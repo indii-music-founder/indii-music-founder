@@ -6,16 +6,7 @@ import { Editing } from '@/services/image/EditingService';
 import { useStore } from '@/core/store';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '../themes';
-import { ProductType } from '../types';
-
-const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
-    't-shirt': 'T-Shirt',
-    'hoodie': 'Hoodie',
-    'mug': 'Mug',
-    'bottle': 'Bottle',
-    'poster': 'Poster',
-    'phone': 'Phone Screen'
-};
+import { ProductType, PRODUCT_TYPE_MAPPING } from '../types';
 
 // Placement options for different product types
 const placementOptions: Record<string, { id: string; label: string; icon: React.ReactNode }[]> = {

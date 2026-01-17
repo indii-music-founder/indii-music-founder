@@ -10,14 +10,14 @@ const toBoolean = (value: string | boolean | undefined): boolean => {
 const FrontendEnvSchema = CommonEnvSchema.extend({
     // Frontend specific
     VITE_FUNCTIONS_URL: z.string().url().optional(),
-    VITE_RAG_PROXY_URL: z.string().url().optional(),
+    VITE_RAG_PROXY_URL: z.union([z.string().url(), z.literal('')]).optional(),
     VITE_GOOGLE_MAPS_API_KEY: z.string().optional(),
     DEV: z.boolean().default(false),
 
     // Firebase specific overrides (optional)
     firebaseProjectId: z.string().optional(),
     firebaseStorageBucket: z.string().optional(),
-    firebaseDatabaseURL: z.string().url().optional(),
+    firebaseDatabaseURL: z.union([z.string().url(), z.literal('')]).optional(),
 
     // App Check
     VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),

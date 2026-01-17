@@ -154,19 +154,32 @@ describe('FirebaseAIService', () => {
     it('should handle analyzeImage', async () => {
         await service.analyzeImage('What is this?', 'data:image/png;base64,encoded...', 'image/png');
 
-        expect(mockGenerateContent).toHaveBeenCalledWith(expect.arrayContaining([
-            'What is this?',
-            expect.objectContaining({
-                inlineData: { data: 'encoded...', mimeType: 'image/png' }
-            })
-        ]));
+        const args = mockGenerateContent.mock.calls[0];
+        expect(args[0]).toMatchObject({
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: 'What is this?' },
+                    { inlineData: { data: 'encoded...', mimeType: 'image/png' } }
+                ]
+            }]
+        });
     });
 
     it('should handle analyzeMultimodal', async () => {
         const parts = [{ text: 'Extra Part' }];
         await service.analyzeMultimodal('Explain', parts);
 
-        expect(mockGenerateContent).toHaveBeenCalledWith(['Explain', ...parts]);
+        const args = mockGenerateContent.mock.calls[0];
+        expect(args[0]).toMatchObject({
+            contents: [{
+                role: 'user',
+                parts: [
+                    { text: 'Explain' },
+                    { text: 'Extra Part' }
+                ]
+            }]
+        });
     });
 
     it('should handle generateGroundedContent', async () => {
@@ -223,7 +236,7 @@ describe('FirebaseAIService', () => {
 
     it('should throw if called without successful initialization', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValue(new Error('Fail'));
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error('Fail'));
 
         await expect(service.generateText('test')).rejects.toThrow('AI Service Failure: Fail');
     });
@@ -248,5 +261,35 @@ describe('FirebaseAIService', () => {
         });
 
         expect(result).toBe('http://video.mp4');
+    });
+
+    it('should retry on transient errors', async () => {
+        // Fail twice with "signal is aborted", then succeed
+        mockGenerateContent
+            .mockRejectedValueOnce(new Error('signal is aborted without reason'))
+            .mockRejectedValueOnce(new Error('503 service unavailable'))
+            .mockResolvedValueOnce({
+                response: {
+                    text: () => 'Success after retry',
+                    usageMetadata: {}
+                }
+            });
+
+        const result = await service.generateContent('Retry me');
+        expect(result.response.text()).toBe('Success after retry');
+        // Initial call + 2 retries = 3 calls
+        expect(mockGenerateContent).toHaveBeenCalledTimes(3);
+    });
+
+    it('should abort retry if user cancels', async () => {
+        mockGenerateContent.mockRejectedValue(new Error('503 service unavailable'));
+        const abortController = new AbortController();
+
+        const promise = service.generateContent('Cancel me', undefined, undefined, undefined, undefined, { signal: abortController.signal });
+
+        // Abort while it's "retrying" (shortly after start)
+        setTimeout(() => abortController.abort(), 10);
+
+        await expect(promise).rejects.toThrow('Operation cancelled by user');
     });
 });

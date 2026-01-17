@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render } from '@testing-library/react';
 import { axe } from 'vitest-axe';
 import * as matchers from 'vitest-axe/matchers';
-import WhiskSidebar from '../WhiskSidebar';
+import { WhiskDropZone } from '../WhiskDropZone';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import React from 'react';
+import { WhiskItem } from '@/core/store/slices/creativeSlice';
 
 expect.extend(matchers);
 
@@ -25,22 +26,30 @@ vi.mock('framer-motion', async () => {
     };
 });
 
-describe('WhiskSidebar Accessibility', () => {
+describe('WhiskDropZone Accessibility', () => {
     const mockAddWhiskItem = vi.fn();
     const mockRemoveWhiskItem = vi.fn();
     const mockToggleWhiskItem = vi.fn();
     const mockUpdateWhiskItem = vi.fn();
-    const mockSetPreciseReference = vi.fn();
     const mockToastSuccess = vi.fn();
     const mockToastInfo = vi.fn();
     const mockToastWarning = vi.fn();
     const mockToastError = vi.fn();
 
-    const mockWhiskState = {
-        preciseReference: false,
-        subjects: [{ id: '1', content: 'Robot', checked: true, type: 'text' }],
-        scenes: [{ id: '2', content: 'City', checked: false, type: 'text' }],
-        styles: []
+    const mockItems: WhiskItem[] = [
+        { id: '1', content: 'Robot', checked: true, type: 'text', category: 'subject' }
+    ];
+
+
+    const defaultProps = {
+        title: 'Subject',
+        category: 'subject' as const,
+        items: mockItems,
+        onAdd: mockAddWhiskItem,
+        onRemove: mockRemoveWhiskItem,
+        onToggle: mockToggleWhiskItem,
+        onUpdate: mockUpdateWhiskItem,
+        description: 'Describe subject'
     };
 
     beforeEach(() => {
@@ -54,23 +63,20 @@ describe('WhiskSidebar Accessibility', () => {
         });
 
         (useStore as any).mockReturnValue({
-            whiskState: mockWhiskState,
-            addWhiskItem: mockAddWhiskItem,
-            removeWhiskItem: mockRemoveWhiskItem,
-            toggleWhiskItem: mockToggleWhiskItem,
-            updateWhiskItem: mockUpdateWhiskItem,
-            setPreciseReference: mockSetPreciseReference
+            whiskState: {},
+            generatedHistory: [],
+            uploadedImages: []
         });
     });
 
     it('should have no accessibility violations', async () => {
-        const { container } = render(<WhiskSidebar />);
+        const { container } = render(<WhiskDropZone {...defaultProps} />);
         const results = await axe(container);
         expect(results).toHaveNoViolations();
     });
 
     it('buttons should have accessible names', async () => {
-        const { container } = render(<WhiskSidebar />);
+        const { container } = render(<WhiskDropZone {...defaultProps} />);
 
         // Check for buttons without text content or aria-label
         const buttons = container.querySelectorAll('button');
@@ -83,7 +89,7 @@ describe('WhiskSidebar Accessibility', () => {
             const hasAccessibleName = hasText || hasAriaLabel;
 
             if (!hasAccessibleName) {
-                 // console.log('Button missing accessible name:', button.outerHTML);
+                // console.log('Button missing accessible name:', button.outerHTML);
             }
 
             expect(hasAccessibleName).toBeTruthy();

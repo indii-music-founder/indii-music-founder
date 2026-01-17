@@ -60,9 +60,9 @@ vi.mock('../theme/moduleColors', () => ({
 
 vi.mock('framer-motion', () => ({
     motion: {
-        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
+        div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div className={className} {...props}>{children}</div>
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
 describe('CommandBar', () => {

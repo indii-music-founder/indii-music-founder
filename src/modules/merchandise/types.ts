@@ -3,6 +3,15 @@ import { Timestamp, FieldValue } from 'firebase/firestore';
 
 export type ProductType = 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
 
+export const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
+    't-shirt': 'T-Shirt',
+    'hoodie': 'Hoodie',
+    'mug': 'Mug',
+    'bottle': 'Bottle',
+    'poster': 'Poster',
+    'phone': 'Phone Screen'
+};
+
 export interface MerchProduct {
     id: string;
     userId: string;

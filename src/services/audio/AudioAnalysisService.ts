@@ -1,5 +1,6 @@
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
 
 export interface AudioFeatures {
     bpm: number;
@@ -84,7 +85,26 @@ export class AudioAnalysisService {
     /**
      * Analyzes an audio file/blob to extract high-level features.
      */
-    async analyze(file: File | Blob): Promise<AudioFeatures> {
+    /**
+     * Analyzes an audio file/blob to extract high-level features.
+     * Checks MusicLibraryService cache first to avoid expensive re-computation.
+     */
+    async analyze(file: File): Promise<AudioFeatures> {
+        // 1. Generate a robust hash for the file
+        const fileHash = await this.generateFileHash(file);
+
+        // 2. Check Cache
+        try {
+            const cached = await musicLibraryService.getAnalysis(fileHash);
+            if (cached) {
+                console.info(`[AudioAnalysis] Cache hit for ${file.name}`);
+                return cached.features;
+            }
+        } catch (e) {
+            console.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
+        }
+
+        // 3. Perform Fresh Analysis
         await this.init(); // Ensure init
         if (!this.essentia) throw new Error("Essentia not initialized");
 
@@ -92,7 +112,35 @@ export class AudioAnalysisService {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        return this.analyzeBuffer(audioBuffer);
+        const features = await this.analyzeBuffer(audioBuffer);
+
+        // 4. Save to Cache
+        try {
+            await musicLibraryService.saveAnalysis(fileHash, file.name, features, fileHash);
+        } catch (e) {
+            console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
+        }
+
+        return features;
+    }
+
+    /**
+     * Generates a unique hash for the file based on metadata and partial content.
+     */
+    private async generateFileHash(file: File): Promise<string> {
+        // Simple hash based on metadata + first 1KB of data
+        const metadata = `${file.name}-${file.size}-${file.lastModified}`;
+        return this.simpleHash(metadata);
+    }
+
+    private simpleHash(str: string): string {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(16);
     }
 
     /**

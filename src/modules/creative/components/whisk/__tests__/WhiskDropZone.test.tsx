@@ -1,16 +1,17 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import WhiskSidebar from '../WhiskSidebar';
+import { WhiskDropZone } from '../WhiskDropZone';
 import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
+import { WhiskItem } from '@/core/store/slices/creativeSlice';
 
 // Mock dependencies
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 vi.mock('@/services/image/ImageGenerationService');
 
-describe('WhiskSidebar', () => {
+describe('WhiskDropZone', () => {
     // Silence window.scrollTo not implemented error from framer-motion in jsdom
     beforeAll(() => {
         window.scrollTo = vi.fn();
@@ -20,17 +21,25 @@ describe('WhiskSidebar', () => {
     const mockRemoveWhiskItem = vi.fn();
     const mockToggleWhiskItem = vi.fn();
     const mockUpdateWhiskItem = vi.fn();
-    const mockSetPreciseReference = vi.fn();
     const mockToastSuccess = vi.fn();
     const mockToastInfo = vi.fn();
     const mockToastWarning = vi.fn();
     const mockToastError = vi.fn();
 
-    const mockWhiskState = {
-        preciseReference: false,
-        subjects: [{ id: '1', content: 'Robot', checked: true, type: 'text' }],
-        scenes: [],
-        styles: []
+    const mockItems: WhiskItem[] = [
+        { id: '1', content: 'Robot', checked: true, type: 'text', category: 'subject' }
+    ];
+
+
+    const defaultProps = {
+        title: 'Subject',
+        category: 'subject' as const,
+        items: mockItems,
+        onAdd: mockAddWhiskItem,
+        onRemove: mockRemoveWhiskItem,
+        onToggle: mockToggleWhiskItem,
+        onUpdate: mockUpdateWhiskItem,
+        description: 'Describe subject'
     };
 
     beforeEach(() => {
@@ -43,95 +52,60 @@ describe('WhiskSidebar', () => {
             error: mockToastError
         });
 
+        // Some logic inside WhiskDropZone (handleDrop) imports store dynamically or uses it?
+        // Actually handleDrop does dynamic import.
         (useStore as any).mockReturnValue({
-            whiskState: mockWhiskState,
-            addWhiskItem: mockAddWhiskItem,
-            removeWhiskItem: mockRemoveWhiskItem,
-            toggleWhiskItem: mockToggleWhiskItem,
-            updateWhiskItem: mockUpdateWhiskItem,
-            setPreciseReference: mockSetPreciseReference
+            whiskState: {}, // Not really used directly
+            generatedHistory: [],
+            uploadedImages: []
         });
     });
 
-    it('renders sections correctly', () => {
-        render(<WhiskSidebar />);
+    it('renders correctly', () => {
+        render(<WhiskDropZone {...defaultProps} />);
         expect(screen.getByText(/Subject/i)).toBeInTheDocument();
-        expect(screen.getByText(/Scene/i)).toBeInTheDocument();
-        // Style appears in both section header and Quick Styles, so use getAllByText
-        expect(screen.getAllByText(/Style/i).length).toBeGreaterThan(0);
         expect(screen.getByText('Robot')).toBeInTheDocument();
     });
 
-    it('Precise Mode Toggle: click -> update state -> feedback', () => {
-        const { rerender } = render(<WhiskSidebar />);
-
-        // 1. Initial State: Ready & OFF
-        const toggleBtn = screen.getByRole('switch', { name: 'Toggle precise mode' });
-        expect(toggleBtn).toBeInTheDocument();
-        expect(toggleBtn).toHaveAttribute('aria-checked', 'false');
-
-        // 2. Action: Click
-        fireEvent.click(toggleBtn);
-
-        // 3. Verify Action
-        expect(mockSetPreciseReference).toHaveBeenCalledWith(true);
-
-        // 4. State Change (simulated)
-        const updatedState = { ...mockWhiskState, preciseReference: true };
-        (useStore as any).mockReturnValue({
-            whiskState: updatedState,
-            addWhiskItem: mockAddWhiskItem,
-            removeWhiskItem: mockRemoveWhiskItem,
-            toggleWhiskItem: mockToggleWhiskItem,
-            updateWhiskItem: mockUpdateWhiskItem,
-            setPreciseReference: mockSetPreciseReference
-        });
-        rerender(<WhiskSidebar />);
-
-        // 5. Verify Feedback: ON
-        const updatedBtn = screen.getByRole('switch', { name: 'Toggle precise mode' });
-        expect(updatedBtn).toHaveAttribute('aria-checked', 'true');
-    });
 
     it('shows input when clicking add button', () => {
-        render(<WhiskSidebar />);
-        // With changes, we can now use aria-label
-        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        render(<WhiskDropZone {...defaultProps} />);
+        const addBtn = screen.getByRole('button', { name: 'Add new Subject' }); // Updated label logic
         fireEvent.click(addBtn);
         expect(screen.getByPlaceholderText(/Describe subject/i)).toBeInTheDocument();
     });
 
     it('adds a text item on Enter', () => {
-        render(<WhiskSidebar />);
-        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        render(<WhiskDropZone {...defaultProps} />);
+        const addBtn = screen.getByRole('button', { name: 'Add new Subject' });
         fireEvent.click(addBtn);
         const input = screen.getByPlaceholderText(/Describe subject/i);
         fireEvent.change(input, { target: { value: 'Alien' } });
         fireEvent.keyDown(input, { key: 'Enter' });
-        expect(mockAddWhiskItem).toHaveBeenCalledWith('subject', 'text', 'Alien', undefined);
+        expect(mockAddWhiskItem).toHaveBeenCalledWith('text', 'Alien');
+
     });
 
     it('toggles an item', () => {
-        render(<WhiskSidebar />);
+        render(<WhiskDropZone {...defaultProps} />);
         const toggleBtn = screen.getByRole('checkbox', { name: 'Select Robot' });
         fireEvent.click(toggleBtn);
-        expect(mockToggleWhiskItem).toHaveBeenCalledWith('subject', '1');
+        expect(mockToggleWhiskItem).toHaveBeenCalledWith('1');
     });
 
     it('removes an item', () => {
-        render(<WhiskSidebar />);
-        const removeBtn = screen.getByRole('button', { name: 'Remove item' });
+        render(<WhiskDropZone {...defaultProps} />);
+        const removeBtn = screen.getByRole('button', { name: 'Remove Robot' }); // The remove button title is "Remove" usually, let's check aria-label
         fireEvent.click(removeBtn);
-        expect(mockRemoveWhiskItem).toHaveBeenCalledWith('subject', '1');
+        expect(mockRemoveWhiskItem).toHaveBeenCalledWith('1');
     });
 
     it('updates an item caption', () => {
         window.prompt = vi.fn().mockReturnValue('New Robot Caption');
-        render(<WhiskSidebar />);
-        // With changes, we can now use aria-label
-        const editBtn = screen.getByRole('button', { name: 'Edit item' });
+        render(<WhiskDropZone {...defaultProps} />);
+        const editBtn = screen.getByRole('button', { name: 'Edit text' });
         fireEvent.click(editBtn);
-        expect(mockUpdateWhiskItem).toHaveBeenCalledWith('subject', '1', { aiCaption: 'New Robot Caption' });
+        expect(mockUpdateWhiskItem).toHaveBeenCalledWith('1', { aiCaption: 'New Robot Caption' });
     });
 
     it('handles QuotaExceededError during file upload', async () => {
@@ -157,10 +131,10 @@ describe('WhiskSidebar', () => {
         (quotaError as any).name = 'QuotaExceededError';
         (ImageGeneration.captionImage as any) = vi.fn().mockRejectedValue(quotaError);
 
-        render(<WhiskSidebar />);
+        render(<WhiskDropZone {...defaultProps} />);
 
         // Open add menu
-        const addBtn = screen.getAllByRole('button', { name: 'Add item' })[0];
+        const addBtn = screen.getByRole('button', { name: 'Add new Subject' });
         fireEvent.click(addBtn);
 
         // Find file input
@@ -187,7 +161,9 @@ describe('WhiskSidebar', () => {
         });
 
         // Also check that it added the image anyway (fallback behavior)
-        expect(mockAddWhiskItem).toHaveBeenCalledWith('subject', 'image', 'data:image/png;base64,fakecontent', undefined);
+        // Also check that it added the image anyway (fallback behavior)
+        expect(mockAddWhiskItem).toHaveBeenCalledWith('image', 'data:image/png;base64,fakecontent');
+
 
         // Restore
         window.FileReader = originalFileReader;

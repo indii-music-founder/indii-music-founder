@@ -127,67 +127,70 @@ export class FirebaseAIService {
         tools?: Tool[],
         options?: { signal?: AbortSignal, cachedContent?: string }
     ): Promise<GenerateContentResult> {
+        // Wrap in retry logic (internal retries for 503/429/Transient Aborts)
         return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
+            return this.withRetry(async () => {
+                await this.ensureInitialized();
 
-            // Rate Limit Check
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                await TokenUsageService.checkQuota(userId);
-            }
-
-            const modelName = modelOverride || this.model!.model;
-            // Validate & Sanitize
-            const sanitizedPrompt = this.sanitizePrompt(prompt);
-
-            // 1. Check for Cached Content if systemInstruction is large
-            let cachedContent = options?.cachedContent;
-            if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                const hash = CachedContextService.generateHash(systemInstruction, tools);
-                const existingCache = await CachedContextService.findCache(hash);
-                if (existingCache) {
-                    cachedContent = existingCache;
-                    // console.info('[FirebaseAIService] Using cached context:', cachedContent);
+                // Rate Limit Check
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await TokenUsageService.checkQuota(userId);
                 }
-            }
 
-            const modelOptions: any = {
-                model: modelName,
-                generationConfig: config,
-                systemInstruction,
-                tools
-            };
+                const modelName = modelOverride || this.model!.model;
+                // Validate & Sanitize
+                const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            // Inject cachedContent if supported/available
-            if (cachedContent) {
-                modelOptions.cachedContent = cachedContent;
-            }
+                // 1. Check for Cached Content if systemInstruction is large
+                let cachedContent = options?.cachedContent;
+                if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                    const hash = CachedContextService.generateHash(systemInstruction, tools);
+                    const existingCache = await CachedContextService.findCache(hash);
+                    if (existingCache) {
+                        cachedContent = existingCache;
+                        // console.info('[FirebaseAIService] Using cached context:', cachedContent);
+                    }
+                }
 
-            const modelCallback = getGenerativeModel(ai, modelOptions);
+                const modelOptions: any = {
+                    model: modelName,
+                    generationConfig: config,
+                    systemInstruction,
+                    tools
+                };
 
-            try {
-                const result = await modelCallback.generateContent(
-                    typeof sanitizedPrompt === 'string'
-                        ? sanitizedPrompt
-                        : { contents: sanitizedPrompt } as any,
-                    // @ts-expect-error - options param validation
-                    options
-                );
+                // Inject cachedContent if supported/available
+                if (cachedContent) {
+                    modelOptions.cachedContent = cachedContent;
+                }
 
-                // Track Usage
-                if (userId && result.response.usageMetadata) {
-                    await TokenUsageService.trackUsage(
-                        userId,
-                        modelName,
-                        result.response.usageMetadata.promptTokenCount || 0,
-                        result.response.usageMetadata.candidatesTokenCount || 0
+                const modelCallback = getGenerativeModel(ai, modelOptions);
+
+                try {
+                    const result = await modelCallback.generateContent(
+                        typeof sanitizedPrompt === 'string'
+                            ? sanitizedPrompt
+                            : { contents: sanitizedPrompt } as any,
+                        // @ts-expect-error - options param validation
+                        options
                     );
-                }
 
-                return result;
-            } catch (error) {
-                throw this.handleError(error);
-            }
+                    // Track Usage
+                    if (userId && result.response.usageMetadata) {
+                        await TokenUsageService.trackUsage(
+                            userId,
+                            modelName,
+                            result.response.usageMetadata.promptTokenCount || 0,
+                            result.response.usageMetadata.candidatesTokenCount || 0
+                        );
+                    }
+
+                    return result;
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
     }
 
@@ -203,101 +206,103 @@ export class FirebaseAIService {
         options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
+            return this.withRetry(async () => {
+                await this.ensureInitialized();
 
-            // Rate Limit Check
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                await TokenUsageService.checkQuota(userId);
-            }
-
-            const modelName = modelOverride || this.model!.model;
-            const sanitizedPrompt = this.sanitizePrompt(prompt);
-
-            // 1. Check for Cached Content if systemInstruction is large
-            let cachedContent: string | undefined;
-            if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                const hash = CachedContextService.generateHash(systemInstruction, tools);
-                const existingCache = await CachedContextService.findCache(hash);
-                if (existingCache) {
-                    cachedContent = existingCache;
+                // Rate Limit Check
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await TokenUsageService.checkQuota(userId);
                 }
-            }
 
-            const modelOptions: any = {
-                model: modelName,
-                generationConfig: config,
-                systemInstruction,
-                tools
-            };
+                const modelName = modelOverride || this.model!.model;
+                const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            if (cachedContent) {
-                modelOptions.cachedContent = cachedContent;
-            }
-
-            const modelCallback = getGenerativeModel(ai, modelOptions);
-
-            try {
-
-                const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
-                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-
-                    // @ts-expect-error - options param not in typed definition but supported
-                    options
-                );
-
-                // Wrap the final response promise
-                const wrappedResponsePromise = result.response.then(async (aggResult) => {
-                    // Track usage
-                    if (userId && aggResult.usageMetadata) {
-                        try {
-                            await TokenUsageService.trackUsage(
-                                userId,
-                                modelName,
-                                aggResult.usageMetadata.promptTokenCount || 0,
-                                aggResult.usageMetadata.candidatesTokenCount || 0
-                            );
-                        } catch {
-                            // Failed to track stream usage (non-critical)
-                        }
+                // 1. Check for Cached Content if systemInstruction is large
+                let cachedContent: string | undefined;
+                if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                    const hash = CachedContextService.generateHash(systemInstruction, tools);
+                    const existingCache = await CachedContextService.findCache(hash);
+                    if (existingCache) {
+                        cachedContent = existingCache;
                     }
+                }
 
-                    return {
-                        response: aggResult as AggregatedStreamResponse,
-                        text: () => aggResult.text?.() ?? '',
-                        functionCalls: () => {
-                            const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                            return part ? [part.functionCall] : [];
-                        },
-                        usage: () => aggResult.usageMetadata
-                    };
-                });
+                const modelOptions: any = {
+                    model: modelName,
+                    generationConfig: config,
+                    systemInstruction,
+                    tools
+                };
 
-                const stream = new ReadableStream<StreamChunk>({
-                    async start(controller) {
-                        try {
-                            for await (const chunk of result.stream) {
-                                controller.enqueue({
-                                    text: () => {
-                                        try { return chunk.text(); } catch { return ''; }
-                                    },
-                                    functionCalls: () => {
-                                        const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                                        return part ? [part.functionCall] : [];
-                                    }
-                                });
+                if (cachedContent) {
+                    modelOptions.cachedContent = cachedContent;
+                }
+
+                const modelCallback = getGenerativeModel(ai, modelOptions);
+
+                try {
+
+                    const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
+                        typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
+
+                        // @ts-expect-error - options param not in typed definition but supported
+                        options
+                    );
+
+                    // Wrap the final response promise
+                    const wrappedResponsePromise = result.response.then(async (aggResult) => {
+                        // Track usage
+                        if (userId && aggResult.usageMetadata) {
+                            try {
+                                await TokenUsageService.trackUsage(
+                                    userId,
+                                    modelName,
+                                    aggResult.usageMetadata.promptTokenCount || 0,
+                                    aggResult.usageMetadata.candidatesTokenCount || 0
+                                );
+                            } catch {
+                                // Failed to track stream usage (non-critical)
                             }
-                            controller.close();
-                        } catch (streamError) {
-                            controller.error(streamError);
                         }
-                    }
-                });
 
-                return { stream, response: wrappedResponsePromise };
-            } catch (error) {
-                throw this.handleError(error);
-            }
+                        return {
+                            response: aggResult as AggregatedStreamResponse,
+                            text: () => aggResult.text?.() ?? '',
+                            functionCalls: () => {
+                                const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                                return part ? [part.functionCall] : [];
+                            },
+                            usage: () => aggResult.usageMetadata
+                        };
+                    });
+
+                    const stream = new ReadableStream<StreamChunk>({
+                        async start(controller) {
+                            try {
+                                for await (const chunk of result.stream) {
+                                    controller.enqueue({
+                                        text: () => {
+                                            try { return chunk.text(); } catch { return ''; }
+                                        },
+                                        functionCalls: () => {
+                                            const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                                            return part ? [part.functionCall] : [];
+                                        }
+                                    });
+                                }
+                                controller.close();
+                            } catch (streamError) {
+                                controller.error(streamError);
+                            }
+                        }
+                    });
+
+                    return { stream, response: wrappedResponsePromise };
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
     }
 
@@ -336,6 +341,7 @@ export class FirebaseAIService {
         thinkingBudgetOrModel?: number | string,
         systemInstructionOrConfig?: string | any
     ): Promise<string> {
+        await this.ensureInitialized();
         let model = this.model!.model;
         let config: any = {};
         let systemInstruction: string | undefined;
@@ -382,6 +388,7 @@ export class FirebaseAIService {
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
+        await this.ensureInitialized();
         const config: GenerationConfig = {
             responseMimeType: 'application/json',
             responseSchema: schema
@@ -422,6 +429,7 @@ export class FirebaseAIService {
         newMessage: string,
         systemInstruction?: string
     ): Promise<string> {
+        await this.ensureInitialized();
         const contents: Content[] = history.map(h => ({
             role: h.role,
             parts: h.parts
@@ -470,6 +478,7 @@ export class FirebaseAIService {
      * ADVANCED: Grounding with Google Search.
      */
     async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
+        await this.ensureInitialized();
         return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
     }
 
@@ -733,23 +742,50 @@ export class FirebaseAIService {
         return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
     }
 
-    private async withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        retries = 3,
+        delay = 1000,
+        signal?: AbortSignal
+    ): Promise<T> {
         try {
+            // Check signal before starting
+            if (signal?.aborted) {
+                throw new Error('Operation cancelled by user');
+            }
             return await operation();
         } catch (error: any) {
+            // If user explicitly cancelled, DO NOT retry
+            if (signal?.aborted) {
+                throw error;
+            }
+
             const msg = error?.message || '';
             const isRetryable =
                 msg.includes('429') ||
                 msg.includes('503') ||
                 msg.includes('service unavailable') ||
                 msg.includes('overloaded') ||
+                // Retry abort/network errors (usually transient)
+                msg.includes('aborted') ||
+                msg.includes('fetch failed') ||
+                msg.includes('network error') ||
                 error?.code === 'resource-exhausted';
 
             if (retries > 0 && isRetryable) {
                 // Exponential backoff with jitter and 10s cap
                 const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
-                await new Promise(r => setTimeout(r, backoff));
-                return this.withRetry(operation, retries - 1, backoff);
+                // Wait for backoff, but listen for abort signal
+                await new Promise((resolve, reject) => {
+                    const timer = setTimeout(resolve, backoff);
+                    if (signal) {
+                        signal.addEventListener('abort', () => {
+                            clearTimeout(timer);
+                            reject(new Error('Operation cancelled by user during retry backoff'));
+                        }, { once: true });
+                    }
+                });
+                return this.withRetry(operation, retries - 1, backoff, signal);
             }
             throw error;
         }

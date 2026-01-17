@@ -8,7 +8,7 @@ import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
-import WhiskSidebar from './components/whisk/WhiskSidebar';
+
 import { WhiskService } from '@/services/WhiskService';
 import { QuotaExceededError } from '@/shared/types/errors';
 
@@ -146,9 +146,8 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
 
                 <div className="flex-1 flex overflow-hidden relative">
                     {/* Whisk Sidebar - Controls Tab on Mobile */}
-                    <div className={`${activeMobileTab === 'controls' ? 'flex w-full' : 'hidden'} md:flex md:w-auto h-full z-10`}>
-                        <WhiskSidebar />
-                    </div>
+                    {/* Whisk Sidebar Removed - moved to Right Panel */}
+
 
                     {/* Main Workspace - Studio Tab on Mobile */}
                     <div className={`${activeMobileTab === 'studio' ? 'flex' : 'hidden'} md:flex flex-1 flex-col relative min-w-0 bg-[#0f0f0f]`}>

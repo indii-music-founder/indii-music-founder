@@ -5,6 +5,11 @@ import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
 import { z } from 'zod';
 import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
+import WhiskPresetStyles, { STYLE_PRESETS } from '@/modules/creative/components/whisk/WhiskPresetStyles';
+import { Sparkles, Lock, Image as ImageIcon, Film, ImagePlay } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useCallback } from 'react';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -17,6 +22,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
     const [activeTab, setActiveTab] = useState('create');
     const {
         studioControls, setStudioControls,
+        whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia
     } = useStore();
     const toast = useToast();
 
@@ -60,6 +66,151 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                 </div>
             ) : (
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
+                    {/* REFERENCE MIXER SECTION */}
+                    <div className="space-y-4">
+                        {/* Reference Mixer Header */}
+                        <div className="flex flex-col gap-3 p-3 bg-white/5 rounded-xl border border-white/10">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 bg-purple-500/20 rounded-lg">
+                                        <Sparkles className="text-purple-400" size={14} />
+                                    </div>
+                                    <div>
+                                        <span className="text-xs font-bold text-white tracking-wide">Reference Mixer</span>
+                                        {(whiskState.subjects.filter(i => i.checked).length +
+                                            whiskState.scenes.filter(i => i.checked).length +
+                                            whiskState.styles.filter(i => i.checked).length +
+                                            whiskState.motion.filter(i => i.checked).length) > 0 && (
+                                                <p className="text-[9px] text-purple-400">
+                                                    {whiskState.subjects.filter(i => i.checked).length +
+                                                        whiskState.scenes.filter(i => i.checked).length +
+                                                        whiskState.styles.filter(i => i.checked).length +
+                                                        whiskState.motion.filter(i => i.checked).length} locked
+                                                </p>
+                                            )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[9px] text-gray-500 uppercase font-bold">Precise</span>
+                                    <button
+                                        onClick={() => setPreciseReference(!whiskState.preciseReference)}
+                                        className={`w-8 h-4 rounded-full relative transition-all ${whiskState.preciseReference
+                                            ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+                                            : 'bg-gray-800'
+                                            }`}
+                                        title={whiskState.preciseReference ? 'Precise: ON' : 'Precise: OFF'}
+                                    >
+                                        <motion.div
+                                            animate={{ x: whiskState.preciseReference ? 16 : 2 }}
+                                            transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+                                            className={`absolute top-0.5 left-0 w-3 h-3 rounded-full ${whiskState.preciseReference ? 'bg-white' : 'bg-gray-500'}`}
+                                        />
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Media Type Toggle */}
+                            <div className="flex items-center gap-1 p-1 bg-black/40 rounded-lg">
+                                <button
+                                    onClick={() => setTargetMedia('image')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
+                                        ? 'bg-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                >
+                                    <ImageIcon size={12} />
+                                    Image
+                                </button>
+                                <button
+                                    onClick={() => setTargetMedia('video')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'video'
+                                        ? 'bg-blue-500/30 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                >
+                                    <Film size={12} />
+                                    Video
+                                </button>
+                                <button
+                                    onClick={() => setTargetMedia('both')}
+                                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'both'
+                                        ? 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                >
+                                    <ImagePlay size={12} />
+                                    Both
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Drop Zones */}
+                        <div className="space-y-2">
+                            <WhiskDropZone
+                                title="Subject"
+                                category="subject"
+                                items={whiskState.subjects}
+                                onAdd={(type, content, cap) => addWhiskItem('subject', type, content, cap)}
+                                onRemove={(id) => removeWhiskItem('subject', id)}
+                                onToggle={(id) => toggleWhiskItem('subject', id)}
+                                onUpdate={(id, updates) => updateWhiskItem('subject', id, updates)}
+                                description="Main subject"
+                            />
+
+                            <WhiskDropZone
+                                title="Scene"
+                                category="scene"
+                                items={whiskState.scenes}
+                                onAdd={(type, content, cap) => addWhiskItem('scene', type, content, cap)}
+                                onRemove={(id) => removeWhiskItem('scene', id)}
+                                onToggle={(id) => toggleWhiskItem('scene', id)}
+                                onUpdate={(id, updates) => updateWhiskItem('scene', id, updates)}
+                                description="Background/Setting"
+                            />
+
+                            <WhiskDropZone
+                                title="Style"
+                                category="style"
+                                items={whiskState.styles}
+                                onAdd={(type, content, cap) => addWhiskItem('style', type, content, cap)}
+                                onRemove={(id) => removeWhiskItem('style', id)}
+                                onToggle={(id) => toggleWhiskItem('style', id)}
+                                onUpdate={(id, updates) => updateWhiskItem('style', id, updates)}
+                                description="Aesthetic/Vibe"
+                            />
+
+                            {(whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both') && (
+                                <WhiskDropZone
+                                    title="Motion"
+                                    category="motion"
+                                    items={whiskState.motion}
+                                    onAdd={(type, content, cap) => addWhiskItem('motion', type, content, cap)}
+                                    onRemove={(id) => removeWhiskItem('motion', id)}
+                                    onToggle={(id) => toggleWhiskItem('motion', id)}
+                                    onUpdate={(id, updates) => updateWhiskItem('motion', id, updates)}
+                                    description="Camera movement"
+                                    accentColor="blue"
+                                />
+                            )}
+                        </div>
+
+                        {/* Presets */}
+                        <div className="pt-2 border-t border-white/10">
+                            <WhiskPresetStyles onSelectPreset={(preset) => {
+                                const exists = whiskState.styles.some(s => s.content === preset.prompt);
+                                if (exists) {
+                                    const item = whiskState.styles.find(s => s.content === preset.prompt);
+                                    if (item) toggleWhiskItem('style', item.id);
+                                } else {
+                                    addWhiskItem('style', 'text', preset.prompt, preset.label);
+                                }
+                                toast.success(`Style: ${preset.label}`);
+                            }} />
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-white/10" />
+
                     {/* Prompt Section */}
 
 
