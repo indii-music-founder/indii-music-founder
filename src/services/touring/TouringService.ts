@@ -18,7 +18,7 @@ const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
 
 // Zod Schemas for Runtime Validation
-const ItineraryStopSchema = z.object({
+export const ItineraryStopSchema = z.object({
     date: z.string(),
     city: z.string(),
     venue: z.string(),
@@ -28,7 +28,7 @@ const ItineraryStopSchema = z.object({
     distance: z.number().optional()
 });
 
-const ItinerarySchema = z.object({
+export const ItinerarySchema = z.object({
     userId: z.string(),
     tourName: z.string(),
     stops: z.array(ItineraryStopSchema),
@@ -38,7 +38,7 @@ const ItinerarySchema = z.object({
     updatedAt: z.any().optional()
 });
 
-const VehicleStatsSchema = z.object({
+export const VehicleStatsSchema = z.object({
     userId: z.string(),
     milesDriven: z.number(),
     fuelLevelPercent: z.number(),
