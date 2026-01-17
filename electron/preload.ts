@@ -74,6 +74,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         executeWaterfall: (data: any) => ipcRenderer.invoke('distribution:execute-waterfall', data),
         validateMetadata: (metadata: any) => ipcRenderer.invoke('distribution:validate-metadata', metadata),
         generateISRC: () => ipcRenderer.invoke('distribution:generate-isrc'),
+        generateUPC: () => ipcRenderer.invoke('distribution:generate-upc'),
+        registerRelease: (metadata: any, releaseId?: string) => ipcRenderer.invoke('distribution:register-release', metadata, releaseId),
+        generateDDEX: (metadata: any) => ipcRenderer.invoke('distribution:generate-ddex', metadata),
         generateContentIdCSV: (data: any) => ipcRenderer.invoke('distribution:generate-content-id-csv', data),
     },
 

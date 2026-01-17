@@ -207,4 +207,37 @@ export const setupDistributionHandlers = () => {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
+
+    ipcMain.handle('distribution:generate-upc', async (event) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', ['generate_upc']);
+            return { success: true, upc: report.upc };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:register-release', async (event, metadata: any, releaseId?: string) => {
+        try {
+            validateSender(event);
+            const args = ['register', JSON.stringify(metadata)];
+            if (releaseId) args.push(releaseId);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
+            return { success: true, release: report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:generate-ddex', async (event, metadata: any) => {
+        try {
+            validateSender(event);
+            const result = await PythonBridge.runScript('distribution', 'ddex_generator.py', [JSON.stringify(metadata)]);
+            // ddex_generator outputs raw XML string
+            return { success: true, xml: typeof result === 'string' ? result : JSON.stringify(result) };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
 };
