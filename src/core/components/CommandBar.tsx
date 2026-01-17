@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image, ChevronUp, X } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, Image, ChevronUp, X, MessageSquare, PanelTopClose, PanelTopOpen } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -409,9 +409,18 @@ function CommandBar() {
                             </div>
 
                             <div className="flex items-center gap-2 ml-auto">
-                                <span className="text-[10px] text-gray-600 flex items-center gap-1 mr-2 select-none cursor-help" title="Using Gemini 3 Pro">
-                                    <span className="text-yellow-500">✦</span> Powered by Gemini
-                                </span>
+                                <button
+                                    type="button"
+                                    onClick={toggleAgentWindow}
+                                    className={cn(
+                                        "p-1.5 rounded-full transition-all duration-300 mr-2 hover:bg-white/10",
+                                        isAgentOpen ? "text-white bg-white/10" : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    title={isAgentOpen ? "Close chat" : "Open chat"}
+                                    aria-label={isAgentOpen ? "Close chat" : "Open chat"}
+                                >
+                                    {isAgentOpen ? <PanelTopClose size={16} /> : <PanelTopOpen size={16} />}
+                                </button>
                                 <button
                                     type="button"
                                     onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
