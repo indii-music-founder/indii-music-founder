@@ -190,6 +190,50 @@ export default function VideoWorkflow() {
         if (!jobId) return;
 
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
+            if (data) {
+                const newStatus = data.status;
+
+                // Check current status to avoid unnecessary updates
+                const currentStatus = useVideoEditorStore.getState().status;
+                if (newStatus && newStatus !== currentStatus) {
+                    // Start of type guard
+                    if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
+                        setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
+                    }
+                }
+
+                if (data.progress !== undefined) {
+                    setJobProgress(data.progress);
+                    useVideoEditorStore.getState().setProgress(data.progress);
+                }
+
+                if (newStatus === 'completed' && data.videoUrl) {
+                    // Extract metadata from Veo 3.1 output (enforcing contract)
+                    const metadata = data.output?.metadata || data.metadata;
+
+                    const newAsset = {
+                        id: jobId,
+                        url: data.videoUrl,
+                        prompt: data.prompt || localPromptRef.current,
+                        type: 'video' as const,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default',
+                        orgId: currentOrganizationId,
+                        meta: metadata ? JSON.stringify(metadata) : undefined
+                    };
+                    addToHistory(newAsset);
+                    setActiveVideo(newAsset);
+                    toast.success('Scene generated!');
+                    setJobId(null);
+                    setJobStatus('idle');
+                    useVideoEditorStore.getState().setProgress(0);
+                } else if (newStatus === 'failed') {
+                    toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
+                    setJobId(null);
+                    setJobStatus('failed');
+                    useVideoEditorStore.getState().setProgress(0);
+                }
+            }
             processJobUpdate(data, jobId, {
                 currentProjectId,
                 currentOrganizationId,
