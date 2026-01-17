@@ -355,9 +355,37 @@ service cloud.firestore {
     }
 
     // ========================================
+    // TAX PROFILES (Distribution Engine - user-scoped)
+    // ========================================
+
+    match /tax_profiles/{profileId} {
+      // Users can read their own tax profile
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create/update their own profile (certifiedBy must be self)
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Delete restricted (compliance record retention)
+      allow delete: if false;
+    }
+
+    // ========================================
+    // ISRC REGISTRY (Distribution Engine - system-managed)
+    // ========================================
+
+    match /isrc_registry/{isrcId} {
+      // Users can read their own ISRCs
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create new ISRCs
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // No updates or deletes (ISRCs are permanent identifiers)
+      allow update, delete: if false;
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 
     // Any paths not explicitly matched above are denied by default
   }
 }
+

@@ -13,6 +13,9 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
 
+// Unified SDK
+import { GoogleGenAI } from "@google/genai";
+
 // Initialize Firebase Admin
 admin.initializeApp();
 
@@ -518,10 +521,12 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
+            // Initialize SDK Client
+            const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [{ text: prompt }];
+
             if (images) {
                 images.forEach(img => {
                     parts.push({
@@ -533,29 +538,26 @@ export const generateImageV3 = functions
                 });
             }
 
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{ role: "user", parts: parts }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE"],
-                        candidateCount: count || 1,
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                    }
-                }),
+            const response = await client.models.generateContent({
+                model: modelId,
+                contents: [{ role: "user", parts }],
+                config: {
+                    responseModalities: ["IMAGE"],
+                    candidateCount: count || 1,
+                    ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Google AI Error:", response.status, errorText);
-                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
+            const result = response; // SDK returns the result object directly usually, or we access response.candidates
+
+            // The Unified SDK response structure:
+            // response.candidates[0].content.parts[0].inlineData
+
+            if (!result.candidates || result.candidates.length === 0) {
+                throw new functions.https.HttpsError('internal', 'No candidates returned from Google AI');
             }
 
-            const result = await response.json();
-            const processedImages = (result.candidates?.[0]?.content?.parts || [])
+            const processedImages = (result.candidates[0].content?.parts || [])
                 .filter((p: any) => p.inlineData)
                 .map((p: any) => ({
                     bytesBase64Encoded: p.inlineData.data,
@@ -563,6 +565,7 @@ export const generateImageV3 = functions
                 }));
 
             return { images: processedImages };
+
         } catch (error: any) {
             console.error("[generateImageV3] Error:", error);
             if (error instanceof functions.https.HttpsError) {
@@ -593,9 +596,9 @@ export const editImage = functions
         const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
 
         try {
+            // Initialize SDK Client
+            const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
 
             const parts: any[] = [
                 {
@@ -633,29 +636,22 @@ export const editImage = functions
 
             parts.push({ text: prompt });
 
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: parts
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE"],
-                        temperature: 1.0
-                    }
-                }),
+            const result = await client.models.generateContent({
+                model: modelId,
+                contents: [{
+                    role: "user",
+                    parts: parts
+                }],
+                config: {
+                    responseModalities: ["IMAGE"],
+                    temperature: 1.0 // Although usually ignored for image gen, keeping it for consistency if API accepts it
+                }
             });
 
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
+            if (!result.candidates) {
+                throw new functions.https.HttpsError('internal', "No candidates returned.");
             }
 
-            const result = await response.json();
             return { candidates: result.candidates };
 
         } catch (error: unknown) {
@@ -719,60 +715,29 @@ export const generateContentStream = functions
                     return;
                 }
 
-                if (!Array.isArray(contents)) {
-                    res.status(400).send('Invalid input: contents must be an array.');
-                    return;
-                }
+                // Initialize SDK Client
+                // Initialize SDK Client
+                const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
 
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents,
-                        generationConfig: config
-                    })
+                // Generate Content Stream
+                const result = await client.models.generateContentStream({
+                    model: modelId,
+                    contents: contents, // SDK accepts standard Content format
+                    config: config
                 });
-
-                if (!response.ok) {
-                    const error = await response.text();
-                    res.status(response.status).send(error);
-                    return;
-                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
-                const reader = response.body?.getReader();
-                if (!reader) {
-                    res.status(500).send('No response body');
-                    return;
-                }
-
-                const decoder = new TextDecoder();
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.substring(6));
-                                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                                if (text) {
-                                    res.write(JSON.stringify({ text }) + '\n');
-                                }
-                            } catch {
-                                // Ignore parse errors for partial chunks
-                            }
-                        }
+                // Iterate over SDK Stream
+                for await (const chunk of result) {
+                    const text = chunk.text;
+                    if (text) {
+                        res.write(JSON.stringify({ text }) + '\n');
                     }
                 }
+
                 res.end();
 
             } catch (error: any) {

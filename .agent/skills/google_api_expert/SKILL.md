@@ -70,9 +70,9 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // Note: In indiiOS, we often use generic wrappers like FirebaseAIService.
 // But for direct SDK usage:
 
-import { Client } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 
-const client = new Client({ apiKey: process.env.GOOGLE_GENAI_API_KEY });
+const client = new GoogleGenAI({ apiKey: process.env.GOOGLE_GENAI_API_KEY });
 
 async function generateContent() {
   const response = await client.models.generateContent({
