@@ -112,6 +112,36 @@ class DistributionService {
             throw error;
         }
     }
+
+    /**
+     * Calculate tax withholding via Electron IPC (uses Python engine)
+     */
+    async calculateWithholding(userId: string, amount: number): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for tax calculations');
+        }
+
+        const result = await window.electronAPI.distribution.calculateTax(userId, amount);
+        if (!result.success) {
+            throw new Error(result.error || 'Tax calculation failed');
+        }
+        return result.report;
+    }
+
+    /**
+     * Execute industrial waterfall payout via Electron IPC (uses Python engine)
+     */
+    async executeWaterfall(data: { gross: number; splits: Record<string, number>; recoupment?: number; indii_fee_percent?: number }): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for waterfall execution');
+        }
+
+        const result = await window.electronAPI.distribution.executeWaterfall(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Waterfall execution failed');
+        }
+        return result.report;
+    }
 }
 
 export const distributionService = new DistributionService();

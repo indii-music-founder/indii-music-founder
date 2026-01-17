@@ -64,6 +64,9 @@ export interface ElectronAPI {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
         runForensics: (filePath: string) => Promise<{ success: boolean; report: any; error?: string }>;
         packageITMSP: (releaseId: string) => Promise<{ success: boolean; itmspPath?: string; message?: string; error?: string }>;
+        calculateTax: (userId: string, amount: number) => Promise<{ success: boolean; report: any; error?: string }>;
+        certifyTax: (userId: string, data: any) => Promise<{ success: boolean; report: any; error?: string }>;
+        executeWaterfall: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
     };
 }
 
