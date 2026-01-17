@@ -8,7 +8,7 @@ import { apiService } from '../services/APIService';
 import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
-import { validateSafeAudioPath } from '../utils/file-security';
+
 import { z } from 'zod';
 
 // Fix for packing in Electron (files in asar)
@@ -55,8 +55,6 @@ export function registerAudioHandlers() {
             const rawPath = AudioAnalyzeSchema.parse(filePath);
 
             // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files)
-            // Validation (Schema + Security Check)
-            const rawPath = AudioAnalyzeSchema.parse(filePath);
             const validatedPath = validateSafeAudioPath(rawPath);
 
             // Parallel execution: Hash + Metadata
@@ -94,9 +92,9 @@ export function registerAudioHandlers() {
     ipcMain.handle('audio:lookup-metadata', async (event, hash) => {
         console.log('[Main] Metadata lookup requested for hash:', hash);
         try {
-             validateSender(event);
-             // Schema Validation
-             const validatedHash = AudioLookupSchema.parse(hash);
+            validateSender(event);
+            // Schema Validation
+            const validatedHash = AudioLookupSchema.parse(hash);
 
             // In a real app, you might pass the user's auth token here if needed
             // const token = await authService.getToken(); 
