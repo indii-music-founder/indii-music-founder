@@ -31,7 +31,7 @@ describe('ManufacturingPanel Cost Calculation', () => {
 
     it('uses catalog price when available (e.g. "T-Shirt" matches "Standard Tee")', async () => {
         mockGetCatalog.mockResolvedValue([
-            { id: '1', title: 'Standard Tee', basePrice: 24.99, category: 'standard', image: '' }
+            { id: '1', title: 'Standard Tee', basePrice: 24.99, category: 'standard', image: 'https://example.com/tee.jpg' }
         ]);
 
         render(
