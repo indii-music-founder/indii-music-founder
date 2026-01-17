@@ -1,7 +1,8 @@
+import { WhiskState } from '@/core/store/slices/creativeSlice';
+export type { WhiskState };
 
 import { AgentMessage } from '@/core/store';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
-import { WhiskState } from '@/core/store/slices/creativeSlice';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 

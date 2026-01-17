@@ -69,6 +69,8 @@ export class AgentOrchestrator {
         6. "video" handles storyboards, treatments, and video editing.
         7. "marketing" handles social media, campaigns, and brand strategy.
         8. CRITICAL: Requests to GENERATE, CREATE, or MAKE new images, visuals, or album art must go to "generalist" (Agent Zero) or "director", NOT "merchandise". "merchandise" is ONLY for managing physical goods.
+        9. Use "director" specifically for high-fidelity visual concepts, cinematic aesthetics, character consistency, or when the user explicitly mentions creative/artistic direction.
+        10. Use "generalist" (Agent Zero) for multi-step orchestration, general inquiries, or when a specific specialist is not clearly required.
         `;
 
         try {

@@ -89,7 +89,7 @@ export class AudioAnalysisService {
      * Analyzes an audio file/blob to extract high-level features.
      * Checks MusicLibraryService cache first to avoid expensive re-computation.
      */
-    async analyze(file: File): Promise<AudioFeatures> {
+    async analyze(file: File): Promise<{ features: AudioFeatures, fromCache: boolean }> {
         // 1. Generate a robust hash for the file
         const fileHash = await this.generateFileHash(file);
 
@@ -98,7 +98,7 @@ export class AudioAnalysisService {
             const cached = await musicLibraryService.getAnalysis(fileHash);
             if (cached) {
                 console.info(`[AudioAnalysis] Cache hit for ${file.name}`);
-                return cached.features;
+                return { features: cached.features, fromCache: true };
             }
         } catch (e) {
             console.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
@@ -121,26 +121,32 @@ export class AudioAnalysisService {
             console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
         }
 
-        return features;
+        return { features, fromCache: false };
     }
 
     /**
-     * Generates a unique hash for the file based on metadata and partial content.
+     * Generates a unique hash for the file based on metadata and partial content (first 1MB).
      */
     private async generateFileHash(file: File): Promise<string> {
-        // Simple hash based on metadata + first 1KB of data
-        const metadata = `${file.name}-${file.size}-${file.lastModified}`;
-        return this.simpleHash(metadata);
-    }
+        // Read the first 1MB for hashing to ensure decent collision resistance without full file read
+        const CHUNK_SIZE = 1024 * 1024; // 1MB
+        const blob = file.slice(0, CHUNK_SIZE);
+        const arrayBuffer = await blob.arrayBuffer();
 
-    private simpleHash(str: string): string {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            const char = str.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32bit integer
-        }
-        return Math.abs(hash).toString(16);
+        // Combine metadata with partial content
+        const metadata = `${file.name}-${file.size}-${file.lastModified}`;
+        const encoder = new TextEncoder();
+        const metadataBuffer = encoder.encode(metadata);
+
+        // Concatenate buffers
+        const combinedBuffer = new Uint8Array(metadataBuffer.length + arrayBuffer.byteLength);
+        combinedBuffer.set(metadataBuffer, 0);
+        combinedBuffer.set(new Uint8Array(arrayBuffer), metadataBuffer.length);
+
+        // Use SHA-256 for a robust hash
+        const hashBuffer = await crypto.subtle.digest('SHA-256', combinedBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
 
     /**

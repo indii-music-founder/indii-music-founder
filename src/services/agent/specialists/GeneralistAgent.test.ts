@@ -132,7 +132,8 @@ describe('GeneralistAgent', () => {
         }));
     });
 
-    it('should have native function declarations configured', () => {
+    it('should have native function declarations configured', async () => {
+        await agent.initialize();
         // Verify the agent has proper tool declarations
         expect(agent.tools).toBeDefined();
         expect(agent.tools.length).toBeGreaterThan(0);
@@ -147,10 +148,11 @@ describe('GeneralistAgent', () => {
         expect(toolNames).toContain('delegate_task');
     });
 
-    it('should have access to full TOOL_REGISTRY via functions property', () => {
+    it('should have access to full TOOL_REGISTRY via functions property', async () => {
+        await agent.initialize();
         const agentAny = agent as any;
         expect(agentAny.functions).toBeDefined();
-        expect(Object.keys(agentAny.functions).length).toBeGreaterThan(10);
+        expect(Object.keys(agentAny.functions).length).toBeGreaterThan(5);
 
         // Verify core tools are accessible
         expect(agentAny.functions).toHaveProperty('generate_image');

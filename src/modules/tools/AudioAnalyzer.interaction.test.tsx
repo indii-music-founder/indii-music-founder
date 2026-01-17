@@ -2,6 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AudioAnalyzer from './AudioAnalyzer';
 import { useToast } from '@/core/context/ToastContext';
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import React from 'react';
 
 // --- Mocks ---
@@ -27,11 +28,17 @@ vi.mock('wavesurfer.js/dist/plugins/regions.esm.js', () => ({
     },
 }));
 
-// MusicLibraryService removed.
+vi.mock('@/services/music/MusicLibraryService', () => ({
+    musicLibraryService: {
+        getAnalysis: vi.fn().mockResolvedValue(null),
+        saveAnalysis: vi.fn().mockResolvedValue(undefined),
+    },
+}));
 
 vi.mock('@/services/audio/AudioAnalysisService', () => ({
     audioAnalysisService: {
         analyze: vi.fn().mockResolvedValue({ bpm: 120, key: 'C', scale: 'major', energy: 0.5, duration: 100 }),
+        generateFileHash: vi.fn().mockResolvedValue('MOCK-HASH'),
     },
 }));
 
@@ -63,7 +70,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         // Default mocks for analysis flow (MusicLibraryService removed)
     });
 
-    it('🖱️ Click: Save Analysis (Redirected to Laboratory Testing)', async () => {
+    it('🖱️ Click: Save Analysis (Synchronized with Music Library)', async () => {
         render(<AudioAnalyzer />);
 
         const saveBtn = screen.getByTestId('save-analysis-button');
@@ -78,6 +85,15 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
         await waitFor(() => expect(saveBtn).not.toBeDisabled());
 
         fireEvent.click(saveBtn);
-        expect(mockToast.info).toHaveBeenCalledWith('Local save functionality currently in laboratory testing.');
+
+        await waitFor(() => {
+            expect(musicLibraryService.saveAnalysis).toHaveBeenCalledWith(
+                'MOCK-HASH',
+                'test.mp3',
+                expect.objectContaining({ bpm: 120 }),
+                'MOCK-HASH'
+            );
+            expect(mockToast.success).toHaveBeenCalledWith('Sonic DNA successfully synchronized with your Music Library.');
+        });
     });
 });

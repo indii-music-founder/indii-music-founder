@@ -1,4 +1,4 @@
-import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId } from './types';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
 // TOOL_REGISTRY removed to prevent circular dependency
@@ -323,6 +323,37 @@ export class BaseAgent implements SpecializedAgent {
         };
     }
 
+    protected buildWhiskContext(whiskState: WhiskState): string {
+        if (!whiskState) return '';
+        const { subjects, scenes, styles, preciseReference } = whiskState;
+        const lines: string[] = [];
+
+        const checkedSubjects = subjects.filter(s => s.checked);
+        const checkedScenes = scenes.filter(s => s.checked);
+        const checkedStyles = styles.filter(s => s.checked);
+
+        if (checkedSubjects.length === 0 && checkedScenes.length === 0 && checkedStyles.length === 0) {
+            return '';
+        }
+
+        lines.push('## REFERENCE MIXER (WHISK) CONTEXT');
+        lines.push(`- Precise Mode: ${preciseReference ? 'ON (strict adherence to references)' : 'OFF (creative freedom)'}`);
+        lines.push('The following items are "Locked" in the Reference Mixer. They represent the current visual direction:');
+
+        if (checkedSubjects.length > 0) {
+            lines.push('- SUBJECTS: ' + checkedSubjects.map(s => s.aiCaption || s.content).join(', '));
+        }
+        if (checkedScenes.length > 0) {
+            lines.push('- SCENES: ' + checkedScenes.map(s => s.aiCaption || s.content).join(', '));
+        }
+        if (checkedStyles.length > 0) {
+            lines.push('- STYLES: ' + checkedStyles.map(s => s.aiCaption || s.content).join(', '));
+        }
+
+        lines.push('IMPORTANT: When generating images or videos, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');
+        return lines.join('\n');
+    }
+
     /**
      * Common method to execute a task using the agent's capabilities.
      * This method handles the AI interaction loop, tool calls, and progress reporting.
@@ -342,8 +373,6 @@ export class BaseAgent implements SpecializedAgent {
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
 
         // KEEPER: Prevent Context Duplication
-        // We strip large fields from the JSON context because they are either
-        // injected separately (chatHistoryString) or not needed in the raw JSON dump.
         const { chatHistoryString, chatHistory, memoryContext, ...leanContext } = context || {};
 
         const enrichedContext = {
@@ -359,6 +388,7 @@ export class BaseAgent implements SpecializedAgent {
         - **Reflection:** Call 'verify_output' to critique your own work if the task is complex.
         - **Approval:** Call 'request_approval' for any action that publishes content or spends money.
         - **Collaboration:** If a task requires expertise outside your primary domain (${this.name}), call 'delegate_task' to hand it over to a specialist. For complex problems needing multiple viewpoints, use 'consult_experts'.
+        - **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
 
         ## COLLABORATION PROTOCOL
         - If you are receiving a delegated task (check context.traceId), be extremely concise and data-oriented.
@@ -376,29 +406,28 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## RELEVANT MEMORIES\n${context.memoryContext}\n`
             : '';
 
-        // Build distributor section - this informs all AI operations about requirements
+        // Build Reference Mixer context
+        const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
+
+        // Build distributor section
         const distributorSection = context?.distributor?.isConfigured
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
-        // KEEPER: Truncate history string if it's too long
-        // Max context window for standard Gemini models is huge (1M), but we don't want to pay for all of it.
-        // Let's cap the HISTORY part at ~8k tokens (approx 32k chars) to be safe and efficient.
-        // This ensures the total prompt size (incl. system instructions and tools) stays manageable.
         const MAX_HISTORY_CHARS = 32000;
         let safeHistory = context?.chatHistoryString || '';
         if (safeHistory.length > MAX_HISTORY_CHARS) {
             safeHistory = safeHistory.slice(-MAX_HISTORY_CHARS);
-            // Prepend a marker
             safeHistory = `[...Older history truncated...]\n${safeHistory}`;
         }
 
-        const fullPrompt = `
+        let fullPrompt = `
 # MISSION
 ${this.systemPrompt}
 
 # CONTEXT
 ${JSON.stringify(enrichedContext, null, 2)}
+${whiskContext}
 
 # HISTORY
 ${safeHistory}
@@ -411,29 +440,16 @@ ${SUPERPOWER_PROMPT}
 ${task}
 `;
 
-        // Collect all tool names from specialist's tools to avoid duplicates
+        // Tool gathering logic
         const specialistToolNames = new Set(
-            (this.tools || [])
-                .flatMap(t => t.functionDeclarations || [])
-                .map(f => f.name)
+            (this.tools || []).flatMap(t => t.functionDeclarations || []).map(f => f.name)
         );
-
-        // Filter SUPERPOWER_TOOLS to exclude any already defined by specialist
-        const filteredSuperpowers = SUPERPOWER_TOOLS.filter(
-            tool => !specialistToolNames.has(tool.name)
-        );
-
-        // Merge specialist tools with filtered superpowers
-        // We prioritize core collaboration tools to ensure swarming always works
+        const filteredSuperpowers = SUPERPOWER_TOOLS.filter(tool => !specialistToolNames.has(tool.name));
         const collaborationToolNames = ['delegate_task', 'consult_experts'];
         const collaborationTools = filteredSuperpowers.filter(t => collaborationToolNames.includes(t.name));
         const otherSuperpowers = filteredSuperpowers.filter(t => !collaborationToolNames.includes(t.name));
 
-        // TOOL LIMIT: Gemini supports up to 128 tools, but we cap at 24 to keep prompts focused.
-        // This accommodates the largest agent (Creative Director: 11 config + 12 superpowers = 23).
-        // Previously was 12, which caused tools to be cut off silently.
         const MAX_TOOLS_PER_AGENT = 24;
-
         const allFunctions: FunctionDeclaration[] = ([
             ...collaborationTools,
             ...(this.tools || []).flatMap(t => t.functionDeclarations || []),
@@ -450,173 +466,105 @@ ${task}
             }]
             : [];
 
+        let accumulatedResponse = '';
+        let iterations = 0;
+        const MAX_ITERATIONS = 5;
+        let lastToolCall: { name: string; args: string } | null = null;
+
         try {
-            onProgress?.({ type: 'thought', content: 'Generating response...' });
+            while (iterations < MAX_ITERATIONS) {
+                iterations++;
+                onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
-            const { stream, response: responsePromise } = await AI.generateContentStream({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { text: fullPrompt },
-                        ...(attachments || []).map(a => ({
-                            inlineData: { mimeType: a.mimeType, data: a.base64 }
-                        }))
-                    ]
-                }],
-                config: {
-                    ...AI_CONFIG.THINKING.LOW
-                },
-                tools: allTools as any, // casting to any due to complex tool schema mapping
-                signal
-            });
-
-            // Consume stream for tokens (Robust handling)
-            const streamIterator = {
-                [Symbol.asyncIterator]: async function* () {
-                    const rawStream = stream as unknown;
-                    if (rawStream && typeof (rawStream as { getReader?: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader === 'function') {
-                        const reader = (rawStream as { getReader: () => { read: () => Promise<{ done: boolean; value: any }>; releaseLock: () => void } }).getReader();
-                        try {
-                            while (true) {
-                                const { done, value } = await reader.read();
-                                if (done) return;
-                                yield value;
-                            }
-                        } finally {
-                            reader.releaseLock();
-                        }
-                    } else if (rawStream && typeof rawStream === 'object' && Symbol.asyncIterator in (rawStream as object)) {
-                        yield* rawStream as AsyncIterable<{ text: () => string }>;
-                    } else {
-                        // Not iterable, warn but don't crash
-                        console.info('[BaseAgent] Stream is not iterable, waiting for full response');
-                    }
-                }
-            };
-
-            try {
-                for await (const value of streamIterator) {
-                    const chunkText = typeof value.text === 'function' ? value.text() : '';
-                    if (chunkText) {
-                        onProgress?.({ type: 'token', content: chunkText });
-                    }
-                }
-            } catch (streamError) {
-                console.warn('[BaseAgent] Stream read interrupted:', streamError);
-            }
-
-            const response = await responsePromise;
-            // Defensive check for usage method (safeguard against SDK mismatches)
-            const usage = typeof response.usage === 'function' ? response.usage() : undefined;
-            const mappedUsage = usage ? {
-                promptTokens: usage.promptTokenCount || 0,
-                completionTokens: usage.candidatesTokenCount || 0,
-                totalTokens: usage.totalTokenCount || 0
-            } : undefined;
-
-            // Emit usage event for observability
-            if (mappedUsage) {
-                onProgress?.({
-                    type: 'usage',
-                    content: 'Token usage updated',
-                    usage: mappedUsage
+                const response = await AI.generateContent({
+                    model: AI_MODELS.TEXT.AGENT,
+                    contents: [{
+                        role: 'user',
+                        parts: [
+                            { text: fullPrompt },
+                            ...(attachments || []).map(a => ({
+                                inlineData: { mimeType: a.mimeType, data: a.base64 }
+                            }))
+                        ]
+                    }],
+                    config: { ...AI_CONFIG.THINKING.LOW },
+                    tools: allTools as any
                 });
-            }
+                const functionCall = response.functionCalls()?.[0];
 
-            const functionCall = response.functionCalls()?.[0];
-            if (functionCall) {
-                const { name, args } = functionCall;
-                onProgress?.({ type: 'tool', toolName: name, content: `Calling tool: ${name}` });
+                if (functionCall) {
+                    const { name, args } = functionCall;
+                    const argsStr = JSON.stringify(args);
 
-                let result: any;
+                    // Loop detection
+                    if (lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
+                        console.warn(`[BaseAgent] Loop detected in ${this.id}: same tool ${name} called twice`);
+                        return {
+                            text: accumulatedResponse || 'Task ended due to potential loop.',
+                            error: 'Loop detected'
+                        };
+                    }
+                    lastToolCall = { name, args: argsStr };
 
-                // Check local functions first (specialist specific)
-                if (this.functions[name]) {
-                    try {
-                        // Validate against Zod schema if available
-                        const schema = this.toolSchemas.get(name);
-                        if (schema) {
-                            // This throws if invalid
-                            schema.parse(args);
+                    onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
+
+                    let result: any;
+                    if (this.functions[name]) {
+                        try {
+                            const schema = this.toolSchemas.get(name);
+                            if (schema) schema.parse(args);
+                            result = await this.functions[name](args, enrichedContext);
+                        } catch (err: unknown) {
+                            const msg = err instanceof Error ? err.message : String(err);
+                            result = { success: false, error: msg };
                         }
-                        result = await this.functions[name](args, enrichedContext);
-                    } catch (err: unknown) {
-                        const msg = err instanceof Error ? err.message : String(err);
-                        console.warn(`[BaseAgent] Tool validation failed for ${name}:`, msg);
-                        result = {
-                            success: false,
-                            error: `Validation Error: ${msg}`,
-                            message: `Invalid arguments for tool '${name}': ${msg}`
-                        };
-                    }
-                }
-                // Then check global tool registry
-                else {
-                    // Dynamic import to break circular dependency
-                    const { TOOL_REGISTRY } = await import('./tools');
-
-                    if (TOOL_REGISTRY[name]) {
-                        result = await TOOL_REGISTRY[name](args);
                     } else {
-                        // Enhanced error messaging: Find similar tool names
-                        const allToolNames = [
-                            ...Object.keys(this.functions),
-                            ...Object.keys(TOOL_REGISTRY)
-                        ];
-
-                        // Simple fuzzy match: find tools that start with same letters or contain the name
-                        const nameLower = name.toLowerCase();
-                        const suggestions = allToolNames
-                            .filter(t => {
-                                const tLower = t.toLowerCase();
-                                return tLower.includes(nameLower) ||
-                                    nameLower.includes(tLower) ||
-                                    tLower.startsWith(nameLower.substring(0, 3));
-                            })
-                            .slice(0, 5);
-
-                        const suggestionText = suggestions.length > 0
-                            ? ` Did you mean: ${suggestions.join(', ')}?`
-                            : ` Available tools include: ${allToolNames.slice(0, 10).join(', ')}...`;
-
-                        console.warn(`[${this.name}] Tool '${name}' not found.${suggestionText}`);
-
-                        result = {
-                            success: false,
-                            error: `Error: Tool '${name}' not implemented.${suggestionText}`,
-                            message: `Error: Tool '${name}' not implemented.${suggestionText}`
-                        };
+                        const { TOOL_REGISTRY } = await import('./tools');
+                        if (TOOL_REGISTRY[name]) {
+                            result = await TOOL_REGISTRY[name](args);
+                        } else {
+                            result = { success: false, error: `Tool '${name}' not found.` };
+                        }
                     }
+
+                    const outputText = typeof result === 'string'
+                        ? result
+                        : (result.success === false
+                            ? `Error: ${result.error || result.message}`
+                            : `Success: ${JSON.stringify(result.data || result)}`);
+
+                    // Update prompt with tool result for next iteration
+                    fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
+
+                    if (name === 'speak') {
+                        // Keep going - don't let speak terminate the agent turn
+                        continue;
+                    }
+
+                    // For most tools, we continue to let the AI process the result
+                    continue;
+                } else {
+                    const finalResponse = response.text?.() || '';
+                    const usage = response.usage?.();
+
+                    return {
+                        text: finalResponse,
+                        usage: usage ? {
+                            promptTokens: usage.promptTokenCount || 0,
+                            completionTokens: usage.candidatesTokenCount || 0,
+                            totalTokens: usage.totalTokenCount || 0
+                        } : undefined
+                    };
                 }
-
-                onProgress?.({ type: 'thought', content: `Tool ${name} completed.` });
-
-                // Construct a text-friendly output for the AI if it just returned data
-                const outputText = typeof result === 'string'
-                    ? result
-                    : (result.success === false
-                        ? `Error: ${result.error || result.message}`
-                        : `Success: ${JSON.stringify(result.data || result)}`);
-
-                return {
-                    text: `[Tool: ${name}] Output: ${outputText}`,
-                    data: result,
-                    usage: mappedUsage
-                };
             }
 
             return {
-                text: response.text(),
-                usage: mappedUsage
+                text: accumulatedResponse || 'Maximum iterations reached.',
+                error: 'Max iterations reached'
             };
         } catch (error: unknown) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`[${this.name}] Error executing task:`, error);
-            onProgress?.({ type: 'thought', content: `Error: ${errorMessage}` });
-            return {
-                text: `Error executing task: ${errorMessage}`
-            };
+            return { text: `Error: ${errorMessage}` };
         }
     }
 }

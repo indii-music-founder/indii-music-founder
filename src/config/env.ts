@@ -102,11 +102,11 @@ export const firebaseConfig = {
     databaseURL: firebaseEnv.firebaseDatabaseURL || "",
     projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "",
     storageBucket: firebaseEnv.firebaseStorageBucket || (firebaseEnv.firebaseProjectId || firebaseEnv.projectId ? `${firebaseEnv.firebaseProjectId || firebaseEnv.projectId}.firebasestorage.app` : ""),
-    messagingSenderId: "223837784072",
-    appId: "1:223837784072:web:28eabcf0c5dd985395e9bd",
-    measurementId: "G-KNWPRGE5JK"
+    messagingSenderId: getEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "000000000000",
+    appId: getEnv(import.meta.env.VITE_FIREBASE_APP_ID, process.env.VITE_FIREBASE_APP_ID) || "1:000000000000:web:0000000000000000000000",
+    measurementId: getEnv(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, process.env.VITE_FIREBASE_MEASUREMENT_ID) || "G-XXXXXXXXXX"
 };
 
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-    console.warn("⚠️ Firebase Configuration Missing: Please set VITE_FIREBASE_API_KEY and VITE_FIREBASE_PROJECT_ID");
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
+    console.warn("⚠️ Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID");
 }

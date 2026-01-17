@@ -45,6 +45,31 @@ service cloud.firestore {
       return isAuthenticated() && exists(projectPath) && isOrgMember(project.data.orgId);
     }
 
+    // --- Schema Validation ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'role', 'onboarded']) &&
+             data.id is string &&
+             data.email is string &&
+             data.role in ['user', 'artist', 'admin', 'manager'] &&
+             data.onboarded is bool;
+    }
+
+    function isValidAnalyzedTrack(data) {
+      return data.keys().hasAll(['id', 'userId', 'filename', 'features', 'analyzedAt']) &&
+             data.userId == request.auth.uid &&
+             data.features.bpm is number &&
+             data.features.key is string &&
+             data.features.energy is number;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'name', 'orgId', 'createdAt']) &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.orgId is string;
+    }
+
     // ========================================
     // LICENSING (authenticated access)
     // ========================================
@@ -72,7 +97,19 @@ service cloud.firestore {
 
     // Users can only read/write their own profile
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && (
+        !request.resource.data.diff(resource.data).affectedKeys().has('role') || 
+        request.auth.token.admin == true
+      );
+
+      // Music Library (Analyzed Tracks)
+      match /analyzed_tracks/{trackId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAnalyzedTrack(request.resource.data);
+        allow update, delete: if isOwner(userId);
+      }
 
       // Usage tracking subcollection
       match /usage/{date} {
@@ -114,8 +151,6 @@ service cloud.firestore {
 
       // Only members can update (DELETION RESTRICTED to admins via backend)
       allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
-      // Only members can update
-      allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
 
       // Prevent deletion (only admins via backend should delete orgs)
       allow delete: if false;
@@ -127,8 +162,12 @@ service cloud.firestore {
 
     match /projects/{projectId} {
       allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
+      allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
+      allow update: if isResourceOrgMember() && (
+          !request.resource.data.diff(resource.data).affectedKeys().has('orgId') || 
+          request.auth.token.admin == true
+      );
+      allow delete: if isResourceOrgMember();
     }
 
     // ========================================
@@ -248,7 +287,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -260,7 +298,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -272,7 +309,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -284,7 +320,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================

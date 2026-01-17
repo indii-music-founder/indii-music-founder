@@ -7,9 +7,26 @@ service firebase.storage {
     // USER-SPECIFIC STORAGE (Private)
     // ========================================
 
+    // ========================================
+    // HELPER FUNCTIONS
+    // ========================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOrgMember(orgId) {
+      return isAuthenticated() && 
+        request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
+    }
+
+    // ========================================
+    // USER-SPECIFIC STORAGE (Private)
+    // ========================================
+
     // Users can only access their own storage
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
     }
 
     // ========================================
@@ -17,10 +34,8 @@ service firebase.storage {
     // ========================================
 
     // Org members can access org storage
-    // Note: Requires Firestore access for membership check
     match /orgs/{orgId}/{allPaths=**} {
-      allow read, write: if request.auth != null
-        && request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
+      allow read, write: if isOrgMember(orgId);
     }
 
     // ========================================
@@ -29,9 +44,9 @@ service firebase.storage {
 
     // Allow users to upload to their own folder within a project
     match /projects/{projectId}/{userId}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId
+      allow read, write: if isAuthenticated() && request.auth.uid == userId
         && firestore.exists(/databases/(default)/documents/projects/$(projectId))
-        && request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(firestore.get(/databases/(default)/documents/projects/$(projectId)).data.orgId)).data.members;
+        && isOrgMember(firestore.get(/databases/(default)/documents/projects/$(projectId)).data.orgId);
     }
 
     // ========================================

@@ -57,6 +57,7 @@ export class GeneralistAgent extends BaseAgent {
 * **File Management:** You can list and search generated files using 'list_files' and 'search_files'. Use this to help the user find past work.
 * **Organization:** You can switch contexts using 'switch_organization' or 'create_organization' if the user asks to change workspaces.
 * **Creative Generation:** Use 'generate_image' to create visuals and 'generate_video' to create videos. DO NOT just describe - GENERATE.
+* **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
 `;
 
     systemPrompt = `You are indii, the Autonomous Studio Manager (Agent Zero).
@@ -67,6 +68,7 @@ CRITICAL RULES:
 2. When asked to create video content, use 'generate_video'.
 3. Be proactive - if a tool can help, use it immediately.
 4. For complex tasks, break them into steps and execute each one.
+5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn or the very next turn. Do NOT stop after calling 'speak'.
 `;
 
     tools: ToolDefinition[] = [];
@@ -95,39 +97,7 @@ CRITICAL RULES:
         this.tools = this.buildToolDeclarations();
     }
 
-    /**
-     * Builds a context string from the Reference Mixer (Whisk) state.
-     * This allows the agent to understand what references the user has locked.
-     */
-    private buildWhiskContext(whiskState: WhiskState): string {
-        const subjects = whiskState.subjects.filter(i => i.checked);
-        const scenes = whiskState.scenes.filter(i => i.checked);
-        const styles = whiskState.styles.filter(i => i.checked);
 
-        if (subjects.length === 0 && scenes.length === 0 && styles.length === 0) {
-            return '';
-        }
-
-        const lines: string[] = [
-            'REFERENCE MIXER CONTEXT (Whisk):',
-            `- Precise Mode: ${whiskState.preciseReference ? 'ON (strict adherence to references)' : 'OFF (creative freedom)'}`,
-        ];
-
-        if (subjects.length > 0) {
-            lines.push(`- SUBJECTS: ${subjects.map(s => s.aiCaption || s.content).join('; ')}`);
-        }
-        if (scenes.length > 0) {
-            lines.push(`- SCENES: ${scenes.map(s => s.aiCaption || s.content).join('; ')}`);
-        }
-        if (styles.length > 0) {
-            lines.push(`- STYLES: ${styles.map(s => s.aiCaption || s.content).join('; ')}`);
-        }
-
-        lines.push('');
-        lines.push('IMPORTANT: When generating images, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');
-
-        return lines.join('\n');
-    }
 
     /**
      * Builds native Gemini function declarations from the TOOL_REGISTRY(conceptually).
@@ -393,7 +363,7 @@ RECENT UPLOADS (Reference by Index):
 ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${img.subject ? img.subject + ' - ' : ''}${img.category ? img.category.toUpperCase() + ': ' : ''}${img.prompt || 'Uploaded Image'} (${img.type}) ${img.tags ? '(' + img.tags.join(', ') + ')' : ''}`).slice(0, 10).join('\n') || 'None'}
 ` : '';
 
-        // Build Reference Mixer context (Whisk)
+        // Build Reference Mixer context (Whisk) - Use inherited method
         const whiskContext = context?.whiskState ? this.buildWhiskContext(context.whiskState) : '';
 
         const fullSystemPrompt = `${this.systemPrompt}
