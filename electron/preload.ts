@@ -72,6 +72,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         calculateTax: (userId: string, amount: number) => ipcRenderer.invoke('distribution:calculate-tax', userId, amount),
         certifyTax: (userId: string, data: any) => ipcRenderer.invoke('distribution:certify-tax', userId, data),
         executeWaterfall: (data: any) => ipcRenderer.invoke('distribution:execute-waterfall', data),
+        validateMetadata: (metadata: any) => ipcRenderer.invoke('distribution:validate-metadata', metadata),
+        generateISRC: () => ipcRenderer.invoke('distribution:generate-isrc'),
+        generateContentIdCSV: (data: any) => ipcRenderer.invoke('distribution:generate-content-id-csv', data),
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),

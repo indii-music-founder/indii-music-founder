@@ -67,6 +67,9 @@ export interface ElectronAPI {
         calculateTax: (userId: string, amount: number) => Promise<{ success: boolean; report: any; error?: string }>;
         certifyTax: (userId: string, data: any) => Promise<{ success: boolean; report: any; error?: string }>;
         executeWaterfall: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
+        validateMetadata: (metadata: any) => Promise<{ success: boolean; report: any; error?: string }>;
+        generateISRC: () => Promise<{ success: boolean; isrc?: string; report: any; error?: string }>;
+        generateContentIdCSV: (data: any) => Promise<{ success: boolean; csvData?: string; report?: any; error?: string }>;
     };
 }
 

@@ -162,4 +162,49 @@ export const setupDistributionHandlers = () => {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
+
+    ipcMain.handle('distribution:validate-metadata', async (event, metadata: any) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'qc_validator.py', [JSON.stringify(metadata)]);
+            return { success: report.valid, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:generate-isrc', async (event) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', ['generate_isrc']);
+            return { success: true, isrc: report.isrc, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:generate-content-id-csv', async (event, data: any) => {
+        try {
+            validateSender(event);
+            // Script outputs CSV content to stdout if successful, or maybe a JSON object with location?
+            // verify_all_scripts check suggests it prints the CSV or relevant info.
+            // Let's assume it returns a JSON with the content or path, or we might need to adjust python script to match expectation.
+            // verifying verify_all_scripts: it checks `assert "sound_recording" in res.stdout`
+            // This implies the script might be dumping raw CSV to stdout?
+            // DistributionService expects a report/result.
+            // Let's rely on PythonBridge parsing JSON last line.
+            // If the script dumps CSV, PythonBridge JSON parse will fail and return raw string.
+            // We should ideally wrap the Python script output in JSON.
+            // But for now, let's pass the raw string if it's CSV.
+            const result = await PythonBridge.runScript('distribution', 'content_id_csv_generator.py', [JSON.stringify(data)]);
+
+            // If result is a string (CSV content), wrap it. If it's an object (report), return it.
+            if (typeof result === 'string') {
+                return { success: true, csvData: result };
+            }
+            return { success: true, report: result };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
 };

@@ -118,14 +118,21 @@ class DistributionService {
      */
     async calculateWithholding(userId: string, amount: number): Promise<any> {
         if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for tax calculation');
             throw new Error('Electron environment required for tax calculations');
         }
 
-        const result = await window.electronAPI.distribution.calculateTax(userId, amount);
-        if (!result.success) {
-            throw new Error(result.error || 'Tax calculation failed');
+        try {
+            const result = await window.electronAPI.distribution.calculateTax(userId, amount);
+            if (!result.success) {
+                console.error('[Distribution] Tax calculation failed:', result.error);
+                throw new Error(result.error || 'Tax calculation failed');
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Unexpected tax engine error:', error);
+            throw error;
         }
-        return result.report;
     }
 
     /**
@@ -133,14 +140,90 @@ class DistributionService {
      */
     async executeWaterfall(data: { gross: number; splits: Record<string, number>; recoupment?: number; indii_fee_percent?: number }): Promise<any> {
         if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for waterfall execution');
             throw new Error('Electron environment required for waterfall execution');
         }
 
-        const result = await window.electronAPI.distribution.executeWaterfall(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Waterfall execution failed');
+        try {
+            const result = await window.electronAPI.distribution.executeWaterfall(data);
+            if (!result.success) {
+                console.error('[Distribution] Waterfall execution failed:', result.error);
+                throw new Error(result.error || 'Waterfall execution failed');
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Unexpected waterfall engine error:', error);
+            throw error;
         }
-        return result.report;
+    }
+
+
+    /**
+     * Validate release metadata using Python QC engine
+     */
+    async validateReleaseMetadata(metadata: any): Promise<any> {
+        if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for metadata validation');
+            throw new Error('Electron environment required for validation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.validateMetadata(metadata);
+            if (!result.success) {
+                console.warn('[Distribution] Metadata validation failed:', result.report);
+                // We don't throw error here if validation fails, just return report so UI can show errors
+                // Unless it's an execution error
+                if (result.error) throw new Error(result.error);
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Validation engine error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generate a new ISRC via Python engine
+     */
+    async assignISRCs(): Promise<string> {
+        if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for ISRC generation');
+            throw new Error('Electron environment required for ISRC generation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.generateISRC();
+            if (!result.success || !result.isrc) {
+                console.error('[Distribution] ISRC Generation failed:', result.error);
+                throw new Error(result.error || 'ISRC Generation failed');
+            }
+            return result.isrc;
+        } catch (error) {
+            console.error('[Distribution] ISRC engine error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generate Content ID CSV Assets
+     */
+    async generateContentIdAssets(data: any): Promise<string> {
+        if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for Content ID generation');
+            throw new Error('Electron environment required for Content ID generation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+            if (!result.success || (!result.csvData && !result.report)) {
+                console.error('[Distribution] Content ID generation failed:', result.error);
+                throw new Error(result.error || 'Content ID generation failed');
+            }
+            return result.csvData || JSON.stringify(result.report);
+        } catch (error) {
+            console.error('[Distribution] Content ID engine error:', error);
+            throw error;
+        }
     }
 }
 
