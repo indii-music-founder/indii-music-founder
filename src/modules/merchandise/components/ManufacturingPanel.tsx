@@ -59,7 +59,7 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
             });
 
             if (match) {
-                setCatalogPrice(match.basePrice);
+                setBaseCost(match.basePrice);
             }
         };
         fetchCatalog();
