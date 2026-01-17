@@ -115,7 +115,16 @@ export default function VideoWorkflow() {
         setStatus: setJobStatus,
         progress: jobProgress,
         setProgress: setJobProgress
-    } = useVideoEditorStore();
+    } = useVideoEditorStore(useShallow(state => ({
+        viewMode: state.viewMode,
+        setViewMode: state.setViewMode,
+        jobId: state.jobId,
+        setJobId: state.setJobId,
+        status: state.status,
+        setStatus: state.setStatus,
+        progress: state.progress,
+        setProgress: state.setProgress
+    })));
 
     const toast = useToast();
 
