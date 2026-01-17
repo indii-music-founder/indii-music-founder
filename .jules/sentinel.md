@@ -35,3 +35,8 @@
 **Risk:** High. Allows arbitrary file read of sensitive data by bypassing extension checks via symlinks.
 **Learning:** Checking file extensions is insufficient for security. "String validation does not equal path validation." Security boundaries must verify the *physical* file location (using `fs.realpath`) and restrict access to authorized user directories (e.g., Music, Downloads).
 **Prevention:** Implemented `validateSafeAudioPath` in `electron/utils/file-security.ts`. This utility forces `fs.realpathSync` to resolve symlinks and enforces an allowlist of safe user directories (Music, Downloads, Desktop) and strict extension checking, blocking access to system and hidden files.
+
+## 2026-02-14 - [Hardcoded Firebase API Key in Utility Script]
+**Vulnerability:** The utility script `scripts/send-reset.js` contained a hardcoded Firebase API key committed directly to the source code. While Firebase API keys are technically public-identifiable keys, hardcoding them violates "Secrets Management" best practices and sets a dangerous precedent for other sensitive keys (like Service Account keys).
+**Learning:** "Convenience breeds vulnerability." Utility scripts often bypass standard configuration management (like `.env` loading) for quick execution, leading to hardcoded secrets that are easily forgotten and committed.
+**Prevention:** Removed the hardcoded key and integrated `dotenv` to load the `VITE_FIREBASE_API_KEY` from the environment, ensuring the script fails safely if the configuration is missing.
