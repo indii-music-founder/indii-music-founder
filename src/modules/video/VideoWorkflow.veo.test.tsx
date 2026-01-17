@@ -169,8 +169,9 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
                 meta: JSON.stringify(expectedMetadata)
             }));
         }, { timeout: 2000 });
+    });
+});
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { processJobUpdate } from './VideoWorkflow';
 
 describe('VideoWorkflow - processJobUpdate', () => {

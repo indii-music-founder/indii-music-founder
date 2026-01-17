@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -11,6 +11,7 @@ interface ThreeDCardProps {
 
 export const ThreeDCard = ({ children, className, containerClassName, onClick }: ThreeDCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
+    const frameRef = useRef<number>(0);
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -23,19 +24,37 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
     const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
 
+    useEffect(() => {
+        return () => {
+            if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+            }
+        };
+    }, []);
+
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!ref.current) return;
 
-        const rect = ref.current.getBoundingClientRect();
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
-        const width = rect.width;
-        const height = rect.height;
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
 
-        const mouseXFromCenter = e.clientX - rect.left - width / 2;
-        const mouseYFromCenter = e.clientY - rect.top - height / 2;
+        frameRef.current = requestAnimationFrame(() => {
+            if (!ref.current) return;
+            const rect = ref.current.getBoundingClientRect();
 
-        x.set(mouseXFromCenter / width);
-        y.set(mouseYFromCenter / height);
+            const width = rect.width;
+            const height = rect.height;
+
+            const mouseXFromCenter = clientX - rect.left - width / 2;
+            const mouseYFromCenter = clientY - rect.top - height / 2;
+
+            x.set(mouseXFromCenter / width);
+            y.set(mouseYFromCenter / height);
+        });
     };
 
     const handleMouseEnter = () => {
@@ -44,6 +63,9 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
 
     const handleMouseLeave = () => {
         setHovered(false);
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
         x.set(0);
         y.set(0);
     };
@@ -165,14 +187,34 @@ export const ThreeDCardContainer = ({
     onClick?: () => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const frameRef = useRef<number>(0);
     const [isMouseEntered, setIsMouseEntered] = useState(false);
+
+    useEffect(() => {
+        return () => {
+            if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+            }
+        };
+    }, []);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
-        const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - left - width / 2) / 25;
-        const y = (e.clientY - top - height / 2) / 25;
-        containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
+
+        frameRef.current = requestAnimationFrame(() => {
+            if (!containerRef.current) return;
+            const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+            const x = (clientX - left - width / 2) / 25;
+            const y = (clientY - top - height / 2) / 25;
+            containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+        });
     };
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -183,6 +225,9 @@ export const ThreeDCardContainer = ({
     const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
         setIsMouseEntered(false);
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
         containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
     };
 
