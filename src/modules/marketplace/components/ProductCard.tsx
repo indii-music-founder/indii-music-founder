@@ -9,7 +9,7 @@ interface ProductCardProps {
     variant?: 'default' | 'embedded';
 }
 
-export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
+const ProductCard = React.memo(({ product, variant = 'default' }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
     const currentUser = useStore((state) => state.userProfile);
@@ -44,6 +44,8 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                             src={product.images[0]}
                             alt={product.title}
                             className="w-full h-full object-cover"
+                            // ⚡ Bolt Optimization: Offload decoding from main thread
+                            decoding="async"
                         />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
@@ -100,6 +102,8 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                         src={product.images[0]}
                         alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        // ⚡ Bolt Optimization: Offload decoding from main thread
+                        decoding="async"
                     />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
@@ -157,4 +161,8 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
             </div>
         </div>
     );
-}
+});
+
+ProductCard.displayName = 'ProductCard';
+
+export default ProductCard;
