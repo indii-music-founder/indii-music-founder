@@ -160,8 +160,6 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                     <button
                         onClick={() => setIsAdding(!isAdding)}
                         className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
-                        aria-label={isAdding ? "Cancel adding item" : `Add new ${category}`}
-                        aria-label={isAdding ? "Cancel add" : "Add item"}
                         aria-label={isAdding ? "Cancel adding item" : `Add new ${title}`}
                         aria-expanded={isAdding}
                     >
