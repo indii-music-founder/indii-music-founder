@@ -69,6 +69,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
         runForensics: (filePath: string) => ipcRenderer.invoke('distribution:run-forensics', filePath),
         packageITMSP: (releaseId: string) => ipcRenderer.invoke('distribution:package-itmsp', releaseId),
+        calculateTax: (userId: string, amount: number) => ipcRenderer.invoke('distribution:calculate-tax', userId, amount),
+        certifyTax: (userId: string, data: any) => ipcRenderer.invoke('distribution:certify-tax', userId, data),
+        executeWaterfall: (data: any) => ipcRenderer.invoke('distribution:execute-waterfall', data),
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),

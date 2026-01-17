@@ -132,4 +132,34 @@ export const setupDistributionHandlers = () => {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
     });
+
+    ipcMain.handle('distribution:calculate-tax', async (event, userId: string, amount: number) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['calculate', userId, amount.toString()]);
+            return { success: true, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: any) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['certify', userId, JSON.stringify(data)]);
+            return { success: true, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:execute-waterfall', async (event, data: any) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('finance', 'waterfall_payout.py', [JSON.stringify(data)]);
+            return { success: true, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
 };
