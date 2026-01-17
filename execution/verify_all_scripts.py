@@ -72,6 +72,36 @@ def test_content_id():
     else:
         print(f"❌ Content ID Generator Failed: {res.stderr}")
 
+def test_upc_manager():
+    print("Testing UPC generation via isrc_manager.py...")
+    res = run_script("execution/distribution/isrc_manager.py", ["generate_upc"])
+    if res.returncode == 0:
+        data = json.loads(res.stdout)
+        assert "upc" in data
+        assert len(data["upc"]) == 12
+        print("✅ UPC Generation Passed")
+    else:
+        print(f"❌ UPC Generation Failed: {res.stderr}")
+
+def test_ddex_generator():
+    print("Testing ddex_generator.py...")
+    input_data = json.dumps({
+        "tracks": [{"id": "1", "title": "Test Track", "isrc": "US-XXX-26-00001"}],
+        "album_title": "Test Album",
+        "upc": "123456789012",
+        "artist": "Test Artist"
+    })
+    res = run_script("execution/distribution/ddex_generator.py", [input_data])
+    if res.returncode == 0:
+        data = json.loads(res.stdout)
+        assert data["status"] == "SUCCESS"
+        assert "xml" in data
+        assert "NewReleaseMessage" in data["xml"]
+        assert "US-XXX-26-00001" in data["xml"]
+        print("✅ DDEX ERN 4.3 Generation Passed")
+    else:
+        print(f"❌ DDEX Generator Failed: {res.stderr}")
+
 if __name__ == "__main__":
     print("\n" + "="*60)
     print(" EXECUTING GLOBAL SCRIPT VERIFICATION ")
@@ -79,5 +109,8 @@ if __name__ == "__main__":
     test_waterfall()
     test_qc_validator()
     test_isrc_manager()
+    test_upc_manager()
     test_content_id()
+    test_ddex_generator()
     print("="*60 + "\n")
+

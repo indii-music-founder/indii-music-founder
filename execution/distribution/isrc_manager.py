@@ -73,22 +73,38 @@ class IdentityManager:
         logger.info(f"Generated ISRC: {isrc}")
         return isrc
 
-    def generate_upc(self, prefix: str = "1234567") -> str:
-        """Generates a new mock 12-digit UPC (Universal Product Code).
+    def _calculate_upc_check_digit(self, partial_upc: str) -> int:
+        """Calculate GS1 check digit for an 11-digit partial UPC (Modulo 10)."""
+        if len(partial_upc) != 11 or not partial_upc.isdigit():
+            raise ValueError(f"Invalid partial UPC length: {len(partial_upc)}")
+            
+        odd_sum = sum(int(partial_upc[i]) for i in range(0, 11, 2))
+        even_sum = sum(int(partial_upc[i]) for i in range(1, 11, 2))
+        total = (odd_sum * 3) + even_sum
+        check_digit = (10 - (total % 10)) % 10
+        return check_digit
 
+    def generate_upc(self, prefix: str = "060123456") -> str:
+        """Generates a new valid 12-digit UPC with GS1 check digit.
+        
         Args:
-            prefix: 7-digit company prefix.
-
+            prefix: 9-digit company prefix (defaults to mock prefix).
+                    Note: A 9-digit prefix allows for 2 digits of item reference (100 items).
+        
         Returns:
-            A 12-digit UPC string.
+            A valid 12-digit UPC string.
         """
         self.data["upc_count"] += 1
-        sequence = str(self.data["upc_count"]).zfill(4)
+        sequence = str(self.data["upc_count"]).zfill(2)  # 2 digits item ref for 9 digit prefix
         
-        # UPC is typically 12 digits
-        raw_upc = f"{prefix}{sequence}".zfill(12)
-        logger.info(f"Generated UPC: {raw_upc}")
-        return raw_upc
+        # Build 11-digit base
+        partial_upc = f"{prefix}{sequence}"[-11:].zfill(11)
+        
+        check_digit = self._calculate_upc_check_digit(partial_upc)
+        full_upc = f"{partial_upc}{check_digit}"
+        
+        logger.info(f"Generated UPC: {full_upc}")
+        return full_upc
 
     def register_release(self, release_id: str, metadata: Dict[str, Any]) -> Dict[str, Any]:
         """Assigns ISRCs and a UPC to a release and its tracks.
@@ -144,10 +160,22 @@ if __name__ == "__main__":
             rid = sys.argv[3] if len(sys.argv) > 3 else f"REL-{datetime.datetime.now().strftime('%Y%m%d%f')}"
             print(json.dumps(manager.register_release(rid, payload), indent=2))
         elif cmd == "generate_isrc":
-            print(json.dumps({"isrc": manager.generate_isrc()}, indent=2))
+            kwargs = {}
+            if len(sys.argv) > 2:
+                try:
+                    kwargs = json.loads(sys.argv[2])
+                except Exception:
+                    pass
+            print(json.dumps({"isrc": manager.generate_isrc(**kwargs)}, indent=2))
             manager._save_data()
         elif cmd == "generate_upc":
-            print(json.dumps({"upc": manager.generate_upc()}, indent=2))
+            kwargs = {}
+            if len(sys.argv) > 2:
+                try:
+                    kwargs = json.loads(sys.argv[2])
+                except Exception:
+                    pass
+            print(json.dumps({"upc": manager.generate_upc(**kwargs)}, indent=2))
             manager._save_data()
         else:
             print(json.dumps({"error": f"Unknown command: {cmd}"}))

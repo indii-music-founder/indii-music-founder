@@ -64,15 +64,17 @@ export interface ElectronAPI {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
         runForensics: (filePath: string) => Promise<{ success: boolean; report: any; error?: string }>;
         packageITMSP: (releaseId: string) => Promise<{ success: boolean; itmspPath?: string; message?: string; error?: string }>;
-        calculateTax: (userId: string, amount: number) => Promise<{ success: boolean; report: any; error?: string }>;
+        calculateTax: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
         certifyTax: (userId: string, data: any) => Promise<{ success: boolean; report: any; error?: string }>;
         executeWaterfall: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
         validateMetadata: (metadata: any) => Promise<{ success: boolean; report: any; error?: string }>;
-        generateISRC: () => Promise<{ success: boolean; isrc?: string; report?: any; error?: string }>;
-        generateUPC: () => Promise<{ success: boolean; upc?: string; error?: string }>;
+        generateISRC: (options?: any) => Promise<{ success: boolean; isrc?: string; report?: any; error?: string }>;
+        generateUPC: (options?: any) => Promise<{ success: boolean; upc?: string; error?: string }>;
         registerRelease: (metadata: any, releaseId?: string) => Promise<{ success: boolean; release?: any; error?: string }>;
         generateDDEX: (metadata: any) => Promise<{ success: boolean; xml?: string; error?: string }>;
         generateContentIdCSV: (data: any) => Promise<{ success: boolean; csvData?: string; report?: any; error?: string }>;
+        generateBWARM: (data: any) => Promise<{ success: boolean; csv?: string; report?: any; error?: string }>;
+        checkMerlinStatus: (data: any) => Promise<{ success: boolean; report?: any; error?: string }>;
     };
 }
 

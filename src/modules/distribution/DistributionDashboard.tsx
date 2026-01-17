@@ -7,6 +7,7 @@ import { ReleaseStatus } from '@/services/distribution/types/distributor';
 import { BankPanel } from './components/BankPanel';
 import { AuthorityPanel } from './components/AuthorityPanel';
 import { QCPanel } from './components/QCPanel';
+import { KeysPanel } from './components/KeysPanel';
 
 export default function DistributionDashboard() {
     const { distribution, subscribeToReleases } = useStore();
@@ -64,6 +65,12 @@ export default function DistributionDashboard() {
                             Authority
                         </TabsTrigger>
                         <TabsTrigger
+                            value="keys"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Keys
+                        </TabsTrigger>
+                        <TabsTrigger
                             value="brain"
                             className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
                         >
@@ -82,6 +89,10 @@ export default function DistributionDashboard() {
 
                         <TabsContent value="authority" className="mt-0 border-none outline-none">
                             <AuthorityPanel />
+                        </TabsContent>
+
+                        <TabsContent value="keys" className="mt-0 border-none outline-none">
+                            <KeysPanel />
                         </TabsContent>
 
                         <TabsContent value="brain" className="mt-0 border-none outline-none">

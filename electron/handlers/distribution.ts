@@ -133,10 +133,12 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:calculate-tax', async (event, userId: string, amount: number) => {
+    ipcMain.handle('distribution:calculate-tax', async (event, data: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['calculate', userId, amount.toString()]);
+            const { userId, amount } = data || {};
+            if (!userId || amount === undefined) throw new Error('Missing userId or amount');
+            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['calculate', userId, String(amount)]);
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -173,10 +175,12 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-isrc', async (event) => {
+    ipcMain.handle('distribution:generate-isrc', async (event, options?: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', ['generate_isrc']);
+            const args = ['generate_isrc'];
+            if (options) args.push(JSON.stringify(options));
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
             return { success: true, isrc: report.isrc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -208,11 +212,13 @@ export const setupDistributionHandlers = () => {
         }
     });
 
-    ipcMain.handle('distribution:generate-upc', async (event) => {
+    ipcMain.handle('distribution:generate-upc', async (event, options?: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'upc_manager.py', ['generate']);
-            return { success: report.status === 'SUCCESS', upc: report.upc, report };
+            const args = ['generate_upc'];
+            if (options) args.push(JSON.stringify(options));
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
+            return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
@@ -240,6 +246,26 @@ export const setupDistributionHandlers = () => {
             }
             // Fallback for raw XML string
             return { success: true, xml: typeof result === 'string' ? result : JSON.stringify(result) };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:generate-bwarm', async (event, data: any) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', ['bwarm', JSON.stringify(data)]);
+            return { success: report.status === 'SUCCESS', csv: report.csv, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+
+    ipcMain.handle('distribution:check-merlin-status', async (event, data: any) => {
+        try {
+            validateSender(event);
+            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', ['merlin_check', JSON.stringify(data)]);
+            return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }

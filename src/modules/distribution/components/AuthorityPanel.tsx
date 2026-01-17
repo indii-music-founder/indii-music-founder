@@ -11,19 +11,11 @@ export const AuthorityPanel: React.FC = () => {
     const [loading, setLoading] = useState<'isrc' | 'upc' | 'ddex' | null>(null);
 
     const handleGenerateISRC = async () => {
-        if (!window.electronAPI) {
-            toastError('Electron environment required');
-            return;
-        }
         setLoading('isrc');
         try {
-            const result = await window.electronAPI.distribution.generateISRC();
-            if (result.success && result.isrc) {
-                setIsrc(result.isrc);
-                success(`ISRC Generated: ${result.isrc}`);
-            } else {
-                throw new Error(result.error || 'Failed to generate ISRC');
-            }
+            const result = await distributionService.assignISRCs();
+            setIsrc(result);
+            success(`ISRC Generated: ${result}`);
         } catch (error) {
             toastError(error instanceof Error ? error.message : 'ISRC generation failed');
         } finally {
@@ -32,19 +24,11 @@ export const AuthorityPanel: React.FC = () => {
     };
 
     const handleGenerateUPC = async () => {
-        if (!window.electronAPI) {
-            toastError('Electron environment required');
-            return;
-        }
         setLoading('upc');
         try {
-            const result = await window.electronAPI.distribution.generateUPC();
-            if (result.success && result.upc) {
-                setUpc(result.upc);
-                success(`UPC Generated: ${result.upc}`);
-            } else {
-                throw new Error(result.error || 'Failed to generate UPC');
-            }
+            const result = await distributionService.generateUPC();
+            setUpc(result);
+            success(`UPC Generated: ${result}`);
         } catch (error) {
             toastError(error instanceof Error ? error.message : 'UPC generation failed');
         } finally {
@@ -53,10 +37,6 @@ export const AuthorityPanel: React.FC = () => {
     };
 
     const handleGenerateDDEX = async () => {
-        if (!window.electronAPI) {
-            toastError('Electron environment required');
-            return;
-        }
         setLoading('ddex');
         try {
             const mockRelease = {
@@ -66,13 +46,9 @@ export const AuthorityPanel: React.FC = () => {
                 album_title: 'indii Authority Test',
                 upc: upc || '123456789012'
             };
-            const result = await window.electronAPI.distribution.generateDDEX(mockRelease);
-            if (result.success && result.xml) {
-                setDdexXml(result.xml);
-                success('DDEX ERN 4.3 Message Generated');
-            } else {
-                throw new Error(result.error || 'Failed to generate DDEX');
-            }
+            const result = await distributionService.generateDDEX(mockRelease);
+            setDdexXml(result);
+            success('DDEX ERN 4.3 Message Generated');
         } catch (error) {
             toastError(error instanceof Error ? error.message : 'DDEX generation failed');
         } finally {
