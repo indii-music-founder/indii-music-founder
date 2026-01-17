@@ -68,10 +68,8 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
     }, [productType]);
 
     // Dynamic Cost Calculation
-    const baseCost = catalogPrice || BASE_COSTS[productType] || 10.00;
     const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
     const [isLoadingPrices, setIsLoadingPrices] = React.useState(true);
-    const toast = useToast();
 
     // Fetch catalog prices on mount
     useEffect(() => {
