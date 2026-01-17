@@ -91,8 +91,9 @@ const corsHandler = corsLib({
     origin: (origin, callback) => {
         const allowedOrigins = getAllowedOrigins();
 
-        // Allow requests with no origin (mobile apps, Postman) only in emulator
-        if (!origin && process.env.FUNCTIONS_EMULATOR === 'true') {
+        // Allow requests with no origin (mobile apps, Postman, server-to-server)
+        // We rely on ID Token verification (Bearer token) for actual security.
+        if (!origin) {
             return callback(null, true);
         }
 
