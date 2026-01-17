@@ -17,6 +17,65 @@ import { useToast } from '@/core/context/ToastContext';
 // Lazy load the heavy Editor
 const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
+export const processJobUpdate = (
+    data: any,
+    currentJobId: string,
+    deps: {
+        currentProjectId: string | null,
+        currentOrganizationId: string | undefined,
+        localPrompt: string,
+        addToHistory: (item: HistoryItem) => void,
+        setActiveVideo: (item: HistoryItem) => void,
+        setJobId: (id: string | null) => void,
+        setJobStatus: (status: any) => void,
+        setJobProgress: (progress: number) => void,
+        toast: any,
+        resetEditorProgress: () => void,
+        getCurrentStatus: () => string
+    }
+) => {
+     if (data) {
+        const newStatus = data.status;
+
+        // Check current status to avoid unnecessary updates
+        const currentStatus = deps.getCurrentStatus();
+        if (newStatus && newStatus !== currentStatus) {
+            // Start of type guard
+            if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
+                deps.setJobStatus(newStatus as any);
+            }
+        }
+
+        if (data.progress !== undefined) {
+            deps.setJobProgress(data.progress);
+        }
+
+        if (newStatus === 'completed' && data.videoUrl) {
+            const newAsset = {
+                id: currentJobId,
+                url: data.videoUrl,
+                prompt: data.prompt || deps.localPrompt,
+                type: 'video' as const,
+                timestamp: Date.now(),
+                projectId: deps.currentProjectId || 'default',
+                orgId: deps.currentOrganizationId,
+                meta: data.metadata ? JSON.stringify(data.metadata) : undefined
+            };
+            deps.addToHistory(newAsset);
+            deps.setActiveVideo(newAsset);
+            deps.toast.success('Scene generated!');
+            deps.setJobId(null);
+            deps.setJobStatus('idle');
+            deps.resetEditorProgress();
+        } else if (newStatus === 'failed') {
+            deps.toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
+            deps.setJobId(null);
+            deps.setJobStatus('failed');
+            deps.resetEditorProgress();
+        }
+    }
+}
+
 export default function VideoWorkflow() {
     // Global State
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates (like prompt keystrokes)
@@ -122,50 +181,26 @@ export default function VideoWorkflow() {
         if (!jobId) return;
 
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
-            if (data) {
-                const newStatus = data.status;
-
-                // Check current status to avoid unnecessary updates
-                const currentStatus = useVideoEditorStore.getState().status;
-                if (newStatus && newStatus !== currentStatus) {
-                    // Start of type guard
-                    if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
-                        setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
-                    }
-                }
-
-                if (data.progress !== undefined) {
-                    setJobProgress(data.progress);
-                    useVideoEditorStore.getState().setProgress(data.progress);
-                }
-
-                if (newStatus === 'completed' && data.videoUrl) {
-                    const newAsset = {
-                        id: jobId,
-                        url: data.videoUrl,
-                        prompt: data.prompt || localPromptRef.current,
-                        type: 'video' as const,
-                        timestamp: Date.now(),
-                        projectId: currentProjectId || 'default',
-                        orgId: currentOrganizationId
-                    };
-                    addToHistory(newAsset);
-                    setActiveVideo(newAsset);
-                    toast.success('Scene generated!');
-                    setJobId(null);
-                    setJobStatus('idle');
-                    useVideoEditorStore.getState().setProgress(0);
-                } else if (newStatus === 'failed') {
-                    toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
-                    setJobId(null);
-                    setJobStatus('failed');
-                    useVideoEditorStore.getState().setProgress(0);
-                }
-            }
+            processJobUpdate(data, jobId, {
+                currentProjectId,
+                currentOrganizationId,
+                localPrompt: localPromptRef.current,
+                addToHistory,
+                setActiveVideo,
+                setJobId,
+                setJobStatus,
+                setJobProgress: (p) => {
+                    setJobProgress(p);
+                    useVideoEditorStore.getState().setProgress(p);
+                },
+                toast,
+                resetEditorProgress: () => useVideoEditorStore.getState().setProgress(0),
+                getCurrentStatus: () => useVideoEditorStore.getState().status
+            });
         });
 
         return () => { if (unsubscribe) unsubscribe(); };
-    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId]);
+    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
 
     const handleGenerate = async () => {
         setJobStatus('queued');
