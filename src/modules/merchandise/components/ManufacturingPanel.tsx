@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2 } from 'lucide-react';
 import { MerchTheme } from '@/modules/merchandise/themes';
-import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
+import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
 import { ProductType, CatalogProductSchema } from '../types';
 
@@ -37,6 +37,38 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
     const [selectedSize, setSelectedSize] = React.useState('L');
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
     const [quantity, setQuantity] = React.useState(100);
+    const [catalogPrice, setCatalogPrice] = React.useState<number | null>(null);
+    const toast = useToast();
+
+    React.useEffect(() => {
+        let isMounted = true;
+        const fetchCatalog = async () => {
+            const catalog = await MerchandiseService.getCatalog();
+            if (!isMounted) return;
+
+            const normalizedType = productType.toLowerCase();
+            const match = catalog.find(p => {
+                const title = p.title.toLowerCase();
+                // Direct match
+                if (title.includes(normalizedType)) return true;
+                // Alias: T-Shirt -> Tee
+                if (normalizedType === 't-shirt' && title.includes('tee')) return true;
+                // Alias: Phone Screen -> Phone Case? (If needed, but Phone Case usually matches Phone Screen via 'phone'?)
+                // 'phone screen'.includes('phone') -> true.
+                // But productType is 'Phone Screen'. normalized 'phone screen'.
+                return false;
+            });
+
+            if (match) {
+                setCatalogPrice(match.basePrice);
+            }
+        };
+        fetchCatalog();
+        return () => { isMounted = false; };
+    }, [productType]);
+
+    // Dynamic Cost Calculation
+    const baseCost = catalogPrice || BASE_COSTS[productType] || 10.00;
     const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
     const [isLoadingPrices, setIsLoadingPrices] = React.useState(true);
     const toast = useToast();
