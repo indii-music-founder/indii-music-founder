@@ -1,12 +1,21 @@
-
+import 'dotenv/config';
 import { initializeApp } from 'firebase/app';
 import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
 
-// Use the VALID key found in .env
+const apiKey = process.env.VITE_FIREBASE_API_KEY;
+const authDomain = process.env.VITE_FIREBASE_AUTH_DOMAIN;
+const projectId = process.env.VITE_FIREBASE_PROJECT_ID;
+
+if (!apiKey || !authDomain || !projectId) {
+    console.error("❌ Missing Firebase configuration in .env");
+    console.error("Please ensure VITE_FIREBASE_API_KEY, VITE_FIREBASE_AUTH_DOMAIN, and VITE_FIREBASE_PROJECT_ID are set.");
+    process.exit(1);
+}
+
 const firebaseConfig = {
-    apiKey: "AIzaSyBWCig_kA7j_3Xm5IphpAq4WqGLwpwEzvA", // VITE_FIREBASE_API_KEY
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
+    apiKey,
+    authDomain,
+    projectId,
 };
 
 const app = initializeApp(firebaseConfig);
