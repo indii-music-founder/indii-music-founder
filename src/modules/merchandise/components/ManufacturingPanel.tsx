@@ -37,7 +37,6 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
     const [selectedSize, setSelectedSize] = React.useState('L');
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
     const [quantity, setQuantity] = React.useState(100);
-    const [catalogPrice, setCatalogPrice] = React.useState<number | null>(null);
     const toast = useToast();
 
     React.useEffect(() => {
