@@ -281,7 +281,7 @@ function CommandBar() {
                 <div
                     data-testid="command-bar-input-container"
                     className={cn(
-                        "bg-[#161b22] border rounded-xl transition-all relative overflow-hidden focus-within:ring-1",
+                        "bg-[#161b22] border rounded-xl transition-all relative focus-within:ring-1",
                         isIndiiMode
                             ? "border-purple-500/30 ring-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.05)]"
                             : `${colors.border} ${colors.ring}`,
@@ -323,7 +323,7 @@ function CommandBar() {
                     >
                         <PromptInputTextarea
                             placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
-                            className="text-gray-200 placeholder-gray-600"
+                            className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                             aria-label="Command input"
                         />
 
@@ -384,10 +384,20 @@ function CommandBar() {
                                         <button
                                             type="button"
                                             onClick={() => setOpenDelegate(!openDelegate)}
-                                            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 transition-colors"
+                                            className={cn(
+                                                "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-all border",
+                                                !isIndiiMode
+                                                    ? `${colors.bg} ${colors.border} ${colors.text} shadow-lg`
+                                                    : "bg-transparent border-transparent text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                                            )}
                                             aria-haspopup="true"
                                             aria-expanded={openDelegate}
                                         >
+                                            {/* Active indicator dot */}
+                                            <div className={cn(
+                                                "w-2 h-2 rounded-full transition-colors",
+                                                !isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600"
+                                            )} />
                                             <span>Delegate to {currentModule === 'dashboard' || currentModule === 'select-org' ? 'indii' : currentModule.charAt(0).toUpperCase() + currentModule.slice(1)}</span>
                                             <ChevronUp size={12} className={`transition-transform ${openDelegate ? 'rotate-180' : ''}`} />
                                         </button>
@@ -404,7 +414,10 @@ function CommandBar() {
                                 )}
                             </div>
 
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 ml-auto">
+                                <span className="text-[10px] text-gray-600 flex items-center gap-1 mr-2 select-none cursor-help" title="Using Gemini 3 Pro">
+                                    <span className="text-yellow-500">✦</span> Powered by Gemini
+                                </span>
                                 <button
                                     type="button"
                                     onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
@@ -454,11 +467,7 @@ function CommandBar() {
                     </PromptInput>
                 </div>
 
-                <div className="flex justify-end mt-2">
-                    <span className="text-[10px] text-gray-600 flex items-center gap-1">
-                        <span className="text-yellow-500">✦</span> Powered by Gemini
-                    </span>
-                </div>
+
             </div>
         </div >
     );

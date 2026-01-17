@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Maximize2, Minimize2, Mic, StopCircle, RefreshCw, AlertCircle, Bot } from 'lucide-react';
+import { X, Maximize2, Minimize2, Mic, StopCircle, RefreshCw, AlertCircle, Bot, GripHorizontal } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
 import { MessageItem } from './chat/ChatMessage';
+import { useDragControls } from 'framer-motion';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -19,6 +20,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const isProcessing = useStore(state => state.isAgentProcessing);
     const activeSessionId = useStore(state => state.activeSessionId);
     const chatChannel = useStore(state => state.chatChannel);
+    const dragControls = useDragControls();
 
     // Derived state for active agent (defaulting to 'generalist' or first participant)
     const activeAgentId = useStore(state => {
@@ -80,13 +82,26 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
                     transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                    className="fixed bottom-6 right-6 w-[500px] h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-[2rem] border border-white/10 shadow-2xl flex flex-col overflow-hidden z-[100] isolate ring-1 ring-white/10"
+                    drag
+                    dragControls={dragControls}
+                    dragListener={false}
+                    dragMomentum={false}
+                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[70] isolate ring-0 md:ring-1 ring-white/10"
                 >
                     {/* Header */}
-                    <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 pointer-events-none" />
+                    <div
+                        onPointerDown={(e) => dragControls.start(e)}
+                        className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 cursor-grab active:cursor-grabbing"
+                    />
                     <div className="relative z-30 px-6 py-5 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
-                        <div className="flex items-center gap-4">
-                            <div className="relative group cursor-pointer">
+                        {/* Drag Handle Overlay for easy grabbing in header area without blocking buttons */}
+                        <div
+                            onPointerDown={(e) => dragControls.start(e)}
+                            className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
+                        />
+
+                        <div className="flex items-center gap-4 relative z-10 pointer-events-none">
+                            <div className="relative group pointer-events-auto">
                                 <div className={`absolute -inset-1 bg-${agentColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                 {chatChannel === 'indii' ? (
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-indigo-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg">
@@ -99,7 +114,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 )}
                                 <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121212] rounded-full z-20 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
                             </div>
-                            <div>
+                            <div className="pointer-events-auto">
                                 <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
                                     {agentName}
                                     <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-[#a8a8a8]">Beta</span>
@@ -107,7 +122,15 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 <p className={`text-xs text-${agentColor}-300 font-medium tracking-wide uppercase opacity-80`}>{agentRole}</p>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+
+                        {/* Right Actions */}
+                        <div className="flex items-center gap-2 relative z-10">
+                            <div
+                                onPointerDown={(e) => dragControls.start(e)}
+                                className="p-2 text-white/20 hover:text-white/40 cursor-grab active:cursor-grabbing transition-colors mr-1"
+                            >
+                                <GripHorizontal size={20} />
+                            </div>
                             <button
                                 onClick={onToggleMinimize}
                                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
@@ -118,7 +141,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             <button
                                 onClick={onClose}
                                 className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400"
-                                aria-label="Close chat"
+                                aria-label="Close Agent"
                             >
                                 <X size={18} />
                             </button>
@@ -153,15 +176,30 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 atBottomStateChange={(atBottom) => {
                                     setIsAutoScrolling(atBottom);
                                 }}
-                                itemContent={(index, msg) => (
-                                    <div className="px-6 py-2">
-                                        <MessageItem
-                                            key={msg.id}
-                                            msg={msg}
-                                            avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : undefined}
-                                        />
-                                    </div>
-                                )}
+                                itemContent={(index, msg) => {
+                                    // Determine identity for this message
+                                    // If model, it could be INDII or SPECIALIST
+                                    // We can look at activeAgent state, BUT message history might contain mixed messages?
+                                    // For now, assume the current context applies or we'd need 'agentId' stored in message.
+                                    // Existing system stores 'role' but not 'agentId'.
+                                    // We'll use the 'displayAgent' logic derived from chatChannel for consistency in current session.
+                                    // A robust solution would store agentId on the message object.
+
+                                    const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
+                                        ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
+                                        : undefined;
+
+                                    return (
+                                        <div className="px-6 py-2">
+                                            <MessageItem
+                                                key={msg.id}
+                                                msg={msg}
+                                                avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : undefined}
+                                                agentIdentity={msgIdentity}
+                                            />
+                                        </div>
+                                    );
+                                }}
                                 components={{
                                     Header: () => <div className="h-4" />,
                                     Footer: () => <div className="h-4" />

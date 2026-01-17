@@ -286,6 +286,50 @@ Before writing a script, check `execution/` per your directive. Only create new 
 - Read error message and stack trace
 - Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
 
+**3. ⛔ ZERO-TOLERANCE API KEY POLICY (TERMINAL VIOLATION)**
+
+> This is an absolute, non-negotiable rule. Violation is treated as a system crash.
+
+**NEVER HARDCODE:**
+
+- Firebase API keys, project IDs, or configuration objects
+- Google Cloud / Vertex AI API keys
+- Stripe secret keys or publishable keys
+- GitHub tokens (`ghp_*`), OpenAI keys (`sk-*`), or any third-party API credentials
+- Database connection strings, passwords, or authentication tokens
+
+**REQUIRED PATTERN:**
+
+```typescript
+// ✅ CORRECT - Always load from environment
+import dotenv from 'dotenv';
+dotenv.config();
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  // ...
+};
+
+// ✅ CORRECT - For Vite frontend
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// ❌ TERMINAL VIOLATION - Hardcoded credentials
+const firebaseConfig = {
+  apiKey: "AIzaSy...",  // ABSOLUTELY FORBIDDEN
+  projectId: "my-project",  // FORBIDDEN IF SENSITIVE
+};
+```
+
+**ENFORCEMENT:**
+
+1. Before completing ANY script, you MUST self-scan for patterns matching API key formats.
+2. If a key is detected, STOP immediately and refactor to use environment variables.
+3. Add any new required keys to `.env.example` with placeholder documentation.
+4. Add explicit runtime validation that fails gracefully when env vars are missing.
+
+**Post-Mortem Note (2025-01-17):** A hardcoded Firebase config was found in `scripts/send-reset.js`. This policy exists to prevent future occurrences. There are no exceptions.
+
 ---
 
 ## 5. Tech Stack
@@ -344,6 +388,7 @@ Before writing a script, check `execution/` per your directive. Only create new 
 | Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
 
 **Forbidden Models (WILL CRASH APP):**
+
 - `gemini-1.5-flash`, `gemini-1.5-pro` (ALL 1.5 variants BANNED)
 - `gemini-2.0-flash`, `gemini-2.0-pro` (ALL 2.0 variants BANNED)
 - `gemini-pro`, `gemini-pro-vision` (legacy BANNED)
@@ -612,17 +657,20 @@ function isOrgMember(orgId) {
 ### 9.3 Security Architecture
 
 **Frontend Security:**
+
 - API key environment variables (VITE_* prefix)
 - Firebase Security Rules for multi-tenancy
 - Credential storage via Keytar (Electron)
 
 **Backend Security:**
+
 - Admin claim enforcement on sensitive functions
 - Origin-based CORS (whitelist: studio.indiios.com, localhost in dev)
 - Rate limiting via Inngest
 - App Check for mobile/desktop app verification
 
 **Electron Security:**
+
 - Context isolation enabled
 - Sandbox enabled
 - No node integration
@@ -689,18 +737,21 @@ function isOrgMember(orgId) {
 ### 10.3 Agent Sources
 
 **Frontend Agent Configs** (`src/agents/`):
+
 - `director/config.ts` - Director agent configuration
 - `legal/config.ts` - Legal agent configuration
 - `producer/config.ts` - Producer agent configuration
 - `screenwriter/config.ts` - Screenwriter agent configuration
 
 **Service Agent Definitions** (`src/services/agent/definitions/`):
+
 - `MarketingAgent.ts`, `FinanceAgent.ts`, `BrandAgent.ts`
 - `VideoAgent.ts`, `SocialAgent.ts`, `PublicistAgent.ts`
 - `RoadAgent.ts`, `PublishingAgent.ts`, `LicensingAgent.ts`
 - `DevOpsAgent.ts`, `SecurityAgent.ts`
 
 **Standalone Agents** (`src/services/agent/`):
+
 - `MerchandiseAgent.ts` - Full merchandise creation workflow
 - `specialists/GeneralistAgent.ts` - Agent Zero (hub)
 
@@ -856,6 +907,7 @@ interface ToolFunctionResult {
 | `MetricsService.ts` | Performance metrics, latency tracking |
 
 **TraceService Features:**
+
 - Start/complete execution traces
 - Track individual steps within traces
 - Calculate usage metrics and costs
@@ -873,6 +925,7 @@ The evolution system implements genetic algorithms for agent improvement:
 | `types.ts` | `AgentGene`, `EvolutionConfig`, fitness/mutation functions |
 
 **Helix Safety Features:**
+
 - **Doomsday Switch:** Halts evolution at max generations
 - **Fitness Validator:** 0.0 fitness kills agent (no reproduction)
 - **Anti-Inbreeding:** Prevents self-crossover
@@ -893,6 +946,7 @@ The evolution system implements genetic algorithms for agent improvement:
 | `OCRService.ts` | Optical character recognition (Tesseract.js) |
 
 **Subdirectories:**
+
 - `billing/` - Usage billing
 - `config/` - AI configuration
 - `context/` - Context management
@@ -906,6 +960,7 @@ The evolution system implements genetic algorithms for agent improvement:
 **Purpose:** AI image generation, infinite canvas, product showroom
 
 **Key Components:**
+
 - `CreativeStudio.tsx` - Main container
 - `InfiniteCanvas.tsx` - Fabric.js canvas with pan/zoom
 - `PromptBuilder.tsx` - AI-powered prompt construction
@@ -917,6 +972,7 @@ The evolution system implements genetic algorithms for agent improvement:
 **Purpose:** AI video production workflow (Idea → Brief → Review)
 
 **Key Components:**
+
 - `VideoStudio.tsx` - Main container
 - `VideoEditor.tsx` - Timeline editor
 - `VideoPlayer.tsx` - Remotion Player wrapper
@@ -928,6 +984,7 @@ The evolution system implements genetic algorithms for agent improvement:
 **Purpose:** Node-based automation for chaining AI tasks
 
 **Key Components:**
+
 - `WorkflowLab.tsx` - React Flow editor
 - `WorkflowEngine.ts` - Execution engine
 - `nodeRegistry.ts` - Available node types
@@ -937,6 +994,7 @@ The evolution system implements genetic algorithms for agent improvement:
 **Purpose:** Campaign management, brand assets, copywriting
 
 **Key Components:**
+
 - `BrandManager.tsx` - Brand kit editor
 - `CampaignManager.tsx` - Campaign lifecycle
 
@@ -945,6 +1003,7 @@ The evolution system implements genetic algorithms for agent improvement:
 **Purpose:** Multi-distributor music distribution
 
 **Services (`src/services/distribution/`):**
+
 - `DistributorService.ts` - Main facade
 - `adapters/DistroKidAdapter.ts`
 - `adapters/TuneCoreAdapter.ts`
@@ -1057,11 +1116,13 @@ The evolution system implements genetic algorithms for agent improvement:
 ### 12.1 Architecture
 
 **Main Process (`electron/main.ts`):**
+
 - BrowserWindow management (1280x800 default)
 - IPC handler registration
 - Security hardening configuration
 
 **Preload Bridge (`electron/preload.ts`):**
+
 - Context-isolated IPC exposure
 - Selective API surface for renderer
 
@@ -1170,10 +1231,12 @@ Auth protocol: `indii-os://` for OAuth callbacks
 ### 13.3 Security Model
 
 **Authentication:**
+
 - All callable functions require `context.auth`
 - Admin functions require `token.admin` custom claim
 
 **CORS Whitelist:**
+
 ```typescript
 const ALLOWED_ORIGINS = [
   'https://indiios-studio.web.app',
@@ -1183,6 +1246,7 @@ const ALLOWED_ORIGINS = [
 ```
 
 **Model Allowlist (Anti-SSRF):**
+
 ```typescript
 const ALLOWED_MODELS = [
   "gemini-3-pro-preview",
@@ -1191,6 +1255,7 @@ const ALLOWED_MODELS = [
 ```
 
 **RAG Proxy Security:**
+
 - DELETE method blocked (data integrity)
 - File listing blocked (privacy/anti-IDOR)
 - Path whitelist: `/v1beta/files`, `/v1beta/models`
@@ -1208,11 +1273,13 @@ const ALLOWED_MODELS = [
 ### 13.5 Inngest Workflows
 
 **Events:**
+
 - `video/generate.requested` → Single video generation
 - `video/long_form.requested` → Multi-segment daisychaining
 - `video/stitch.requested` → Clip stitching via Transcoder
 
 **Functions:**
+
 - `generateVideoFn` - Veo API integration
 - `generateLongFormVideoFn` - Segment-by-segment generation
 - `stitchVideoFn` - Google Cloud Video Transcoder
@@ -1236,6 +1303,7 @@ const ALLOWED_MODELS = [
 | `ApprovalModal.tsx` | 4K | Agent approval workflow UI |
 
 **Renderers (Structured Output):**
+
 - `CallSheetRenderer.tsx` - Video call sheet display
 - `ScreenplayRenderer.tsx` - Script/screenplay formatting
 - `VisualScriptRenderer.tsx` - Visual script display
@@ -1244,6 +1312,7 @@ const ALLOWED_MODELS = [
 ### 14.2 Shared UI Components (`src/components/`)
 
 **Base UI (`ui/`):**
+
 - `button.tsx`, `badge.tsx`, `card.tsx`
 - `tabs.tsx`, `table.tsx`, `slider.tsx`
 - `tooltip.tsx`, `textarea.tsx`, `scroll-area.tsx`
@@ -1252,10 +1321,12 @@ const ALLOWED_MODELS = [
 - `ThreeDButton.tsx`, `ThreeDCard.tsx` - 3D UI elements
 
 **Design Systems:**
+
 - `kokonutui/` - KokonutUI component library
 - `motion-primitives/` - Framer Motion animation components
 
 **Domain Components:**
+
 - `studio/` - Studio-specific UI
 - `subscription/` - Pricing/tier components
 - `instruments/` - Instrument approval modal
@@ -1268,6 +1339,7 @@ const ALLOWED_MODELS = [
 **Types (`types/`):**
 
 `ai.dto.ts` - Gemini SDK compatible types:
+
 - `ContentPart`, `Content` - Message structure
 - `FunctionDeclaration`, `ToolConfig` - Tool definitions
 - `GenerationConfig` - Model configuration
@@ -1289,6 +1361,7 @@ const ALLOWED_MODELS = [
 **Location:** Co-located with source (`.test.ts` suffix) or `__tests__/` directory
 
 **Setup:** `src/test/setup.ts`
+
 - Mocks Firebase SDK (auth, Firestore, storage, functions)
 - HTMLCanvasElement mock for jsdom
 - Provides `fake-indexeddb`
@@ -1306,6 +1379,7 @@ npm run test -- MyComponent  # Specific file
 **Location:** `e2e/` directory (39 test files)
 
 **Key Tests:**
+
 - `electron.spec.ts` - Desktop app flows
 - `auth-flow.spec.ts` - Authentication
 - `creative-persistence.spec.ts` - Canvas saving
@@ -1316,6 +1390,7 @@ npm run test -- MyComponent  # Specific file
 - `chaos-monkey.spec.ts` - Stability testing
 
 **Projects:**
+
 - Electron: Sequential execution
 - Web: Chromium on localhost:4242
 
@@ -1351,10 +1426,12 @@ npx playwright test --debug         # Debug mode
 **File:** `.github/workflows/deploy.yml`
 
 **Triggers:**
+
 - Push to `main` branch
 - Manual workflow dispatch
 
 **Secrets Required:**
+
 - `VITE_API_KEY`
 - `VITE_VERTEX_PROJECT_ID`
 - `VITE_VERTEX_LOCATION`
@@ -1446,6 +1523,7 @@ manualChunks: {
 ### 17.6 Firebase Functions Cold Starts
 
 **Mitigation:**
+
 - Use Gen 2 functions (faster cold starts)
 - Implement request queueing with Inngest
 

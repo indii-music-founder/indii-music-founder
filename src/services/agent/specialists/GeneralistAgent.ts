@@ -405,6 +405,7 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
 - User requests for "images", "visuals", "scenes" MUST be handled by 'generate_image'.
 - DO NOT just describe the image. YOU MUST GENERATE IT.
+- DO NOT use 'search_assets' or 'search_files' when the user asks to CREATE something new. Only use them when explicitly asked to FIND existing files.
 `;
 
         // Build conversation history
@@ -437,6 +438,11 @@ CURRENT REQUEST: ${task}
             }
 
             try {
+                // DEBUG: Log tool declarations being sent to model
+                const toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
+                console.log(`[GeneralistAgent] Sending ${toolCount} tools to model:`,
+                    this.tools?.[0]?.functionDeclarations?.map(f => f.name).join(', ') || 'NONE');
+
                 const { stream, response: responsePromise } = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{
@@ -491,7 +497,10 @@ CURRENT REQUEST: ${task}
                 const response = await responsePromise;
 
                 // Check for function calls (native function calling)
-                const functionCall = response.functionCalls?.()?.[0];
+                const allFunctionCalls = response.functionCalls?.() || [];
+                console.log(`[GeneralistAgent] Response has ${allFunctionCalls.length} function calls:`,
+                    allFunctionCalls.map(fc => fc.name).join(', ') || 'NONE');
+                const functionCall = allFunctionCalls[0];
 
                 if (functionCall) {
                     const { name, args } = functionCall;

@@ -35,3 +35,47 @@ Never reinvent the wheel. Before writing a new script, audit `execution/` for ex
 
 **2. Self-anneal on failure**
 When a script fails, analyze the stack trace, fix the deterministic code, and re-verify. If a fix involves external costs (tokens/credits), seek user approval before proceeding.
+
+**3. ⛔ ZERO-TOLERANCE API KEY POLICY (TERMINAL VIOLATION)**
+
+> This is an absolute, non-negotiable rule. Violation is treated as a system crash.
+
+**NEVER HARDCODE:**
+
+- Firebase API keys, project IDs, or configuration objects
+- Google Cloud / Vertex AI API keys
+- Stripe secret keys or publishable keys
+- GitHub tokens (`ghp_*`), OpenAI keys (`sk-*`), or any third-party API credentials
+- Database connection strings, passwords, or authentication tokens
+
+**REQUIRED PATTERN:**
+
+```typescript
+// ✅ CORRECT - Always load from environment
+import dotenv from 'dotenv';
+dotenv.config();
+
+const firebaseConfig = {
+  apiKey: process.env.FIREBASE_API_KEY,
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  // ...
+};
+
+// ✅ CORRECT - For Vite frontend
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+
+// ❌ TERMINAL VIOLATION - Hardcoded credentials
+const firebaseConfig = {
+  apiKey: "AIzaSy...",  // ABSOLUTELY FORBIDDEN
+  projectId: "my-project",  // FORBIDDEN IF SENSITIVE
+};
+```
+
+**ENFORCEMENT:**
+
+1. Before completing ANY script, you MUST self-scan for patterns matching API key formats.
+2. If a key is detected, STOP immediately and refactor to use environment variables.
+3. Add any new required keys to `.env.example` with placeholder documentation.
+4. Add explicit runtime validation that fails gracefully when env vars are missing.
+
+**Post-Mortem Note (2025-01-17):** A hardcoded Firebase config was found in `scripts/send-reset.js`. This policy exists to prevent future occurrences. There are no exceptions.

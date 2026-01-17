@@ -39,7 +39,7 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.9, y: 10 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className="absolute top-16 right-0 w-[380px] origin-top-right z-50 rounded-3xl overflow-hidden border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]"
+            className="absolute top-16 right-0 w-[90vw] max-w-[380px] origin-top-right z-50 rounded-3xl overflow-hidden border border-white/10 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.7)]"
             style={{
                 background: 'rgba(10, 10, 14, 0.95)',
                 backdropFilter: 'blur(40px) saturate(200%)'

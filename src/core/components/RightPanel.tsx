@@ -6,6 +6,7 @@ import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'framer-motion';
+import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function RightPanel() {
     const { currentModule, setModule, isRightPanelOpen, toggleRightPanel } = useStore();
@@ -43,9 +44,21 @@ export default function RightPanel() {
                             </button>
                         </div>
                         <div className="flex-1 p-8 flex flex-col items-center justify-center text-center space-y-4">
-                            <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center">
-                                <Layers size={24} className="text-gray-600" />
-                            </div>
+                            <motion.div
+                                className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center"
+                                animate={{
+                                    scale: [1, 1.05, 1],
+                                    opacity: [0.6, 1, 0.6],
+                                    boxShadow: ['0 0 0px rgba(255,255,255,0)', '0 0 20px rgba(255,255,255,0.1)', '0 0 0px rgba(255,255,255,0)']
+                                }}
+                                transition={{
+                                    duration: 4,
+                                    repeat: Infinity,
+                                    ease: "easeInOut"
+                                }}
+                            >
+                                <Layers size={24} className="text-gray-500" />
+                            </motion.div>
                             <div>
                                 <h3 className="text-sm font-medium text-gray-300">No Tool Selected</h3>
                                 <p className="text-xs text-gray-500 mt-1 max-w-[200px]">Select a tool from the sidebar to view its controls and settings.</p>
@@ -59,6 +72,10 @@ export default function RightPanel() {
     const handleToolClick = (module: 'creative' | 'video' | 'files') => {
         setModule(module);
     };
+
+    const creativeTheme = getColorForModule('creative');
+    const videoTheme = getColorForModule('video');
+    const filesTheme = getColorForModule('files');
 
     return (
         <motion.aside
@@ -89,29 +106,29 @@ export default function RightPanel() {
                         <div className="flex flex-col gap-4 w-full px-2">
                             <button
                                 onClick={() => handleToolClick('creative')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'creative' ? 'bg-purple-500/20 text-purple-400 shadow-[0_0_10px_rgba(168,85,247,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'creative' ? `${creativeTheme.bg} ${creativeTheme.text} shadow-[0_0_10px_rgba(168,85,247,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Image Studio"
                             >
                                 <Palette size={20} />
-                                {currentModule === 'creative' && <div className="absolute inset-0 rounded-xl bg-purple-500/10 blur-sm" />}
+                                {currentModule === 'creative' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
                             </button>
 
                             <button
                                 onClick={() => handleToolClick('video')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'video' ? 'bg-blue-500/20 text-blue-400 shadow-[0_0_10px_rgba(59,130,246,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'video' ? `${videoTheme.bg} ${videoTheme.text} shadow-[0_0_10px_rgba(59,130,246,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Video Studio"
                             >
                                 <Film size={20} />
-                                {currentModule === 'video' && <div className="absolute inset-0 rounded-xl bg-blue-500/10 blur-sm" />}
+                                {currentModule === 'video' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
                             </button>
 
                             <button
                                 onClick={() => handleToolClick('files')}
-                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'files' ? 'bg-green-500/20 text-green-400 shadow-[0_0_10px_rgba(34,197,94,0.2)]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                                className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'files' ? `${filesTheme.bg} ${filesTheme.text} shadow-[0_0_10px_rgba(34,197,94,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Project Files"
                             >
                                 <Folder size={20} />
-                                {currentModule === 'files' && <div className="absolute inset-0 rounded-xl bg-green-500/10 blur-sm" />}
+                                {currentModule === 'files' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
                             </button>
                         </div>
                     </motion.div>

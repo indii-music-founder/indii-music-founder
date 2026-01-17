@@ -1,13 +1,26 @@
+import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { getStorage, ref, uploadBytes, deleteObject } from 'firebase/storage';
 import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
 
+// Load environment variables
+dotenv.config();
+
+// Validate required env vars
+const requiredEnvVars = ['FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN', 'FIREBASE_PROJECT_ID', 'FIREBASE_APP_ID', 'AUTOMATOR_EMAIL', 'AUTOMATOR_PASSWORD'];
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        console.error(`Missing required environment variable: ${envVar}`);
+        console.error('Please ensure your .env file contains all required configuration.');
+        process.exit(1);
+    }
+}
+
 const firebaseConfig = {
-    apiKey: "AIzaSyCXQDyy5Bc0-ZNoZwI41Zrx9AqhdxUjvQo",
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
-    // storageBucket: We will inject this dynamically
-    appId: "1:223837784072:web:3af738739465ea4095e9bd"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    appId: process.env.FIREBASE_APP_ID,
 };
 
 const BUCKET_CANDIDATES = [
@@ -22,8 +35,8 @@ async function main() {
     const auth = getAuth(app);
 
     console.log("Authenticating...");
-    const email = "automator@indiios.com";
-    const password = "AutomatorPass123!";
+    const email = process.env.AUTOMATOR_EMAIL!;
+    const password = process.env.AUTOMATOR_PASSWORD!;
     let user;
     try {
         const cred = await signInWithEmailAndPassword(auth, email, password);

@@ -1,9 +1,9 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { useStore } from '@/core/store';
-import { Plus, Trash2, Edit3, Image as ImageIcon, Sparkles, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
+import { Plus, Trash2, Edit3, Image as ImageIcon, Sparkles, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock, Film, Video, ImagePlay } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
-import { WhiskItem } from '@/core/store/slices/creativeSlice';
+import { WhiskItem, WhiskCategory, TargetMedia } from '@/core/store/slices/creativeSlice';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { WhiskService } from '@/services/WhiskService';
 import WhiskPresetStyles, { STYLE_PRESETS } from './WhiskPresetStyles';
@@ -13,16 +13,17 @@ import WhiskPresetStyles, { STYLE_PRESETS } from './WhiskPresetStyles';
 // ============================================================================
 interface WhiskDropZoneProps {
     title: string;
-    category: 'subject' | 'scene' | 'style';
+    category: WhiskCategory;
     items: WhiskItem[];
     onAdd: (type: 'text' | 'image', content: string, caption?: string) => void;
     onRemove: (id: string) => void;
     onToggle: (id: string) => void;
     onUpdate: (id: string, updates: Partial<WhiskItem>) => void;
     description: string;
+    accentColor?: string; // For video-related categories
 }
 
-const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description }: WhiskDropZoneProps) => {
+const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor = 'purple' }: WhiskDropZoneProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -49,7 +50,9 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                 const pureMime = mimeType.split(':')[1].split(';')[0];
 
                 try {
-                    const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, category);
+                    // For motion category, use 'style' for captioning as motion is described visually
+                    const captionCategory = category === 'motion' ? 'style' : category as 'subject' | 'scene' | 'style';
+                    const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, captionCategory);
                     onAdd('image', dataUrl, caption);
                     toast.success(`${title} reference added!`);
                 } catch (err: any) {
@@ -83,7 +86,9 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
             try {
                 const [mimeType, b64] = item.url.split(',');
                 const pureMime = mimeType?.split(':')[1]?.split(';')[0] || 'image/png';
-                const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, category);
+                // For motion category, use 'style' for captioning as motion is described visually
+                const captionCategory = category === 'motion' ? 'style' : category as 'subject' | 'scene' | 'style';
+                const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, captionCategory);
                 onAdd('image', item.url, caption);
                 toast.success(`${title} reference set!`);
             } catch (err: any) {
@@ -237,10 +242,10 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                             onDragLeave={() => setIsDragOver(false)}
                             onDrop={handleDrop}
                             className={`relative min-h-[80px] rounded-xl border-2 border-dashed transition-all duration-200 ${isDragOver
-                                    ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
-                                    : hasItems
-                                        ? 'border-transparent bg-[#111]'
-                                        : 'border-gray-700 bg-[#0d0d0d] hover:border-gray-600'
+                                ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
+                                : hasItems
+                                    ? 'border-transparent bg-[#111]'
+                                    : 'border-gray-700 bg-[#0d0d0d] hover:border-gray-600'
                                 }`}
                         >
                             {/* Empty State */}
@@ -264,16 +269,16 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
                                             animate={{ opacity: 1, scale: 1 }}
                                             exit={{ opacity: 0, scale: 0.9 }}
                                             className={`group relative flex items-center gap-3 p-2 rounded-lg transition-all ${item.checked
-                                                    ? 'bg-gradient-to-r from-purple-900/30 to-purple-900/10 border border-purple-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
-                                                    : 'bg-[#1a1a1a] border border-gray-800/50 opacity-50'
+                                                ? 'bg-gradient-to-r from-purple-900/30 to-purple-900/10 border border-purple-500/40 shadow-[0_0_10px_rgba(147,51,234,0.15)]'
+                                                : 'bg-[#1a1a1a] border border-gray-800/50 opacity-50'
                                                 }`}
                                         >
                                             {/* Toggle Checkbox */}
                                             <button
                                                 onClick={() => onToggle(item.id)}
                                                 className={`flex-shrink-0 w-5 h-5 rounded flex items-center justify-center border-2 transition-all ${item.checked
-                                                        ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
-                                                        : 'bg-transparent border-gray-600 hover:border-gray-400'
+                                                    ? 'bg-purple-500 border-purple-400 text-white shadow-[0_0_8px_rgba(147,51,234,0.5)]'
+                                                    : 'bg-transparent border-gray-600 hover:border-gray-400'
                                                     }`}
                                             >
                                                 {item.checked && <Check size={12} strokeWidth={3} />}
@@ -331,7 +336,7 @@ const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUp
 // MAIN WHISK SIDEBAR COMPONENT
 // ============================================================================
 export default function WhiskSidebar() {
-    const { whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference } = useStore();
+    const { whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia } = useStore();
     const toast = useToast();
 
     const handleAddPreset = useCallback((preset: typeof STYLE_PRESETS[number]) => {
@@ -350,13 +355,14 @@ export default function WhiskSidebar() {
     const totalLockedItems =
         whiskState.subjects.filter(i => i.checked).length +
         whiskState.scenes.filter(i => i.checked).length +
-        whiskState.styles.filter(i => i.checked).length;
+        whiskState.styles.filter(i => i.checked).length +
+        whiskState.motion.filter(i => i.checked).length;
 
     return (
         <div className="w-full md:w-72 border-r border-gray-800/50 bg-gradient-to-b from-[#0a0a0a] to-[#080808] flex flex-col h-full overflow-hidden">
             {/* Header */}
             <div className="p-4 border-b border-gray-800/50 bg-gradient-to-r from-purple-900/10 to-transparent">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
                         <div className="p-1.5 bg-purple-500/20 rounded-lg">
                             <Sparkles className="text-purple-400" size={16} />
@@ -373,8 +379,8 @@ export default function WhiskSidebar() {
                         <button
                             onClick={() => setPreciseReference(!whiskState.preciseReference)}
                             className={`w-9 h-5 rounded-full relative transition-all ${whiskState.preciseReference
-                                    ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
-                                    : 'bg-gray-800'
+                                ? 'bg-purple-600 shadow-[0_0_10px_rgba(147,51,234,0.5)]'
+                                : 'bg-gray-800'
                                 }`}
                             title={whiskState.preciseReference ? 'Precise: ON - Strict adherence to references' : 'Precise: OFF - Creative freedom'}
                         >
@@ -386,6 +392,39 @@ export default function WhiskSidebar() {
                             />
                         </button>
                     </div>
+                </div>
+                {/* Media Type Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-black/40 rounded-lg">
+                    <button
+                        onClick={() => setTargetMedia('image')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
+                            ? 'bg-purple-500/30 text-purple-300 shadow-[0_0_8px_rgba(147,51,234,0.3)]'
+                            : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                    >
+                        <ImageIcon size={12} />
+                        Image
+                    </button>
+                    <button
+                        onClick={() => setTargetMedia('video')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'video'
+                            ? 'bg-blue-500/30 text-blue-300 shadow-[0_0_8px_rgba(59,130,246,0.3)]'
+                            : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                    >
+                        <Film size={12} />
+                        Video
+                    </button>
+                    <button
+                        onClick={() => setTargetMedia('both')}
+                        className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'both'
+                            ? 'bg-gradient-to-r from-purple-500/30 to-blue-500/30 text-white shadow-[0_0_8px_rgba(147,51,234,0.2)]'
+                            : 'text-gray-500 hover:text-gray-300'
+                            }`}
+                    >
+                        <ImagePlay size={12} />
+                        Both
+                    </button>
                 </div>
             </div>
 
@@ -423,6 +462,21 @@ export default function WhiskSidebar() {
                     onUpdate={(id, updates) => updateWhiskItem('style', id, updates)}
                     description="Drop a style reference or describe the aesthetic"
                 />
+
+                {/* Motion Category - For Video */}
+                {(whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both') && (
+                    <WhiskDropZone
+                        title="Motion"
+                        category="motion"
+                        items={whiskState.motion}
+                        onAdd={(type, content, cap) => addWhiskItem('motion', type, content, cap)}
+                        onRemove={(id) => removeWhiskItem('motion', id)}
+                        onToggle={(id) => toggleWhiskItem('motion', id)}
+                        onUpdate={(id, updates) => updateWhiskItem('motion', id, updates)}
+                        description="Describe camera movements, speed, and energy"
+                        accentColor="blue"
+                    />
+                )}
 
                 {/* Preset Styles */}
                 <div className="pt-2 border-t border-gray-800/50">

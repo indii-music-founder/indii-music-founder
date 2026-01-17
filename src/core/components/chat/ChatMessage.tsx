@@ -24,88 +24,72 @@ import { Components } from 'react-markdown';
 interface MessageItemProps {
     msg: AgentMessage;
     avatarUrl?: string;
+    agentIdentity?: {
+        color: string;
+        initials: string;
+    };
 }
 
-export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
+export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
+    // ... existing components ...
     const markdownComponents: Components = {
+        // ... (keep existing implementation)
         img: ({ src, alt }: any) => <ImageRenderer src={src} alt={alt} />,
         p: ({ children }: any) => {
             const text = getText(children);
-
+            // ... (keep existing implementation)
             // Detect Raw AI Image Tool Output
             const toolMatch = text.match(/\[Tool: (generate_image|batch_edit_images|generate_high_res_asset|render_cinematic_grid|extract_grid_frame)\] Output: (?:Success: )?(\{.*\})/s);
 
             if (toolMatch) {
+                // ... existing logic ...
                 try {
                     const toolName = toolMatch[1];
                     const json = JSON.parse(toolMatch[2]);
                     const { generatedHistory } = useStore.getState();
 
                     let imageIds: string[] = [];
-
-                    // Collect IDs based on return format
                     if (json.image_ids && Array.isArray(json.image_ids)) imageIds = json.image_ids;
                     else if (json.asset_id) imageIds = [json.asset_id];
                     else if (json.grid_id) imageIds = [json.grid_id];
                     else if (json.frame_id) imageIds = [json.frame_id];
 
-                    // Resolve IDs to Image Objects
-                    const images = imageIds
-                        .map(id => generatedHistory.find(h => h.id === id))
-                        .filter(Boolean);
-
+                    const images = imageIds.map(id => generatedHistory.find(h => h.id === id)).filter(Boolean);
                     if (images.length > 0) {
                         return (
                             <div className="flex flex-col gap-4 my-4">
                                 {images.map((img: any, idx: number) => (
-                                    <ToolImageOutput
-                                        key={idx}
-                                        toolName={toolName}
-                                        idx={idx}
-                                        url={img.url}
-                                        prompt={img.prompt}
-                                    />
+                                    <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} />
                                 ))}
                             </div>
                         );
                     }
-
-                    // Fallback: Legacy Base64 URLs
                     if (json.urls && Array.isArray(json.urls)) {
                         return (
                             <div className="flex flex-col gap-4 my-4">
                                 {json.urls.map((url: string, idx: number) => (
-                                    <ToolImageOutput
-                                        key={idx}
-                                        toolName={toolName}
-                                        idx={idx}
-                                        url={url}
-                                    />
+                                    <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} />
                                 ))}
                             </div>
                         );
                     }
-                } catch (e) {
-                    console.warn("Failed to parse image tool output:", e);
-                }
+                } catch (e) { console.warn("Failed to parse image tool output:", e); }
             }
 
             // Detect Delegate Task Output
             const delegateMatch = text.match(/\[Tool: delegate_task\] Output: (?:Success: )?(\{.*\})/s);
             if (delegateMatch) {
+                // ... existing logic ...
                 try {
                     const json = JSON.parse(delegateMatch[1]);
                     if (json.text) {
                         const innerToolMatch = json.text.match(/\[Tool: ([^\]]+)\] Output: (?:Success: )?(\{.*\})/s);
-
                         if (innerToolMatch) {
                             const toolName = innerToolMatch[1];
                             const innerJsonStr = innerToolMatch[2];
-
                             try {
                                 const innerJson = JSON.parse(innerJsonStr);
-
                                 if (toolName === 'analyze_brand_consistency' && innerJson.analysis) {
                                     return (
                                         <div className="my-4 bg-purple-900/10 rounded-xl border border-purple-500/20 p-4">
@@ -114,9 +98,7 @@ export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
                                                 <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
                                             </div>
                                             <div className="prose prose-invert prose-sm max-w-none">
-                                                <ReactMarkdown components={{
-                                                    p: ({ children }: any) => <span className="block mb-2 last:mb-0">{children}</span>
-                                                }}>
+                                                <ReactMarkdown components={{ p: ({ children }: any) => <span className="block mb-2 last:mb-0">{children}</span> }}>
                                                     {innerJson.analysis}
                                                 </ReactMarkdown>
                                             </div>
@@ -129,37 +111,23 @@ export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
                                         {JSON.stringify(innerJson, null, 2)}
                                     </div>
                                 );
-
-                            } catch (e) {
-                                // Failed to parse inner tool output, ignore
-                            }
+                            } catch (e) { }
                         }
                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
                     }
-                } catch (e) {
-                    console.warn("Failed to parse delegate tool output:", e);
-                }
+                } catch (e) { console.warn("Failed to parse delegate tool output:", e); }
             }
-
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
         pre: ({ children, ...props }: any) => {
+            // ... existing logic ...
             if (React.isValidElement(children)) {
                 const { className, children: codeChildren } = children.props as any;
                 const content = String(codeChildren || '');
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
-
-                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) {
-                    return <>{children}</>;
-                }
-
-                if (isJson) {
-                    try {
-                        JSON.parse(content.replace(/\n$/, ''));
-                        return <>{children}</>;
-                    } catch (e) { /* ignore json parse error */ }
-                }
+                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return <>{children}</>;
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return <>{children}</>; } catch (e) { } }
             }
             return (
                 <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
@@ -173,14 +141,11 @@ export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
             </div>
         ),
         code({ node, inline, className, children, ...props }: any) {
+            // ... existing logic ...
             const match = /language-(\w+)/.exec(className || '')
             const isJson = match && match[1] === 'json';
             const childrenStr = String(children);
-
-            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) {
-                return <ContractRenderer markdown={childrenStr} />;
-            }
-
+            if (!inline && (childrenStr.includes('# LEGAL AGREEMENT') || childrenStr.includes('**NON-DISCLOSURE AGREEMENT**'))) return <ContractRenderer markdown={childrenStr} />;
             if (!inline && isJson) {
                 try {
                     const content = childrenStr.replace(/\n$/, '');
@@ -189,7 +154,7 @@ export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                     return <JsonViewer data={data} />;
-                } catch (e) { /* ignore json parse error */ }
+                } catch (e) { }
             }
             return <code className={className} {...props}>{children}</code>
         }
@@ -204,13 +169,17 @@ export const MessageItem = memo(({ msg, avatarUrl }: MessageItemProps) => {
         >
             {msg.role === 'model' && (
                 <div className="relative mt-1 flex-shrink-0">
-                    <div className="absolute -inset-1 bg-purple-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div className={`absolute -inset-1 bg-${agentIdentity?.color || 'purple'}-500/20 rounded-full blur-sm opacity-0 group-hover:opacity-100 transition-opacity`}></div>
                     {avatarUrl ? (
                         <img
                             src={avatarUrl}
-                            className="w-9 h-9 rounded-full object-cover relative z-10 border border-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                            className={`w-9 h-9 rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
                             alt="AI"
                         />
+                    ) : agentIdentity ? (
+                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center text-xs font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
+                            {agentIdentity.initials}
+                        </div>
                     ) : (
                         <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30">
                             <Bot size={18} className="text-purple-200" />

@@ -34,20 +34,25 @@ export interface ShotItem {
     cameraMovement?: string;
 }
 
+export type WhiskCategory = 'subject' | 'scene' | 'style' | 'motion';
+export type TargetMedia = 'image' | 'video' | 'both';
+
 export interface WhiskItem {
     id: string;
     type: 'text' | 'image';
     content: string; // user text or original image data/url
     aiCaption?: string; // Generated caption for images
     checked: boolean;
-    category: 'subject' | 'scene' | 'style';
+    category: WhiskCategory;
 }
 
 export interface WhiskState {
     subjects: WhiskItem[];
     scenes: WhiskItem[];
     styles: WhiskItem[];
+    motion: WhiskItem[]; // NEW: Camera movements, speed, energy
     preciseReference: boolean;
+    targetMedia: TargetMedia; // NEW: What to generate (image, video, or both)
 }
 
 export interface CreativeSlice {
@@ -129,11 +134,12 @@ export interface CreativeSlice {
 
     // Whisk
     whiskState: WhiskState;
-    addWhiskItem: (category: 'subject' | 'scene' | 'style', type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
-    updateWhiskItem: (category: 'subject' | 'scene' | 'style', id: string, updates: Partial<WhiskItem>) => void;
-    removeWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
-    toggleWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
+    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
+    updateWhiskItem: (category: WhiskCategory, id: string, updates: Partial<WhiskItem>) => void;
+    removeWhiskItem: (category: WhiskCategory, id: string) => void;
+    toggleWhiskItem: (category: WhiskCategory, id: string) => void;
     setPreciseReference: (precise: boolean) => void;
+    setTargetMedia: (target: TargetMedia) => void; // NEW
 
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
@@ -330,7 +336,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         subjects: [],
         scenes: [],
         styles: [],
-        preciseReference: false
+        motion: [], // NEW: Camera movements, speed, energy
+        preciseReference: false,
+        targetMedia: 'image' as TargetMedia // NEW: Default to image generation
     },
     addWhiskItem: (category, type, content, aiCaption, explicitId) => set((state) => {
         const newItem: WhiskItem = {
@@ -341,43 +349,70 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             checked: true,
             category
         };
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: [...state.whiskState[key], newItem]
+                [key]: [...(state.whiskState[key] as WhiskItem[]), newItem]
             }
         };
     }),
     updateWhiskItem: (category, id, updates) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, ...updates } : item)
+                [key]: (state.whiskState[key] as WhiskItem[]).map(item => item.id === id ? { ...item, ...updates } : item)
             }
         };
     }),
     removeWhiskItem: (category, id) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].filter(item => item.id !== id)
+                [key]: (state.whiskState[key] as WhiskItem[]).filter(item => item.id !== id)
             }
         };
     }),
     toggleWhiskItem: (category, id) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, checked: !item.checked } : item)
+                [key]: (state.whiskState[key] as WhiskItem[]).map(item => item.id === id ? { ...item, checked: !item.checked } : item)
             }
         };
     }),
     setPreciseReference: (precise) => set((state) => ({
         whiskState: { ...state.whiskState, preciseReference: precise }
+    })),
+    setTargetMedia: (target) => set((state) => ({
+        whiskState: { ...state.whiskState, targetMedia: target }
     })),
 
     isGenerating: false,

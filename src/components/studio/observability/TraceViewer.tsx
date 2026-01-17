@@ -48,7 +48,7 @@ export function TraceViewer() {
         <div className="flex flex-col h-full w-full p-4 space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-[400px]">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger
                             value="list"

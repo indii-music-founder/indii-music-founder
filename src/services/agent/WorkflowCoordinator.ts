@@ -77,8 +77,16 @@ export class WorkflowCoordinator {
         // If it looks like it needs tools (e.g. database access, memory, media generation), force Agent
         const lower = message.toLowerCase();
 
-        // Media generation keywords
-        const mediaKeywords = ['image', 'photo', 'picture', 'art', 'draw', 'video', 'movie', 'film', 'music', 'song', 'track'];
+        // Media generation keywords - EXPANDED for better coverage
+        const mediaKeywords = [
+            'image', 'photo', 'picture', 'art', 'draw', 'video', 'movie', 'film', 'music', 'song', 'track',
+            // Album/Cover related
+            'cover', 'album', 'poster', 'artwork', 'thumbnail', 'banner',
+            // Visual design terms
+            'visual', 'graphic', 'design', 'illustration', 'render', 'scene',
+            // Action verbs that imply image generation
+            'visualize', 'depict', 'illustrate'
+        ];
         if (mediaKeywords.some(w => lower.includes(w))) return true;
 
         return lower.includes('my') || lower.includes('save') || lower.includes('find');

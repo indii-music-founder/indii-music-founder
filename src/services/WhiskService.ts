@@ -3,7 +3,7 @@ import { ImageGeneration } from './image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 // Inspiration prompts for each category
-const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style', string> = {
+const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
     subject: `You are a creative director for music artists. Generate 4 unique, evocative subject ideas for AI image generation. Focus on:
 - Characters (singers, musicians, abstract figures)
 - Objects (instruments, microphones, vinyl records, headphones)
@@ -23,6 +23,13 @@ Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explana
 - Techniques (double exposure, glitch art, pointillism, watercolor)
 - Media types (vintage film grain, polaroid, 3D render, vector art)
 - Moods (dreamlike, gritty, nostalgic, futuristic)
+Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`,
+
+    motion: `You are a creative director for music videos. Generate 4 unique camera movement and motion ideas for AI video generation. Focus on:
+- Camera movements (slow orbit, dramatic push-in, fluid tracking shot, aerial sweep)
+- Motion intensities (serene and hypnotic, energetic and dynamic, subtle breathing motion)
+- Speed variations (slow motion dreamscape, quick cuts, time-lapse transition)
+- Visual effects (particles flowing, light rays streaming, atmospheric haze drifting)
 Return ONLY a JSON array of 4 short descriptions (max 15 words each). No explanations.`
 };
 
@@ -119,9 +126,79 @@ export class WhiskService {
     }
 
     /**
+     * Synthesizes a video-optimized prompt from the user's action prompt and locked Whisk references.
+     * Includes motion descriptors for camera movement and temporal flow.
+     */
+    static synthesizeVideoPrompt(actionPrompt: string, whiskState: WhiskState): string {
+        // Start with the image-based synthesis
+        let finalPrompt = this.synthesizeWhiskPrompt(actionPrompt, whiskState);
+
+        // Add motion context if available
+        const activeMotion = whiskState.motion.filter(i => i.checked);
+        if (activeMotion.length > 0) {
+            const motionDescs = activeMotion.map(m => m.aiCaption || m.content);
+            finalPrompt = `${finalPrompt}. Camera and motion: ${motionDescs.join(', ')}`;
+        }
+
+        // Add video-specific keywords for better generation
+        finalPrompt = `${finalPrompt}. Cinematic quality, smooth motion, professional video aesthetic`;
+
+        return finalPrompt;
+    }
+
+    /**
+     * Extracts video generation parameters from locked presets.
+     * Returns aspectRatio, duration, and motionIntensity if available.
+     */
+    static async getVideoParameters(whiskState: WhiskState): Promise<{
+        aspectRatio?: string;
+        duration?: number;
+        motionIntensity?: string;
+    }> {
+        const { STYLE_PRESETS } = await import('@/modules/creative/components/whisk/WhiskPresetStyles');
+
+        const params: { aspectRatio?: string; duration?: number; motionIntensity?: string } = {};
+
+        // Check styles for video parameters
+        const activeStyles = whiskState.styles.filter(i => i.checked);
+        for (const style of activeStyles) {
+            const matchingPreset = STYLE_PRESETS.find((p: any) => p.prompt === style.content);
+            if (matchingPreset) {
+                if (matchingPreset.aspectRatio) params.aspectRatio = matchingPreset.aspectRatio;
+                if ((matchingPreset as any).duration) params.duration = (matchingPreset as any).duration;
+                if ((matchingPreset as any).motionIntensity) params.motionIntensity = (matchingPreset as any).motionIntensity;
+            }
+        }
+
+        // Check motion category for intensity hints
+        const activeMotion = whiskState.motion.filter(i => i.checked);
+        for (const motion of activeMotion) {
+            const content = (motion.aiCaption || motion.content).toLowerCase();
+            if (content.includes('slow') || content.includes('calm') || content.includes('serene')) {
+                params.motionIntensity = 'low';
+            } else if (content.includes('dynamic') || content.includes('energetic') || content.includes('fast')) {
+                params.motionIntensity = 'high';
+            } else if (!params.motionIntensity) {
+                params.motionIntensity = 'medium';
+            }
+        }
+
+        return params;
+    }
+
+    /**
+     * Gets the duration from any locked video preset.
+     * Returns undefined if no duration preset is locked.
+     */
+    static async getLockedDuration(whiskState: WhiskState): Promise<number | undefined> {
+        const params = await this.getVideoParameters(whiskState);
+        return params.duration;
+    }
+
+    /**
      * Generates creative text suggestions for a given category using the AI service.
      */
-    static async generateInspiration(category: 'subject' | 'scene' | 'style'): Promise<string[]> {
+    static async generateInspiration(category: 'subject' | 'scene' | 'style' | 'motion'): Promise<string[]> {
         try {
             const { AI } = await import('@/services/ai/AIService');
 

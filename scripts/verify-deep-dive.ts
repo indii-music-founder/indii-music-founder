@@ -1,8 +1,11 @@
 
+import dotenv from 'dotenv';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInWithCredential, GoogleAuthProvider } from 'firebase/auth';
 import { getFunctions, httpsCallable } from 'firebase/functions';
-import { env } from '../src/config/env';
+
+// Load environment variables
+dotenv.config();
 
 // Mock Browser Environment for Firebase
 // @ts-expect-error Firebase scripts assume DOM window exists
@@ -10,19 +13,28 @@ global.window = {};
 // @ts-expect-error align global self reference for Firebase SDK in Node
 global.self = global;
 
-// Hardcoded Token from Step 249 (This is the one-time proof)
-// Hardcoded Token from Step 249 (This is the one-time proof)
-const ID_TOKEN = "YOUR_ID_TOKEN_HERE";
+// Validate required env vars
+const requiredEnvVars = ['FIREBASE_API_KEY', 'FIREBASE_AUTH_DOMAIN', 'FIREBASE_PROJECT_ID', 'FIREBASE_STORAGE_BUCKET', 'FIREBASE_APP_ID'];
+for (const envVar of requiredEnvVars) {
+    if (!process.env[envVar]) {
+        console.error(`Missing required environment variable: ${envVar}`);
+        console.error('Please ensure your .env file contains all required Firebase configuration.');
+        process.exit(1);
+    }
+}
 
-const ACCESS_TOKEN = "YOUR_ACCESS_TOKEN_HERE";
+// Hardcoded Token from Step 249 (This is the one-time proof)
+// Replace with your actual tokens for testing
+const ID_TOKEN = process.env.GOOGLE_ID_TOKEN || "YOUR_ID_TOKEN_HERE";
+const ACCESS_TOKEN = process.env.GOOGLE_ACCESS_TOKEN || "YOUR_ACCESS_TOKEN_HERE";
 
-// Init Firebase (Replicating src/services/firebase.ts config to avoid import issues in script)
+// Init Firebase from environment variables
 const firebaseConfig = {
-    apiKey: "AIzaSyCXQDyy5Bc0-ZNoZwI41Zrx9AqhdxUjvQo",
-    authDomain: "indiios-v-1-1.firebaseapp.com",
-    projectId: "indiios-v-1-1",
-    storageBucket: "indiios-v-1-1.firebasestorage.app",
-    appId: "1:223837784072:web:3af738739465ea4095e9bd"
+    apiKey: process.env.FIREBASE_API_KEY,
+    authDomain: process.env.FIREBASE_AUTH_DOMAIN,
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
+    appId: process.env.FIREBASE_APP_ID,
 };
 
 console.log("Initializing Firebase...");

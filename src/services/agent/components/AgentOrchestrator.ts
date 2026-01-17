@@ -68,6 +68,7 @@ export class AgentOrchestrator {
         5. "music" handles audio analysis, lyrics, and production.
         6. "video" handles storyboards, treatments, and video editing.
         7. "marketing" handles social media, campaigns, and brand strategy.
+        8. CRITICAL: Requests to GENERATE, CREATE, or MAKE new images, visuals, or album art must go to "generalist" (Agent Zero) or "director", NOT "merchandise". "merchandise" is ONLY for managing physical goods.
         `;
 
         try {
@@ -111,6 +112,7 @@ export class AgentOrchestrator {
             }
 
             // Log Step
+            console.info(`[AgentOrchestrator] Routing: "${sanitizedQuery}" -> ${finalRoute} (original: ${targetAgentId}, conf: ${confidence})`);
             await TraceService.addStep(traceId, 'routing', {
                 selectedAgent: finalRoute,
                 confidence,

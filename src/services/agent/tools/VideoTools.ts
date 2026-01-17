@@ -79,12 +79,45 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             return toolError(resolutionError, 'INVALID_INPUT');
         }
 
-        const { userProfile } = useStore.getState();
+        const { userProfile, whiskState } = useStore.getState();
+
+        // =====================================================================
+        // WHISK INTEGRATION: Synthesize prompt with locked references
+        // =====================================================================
+        let finalPrompt = args.prompt;
+        let finalAspectRatio = args.aspectRatio as any;
+        let finalDuration = args.duration;
+
+        // Check if we should use Whisk synthesis (video mode or both)
+        if (whiskState && (whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both')) {
+            // Import WhiskService dynamically to avoid circular deps
+            const { WhiskService } = await import('@/services/WhiskService');
+
+            // Synthesize video-optimized prompt with Subject/Scene/Style/Motion
+            finalPrompt = WhiskService.synthesizeVideoPrompt(args.prompt, whiskState);
+
+            // Get video parameters from locked presets
+            const videoParams = await WhiskService.getVideoParameters(whiskState);
+
+            // Use locked aspect ratio if not explicitly provided
+            if (!args.aspectRatio && videoParams.aspectRatio) {
+                finalAspectRatio = videoParams.aspectRatio;
+            }
+
+            // Use locked duration if not explicitly provided
+            if (!args.duration && videoParams.duration) {
+                finalDuration = videoParams.duration;
+            }
+
+            console.log('[VideoTools] Whisk-enhanced prompt:', finalPrompt.slice(0, 200) + '...');
+            console.log('[VideoTools] Whisk params:', { aspectRatio: finalAspectRatio, duration: finalDuration });
+        }
+
         const results = await VideoGeneration.generateVideo({
-            prompt: args.prompt,
+            prompt: finalPrompt,
             firstFrame: args.image,
-            duration: args.duration,
-            aspectRatio: args.aspectRatio as any,
+            duration: finalDuration,
+            aspectRatio: finalAspectRatio,
             resolution: args.resolution as any,
             userProfile
         });

@@ -4,6 +4,7 @@ import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
 import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Sidebar() {
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
@@ -58,25 +59,35 @@ export default function Sidebar() {
         const colors = getColorForModule(item.id);
 
         return (
-            <button
-                onClick={() => setModule(item.id)}
-                style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
-                className={`
-                    w-full flex items-center gap-3 px-4 py-2 text-sm
-                    bolt-interactive relative
-                    ${isActive
-                        ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
-                        : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
-                    }
-                    ${!isSidebarOpen ? 'justify-center px-2' : ''}
-                `}
-                title={!isSidebarOpen ? item.label : ''}
-                data-testid={`nav-item-${item.id}`}
-                aria-current={isActive ? 'page' : undefined}
-            >
-                <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
-                {isSidebarOpen && <span className="truncate">{item.label}</span>}
-            </button>
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            onClick={() => setModule(item.id)}
+                            style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
+                            className={`
+                                w-full flex items-center gap-3 px-4 py-2 text-sm
+                                bolt-interactive relative
+                                ${isActive
+                                    ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
+                                    : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
+                                }
+                                ${!isSidebarOpen ? 'justify-center px-2' : ''}
+                            `}
+                            data-testid={`nav-item-${item.id}`}
+                            aria-current={isActive ? 'page' : undefined}
+                        >
+                            <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
+                            {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                        </button>
+                    </TooltipTrigger>
+                    {!isSidebarOpen && (
+                        <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
+                            {item.label}
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
         );
     };
 
