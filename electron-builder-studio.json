@@ -27,7 +27,9 @@
   "protocols": [
     {
       "name": "indiiOS Studio Auth Protocol",
-      "schemes": ["indii-os-studio"]
+      "schemes": [
+        "indii-os-studio"
+      ]
     }
   ],
   "publish": {
@@ -44,7 +46,10 @@
     "target": [
       {
         "target": "nsis",
-        "arch": ["x64", "arm64"]
+        "arch": [
+          "x64",
+          "arm64"
+        ]
       },
       {
         "target": "portable"
@@ -55,7 +60,10 @@
       {
         "path": "build/installer.nsis",
         "target": "nsis",
-        "arch": ["x64", "arm64"]
+        "arch": [
+          "x64",
+          "arm64"
+        ]
       },
       {
         "path": "build/installer-portable.exe",
@@ -78,7 +86,11 @@
       "allowElevation": true,
       "allowToChangeInstallationDirectory": true,
       "perMachine": false,
-      "installerLanguages": ["en_US", "en_GB", "en_AU"],
+      "installerLanguages": [
+        "en_US",
+        "en_GB",
+        "en_AU"
+      ],
       "displayLanguageSelector": true,
       "include": [
         "build/installer.nsh"
@@ -89,12 +101,18 @@
     "target": [
       {
         "target": "dmg",
-        "arch": ["x64", "arm64"],
+        "arch": [
+          "x64",
+          "arm64"
+        ],
         "type": "distribution"
       },
       {
         "target": "zip",
-        "arch": ["x64", "arm64"],
+        "arch": [
+          "x64",
+          "arm64"
+        ],
         "type": "archive"
       }
     ],
@@ -130,10 +148,7 @@
       "window": {
         "title": "indiiOS Studio"
       },
-      "iconText": "",
-      "sign": {
-        "identity": "Developer ID: M9M2T3W5T3"
-      }
+      "iconText": ""
     },
     "zip": {
       "target": "mac-x64",
@@ -156,7 +171,14 @@
     },
     "AppImage": {
       "icon": "assets/icon-studio.png",
-      "keywords": ["indiiOS", "studio", "creative", "AI", "music", "art"]
+      "keywords": [
+        "indiiOS",
+        "studio",
+        "creative",
+        "AI",
+        "music",
+        "art"
+      ]
     },
     "deb": {
       "depends": [
