@@ -59,7 +59,7 @@ test.describe('Flow: Routing & Navigation', () => {
         expect(page.url()).toContain('/creative');
     });
 
-    test('History: Back button restores state', async ({ page }) => {
+    test('History: Back and Forward buttons restore state', async ({ page }) => {
         // 1. Go to Marketing
         await page.getByTestId('nav-item-marketing').click();
         await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
@@ -77,6 +77,14 @@ test.describe('Flow: Routing & Navigation', () => {
         // 4. Verify we are back at Marketing
         await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
         expect(page.url()).toContain('/marketing');
+
+        // 5. Click Browser Forward
+        console.log('Clicking Browser Forward...');
+        await page.goForward();
+
+        // 6. Verify we are back at Social Media
+        await expect(page.getByText('Social Media', { exact: false })).toBeVisible();
+        expect(page.url()).toContain('/social');
     });
 
     test('Deep Link: Direct access loads correct module', async ({ page, context }) => {
