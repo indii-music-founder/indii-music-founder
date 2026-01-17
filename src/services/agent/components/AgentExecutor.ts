@@ -36,7 +36,19 @@ export class AgentExecutor {
 
         if (!agent) {
             console.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
-            agent = await agentRegistry.getAsync('generalist');
+
+            // Try lowercase version first (handle LLM casing hallucinations)
+            if (agentId !== agentId.toLowerCase()) {
+                const lowerId = agentId.toLowerCase();
+                console.log(`[AgentExecutor] Retrying with lowercase ID: '${lowerId}'`);
+                agent = await agentRegistry.getAsync(lowerId);
+            }
+
+            // If still not found, fallback to Generalist
+            if (!agent) {
+                console.log(`[AgentExecutor] Agent '${agentId}' (and lowercase) still not found. Using Generalist.`);
+                agent = await agentRegistry.getAsync('generalist');
+            }
         }
 
         if (!agent) {

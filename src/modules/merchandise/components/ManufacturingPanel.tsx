@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator } from 'lucide-react';
+import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2 } from 'lucide-react';
 import { MerchTheme } from '@/modules/merchandise/themes';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
-import { ProductType } from '../types';
+import { ProductType, CatalogProductSchema } from '../types';
 
 interface ManufacturingPanelProps {
     theme: MerchTheme;
     productType: ProductType;
+    productId?: string; // Optional: If missing, treated as draft
     onClose?: () => void;
 }
 
@@ -20,7 +21,10 @@ const COLORS = [
     { name: 'Navy Blue', hex: '#000080' },
 ];
 
-const BASE_COSTS: Record<ProductType, number> = {
+const RETAIL_MULTIPLIER = 2.2;
+
+// Fallback pricing if catalog fetch fails
+const DEFAULT_COSTS: Record<ProductType, number> = {
     'T-Shirt': 12.50,
     'Hoodie': 24.00,
     'Mug': 6.50,
@@ -29,9 +33,7 @@ const BASE_COSTS: Record<ProductType, number> = {
     'Phone Screen': 2.00
 };
 
-const RETAIL_MULTIPLIER = 2.2;
-
-export default function ManufacturingPanel({ theme, productType, onClose }: ManufacturingPanelProps) {
+export default function ManufacturingPanel({ theme, productType, productId, onClose }: ManufacturingPanelProps) {
     const [selectedSize, setSelectedSize] = React.useState('L');
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
     const [quantity, setQuantity] = React.useState(100);
@@ -67,12 +69,90 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
 
     // Dynamic Cost Calculation
     const baseCost = catalogPrice || BASE_COSTS[productType] || 10.00;
+    const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
+    const [isLoadingPrices, setIsLoadingPrices] = React.useState(true);
+    const toast = useToast();
+
+    // Fetch catalog prices on mount
+    useEffect(() => {
+        let mounted = true;
+
+        // We set loading state here, but wrap in a function to avoid direct set loop
+        const fetchPrices = async () => {
+             setIsLoadingPrices(true);
+             try {
+                const catalog = await MerchandiseService.getCatalog();
+                if (!mounted) return;
+
+                // Validate catalog items safely
+                const validItems = catalog.filter(item => {
+                    const result = CatalogProductSchema.safeParse(item);
+                    return result.success;
+                });
+
+                // Find a matching product in the catalog
+                const match = validItems.find(p =>
+                    p.title.toLowerCase().includes(productType.toLowerCase()) ||
+                    (p.category === 'standard' && productType === 'T-Shirt') // Fallback assumption
+                );
+
+                if (match) {
+                    setBaseCost(match.basePrice);
+                } else {
+                    // Fallback to default if not found
+                    setBaseCost(DEFAULT_COSTS[productType] || 10.00);
+                }
+             } catch (err: unknown) {
+                console.warn("[ManufacturingPanel] Failed to fetch live pricing:", err);
+                if (mounted) setBaseCost(DEFAULT_COSTS[productType] || 10.00);
+             } finally {
+                if (mounted) setIsLoadingPrices(false);
+             }
+        };
+
+        fetchPrices();
+
+        return () => {
+            mounted = false;
+        };
+    }, [productType]);
+
     // Bulk discount: 5% off for every 50 units, max 20%
     const discount = Math.min(Math.floor(quantity / 50) * 0.05, 0.20);
     const unitCost = baseCost * (1 - discount);
     const retailPrice = baseCost * RETAIL_MULTIPLIER;
     const profitPerUnit = retailPrice - unitCost;
     const totalProfit = profitPerUnit * quantity;
+
+    const handleSubmission = async () => {
+        try {
+            toast.info("Initializing production line...");
+
+            // Use provided ID or generate a draft ID
+            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+
+            const result = await MerchandiseService.submitToProduction({
+                productId: effectiveProductId,
+                variantId: `${selectedSize}-${selectedColor.name}`,
+                quantity: quantity
+            });
+
+            if (result.success) {
+                toast.success(`Production Started! Order ID: ${result.orderId}`);
+                if (!productId) {
+                    toast.info("Note: This order was created from a draft design.");
+                }
+            }
+            onClose?.();
+        } catch (e: unknown) {
+            console.error("Production submission failed:", e);
+            if (e instanceof Error) {
+                toast.error(e.message || "Failed to start production.");
+            } else {
+                toast.error("Failed to start production.");
+            }
+        }
+    };
 
     return (
         <div className="flex flex-col h-full relative font-sans text-left">
@@ -193,7 +273,11 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
                 {/* Cost Estimation */}
                 <div className={`p-4 rounded-xl border mt-auto ${theme.colors.background} ${theme.colors.border}`}>
                     <div className="flex justify-between items-center mb-2">
-                        <span className={`${theme.colors.textSecondary} text-xs`}>Unit Cost {discount > 0 && <span className="text-green-400">(-{(discount * 100).toFixed(0)}%)</span>}</span>
+                        <span className={`${theme.colors.textSecondary} text-xs`}>
+                            Unit Cost
+                            {isLoadingPrices && <Loader2 className="inline w-3 h-3 ml-2 animate-spin" />}
+                            {discount > 0 && !isLoadingPrices && <span className="text-green-400 ml-1">(-{(discount * 100).toFixed(0)}%)</span>}
+                        </span>
                         <span className={`${theme.colors.text} font-mono`}>${unitCost.toFixed(2)}</span>
                     </div>
                     <div className="flex justify-between items-center mb-4">
@@ -218,6 +302,7 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
                     whileTap={{ scale: 0.98 }}
                     onClick={async () => {
                         toast.info("Requesting physical sample...");
+                        // Mock sample request for now, can be bound later
                         await new Promise(r => setTimeout(r, 1000));
                         toast.success("Sample request sent to warehouse!");
                         onClose?.();
@@ -231,23 +316,7 @@ export default function ManufacturingPanel({ theme, productType, onClose }: Manu
                 <motion.button
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
-                    onClick={async () => {
-                        try {
-                            toast.info("Initializing production line...");
-                            // Updated to use MerchandiseService
-                            const result = await MerchandiseService.submitToProduction({
-                                productId: 'BETA-DESIGN-001',
-                                variantId: `${selectedSize}-${selectedColor.name}`,
-                                quantity: quantity
-                            });
-                            if (result.success) {
-                                toast.success(`Production Started! Order ID: ${result.orderId}`);
-                            }
-                            onClose?.();
-                        } catch (e) {
-                            toast.error("Failed to start production.");
-                        }
-                    }}
+                    onClick={handleSubmission}
                     className="w-full py-3 bg-green-500 text-black rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-green-500/20 hover:bg-green-400 transition-colors flex items-center justify-center gap-2"
                 >
                     <DollarSign className="w-4 h-4" />
