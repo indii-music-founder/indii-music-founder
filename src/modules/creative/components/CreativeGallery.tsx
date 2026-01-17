@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -50,7 +50,10 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         : generatedHistory) || [];
 
     // Combine all items and sort by timestamp (newest first)
-    const allItems = [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
+    // ⚡ Bolt Optimization: Memoize allItems to prevent expensive sort on every render
+    const allItems = useMemo(() => {
+        return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
+    }, [filteredUploadedImages, filteredUploadedAudio, filteredGenerated]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
@@ -138,7 +141,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             {item.type === 'video' ? (
                 item.url.startsWith('data:image') ? (
                     <div className="relative w-full h-full">
-                        <img src={item.url} alt={item.prompt} loading="lazy" className="w-full h-full object-contain bg-black" />
+                        <img
+                            src={item.url}
+                            alt={item.prompt}
+                            loading="lazy"
+                            decoding="async"
+                            className="w-full h-full object-contain bg-black"
+                        />
                         <div className="absolute top-2 left-2 bg-purple-600/80 text-white text-[10px] font-bold px-2 py-0.5 rounded backdrop-blur-sm">
                             STORYBOARD
                         </div>
@@ -160,7 +169,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                         <span className="text-[10px] font-mono leading-tight">DEV PREVIEW<br />(Size Limit)</span>
                     </div>
                 ) : (
-                    <img src={item.url} alt={item.prompt} className="w-full h-full object-contain bg-black" />
+                    <img
+                        src={item.url}
+                        alt={item.prompt}
+                        loading="lazy"
+                        decoding="async"
+                        className="w-full h-full object-contain bg-black"
+                    />
                 )
             )}
 
