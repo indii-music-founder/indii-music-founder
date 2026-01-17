@@ -211,8 +211,8 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-upc', async (event) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', ['generate_upc']);
-            return { success: true, upc: report.upc };
+            const report = await PythonBridge.runScript('distribution', 'upc_manager.py', ['generate']);
+            return { success: report.status === 'SUCCESS', upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
@@ -234,7 +234,11 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const result = await PythonBridge.runScript('distribution', 'ddex_generator.py', [JSON.stringify(metadata)]);
-            // ddex_generator outputs raw XML string
+            // Enhanced ddex_generator returns JSON with xml field
+            if (typeof result === 'object' && result.xml) {
+                return { success: result.status === 'SUCCESS', xml: result.xml, report: result };
+            }
+            // Fallback for raw XML string
             return { success: true, xml: typeof result === 'string' ? result : JSON.stringify(result) };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
