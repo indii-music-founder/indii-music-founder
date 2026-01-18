@@ -42,29 +42,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
         return () => clearTimeout(timer);
     }, []);
 
-    // Debug logging (dev mode only)
-    React.useEffect(() => {
-        if (!import.meta.env.DEV) return;
-
-        console.group('🖼️ Asset Library Debug');
-        console.log('Total history items:', history.length);
-        console.log('Filtered image assets:', imageAssets.length);
-
-        if (imageAssets.length > 0) {
-            const sample = imageAssets[0];
-            console.log('Sample asset:', {
-                id: sample.id,
-                type: sample.type,
-                urlPrefix: sample.url?.substring(0, 30),
-                urlType: sample.url?.startsWith('data:') ? 'data-uri' :
-                         sample.url?.startsWith('http') ? 'http' :
-                         sample.url?.startsWith('blob:') ? 'blob' : 'unknown'
-            });
-        }
-
-        console.groupEnd();
-    }, [imageAssets.length, history.length]);
-
     // Search filter
     const filteredAssets = useMemo(() => {
         if (!searchQuery.trim()) return imageAssets;
