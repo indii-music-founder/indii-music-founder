@@ -4,6 +4,7 @@ import os
 import shutil
 import hashlib
 import logging
+import time
 
 # Ensure we can import sibling modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -136,12 +137,6 @@ def package_itmsp(release_id, staging_path):
             "details": f"Successfully created ITMSP bundle at {bundle_path} with {len(processed_tracks)} tracks.",
             "delivery_ready": True
         }
-
-            "details": (
-                f"Packaged assets from {staging_path} "
-                "into Apple ITMSP bundle."
-            ),
-            "delivery_ready": True}
     except Exception as e:
         logger.exception("Packaging failed")
         return {"status": "FAIL", "error": str(e)}
