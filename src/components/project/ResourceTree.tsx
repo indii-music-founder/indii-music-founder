@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { StorageService } from '@/services/StorageService';
 import {
     Folder,
@@ -58,7 +58,24 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
         }
     }, [currentProjectId, fetchFileNodes]);
 
-    const rootNodes = fileNodes.filter((node: FileNode) => !node.parentId);
+    // Optimization: Pre-calculate children map to avoid O(N^2) filtering in renderNode
+    const { rootNodes, nodeChildrenMap } = useMemo(() => {
+        const map = new Map<string, FileNode[]>();
+        const roots: FileNode[] = [];
+
+        fileNodes.forEach((node: FileNode) => {
+            if (node.parentId) {
+                if (!map.has(node.parentId)) {
+                    map.set(node.parentId, []);
+                }
+                map.get(node.parentId)!.push(node);
+            } else {
+                roots.push(node);
+            }
+        });
+
+        return { rootNodes: roots, nodeChildrenMap: map };
+    }, [fileNodes]);
 
     // Helpers
     const getFileTypeFromMime = (mime: string): FileNode['fileType'] => {
@@ -136,8 +153,10 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
     const renderNode = (node: FileNode, depth: number = 0) => {
         const isExpanded = expandedFolderIds.includes(node.id);
         const isSelected = selectedFileNodeId === node.id;
-        const hasChildren = fileNodes.some((n: FileNode) => n.parentId === node.id);
-        const children = fileNodes.filter((n: FileNode) => n.parentId === node.id);
+
+        const children = nodeChildrenMap.get(node.id) || [];
+        const hasChildren = children.length > 0;
+
         const isEditing = editingNodeId === node.id;
 
         const handleToggle = (e: React.MouseEvent) => {
