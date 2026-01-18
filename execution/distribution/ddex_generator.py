@@ -204,6 +204,9 @@ class DDEXGenerator:
             hash_elem = self._create_element(file_elem, "HashSum")
             self._create_element(hash_elem, "HashSumValue", file_hash)
             self._create_element(hash_elem, "HashSumAlgorithmType", "MD5")
+        self._create_element(
+            file_elem, "FileName", track.get(
+                "filename", f"track_{track_num}.flac"))
 
         return sr
 

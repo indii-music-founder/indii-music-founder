@@ -19,6 +19,7 @@ const mockElectronAPI = {
 
 describe('DistributionService Integration', () => {
     beforeEach(() => {
+        // @ts-expect-error - Mocking Electron API
         // @ts-expect-error - mocking electronAPI globally
         // @ts-expect-error - Mocking Electron API on window
         window.electronAPI = mockElectronAPI;

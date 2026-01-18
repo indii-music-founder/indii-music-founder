@@ -21,6 +21,10 @@ export function useMediaQuery(query: string): boolean {
 
         const mediaQuery = window.matchMedia(query);
 
+    const getSnapshot = () => {
+        return window.matchMedia(query).matches;
+    };
+
         // Set initial value
         setMatches(mediaQuery.matches);
 
