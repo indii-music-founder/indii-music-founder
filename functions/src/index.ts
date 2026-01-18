@@ -20,6 +20,42 @@ import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream 
 // Initialize Firebase Admin
 admin.initializeApp();
 
+/**
+ * Security Helper: Validate Organization Access
+ *
+ * Ensures the authenticated user is a member of the target organization.
+ * Prevents IDOR/Injection attacks where users create jobs for orgs they don't belong to.
+ */
+const validateOrgAccess = async (userId: string, orgId?: string | null) => {
+    // 1. Personal workspace is always allowed (scoped to user in logic)
+    if (!orgId || orgId === 'personal') {
+        return;
+    }
+
+    // 2. Fetch Organization
+    const orgRef = admin.firestore().collection('organizations').doc(orgId);
+    const orgDoc = await orgRef.get();
+
+    if (!orgDoc.exists) {
+        throw new functions.https.HttpsError(
+            "not-found",
+            `Organization '${orgId}' not found.`
+        );
+    }
+
+    const orgData = orgDoc.data();
+    const members = orgData?.members || [];
+
+    // 3. Verify Membership
+    if (!members.includes(userId)) {
+        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        throw new functions.https.HttpsError(
+            "permission-denied",
+            "You are not a member of this organization."
+        );
+    }
+};
+
 // Define Secrets
 const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
@@ -179,9 +215,12 @@ export const triggerVideoJob = functions
 
         const { prompt, jobId, orgId, ...options } = inputData;
 
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
+
         try {
-            // 1. Create Initial Job Record in Firestore
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -257,6 +296,9 @@ export const triggerLongFormVideoJob = functions
         // Destructure validated data
         const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
 
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
+
         // Additional validation
         if (prompts.length === 0) {
             throw new functions.https.HttpsError(
@@ -320,8 +362,8 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
 
             // 4. Create Parent Job Record
-            // 1. Create Parent Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Parent Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -421,8 +463,8 @@ export const renderVideo = functions
 
             const segmentUrls = videoClips.map((c: any) => c.src);
 
-            // 2. Create Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 2. Create Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: "personal",

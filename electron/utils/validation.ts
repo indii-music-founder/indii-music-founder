@@ -144,3 +144,10 @@ export const SftpUploadSchema = z.object({
     const hasTraversal = (path: string) => path.includes('..');
     return !hasTraversal(data.localPath) && !hasTraversal(data.remotePath);
 }, { message: "Path traversal detected in local or remote path" });
+
+export const AgentHistorySaveSchema = z.object({
+    id: z.string().min(1),
+    data: z.record(z.any())
+});
+
+export const AgentHistoryIdSchema = z.string().min(1);
