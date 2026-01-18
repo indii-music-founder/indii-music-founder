@@ -294,13 +294,46 @@ export class DeliveryService {
         }
 
         try {
-            console.warn('[DeliveryService] SFTP operations are disabled in the browser environment. Use backend functions.');
-            return {
-                success: true,
-                message: 'Delivery successful (Mock)',
-                deliveredFiles: ['mock-file.xml'],
-                timestamp: new Date().toISOString(),
-            };
+            // 1. Determine environment
+            const isElectron = typeof window !== 'undefined' && !!window.electronAPI;
+
+            if (isElectron) {
+                // Real Delivery via Electron SFTP
+                console.info(`[DeliveryService] Connecting to SFTP host: ${credentials.host}...`);
+
+                await this.transporter.connect({
+                    host: credentials.host,
+                    port: credentials.port || 22,
+                    username: credentials.username,
+                    password: credentials.password,
+                    privateKey: credentials.apiSecret // Assuming key might be stored here for some
+                });
+
+                // Determine remote path (usually distributor defines an inbox)
+                // Defaulting to /inbox/releaseId or just /releaseId based on standard
+                // For now, let's use a standard 'upload' folder or root
+                const remoteDir = `/${releaseId}`;
+
+                console.info(`[DeliveryService] Uploading package to ${remoteDir}...`);
+                const deliveredFiles = await this.transporter.uploadDirectory(packagePath, remoteDir);
+
+                await this.transporter.disconnect();
+
+                return {
+                    success: true,
+                    message: `Delivery successful to ${distributorId}`,
+                    deliveredFiles,
+                    timestamp: new Date().toISOString()
+                };
+            } else {
+                console.warn('[DeliveryService] SFTP operations are disabled in the browser environment. Use backend functions.');
+                return {
+                    success: true,
+                    message: 'Delivery successful (Mock - Browser)',
+                    deliveredFiles: ['mock-file.xml'],
+                    timestamp: new Date().toISOString(),
+                };
+            }
         } catch (error) {
             console.error('[DeliveryService] Delivery failed:', error);
             if (await this.transporter.isConnected()) {

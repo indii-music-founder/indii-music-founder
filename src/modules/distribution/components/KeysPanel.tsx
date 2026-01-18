@@ -3,12 +3,31 @@ import React, { useState } from 'react';
 import { Loader2, CheckCircle, XCircle, FileText, Key, ShieldCheck, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { distributionService } from '@/services/distribution/DistributionService';
-import { auth } from '@/services/firebase';
+
+interface MerlinReport {
+    status: string; // 'READY' | 'NOT_READY'
+    score: number;
+    checks: string[];
+    timestamp?: string;
+}
+
+interface BwarmResponse {
+    success: boolean;
+    csv?: string;
+    report?: any;
+    error?: string;
+}
+
+interface MerlinResponse {
+    success: boolean;
+    report?: MerlinReport;
+    error?: string;
+}
 
 export const KeysPanel: React.FC = () => {
-    const { toast } = useToast();
+    const { success, error } = useToast();
     const [loading, setLoading] = useState(false);
-    const [statusReport, setStatusReport] = useState<any>(null);
+    const [statusReport, setStatusReport] = useState<MerlinReport | null>(null);
     const [bwarmCsv, setBwarmCsv] = useState<string | null>(null);
 
     const handleCheckMerlin = async () => {
@@ -23,19 +42,17 @@ export const KeysPanel: React.FC = () => {
                 exclusive_rights: true
             };
 
-            const result = await distributionService.checkMerlinStatus(mockCatalogData);
-            setStatusReport(result);
-            toast({
-                title: 'Merlin Readiness Check Complete',
-                type: 'success',
-                message: `Status: ${result.status}`
-            });
-        } catch (error) {
-            toast({
-                title: 'Check Failed',
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Unknown error'
-            });
+            // Cast response to known shape since service returns any/Promise<any>
+            const response = await distributionService.checkMerlinStatus(mockCatalogData) as MerlinResponse;
+
+            if (response.success && response.report) {
+                setStatusReport(response.report);
+                success(`Merlin Readiness Check Complete. Status: ${response.report.status}`);
+            } else {
+                throw new Error(response.error || 'Merlin check failed to return a report.');
+            }
+        } catch (err) {
+            error(err instanceof Error ? err.message : 'Unknown error during Merlin check');
         } finally {
             setLoading(false);
         }
@@ -51,33 +68,16 @@ export const KeysPanel: React.FC = () => {
                 { title: 'Midnight Drive', writer_last: 'Smith', writer_first: 'John', writer_ipi: '00987654321' }
             ];
 
-            const result = await distributionService.generateBWARM({ works: mockWorks });
+            const response = await distributionService.generateBWARM({ works: mockWorks }) as BwarmResponse;
 
-            // result is CSV string or JSON string from service
-            let csvContent = result;
-            if (result.startsWith('{')) {
-                // Try parse if JSON
-                try {
-                    const parsed = JSON.parse(result);
-                    if (parsed.csv) csvContent = parsed.csv;
-                } catch (e) {
-                    // assume raw CSV
-                }
+            if (response.success && response.csv) {
+                setBwarmCsv(response.csv);
+                success('BWARM CSV Generated. Ready for download.');
+            } else {
+                throw new Error(response.error || 'BWARM generation failed.');
             }
-
-            setBwarmCsv(csvContent);
-            toast({
-                title: 'BWARM CSV Generated',
-                type: 'success',
-                message: 'Ready for download'
-            });
-
-        } catch (error) {
-            toast({
-                title: 'Generation Failed',
-                type: 'error',
-                message: error instanceof Error ? error.message : 'Unknown error'
-            });
+        } catch (err) {
+            error(err instanceof Error ? err.message : 'Unknown error during BWARM generation');
         } finally {
             setLoading(false);
         }

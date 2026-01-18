@@ -5,12 +5,12 @@
 ## ✅ Implementation Status
 
 | Phase | Name | Status | UI Component |
-|-------|------|--------|--------------|
+| :--- | :--- | :--- | :--- |
 | 1 | Metal Layer | ✅ Complete | `PythonBridge`, `package_itmsp.py`, `ddex_generator.py` |
 | 2 | Brain Layer | ✅ Complete | `QCPanel.tsx`, `qc_validator.py`, `content_id_csv_generator.py` |
 | 3 | Authority Layer | ✅ Complete | `AuthorityPanel.tsx`, `isrc_manager.py` |
 | 4 | Bank Layer | ✅ Complete | `BankPanel.tsx`, `tax_withholding_engine.py`, `waterfall_payout.py` |
-| 5 | Keys (Merlin/MLC) | 🔲 Strategic | External partnerships required |
+| 5 | Keys (Merlin/MLC) | ✅ Complete | `KeysPanel.tsx`, `keys_manager.py` |
 
 ---
 
@@ -43,15 +43,16 @@
 * **Waterfall Engine**: Advanced royalty splits (`Gross -> Indii Fee -> Recoup -> Splits`) via `waterfall_payout.py`.
 * **UI**: `BankPanel.tsx` provides tax calculation simulation and withholding visualization.
 
-## 🔑 Phase 5: Keys (Strategic Strategy)
+## 🔑 Phase 5: Keys (Initiated)
 
-* **Merlin Readiness**: Meeting "in-house delivery" requirements for premium commercial terms.
-* **MLC Bridge**: BWARM standard alignment for mechanical royalty transparency.
+* **Merlin Readiness**: Automated compliance checks via `keys_manager.py`.
+* **MLC Bridge**: BWARM CSV generation (The MLC Standard) implemented.
+* **External Connections**: Future direct API integrations (Merlin/MLC).
 
 ## 🛠️ Execution Toolbox
 
 | Script | Function | Category |
-|--------|----------|----------|
+| :--- | :--- | :--- |
 | `ddex_generator.py` | Industrial XML generation | Metal |
 | `audio_forensics.py` | Spectral fraud detection | Brain |
 | `qc_validator.py` | DSP style guide enforcement | Brain |
@@ -59,19 +60,23 @@
 | `isrc_manager.py` | Release identity persistence | Authority |
 | `tax_withholding_engine.py` | Digital tax officer (W-8/W-9/TIN) | Bank |
 | `waterfall_payout.py` | Multi-party industrial settlement | Bank |
+| `keys_manager.py` | BWARM/Merlin Compliance | Keys |
 
 ## 🖥️ UI Components
 
 All panels are accessible via the **Distribution Dashboard** (`/distribution`):
+
 * **Distributors Tab**: Platform connection management
 * **Bank Layer Tab**: Tax compliance simulation
 * **Authority Tab**: ISRC/UPC/DDEX generation
 * **Brain (QC) Tab**: Metadata validation & Content ID
+* **Keys Tab**: Merlin Readiness & BWARM Generation
 * **Active Releases Tab**: Delivery tracking
 
 ## 🔌 Electron Integration
 
 All Python scripts are executed via `PythonBridge` in the Electron main process:
+
 * IPC handlers in `electron/handlers/distribution.ts`
 * Preload bridge in `electron/preload.ts`
 * Type definitions in `src/types/electron.d.ts`

@@ -251,10 +251,10 @@ async function certify_tax_profile(args: {
     if (typeof window !== 'undefined' && window.electronAPI) {
         try {
             // Calculate status first
-            const taxResult = await window.electronAPI.distribution.calculateTax(userId, 100);
+            const taxResult = await window.electronAPI.distribution.calculateTax({ userId, amount: 100 });
 
             // Certify
-            const certResult = await window.electronAPI.distribution.certifyTax({
+            const certResult = await window.electronAPI.distribution.certifyTax(userId, {
                 userId, tin,
                 is_us_person: isUsPerson,
                 signed_date: new Date().toISOString()
@@ -389,11 +389,80 @@ async function run_metadata_qc(args: {
 }
 
 
+/**
+ * Generate (The MLC) BWARM CSV via Keys Layer.
+ */
+async function generate_bwarm(args: {
+    works: Array<{ title: string; writer_last: string; writer_first: string; writer_ipi?: string }>;
+}): Promise<string> {
+    const { works } = args;
+
+    // 1. Try Keys Layer (Electron)
+    if (typeof window !== 'undefined' && window.electronAPI) {
+        try {
+            const result = await window.electronAPI.distribution.generateBWARM({ works });
+
+            return JSON.stringify({
+                success: true,
+                data: {
+                    csv: result.csv, // Raw CSV string
+                    report: result.report,
+                    engine: 'Keys Layer (Python)'
+                },
+                message: `BWARM CSV generated successfully with ${works.length} works.`
+            });
+        } catch (e) {
+            console.warn('Keys Layer BWARM generation failed:', e);
+            return JSON.stringify({ success: false, error: e instanceof Error ? e.message : 'Unknown error' });
+        }
+    }
+
+    return JSON.stringify({
+        success: false,
+        message: 'BWARM generation requires Electron environment (Keys Layer).'
+    });
+}
+
+/**
+ * Check Merlin Network compliance via Keys Layer.
+ */
+async function check_merlin_status(args: {
+    total_tracks: number;
+    has_isrcs: boolean;
+    has_upcs: boolean;
+    exclusive_rights: boolean;
+}): Promise<string> {
+    const { total_tracks, has_isrcs, has_upcs, exclusive_rights } = args;
+
+    // 1. Try Keys Layer (Electron)
+    if (typeof window !== 'undefined' && window.electronAPI) {
+        try {
+            const result = await window.electronAPI.distribution.checkMerlinStatus(args);
+
+            return JSON.stringify({
+                success: true,
+                data: result.report,
+                message: `Merlin Check Complete: ${result.report.status} (Score: ${result.report.score})`
+            });
+        } catch (e) {
+            console.warn('Keys Layer Merlin check failed:', e);
+            return JSON.stringify({ success: false, error: e instanceof Error ? e.message : 'Unknown error' });
+        }
+    }
+
+    return JSON.stringify({
+        success: false,
+        message: 'Merlin check requires Electron environment (Keys Layer).'
+    });
+}
+
 export const DistributionTools: Record<string, (args: any) => Promise<string>> = {
     prepare_release,
     run_audio_qc,
     issue_isrc,
     certify_tax_profile,
     calculate_payout,
-    run_metadata_qc
+    run_metadata_qc,
+    generate_bwarm,
+    check_merlin_status
 };
