@@ -66,3 +66,4 @@ dist-electron-studio/
 # Distribution Engine Runtime Data
 upc_store.json
 identity_store.json
+.mypy_cache/

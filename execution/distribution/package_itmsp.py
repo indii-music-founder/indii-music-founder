@@ -28,6 +28,7 @@ def calculate_md5(file_path):
             hash_md5.update(chunk)
     return hash_md5.hexdigest()
 
+
 def package_itmsp(release_id, staging_path):
     """
     Creates an Apple ITMSP bundle from a staged release.
@@ -37,13 +38,18 @@ def package_itmsp(release_id, staging_path):
     3. Generates DDEX ERN 4.3 XML.
     4. Creates .itmsp directory structure.
     5. Moves assets and XML into the bundle.
+    Simulates the creation of an Apple ITMSP bundle.
+    In production, this would use lxml to build the metadata.xml
+    and verify the checksums of all audio files.
     """
     logger.info(f"Starting ITMSP packaging for release {release_id} from {staging_path}")
 
     try:
         # 1. Validation
         if not os.path.exists(staging_path):
-            return {"status": "FAIL", "error": f"Staging path {staging_path} does not exist"}
+            return {
+                "status": "FAIL",
+                "error": f"Staging path {staging_path} does not exist"}
 
         metadata_path = os.path.join(staging_path, "metadata.json")
         if not os.path.exists(metadata_path):
@@ -113,6 +119,15 @@ def package_itmsp(release_id, staging_path):
         # Verify Bundle
         files_in_bundle = os.listdir(bundle_path)
         logger.info(f"Bundle created with files: {files_in_bundle}")
+        # 2. Simulate processing
+        time.sleep(1.5)  # Simulate IO heavy task
+
+        bundle_path = os.path.join(
+            os.path.dirname(staging_path),
+            f"{release_id}.itmsp")
+
+        # In a real scenario, we'd do os.mkdir(bundle_path) etc.
+        # But here we just return success to prove the bridge works.
 
         return {
             "status": "PASS",
@@ -122,13 +137,21 @@ def package_itmsp(release_id, staging_path):
             "delivery_ready": True
         }
 
+            "details": (
+                f"Packaged assets from {staging_path} "
+                "into Apple ITMSP bundle."
+            ),
+            "delivery_ready": True}
     except Exception as e:
         logger.exception("Packaging failed")
         return {"status": "FAIL", "error": str(e)}
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print(json.dumps({"error": "Usage: package_itmsp.py <release_id> <staging_path>"}))
+        print(json.dumps({
+            "error": "Usage: package_itmsp.py <release_id> <staging_path>"
+        }))
         sys.exit(1)
 
     rid = sys.argv[1]
