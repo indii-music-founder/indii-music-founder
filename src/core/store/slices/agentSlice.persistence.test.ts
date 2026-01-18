@@ -4,20 +4,16 @@ import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
 
 // Mock SessionService dynamic import
-const mockUpdateSession = vi.fn().mockResolvedValue(undefined); // Must return a Promise!
-const mockSessionService = {
-    sessionService: {
-        updateSession: mockUpdateSession,
-        getSessionsForUser: vi.fn().mockResolvedValue([]),
-        createSession: vi.fn().mockResolvedValue('new-session-id')
-    }
-};
+const { mockUpdateSession, mockCreateSession } = vi.hoisted(() => ({
+    mockUpdateSession: vi.fn().mockResolvedValue(undefined),
+    mockCreateSession: vi.fn().mockResolvedValue('new-session-id')
+}));
 
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
         getSessionsForUser: vi.fn().mockResolvedValue([]),
-        createSession: vi.fn().mockResolvedValue('new-session-id')
+        createSession: mockCreateSession
     }
 }));
 
@@ -50,7 +46,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(newMessage);
 
         // Wait for async import and promise resolution
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The message should be persisted to storage
         expect(mockUpdateSession).toHaveBeenCalledWith(

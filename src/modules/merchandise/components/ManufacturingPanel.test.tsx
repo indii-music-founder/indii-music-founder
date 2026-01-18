@@ -28,7 +28,7 @@ vi.mock('@/services/merchandise/MerchandiseService', () => ({
     MerchandiseService: {
         submitToProduction: vi.fn(),
         getCatalog: () => mockGetCatalog(),
-        requestSample: (...args) => mockRequestSample(...args)
+        requestSample: (...args: any[]) => mockRequestSample(...args)
     }
 }));
 

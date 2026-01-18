@@ -708,10 +708,28 @@ export class FirebaseAIService {
 
     /**
      * ADVANCED: Live API for real-time bi-directional communication.
+     * NOTE: Live API is not available in fallback mode (requires Firebase AI SDK with App Check)
      */
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
         await this.ensureInitialized();
-        return getLiveGenerativeModel(getFirebaseAI()!, {
+
+        // Live API is Firebase-specific and not available in fallback mode
+        if (this.useFallbackMode) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Live API is not available without App Check configuration. Please configure VITE_FIREBASE_APP_CHECK_KEY.'
+            );
+        }
+
+        const firebaseAI = getFirebaseAI();
+        if (!firebaseAI) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Firebase AI not initialized. Live API requires App Check.'
+            );
+        }
+
+        return getLiveGenerativeModel(firebaseAI, {
             model: AI_MODELS.TEXT.AGENT,
             systemInstruction
         });
@@ -790,7 +808,27 @@ export class FirebaseAIService {
             }
 
             const modelName = modelOverride || 'text-embedding-004';
-            const modelCallback = getGenerativeModel(getFirebaseAI()!, { model: modelName });
+
+            // FALLBACK MODE: Use direct Gemini SDK
+            if (this.useFallbackMode && this.fallbackClient) {
+                const model = this.fallbackClient.getGenerativeModel({ model: modelName });
+                const promises = contents.map(async (c) => {
+                    const result = await model.embedContent(c as any);
+                    return result.embedding.values;
+                });
+                return Promise.all(promises);
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
+                await this.initializeFallbackMode();
+                return this.batchEmbedContents(contents, modelOverride);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, { model: modelName });
 
             try {
                 // If batchEmbedContents is available, use it
@@ -812,6 +850,12 @@ export class FirebaseAIService {
                     throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
                 }
             } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during batch embedding, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.batchEmbedContents(contents, modelOverride);
+                }
                 throw this.handleError(error);
             }
         });
@@ -858,7 +902,51 @@ export class FirebaseAIService {
                 }
             };
 
-            const modelCallback = getGenerativeModel(getFirebaseAI()!, {
+            // FALLBACK MODE: Use direct Gemini SDK
+            if (this.useFallbackMode && this.fallbackClient) {
+                try {
+                    const model = this.fallbackClient.getGenerativeModel({
+                        model: modelName,
+                        generationConfig: config as any
+                    });
+
+                    const result = await model.generateContent(text);
+                    const candidates = result.response.candidates;
+
+                    if (!candidates || candidates.length === 0) {
+                        throw new Error('No candidates returned from TTS fallback model');
+                    }
+
+                    const audioPart = candidates[0].content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
+
+                    if (!audioPart || !audioPart.inlineData) {
+                        throw new Error('No audio data found in fallback response parts');
+                    }
+
+                    return {
+                        audio: {
+                            inlineData: {
+                                mimeType: audioPart.inlineData.mimeType,
+                                data: audioPart.inlineData.data
+                            }
+                        }
+                    };
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+
+            // Auto-switch to fallback if Firebase AI is missing
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for speech, switching to fallback');
+                await this.initializeFallbackMode();
+                return this.generateSpeech(text, voice, modelOverride);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, {
                 model: modelName,
                 generationConfig: config as unknown as Record<string, unknown>
             });
@@ -886,6 +974,12 @@ export class FirebaseAIService {
                     }
                 };
             } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during speech, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.generateSpeech(text, voice, modelOverride);
+                }
                 throw this.handleError(error);
             }
         });
@@ -894,18 +988,55 @@ export class FirebaseAIService {
     /**
      * CORE: Embed content
      */
+    /**
+     * CORE: Embed content
+     */
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
-            const modelCallback = getGenerativeModel(getFirebaseAI()!, {
+
+            // FALLBACK MODE: Use direct Gemini SDK
+            if (this.useFallbackMode && this.fallbackClient) {
+                try {
+                    const model = this.fallbackClient.getGenerativeModel({
+                        model: options.model
+                    });
+                    const result = await model.embedContent(options.content as any);
+                    return { values: result.embedding.values };
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+
+            // Auto-switch to fallback if Firebase AI is missing
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for embeddings, switching to fallback');
+                await this.initializeFallbackMode();
+                return this.embedContent(options);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, {
                 model: options.model
             });
 
-            interface GenerativeModelWithEmbed {
-                embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+            try {
+                interface GenerativeModelWithEmbed {
+                    embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+                }
+                const result = await (modelCallback as unknown as GenerativeModelWithEmbed).embedContent({ content: options.content });
+                return { values: result.embedding.values };
+            } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during embedding, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.embedContent(options);
+                }
+                throw this.handleError(error);
             }
-            const result = await (modelCallback as unknown as GenerativeModelWithEmbed).embedContent({ content: options.content });
-            return { values: result.embedding.values };
         });
     }
 

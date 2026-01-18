@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CommonEnvSchema } from '../shared/schemas/env.schema.ts';
+import { Logger } from '@/core/logger/Logger';
 
 const toBoolean = (value: string | boolean | undefined): boolean => {
     if (typeof value === 'boolean') return value;
@@ -56,7 +57,7 @@ const processEnv = {
 const parsed = FrontendEnvSchema.safeParse(processEnv);
 
 if (!parsed.success) {
-    console.error("Invalid environment configuration:", parsed.error.format());
+    Logger.error('Env', "Invalid environment configuration:", parsed.error.format());
 
     // Explicitly log missing keys for easier debugging
     const missingKeys: string[] = [];
@@ -65,8 +66,8 @@ if (!parsed.success) {
     if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
 
     if (missingKeys.length > 0) {
-        console.warn("WARNING: The following environment variables are missing:", missingKeys.join(', '));
-        console.warn("App will attempt to run with defaults, but some features may be disabled.");
+        Logger.warn('Env', "WARNING: The following environment variables are missing:", missingKeys.join(', '));
+        Logger.warn('Env', "App will attempt to run with defaults, but some features may be disabled.");
     }
 }
 
@@ -108,5 +109,5 @@ export const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-    console.warn("⚠️ Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID");
+    Logger.warn('Env', "⚠️ Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID");
 }

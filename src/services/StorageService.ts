@@ -6,6 +6,7 @@ import { HistoryItem } from '@/core/types/history';
 import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
+import { Logger } from '@/core/logger/Logger';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -49,14 +50,22 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 'state_changed',
                 (snapshot) => {
                     const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    Logger.debug('StorageService', `Upload is ${progress}% done`);
                     onProgress(progress);
                 },
                 (error) => {
+                    Logger.error('StorageService', 'Upload failed:', error);
                     reject(error);
                 },
                 async () => {
-                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-                    resolve(downloadURL);
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        Logger.info('StorageService', 'File available at', downloadURL);
+                        resolve(downloadURL);
+                    } catch (e) {
+                        Logger.error('StorageService', 'Failed to get download URL', e);
+                        reject(e);
+                    }
                 }
             );
         });

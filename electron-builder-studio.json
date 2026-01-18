@@ -53,20 +53,8 @@
     "hardenedRuntime": true,
     "icon": "assets/icon-studio.icns",
     "target": [
-      {
-        "target": "dmg",
-        "arch": [
-          "x64",
-          "arm64"
-        ]
-      },
-      {
-        "target": "zip",
-        "arch": [
-          "x64",
-          "arm64"
-        ]
-      }
+      "dmg",
+      "zip"
     ]
   },
   "dmg": {
@@ -105,7 +93,8 @@
       "en_AU"
     ],
     "oneClick": false,
-    "perMachine": false
+    "perMachine": false,
+    "uninstallDisplayName": "indiiOS Studio"
   },
   "npmRebuild": false,
   "productName": "indiiOS Studio",
@@ -128,18 +117,9 @@
   ],
   "win": {
     "target": [
-      {
-        "target": "nsis",
-        "arch": [
-          "x64",
-          "arm64"
-        ]
-      },
-      {
-        "target": "portable"
-      }
+      "nsis",
+      "portable"
     ],
-    "uninstallDisplayName": "indiiOS Studio",
     "verifyUpdateCodeSignature": true
   }
 }

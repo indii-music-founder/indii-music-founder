@@ -1,4 +1,4 @@
-import { ipcMain } from 'electron';
+import { ipcMain, app } from 'electron';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as os from 'os';
@@ -15,6 +15,19 @@ interface StagedFile {
     data: string;
     name: string;
 }
+
+/**
+ * Get the storage path for distribution data persistence.
+ * Uses app.getPath('userData') in production, falls back to temp in dev.
+ */
+const getStoragePath = (): string => {
+    try {
+        return path.join(app.getPath('userData'), 'distribution');
+    } catch {
+        // Fallback for development/testing
+        return path.join(os.tmpdir(), 'indiiOS-distribution');
+    }
+};
 
 export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:stage-release', async (event, releaseId: string, files: StagedFile[]) => {
@@ -181,8 +194,10 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-isrc', async (event, options?: any) => {
         try {
             validateSender(event);
+            const storagePath = getStoragePath();
             const args = ['generate_isrc'];
             if (options) args.push(JSON.stringify(options));
+            args.push('--storage-path', storagePath);
             const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
             return { success: true, isrc: report.isrc, report };
         } catch (error) {
@@ -203,7 +218,12 @@ export const setupDistributionHandlers = () => {
             // If the script dumps CSV, PythonBridge JSON parse will fail and return raw string.
             // We should ideally wrap the Python script output in JSON.
             // But for now, let's pass the raw string if it's CSV.
-            const result = await PythonBridge.runScript('distribution', 'content_id_csv_generator.py', [JSON.stringify(data)]);
+            const storagePath = getStoragePath();
+            const result = await PythonBridge.runScript('distribution', 'content_id_csv_generator.py', [
+                JSON.stringify(data),
+                '--storage-path',
+                storagePath
+            ]);
 
             // If result is a string (CSV content), wrap it. If it's an object (report), return it.
             if (typeof result === 'string') {
@@ -218,8 +238,10 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-upc', async (event, options?: any) => {
         try {
             validateSender(event);
+            const storagePath = getStoragePath();
             const args = ['generate_upc'];
             if (options) args.push(JSON.stringify(options));
+            args.push('--storage-path', storagePath);
             const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
             return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
         } catch (error) {
@@ -230,8 +252,10 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:register-release', async (event, metadata: any, releaseId?: string) => {
         try {
             validateSender(event);
+            const storagePath = getStoragePath();
             const args = ['register', JSON.stringify(metadata)];
             if (releaseId) args.push(releaseId);
+            args.push('--storage-path', storagePath);
             const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
             return { success: true, release: report };
         } catch (error) {
@@ -242,7 +266,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-ddex', async (event, metadata: any) => {
         try {
             validateSender(event);
-            const result = await PythonBridge.runScript('distribution', 'ddex_generator.py', [JSON.stringify(metadata)]);
+            const storagePath = getStoragePath();
+            const result = await PythonBridge.runScript('distribution', 'ddex_generator.py', [
+                JSON.stringify(metadata),
+                '--storage-path',
+                storagePath
+            ]);
             // Enhanced ddex_generator returns JSON with xml field
             if (typeof result === 'object' && result.xml) {
                 return { success: result.status === 'SUCCESS', xml: result.xml, report: result };
@@ -257,7 +286,13 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:generate-bwarm', async (event, data: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', ['bwarm', JSON.stringify(data)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', [
+                'bwarm',
+                JSON.stringify(data),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: report.status === 'SUCCESS', csv: report.csv, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -267,7 +302,13 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:check-merlin-status', async (event, data: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', ['merlin_check', JSON.stringify(data)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', [
+                'merlin_check',
+                JSON.stringify(data),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, Sparkles, Loader2, Calendar, Target, Users, MessageSquare, RefreshCw, Check } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
+import { Logger } from '@/core/logger/Logger';
 import {
     CampaignBrief,
     CampaignAsset,
@@ -104,7 +105,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
             let plan: GeneratedCampaignPlan;
             if (mockPlan) {
                 // Use the mock plan if available (Maestro Testing)
-                console.log("[AIGenerateCampaignModal] Using Mock AI Plan:", mockPlan);
+                Logger.info('CampaignModal', "Using Mock AI Plan:", mockPlan);
                 plan = mockPlan;
 
                 // Clear the mock so the next generation (e.g. retry) doesn't use the same one unless re-injected

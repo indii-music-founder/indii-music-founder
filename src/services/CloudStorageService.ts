@@ -10,6 +10,7 @@
 
 import { ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
 import { storage } from './firebase';
+import { Logger } from '@/core/logger/Logger';
 
 export interface ImageCompressionOptions {
     maxWidth?: number;
@@ -127,11 +128,11 @@ export class CloudStorageService {
         try {
             // Compress main image
             const compressed = await this.compressImage(dataUri);
-            console.log(`Image compressed: ${dataUri.length} → ${compressed.blob.size} bytes`);
+            Logger.info('CloudStorage', `Image compressed: ${dataUri.length} → ${compressed.blob.size} bytes`);
 
             // Generate thumbnail
             const thumbnail = await this.generateThumbnail(dataUri);
-            console.log(`Thumbnail generated: ${thumbnail.blob.size} bytes`);
+            Logger.info('CloudStorage', `Thumbnail generated: ${thumbnail.blob.size} bytes`);
 
             // Upload main image
             const imageRef = ref(storage, `users/${userId}/assets/${id}.jpg`);
@@ -150,7 +151,7 @@ export class CloudStorageService {
                 thumbnailSize: thumbnail.blob.size
             };
         } catch (error) {
-            console.error('Cloud upload failed:', error);
+            Logger.error('CloudStorage', 'Cloud upload failed:', error);
             throw error;
         }
     }
@@ -164,11 +165,11 @@ export class CloudStorageService {
             const thumbRef = ref(storage, `users/${userId}/thumbnails/${id}.jpg`);
 
             await Promise.all([
-                deleteObject(imageRef).catch(() => console.warn('Image not found')),
-                deleteObject(thumbRef).catch(() => console.warn('Thumbnail not found'))
+                deleteObject(imageRef).catch(() => Logger.warn('CloudStorage', 'Image not found for deletion')),
+                deleteObject(thumbRef).catch(() => Logger.warn('CloudStorage', 'Thumbnail not found for deletion'))
             ]);
         } catch (error) {
-            console.error('Delete failed:', error);
+            Logger.error('CloudStorage', 'Delete failed:', error);
         }
     }
 
