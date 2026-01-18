@@ -130,13 +130,15 @@ def package_itmsp(release_id, staging_path):
         return {"status": "FAIL", "error": str(e)}
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 3:
-        print(json.dumps({
-            "error": "Usage: package_itmsp.py <release_id> <staging_path>"
-        }))
-        sys.exit(1)
 
-    rid = sys.argv[1]
-    spath = sys.argv[2]
-    print(json.dumps(package_itmsp(rid, spath), indent=2))
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Apple ITMSP Bundle Packager")
+    parser.add_argument("release_id", help="The ID of the release")
+    parser.add_argument("staging_path", help="Path to the staged assets and metadata")
+    parser.add_argument("--storage-path", help="Path to the data store directory (unused but for consistency)")
+
+    args = parser.parse_args()
+
+    print(json.dumps(package_itmsp(args.release_id, args.staging_path), indent=2))

@@ -112,19 +112,18 @@ class QCValidator:
         }
 
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": (
-                "No metadata JSON provided. "
-                "Usage: python3 qc_validator.py '<metadata_json>'"
-            )
-        }))
-        sys.exit(1)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Distribution QC Validator")
+    parser.add_argument("payload", help="JSON payload containing metadata to validate")
+    parser.add_argument("--storage-path", help="Path to the data store directory (unused but for consistency)")
+
+    args = parser.parse_args()
 
     try:
-        input_payload = sys.argv[1]
-        metadata = json.loads(input_payload)
+        metadata = json.loads(args.payload)
 
         validator = QCValidator()
         result = validator.validate_metadata(metadata)

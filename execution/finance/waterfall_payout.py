@@ -93,36 +93,29 @@ def calculate_waterfall(
     return report
 
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": (
-                "Input JSON required. Example: '{\"gross\": 1000, "
-                "\"splits\": {\"artist\": 0.5, \"label\": 0.5}, "
-                "\"recoupment\": 100}'"
-            )
-        }))
-        sys.exit(1)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Waterfall Payout Calculator")
+    parser.add_argument("payload", help="JSON payload for the calculation")
+    parser.add_argument("--storage-path", help="Path to the data store directory (unused but for consistency)")
+
+    args = parser.parse_args()
 
     try:
-        input_data = json.loads(sys.argv[1])
+        input_data = json.loads(args.payload)
 
         # Mandatory field validation
         if "gross" not in input_data or "splits" not in input_data:
             raise ValueError("Missing 'gross' or 'splits' in input data.")
 
         payout_report = calculate_waterfall(
-            gross_amount=float(
-                input_data["gross"]),
+            gross_amount=float(input_data["gross"]),
             party_splits=input_data["splits"],
-            recoupment_remaining=float(
-                input_data.get(
-                    "recoupment",
-                    0)),
-            platform_fee_percent=float(
-                input_data.get(
-                    "indii_fee_percent",
-                    0.15)))
+            recoupment_remaining=float(input_data.get("recoupment", 0)),
+            platform_fee_percent=float(input_data.get("indii_fee_percent", 0.15))
+        )
         print(json.dumps(payout_report, indent=2))
 
     except (json.JSONDecodeError, ValueError, TypeError, KeyError) as e:

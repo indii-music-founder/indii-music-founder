@@ -145,3 +145,21 @@ export interface PackageResponse extends IPCResponse<any> {
     files?: string[];
     message?: string;
 }
+
+export interface SFTPConfig {
+    host: string;
+    port?: number;
+    user: string;
+    password?: string;
+    key?: string; // Path to private key
+    localPath: string;
+    remotePath?: string;
+}
+
+export interface SFTPReport {
+    status: 'SUCCESS' | 'FAIL';
+    message: string;
+    host: string;
+    remote_path: string;
+}
+

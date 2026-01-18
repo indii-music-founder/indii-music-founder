@@ -16,7 +16,9 @@ import {
     WaterfallData,
     WaterfallReport,
     TaxReport,
-    ValidationReport
+    ValidationReport,
+    SFTPConfig,
+    SFTPReport
 } from '@/types/distribution';
 
 export type { DistributionTaskDocument as DistributionTask };
@@ -340,6 +342,26 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             return result.csv || JSON.stringify(result.report);
         } catch (error) {
             console.error('[Distribution] BWARM engine error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Transmit a release package via SFTP
+     */
+    async transmit(config: SFTPConfig): Promise<SFTPReport> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for transmission');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.transmit(config);
+            if (!result.success || !result.report) {
+                throw new Error(result.error || 'Transmission failed');
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Transmission engine error:', error);
             throw error;
         }
     }

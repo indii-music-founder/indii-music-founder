@@ -45,6 +45,7 @@ vi.mock('@/core/store', () => {
 vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
         getWhiskStatus: vi.fn().mockResolvedValue({}),
+        synthesizeVideoPrompt: vi.fn((prompt) => prompt), // Identity function for mock
     }
 }));
 

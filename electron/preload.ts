@@ -72,7 +72,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
         runForensics: (filePath: string) => ipcRenderer.invoke('distribution:run-forensics', filePath),
         packageITMSP: (releaseId: string) => ipcRenderer.invoke('distribution:package-itmsp', releaseId),
-        calculateTax: (userId: string, amount: number) => ipcRenderer.invoke('distribution:calculate-tax', userId, amount),
+        calculateTax: (data: any) => ipcRenderer.invoke('distribution:calculate-tax', data),
         certifyTax: (userId: string, data: any) => ipcRenderer.invoke('distribution:certify-tax', userId, data),
         executeWaterfall: (data: any) => ipcRenderer.invoke('distribution:execute-waterfall', data),
         validateMetadata: (metadata: any) => ipcRenderer.invoke('distribution:validate-metadata', metadata),
@@ -83,6 +83,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         generateContentIdCSV: (data: any) => ipcRenderer.invoke('distribution:generate-content-id-csv', data),
         generateBWARM: (data: any) => ipcRenderer.invoke('distribution:generate-bwarm', data),
         checkMerlinStatus: (data: any) => ipcRenderer.invoke('distribution:check-merlin-status', data),
+        transmit: (config: any) => ipcRenderer.invoke('distribution:transmit', config),
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),

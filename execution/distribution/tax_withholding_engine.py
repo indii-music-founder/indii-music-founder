@@ -236,42 +236,40 @@ class TaxComplianceOfficer:
         return user_record
 
 
+
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Tax Compliance & Withholding Engine")
+    parser.add_argument("command", choices=["certify", "calculate"], help="Command to execute")
+    parser.add_argument("user_id", help="Beneficiary User ID")
+    parser.add_argument("payload", help="JSON payload or Amount")
+    parser.add_argument("--storage-path", help="Path to the data store directory")
+
+    args = parser.parse_args()
+
     # Base paths
-    BASE_DIR = os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
+    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     TREATY_FILE = os.path.join(BASE_DIR, "resources/finance/tax_treaties.json")
-    STORE_FILE = os.path.join(BASE_DIR, "tax_compliance_store.json")
+    
+    # Determine store path
+    store_file = os.path.join(BASE_DIR, "tax_compliance_store.json")
+    if args.storage_path:
+        os.makedirs(args.storage_path, exist_ok=True)
+        store_file = os.path.join(args.storage_path, "tax_compliance_store.json")
 
-    officer = TaxComplianceOfficer(TREATY_FILE, STORE_FILE)
-
-    if len(sys.argv) < 2:
-        print(json.dumps(
-            {"error": "Usage: tax_engine.py [certify|calculate] ..."}))
-        sys.exit(1)
-
-    command = sys.argv[1].lower()
+    officer = TaxComplianceOfficer(TREATY_FILE, store_file)
 
     try:
-        if command == "certify":
-            # Usage: python3 tax_engine.py certify "usr_123" '{"is_us_person":
-            # false, ...}'
-            uid = sys.argv[2]
-            payload = json.loads(sys.argv[3])
-            result = officer.certify_user(uid, payload)
+        if args.command == "certify":
+            payload = json.loads(args.payload)
+            result = officer.certify_user(args.user_id, payload)
             print(json.dumps(result, indent=2))
 
-        elif command == "calculate":
-            # Usage: python3 tax_engine.py calculate "usr_123" 1500.50
-            uid = sys.argv[2]
-            amt = float(sys.argv[3])
-            result = officer.calculate_withholding(uid, amt)
+        elif args.command == "calculate":
+            amt = float(args.payload)
+            result = officer.calculate_withholding(args.user_id, amt)
             print(json.dumps(result, indent=2))
-        else:
-            print(json.dumps({"error": f"Unknown command: {command}"}))
-            sys.exit(1)
 
     except Exception as e:
         logger.exception("Tax Engine Execution Error")

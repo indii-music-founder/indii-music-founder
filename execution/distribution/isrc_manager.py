@@ -165,11 +165,25 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # Determine store path
+    # Determine store path and fix potential argparse greedy consumption
+    storage_path = args.storage_path
+    
+    # If storage_path is None but payload or extra_arg looks like a flag
+    # this is a heuristic to fix Electron bridge's positional argument gaps
+    if storage_path is None:
+        if args.payload == "--storage-path" and args.extra_arg:
+            storage_path = args.extra_arg
+            args.payload = None
+            args.extra_arg = None
+        elif args.extra_arg == "--storage-path":
+            # This case shouldn't happen with the current bridge but for safety
+            # we'd need to look at sys.argv for the value after --storage-path
+            pass
+
     store_file = None
-    if args.storage_path:
-        os.makedirs(args.storage_path, exist_ok=True)
-        store_file = os.path.join(args.storage_path, "identity_store.json")
+    if storage_path:
+        os.makedirs(storage_path, exist_ok=True)
+        store_file = os.path.join(storage_path, "identity_store.json")
 
     manager = IdentityManager(store_path=store_file)
 

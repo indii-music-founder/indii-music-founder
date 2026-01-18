@@ -8,27 +8,23 @@
   ],
   "buildVersion": "1.0.0",
   "copyright": "Copyright \u00a9 2025 IndiiOS LLC",
-  "description": "The Operating System for Independent Artists - Studio Edition with AI-powered creativity tools",
   "directories": {
     "buildResources": "build",
     "output": "dist-electron-studio"
   },
-  "exclude": [
-    "**/test/**/*",
-    "**/*.spec.ts",
-    "**/*.spec.tsx",
-    "**/*.md",
-    "docs/**/*",
-    ".github/**/*",
-    "**/.env.example",
-    "**/.env.*",
-    "!node_modules/@rollup/rollup-linux-x64-gnu/**"
-  ],
   "files": [
     "dist/**/*",
     "dist-electron/**/*",
     "node_modules/**/*",
-    "package.json"
+    "package.json",
+    "!**/test/**/*",
+    "!**/*.spec.ts",
+    "!**/*.spec.tsx",
+    "!**/*.md",
+    "!docs/**/*",
+    "!.github/**/*",
+    "!**/.env.example",
+    "!**/.env.*"
   ],
   "linux": {
     "category": "AudioVideo",
@@ -58,35 +54,28 @@
     ]
   },
   "dmg": {
-    "background-color": "#0d1117",
+    "backgroundColor": "#0d1117",
     "contents": [
       {
-        "path": "dist-electron-studio/indiiOS Studio.app",
-        "type": "file",
         "x": 130,
         "y": 220
       },
       {
-        "path": "Applications",
-        "type": "file",
         "x": 410,
-        "y": 220
+        "y": 220,
+        "type": "link",
+        "path": "/Applications"
       }
     ],
     "icon": "assets/icon-studio.icns",
-    "iconText": "",
-    "window": {
-      "title": "indiiOS Studio"
-    }
+    "window": {}
   },
   "nsis": {
     "allowElevation": true,
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false,
     "displayLanguageSelector": true,
-    "include": [
-      "build/installer.nsh"
-    ],
+    "include": "build/installer.nsh",
     "installerLanguages": [
       "en_US",
       "en_GB",

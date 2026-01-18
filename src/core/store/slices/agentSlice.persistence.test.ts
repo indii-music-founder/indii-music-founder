@@ -3,19 +3,20 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
 
-// Mock SessionService dynamic import
-const { mockUpdateSession, mockCreateSession } = vi.hoisted(() => ({
-    mockUpdateSession: vi.fn().mockResolvedValue(undefined),
-    mockCreateSession: vi.fn().mockResolvedValue('new-session-id')
-}));
-
+// Mock must be defined before imports that use it
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
-        updateSession: mockUpdateSession,
+        updateSession: vi.fn().mockResolvedValue(undefined),
         getSessionsForUser: vi.fn().mockResolvedValue([]),
-        createSession: mockCreateSession
+        createSession: vi.fn().mockResolvedValue('new-session-id'),
+        deleteSession: vi.fn().mockResolvedValue(undefined)
     }
 }));
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createStore } from 'zustand';
+import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
     let useStore: any;
@@ -49,7 +50,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The message should be persisted to storage
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({
                 messages: expect.arrayContaining([

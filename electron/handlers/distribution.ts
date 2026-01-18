@@ -134,7 +134,13 @@ export const setupDistributionHandlers = () => {
             const stagingPath = path.join(tempDir, 'indiiOS-releases', releaseId);
 
             // Execute Python Script
-            const report = await PythonBridge.runScript('distribution', 'package_itmsp.py', [releaseId, stagingPath]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'package_itmsp.py', [
+                releaseId,
+                stagingPath,
+                '--storage-path',
+                storagePath
+            ]);
 
             return {
                 success: report.status === 'PASS',
@@ -154,7 +160,14 @@ export const setupDistributionHandlers = () => {
             validateSender(event);
             const { userId, amount } = data || {};
             if (!userId || amount === undefined) throw new Error('Missing userId or amount');
-            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['calculate', userId, String(amount)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', [
+                'calculate',
+                userId,
+                String(amount),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -164,7 +177,14 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:certify-tax', async (event, userId: string, data: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', ['certify', userId, JSON.stringify(data)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', [
+                'certify',
+                userId,
+                JSON.stringify(data),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -174,7 +194,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:execute-waterfall', async (event, data: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('finance', 'waterfall_payout.py', [JSON.stringify(data)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('finance', 'waterfall_payout.py', [
+                JSON.stringify(data),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -184,7 +209,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:validate-metadata', async (event, metadata: any) => {
         try {
             validateSender(event);
-            const report = await PythonBridge.runScript('distribution', 'qc_validator.py', [JSON.stringify(metadata)]);
+            const storagePath = getStoragePath();
+            const report = await PythonBridge.runScript('distribution', 'qc_validator.py', [
+                JSON.stringify(metadata),
+                '--storage-path',
+                storagePath
+            ]);
             return { success: report.valid, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -310,6 +340,34 @@ export const setupDistributionHandlers = () => {
                 storagePath
             ]);
             return { success: true, report };
+        } catch (error) {
+            return { success: false, error: error instanceof Error ? error.message : String(error) };
+        }
+    });
+    ipcMain.handle('distribution:transmit', async (event, config: any) => {
+        try {
+            validateSender(event);
+            const { host, port, user, password, key, localPath, remotePath } = config;
+
+            if (!host || !user || !localPath) {
+                throw new Error('Missing required SFTP configuration (host, user, or localPath)');
+            }
+
+            const storagePath = getStoragePath();
+            const args = [
+                '--host', host,
+                '--port', String(port || 22),
+                '--user', user,
+                '--local', localPath,
+                '--remote', remotePath || '.',
+                '--storage-path', storagePath
+            ];
+
+            if (password) args.push('--password', password);
+            if (key) args.push('--key', key);
+
+            const report = await PythonBridge.runScript('distribution', 'sftp_uploader.py', args);
+            return { success: report.status === 'SUCCESS', report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
         }
