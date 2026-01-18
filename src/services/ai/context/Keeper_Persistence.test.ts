@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SessionService } from '@/services/agent/SessionService'; // Direct import of class if possible, or module
+import { sessionService } from '@/services/agent/SessionService';
 
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({

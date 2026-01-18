@@ -220,7 +220,7 @@ export const findPlaces = functions
             // Map to simplified structure
             const places = placesRes.data.results.map(p => ({
                 name: p.name,
-                address: p.vicinity,
+                vicinity: p.vicinity,
                 rating: p.rating,
                 isOpen: p.opening_hours?.open_now,
                 place_id: p.place_id,

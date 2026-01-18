@@ -17,9 +17,6 @@ import {
 import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
 
-// Simple in-memory mock storage for test environments
-const testMemoryStore: Record<string, any> = {};
-
 export class MarketingService {
     /**
      * Get Marketing Stats
@@ -36,10 +33,9 @@ export class MarketingService {
                 return snapshot.data() as { totalReach: number; engagementRate: number; activeCampaigns: number };
             }
         } catch (e) {
-            console.warn("MarketingService: Stats fetch failed (likely stub/test env). Returning mock defaults.");
+            console.warn("MarketingService: Stats fetch failed", e);
         }
 
-        // Return default stats without seeding if write fails
         return {
             totalReach: 0,
             engagementRate: 0,
@@ -57,11 +53,6 @@ export class MarketingService {
     static async getCampaigns(): Promise<CampaignAsset[]> {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return [];
-
-        // TEST MODE HOOK: Return mock campaigns if in test mode
-        if (userProfile.id === 'maestro-user-id' || (typeof window !== 'undefined' && (window as any).TEST_MODE)) {
-            return Object.values(testMemoryStore);
-        }
 
         try {
             const q = query(
@@ -81,7 +72,7 @@ export class MarketingService {
                 } as CampaignAsset;
             });
         } catch (e) {
-            console.warn("MarketingService: Campaign fetch failed. Returning empty list.");
+            console.error("MarketingService: Campaign fetch failed", e);
             return [];
         }
     }
@@ -90,11 +81,6 @@ export class MarketingService {
      * Get a single campaign by ID
      */
     static async getCampaignById(id: string): Promise<CampaignAsset | null> {
-        // Check memory store first (for test environments)
-        if (id.startsWith('mock-campaign-')) {
-            return testMemoryStore[id] || null;
-        }
-
         try {
             const docRef = doc(db, 'campaigns', id);
             const snapshot = await getDoc(docRef);
@@ -108,6 +94,7 @@ export class MarketingService {
             }
             return null;
         } catch (error) {
+            console.error("MarketingService: Failed to fetch campaign", error);
             return null;
         }
     }
@@ -118,25 +105,7 @@ export class MarketingService {
     static async createCampaign(campaign: Omit<CampaignAsset, 'id'>): Promise<string> {
         const userProfile = useStore.getState().userProfile;
 
-        // Allow creation in test mode even if user is mocked/stubbed
-        // But if userProfile is missing entirely, throw.
         if (!userProfile?.id) throw new Error("User not authenticated");
-
-        // TEST MODE HOOK: If running in E2E test with a mock user (usually 'maestro-user-id'),
-        // we bypass Firestore and store in memory to ensure reliability.
-        if (userProfile.id === 'maestro-user-id' || (typeof window !== 'undefined' && (window as any).TEST_MODE)) {
-            const mockId = 'mock-campaign-' + Date.now();
-            const mockCampaign = {
-                ...campaign,
-                id: mockId,
-                userId: userProfile.id,
-                createdAt: new Date(),
-                status: CampaignStatus.PENDING
-            };
-            testMemoryStore[mockId] = mockCampaign;
-            console.log("[MarketingService] Created mock campaign in memory:", mockId);
-            return mockId;
-        }
 
         const campaignData = {
             ...campaign,
@@ -160,15 +129,13 @@ export class MarketingService {
      * Update an existing campaign
      */
     static async updateCampaign(id: string, updates: Partial<CampaignAsset>) {
-        if (id.startsWith('mock-campaign-')) {
-            if (testMemoryStore[id]) {
-                testMemoryStore[id] = { ...testMemoryStore[id], ...updates };
-            }
-            return;
+        try {
+            const docRef = doc(db, 'campaigns', id);
+            const { id: _id, ...cleanUpdates } = updates;
+            await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
+        } catch (error) {
+            console.error("MarketingService: Update failed", error);
+            throw error;
         }
-
-        const docRef = doc(db, 'campaigns', id);
-        const { id: _id, ...cleanUpdates } = updates;
-        await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
     }
 }

@@ -1,18 +1,14 @@
 import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
-
-declare global {
-    interface Window {
-        __MOCK_LIBRARY__?: Record<string, AnalyzedTrack>;
-    }
-}
+import { AudioSemanticData } from '@/services/audio/types';
 
 export interface AnalyzedTrack {
     id: string; // Typically a hash of the file or consistent local ID
     userId: string;
     filename: string;
     features: AudioFeatures;
+    semantic?: AudioSemanticData; // Optional semantic data from Gemini
     analyzedAt: string; // ISO string
     fileHash?: string; // Optional hash for de-duplication
 }
@@ -27,30 +23,21 @@ export class MusicLibraryService {
         trackId: string,
         filename: string,
         features: AudioFeatures,
-        fileHash?: string
+        fileHash?: string,
+        semantic?: AudioSemanticData
     ): Promise<void> {
-        const userId = auth.currentUser?.uid || 'mock-user';
+        const userId = auth.currentUser?.uid;
+        if (!userId) return;
 
         const data: AnalyzedTrack = {
             id: trackId,
             userId,
             filename,
             features,
+            semantic,
             analyzedAt: new Date().toISOString(),
             fileHash
         };
-
-        // E2E Mock Support
-        if (window.__MOCK_LIBRARY__) {
-            window.__MOCK_LIBRARY__[trackId] = data;
-            if (fileHash) {
-                window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
-            }
-            console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
-            return;
-        }
-
-        if (!auth.currentUser) return;
 
         try {
             const trackRef = doc(db, this.COLLECTION, userId, 'analyzed_tracks', trackId);
@@ -66,11 +53,6 @@ export class MusicLibraryService {
      * Retrieves cached analysis if available.
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
-        // E2E Mock Support
-        if (window.__MOCK_LIBRARY__?.[trackId]) {
-            return window.__MOCK_LIBRARY__[trackId];
-        }
-
         if (!auth.currentUser) return null;
 
         const userId = auth.currentUser.uid;
@@ -93,11 +75,6 @@ export class MusicLibraryService {
      * Retrieves cached analysis by file hash (for de-duplication).
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
-        // E2E Mock Support
-        if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
-        }
-
         if (!auth.currentUser) return null;
 
         const userId = auth.currentUser.uid;

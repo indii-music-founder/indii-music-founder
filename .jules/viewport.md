@@ -1,3 +1,7 @@
-## 2026-02-xx - Tool Output Injection & Markdown Escaping
-**Learning:** When injecting simulated Tool Outputs (JSON) into the chat store for testing, `ReactMarkdown` processes the text first. If the component relies on regex matching against the *rendered* text content (like `ChatMessage.tsx`), you must double-escape quotes in the inner JSON string (`replace(/"/g, '\\"')`) so that they survive Markdown's unescaping behavior and remain valid JSON for `JSON.parse`.
-**Action:** When writing tests for tool outputs, verify if the component parses raw markdown or rendered text, and escape JSON strings accordingly.
+## 2025-06-27 - [Toolbar Layouts]
+**Learning:** Absolute positioning (`absolute bottom-3`) for toolbars creates fragile layouts on mobile that break when content scales or containers resize.
+**Action:** Always use `flex justify-between items-center` with `min-h-[44px]` for input toolbars to ensure buttons remain accessible and the layout adapts to content changes.
+
+## 2025-05-24 - [Fixed Width on Modal Overlays]
+**Learning:** Hardcoded pixel widths (e.g., `w-[500px]`) on modals cause severe overflow on mobile devices, rendering them unusable and off-screen.
+**Action:** Use `w-full md:w-[500px]` and `inset-0 md:inset-auto` pattern for responsive modals that need to be full-screen on mobile and floating on desktop.

@@ -7,7 +7,8 @@ import {
     DistributorEarnings,
     AggregatedEarnings,
     DateRange,
-    IDistributorAdapter
+    IDistributorAdapter,
+    DistributorCredentials
 } from '@/services/distribution/types/distributor';
 
 // Import Adapters
@@ -35,15 +36,12 @@ export class RevenueService {
      */
     async getAggregatedEarnings(period: DateRange): Promise<AggregatedEarnings[]> {
         const connectedAdapters = Array.from(this.adapters.values());
-        // In a real app, we'd filter by await adapter.isConnected()
 
         const allEarningsPromises = connectedAdapters.map(async (adapter) => {
             try {
-                // Mock: assume connected for demo if needed, or check
                 if (await adapter.isConnected()) {
                     return await adapter.getAllEarnings(period);
                 }
-                // Return empty if not connected to avoid breaking the flow
                 return [];
             } catch (e) {
                 console.error(`Failed to fetch earnings from ${adapter.name}`, e);
@@ -73,10 +71,10 @@ export class RevenueService {
                 totalGrossRevenue: 0,
                 totalFees: 0,
                 totalNetRevenue: 0,
-                currencyCode: 'USD', // Simplified for demo
+                currencyCode: 'USD',
                 byDistributor: earnings,
-                byPlatform: [], // Would need breakdown logic
-                byTerritory: [] // Would need breakdown logic
+                byPlatform: [],
+                byTerritory: []
             };
 
             return earnings.reduce((acc, curr) => {
@@ -99,12 +97,14 @@ export class RevenueService {
     }
 
     /**
-     * Mock: Connect an adapter for testing/demo purposes
+     * Connect an adapter - requires valid credentials
      */
-    async connectDistributor(id: DistributorId): Promise<void> {
+    async connectDistributor(id: DistributorId, creds: DistributorCredentials): Promise<void> {
         const adapter = this.adapters.get(id);
         if (adapter) {
-            await adapter.connect({ username: 'demo', password: 'demo' }); // Mock creds
+            await adapter.connect(creds);
+        } else {
+            throw new Error(`Distributor adapter not found: ${id}`);
         }
     }
 }

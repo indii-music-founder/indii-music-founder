@@ -13,36 +13,37 @@ const mockElectronAPI = {
         executeWaterfall: vi.fn(),
         validateMetadata: vi.fn(),
         generateISRC: vi.fn(),
+        generateUPC: vi.fn(),
+        generateDDEX: vi.fn(),
         generateContentIdCSV: vi.fn(),
+        checkMerlinStatus: vi.fn(),
+        generateBWARM: vi.fn(),
     }
 };
 
 describe('DistributionService Integration', () => {
     beforeEach(() => {
-        // @ts-expect-error - Mocking Electron API globally
-        // @ts-expect-error - Mocking Electron API on window
-        window.electronAPI = mockElectronAPI;
+        (window as any).electronAPI = mockElectronAPI;
         vi.clearAllMocks();
     });
 
     afterEach(() => {
-        // @ts-expect-error - deleting global property
-        delete window.electronAPI;
         // Clean up Electron API mock
         (window as any).electronAPI = undefined;
     });
 
     it('should call validateMetadata via IPC', async () => {
-        const metadata = { title: 'Test Release' };
+        const metadata = { releaseId: '123', title: 'Test Release', artists: ['Me'], tracks: [] };
+        // Valid ValidationReport response
         mockElectronAPI.distribution.validateMetadata.mockResolvedValue({
             success: true,
-            report: { valid: true, details: 'LGTM' }
+            report: { valid: true, errors: [] }
         });
 
         const result = await distributionService.validateReleaseMetadata(metadata);
 
         expect(mockElectronAPI.distribution.validateMetadata).toHaveBeenCalledWith(metadata);
-        expect(result).toEqual({ valid: true, details: 'LGTM' });
+        expect(result).toEqual({ valid: true, errors: [] });
     });
 
     it('should call generateISRC via IPC', async () => {
@@ -63,7 +64,7 @@ describe('DistributionService Integration', () => {
         mockElectronAPI.distribution.generateContentIdCSV.mockResolvedValue({
             success: true,
             csvData: 'ISRC,Title\nUS123,Test',
-            report: { status: 'SUCCESS' }
+            report: { status: 'SUCCESS', generated_count: 1 }
         });
 
         const result = await distributionService.generateContentIdAssets(data);
@@ -83,8 +84,8 @@ describe('DistributionService Integration', () => {
     });
 
     it('should handle waterfall execution success', async () => {
-        const data = { gross: 1000, splits: { 'user1': 1.0 } };
-        const mockReport = { distributions: { 'user1': 1000 } };
+        const data = { gross_revenue: 1000, splits: { 'user1': 1.0 } };
+        const mockReport = { distributions: { 'user1': 1000 }, net_revenue: 1000, processed_at: '2024-01-01' };
         mockElectronAPI.distribution.executeWaterfall.mockResolvedValue({
             success: true,
             report: mockReport
@@ -92,5 +93,16 @@ describe('DistributionService Integration', () => {
 
         const result = await distributionService.executeWaterfall(data);
         expect(result).toEqual(mockReport);
+    });
+
+    it('should call generateDDEX via IPC', async () => {
+        const metadata = { releaseId: '123', title: 'Test', artists: [], tracks: [] };
+        mockElectronAPI.distribution.generateDDEX.mockResolvedValue({
+            success: true,
+            xml: '<xml>DDEX</xml>'
+        });
+
+        const result = await distributionService.generateDDEX(metadata);
+        expect(result).toBe('<xml>DDEX</xml>');
     });
 });

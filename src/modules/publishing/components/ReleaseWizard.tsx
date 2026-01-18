@@ -229,6 +229,20 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
           />
         </div>
 
+        {/* ISRC */}
+        <div>
+          <label className="block text-sm font-medium text-gray-300 mb-2">
+            ISRC code
+          </label>
+          <input
+            type="text"
+            value={metadata.isrc || ''}
+            onChange={e => updateMetadata({ isrc: e.target.value.toUpperCase() })}
+            placeholder="US-XXX-25-XXXXX (Optional - will generate if empty)"
+            className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-blue-400 font-mono placeholder-gray-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+          />
+        </div>
+
         {/* Release Date */}
         <div>
           <label className="block text-sm font-medium text-gray-300 mb-2">

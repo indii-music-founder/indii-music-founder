@@ -7,9 +7,10 @@ import { License, LicenseRequest } from '@/services/licensing/types';
 interface MetricsGridProps {
     activeLicensesCount: number;
     pendingRequestsCount: number;
+    projectedValue: number;
 }
 
-export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, pendingRequestsCount }) => {
+export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, pendingRequestsCount, projectedValue }) => {
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <MetricCard
@@ -29,8 +30,8 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, p
                 gradient="from-blue-500/10 to-transparent"
             />
             <MetricCard
-                title="Beta: Projected Value"
-                value={`$${(activeLicensesCount * 12500).toLocaleString()}`} // Simulated projection for Beta
+                title="Projected Value"
+                value={`$${projectedValue.toLocaleString()}`}
                 trend="+8.5%"
                 icon={TrendingUp}
                 color="text-purple-400"

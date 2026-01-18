@@ -95,14 +95,6 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
             required: ['title', 'description', 'posts']
         };
 
-        // E2E Test Mock Bypass
-        // @ts-expect-error - injected by Playwright
-        if (import.meta.env.DEV && window.__MOCK_AI_PLAN__) {
-            console.log('[CampaignAIService] Using MOCK AI Plan');
-            // @ts-expect-error - injected by Playwright
-            return window.__MOCK_AI_PLAN__;
-        }
-
         try {
             const result = await AI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
 

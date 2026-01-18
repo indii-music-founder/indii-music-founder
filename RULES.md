@@ -60,6 +60,15 @@
 
 ---
 
+## 🔌 RULE: FULL STACK COMPLETION (Backend Sync)
+
+**Goal:** Prevent frontend/backend drift.
+
+* **Requirement:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement/build the backend logic immediately.
+* **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
+
+---
+
 ## 🏗️ RULE: THE AGENT CONSTITUTION (Technical Governance)
 
 **Reference:** See `agents.md` for strict technical rules enforced on the AI Agent.

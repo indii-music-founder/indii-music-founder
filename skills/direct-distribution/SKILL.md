@@ -11,6 +11,7 @@
 | 3 | Authority Layer | ✅ Complete | `AuthorityPanel.tsx`, `isrc_manager.py` |
 | 4 | Bank Layer | ✅ Complete | `BankPanel.tsx`, `tax_withholding_engine.py`, `waterfall_payout.py` |
 | 5 | Keys (Merlin/MLC) | ✅ Complete | `KeysPanel.tsx`, `keys_manager.py` |
+| 6 | Transmission | ✅ Complete | `DeliveryService.ts`, `SFTPTransporter.ts` |
 
 ---
 
@@ -49,11 +50,19 @@
 * **MLC Bridge**: BWARM CSV generation (The MLC Standard) implemented.
 * **External Connections**: Future direct API integrations (Merlin/MLC).
 
+## 🛰️ Phase 6: Transmission (Active Delivery)
+
+* **Gateway**: Secure SFTP transmission via Electron IPC bridges.
+* **Orchestration**: `DeliveryService.ts` handles package staging, validation, and multi-threaded upload.
+* **Security**: Path-containment and symlink resolution in `electron/handlers/sftp.ts`.
+* **Reliability**: Automated retry logic and connection pooling via `SFTPTransporter.ts`.
+
 ## 🛠️ Execution Toolbox
 
 | Script | Function | Category |
 | :--- | :--- | :--- |
 | `ddex_generator.py` | Industrial XML generation | Metal |
+| `package_itmsp.py` | Apple Music Store Package | Metal |
 | `audio_forensics.py` | Spectral fraud detection | Brain |
 | `qc_validator.py` | DSP style guide enforcement | Brain |
 | `content_id_csv_generator.py` | YouTube CID bulk metadata | Brain |
@@ -61,6 +70,8 @@
 | `tax_withholding_engine.py` | Digital tax officer (W-8/W-9/TIN) | Bank |
 | `waterfall_payout.py` | Multi-party industrial settlement | Bank |
 | `keys_manager.py` | BWARM/Merlin Compliance | Keys |
+| `DeliveryService.ts` | Multi-threaded package delivery | Transmission |
+| `SFTPTransporter.ts` | SFTP connection pooling | Transmission |
 
 ## 🖥️ UI Components
 
@@ -71,12 +82,12 @@ All panels are accessible via the **Distribution Dashboard** (`/distribution`):
 * **Authority Tab**: ISRC/UPC/DDEX generation
 * **Brain (QC) Tab**: Metadata validation & Content ID
 * **Keys Tab**: Merlin Readiness & BWARM Generation
-* **Active Releases Tab**: Delivery tracking
+* **Active Releases Tab**: Real-time delivery tracking and transmission monitor
 
 ## 🔌 Electron Integration
 
-All Python scripts are executed via `PythonBridge` in the Electron main process:
+All Python scripts and network protocols are executed via the Electron main process:
 
-* IPC handlers in `electron/handlers/distribution.ts`
+* IPC handlers in `electron/handlers/distribution.ts` and `electron/handlers/sftp.ts`
 * Preload bridge in `electron/preload.ts`
 * Type definitions in `src/types/electron.d.ts`

@@ -426,6 +426,34 @@ service cloud.firestore {
     }
 
     // ========================================
+    // MARKETING CAMPAIGNS (User Scoped)
+    // ========================================
+
+    match /campaigns/{campaignId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // TOURING & LOGISTICS (User Scoped)
+    // ========================================
+
+    match /tour_vehicles/{vehicleId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /tour_itineraries/{itineraryId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /tour_rider_items/{itemId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

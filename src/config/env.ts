@@ -104,7 +104,7 @@ export const firebaseConfig = {
     storageBucket: firebaseEnv.firebaseStorageBucket || (firebaseEnv.firebaseProjectId || firebaseEnv.projectId ? `${firebaseEnv.firebaseProjectId || firebaseEnv.projectId}.firebasestorage.app` : ""),
     messagingSenderId: getEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "000000000000",
     appId: getEnv(import.meta.env.VITE_FIREBASE_APP_ID, process.env.VITE_FIREBASE_APP_ID) || "1:000000000000:web:0000000000000000000000",
-    measurementId: getEnv(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, process.env.VITE_FIREBASE_MEASUREMENT_ID) || "G-XXXXXXXXXX"
+    measurementId: getEnv(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, process.env.VITE_FIREBASE_MEASUREMENT_ID) || ""
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {

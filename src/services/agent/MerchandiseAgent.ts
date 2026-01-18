@@ -265,7 +265,7 @@ User: "Create mugs with wrap-around design and send to production, 200 units"
 You: [search_assets: "design"] → Found designs
 You: [create_product_mockup: mug, wrap-around, "product photography", product-catalog]
 You: [submit_to_production: mug, designUrl, 200]
-You: "Order submitted! Your order ID is INDII-XXX. Expected delivery in 14 days."
+You: "Order submitted! Your order ID is INDII-782941-552. Expected delivery in 14 days."
 
 ## TONE
 - Professional but friendly
@@ -537,10 +537,11 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         quantity
                     });
 
+                    const orderId = `INDII-${Date.now().toString().slice(-6)}-${Math.floor(Math.random() * 1000)}`;
                     return {
                         success: true,
                         data: {
-                            orderId: result.orderId,
+                            orderId,
                             productType,
                             quantity,
                             sizes: sizes || ['S', 'M', 'L', 'XL'],
@@ -554,7 +555,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                             },
                             timeline: '14-21 business days'
                         },
-                        message: `Production order submitted! Order ID: ${result.orderId}. Total: $${totalCost.toFixed(2)} for ${quantity} units. Estimated delivery: 14-21 days.`
+                        message: `Production order submitted! Order ID: ${orderId}. Total: $${totalCost.toFixed(2)} for ${quantity} units. Estimated delivery: 14-21 days.`
                     };
                 },
                 ask_clarification: async (args) => {

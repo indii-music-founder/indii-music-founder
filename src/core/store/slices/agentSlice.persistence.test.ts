@@ -13,7 +13,13 @@ const mockSessionService = {
     }
 };
 
-vi.mock('@/services/agent/SessionService', () => mockSessionService);
+vi.mock('@/services/agent/SessionService', () => ({
+    sessionService: {
+        updateSession: mockUpdateSession,
+        getSessionsForUser: vi.fn().mockResolvedValue([]),
+        createSession: vi.fn().mockResolvedValue('new-session-id')
+    }
+}));
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
     let useStore: any;

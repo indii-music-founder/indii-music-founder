@@ -8,7 +8,7 @@ export const BankPanel: React.FC = () => {
     const [userId, setUserId] = useState('user_123'); // Default mock user
     const [amount, setAmount] = useState('1000');
     const [loading, setLoading] = useState(false);
-    const [report, setReport] = useState<any>(null);
+    const [report, setReport] = useState<import('@/types/distribution').TaxReport | null>(null);
 
     const handleCalculate = async () => {
         setLoading(true);
@@ -89,42 +89,47 @@ export const BankPanel: React.FC = () => {
                     ) : (
                         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                             <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${report.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${report.payout_status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
                                     }`}>
-                                    Status: {report.status}
+                                    Status: {report.payout_status}
                                 </span>
-                                <span className="text-xs text-zinc-500 font-mono">ID: {report.user_id}</span>
+                                <span className="text-xs text-zinc-500 font-mono">TIN: {report.tin_masked}</span>
                             </div>
 
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                                    <span className="block text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Tax Treaty</span>
-                                    <span className="text-lg font-mono text-white">{report.country} ({report.treaty_article})</span>
+                                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Withholding Rate</div>
+                                    <div className="text-xl font-mono text-white">{(report.withholding_rate * 100).toFixed(1)}%</div>
+                                    <div className="text-xs text-zinc-500 mt-1">Article 12 Treaty</div>
                                 </div>
+
                                 <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                                    <span className="block text-[10px] text-zinc-500 uppercase tracking-widest mb-1">Withholding Rate</span>
-                                    <span className="text-lg font-mono text-white">{report.withholding_rate}%</span>
+                                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Tax Form</div>
+                                    <div className="text-xl font-mono text-white">{report.form_type}</div>
+                                    <div className="text-xs text-zinc-500 mt-1">Certified: {report.certified ? 'YES' : 'NO'}</div>
                                 </div>
                             </div>
 
-                            <div className="p-4 rounded-xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 space-y-4">
-                                <div className="flex justify-between items-center text-zinc-400 text-sm">
-                                    <span>Gross Amount</span>
-                                    <span className="font-mono">${parseFloat(amount).toFixed(2)}</span>
+                            <div className="bg-black/30 rounded-lg p-4 space-y-3">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-gray-400">Gross Amount</span>
+                                    <span className="text-white font-mono">${parseFloat(amount).toFixed(2)}</span>
                                 </div>
-                                <div className="flex justify-between items-center text-rose-400 text-sm">
-                                    <span>Withheld Tax</span>
-                                    <span className="font-mono">-${report.withheld_amount.toFixed(2)}</span>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-rose-400">Tax Withholding</span>
+                                    <span className="text-rose-400 font-mono">-${(parseFloat(amount) * report.withholding_rate).toFixed(2)}</span>
                                 </div>
-                                <div className="border-t border-white/10 pt-3 flex justify-between items-center text-white font-bold text-lg">
-                                    <span>Net Payable</span>
-                                    <span className="font-mono text-emerald-400">${report.payable_amount.toFixed(2)}</span>
+                                <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
+                                    <span className="text-emerald-400">Net Payable</span>
+                                    <span className="text-emerald-400 font-mono">${(parseFloat(amount) * (1 - report.withholding_rate)).toFixed(2)}</span>
                                 </div>
                             </div>
 
-                            {report.reason && (
-                                <div className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg text-xs text-rose-300">
-                                    {report.reason}
+                            {report.payout_status !== 'ACTIVE' && (
+                                <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 flex items-start gap-3">
+                                    <p className="text-xs text-rose-300">
+                                        Payouts are currently HELD. Please update tax certification to release funds.
+                                    </p>
                                 </div>
                             )}
                         </div>

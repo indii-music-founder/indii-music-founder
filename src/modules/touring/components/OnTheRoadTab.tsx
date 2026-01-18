@@ -65,9 +65,12 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
     };
 
     const estimatedRange = fuelStats.tankSizeGallons * fuelStats.mpg * (fuelStats.fuelLevelPercent / 100);
+    const range = fuelLogistics?.currentRangeMiles ?? estimatedRange;
+    const status = fuelLogistics?.status ?? (estimatedRange < 50 ? 'LOW' : 'GOOD');
 
     return (
         <div className="flex flex-col gap-6 h-full">
+            {/* ... rest of existing imports and logic ... */}
             {/* Top Row: Command Center & Map */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
                 {/* Main Telemetry / Command Center */}
@@ -184,19 +187,21 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                         <div className="mt-auto bg-bg-dark/50 border border-gray-800 rounded-lg p-4 grid grid-cols-3 gap-2">
                             <div className="text-center">
                                 <div className="text-[10px] text-gray-500 uppercase font-bold">Range</div>
-                                <div className={`text-xl font-mono font-bold ${estimatedRange < 50 ? 'text-red-500 animate-pulse' : 'text-green-500'}`}>
-                                    {Math.round(estimatedRange)} <span className="text-[10px]">mi</span>
+                                <div className={`text-xl font-mono font-bold ${range < 50 ? 'text-red-500 animate-pulse' : 'text-green-500'}`}>
+                                    {Math.round(range)} <span className="text-[10px]">mi</span>
                                 </div>
                             </div>
                             <div className="text-center border-l border-gray-800">
                                 <div className="text-[10px] text-gray-500 uppercase font-bold">Status</div>
                                 <div className="text-xl font-mono font-bold text-white">
-                                    {estimatedRange < 50 ? 'LOW' : 'GOOD'}
+                                    {status}
                                 </div>
                             </div>
                             <div className="text-center border-l border-gray-800">
-                                <div className="text-[10px] text-gray-500 uppercase font-bold">Efficiency</div>
-                                <div className="text-xl font-mono font-bold text-blue-400">92%</div>
+                                <div className="text-[10px] text-gray-500 uppercase font-bold">Fill Cost</div>
+                                <div className="text-xl font-mono font-bold text-blue-400">
+                                    ${fuelLogistics?.costToFill ?? '--'}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -247,7 +252,9 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                                                 <div className="text-sm font-bold text-white">{place.name}</div>
                                                 <div className="text-xs text-gray-500">{place.vicinity}</div>
                                             </div>
-                                            <div className="text-xs text-green-400 font-mono font-bold">OPEN</div>
+                                            <div className={`text-xs font-mono font-bold ${place.isOpen ? 'text-green-400' : 'text-red-400'}`}>
+                                                {place.isOpen ? 'OPEN' : 'CLOSED'}
+                                            </div>
                                         </div>
                                     ))}
                                 </div>

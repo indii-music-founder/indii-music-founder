@@ -891,6 +891,7 @@ import * as gkeService from './devops/gkeService';
 import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
+import * as marketingService from './lib/marketing';
 
 /**
  * List GKE Clusters
@@ -920,6 +921,9 @@ export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
 export const calculateFuelLogistics = touringService.calculateFuelLogistics;
+
+// Marketing
+export const executeCampaign = marketingService.executeCampaign;
 
 /**
  * Get GKE Cluster Status

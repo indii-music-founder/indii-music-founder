@@ -28,6 +28,11 @@ This skill synthesizes the historical learnings, security vulnerabilities, and d
 * **Approval Gates:** "A workflow without an approval gate is a runaway train."
   * ANY agent tool that modifies infrastructure (DevOps), deletes data, or performs sensitive mutations MUST require explicit human approval (`requireApproval: true`).
 
+### 1.4 Full Stack Sync (Backend Integrity)
+
+* **The Law:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement the backend logic immediately.
+* **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
+
 ---
 
 ## 2. The Laws of UI & Experience (Bolt, Pixel & Viewport)

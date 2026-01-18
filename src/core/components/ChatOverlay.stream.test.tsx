@@ -92,7 +92,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                 { id: 'u1', role: 'user', text: 'Write a poem', timestamp: 100 }
             ]
         });
-        const { rerender } = render(<ChatOverlay />);
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
         expect(screen.getByText('Write a poem')).toBeInTheDocument();
 
@@ -103,7 +103,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                 { id: 'ai1', role: 'model', text: '', isStreaming: true, timestamp: 101 }
             ]
         });
-        rerender(<ChatOverlay />);
+        rerender(<ChatOverlay onClose={vi.fn()} />);
 
         // Verify "Thinking" indicators using Role, not TestId
         expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
     it('Scenario 2: Verifies progressive text streaming without layout thrashing', async () => {
         // Pixel says: "Verify the UI behavior, not the model"
 
-        const { rerender } = render(<ChatOverlay />);
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
         // Simulating chunks arriving
         const chunks = ['The', ' neon', ' lights', ' flicker', '.'];
@@ -127,7 +127,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                 ]
             });
 
-            rerender(<ChatOverlay />);
+            rerender(<ChatOverlay onClose={vi.fn()} />);
 
             // Assert text update
             const content = screen.getByTestId('markdown-content');
@@ -146,7 +146,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                 { id: 'ai1', role: 'model', text: 'Done.', isStreaming: true, timestamp: 101 }
             ]
         });
-        const { rerender } = render(<ChatOverlay />);
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
         expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
 
@@ -156,7 +156,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                 { id: 'ai1', role: 'model', text: 'Done.', isStreaming: false, timestamp: 101 }
             ]
         });
-        rerender(<ChatOverlay />);
+        rerender(<ChatOverlay onClose={vi.fn()} />);
 
         // Dots should be gone
         expect(screen.queryByRole('status', { name: /thinking/i })).not.toBeInTheDocument();
@@ -182,7 +182,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Verify Thought Chain Indicator
         expect(screen.getByText(/Cognitive Logic/i)).toBeInTheDocument();
@@ -200,7 +200,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
             agentHistory: Array.from({ length: 10 }, (_, i) => ({ id: `msg-${i}`, role: 'user', text: `msg-${i}` }))
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const list = screen.getByTestId('stream-list');
         // Virtuoso prop: initialTopMostItemIndex

@@ -314,12 +314,13 @@ export class FirebaseAIService {
         modelOverride?: string,
         config?: any,
         systemInstruction?: string,
-        tools?: any[]
+        tools?: any[],
+        options?: { signal?: AbortSignal, cachedContent?: string }
     ): Promise<GenerateContentResult> {
-        return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools);
-    }
-
-    /**
+        return this.withRetry(() => {
+            return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
+        }, 3, 1000, options?.signal);
+    }/**
      * CORE: Generate content stream (Used by AIService)
      */
     async generateContentStream(

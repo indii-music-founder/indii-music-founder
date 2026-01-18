@@ -50,7 +50,7 @@ vi.mock('./tools', () => ({
 describe('BaseAgent Cost Circuit Breaker', () => {
     let agent: BaseAgent;
     const mockConfig: AgentConfig = {
-        id: 'ledger-agent',
+        id: 'ledger-agent' as any,
         name: 'Ledger Agent',
         description: 'Testing Agent for Budgets',
         color: 'green',

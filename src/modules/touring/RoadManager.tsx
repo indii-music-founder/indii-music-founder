@@ -30,10 +30,10 @@ interface NearbyPlace {
 }
 
 interface FuelLogistics {
-    estimatedFuelNeeded: number;
-    estimatedCost: number;
-    remainingDistance: number;
-    recommendedStations: string[];
+    currentRangeMiles: number;
+    fullTankRangeMiles: number;
+    costToFill: number;
+    status: 'CRITICAL' | 'LOW' | 'OK';
 }
 
 const RoadManager: React.FC = () => {
