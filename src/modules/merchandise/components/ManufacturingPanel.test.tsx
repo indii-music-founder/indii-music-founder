@@ -1,16 +1,34 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import ManufacturingPanel from './ManufacturingPanel';
 import { THEMES } from '@/modules/merchandise/themes';
+import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 
 // Mock MerchandiseService
 const mockGetCatalog = vi.fn();
+const mockRequestSample = vi.fn();
+
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn(() => ({
+        userProfile: {
+            shippingAddress: {
+                street: "Test St",
+                city: "Test City",
+                state: "TC",
+                zip: "12345",
+                country: "Testland"
+            }
+        }
+    }))
+}));
 
 vi.mock('@/services/merchandise/MerchandiseService', () => ({
     MerchandiseService: {
         submitToProduction: vi.fn(),
-        getCatalog: () => mockGetCatalog()
+        getCatalog: () => mockGetCatalog(),
+        requestSample: (...args) => mockRequestSample(...args)
     }
 }));
 
@@ -68,5 +86,23 @@ describe('ManufacturingPanel Cost Calculation', () => {
         await waitFor(() => {
             expect(screen.getByText('$11.25')).toBeInTheDocument();
         });
+    });
+
+    it('calls requestSample when Order Sample is clicked', async () => {
+        mockGetCatalog.mockResolvedValue([]);
+        mockRequestSample.mockResolvedValue({ success: true, requestId: 'SAMPLE-123' });
+        const user = userEvent.setup();
+
+        render(
+            <ManufacturingPanel
+                theme={THEMES.pro}
+                productType="T-Shirt"
+            />
+        );
+
+        const orderBtn = screen.getByText('Order Sample');
+        await user.click(orderBtn);
+
+        expect(mockRequestSample).toHaveBeenCalled();
     });
 });

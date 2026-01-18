@@ -11,8 +11,6 @@ import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
-import { PerformanceOverlay } from './components/PerformanceOverlay';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
@@ -111,9 +109,6 @@ export default function MerchDesigner() {
         designId,
         { interval: 30000, enabled: true }
     );
-
-    // Performance monitoring (dev mode only)
-    const performanceMetrics = usePerformanceMonitor(fabricCanvas);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -496,10 +491,10 @@ export default function MerchDesigner() {
                             <DesignCanvas
                                 onLayersChange={setLayers}
                                 onSelectionChange={setSelectedLayer}
-                                onCanvasReady={(canvas) => {
+                                onCanvasReady={useCallback((canvas: fabric.Canvas) => {
                                     fabricCanvasRef.current = canvas;
                                     setFabricCanvas(canvas);
-                                }}
+                                }, [])}
                                 onRequestDelete={handleDeleteLayers}
                             />
 
@@ -605,10 +600,6 @@ export default function MerchDesigner() {
                 />
             )}
 
-            {/* Performance Overlay (dev mode only) */}
-            {import.meta.env.DEV && viewMode === 'design' && (
-                <PerformanceOverlay metrics={performanceMetrics} />
-            )}
         </MerchLayout>
     );
 }
