@@ -363,23 +363,25 @@ function CommandBar() {
                                         <Mic size={14} />
                                     </button>
                                 </PromptInputAction>
-                                <button
-                                    type="button"
-                                    onClick={(e) => handleSubmit(e)}
-                                    data-testid="command-bar-run-btn"
-                                    disabled={(!input.trim() && attachments.length === 0) || isProcessing}
-                                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
-                                    aria-label={isProcessing ? "Processing command" : "Run command"}
-                                >
-                                    {isProcessing ? (
-                                        <Loader2 data-testid="run-loader" size={14} className="animate-spin" />
-                                    ) : (
-                                        <>
-                                            Run
-                                            <ArrowRight size={14} />
-                                        </>
-                                    )}
-                                </button>
+                                <PromptInputAction tooltip="Run command (Enter)">
+                                    <button
+                                        type="button"
+                                        onClick={(e) => handleSubmit(e)}
+                                        data-testid="command-bar-run-btn"
+                                        disabled={(!input.trim() && attachments.length === 0) || isProcessing}
+                                        className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium rounded-lg transition-colors"
+                                        aria-label={isProcessing ? "Processing command" : "Run command"}
+                                    >
+                                        {isProcessing ? (
+                                            <Loader2 data-testid="run-loader" size={14} className="animate-spin" />
+                                        ) : (
+                                            <>
+                                                Run
+                                                <ArrowRight size={14} />
+                                            </>
+                                        )}
+                                    </button>
+                                </PromptInputAction>
                             </div>
                         </PromptInputActions>
                     </PromptInput>
