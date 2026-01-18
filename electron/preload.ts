@@ -62,6 +62,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),
         performAction: (action: string, selector: string, text?: string) => ipcRenderer.invoke('agent:perform-action', action, selector, text),
         captureState: () => ipcRenderer.invoke('agent:capture-state'),
+        saveHistory: (id: string, data: any) => ipcRenderer.invoke('agent:save-history', id, data),
+        getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
+        deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
     },
 
     // Distribution

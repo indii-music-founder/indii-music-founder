@@ -50,6 +50,9 @@ export interface ElectronAPI {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
         performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
+        saveHistory: (id: string, data: any) => Promise<{ success: boolean; error?: string }>;
+        getHistory: (id: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+        deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
     };
 
     // Credentials

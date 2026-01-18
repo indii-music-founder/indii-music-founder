@@ -127,6 +127,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         const newSessions = { ...state.sessions };
         delete newSessions[sessionId];
 
+        // Persist the deletion
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.deleteSession(sessionId).catch(console.error);
+        });
+
         // If deleting active session, fallback to another or null
         let newActiveId = state.activeSessionId;
         let newHistory = state.agentHistory;

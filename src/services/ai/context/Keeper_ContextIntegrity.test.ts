@@ -15,6 +15,11 @@ vi.mock('@/services/ai/AIService', () => ({
                 usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
                 functionCalls: () => []
             })
+        }),
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => 'Mock Response',
+            usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
+            functionCalls: () => []
         })
     }
 }));
@@ -113,7 +118,7 @@ describe('📚 Keeper: Context Integrity', () => {
         await agent.execute('Hello', context);
 
         // 3. Inspect the payload sent to AI
-        const generateCall = vi.mocked(AI.generateContentStream).mock.calls[0];
+        const generateCall = vi.mocked(AI.generateContent).mock.calls[0] || vi.mocked(AI.generateContentStream).mock.calls[0];
         const payload = generateCall[0];
 
         // Extract the full prompt text sent to the model
