@@ -2,6 +2,12 @@ import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { Loader2 } from 'lucide-react';
 import { useStore } from '@/core/store';
+import type {
+    FabricObjectWithMeta,
+    FabricCanvasWithClipboard,
+    FabricActiveSelectionWithIterator,
+    FabricTextObject,
+} from '../types/fabric-extensions';
 
 // Generate unique IDs
 const generateId = () => `obj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -48,15 +54,16 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
     }, [snapToGrid, isInitialized]);
 
     // Convert Fabric.js object to CanvasObject
-    const convertFabricToCanvasObject = useCallback((obj: any): CanvasObject => {
+    const convertFabricToCanvasObject = useCallback((obj: fabric.Object): CanvasObject => {
+        const objWithMeta = obj as FabricObjectWithMeta;
         return {
-            id: (obj as any).name || generateId(),
+            id: objWithMeta.name || generateId(),
             type: obj.type === 'text' || obj.type === 'i-text' || obj.type === 'textbox'
                 ? 'text'
                 : obj.type === 'image'
                     ? 'image'
                     : 'shape',
-            name: (obj as any).name || `${obj.type} ${Date.now()}`,
+            name: objWithMeta.name || `${obj.type} ${Date.now()}`,
             visible: obj.visible ?? true,
             locked: !obj.selectable,
             fabricObject: obj
@@ -142,7 +149,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                         quality: 0.7,
                         multiplier: 0.15, // Low-res thumbnail (50x50 approx)
                     });
-                    (obj as any).thumbnail = thumbnail;
+                    (obj as FabricObjectWithMeta).thumbnail = thumbnail;
                 } catch (err) {
                     console.warn('Failed to generate thumbnail:', err);
                 }
@@ -200,14 +207,15 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
                 if ((e.metaKey || e.ctrlKey) && e.key === 'c' && activeObject) {
                     e.preventDefault();
-                    (activeObject as any).clone().then((cloned: fabric.Object) => {
-                        (canvas as any)._clipboard = cloned;
+                    activeObject.clone().then((cloned: fabric.Object) => {
+                        (canvas as FabricCanvasWithClipboard)._clipboard = cloned;
                     });
                 }
 
                 if ((e.metaKey || e.ctrlKey) && e.key === 'v') {
                     e.preventDefault();
-                    const clipboard = (canvas as any)._clipboard;
+                    const canvasWithClip = canvas as FabricCanvasWithClipboard;
+                    const clipboard = canvasWithClip._clipboard;
                     if (clipboard) {
                         clipboard.clone().then((cloned: fabric.Object) => {
                             canvas.discardActiveObject();
@@ -218,16 +226,19 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                             });
                             if (cloned.type === 'activeSelection') {
                                 (cloned as fabric.ActiveSelection).canvas = canvas;
-                                (cloned as any).forEachObject((obj: fabric.Object) => {
+                                const activeWithIterator = cloned as FabricActiveSelectionWithIterator;
+                                activeWithIterator.forEachObject((obj: fabric.Object) => {
                                     canvas.add(obj);
                                 });
                                 cloned.setCoords();
                             } else {
                                 canvas.add(cloned);
                             }
-                            const clip = (canvas as any)._clipboard;
-                            clip.top = (clip.top ?? 0) + 10;
-                            clip.left = (clip.left ?? 0) + 10;
+                            const clip = canvasWithClip._clipboard;
+                            if (clip) {
+                                clip.top = (clip.top ?? 0) + 10;
+                                clip.left = (clip.left ?? 0) + 10;
+                            }
                             canvas.setActiveObject(cloned);
                             canvas.requestRenderAll();
                         });
@@ -446,7 +457,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
                 scaleY: scale
             });
 
-            (img as any).name = name || `Image ${generateId()}`;
+            (img as FabricObjectWithMeta).name = name || `Image ${generateId()}`;
 
             canvas.add(img);
             canvas.setActiveObject(img);
@@ -505,7 +516,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         });
     }, [canvas]);
 
-    const addText = useCallback((text: string = 'Your Text', options?: any) => {
+    const addText = useCallback((text: string = 'Your Text', options?: Partial<fabric.IText>) => {
         if (!canvas) return;
 
         const position = getSmartPosition(200, 60);

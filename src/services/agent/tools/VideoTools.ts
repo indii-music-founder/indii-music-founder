@@ -108,9 +108,6 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             if (!args.duration && videoParams.duration) {
                 finalDuration = videoParams.duration;
             }
-
-            console.log('[VideoTools] Whisk-enhanced prompt:', finalPrompt.slice(0, 200) + '...');
-            console.log('[VideoTools] Whisk params:', { aspectRatio: finalAspectRatio, duration: finalDuration });
         }
 
         const results = await VideoGeneration.generateVideo({

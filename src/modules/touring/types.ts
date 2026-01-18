@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface ItineraryStop {
     date: string;
     city: string;
@@ -15,7 +17,7 @@ export interface Itinerary {
     stops: ItineraryStop[];
     totalDistance: string;
     estimatedBudget: string;
-    createdAt?: any;
+    createdAt?: Timestamp;
 }
 
 export interface VehicleStats {
@@ -26,7 +28,7 @@ export interface VehicleStats {
     tankSizeGallons: number;
     mpg: number;
     gasPricePerGallon: number;
-    updatedAt?: any;
+    updatedAt?: Timestamp;
 }
 
 export interface RiderItem {
@@ -35,6 +37,6 @@ export interface RiderItem {
     label: string;
     completed: boolean;
     category: 'food' | 'drink' | 'essential';
-    createdAt?: any;
-    updatedAt?: any;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
 }

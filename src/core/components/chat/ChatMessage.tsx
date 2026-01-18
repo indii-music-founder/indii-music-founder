@@ -34,9 +34,8 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
     // Custom Markdown Components
     // ... existing components ...
     const markdownComponents: Components = {
-        // ... (keep existing implementation)
-        img: ({ src, alt }: any) => <ImageRenderer src={src} alt={alt} />,
-        p: ({ children }: any) => {
+        img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} />,
+        p: ({ children }: { children?: React.ReactNode }) => {
             const text = getText(children);
             // ... (keep existing implementation)
             // Detect Raw AI Image Tool Output
@@ -55,11 +54,11 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                     else if (json.grid_id) imageIds = [json.grid_id];
                     else if (json.frame_id) imageIds = [json.frame_id];
 
-                    const images = imageIds.map(id => generatedHistory.find(h => h.id === id)).filter(Boolean);
+                    const images = imageIds.map(id => generatedHistory.find(h => h.id === id)).filter((img): img is NonNullable<typeof img> => !!img);
                     if (images.length > 0) {
                         return (
                             <div className="flex flex-col gap-4 my-4">
-                                {images.map((img: any, idx: number) => (
+                                {images.map((img, idx: number) => (
                                     <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} />
                                 ))}
                             </div>
@@ -98,8 +97,8 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                                                 <span className="text-xs font-bold text-purple-300 uppercase tracking-widest">Brand Analysis Report</span>
                                             </div>
                                             <div className="prose prose-invert prose-sm max-w-none">
-                                                <ReactMarkdown components={{ p: ({ children }: any) => <span className="block mb-2 last:mb-0">{children}</span> }}>
-                                                    {innerJson.analysis}
+                                                <ReactMarkdown components={{ p: ({ children }: { children?: React.ReactNode }) => <span className="block mb-2 last:mb-0">{children}</span> }}>
+                                                    {innerJson.analysis as string}
                                                 </ReactMarkdown>
                                             </div>
                                         </div>
@@ -119,10 +118,10 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
             }
             return <p className="mb-4 last:mb-0">{children}</p>;
         },
-        pre: ({ children, ...props }: any) => {
-            // ... existing logic ...
+        pre: ({ children, ...props }: { children?: React.ReactNode }) => {
             if (React.isValidElement(children)) {
-                const { className, children: codeChildren } = children.props as any;
+                const childProps = children.props as { className?: string; children?: React.ReactNode };
+                const { className, children: codeChildren } = childProps;
                 const content = String(codeChildren || '');
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
@@ -135,12 +134,12 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                 </div>
             );
         },
-        table: ({ node, ...props }: any) => (
+        table: ({ children, ...props }: { children?: React.ReactNode }) => (
             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
-                <table {...props} className="min-w-full" />
+                <table {...props} className="min-w-full">{children}</table>
             </div>
         ),
-        code({ node, inline, className, children, ...props }: any) {
+        code({ inline, className, children, ...props }: { node?: any; inline?: boolean; className?: string; children?: React.ReactNode }) {
             // ... existing logic ...
             const match = /language-(\w+)/.exec(className || '')
             const isJson = match && match[1] === 'json';

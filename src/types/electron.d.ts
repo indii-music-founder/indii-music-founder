@@ -84,6 +84,17 @@ export interface ElectronAPI {
 declare global {
     interface Window {
         electronAPI?: ElectronAPI;
+        __MAESTRO_MOCK_EXECUTION__?: boolean;
+        __MAESTRO_TEST_MODE__?: boolean;
+        MSStream?: any; // Legacy iOS detection
+    }
+
+    interface Navigator {
+        standalone?: boolean; // iOS PWA detection
+        wakeLock?: {
+            request: (type: 'screen') => Promise<any>;
+        };
+        getBattery?: () => Promise<any>;
     }
 }
 

@@ -29,25 +29,17 @@ export class AgentRegistry {
             } as SpecializedAgent;
 
             this.registerLazy(meta, async () => {
-                console.log(`[AgentRegistry] Loading GeneralistAgent...`);
-                try {
-                    const module = await import('./specialists/GeneralistAgent');
-                    console.log(`[AgentRegistry] GeneralistAgent module imported. Keys:`, Object.keys(module));
-                    if (!module.GeneralistAgent) {
-                        throw new Error("Module imported but GeneralistAgent export is missing!");
-                    }
-                    const agent = new module.GeneralistAgent();
-                    console.log(`[AgentRegistry] GeneralistAgent instantiated successfully.`);
-                    if ('initialize' in agent && typeof (agent as any).initialize === 'function') {
-                        await (agent as any).initialize();
-                    }
-                    return agent;
-                } catch (err: any) {
-                    console.error(`[AgentRegistry] loader() failed for GeneralistAgent:`, err);
-                    throw err;
+                const module = await import('./specialists/GeneralistAgent');
+                if (!module.GeneralistAgent) {
+                    throw new Error("Module imported but GeneralistAgent export is missing!");
                 }
+                const agent = new module.GeneralistAgent();
+                // Check for initialize method using type guard
+                if ('initialize' in agent && typeof agent.initialize === 'function') {
+                    await agent.initialize();
+                }
+                return agent;
             });
-            // Log removed (Platinum Polish) - but we could use a silent internal flag if needed for debugging
         } catch (e) {
             console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
@@ -72,11 +64,8 @@ export class AgentRegistry {
         }
 
         // Register Config-based Agents
-        console.log(`[AgentRegistry] Initializing agents from AGENT_CONFIGS. Count: ${AGENT_CONFIGS.length}`);
-
         AGENT_CONFIGS.forEach(config => {
             try {
-                console.log(`[AgentRegistry] Registering lazy loader for agent: ${config.id}`);
                 const meta = {
                     id: config.id,
                     name: config.name,
@@ -102,7 +91,6 @@ export class AgentRegistry {
     }
 
     registerLazy(meta: SpecializedAgent, loader: () => Promise<SpecializedAgent>) {
-        console.log(`[AgentRegistry] Adding lazy loader for: ${meta.id}`);
         this.metadata.set(meta.id, meta);
         this.loaders.set(meta.id, loader);
     }

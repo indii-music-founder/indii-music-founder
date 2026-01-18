@@ -431,7 +431,6 @@ export default function OnboardingPage() {
                         <button
                             onClick={() => setShowMobileStatus(true)}
                             aria-label={`View profile progress, ${coreProgress}% complete`}
-                            aria-label="View profile progress"
                             className="flex items-center gap-2 bg-[#1a1f2e] border border-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                         >
                             {coreProgress}% <ChevronRight size={14} className="text-gray-400" />

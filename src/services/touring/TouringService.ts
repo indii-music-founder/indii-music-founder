@@ -9,7 +9,8 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    onSnapshot
+    onSnapshot,
+    Timestamp
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary } from '@/modules/touring/types';
 import { z } from 'zod';
@@ -34,8 +35,8 @@ export const ItinerarySchema = z.object({
     stops: z.array(ItineraryStopSchema),
     totalDistance: z.string(),
     estimatedBudget: z.string(),
-    createdAt: z.any().optional(),
-    updatedAt: z.any().optional()
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
 });
 
 export const VehicleStatsSchema = z.object({
@@ -45,8 +46,8 @@ export const VehicleStatsSchema = z.object({
     tankSizeGallons: z.number(),
     mpg: z.number(),
     gasPricePerGallon: z.number(),
-    createdAt: z.any().optional(),
-    updatedAt: z.any().optional()
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
 });
 
 export const TouringService = {

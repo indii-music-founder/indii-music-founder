@@ -1,82 +1,56 @@
-/**
- * DistributionService.ts
- * 
- * Central coordinator for the Direct Distribution Engine in the renderer process.
- * Manages the state of distribution tasks and communicates with Electron IPC.
- */
+import { auth } from '@/services/firebase';
+import { FirestoreService } from '@/services/FirestoreService';
+import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore';
+import { isrcService } from './ISRCService';
+import { taxService } from './TaxService';
+import { Timestamp } from 'firebase/firestore';
 
-import { auth, db } from '@/services/firebase';
-import { collection, addDoc, serverTimestamp, updateDoc, doc, onSnapshot, query, where, orderBy } from 'firebase/firestore';
+export type { DistributionTaskDocument as DistributionTask };
 
-export interface DistributionTask {
-    id: string;
-    userId: string;
-    type: 'QC' | 'STAGING' | 'PACKAGING' | 'DELIVERY';
-    status: 'PENDING' | 'RUNNING' | 'COMPLETED' | 'FAILED';
-    progress: number;
-    title: string;
-    subtext?: string;
-    error?: string;
-    createdAt: any;
-    updatedAt: any;
-    metadata?: any;
-}
-
-class DistributionService {
-    private collectionName = 'distribution_tasks';
+class DistributionService extends FirestoreService<DistributionTaskDocument> {
+    constructor() {
+        super('distribution_tasks');
+    }
 
     /**
      * Track a new distribution task in Firestore
      */
-    async createTask(type: DistributionTask['type'], title: string, metadata: any = {}): Promise<string> {
+    async createTask(type: DistributionTaskDocument['type'], title: string, metadata: Record<string, unknown> = {}): Promise<string> {
         const userId = auth.currentUser?.uid;
         if (!userId) throw new Error('User must be authenticated');
 
-        const docRef = await addDoc(collection(db, this.collectionName), {
+        return this.add({
             userId,
             type,
             status: 'PENDING',
             progress: 0,
             title,
-            createdAt: serverTimestamp(),
-            updatedAt: serverTimestamp(),
             metadata
         });
-
-        return docRef.id;
     }
 
     /**
      * Update task progress and status
      */
-    async updateTask(taskId: string, updates: Partial<Pick<DistributionTask, 'status' | 'progress' | 'subtext' | 'error' | 'metadata'>>) {
-        const taskRef = doc(db, this.collectionName, taskId);
-        await updateDoc(taskRef, {
-            ...updates,
-            updatedAt: serverTimestamp()
-        });
+    async updateTask(taskId: string, updates: Partial<Pick<DistributionTaskDocument, 'status' | 'progress' | 'subtext' | 'error' | 'metadata'>>) {
+        await this.update(taskId, updates);
     }
 
     /**
      * Subscribe to active distribution tasks for the current user
      */
-    subscribeTasks(callback: (tasks: DistributionTask[]) => void) {
+    subscribeTasks(callback: (tasks: DistributionTaskDocument[]) => void, onError?: (error: Error) => void) {
         const userId = auth.currentUser?.uid;
         if (!userId) return () => { };
 
-        const q = query(
-            collection(db, this.collectionName),
-            where('userId', '==', userId),
-            orderBy('createdAt', 'desc')
+        return this.subscribe(
+            [this.where('userId', '==', userId), this.orderBy('createdAt', 'desc')],
+            callback,
+            (error) => {
+                console.warn('[DistributionService] Subscription error:', error);
+                if (onError) onError(error);
+            }
         );
-
-        return onSnapshot(q, (snapshot) => {
-            const tasks = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as DistributionTask));
-            callback(tasks);
-        });
     }
 
     /**
@@ -132,6 +106,42 @@ class DistributionService {
             return result.report;
         } catch (error) {
             console.error('[Distribution] Unexpected tax engine error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Certify user tax status via Electron IPC and persist to Firestore
+     */
+    async certifyTax(userId: string, data: any): Promise<TaxProfileDocument> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for tax certification');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.certifyTax(userId, data);
+            if (!result.success || !result.report) {
+                throw new Error(result.error || 'Tax certification failed');
+            }
+
+            const report = result.report;
+
+            // Persist to Firestore via TaxService
+            await taxService.saveProfile(userId, {
+                userId,
+                formType: report.form_type,
+                country: report.country,
+                tinMasked: report.tin_masked,
+                tinValid: report.tin_valid,
+                certified: report.certified,
+                payoutStatus: report.payout_status,
+                certTimestamp: report.cert_timestamp ? Timestamp.fromDate(new Date(report.cert_timestamp)) : null,
+                metadata: { ...data, rawReport: report }
+            });
+
+            return (await taxService.getProfile(userId))!;
+        } catch (error) {
+            console.error('[Distribution] Tax certification error:', error);
             throw error;
         }
     }
@@ -216,6 +226,21 @@ class DistributionService {
                 console.error('[Distribution] ISRC Generation failed:', result.error);
                 throw new Error(result.error || 'ISRC Generation failed');
             }
+
+            // Persist assignment if options contain metadata (e.g. for a specific track)
+            if (options?.releaseId && options?.trackTitle) {
+                const userId = auth.currentUser?.uid || 'system';
+                await isrcService.recordAssignment({
+                    isrc: result.isrc,
+                    releaseId: options.releaseId,
+                    userId,
+                    trackTitle: options.trackTitle,
+                    artistName: options.artistName || 'Unknown Artist',
+                    assignedAt: Timestamp.now(),
+                    metadataSnapshot: options
+                });
+            }
+
             return result.isrc;
         } catch (error) {
             console.error('[Distribution] ISRC engine error:', error);

@@ -13,13 +13,29 @@ import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 import { DirectorPromptBar } from './components/DirectorPromptBar';
 import { DailiesStrip } from './components/DailiesStrip';
 import { VideoStage } from './components/VideoStage'; // ⚡ Bolt Optimization
-import { useToast } from '@/core/context/ToastContext';
+import { useToast, ToastContextType } from '@/core/context/ToastContext';
+
+/** Valid job status values for video generation */
+export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching';
+
+/** Data shape from Firestore video job listener */
+export interface VideoJobUpdateData {
+    status?: string;
+    progress?: number;
+    videoUrl?: string;
+    prompt?: string;
+    stitchError?: string;
+    metadata?: Record<string, unknown>;
+    output?: {
+        metadata?: Record<string, unknown>;
+    };
+}
 
 // Lazy load the heavy Editor
 const VideoEditor = React.lazy(() => import('./editor/VideoEditor').then(module => ({ default: module.VideoEditor })));
 
 export const processJobUpdate = (
-    data: any,
+    data: VideoJobUpdateData | null,
     currentJobId: string,
     deps: {
         currentProjectId: string | null,
@@ -28,22 +44,23 @@ export const processJobUpdate = (
         addToHistory: (item: HistoryItem) => void,
         setActiveVideo: (item: HistoryItem) => void,
         setJobId: (id: string | null) => void,
-        setJobStatus: (status: any) => void,
+        setJobStatus: (status: JobStatus) => void,
         setJobProgress: (progress: number) => void,
-        toast: any,
+        toast: ToastContextType,
         resetEditorProgress: () => void,
-        getCurrentStatus: () => string
+        getCurrentStatus: () => JobStatus
     }
 ) => {
-     if (data) {
+    if (data) {
         const newStatus = data.status;
 
         // Check current status to avoid unnecessary updates
         const currentStatus = deps.getCurrentStatus();
         if (newStatus && newStatus !== currentStatus) {
-            // Start of type guard
-            if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
-                deps.setJobStatus(newStatus as any);
+            // Type guard for valid job statuses
+            const validStatuses: JobStatus[] = ['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'];
+            if (validStatuses.includes(newStatus as JobStatus)) {
+                deps.setJobStatus(newStatus as JobStatus);
             }
         }
 
@@ -332,9 +349,10 @@ export default function VideoWorkflow() {
                     setJobStatus('processing');
                 }
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
             console.error("Video generation failed:", error);
-            toast.error(`Trigger failed: ${error.message}`);
+            toast.error(`Trigger failed: ${message}`);
             setJobStatus('failed');
         }
     };

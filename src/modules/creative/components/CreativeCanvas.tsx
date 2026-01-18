@@ -121,9 +121,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             } else {
                 toast.error('Generation failed to produce candidates.');
             }
-        } catch (error: any) {
-            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
-                toast.error(error.message || 'Limit reached. Please upgrade.');
+        } catch (error: unknown) {
+            const err = error as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Limit reached. Please upgrade.');
             } else {
                 toast.error('Failed to process edits');
             }
@@ -143,9 +144,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             } else {
                 throw new Error(result.error || 'Unknown error');
             }
-        } catch (error: any) {
-            if (error?.name === 'QuotaExceededError' || error?.code === 'QUOTA_EXCEEDED') {
-                toast.error(error.message || 'Video limit reached. Please upgrade.');
+        } catch (error: unknown) {
+            const err = error as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Video limit reached. Please upgrade.');
             } else {
                 const message = error instanceof Error ? error.message : 'Unknown error';
                 toast.error(`Animation failed: ${message}`);
@@ -243,9 +245,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             const { updateWhiskItem } = useStore.getState();
             updateWhiskItem('subject', whiskId, { aiCaption: caption });
             toast.success("Image essence extracted and locked!");
-        } catch (e: any) {
-            if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
-                toast.error(e.message || 'Quota exceeded during analysis.');
+        } catch (e: unknown) {
+            const err = e as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Quota exceeded during analysis.');
             } else {
                 toast.warning("Could not auto-caption. Using original prompt.");
             }

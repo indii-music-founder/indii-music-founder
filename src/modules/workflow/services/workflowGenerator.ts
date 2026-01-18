@@ -6,14 +6,65 @@ import { Status } from '../types';
 import { isTextPart } from '@/shared/types/ai.dto';
 import { AI_MODELS } from '@/core/config/ai-models';
 
+interface JobSummary {
+    id: string;
+    description: string;
+    inputs: string[];
+    outputs: string[];
+}
+
+interface RegistryContextItem {
+    department: string;
+    jobs: JobSummary[];
+}
+
 // Helper to flatten registry for the AI context
-const getRegistryContext = () => {
+const getRegistryContext = (): RegistryContextItem[] => {
     const allDefs = { ...NODE_REGISTRY, ...LOGIC_REGISTRY };
-    return Object.values(allDefs).map((def: any) => ({
+    return Object.values(allDefs).map((def: { departmentName: string; jobs: any[] }) => ({
         department: def.departmentName,
-        jobs: def.jobs.map((j: any) => ({ id: j.id, description: j.description, inputs: j.inputs, outputs: j.outputs }))
+        jobs: def.jobs.map((j: { id: string; description: string; inputs: string[]; outputs: string[] }) => ({
+            id: j.id,
+            description: j.description,
+            inputs: j.inputs,
+            outputs: j.outputs
+        }))
     }));
 };
+
+interface GeneratedNodeData {
+    nodeType: 'department' | 'input' | 'output' | 'audioSegment' | 'logic';
+    departmentName?: string;
+    selectedJobId?: string;
+    prompt?: string;
+    config?: {
+        condition?: string;
+        message?: string;
+        variableKey?: string;
+    };
+}
+
+interface GeneratedNode {
+    id: string;
+    type: string;
+    position: { x: number; y: number };
+    data: GeneratedNodeData;
+}
+
+interface GeneratedEdge {
+    id: string;
+    source: string;
+    target: string;
+    sourceHandle?: string;
+    targetHandle?: string;
+}
+
+interface GeneratedWorkflow {
+    name: string;
+    description: string;
+    nodes: GeneratedNode[];
+    edges: GeneratedEdge[];
+}
 
 export async function generateWorkflowFromPrompt(userPrompt: string): Promise<SavedWorkflow> {
     const registryContext = JSON.stringify(getRegistryContext(), null, 2);
@@ -94,7 +145,7 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
         }
     };
 
-    const generated = await AI.generateStructuredData<any>(
+    const generated = await AI.generateStructuredData<GeneratedWorkflow>(
         `User Request: "${userPrompt}"\n\nGenerate the workflow JSON.`,
         schema as any,
         undefined,
@@ -102,16 +153,16 @@ export async function generateWorkflowFromPrompt(userPrompt: string): Promise<Sa
     );
 
     // Post-processing to ensure internal consistency (status, etc)
-    const nodes = (generated.nodes || []).map((n: any) => ({
+    const nodes: SavedWorkflow['nodes'] = (generated.nodes || []).map((n: GeneratedNode) => ({
         ...n,
         data: { ...n.data, status: Status.PENDING }
-    }));
+    })) as SavedWorkflow['nodes'];
 
-    const edges = (generated.edges || []).map((e: any) => ({
+    const edges: SavedWorkflow['edges'] = (generated.edges || []).map((e: GeneratedEdge) => ({
         ...e,
         type: 'default', // Ensure edge type is set
         animated: false
-    }));
+    })) as SavedWorkflow['edges'];
 
     return {
         id: uuidv4(),

@@ -410,8 +410,6 @@ CURRENT REQUEST: ${task}
             try {
                 // DEBUG: Log tool declarations being sent to model
                 const toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
-                console.log(`[GeneralistAgent] Sending ${toolCount} tools to model:`,
-                    this.tools?.[0]?.functionDeclarations?.map(f => f.name).join(', ') || 'NONE');
 
                 const { stream, response: responsePromise } = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
@@ -468,8 +466,6 @@ CURRENT REQUEST: ${task}
 
                 // Check for function calls (native function calling)
                 const allFunctionCalls = response.functionCalls?.() || [];
-                console.log(`[GeneralistAgent] Response has ${allFunctionCalls.length} function calls:`,
-                    allFunctionCalls.map(fc => fc.name).join(', ') || 'NONE');
                 const functionCall = allFunctionCalls[0];
 
                 if (functionCall) {

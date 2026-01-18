@@ -50,3 +50,11 @@ When applying Platinum Polish to a module:
 2. **Scan**: `grep -r "as any" src/modules/<name>`
 3. **Refactor**: Apply changes.
 4. **Verify**: Run module-specific tests.
+
+---
+
+## Extended Protocols
+
+For domain-specific standards, see:
+
+- **[Database Platinum Protocol](docs/DATABASE_PLATINUM_PROTOCOL.md)** - Firestore/database layer standards

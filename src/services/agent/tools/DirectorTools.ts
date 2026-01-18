@@ -94,7 +94,6 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
-        console.log("DirectorTools: generate_image called with args", args);
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
@@ -142,14 +141,12 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         if (hasWhiskRefs) {
             const { WhiskService } = await import('@/services/WhiskService');
             finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
-            console.log("DirectorTools: Synthesized Whisk prompt:", finalPrompt);
 
             // If no source images yet and precise mode is on, get them from Whisk
             if (!sourceImages && whiskState.preciseReference) {
                 const whiskSourceImages = WhiskService.getSourceImages(whiskState);
                 if (whiskSourceImages && whiskSourceImages.length > 0) {
                     sourceImages = whiskSourceImages;
-                    console.log("DirectorTools: Using Whisk source images for precise mode");
                 }
             }
         }
@@ -161,7 +158,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             const lockedAspectRatio = await WhiskService.getLockedAspectRatio(whiskState);
             if (lockedAspectRatio) {
                 effectiveAspectRatio = lockedAspectRatio;
-                console.log("DirectorTools: Using locked style aspect ratio:", lockedAspectRatio);
             }
         }
 
@@ -452,8 +448,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 profile,
                 `Audio analysis complete for "${audioItem.prompt || 'Track'}". Semantic Vibe: ${profile.semantic.mood.join(', ')}`
             );
-        } catch (error: any) {
-            return toolError(`Failed to analyze audio: ${error.message}`, "ANALYSIS_FAILED");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze audio: ${message}`, "ANALYSIS_FAILED");
         }
     })
 };

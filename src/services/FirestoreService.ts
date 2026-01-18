@@ -14,7 +14,10 @@ import {
     DocumentData,
     onSnapshot,
     Unsubscribe,
-    setDoc
+    setDoc,
+    orderBy,
+    OrderByDirection,
+    WhereFilterOp
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -25,7 +28,17 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
         return collection(db, this.collectionPath);
     }
 
-    async add(data: Omit<T, 'id'>): Promise<string> {
+    // Helper for where clause
+    protected where(field: string, op: WhereFilterOp, value: any): QueryConstraint {
+        return where(field, op, value);
+    }
+
+    // Helper for order by
+    protected orderBy(field: string, direction: OrderByDirection = 'asc'): QueryConstraint {
+        return orderBy(field, direction);
+    }
+
+    async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
         const docRef = await addDoc(this.collection, {
             ...data,
             createdAt: Timestamp.now(),

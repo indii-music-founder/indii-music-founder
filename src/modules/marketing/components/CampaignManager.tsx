@@ -48,7 +48,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         try {
             // Determine Execution Mode
             // 1. Force Mock for Test Environment (Maestro) or offline dev without functions
-            const forceMock = (window as any).__MAESTRO_MOCK_EXECUTION__;
+            const forceMock = window.__MAESTRO_MOCK_EXECUTION__;
             // 2. Dry Run for Localhost Dev to verify function connectivity without side effects
             // Note: import.meta.env.DEV might be true in production builds if not configured correctly,
             // but usually it's reliable for Vite.
@@ -57,9 +57,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
             let responseData: { posts?: ScheduledPost[], success?: boolean, message?: string } = {};
 
             if (forceMock || (!functions && isDev)) {
-                 console.warn("[CampaignManager] Using Client-Side Mock Execution");
-                 await new Promise(resolve => setTimeout(resolve, 1500));
-                 responseData = {
+                console.warn("[CampaignManager] Using Client-Side Mock Execution");
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                responseData = {
                     posts: selectedCampaign.posts.map(p => ({
                         ...p,
                         status: CampaignStatus.DONE,
@@ -76,9 +76,9 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                     dryRun: isDev // In dev mode, we ask the backend to dry-run
                 };
 
-                const executeCampaign = httpsCallable(functions, 'executeCampaign');
+                const executeCampaign = httpsCallable<CampaignExecutionRequest, { posts: ScheduledPost[]; success: boolean; message: string }>(functions, 'executeCampaign');
                 const result = await executeCampaign(payload);
-                responseData = result.data as any;
+                responseData = result.data;
             }
 
             if (responseData.success && responseData.posts) {
@@ -89,16 +89,16 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 });
                 toast.success(responseData.message || "Campaign executed successfully!");
             } else {
-                 throw new Error(responseData.message || "Execution returned failure status.");
+                throw new Error(responseData.message || "Execution returned failure status.");
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Campaign Execution Failed:", error);
 
             // Revert status or set to FAILED
             onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });
 
-            const errorMsg = error.message || "Unknown error";
+            const errorMsg = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Execution failed: ${errorMsg}`);
         } finally {
             setIsExecuting(false);

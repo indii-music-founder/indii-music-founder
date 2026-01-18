@@ -743,7 +743,7 @@ export function processFunctionCalls(
 // --- Natural Fallback Response Generator ---
 // These replace robotic "I processed that" messages with human, contextual responses
 
-export type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor';
+export type TopicKey = 'bio' | 'brandDescription' | 'socials' | 'visuals' | 'careerStage' | 'goals' | 'title' | 'type' | 'genre' | 'mood' | 'themes' | 'distributor' | 'colorPalette' | 'typography' | 'aestheticStyle';
 
 // Educational context for each topic - helps users understand WHY we need this info
 const topicContext: Record<TopicKey, { name: string; why: string; examples: string[] }> = {
@@ -806,6 +806,21 @@ const topicContext: Record<TopicKey, { name: string; why: string; examples: stri
         name: 'your distributor',
         why: "Every distributor has different rules for cover art and metadata. Knowing this prevents rejection headaches later.",
         examples: ["Symphonic", "CD Baby", "DistroKid", "TuneCore"]
+    },
+    colorPalette: {
+        name: 'color palette',
+        why: "Colors set the emotional tone of your visual brand — from vibrant energy to muted introspection",
+        examples: ["Vibrant & Neon", "Muted & Earthy", "Black & White"]
+    },
+    typography: {
+        name: 'typography styles',
+        why: "Fonts communicate your personality before a single word is read",
+        examples: ["Bold & Geometric", "Elegant Serif", "Clean Sans-Serif"]
+    },
+    aestheticStyle: {
+        name: 'aesthetic style',
+        why: "Your aesthetic is the visual language that connects your music to your audience",
+        examples: ["Cyberpunk", "Minimalist", "Retro 80s"]
     }
 };
 

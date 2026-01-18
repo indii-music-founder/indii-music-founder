@@ -33,25 +33,48 @@ export interface ReleaseDeploymentDocument extends BaseDocument {
     userId: string;
     orgId: string;
     distributorId: string;
-    status: 'processing' | 'staged' | 'packaged' | 'delivering' | 'completed' | 'failed';
-
-    // Metadata Snapshot
+    status: 'validating' | 'pending_review' | 'in_review' | 'processing' | 'submitted' | 'failed' | 'delivered' | 'live' | 'takedown_pending' | 'takedown_complete';
+    externalId?: string;
+    submittedAt?: Timestamp;
+    lastCheckedAt?: Timestamp;
     title?: string;
     artist?: string;
     coverArtUrl?: string;
-
-    // External IDs
-    externalId?: string;
-    distributorReleaseId?: string;
-
-    // Track Dates as Timestamps
-    submittedAt: Timestamp;
-    lastCheckedAt: Timestamp;
-
     // Support for distribution/types/distributor.ts types indirectly
     errors?: any[];
     warnings?: string[];
     territories?: string[];
     projectedReleaseDate?: string;
     trackingLink?: string;
+}
+
+/**
+ * ISRC Record: Tracks assigned ISRCs to prevent duplicates and maintain registry
+ * Collection: isrc_registry
+ */
+export interface ISRCRecordDocument extends BaseDocument {
+    isrc: string;
+    releaseId: string;
+    userId: string;
+    trackTitle: string;
+    artistName: string;
+    assignedAt: Timestamp;
+    metadataSnapshot?: Record<string, unknown>;
+}
+
+/**
+ * Tax Profile: User compliance data for international withholding
+ * Collection: tax_profiles
+ */
+export interface TaxProfileDocument extends BaseDocument {
+    userId: string;
+    formType: 'W-9' | 'W-8BEN' | 'W-8BEN-E';
+    country: string;
+    tinMasked: string;
+    tinEncrypted?: string; // Future: hardware-backed encryption
+    tinValid: boolean;
+    certified: boolean;
+    payoutStatus: 'ACTIVE' | 'HELD';
+    certTimestamp: Timestamp | null;
+    metadata?: Record<string, unknown>;
 }

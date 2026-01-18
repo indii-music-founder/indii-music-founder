@@ -1,7 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '../../services/onboarding/onboardingService';
+import {
+    OnboardingTools,
+    runOnboardingConversation,
+    processFunctionCalls,
+    generateEmptyResponseFallback,
+    generateNaturalFallback,
+    calculateProfileStatus,
+    TopicKey
+} from '@/services/onboarding/onboardingService';
 import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
@@ -126,13 +134,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 // Natural fallback: If model did work but didn't speak, generate human-sounding response
                 if (!text && updates.length > 0) {
                     const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
-                    const nextMissing = coreMissing.length > 0
-                        ? coreMissing[0] as any
+                    const nextMissing = (coreMissing.length > 0
+                        ? coreMissing[0]
                         : releaseMissing.length > 0
-                            ? releaseMissing[0] as any
-                            : null;
+                            ? releaseMissing[0]
+                            : null) as string | null;
                     const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
-                    const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
+                    const fallbackText = generateNaturalFallback(updates, nextMissing as TopicKey | null, isReleaseContext);
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
                 } else if (text) {
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
@@ -143,9 +151,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Full Onboarding Error:", error);
-            // toast.error("Connection glitch. Please try again."); // Assuming toast is available or add it
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // Optionally logs to a tracking service if needed, but avoiding console log spam here.
+
             const errorResponses = [
                 `Hmm, something went sideways on my end. Mind trying that again?`,
                 `Tech hiccup — my bad. Hit me with that one more time?`,

@@ -2,9 +2,17 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { MerchCard } from './MerchCard';
 import { Layers, Eye, EyeOff, Lock, Unlock, Trash2, ChevronUp, ChevronDown, Type, Image as ImageIcon, Square } from 'lucide-react';
 import type { CanvasObject } from './DesignCanvas';
+import type {
+    FabricObjectWithMeta,
+    FabricTextObject,
+    LayerPropertyValue,
+} from '../types/fabric-extensions';
 
-// Debounce helper
-const debounce = <T extends (...args: any[]) => any>(fn: T, ms: number) => {
+/**
+ * Debounce helper for throttling rapid property updates
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const debounce = <T extends (...args: any[]) => void>(fn: T, ms: number): ((...args: Parameters<T>) => void) => {
     let timeoutId: NodeJS.Timeout;
     return (...args: Parameters<T>) => {
         clearTimeout(timeoutId);
@@ -20,23 +28,24 @@ export interface LayersPanelProps {
     onToggleLock: (layer: CanvasObject) => void;
     onDeleteLayer: (layer: CanvasObject) => void;
     onReorderLayer: (layer: CanvasObject, direction: 'up' | 'down') => void;
-    onUpdateProperty?: (layer: CanvasObject, property: string, value: any) => void;
+    onUpdateProperty?: (layer: CanvasObject, property: string, value: LayerPropertyValue) => void;
 }
 
-// Extracted Properties Component
 const LayerProperties: React.FC<{
     layer: CanvasObject;
-    onUpdateProperty?: (layer: CanvasObject, property: string, value: any) => void;
+    onUpdateProperty?: (layer: CanvasObject, property: string, value: LayerPropertyValue) => void;
 }> = ({ layer, onUpdateProperty }) => {
+    // Cast to text object type for text-specific properties
+    const textObj = layer.fabricObject as FabricTextObject;
     // Initialize state from props - key={layer.id} will ensure reset
     const [localOpacity, setLocalOpacity] = useState(
         layer.fabricObject.opacity ? Math.round(layer.fabricObject.opacity * 100) : 100
     );
     const [localFontSize, setLocalFontSize] = useState(
-        layer.type === 'text' ? ((layer.fabricObject as any).fontSize || 60) : 60
+        layer.type === 'text' ? (textObj.fontSize || 60) : 60
     );
-    const [localColor, setLocalColor] = useState(
-        layer.type === 'text' ? ((layer.fabricObject as any).fill || '#FFE135') : '#FFE135'
+    const [localColor, setLocalColor] = useState<string>(
+        layer.type === 'text' ? (typeof textObj.fill === 'string' ? textObj.fill : '#FFE135') : '#FFE135'
     );
     const [localBlendMode, setLocalBlendMode] = useState<GlobalCompositeOperation>(
         (layer.fabricObject.globalCompositeOperation as GlobalCompositeOperation) || 'source-over'
@@ -221,9 +230,9 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                     {/* Layer Info */}
                                     <div className="flex items-center gap-2 mb-1">
                                         {/* Thumbnail (if available) */}
-                                        {(layer.fabricObject as any).thumbnail ? (
+                                        {(layer.fabricObject as FabricObjectWithMeta).thumbnail ? (
                                             <img
-                                                src={(layer.fabricObject as any).thumbnail}
+                                                src={(layer.fabricObject as FabricObjectWithMeta).thumbnail}
                                                 alt={layer.name}
                                                 className="w-10 h-10 rounded border border-white/10 object-cover bg-neutral-800 flex-shrink-0"
                                             />
