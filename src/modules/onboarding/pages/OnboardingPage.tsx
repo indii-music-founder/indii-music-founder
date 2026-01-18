@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback, generateSection, OPTION_WHITELISTS, type TopicKey } from '@/services/onboarding/onboardingService';
 import { useToast } from '@/core/context/ToastContext';
-import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check } from 'lucide-react';
+import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
@@ -430,6 +430,7 @@ export default function OnboardingPage() {
                     <div className="flex items-center gap-2 lg:hidden">
                         <button
                             onClick={() => setShowMobileStatus(true)}
+                            aria-label="View profile progress"
                             className="flex items-center gap-2 bg-[#1a1f2e] border border-gray-700 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
                         >
                             {coreProgress}% <ChevronRight size={14} className="text-gray-400" />
@@ -652,6 +653,7 @@ export default function OnboardingPage() {
                                 )}
                                 <button
                                     onClick={() => removeFile(file.id)}
+                                    aria-label="Remove file"
                                     className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
                                 >
                                     <Trash2 size={16} />
@@ -700,6 +702,7 @@ export default function OnboardingPage() {
                         />
                         <button
                             onClick={() => fileInputRef.current?.click()}
+                            aria-label="Attach file"
                             className="p-3 md:p-4 text-gray-400 hover:text-white bg-[#1a1f2e] hover:bg-[#252b40] rounded-xl border border-gray-800 transition-colors"
                         >
                             <Paperclip size={20} className="md:w-6 md:h-6" />
@@ -707,6 +710,7 @@ export default function OnboardingPage() {
                         <input
                             type="text"
                             value={input}
+                            aria-label="Type your message"
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                             placeholder="Tell me about your music..."
@@ -719,7 +723,11 @@ export default function OnboardingPage() {
                             aria-label="Send message"
                             className="bg-white hover:bg-gray-200 text-black p-3 md:p-4 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                         >
-                            <Send size={20} className="md:w-6 md:h-6" />
+                            {isProcessing ? (
+                                <Loader2 size={20} className="animate-spin md:w-6 md:h-6" />
+                            ) : (
+                                <Send size={20} className="md:w-6 md:h-6" />
+                            )}
                         </button>
                     </div>
                 </div>
@@ -744,6 +752,7 @@ export default function OnboardingPage() {
                                             <button
                                                 onClick={handleRegenerateBio}
                                                 disabled={isRegenerating}
+                                                aria-label="Regenerate bio with AI"
                                                 className="p-1.5 text-gray-500 hover:text-purple-400 hover:bg-purple-500/10 rounded-md transition-colors disabled:opacity-50"
                                                 title="Regenerate with AI"
                                             >
@@ -751,6 +760,7 @@ export default function OnboardingPage() {
                                             </button>
                                             <button
                                                 onClick={handleEditBio}
+                                                aria-label="Edit bio manually"
                                                 className="p-1.5 text-gray-500 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                                                 title="Edit bio"
                                             >
@@ -884,6 +894,7 @@ export default function OnboardingPage() {
                                 <h3 className="text-white font-bold text-lg">Your Progress</h3>
                                 <button
                                     onClick={() => setShowMobileStatus(false)}
+                                    aria-label="Close profile progress drawer"
                                     className="p-2 text-gray-400 hover:text-white rounded-full hover:bg-gray-800"
                                 >
                                     <X size={24} />
