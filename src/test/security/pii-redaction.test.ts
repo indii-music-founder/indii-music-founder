@@ -1,6 +1,5 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from '../../services/agent/AgentService';
-import { useStore } from '../../core/store';
 import { coordinator } from '../../services/agent/WorkflowCoordinator';
 
 // Mock the dependencies

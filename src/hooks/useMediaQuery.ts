@@ -30,6 +30,26 @@ export function useMediaQuery(query: string): boolean {
         return window.matchMedia(query).matches;
     };
 
+        // Set initial value
+        if (matches !== mediaQuery.matches) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setMatches(mediaQuery.matches);
+        }
+
+        // Modern API (addEventListener) with fallback
+        if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener('change', handleChange);
+            return () => mediaQuery.removeEventListener('change', handleChange);
+        } else {
+            // Legacy Safari
+            mediaQuery.addListener(handleChange);
+            return () => mediaQuery.removeListener(handleChange);
+        }
+    }, [query, handleChange, matches]);
+    const getSnapshot = () => {
+        return window.matchMedia(query).matches;
+    };
+
     const getServerSnapshot = () => {
         return false;
     };

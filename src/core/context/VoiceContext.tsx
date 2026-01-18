@@ -63,6 +63,8 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     setIsListening(false);
                 };
 
+                // eslint-disable-next-line react-hooks/set-state-in-effect
+                setRecognition(recognitionInstance);
                 recognitionRef.current = recognitionInstance;
             }
         }
