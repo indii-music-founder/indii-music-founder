@@ -111,7 +111,7 @@ class SFTPUploader:
             self._mkdir_recursive(sftp, os.path.dirname(remote_directory))
             sftp.mkdir(remote_directory)
 
-if __name__ == "__main__":
+def setup_args():
     parser = argparse.ArgumentParser(description="IndiiOS SFTP Transmission Engine")
     parser.add_argument("--host", required=True, help="SFTP Host")
     parser.add_argument("--port", type=int, default=22, help="SFTP Port")
@@ -121,8 +121,10 @@ if __name__ == "__main__":
     parser.add_argument("--local", required=True, help="Local file or directory to upload")
     parser.add_argument("--remote", default=".", help="Remote directory path")
     parser.add_argument("--storage-path", help="Path for logs and session data")
+    return parser.parse_args()
 
-    args = parser.parse_args()
+if __name__ == "__main__":
+    args = setup_args()
 
     uploader = SFTPUploader(storage_path=args.storage_path)
     result = uploader.upload(

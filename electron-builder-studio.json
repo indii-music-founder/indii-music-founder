@@ -1,6 +1,4 @@
 {
-  "afterAllArtifactBuild": "build/postinstall.sh",
-  "afterSign": "build/notarize.js",
   "appId": "com.indii.os.studio",
   "asarUnpack": [
     "**/node_modules/ffmpeg-static/**",
@@ -9,7 +7,6 @@
   "buildVersion": "1.0.0",
   "copyright": "Copyright \u00a9 2025 IndiiOS LLC",
   "directories": {
-    "buildResources": "build",
     "output": "dist-electron-studio"
   },
   "files": [
@@ -37,16 +34,8 @@
   },
   "mac": {
     "category": "public.app-category.productivity",
-    "darkModeSupport": true,
-    "entitlements": "build/entitlements.mac.plist",
-    "entitlementsInherit": "build/entitlements.mac.plist",
-    "extendInfo": {
-      "CFBundleIdentifier": "com.indii.os.studio",
-      "NSAppTransportSecurity": true,
-      "apple_event_scanner": "true"
-    },
-    "gatekeeperAssess": true,
-    "hardenedRuntime": true,
+    "gatekeeperAssess": false,
+    "hardenedRuntime": false,
     "icon": "assets/icon-studio.icns",
     "target": [
       "dmg",
@@ -75,7 +64,6 @@
     "allowToChangeInstallationDirectory": true,
     "deleteAppDataOnUninstall": false,
     "displayLanguageSelector": true,
-    "include": "build/installer.nsh",
     "installerLanguages": [
       "en_US",
       "en_GB",

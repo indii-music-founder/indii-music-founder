@@ -147,6 +147,7 @@ export interface PackageResponse extends IPCResponse<any> {
 }
 
 export interface SFTPConfig {
+    protocol?: 'SFTP' | 'ASPERA';
     host: string;
     port?: number;
     user: string;
@@ -161,5 +162,6 @@ export interface SFTPReport {
     message: string;
     host: string;
     remote_path: string;
+    error?: string;
 }
 

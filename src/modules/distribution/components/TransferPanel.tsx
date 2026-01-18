@@ -10,6 +10,7 @@ export const TransferPanel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<SFTPReport | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
+    const [protocol, setProtocol] = useState<'SFTP' | 'ASPERA'>('SFTP');
 
     // SFTP Config State
     const [config, setConfig] = useState<SFTPConfig>({
@@ -33,17 +34,23 @@ export const TransferPanel: React.FC = () => {
 
         setLoading(true);
         setReport(null);
-        addLog(`Initiating transmission to ${config.host}...`);
+        addLog(`Initiating ${protocol} transmission to ${config.host}...`);
 
         try {
-            const result = await distributionService.transmit(config);
-            setReport(result);
-            if (result.status === 'SUCCESS') {
-                success('Transmission Complete!');
+            // Updated transmit to include protocol if needed, though handler currently uses sftp_uploader.py
+            // We'll update the handler to switch based on protocol
+            const result = await window.electronAPI!.distribution.transmit({
+                ...config,
+                protocol // Pass protocol to IPC handler
+            });
+
+            setReport(result.report || null);
+            if (result.success) {
+                success(`${protocol} Transmission Complete!`);
                 addLog('SUCCESS: All files uploaded and verified.');
             } else {
-                error('Transmission Failed. Check logs.');
-                addLog(`ERROR: ${result.message}`);
+                error(`${protocol} Transmission Failed. Check logs.`);
+                addLog(`ERROR: ${result.report?.error || result.error}`);
             }
         } catch (err) {
             const errMsg = err instanceof Error ? err.message : 'Unknown transmission error';
@@ -62,13 +69,30 @@ export const TransferPanel: React.FC = () => {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Configuration Section */}
                 <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
-                    <div className="flex items-center gap-3 mb-8">
-                        <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                            <Server className="w-5 h-5 text-blue-500" />
+                    <div className="flex items-center justify-between mb-8">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+                                <Server className="w-5 h-5 text-blue-500" />
+                            </div>
+                            <div>
+                                <h3 className="text-xl font-bold text-white uppercase tracking-tighter italic">Bridge Control</h3>
+                                <p className="text-xs text-gray-500 font-medium">DSP Gateway Transmission.</p>
+                            </div>
                         </div>
-                        <div>
-                            <h3 className="text-xl font-bold text-white uppercase tracking-tighter italic">SFTP Bridge</h3>
-                            <p className="text-xs text-gray-500 font-medium">Direct secure transmission to DSP gateways.</p>
+
+                        <div className="flex items-center bg-black p-1 rounded-lg border border-gray-800">
+                            <button
+                                onClick={() => setProtocol('SFTP')}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${protocol === 'SFTP' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                SFTP
+                            </button>
+                            <button
+                                onClick={() => setProtocol('ASPERA')}
+                                className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${protocol === 'ASPERA' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Aspera
+                            </button>
                         </div>
                     </div>
 

@@ -1,138 +1,317 @@
+
 import React, { useState } from 'react';
 import { distributionService } from '@/services/distribution/DistributionService';
-import { Loader2, DollarSign, FileCheck, Landmark } from 'lucide-react';
+import { Loader2, DollarSign, FileCheck, Landmark, Users, Plus, Trash2, PieChart, ArrowDownRight, Shield } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { TaxReport, WaterfallReport, WaterfallData } from '@/types/distribution';
 
 export const BankPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
-    const [userId, setUserId] = useState('user_123'); // Default mock user
+
+    // Global State
     const [amount, setAmount] = useState('1000');
     const [loading, setLoading] = useState(false);
-    const [report, setReport] = useState<import('@/types/distribution').TaxReport | null>(null);
+    const [activeTab, setActiveTab] = useState<'TAX' | 'WATERFALL'>('TAX');
 
-    const handleCalculate = async () => {
+    // Tax Engine State
+    const [userId, setUserId] = useState('user_123');
+    const [taxReport, setTaxReport] = useState<TaxReport | null>(null);
+
+    // Waterfall Engine State
+    const [splits, setSplits] = useState<{ userId: string; percentage: number }[]>([
+        { userId: 'artist_01', percentage: 0.50 },
+        { userId: 'producer_01', percentage: 0.30 },
+        { userId: 'label_hq', percentage: 0.20 }
+    ]);
+    const [waterfallReport, setWaterfallReport] = useState<WaterfallReport | null>(null);
+
+    const handleCalculateTax = async () => {
         setLoading(true);
         try {
             const result = await distributionService.calculateWithholding(userId, parseFloat(amount));
-            setReport(result);
-            success('Tax calculation complete');
+            setTaxReport(result);
+            success('Tax compliance verified.');
         } catch (error) {
             console.error('Tax calc failed:', error);
-            toastError('Calculation failed. Ensure you are in Electron mode.');
+            toastError('Tax verification failed.');
         } finally {
             setLoading(false);
         }
     };
 
+    const handleExecuteWaterfall = async () => {
+        setLoading(true);
+        try {
+            const splitMap: Record<string, number> = {};
+            splits.forEach(s => splitMap[s.userId] = s.percentage);
+
+            const data: WaterfallData = {
+                gross_revenue: parseFloat(amount),
+                splits: splitMap
+            };
+
+            const result = await distributionService.executeWaterfall(data);
+            setWaterfallReport(result);
+            success('Revenue waterfall executed.');
+        } catch (error) {
+            console.error('Waterfall failed:', error);
+            toastError('Waterfall execution failed.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const addSplit = () => {
+        setSplits([...splits, { userId: '', percentage: 0 }]);
+    };
+
+    const removeSplit = (index: number) => {
+        setSplits(splits.filter((_, i) => i !== index));
+    };
+
+    const updateSplit = (index: number, field: 'userId' | 'percentage', value: string | number) => {
+        const newSplits = [...splits];
+        if (field === 'percentage') {
+            newSplits[index].percentage = parseFloat(value as string) / 100;
+        } else {
+            newSplits[index].userId = value as string;
+        }
+        setSplits(newSplits);
+    };
+
+    const totalPercentage = splits.reduce((sum, s) => sum + s.percentage, 0);
+
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col gap-2">
-                <h2 className="text-2xl font-bold text-white">Industrial Bank Layer</h2>
-                <p className="text-gray-400">
-                    Direct integration with the IRS Tax Withholding Engine and Waterfall Payout logic.
-                    Executes locally via Python Bridge for maximum security.
-                </p>
+        <div className="space-y-8 animate-in fade-in duration-700">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                <div className="flex flex-col gap-2">
+                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Bank Layer</h2>
+                    <p className="text-gray-500 font-medium max-w-xl">
+                        Locally processed financial compliance and automated revenue splits.
+                        IndiiOS executes all logic via secure-context Python bridges.
+                    </p>
+                </div>
+
+                <div className="flex p-1 bg-[#121212] border border-gray-800 rounded-xl">
+                    <button
+                        onClick={() => setActiveTab('TAX')}
+                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'TAX' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        Tax Engine
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('WATERFALL')}
+                        className={`px-6 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'WATERFALL' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                    >
+                        Waterfall
+                    </button>
+                </div>
             </div>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* Input Panel */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center gap-2 text-emerald-400 mb-4">
-                        <Landmark className="w-5 h-5" />
-                        <span className="font-bold uppercase tracking-wider text-sm">Revenue Simulator</span>
-                    </div>
-
-                    <div className="space-y-4">
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Beneficiary User ID</label>
-                            <input
-                                type="text"
-                                value={userId}
-                                onChange={(e) => setUserId(e.target.value)}
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors font-mono"
-                            />
+                {/* Global Controls & Simulator Input */}
+                <div className="space-y-6">
+                    <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
+                        <div className="flex items-center gap-2 text-emerald-500 mb-6">
+                            <DollarSign className="w-5 h-5" />
+                            <span className="font-black uppercase tracking-[0.2em] text-[10px]">Revenue Simulator</span>
                         </div>
 
-                        <div>
-                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Gross Revenue (USD)</label>
-                            <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                        <div className="space-y-6">
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Simulation Amount (USD)</label>
+                                <div className="relative">
+                                    <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-emerald-500">$</span>
+                                    <input
+                                        type="number"
+                                        value={amount}
+                                        onChange={(e) => setAmount(e.target.value)}
+                                        className="w-full bg-black border border-gray-800 rounded-xl pl-10 pr-4 py-4 text-xl font-black text-white focus:outline-none focus:border-emerald-500 transition-all italic"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {activeTab === 'TAX' ? (
+                        <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8 space-y-6 animate-in slide-in-from-left-4 duration-500">
+                            <div className="flex items-center gap-2 text-blue-500 mb-2">
+                                <Landmark className="w-4 h-4" />
+                                <span className="font-black uppercase tracking-[0.2em] text-[10px]">Tax Verification</span>
+                            </div>
+
+                            <div>
+                                <label className="block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 ml-1">Beneficiary ID</label>
                                 <input
-                                    type="number"
-                                    value={amount}
-                                    onChange={(e) => setAmount(e.target.value)}
-                                    className="w-full bg-black/50 border border-white/10 rounded-lg pl-10 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors font-mono"
+                                    type="text"
+                                    value={userId}
+                                    onChange={(e) => setUserId(e.target.value)}
+                                    className="w-full bg-black border border-gray-800 rounded-xl px-4 py-3 text-sm font-bold text-gray-300 focus:outline-none focus:border-blue-500 transition-all font-mono"
                                 />
                             </div>
-                        </div>
 
-                        <button
-                            onClick={handleCalculate}
-                            disabled={loading}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileCheck className="w-5 h-5" />}
-                            Execute Compliance Check
-                        </button>
-                    </div>
-                </div>
-
-                {/* Report Panel */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 relative overflow-hidden">
-                    {!report ? (
-                        <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4 min-h-[300px]">
-                            <div className="p-4 rounded-full bg-white/5">
-                                <Landmark className="w-8 h-8 opacity-20" />
-                            </div>
-                            <p className="text-sm font-medium">Awaiting Calculation Data</p>
+                            <button
+                                onClick={handleCalculateTax}
+                                disabled={loading}
+                                className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                            >
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
+                                Verify Compliance
+                            </button>
                         </div>
                     ) : (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${report.payout_status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
-                                    }`}>
-                                    Status: {report.payout_status}
-                                </span>
-                                <span className="text-xs text-zinc-500 font-mono">TIN: {report.tin_masked}</span>
+                        <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8 space-y-6 animate-in slide-in-from-left-4 duration-500">
+                            <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2 text-purple-500">
+                                    <Users className="w-4 h-4" />
+                                    <span className="font-black uppercase tracking-[0.2em] text-[10px]">Equity Splits</span>
+                                </div>
+                                <button
+                                    onClick={addSplit}
+                                    className="p-1.5 bg-gray-800 rounded-lg hover:bg-gray-700 text-gray-400 hover:text-white transition-all"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                </button>
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Withholding Rate</div>
-                                    <div className="text-xl font-mono text-white">{(report.withholding_rate * 100).toFixed(1)}%</div>
-                                    <div className="text-xs text-zinc-500 mt-1">Article 12 Treaty</div>
-                                </div>
-
-                                <div className="p-4 rounded-xl bg-black/20 border border-white/5">
-                                    <div className="text-xs text-gray-500 uppercase tracking-wider mb-1">Tax Form</div>
-                                    <div className="text-xl font-mono text-white">{report.form_type}</div>
-                                    <div className="text-xs text-zinc-500 mt-1">Certified: {report.certified ? 'YES' : 'NO'}</div>
-                                </div>
+                            <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2 scrollbar-hide">
+                                {splits.map((split, idx) => (
+                                    <div key={idx} className="flex items-center gap-3">
+                                        <input
+                                            type="text"
+                                            placeholder="User ID"
+                                            value={split.userId}
+                                            onChange={(e) => updateSplit(idx, 'userId', e.target.value)}
+                                            className="flex-1 bg-black border border-gray-800 rounded-lg px-3 py-2 text-xs font-bold text-gray-300 focus:outline-none focus:border-purple-500 transition-all font-mono"
+                                        />
+                                        <div className="w-24 relative">
+                                            <input
+                                                type="number"
+                                                value={split.percentage * 100}
+                                                onChange={(e) => updateSplit(idx, 'percentage', e.target.value)}
+                                                className="w-full bg-black border border-gray-800 rounded-lg pl-3 pr-7 py-2 text-xs font-bold text-gray-300 focus:outline-none focus:border-purple-500 transition-all font-mono text-right"
+                                            />
+                                            <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-gray-600">%</span>
+                                        </div>
+                                        <button
+                                            onClick={() => removeSplit(idx)}
+                                            className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
 
-                            <div className="bg-black/30 rounded-lg p-4 space-y-3">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-400">Gross Amount</span>
-                                    <span className="text-white font-mono">${parseFloat(amount).toFixed(2)}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-rose-400">Tax Withholding</span>
-                                    <span className="text-rose-400 font-mono">-${(parseFloat(amount) * report.withholding_rate).toFixed(2)}</span>
-                                </div>
-                                <div className="border-t border-white/10 pt-3 flex justify-between font-bold">
-                                    <span className="text-emerald-400">Net Payable</span>
-                                    <span className="text-emerald-400 font-mono">${(parseFloat(amount) * (1 - report.withholding_rate)).toFixed(2)}</span>
-                                </div>
+                            <div className={`flex items-center justify-between px-4 py-3 rounded-xl border ${Math.abs(totalPercentage - 1.0) < 0.001 ? 'bg-green-500/10 border-green-500/20 text-green-500' : 'bg-red-500/10 border-red-500/20 text-red-500'}`}>
+                                <span className="text-[10px] font-black uppercase tracking-widest">Total Integrity</span>
+                                <span className="text-sm font-black italic">{(totalPercentage * 100).toFixed(1)}%</span>
                             </div>
 
-                            {report.payout_status !== 'ACTIVE' && (
-                                <div className="bg-rose-500/10 border border-rose-500/20 rounded-lg p-3 flex items-start gap-3">
-                                    <p className="text-xs text-rose-300">
-                                        Payouts are currently HELD. Please update tax certification to release funds.
-                                    </p>
-                                </div>
-                            )}
+                            <button
+                                onClick={handleExecuteWaterfall}
+                                disabled={loading || Math.abs(totalPercentage - 1.0) > 0.001}
+                                className="w-full bg-white text-black font-black uppercase tracking-widest py-4 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-200 active:scale-[0.98] transition-all disabled:opacity-50"
+                            >
+                                {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <PieChart className="w-5 h-5" />}
+                                Launch Waterfall
+                            </button>
                         </div>
+                    )}
+                </div>
+
+                {/* Reporting Panel */}
+                <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8 relative overflow-hidden flex flex-col min-h-[500px]">
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[80px] rounded-full -mr-16 -mt-16" />
+
+                    {activeTab === 'TAX' ? (
+                        !taxReport ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-4">
+                                <div className="p-6 bg-black border border-gray-800 rounded-3xl">
+                                    <Shield className="w-12 h-12 opacity-10" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 italic">Awaiting Compliance Hash</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center justify-between border-b border-gray-800 pb-6">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-3 h-3 rounded-full animate-pulse ${taxReport.payout_status === 'ACTIVE' ? 'bg-green-500 shadow-[0_0_12px_rgba(34,197,94,0.5)]' : 'bg-red-500'}`} />
+                                        <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Verified Node</h4>
+                                    </div>
+                                    <div className="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                                        {taxReport.form_type} Protocol
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="p-6 rounded-2xl bg-black border border-gray-800 group hover:border-blue-500/50 transition-all">
+                                        <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Withholding</span>
+                                        <span className="text-2xl font-black text-white italic">{(taxReport.withholding_rate * 100).toFixed(1)}%</span>
+                                    </div>
+                                    <div className="p-6 rounded-2xl bg-black border border-gray-800 group hover:border-emerald-500/50 transition-all">
+                                        <span className="block text-[10px] font-black text-gray-600 uppercase tracking-widest mb-2">Payout Node</span>
+                                        <span className="text-2xl font-black text-white italic">{taxReport.payout_status}</span>
+                                    </div>
+                                </div>
+
+                                <div className="bg-black border border-gray-800 rounded-2xl p-6 space-y-4">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Gross Inventory</span>
+                                        <span className="text-lg font-black text-gray-300 italic">${parseFloat(amount).toLocaleString()}</span>
+                                    </div>
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-[10px] font-black text-red-900 uppercase tracking-widest">Compliance Levy</span>
+                                        <span className="text-lg font-black text-red-600 italic">-${(parseFloat(amount) * taxReport.withholding_rate).toLocaleString()}</span>
+                                    </div>
+                                    <div className="border-t border-gray-900 pt-4 flex justify-between items-end">
+                                        <span className="text-[10px] font-black text-emerald-500 uppercase tracking-widest">Net Disbursable</span>
+                                        <span className="text-3xl font-black text-white italic tracking-tighter shadow-emerald-500/20 drop-shadow-lg">
+                                            ${(parseFloat(amount) * (1 - taxReport.withholding_rate)).toLocaleString()}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        )
+                    ) : (
+                        !waterfallReport ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-700 space-y-4">
+                                <div className="p-6 bg-black border border-gray-800 rounded-3xl">
+                                    <PieChart className="w-12 h-12 opacity-10" />
+                                </div>
+                                <p className="text-[10px] font-black uppercase tracking-[0.3em] opacity-30 italic">Awaiting Split Signal</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                <div className="flex items-center justify-between border-b border-gray-800 pb-6">
+                                    <h4 className="text-xl font-black text-white italic uppercase tracking-tighter">Waterfall Flow</h4>
+                                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Processed: {new Date(waterfallReport.processed_at).toLocaleTimeString()}</div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {Object.entries(waterfallReport.distributions).map(([user, distAmount], i) => (
+                                        <div key={user} className="flex items-center gap-4 group">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-purple-500 group-hover:scale-150 transition-all" />
+                                            <div className="flex-1 p-4 bg-black border border-gray-800 rounded-xl flex items-center justify-between group-hover:border-purple-500/30 transition-all">
+                                                <div className="flex flex-col">
+                                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Beneficiary Node</span>
+                                                    <span className="text-xs font-bold text-gray-300 font-mono">{user}</span>
+                                                </div>
+                                                <div className="flex items-center gap-3">
+                                                    <ArrowDownRight className="w-4 h-4 text-purple-500 opacity-20 group-hover:opacity-100 transition-all" />
+                                                    <span className="text-xl font-black text-white italic">${distAmount.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="mt-8 pt-6 border-t border-gray-800 flex justify-between items-center">
+                                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Dispersed</span>
+                                    <span className="text-3xl font-black text-white italic">${waterfallReport.net_revenue.toLocaleString()}</span>
+                                </div>
+                            </div>
+                        )
                     )}
                 </div>
             </div>

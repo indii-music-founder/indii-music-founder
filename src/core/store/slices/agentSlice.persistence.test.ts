@@ -1,7 +1,7 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { sessionService } from '@/services/agent/SessionService';
 
 // Mock must be defined before imports that use it
 vi.mock('@/services/agent/SessionService', () => ({
@@ -12,11 +12,6 @@ vi.mock('@/services/agent/SessionService', () => ({
         deleteSession: vi.fn().mockResolvedValue(undefined)
     }
 }));
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createStore } from 'zustand';
-import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
-import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
     let useStore: any;
@@ -71,7 +66,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Wait for the side effect of seeding to finish!
         await new Promise(resolve => setTimeout(resolve, 20));
 
-        mockUpdateSession.mockClear(); // Clear the call from addAgentMessage
+        (sessionService.updateSession as any).mockClear(); // Clear the call from addAgentMessage
 
         // Action: Update the message
         store.updateAgentMessage('msg-1', { text: 'New text' });
@@ -80,7 +75,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 20));
 
         // Expectation: The update should be persisted
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({
                 messages: expect.arrayContaining([
@@ -98,7 +93,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Wait for the side effect of seeding to finish!
         await new Promise(resolve => setTimeout(resolve, 20));
 
-        mockUpdateSession.mockClear();
+        (sessionService.updateSession as any).mockClear();
 
         // Action: Clear history
         store.clearAgentHistory();
@@ -107,7 +102,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         await new Promise(resolve => setTimeout(resolve, 20));
 
         // Expectation: The empty message list should be persisted
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({ messages: [] })
         );

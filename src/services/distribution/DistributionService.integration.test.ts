@@ -2,6 +2,7 @@
 import { distributionService } from './DistributionService';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+
 // Mock Electron API
 const mockElectronAPI = {
     distribution: {
@@ -18,6 +19,7 @@ const mockElectronAPI = {
         generateContentIdCSV: vi.fn(),
         checkMerlinStatus: vi.fn(),
         generateBWARM: vi.fn(),
+        transmit: vi.fn(),
     }
 };
 
@@ -104,5 +106,19 @@ describe('DistributionService Integration', () => {
 
         const result = await distributionService.generateDDEX(metadata);
         expect(result).toBe('<xml>DDEX</xml>');
+    });
+
+    it('should handle SFTP transmission success', async () => {
+        const config = { host: 'gateway.com', user: 'u', localPath: '/p' };
+        const mockReport = { status: 'SUCCESS', message: 'OK', host: 'gateway.com', remote_path: '.' };
+
+        mockElectronAPI.distribution.transmit = vi.fn().mockResolvedValue({
+            success: true,
+            report: mockReport
+        });
+
+        const result = await distributionService.transmit(config);
+        expect(result).toEqual(mockReport);
+        expect(mockElectronAPI.distribution.transmit).toHaveBeenCalledWith(config);
     });
 });

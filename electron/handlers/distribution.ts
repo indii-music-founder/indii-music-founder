@@ -347,26 +347,28 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:transmit', async (event, config: any) => {
         try {
             validateSender(event);
-            const { host, port, user, password, key, localPath, remotePath } = config;
+            const { protocol, host, port, user, password, key, localPath, remotePath } = config;
 
             if (!host || !user || !localPath) {
-                throw new Error('Missing required SFTP configuration (host, user, or localPath)');
+                throw new Error('Missing required transmission configuration (host, user, or localPath)');
             }
 
             const storagePath = getStoragePath();
+            const scriptName = (protocol === 'ASPERA') ? 'aspera_uploader.py' : 'sftp_uploader.py';
+
             const args = [
                 '--host', host,
-                '--port', String(port || 22),
                 '--user', user,
                 '--local', localPath,
                 '--remote', remotePath || '.',
                 '--storage-path', storagePath
             ];
 
+            if (port && protocol !== 'ASPERA') args.push('--port', String(port));
             if (password) args.push('--password', password);
             if (key) args.push('--key', key);
 
-            const report = await PythonBridge.runScript('distribution', 'sftp_uploader.py', args);
+            const report = await PythonBridge.runScript('distribution', scriptName, args);
             return { success: report.status === 'SUCCESS', report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
