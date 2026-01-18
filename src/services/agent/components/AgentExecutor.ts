@@ -50,7 +50,19 @@ export class AgentExecutor {
         }
 
         if (!agent) {
-            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load.`);
+            // Get diagnostic info about why the load failed
+            const loadError = agentRegistry.getLoadError('generalist');
+            const errorDetail = loadError
+                ? `Last error: ${loadError.error.message} (${loadError.attempts} attempts)`
+                : 'No error details available';
+
+            console.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
+                requestedAgentId: agentId,
+                generalistLoadError: loadError,
+                registeredAgents: agentRegistry.getAll().map(a => a.id)
+            });
+
+            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load. ${errorDetail}`);
         }
 
         const userId = auth.currentUser?.uid || 'anonymous';
