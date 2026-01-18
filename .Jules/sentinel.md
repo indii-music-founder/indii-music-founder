@@ -40,3 +40,9 @@
 **Vulnerability:** The utility script `scripts/send-reset.js` contained a hardcoded Firebase API key committed directly to the source code. While Firebase API keys are technically public-identifiable keys, hardcoding them violates "Secrets Management" best practices and sets a dangerous precedent for other sensitive keys (like Service Account keys).
 **Learning:** "Convenience breeds vulnerability." Utility scripts often bypass standard configuration management (like `.env` loading) for quick execution, leading to hardcoded secrets that are easily forgotten and committed.
 **Prevention:** Removed the hardcoded key and integrated `dotenv` to load the `VITE_FIREBASE_API_KEY` from the environment, ensuring the script fails safely if the configuration is missing.
+
+## 2026-03-03 - [Missing Validation in Distribution Forensics]
+**Vulnerability:** The `distribution:run-forensics` IPC handler acknowledged the need for security validation via a TODO comment but failed to implement it, allowing arbitrary file paths (including system files) to be passed to the Python execution layer.
+**Risk:** High. Could allow execution of heavy processes on arbitrary files or potential side-channel attacks via the Python script.
+**Learning:** TODO comments are not security controls. Explicit gaps identified during development must be tracked or implemented immediately, as they often persist into production.
+**Prevention:** Implemented strict path validation using `validateSafeAudioPath` in `electron/handlers/distribution.ts`, ensuring only valid audio files in safe directories are processed.

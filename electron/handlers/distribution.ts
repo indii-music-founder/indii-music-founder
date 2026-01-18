@@ -4,6 +4,7 @@ import * as path from 'path';
 import * as os from 'os';
 import { DistributionStageReleaseSchema } from '../utils/validation';
 import { validateSafeDistributionSource } from '../utils/security-checks';
+import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 
@@ -95,8 +96,8 @@ export const setupDistributionHandlers = () => {
             const rawPath = filePath.startsWith('file://') ? new URL(filePath).pathname : filePath;
             const absolutePath = decodeURIComponent(rawPath);
 
-            // Security check using audio handler logic (reused conceptualy)
-            // Ideally we'd reuse validateSafeAudioPath from ../utils/file-security
+            // Security check using audio handler logic
+            validateSafeAudioPath(absolutePath);
 
             // Execute Python Script
             const report = await PythonBridge.runScript('audio', 'audio_forensics.py', [absolutePath]);
