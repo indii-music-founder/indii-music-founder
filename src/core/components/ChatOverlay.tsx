@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Maximize2, Minimize2, Mic, StopCircle, RefreshCw, AlertCircle, Bot, GripHorizontal } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
@@ -30,9 +30,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
     const specializedAgents = useMemo(() => agentRegistry.getAll(), []);
 
-    const { isListening, toggleListening, transcript } = useVoice();
+    const { isListening, transcript } = useVoice();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
-    const [lastScrollTop, setLastScrollTop] = useState(0);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
@@ -49,17 +48,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
             });
         }
     }, [messages, isAutoScrolling, isProcessing]);
-
-    // Handle scroll events to pause/resume auto-scroll
-    const handleScroll = (scrollTop: number) => {
-        if (messages.length === 0) return;
-        // Simple heuristic: if user scrolls up significantly, stop auto-scroll
-        if (lastScrollTop > scrollTop + 10) {
-            setIsAutoScrolling(false);
-        }
-        // If user is near bottom, resume auto-scroll
-        // (Virtuoso doesn't give us scrollHeight easily so we rely on user action for now or 'atBottom' state if we added it)
-    };
 
     // Agent Avatar/Header Info - channel-aware
     // When in 'indii' mode, always show indii. When in 'agent' mode, show the active agent.
