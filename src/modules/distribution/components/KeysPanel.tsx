@@ -68,14 +68,10 @@ export const KeysPanel: React.FC = () => {
                 { title: 'Midnight Drive', writer_last: 'Smith', writer_first: 'John', writer_ipi: '00987654321' }
             ];
 
-            const response = await distributionService.generateBWARM({ works: mockWorks }) as BwarmResponse;
-
-            if (response.success && response.csv) {
-                setBwarmCsv(response.csv);
-                success('BWARM CSV Generated. Ready for download.');
-            } else {
-                throw new Error(response.error || 'BWARM generation failed.');
-            }
+            // DistributionService.generateBWARM returns the CSV string directly (unwrapped)
+            const csv = await distributionService.generateBWARM({ works: mockWorks });
+            setBwarmCsv(csv);
+            success('BWARM CSV Generated. Ready for download.');
         } catch (err) {
             error(err instanceof Error ? err.message : 'Unknown error during BWARM generation');
         } finally {
