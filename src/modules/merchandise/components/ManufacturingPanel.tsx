@@ -39,42 +39,15 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
     const [quantity, setQuantity] = React.useState(100);
     const toast = useToast();
 
-    React.useEffect(() => {
-        let isMounted = true;
-        const fetchCatalog = async () => {
-            const catalog = await MerchandiseService.getCatalog();
-            if (!isMounted) return;
-
-            const normalizedType = productType.toLowerCase();
-            const match = catalog.find(p => {
-                const title = p.title.toLowerCase();
-                // Direct match
-                if (title.includes(normalizedType)) return true;
-                // Alias: T-Shirt -> Tee
-                if (normalizedType === 't-shirt' && title.includes('tee')) return true;
-                // Alias: Phone Screen -> Phone Case? (If needed, but Phone Case usually matches Phone Screen via 'phone'?)
-                // 'phone screen'.includes('phone') -> true.
-                // But productType is 'Phone Screen'. normalized 'phone screen'.
-                return false;
-            });
-
-            if (match) {
-                setBaseCost(match.basePrice);
-            }
-        };
-        fetchCatalog();
-        return () => { isMounted = false; };
-    }, [productType]);
-
     // Dynamic Cost Calculation
     const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
     const [isLoadingPrices, setIsLoadingPrices] = React.useState(true);
 
-    // Fetch catalog prices on mount
+    // ⚡ Bolt Optimization: Combined duplicate useEffect hooks to prevent double-fetching
+    // the catalog and potential race conditions.
     useEffect(() => {
         let mounted = true;
 
-        // We set loading state here, but wrap in a function to avoid direct set loop
         const fetchPrices = async () => {
              setIsLoadingPrices(true);
              try {
@@ -87,11 +60,19 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                     return result.success;
                 });
 
+                const normalizedType = productType.toLowerCase();
+
                 // Find a matching product in the catalog
-                const match = validItems.find(p =>
-                    p.title.toLowerCase().includes(productType.toLowerCase()) ||
-                    (p.category === 'standard' && productType === 'T-Shirt') // Fallback assumption
-                );
+                const match = validItems.find(p => {
+                    const title = p.title.toLowerCase();
+                    // Direct match
+                    if (title.includes(normalizedType)) return true;
+                    // Alias: T-Shirt -> Tee
+                    if (normalizedType === 't-shirt' && title.includes('tee')) return true;
+                    // Fallback assumption from previous logic
+                    if (p.category === 'standard' && productType === 'T-Shirt') return true;
+                    return false;
+                });
 
                 if (match) {
                     setBaseCost(match.basePrice);
