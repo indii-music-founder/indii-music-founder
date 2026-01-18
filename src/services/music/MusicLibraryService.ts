@@ -1,5 +1,5 @@
 import { db, auth } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc, query, where, getDocs } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
 
 declare global {
@@ -29,9 +29,11 @@ export class MusicLibraryService {
         features: AudioFeatures,
         fileHash?: string
     ): Promise<void> {
+        const userId = auth.currentUser?.uid || 'mock-user';
+
         const data: AnalyzedTrack = {
             id: trackId,
-            userId: auth.currentUser?.uid || 'mock-user',
+            userId,
             filename,
             features,
             analyzedAt: new Date().toISOString(),
@@ -39,12 +41,9 @@ export class MusicLibraryService {
         };
 
         // E2E Mock Support
-        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             window.__MOCK_LIBRARY__[trackId] = data;
             if (fileHash) {
-                // @ts-expect-error - Mocking global window property for E2E tests
                 window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -52,7 +51,6 @@ export class MusicLibraryService {
         }
 
         if (!auth.currentUser) return;
-        const userId = auth.currentUser.uid;
 
         try {
             const trackRef = doc(db, this.COLLECTION, userId, 'analyzed_tracks', trackId);
@@ -71,7 +69,6 @@ export class MusicLibraryService {
         // E2E Mock Support
         // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -98,9 +95,7 @@ export class MusicLibraryService {
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 

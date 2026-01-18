@@ -123,6 +123,7 @@ class DistributionService {
         }
 
         try {
+            // Updated to pass object as single argument matching new IPC signature
             const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
             if (!result.success) {
                 console.error('[Distribution] Tax calculation failed:', result.error);
