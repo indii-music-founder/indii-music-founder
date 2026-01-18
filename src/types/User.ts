@@ -88,6 +88,14 @@ export interface UserPreferences {
     [key: string]: any; // Allow extensibility
 }
 
+export interface ShippingAddress {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+}
+
 export interface UserMembership {
     tier: 'free' | 'pro' | 'enterprise';
     expiresAt: Timestamp | null;
@@ -120,6 +128,7 @@ export interface UserProfile {
     // Social & Commerce
     accountType: 'fan' | 'artist' | 'label' | 'admin';
     socialStats?: SocialStats;
+    shippingAddress?: ShippingAddress;
 
     // Legacy support aliases
     avatarUrl?: string;

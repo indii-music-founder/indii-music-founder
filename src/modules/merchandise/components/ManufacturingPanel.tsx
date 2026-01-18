@@ -4,6 +4,7 @@ import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2 } f
 import { MerchTheme } from '@/modules/merchandise/themes';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
 import { ProductType, CatalogProductSchema } from '../types';
 
 interface ManufacturingPanelProps {
@@ -38,6 +39,7 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
     const [quantity, setQuantity] = React.useState(100);
     const toast = useToast();
+    const { userProfile } = useStore();
 
     // Dynamic Cost Calculation
     const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
@@ -279,11 +281,29 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={async () => {
-                        toast.info("Requesting physical sample...");
-                        // Mock sample request for now, can be bound later
-                        await new Promise(r => setTimeout(r, 1000));
-                        toast.success("Sample request sent to warehouse!");
-                        onClose?.();
+                         try {
+                             if (!userProfile?.shippingAddress) {
+                                 toast.error("Please add a shipping address to your profile to order samples.");
+                                 return;
+                             }
+
+                             toast.info("Requesting physical sample...");
+                             const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+
+                             const result = await MerchandiseService.requestSample({
+                                 productId: effectiveProductId,
+                                 variantId: `${selectedSize}-${selectedColor.name}`,
+                                 shippingAddress: userProfile.shippingAddress
+                             });
+
+                             if (result.success) {
+                                 toast.success(`Sample request sent! ID: ${result.requestId}`);
+                             }
+                             onClose?.();
+                         } catch (e) {
+                             console.error("Sample request failed:", e);
+                             toast.error("Failed to order sample.");
+                         }
                     }}
                     className={`w-full py-3 ${theme.name === 'pro' ? 'bg-white text-black' : 'bg-yellow-950 text-white'} rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-white/10 hover:opacity-90 transition-all flex items-center justify-center gap-2`}
                 >

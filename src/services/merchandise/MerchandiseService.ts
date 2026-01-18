@@ -33,6 +33,22 @@ export interface ManufactureRequest {
     createdAt?: any;
 }
 
+export interface SampleRequest {
+    productId: string;
+    variantId: string;
+    shippingAddress: {
+        street: string;
+        city: string;
+        state: string;
+        zip: string;
+        country: string;
+    };
+    userId?: string;
+    status?: 'pending' | 'processing' | 'shipped' | 'delivered';
+    requestId?: string;
+    createdAt?: any;
+}
+
 export interface MockupGeneration {
     asset: string;
     type: string;
@@ -168,6 +184,40 @@ export const MerchandiseService = {
         return {
             success: true,
             orderId
+        };
+    },
+
+    /**
+     * Request a physical sample.
+     */
+    requestSample: async (request: SampleRequest): Promise<{ success: boolean; requestId: string }> => {
+        let userId = request.userId;
+        if (!userId) {
+            userId = useStore.getState().userProfile?.id;
+        }
+
+        if (!userId) {
+            throw new AppException(AppErrorCode.AUTH_ERROR, 'User must be logged in to request a sample.');
+        }
+
+        const array = new Uint8Array(9);
+        crypto.getRandomValues(array);
+        const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
+        const requestId = `SAMPLE-${randomPart}`;
+
+        const docRef = await addDoc(collection(db, 'sample_requests'), {
+            ...request,
+            userId,
+            status: 'pending',
+            requestId,
+            createdAt: serverTimestamp()
+        });
+
+        // Simulate processing (no status update simulation needed for sample, usually manual)
+
+        return {
+            success: true,
+            requestId
         };
     },
 
