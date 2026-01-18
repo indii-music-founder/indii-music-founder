@@ -13,8 +13,9 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
 
-// Unified SDK
-import { GoogleGenAI } from "@google/genai";
+// Vertex AI SDK
+import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
 // Initialize Firebase Admin
 admin.initializeApp();
@@ -522,9 +523,13 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            // Initialize SDK Client
-            const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
+            // Initialize Vertex AI Client (Enterprise / Quota Aware)
+            const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
+            const location = 'us-central1';
+            const vertexAI = new VertexAI({ project, location });
+
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
+            const generativeModel = vertexAI.getGenerativeModel({ model: modelId });
 
             const parts: any[] = [{ text: prompt }];
 
@@ -539,26 +544,22 @@ export const generateImageV3 = functions
                 });
             }
 
-            const response = await client.models.generateContent({
-                model: modelId,
+            // NOTE: Vertex AI SDK `generateContent` signature differs slightly from GoogleGenAI
+            const result = await generativeModel.generateContent({
                 contents: [{ role: "user", parts }],
-                config: {
-                    responseModalities: ["IMAGE"],
+                generationConfig: {
                     candidateCount: count || 1,
+                    // @ts-expect-error - imageConfig is valid for image models but not strictly typed in all SDK versions yet
+                    responseModalities: ["IMAGE"],
                     ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
                 }
             });
 
-            const result = response; // SDK returns the result object directly usually, or we access response.candidates
-
-            // The Unified SDK response structure:
-            // response.candidates[0].content.parts[0].inlineData
-
-            if (!result.candidates || result.candidates.length === 0) {
-                throw new functions.https.HttpsError('internal', 'No candidates returned from Google AI');
+            if (!result.response.candidates || result.response.candidates.length === 0) {
+                throw new functions.https.HttpsError('internal', 'No candidates returned from Vertex AI');
             }
 
-            const processedImages = (result.candidates[0].content?.parts || [])
+            const processedImages = (result.response.candidates[0].content?.parts || [])
                 .filter((p: any) => p.inlineData)
                 .map((p: any) => ({
                     bytesBase64Encoded: p.inlineData.data,
@@ -597,9 +598,13 @@ export const editImage = functions
         const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
 
         try {
-            // Initialize SDK Client
-            const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
+            // Initialize Vertex AI Client
+            const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
+            const location = 'us-central1';
+            const vertexAI = new VertexAI({ project, location });
+
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
+            const generativeModel = vertexAI.getGenerativeModel({ model: modelId });
 
             const parts: any[] = [
                 {
@@ -637,23 +642,22 @@ export const editImage = functions
 
             parts.push({ text: prompt });
 
-            const result = await client.models.generateContent({
-                model: modelId,
+            const result = await generativeModel.generateContent({
                 contents: [{
                     role: "user",
                     parts: parts
                 }],
-                config: {
+                generationConfig: {
+                    // @ts-expect-error - imageConfig/responseModalities valid for image models
                     responseModalities: ["IMAGE"],
-                    temperature: 1.0 // Although usually ignored for image gen, keeping it for consistency if API accepts it
                 }
             });
 
-            if (!result.candidates) {
+            if (!result.response.candidates) {
                 throw new functions.https.HttpsError('internal', "No candidates returned.");
             }
 
-            return { candidates: result.candidates };
+            return { candidates: result.response.candidates };
 
         } catch (error: unknown) {
             console.error("Function Error:", error);

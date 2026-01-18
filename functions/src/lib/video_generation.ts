@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
 export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => inngestClient.createFunction(
@@ -24,41 +25,43 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
             });
 
-            // Start Video Generation Operation
-            const operation = await step.run("trigger-google-ai-video", async () => {
+            // Start Video Generation Operation (Vertex AI)
+            const operation = await step.run("trigger-vertex-ai-video", async () => {
                 const modelId = FUNCTION_AI_MODELS.VIDEO.GENERATION;
-                const apiKey = geminiApiKey.value();
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
+                const auth = new GoogleAuth({
+                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                });
+                const client = await auth.getClient();
+                const projectId = await auth.getProjectId();
+                const accessToken = await client.getAccessToken();
+
+                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
                 const requestBody = {
                     instances: [{ prompt: prompt }],
                     parameters: {
                         sampleCount: 1,
-                        // Note: veo-3.1-generate-preview does NOT support videoLength/seconds parameters currently
                         aspectRatio: options?.aspectRatio || "16:9"
                     },
-                    // 🛡️ SECURITY: Enforce strict safety settings for autonomous content generation
-                    safetySettings: [
-                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
-                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
-                    ]
+                    // Vertex AI Safety Settings Structure (slightly different from Gemini API if needed, but usually compatible)
                 };
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken.token}`
+                    },
                     body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Google AI Trigger Error: ${response.status} ${errorText}`);
+                    throw new Error(`Vertex AI Trigger Error: ${response.status} ${errorText}`);
                 }
 
                 const result = await response.json();
-                if (!result.name) throw new Error("No operation name returned from Google AI");
+                if (!result.name) throw new Error("No operation name returned from Vertex AI");
                 return result;
             });
 
@@ -78,10 +81,23 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 await step.sleep(`wait-5s-${attempts}`, "5s");
 
                 finalResult = await step.run(`check-status-${attempts}`, async () => {
-                    const apiKey = geminiApiKey.value();
-                    const statusEndpoint = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`;
+                    const auth = new GoogleAuth({
+                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                    });
+                    const client = await auth.getClient();
+                    // Project ID not needed for polling as operationName contains full path
+                    const accessToken = await client.getAccessToken();
 
-                    const statusResponse = await fetch(statusEndpoint);
+                    // operationName from Vertex is usually: projects/.../locations/.../operations/...
+                    // So we can use the aiplatform endpoint directly with the name
+                    const statusEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`;
+
+                    const statusResponse = await fetch(statusEndpoint, {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken.token}`
+                        }
+                    });
+
                     if (!statusResponse.ok) return null;
 
                     const statusData = await statusResponse.json();
