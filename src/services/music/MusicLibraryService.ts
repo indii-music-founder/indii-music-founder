@@ -39,12 +39,9 @@ export class MusicLibraryService {
         };
 
         // E2E Mock Support
-        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             window.__MOCK_LIBRARY__[trackId] = data;
             if (fileHash) {
-                // @ts-expect-error - Mocking global window property for E2E tests
                 window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -69,9 +66,7 @@ export class MusicLibraryService {
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -98,9 +93,7 @@ export class MusicLibraryService {
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 
