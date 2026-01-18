@@ -158,6 +158,13 @@ class DDEXGenerator:
         file_elem = self._create_element(tech_details, "File")
         self._create_element(file_elem, "FileName", track.get("filename", f"track_{track_num}.flac"))
         
+        # HashSum (MD5)
+        file_hash = track.get("file_hash")
+        if file_hash:
+            hash_elem = self._create_element(file_elem, "HashSum")
+            self._create_element(hash_elem, "HashSumValue", file_hash)
+            self._create_element(hash_elem, "HashSumAlgorithmType", "MD5")
+
         return sr
         
     def generate_release(self, parent: ET.Element, release_data: Dict[str, Any]) -> ET.Element:
