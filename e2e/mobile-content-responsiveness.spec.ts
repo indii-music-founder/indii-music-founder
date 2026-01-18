@@ -96,6 +96,109 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
         const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
         const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
 
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should handle wide images without breaking layout', async ({ page }) => {
+        // Inject a wide image (2000px wide SVG)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            // 2000px wide red rectangle
+            const wideImageSrc = "data:image/svg+xml,%3Csvg%20width%3D%222000%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%222000%22%20height%3D%22100%22%20fill%3D%22red%22%2F%3E%3C%2Fsvg%3E";
+
+            store.addAgentMessage({
+                id: 'test-image-msg',
+                role: 'model',
+                text: `Here is a wide image:\n\n![Wide Image](${wideImageSrc})`,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Image Exists
+        const img = page.locator('img[alt="Wide Image"]');
+        await expect(img).toBeVisible();
+
+        // Check if image is constrained
+        const imgBox = await img.boundingBox();
+        const viewportSize = page.viewportSize();
+
+        console.log(`📱 Wide Image: width=${imgBox?.width}, viewport=${viewportSize?.width}`);
+
+        // Image width should be <= viewport width (minus padding)
+        expect(imgBox?.width).toBeLessThan(viewportSize!.width);
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should handle deep JSON tool output without breaking layout', async ({ page }) => {
+        // Inject a deep JSON tool output
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            const deepJson = {
+                level1: {
+                    level2: {
+                        level3: {
+                            level4: {
+                                level5: {
+                                    text: "This is a deeply nested JSON object that simulates complex tool output.",
+                                    data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                                    meta: "Some metadata here to make it wider"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const jsonString = JSON.stringify(deepJson);
+            // Double escape quotes to survive Markdown rendering
+            const escapedJsonString = jsonString.replace(/"/g, '\\"');
+
+            // To trigger the special Tool Renderer in ChatMessage.tsx, we must match the pattern:
+            // [Tool: delegate_task] Output: { ... "text": "[Tool: inner_tool] Output: { ... }" ... }
+            const innerToolOutput = `[Tool: test_tool] Output: ${escapedJsonString}`;
+            const outerJson = {
+                text: innerToolOutput
+            };
+            const toolOutputText = `[Tool: delegate_task] Output: ${JSON.stringify(outerJson)}`;
+
+            store.addAgentMessage({
+                id: 'test-json-msg',
+                role: 'model',
+                text: toolOutputText,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Tool Result is visible
+        const toolResult = page.getByText('Tool Result: test_tool');
+        await expect(toolResult).toBeVisible();
+
+        // Verify the formatted JSON container
+        const container = toolResult.locator('xpath=..');
+
+        // Check bounding box
+        const box = await container.boundingBox();
+        const viewportSize = page.viewportSize();
+
+        console.log(`📱 JSON Container: width=${box?.width}, viewport=${viewportSize?.width}`);
+
+        expect(box?.width).toBeLessThan(viewportSize!.width);
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
         console.log(`📱 Body: scrollWidth=${bodyScrollWidth}, clientWidth=${bodyClientWidth}`);
 
         // Allow a small margin of error (1px) due to sub-pixel rendering, but strictly no major overflow
