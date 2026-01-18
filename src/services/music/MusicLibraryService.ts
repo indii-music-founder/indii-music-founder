@@ -2,6 +2,12 @@ import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
 
+declare global {
+    interface Window {
+        __MOCK_LIBRARY__?: Record<string, AnalyzedTrack>;
+    }
+}
+
 export interface AnalyzedTrack {
     id: string; // Typically a hash of the file or consistent local ID
     userId: string;

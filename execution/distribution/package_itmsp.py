@@ -39,9 +39,6 @@ def package_itmsp(release_id, staging_path):
     3. Generates DDEX ERN 4.3 XML.
     4. Creates .itmsp directory structure.
     5. Moves assets and XML into the bundle.
-    Simulates the creation of an Apple ITMSP bundle.
-    In production, this would use lxml to build the metadata.xml
-    and verify the checksums of all audio files.
     """
     logger.info(f"Starting ITMSP packaging for release {release_id} from {staging_path}")
 

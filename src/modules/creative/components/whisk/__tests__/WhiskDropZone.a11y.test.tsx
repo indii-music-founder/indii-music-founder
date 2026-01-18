@@ -83,7 +83,6 @@ describe('WhiskDropZone Accessibility', () => {
         buttons.forEach((button) => {
             // Check if button has visual text content
             const hasText = (button.textContent?.trim().length ?? 0) > 0;
-            const hasText = (button.textContent?.trim().length || 0) > 0;
             // Check if button has aria-label or aria-labelledby
             const hasAriaLabel = button.hasAttribute('aria-label') || button.hasAttribute('aria-labelledby');
 
