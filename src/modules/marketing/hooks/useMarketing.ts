@@ -21,24 +21,8 @@ export function useMarketing() {
 
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
-        // Validation: If no profile, or if "guest" mode but no real auth, skip listeners
-        // This prevents the "Internal Assertion Failed" crash when querying prohibited collections without auth
-        const isGuestStub = userProfile?.id === 'guest';
-        const isReallyAuthenticated = !!auth.currentUser;
-
-        // TEST MODE HOOK: Bypass Firestore listeners if in test mode
-        if (userProfile?.id === 'maestro-user-id' || (typeof window !== 'undefined' && (window as any).TEST_MODE)) {
-            console.log("[Marketing] Running in Test Mode. Firestore sync bypassed.");
-            setCampaigns([]); // Or mock campaigns if needed
-            setStats({ totalReach: 1000, engagementRate: 5.5, activeCampaigns: 1 });
-            const timer = setTimeout(() => setIsLoading(false), 0);
-            return () => clearTimeout(timer);
-        }
-
-        if (!userProfile?.id || (isGuestStub && !isReallyAuthenticated)) {
-            if (isGuestStub && !isReallyAuthenticated) {
-                console.warn("[Marketing] Running in offline/guest stub mode. Firestore sync disabled.");
-            }
+        // Validation: If no profile, skip listeners
+        if (!userProfile?.id) {
             const timer = setTimeout(() => setIsLoading(false), 0);
             return () => clearTimeout(timer);
         }

@@ -87,7 +87,7 @@ const veryLongVariableName = "This is a very long string that would definitely b
     });
 
     it('wraps markdown tables in a scrollable container to prevent layout breakage', () => {
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Verify table exists
         const table = screen.getByRole('table');
@@ -105,7 +105,7 @@ const veryLongVariableName = "This is a very long string that would definitely b
             { id: '2', role: 'model', text: LONG_CODE_MARKDOWN, timestamp: 2 }
         ];
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Verify code block text exists
         const codeElement = screen.getByText(/veryLongVariableName/);

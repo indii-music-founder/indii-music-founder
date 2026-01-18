@@ -388,18 +388,19 @@ def generate_ddex(artist_data: Dict[str, Any]) -> str:
     return generator.generate_ern(artist_data)
 
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": (
-                "No input provided. Usage: ddex_generator.py <json_payload>"
-            )
-        }))
-        sys.exit(1)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="DDEX ERN 4.3 Generator")
+    parser.add_argument("json_data", help="JSON payload string")
+    parser.add_argument("--storage-path", help="Optional path for file persistence")
+
+    args = parser.parse_args()
 
     try:
         # Parse input JSON
-        release_data = json.loads(sys.argv[1])
+        release_data = json.loads(args.json_data)
 
         # Generate DDEX XML
         generator = DDEXGenerator()

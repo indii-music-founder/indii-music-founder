@@ -1,16 +1,37 @@
-import { AI } from '@/services/ai/AIService'; // Keep if needed for types, though not used in registry directly in original
-import { AI_MODELS } from '@/core/config/ai-models';
 import { AGENT_CONFIGS } from './agentConfig';
 
-import { AgentContext, AgentResponse, AgentProgressCallback, SpecializedAgent } from './types';
+import { SpecializedAgent } from './types';
 
 export class AgentRegistry {
     private agents: Map<string, SpecializedAgent> = new Map();
     private loaders: Map<string, () => Promise<SpecializedAgent>> = new Map();
-    private metadata: Map<string, SpecializedAgent> = new Map(); // Stores lightweight metadata for both lazy and active agents
+    private metadata: Map<string, SpecializedAgent> = new Map();
+    private loadErrors: Map<string, { error: Error; timestamp: number; attempts: number }> = new Map();
+    private loadingPromises: Map<string, Promise<SpecializedAgent | undefined>> = new Map();
+    private isInitialized = false;
 
     constructor() {
         this.initializeAgents();
+    }
+
+    /**
+     * Pre-warm critical agents (call on app startup)
+     */
+    async warmup(): Promise<void> {
+        if (this.isInitialized) return;
+
+        try {
+            console.log('[AgentRegistry] Pre-warming Generalist agent...');
+            const generalist = await this.getAsync('generalist');
+            if (generalist) {
+                console.log('[AgentRegistry] Generalist agent pre-warmed successfully');
+                this.isInitialized = true;
+            } else {
+                console.error('[AgentRegistry] Failed to pre-warm Generalist agent');
+            }
+        } catch (e) {
+            console.error('[AgentRegistry] Warmup error:', e);
+        }
     }
 
     private initializeAgents() {
@@ -100,24 +121,71 @@ export class AgentRegistry {
         return this.agents.get(id);
     }
 
-    async getAsync(id: string): Promise<SpecializedAgent | undefined> {
+    async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {
+        const MAX_RETRIES = 2;
+        const RETRY_DELAY_MS = 500;
+
+        // Return cached agent if already loaded
         if (this.agents.has(id)) {
             return this.agents.get(id);
         }
 
-        const loader = this.loaders.get(id);
-        if (loader) {
-            try {
-                const agent = await loader();
-                this.agents.set(id, agent);
-                return agent;
-            } catch (e) {
-                console.error(`[AgentRegistry] Failed to load agent '${id}':`, e);
-                return undefined;
-            }
+        // Deduplicate concurrent loads - if already loading, wait for that promise
+        if (this.loadingPromises.has(id)) {
+            return this.loadingPromises.get(id);
         }
 
-        return undefined;
+        const loader = this.loaders.get(id);
+        if (!loader) {
+            return undefined;
+        }
+
+        // Create the loading promise and cache it to prevent duplicate loads
+        const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
+            try {
+                console.log(`[AgentRegistry] Loading agent '${id}'...`);
+                const agent = await loader();
+                this.agents.set(id, agent);
+                // Clear any previous error state
+                this.loadErrors.delete(id);
+                console.log(`[AgentRegistry] Agent '${id}' loaded successfully`);
+                return agent;
+            } catch (e) {
+                const error = e instanceof Error ? e : new Error(String(e));
+                const existingError = this.loadErrors.get(id);
+                const attempts = (existingError?.attempts || 0) + 1;
+
+                console.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
+
+                // Retry with exponential backoff
+                if (retryCount < MAX_RETRIES) {
+                    const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+                    console.log(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    this.loadingPromises.delete(id); // Clear so retry can proceed
+                    return this.getAsync(id, retryCount + 1);
+                }
+
+                console.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
+                return undefined;
+            } finally {
+                // Clean up loading promise after completion (unless retrying)
+                if (retryCount >= MAX_RETRIES || this.agents.has(id)) {
+                    this.loadingPromises.delete(id);
+                }
+            }
+        })();
+
+        this.loadingPromises.set(id, loadPromise);
+        return loadPromise;
+    }
+
+    /**
+     * Get the last error for an agent (useful for debugging)
+     */
+    getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined {
+        return this.loadErrors.get(id);
     }
 
     getAll(): SpecializedAgent[] {

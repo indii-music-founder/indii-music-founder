@@ -4,6 +4,7 @@ import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
+import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 
@@ -13,6 +14,7 @@ import { coordinator } from './WorkflowCoordinator';
  */
 export class AgentService {
     private isProcessing = false;
+    private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
@@ -22,6 +24,23 @@ export class AgentService {
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.executor = new AgentExecutor();
+
+        // Pre-warm agents in the background (non-blocking)
+        this.warmup();
+    }
+
+    /**
+     * Pre-warm critical agents. Call this on app startup for better first-message latency.
+     */
+    async warmup(): Promise<void> {
+        if (this.isWarmedUp) return;
+
+        try {
+            await agentRegistry.warmup();
+            this.isWarmedUp = true;
+        } catch (e) {
+            console.warn('[AgentService] Warmup failed, will retry on first message:', e);
+        }
     }
 
     /**
@@ -33,6 +52,11 @@ export class AgentService {
     async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string): Promise<void> {
         if (this.isProcessing) return;
         this.isProcessing = true;
+
+        // Ensure agents are warmed up before processing (non-blocking if already done)
+        if (!this.isWarmedUp) {
+            await this.warmup();
+        }
 
         // PII Redaction for Agent/LLM Input AND Storage
         // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.

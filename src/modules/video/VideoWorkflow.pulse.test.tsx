@@ -29,6 +29,14 @@ vi.mock('@/core/store', () => ({
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
         setVideoInputs: vi.fn(),
+        whiskState: {
+            subjects: [],
+            scenes: [],
+            styles: [],
+            motion: [],
+            preciseReference: false,
+            targetMedia: 'video'
+        }
     })),
 }));
 

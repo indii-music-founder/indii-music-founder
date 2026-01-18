@@ -64,28 +64,26 @@ export interface ElectronAPI {
 
     // Distribution (DDEX Packaging)
     distribution: {
-        stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
-        runForensics: (filePath: string) => Promise<{ success: boolean; report: any; error?: string }>;
-        packageITMSP: (releaseId: string) => Promise<{ success: boolean; itmspPath?: string; message?: string; error?: string }>;
-        calculateTax: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
-        certifyTax: (userId: string, data: any) => Promise<{ success: boolean; report: any; error?: string }>;
-        executeWaterfall: (data: any) => Promise<{ success: boolean; report: any; error?: string }>;
-        validateMetadata: (metadata: any) => Promise<{ success: boolean; report: any; error?: string }>;
-        generateISRC: (options?: any) => Promise<{ success: boolean; isrc?: string; report?: any; error?: string }>;
-        generateUPC: (options?: any) => Promise<{ success: boolean; upc?: string; error?: string }>;
-        registerRelease: (metadata: any, releaseId?: string) => Promise<{ success: boolean; release?: any; error?: string }>;
-        generateDDEX: (metadata: any) => Promise<{ success: boolean; xml?: string; error?: string }>;
-        generateContentIdCSV: (data: any) => Promise<{ success: boolean; csvData?: string; report?: any; error?: string }>;
-        generateBWARM: (data: any) => Promise<{ success: boolean; csv?: string; report?: any; error?: string }>;
-        checkMerlinStatus: (data: any) => Promise<{ success: boolean; report?: any; error?: string }>;
+        stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<import('./distribution').PackageResponse>;
+        runForensics: (filePath: string) => Promise<import('./distribution').IPCResponse<any>>;
+        packageITMSP: (releaseId: string) => Promise<import('./distribution').PackageResponse>;
+        calculateTax: (data: import('./distribution').TaxCalculationData) => Promise<import('./distribution').IPCResponse<import('./distribution').TaxReport>>;
+        certifyTax: (userId: string, data: import('./distribution').TaxCertificationData) => Promise<import('./distribution').IPCResponse<import('./distribution').TaxReport>>;
+        executeWaterfall: (data: import('./distribution').WaterfallData) => Promise<import('./distribution').IPCResponse<import('./distribution').WaterfallReport>>;
+        validateMetadata: (metadata: import('./distribution').DDEXMetadata) => Promise<import('./distribution').IPCResponse<import('./distribution').ValidationReport>>;
+        generateISRC: (options?: import('./distribution').ISRCGenerationOptions) => Promise<import('./distribution').ISRCResponse>;
+        generateUPC: (options?: import('./distribution').UPCGenerationOptions) => Promise<import('./distribution').UPCResponse>;
+        registerRelease: (metadata: any, releaseId?: string) => Promise<import('./distribution').IPCResponse<any>>;
+        generateDDEX: (metadata: import('./distribution').DDEXMetadata) => Promise<import('./distribution').DDEXResponse>;
+        generateContentIdCSV: (data: import('./distribution').ContentIdData) => Promise<import('./distribution').CSVResponse<import('./distribution').ContentIdReport>>;
+        generateBWARM: (data: import('./distribution').BWarmData) => Promise<import('./distribution').CSVResponse<any>>;
+        checkMerlinStatus: (data: import('./distribution').MerlinCheckData) => Promise<import('./distribution').IPCResponse<import('./distribution').MerlinReport>>;
     };
 }
 
 declare global {
     interface Window {
         electronAPI?: ElectronAPI;
-        __MAESTRO_MOCK_EXECUTION__?: boolean;
-        __MAESTRO_TEST_MODE__?: boolean;
         MSStream?: any; // Legacy iOS detection
     }
 

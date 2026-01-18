@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { Loader2, AlertTriangle, CheckCircle, XCircle, FileText, Youtube } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { distributionService } from '@/services/distribution/DistributionService';
+
+interface QCError {
+    field: string;
+    message: string;
+}
+
+import type { ValidationReport } from '@/types/distribution';
 
 interface QCError {
     field: string;
@@ -13,35 +21,31 @@ export const QCPanel: React.FC = () => {
         title: '',
         artist: '',
         artwork_url: '',
-        version: ''
+        version: '',
+        isrc: ''
     });
     const [loading, setLoading] = useState<'qc' | 'cid' | null>(null);
-    const [qcResult, setQcResult] = useState<{
-        valid: boolean;
-        errors: string[];
-        warnings: string[];
-        summary: string;
-    } | null>(null);
+    const [qcResult, setQcResult] = useState<ValidationReport | null>(null);
     const [csvOutput, setCsvOutput] = useState<string | null>(null);
 
     const handleValidate = async () => {
-        if (!window.electronAPI) {
-            toastError('Electron environment required for QC validation');
-            return;
-        }
         setLoading('qc');
         setQcResult(null);
         try {
-            const result = await window.electronAPI.distribution.validateMetadata(metadata);
-            if (result.report) {
-                setQcResult(result.report);
-                if (result.report.valid) {
-                    success('Metadata passed QC validation');
-                } else {
-                    toastError(`QC Failed: ${result.report.errors.length} error(s)`);
-                }
+            // Map flat state to DDEXMetadata structure
+            const ddexMetadata: import('@/types/distribution').DDEXMetadata = {
+                releaseId: `qc-${Date.now()}`,
+                title: metadata.title,
+                artists: [metadata.artist],
+                tracks: [], // QC usually checks release-level metadata first
+                label: 'Indii Records'
+            };
+            const report = await distributionService.validateReleaseMetadata(ddexMetadata);
+            setQcResult(report);
+            if (report.valid) {
+                success('Metadata passed QC validation');
             } else {
-                throw new Error(result.error || 'Validation failed');
+                toastError(`QC Failed: ${report.errors.length} error(s)`);
             }
         } catch (error) {
             toastError(error instanceof Error ? error.message : 'QC validation failed');
@@ -51,26 +55,20 @@ export const QCPanel: React.FC = () => {
     };
 
     const handleGenerateCID = async () => {
-        if (!window.electronAPI) {
-            toastError('Electron environment required');
-            return;
-        }
         setLoading('cid');
         setCsvOutput(null);
         try {
-            const cidPayload = {
-                tracks: [{ id: '1', title: metadata.title || 'Test Track', isrc: 'US-XXX-26-00001' }],
-                artist: metadata.artist || 'Test Artist',
-                album_title: metadata.title || 'Test Release',
-                upc: '123456789012'
+            const cidPayload: import('@/types/distribution').ContentIdData = {
+                tracks: [{
+                    title: metadata.title || 'Test Track',
+                    isrc: metadata.isrc || `US-S1Z-25-${Math.floor(Math.random() * 100000).toString().padStart(5, '0')}`,
+                    asset_id: `ASSET-${Date.now()}`
+                }]
             };
-            const result = await window.electronAPI.distribution.generateContentIdCSV(cidPayload);
-            if (result.success && result.csvData) {
-                setCsvOutput(result.csvData);
-                success('YouTube Content ID CSV generated');
-            } else {
-                throw new Error(result.error || 'CSV generation failed');
-            }
+            // Service returns the CSV string directly or handles the error
+            const csvData = await distributionService.generateContentIdAssets(cidPayload);
+            setCsvOutput(csvData);
+            success('YouTube Content ID CSV generated');
         } catch (error) {
             toastError(error instanceof Error ? error.message : 'CID generation failed');
         } finally {
@@ -96,6 +94,17 @@ export const QCPanel: React.FC = () => {
                     </div>
 
                     <div className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">ISRC (Optional)</label>
+                            <input
+                                type="text"
+                                value={metadata.isrc}
+                                onChange={(e) => setMetadata(prev => ({ ...prev, isrc: e.target.value }))}
+                                placeholder="US-XXX-25-XXXXX (Leave empty to auto-generate)"
+                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-zinc-600 font-mono"
+                            />
+                        </div>
+
                         <div>
                             <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Track/Release Title</label>
                             <input
@@ -129,7 +138,7 @@ export const QCPanel: React.FC = () => {
                             />
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <button
                                 onClick={handleValidate}
                                 disabled={loading === 'qc'}
@@ -184,10 +193,10 @@ export const QCPanel: React.FC = () => {
                                         </div>
                                     )}
 
-                                    {qcResult.warnings.length > 0 && (
+                                    {(qcResult.warnings?.length ?? 0) > 0 && (
                                         <div className="space-y-2">
                                             <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Warnings</span>
-                                            {qcResult.warnings.map((warn, i) => (
+                                            {qcResult.warnings?.map((warn, i) => (
                                                 <div key={i} className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
                                                     <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
                                                     <span className="text-xs text-amber-300">{warn}</span>

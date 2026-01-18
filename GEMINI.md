@@ -78,4 +78,8 @@ const firebaseConfig = {
 3. Add any new required keys to `.env.example` with placeholder documentation.
 4. Add explicit runtime validation that fails gracefully when env vars are missing.
 
+**4. Full Stack Sync (Backend Completeness)**
+
+If a feature requires backend connectivity, you MUST implement the backend logic immediately. Do not defer it. PROACTIVE BUILD: Do not output frontend code that calls non-existent backend endpoints.
+
 **Post-Mortem Note (2025-01-17):** A hardcoded Firebase config was found in `scripts/send-reset.js`. This policy exists to prevent future occurrences. There are no exceptions.

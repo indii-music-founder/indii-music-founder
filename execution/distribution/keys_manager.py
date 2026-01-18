@@ -122,21 +122,21 @@ class KeysManager:
 
 
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": (
-                "Usage: keys_manager.py [bwarm|merlin_check] <json_payload>"
-            )
-        }))
-        sys.exit(1)
+    import argparse
+    import sys
 
+    parser = argparse.ArgumentParser(description="Keys Manager & BWARM Generator")
+    parser.add_argument("command", choices=["bwarm", "merlin_check"], help="Command to execute")
+    parser.add_argument("json_data", help="JSON payload string")
+    parser.add_argument("--storage-path", help="Optional path for file persistence")
+
+    args = parser.parse_args()
     manager = KeysManager()
-    cmd = sys.argv[1].lower()
 
     try:
-        input_data = json.loads(sys.argv[2])
+        input_data = json.loads(args.json_data)
 
-        if cmd == "bwarm":
+        if args.command == "bwarm":
             # Input expected: {"works": [...]}
             works = input_data.get("works", [])
             csv_out = manager.generate_bwarm_csv(works)
@@ -146,13 +146,14 @@ if __name__ == "__main__":
                 "csv": csv_out
             }))
 
-        elif cmd == "merlin_check":
+        elif args.command == "merlin_check":
             report = manager.check_merlin_compliance(input_data)
             print(json.dumps(report, indent=2))
 
-        else:
-            print(json.dumps({"error": f"Unknown command: {cmd}"}))
-            sys.exit(1)
+    except Exception as e:
+        logger.exception("Keys Manager Error")
+        print(json.dumps({"error": str(e)}))
+        sys.exit(1)
 
     except Exception as e:
         logger.exception("Keys Manager Error")

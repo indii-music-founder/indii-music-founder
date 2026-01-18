@@ -3,7 +3,7 @@ import json
 import logging
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 # Configure logging
 logging.basicConfig(
@@ -23,13 +23,20 @@ class IdentityManager:
     - NNNNN: Unique Designation Code (5 digits)
     """
 
-    def __init__(self, store_path: str):
+    def __init__(self, store_path: Optional[str] = None):
         """Initializes the IdentityManager.
 
         Args:
             store_path: Path to the JSON data store for persistence.
         """
-        self.store_path = store_path
+        if store_path:
+            self.store_path = store_path
+        else:
+            # Default to a protected user directory to avoid "BS" in project root
+            data_dir = os.path.expanduser("~/.indiiOS/data")
+            os.makedirs(data_dir, exist_ok=True)
+            self.store_path = os.path.join(data_dir, "identity_store.json")
+
         self.data = self._load_data()
 
     def _load_data(self) -> Dict[str, Any]:
@@ -146,57 +153,55 @@ class IdentityManager:
         return metadata
 
 
+
 if __name__ == "__main__":
-    # Default to a generic store path if not provided by environment
-    BASE_DIR = os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.abspath(__file__))))
-    DEFAULT_STORE = os.path.join(BASE_DIR, "identity_store.json")
+    import argparse
 
-    manager = IdentityManager(DEFAULT_STORE)
+    parser = argparse.ArgumentParser(description="ISRC & UPC Manager")
+    parser.add_argument("command", choices=["register", "generate_isrc", "generate_upc"], help="Command to execute")
+    parser.add_argument("payload", nargs="?", help="JSON payload for the command")
+    parser.add_argument("extra_arg", nargs="?", help="Optional extra argument (e.g. release ID)")
+    parser.add_argument("--storage-path", help="Path to the data store directory")
 
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": "Command required: register, generate_isrc, or generate_upc."
-        }))
-        sys.exit(1)
+    args = parser.parse_args()
 
-    cmd = sys.argv[1].lower()
+    # Determine store path
+    store_file = None
+    if args.storage_path:
+        os.makedirs(args.storage_path, exist_ok=True)
+        store_file = os.path.join(args.storage_path, "identity_store.json")
+
+    manager = IdentityManager(store_path=store_file)
 
     try:
-        if cmd == "register":
-            # Usage: python3 isrc_manager.py register
-            # '{"tracks": [{"title": "Song 1"}]}' [rid]
-            payload = json.loads(sys.argv[2])
-            if len(sys.argv) > 3:
-                rid = sys.argv[3]
-            else:
-                rid = f"REL-{datetime.datetime.now().strftime('%Y%m%d%f')}"
+        if args.command == "register":
+            if not args.payload:
+                print(json.dumps({"error": "Payload required for register command."}))
+                sys.exit(1)
+            
+            payload = json.loads(args.payload)
+            rid = args.extra_arg if args.extra_arg else f"REL-{datetime.datetime.now().strftime('%Y%m%d%f')}"
             print(json.dumps(manager.register_release(rid, payload), indent=2))
-        elif cmd == "generate_isrc":
+
+        elif args.command == "generate_isrc":
             kwargs = {}
-            if len(sys.argv) > 2:
+            if args.payload:
                 try:
-                    kwargs = json.loads(sys.argv[2])
+                    kwargs = json.loads(args.payload)
                 except Exception:
                     pass
-            print(json.dumps(
-                {"isrc": manager.generate_isrc(**kwargs)}, indent=2))
+            print(json.dumps({"isrc": manager.generate_isrc(**kwargs)}, indent=2))
             manager._save_data()
-        elif cmd == "generate_upc":
+
+        elif args.command == "generate_upc":
             kwargs = {}
-            if len(sys.argv) > 2:
+            if args.payload:
                 try:
-                    kwargs = json.loads(sys.argv[2])
+                    kwargs = json.loads(args.payload)
                 except Exception:
                     pass
-            print(json.dumps(
-                {"upc": manager.generate_upc(**kwargs)}, indent=2))
+            print(json.dumps({"upc": manager.generate_upc(**kwargs)}, indent=2))
             manager._save_data()
-        else:
-            print(json.dumps({"error": f"Unknown command: {cmd}"}))
-            sys.exit(1)
 
     except Exception as e:
         logger.exception("Identity Manager Error")

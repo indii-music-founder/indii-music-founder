@@ -39,12 +39,29 @@ export const AuthorityPanel: React.FC = () => {
     const handleGenerateDDEX = async () => {
         setLoading('ddex');
         try {
+            // Auto-generate identifiers if not already present
+            let activeIsrc = isrc;
+            let activeUpc = upc;
+
+            if (!activeIsrc) {
+                activeIsrc = await distributionService.assignISRCs();
+                setIsrc(activeIsrc);
+            }
+
+            if (!activeUpc) {
+                activeUpc = await distributionService.generateUPC();
+                setUpc(activeUpc);
+            }
+
             const mockRelease = {
+                releaseId: 'REL-MOCK-001',
+                title: 'indii Authority Test',
+                artists: ['Narrow Channel'],
                 tracks: [
-                    { id: '1', title: 'Industrial Test Track', isrc: isrc || 'US-XXX-26-00001' }
+                    { id: '1', title: 'Industrial Test Track', isrc: activeIsrc || 'US-S1Z-25-00001' }
                 ],
-                album_title: 'indii Authority Test',
-                upc: upc || '123456789012'
+                upc: activeUpc || '123456789012',
+                label: 'indii Records'
             };
             const result = await distributionService.generateDDEX(mockRelease);
             setDdexXml(result);

@@ -122,7 +122,7 @@ describe('📚 Keeper: Context Integrity', () => {
         const payload = generateCall[0];
 
         // Extract the full prompt text sent to the model
-        // @ts-expect-error - inspecting the complex payload structure
+        // @ts-ignore - inspecting the complex payload structure, ignoring strict type checks for test inspection
         const parts = payload.contents[0].parts;
         // The BaseAgent might be sending multiple parts. We need to find the one with the huge history.
         // Or checking total length of all parts.

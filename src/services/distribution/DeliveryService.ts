@@ -299,11 +299,15 @@ export class DeliveryService {
 
             if (isElectron) {
                 // Real Delivery via Electron SFTP
+                if (!credentials.host || !credentials.username) {
+                    throw new Error(`Incomplete credentials for ${distributorId}. Host and Username are required.`);
+                }
+
                 console.info(`[DeliveryService] Connecting to SFTP host: ${credentials.host}...`);
 
                 await this.transporter.connect({
                     host: credentials.host,
-                    port: credentials.port || 22,
+                    port: typeof credentials.port === 'string' ? parseInt(credentials.port, 10) : (credentials.port || 22),
                     username: credentials.username,
                     password: credentials.password,
                     privateKey: credentials.apiSecret // Assuming key might be stored here for some

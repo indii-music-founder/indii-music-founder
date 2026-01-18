@@ -141,12 +141,27 @@ describe('CampaignManager', () => {
     });
 
     it('executes campaign when execute button is clicked', async () => {
+        // Update mock to succeed
+        const { httpsCallable } = await import('firebase/functions');
+        (httpsCallable as any).mockReturnValue(() => Promise.resolve({ data: { success: true, posts: mockCampaign.posts, message: "Success" } }));
+
         render(<CampaignManager {...defaultProps} selectedCampaign={mockCampaign} />);
-        fireEvent.click(screen.getByText('Execute Campaign'));
+
+        const { act } = await import('@testing-library/react');
+        await act(async () => {
+            fireEvent.click(screen.getByText('Execute Campaign'));
+        });
 
         // Expect optimistic update
         expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
             status: CampaignStatus.EXECUTING
         }));
+
+        // Wait for final update to DONE
+        await vi.waitFor(() => {
+            expect(mockOnUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
+                status: CampaignStatus.DONE
+            }));
+        });
     });
 });

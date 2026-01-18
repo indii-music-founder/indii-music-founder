@@ -11,7 +11,8 @@ const { mockUpdateSession, mockGetSessionsForUser } = vi.hoisted(() => ({
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
-        getSessionsForUser: mockGetSessionsForUser
+        getSessionsForUser: mockGetSessionsForUser,
+        createSession: vi.fn().mockResolvedValue('new-session-id')
     }
 }));
 

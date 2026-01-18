@@ -132,7 +132,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const table = await screen.findByRole('table');
         expect(table).toBeInTheDocument();
@@ -156,7 +156,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const renderer = await screen.findByTestId('visual-script-renderer');
         expect(renderer).toHaveTextContent("My Movie");
@@ -172,7 +172,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const renderer = await screen.findByTestId('contract-renderer');
         expect(renderer).toBeInTheDocument();
@@ -185,7 +185,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const status = screen.getByRole('status');
         expect(status).toHaveAttribute('aria-label', 'AI is thinking');
@@ -204,7 +204,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             generatedHistory: []
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // The image should be rendered despite markdown auto-linking URLs
         const img = await screen.findByAltText('Generated Image 1');
@@ -221,7 +221,7 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         expect(screen.getByText(/Incomp/)).toBeInTheDocument();
         expect(screen.queryByTestId('visual-script-renderer')).not.toBeInTheDocument();

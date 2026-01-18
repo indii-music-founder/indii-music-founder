@@ -4,6 +4,20 @@ import { DistributionTaskDocument, TaxProfileDocument } from '@/types/firestore'
 import { isrcService } from './ISRCService';
 import { taxService } from './TaxService';
 import { Timestamp } from 'firebase/firestore';
+import {
+    MerlinCheckData, MerlinReport,
+    BWarmData,
+    DDEXMetadata,
+    ContentIdData,
+    ISRCGenerationOptions,
+    UPCGenerationOptions,
+    TaxCalculationData,
+    TaxCertificationData,
+    WaterfallData,
+    WaterfallReport,
+    TaxReport,
+    ValidationReport
+} from '@/types/distribution';
 
 export type { DistributionTaskDocument as DistributionTask };
 
@@ -90,7 +104,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Calculate tax withholding via Electron IPC (uses Python engine)
      */
-    async calculateWithholding(userId: string, amount: number): Promise<any> {
+    async calculateWithholding(userId: string, amount: number): Promise<TaxReport> {
         if (!window.electronAPI) {
             console.warn('[Distribution] Electron API missing for tax calculation');
             throw new Error('Electron environment required for tax calculations');
@@ -99,7 +113,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         try {
             // Updated to pass object as single argument matching new IPC signature
             const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
-            if (!result.success) {
+            if (!result.success || !result.report) {
                 console.error('[Distribution] Tax calculation failed:', result.error);
                 throw new Error(result.error || 'Tax calculation failed');
             }
@@ -113,7 +127,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Certify user tax status via Electron IPC and persist to Firestore
      */
-    async certifyTax(userId: string, data: any): Promise<TaxProfileDocument> {
+    async certifyTax(userId: string, data: TaxCertificationData): Promise<TaxProfileDocument> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for tax certification');
         }
@@ -126,15 +140,15 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             const report = result.report;
 
-            // Persist to Firestore via TaxService
+            // Map Python report keys to Firestore schema
             await taxService.saveProfile(userId, {
                 userId,
-                formType: report.form_type,
+                formType: report.form_type as 'W-9' | 'W-8BEN' | 'W-8BEN-E',
                 country: report.country,
                 tinMasked: report.tin_masked,
                 tinValid: report.tin_valid,
                 certified: report.certified,
-                payoutStatus: report.payout_status,
+                payoutStatus: (report.payout_status === 'BLOCKED' || report.payout_status === 'HOLD') ? 'HELD' : 'ACTIVE',
                 certTimestamp: report.cert_timestamp ? Timestamp.fromDate(new Date(report.cert_timestamp)) : null,
                 metadata: { ...data, rawReport: report }
             });
@@ -149,14 +163,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Execute revenue waterfall via Electron IPC
      */
-    async executeWaterfall(data: any): Promise<any> {
+    async executeWaterfall(data: WaterfallData): Promise<WaterfallReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for waterfall execution');
         }
 
         try {
             const result = await window.electronAPI.distribution.executeWaterfall(data);
-            if (!result.success) {
+            if (!result.success || !result.report) {
                 throw new Error(result.error || 'Waterfall execution failed');
             }
             return result.report;
@@ -169,7 +183,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Validate release metadata via Electron IPC
      */
-    async validateReleaseMetadata(metadata: any): Promise<any> {
+    async validateReleaseMetadata(metadata: DDEXMetadata): Promise<ValidationReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for metadata validation');
         }
@@ -182,7 +196,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 // Unless it's an execution error
                 if (result.error) throw new Error(result.error);
             }
-            return result.report;
+            return result.report || { valid: false, errors: ['Unknown validation error'] };
         } catch (error) {
             console.error('[Distribution] Validation engine error:', error);
             throw error;
@@ -192,7 +206,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate Content ID CSV Assets
      */
-    async generateContentIdAssets(data: any): Promise<string> {
+    async generateContentIdAssets(data: ContentIdData): Promise<string> {
         if (!window.electronAPI) {
             console.warn('[Distribution] Electron API missing for Content ID generation');
             throw new Error('Electron environment required for Content ID generation');
@@ -214,7 +228,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate a new ISRC via Python engine
      */
-    async assignISRCs(options?: any): Promise<string> {
+    async assignISRCs(options?: ISRCGenerationOptions): Promise<string> {
         if (!window.electronAPI) {
             console.warn('[Distribution] Electron API missing for ISRC generation');
             throw new Error('Electron environment required for ISRC generation');
@@ -229,7 +243,9 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             // Persist assignment if options contain metadata (e.g. for a specific track)
             if (options?.releaseId && options?.trackTitle) {
-                const userId = auth.currentUser?.uid || 'system';
+                const userId = auth.currentUser?.uid;
+                if (!userId) throw new Error('User must be authenticated to record ISRC assignment');
+
                 await isrcService.recordAssignment({
                     isrc: result.isrc,
                     releaseId: options.releaseId,
@@ -237,7 +253,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                     trackTitle: options.trackTitle,
                     artistName: options.artistName || 'Unknown Artist',
                     assignedAt: Timestamp.now(),
-                    metadataSnapshot: options
+                    metadataSnapshot: { ...options } as Record<string, unknown>
                 });
             }
 
@@ -251,7 +267,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate a new UPC via Python engine
      */
-    async generateUPC(options?: any): Promise<string> {
+    async generateUPC(options?: UPCGenerationOptions): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for UPC generation');
         }
@@ -271,7 +287,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate DDEX ERN 4.3 XML via Python engine
      */
-    async generateDDEX(metadata: any): Promise<string> {
+    async generateDDEX(metadata: DDEXMetadata): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for DDEX generation');
         }
@@ -291,14 +307,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Check Merlin Network compliance status
      */
-    async checkMerlinStatus(data: any): Promise<any> {
+    async checkMerlinStatus(data: MerlinCheckData): Promise<MerlinReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for Merlin check');
         }
 
         try {
             const result = await window.electronAPI.distribution.checkMerlinStatus(data);
-            if (!result.success) {
+            if (!result.success || !result.report) {
                 throw new Error(result.error || 'Merlin status check failed');
             }
             return result.report;
@@ -311,7 +327,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Generate BWARM CSV report
      */
-    async generateBWARM(data: any): Promise<string> {
+    async generateBWARM(data: BWarmData): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for BWARM generation');
         }

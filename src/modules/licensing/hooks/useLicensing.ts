@@ -128,9 +128,12 @@ export function useLicensing() {
     }
   };
 
+  const projectedValue = licenses.length * 12500;
+
   return {
     licenses,
     requests,
+    projectedValue,
     loading: isLoading,
     error,
     initiateDrafting,

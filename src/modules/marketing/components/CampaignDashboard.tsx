@@ -66,19 +66,6 @@ const CampaignDashboard: React.FC = () => {
         setIsAIModalOpen(true);
     }, []);
 
-    // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
-    useEffect(() => {
-        // Only enable in non-production environments or if specifically enabled
-        if (import.meta.env.DEV || window.location.hostname === 'localhost' || window.__MAESTRO_TEST_MODE__) {
-            const handleTestUpdate = (event: Event) => {
-                const customEvent = event as CustomEvent<CampaignAsset>;
-                console.log("[Maestro] Injecting Agent Plan...", customEvent.detail);
-                setSelectedCampaign(prev => prev ? { ...prev, ...customEvent.detail } : customEvent.detail);
-            };
-            window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestUpdate);
-            return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestUpdate);
-        }
-    }, []);
 
     return (
         <div className="flex h-full bg-slate-950 overflow-hidden text-slate-200 font-sans selection:bg-purple-500/30">

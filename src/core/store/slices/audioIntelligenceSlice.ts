@@ -47,11 +47,12 @@ export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> 
 
             return profile;
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('[AudioIntelligenceMask] Analysis failed', error);
+            const message = error instanceof Error ? error.message : 'Audio analysis failed';
             set({
                 isAnalyzingAudio: false,
-                analysisError: error.message || 'Audio analysis failed'
+                analysisError: message
             });
             throw error;
         }

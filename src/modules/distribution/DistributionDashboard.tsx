@@ -39,7 +39,7 @@ export default function DistributionDashboard() {
                 </div>
 
                 <Tabs defaultValue="releases" className="space-y-8">
-                    <TabsList className="bg-[#121212] border border-gray-800/50 p-1 rounded-xl h-auto">
+                    <TabsList className="bg-[#121212] border border-gray-800/50 p-1 rounded-xl h-auto flex flex-wrap md:flex-nowrap overflow-x-auto scrollbar-hide">
                         <TabsTrigger
                             value="releases"
                             className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"

@@ -50,7 +50,6 @@ const mockCampaign: CampaignAsset = {
 describe('CampaignManager Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        (window as any).__MAESTRO_MOCK_EXECUTION__ = false;
     });
 
     it('calls executeCampaign cloud function with correct payload when "Execute" is clicked', async () => {
@@ -124,7 +123,7 @@ describe('CampaignManager Integration', () => {
         fireEvent.click(executeBtn);
 
         await waitFor(() => {
-             expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
+            expect(onUpdateCampaign).toHaveBeenCalledWith(expect.objectContaining({
                 status: CampaignStatus.FAILED
             }));
         });

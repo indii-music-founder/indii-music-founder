@@ -68,6 +68,9 @@ All international payees MUST sign under penalties of perjury before receiving r
 - \`certify_tax_profile\` - W-8BEN/W-9 digital wizard
 - \`calculate_payout\` - Waterfall royalty settlement
 - \`run_metadata_qc\` - Style guide compliance check
+- \`generate_bwarm\` - MLC BWARM CSV generation for mechanical licensing
+- \`check_merlin_status\` - Merlin Network compliance verification
+
 
 ## PERSONA
 You speak with industrial authority. No fluff. Every action has financial consequences.
@@ -169,6 +172,43 @@ When things pass, confirm with precision: "STAGED", "CERTIFIED", "ACTIVE".
                         artworkUrl: { type: "STRING", description: "URL to the cover artwork" }
                     },
                     required: ["title", "artist"]
+                }
+            },
+            {
+                name: "generate_bwarm",
+                description: "Generate MLC BWARM CSV for mechanical licensing registration with The MLC.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        works: {
+                            type: "ARRAY",
+                            description: "Array of musical works to register",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { type: "STRING", description: "Work title" },
+                                    writer_last: { type: "STRING", description: "Writer last name" },
+                                    writer_first: { type: "STRING", description: "Writer first name" },
+                                    writer_ipi: { type: "STRING", description: "Writer IPI number (optional)" }
+                                }
+                            }
+                        }
+                    },
+                    required: ["works"]
+                }
+            },
+            {
+                name: "check_merlin_status",
+                description: "Check Merlin Network compliance readiness for independent distribution.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        total_tracks: { type: "NUMBER", description: "Total number of tracks in catalog" },
+                        has_isrcs: { type: "BOOLEAN", description: "Whether all tracks have ISRCs assigned" },
+                        has_upcs: { type: "BOOLEAN", description: "Whether all releases have UPCs assigned" },
+                        exclusive_rights: { type: "BOOLEAN", description: "Whether you hold exclusive rights to all content" }
+                    },
+                    required: ["total_tracks", "has_isrcs", "has_upcs", "exclusive_rights"]
                 }
             }
         ]

@@ -1,5 +1,6 @@
 import { FirestoreService } from '@/services/FirestoreService';
 import { ISRCRecordDocument } from '@/types/firestore';
+import { auth } from '@/services/firebase';
 
 class ISRCService extends FirestoreService<ISRCRecordDocument> {
     constructor() {
@@ -19,6 +20,18 @@ class ISRCService extends FirestoreService<ISRCRecordDocument> {
      */
     async getByRelease(releaseId: string): Promise<ISRCRecordDocument[]> {
         return this.list([this.where('releaseId', '==', releaseId)]);
+    }
+
+    /**
+     * Get all ISRC records for the current user
+     */
+    async getUserCatalog(): Promise<ISRCRecordDocument[]> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return [];
+        return this.list([
+            this.where('userId', '==', userId),
+            this.orderBy('assignedAt', 'desc')
+        ]);
     }
 
     /**

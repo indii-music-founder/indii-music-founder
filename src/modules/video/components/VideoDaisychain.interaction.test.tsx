@@ -131,7 +131,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                     setPendingPrompt: vi.fn(),
                     selectedItem: null,
                     userProfile: { id: 'u1', name: 'Test User' },
-                    whiskState: { subjects: [], scenes: [], styles: [], preciseReference: false }
+                    whiskState: { subjects: [], scenes: [], styles: [], motion: [], preciseReference: false, targetMedia: 'video' }
                 };
                 return selector ? selector(storeState) : storeState;
             });

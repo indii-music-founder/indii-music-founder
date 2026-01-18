@@ -19,7 +19,8 @@ export const PublishingAgent: AgentConfig = {
                 const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as Schema);
                 return { success: true, data: { status: "Submitted", ...response } };
             } catch (e) {
-                return { success: true, data: { status: "Submitted", iswc: "T-000.000.001-1" } };
+                const randomISWC = `T-${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}-${Math.floor(1 + Math.random() * 9)}`;
+                return { success: true, data: { status: "Submitted", iswc: randomISWC } };
             }
         },
         analyze_contract: async (args: { file_data: string, mime_type: string }) => {

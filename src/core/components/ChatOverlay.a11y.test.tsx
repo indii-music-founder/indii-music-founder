@@ -90,7 +90,7 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should have no initial accessibility violations', async () => {
-        const { container } = render(<ChatOverlay />);
+        const { container } = render(<ChatOverlay onClose={vi.fn()} />);
         const results = await axe(container);
         // Using object syntax for extend might have issues with how toHaveNoViolations is called in some envs,
         // but here the error "Cannot read properties of undefined (reading 'call')" typically means the matcher isn't found on expect object.
@@ -99,7 +99,7 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should manage focus and state for ThoughtChain toggle', () => {
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Find the toggle button. It renders "Cognitive Logic".
         // The TextEffect mock renders it as a span.
@@ -118,7 +118,7 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should have aria-label on icon-only buttons', () => {
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Invite button
         expect(screen.getByTitle('Invite')).toHaveAttribute('aria-label', 'Invite');
@@ -150,7 +150,7 @@ describe('ChatOverlay Accessibility', () => {
             return streamingState;
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const messageContainer = screen.getByTestId('agent-message');
         expect(messageContainer).toHaveAttribute('aria-live', 'polite');

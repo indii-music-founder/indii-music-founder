@@ -70,21 +70,19 @@ def generate_content_id_csv(asset_data: Dict[str, Any]) -> str:
     return csv_content
 
 
+
 if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print(json.dumps({
-            "error": (
-                "Input JSON string required. "
-                "Usage: python3 content_id_csv_generator.py '<json_data>'"
-            )
-        }))
-        sys.exit(1)
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Content ID CSV Generator")
+    parser.add_argument("json_data", help="JSON payload string")
+    parser.add_argument("--storage-path", help="Optional path for file persistence")
+
+    args = parser.parse_args()
 
     try:
-        # Attempt to parse input JSON
-        raw_input = sys.argv[1]
-        data = json.loads(raw_input)
-
+        # Parse input JSON
+        data = json.loads(args.json_data)
         csv_result = generate_content_id_csv(data)
 
         # Output the raw CSV data to stdout

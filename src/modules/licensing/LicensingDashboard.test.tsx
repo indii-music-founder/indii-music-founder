@@ -42,6 +42,7 @@ describe('LicensingDashboard', () => {
         (useLicensing as any).mockReturnValue({
             licenses: [],
             requests: [],
+            projectedValue: 0,
             loading: true,
             actions: {}
         });
@@ -57,6 +58,7 @@ describe('LicensingDashboard', () => {
         (useLicensing as any).mockReturnValue({
             licenses: [],
             requests: mockRequests,
+            projectedValue: 0,
             isLoading: false,
             actions: {
                 draftAgreement: vi.fn(),
@@ -74,6 +76,7 @@ describe('LicensingDashboard', () => {
         (useLicensing as any).mockReturnValue({
             licenses: [],
             requests: mockRequests,
+            projectedValue: 0,
             isLoading: false,
             initiateDrafting: initiateDraftingMock
         });

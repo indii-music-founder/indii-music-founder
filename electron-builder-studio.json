@@ -26,45 +26,12 @@
   ],
   "files": [
     "dist/**/*",
-    "dist-electron-studio/**/*",
+    "dist-electron/**/*",
     "node_modules/**/*",
     "package.json"
   ],
   "linux": {
-    "AppImage": {
-      "icon": "assets/icon-studio.png",
-      "keywords": [
-        "indiiOS",
-        "studio",
-        "creative",
-        "AI",
-        "music",
-        "art"
-      ]
-    },
     "category": "AudioVideo",
-    "deb": {
-      "afterInstall": [
-        "ln -sf /opt/indiios-studio/resources ~/Desktop/indiiOS-Studio-Resources"
-      ],
-      "depends": [
-        "ffmpeg",
-        "libgconf-2-4",
-        "libnotify4"
-      ],
-      "priority": "optional",
-      "synopsis": "indiiOS Studio - Desktop creative studio for independent artists"
-    },
-    "desktop": {
-      "Keywords": "indiiOS Studio;creative;AI;music;art",
-      "icon": "assets/icon-studio.png",
-      "startupNotify": true
-    },
-    "icon": "assets/icon-studio.png",
-    "rpm": {
-      "category": "AudioVideo",
-      "icon": "assets/icon-studio.png"
-    },
     "target": [
       "AppImage",
       "deb",
@@ -75,28 +42,6 @@
   "mac": {
     "category": "public.app-category.productivity",
     "darkModeSupport": true,
-    "dmg": {
-      "background-color": "#0d1117",
-      "contents": [
-        {
-          "path": "dist-electron-studio/indiiOS Studio.app",
-          "type": "file",
-          "x": 130,
-          "y": 220
-        },
-        {
-          "path": "Applications",
-          "type": "file",
-          "x": 410,
-          "y": 220
-        }
-      ],
-      "icon": "assets/icon-studio.icns",
-      "iconText": "",
-      "window": {
-        "title": "indiiOS Studio"
-      }
-    },
     "entitlements": "build/entitlements.mac.plist",
     "entitlementsInherit": "build/entitlements.mac.plist",
     "extendInfo": {
@@ -109,26 +54,58 @@
     "icon": "assets/icon-studio.icns",
     "target": [
       {
+        "target": "dmg",
         "arch": [
           "x64",
           "arm64"
-        ],
-        "target": "dmg",
-        "type": "distribution"
+        ]
       },
       {
+        "target": "zip",
         "arch": [
           "x64",
           "arm64"
-        ],
-        "target": "zip",
-        "type": "archive"
+        ]
+      }
+    ]
+  },
+  "dmg": {
+    "background-color": "#0d1117",
+    "contents": [
+      {
+        "path": "dist-electron-studio/indiiOS Studio.app",
+        "type": "file",
+        "x": 130,
+        "y": 220
+      },
+      {
+        "path": "Applications",
+        "type": "file",
+        "x": 410,
+        "y": 220
       }
     ],
-    "zip": {
-      "icon": "assets/icon-studio.icns",
-      "target": "mac-x64"
+    "icon": "assets/icon-studio.icns",
+    "iconText": "",
+    "window": {
+      "title": "indiiOS Studio"
     }
+  },
+  "nsis": {
+    "allowElevation": true,
+    "allowToChangeInstallationDirectory": true,
+    "deleteAppDataOnUninstall": false,
+    "displayLanguageSelector": true,
+    "include": [
+      "build/installer.nsh"
+    ],
+    "installerLanguages": [
+      "en_US",
+      "en_GB",
+      "en_AU"
+    ],
+    "oneClick": false,
+    "perMachine": false
   },
   "npmRebuild": false,
   "productName": "indiiOS Studio",
@@ -140,62 +117,23 @@
       ]
     }
   ],
-  "publish": {
-    "UpdaterCacheDirName": "indiios-studio-updater",
-    "generateUpdatesFiles": false,
-    "owner": "the-walking-agency-det",
-    "provider": "github",
-    "publishAutoUpdate": true,
-    "releaseType": "draft",
-    "repo": "indiiOS-Alpha-Electron"
-  },
+  "publish": [
+    {
+      "provider": "github",
+      "owner": "the-walking-agency-det",
+      "repo": "indiiOS-Alpha-Electron",
+      "publishAutoUpdate": true,
+      "releaseType": "draft"
+    }
+  ],
   "win": {
-    "artifacts": [
-      {
-        "arch": [
-          "x64",
-          "arm64"
-        ],
-        "path": "build/installer.nsis",
-        "target": "nsis"
-      },
-      {
-        "path": "build/installer-portable.exe",
-        "target": "portable"
-      }
-    ],
-    "createDesktopShortcut": true,
-    "createStartMenuShortcut": true,
-    "createUninstallShortcut": true,
-    "icon": "assets/icon-studio.ico",
-    "installerIcon": "assets/icon-studio.ico",
-    "nsis": {
-      "allowElevation": true,
-      "allowToChangeInstallationDirectory": true,
-      "deleteAppDataOnUninstall": false,
-      "displayLanguageSelector": true,
-      "include": [
-        "build/installer.nsh"
-      ],
-      "installerLanguages": [
-        "en_US",
-        "en_GB",
-        "en_AU"
-      ],
-      "oneClick": false,
-      "perMachine": false
-    },
-    "requestedExecutionLevel": "asInvoker",
-    "runAfterFinish": false,
-    "setShortcutRunAsAdmin": false,
-    "signDlls": true,
     "target": [
       {
+        "target": "nsis",
         "arch": [
           "x64",
           "arm64"
-        ],
-        "target": "nsis"
+        ]
       },
       {
         "target": "portable"

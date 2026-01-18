@@ -23,13 +23,8 @@ describe('WhiskService Video Support', () => {
                 id: 'm1', type: 'text', checked: true, category: 'motion',
                 content: 'Slow motion orbital camera'
             }],
-            activePresets: [],
             preciseReference: false,
-            targetMedia: 'video',
-            generatedHistory: [],
-            canvasImages: [],
-            uploadedImages: [],
-            studioControls: {} as any
+            targetMedia: 'video'
         };
 
         const prompt = WhiskService.synthesizeVideoPrompt('Singing into microphone', mockState);
@@ -57,13 +52,8 @@ describe('WhiskService Video Support', () => {
                 content: musicVideoPrompt
             }],
             motion: [],
-            activePresets: [],
             preciseReference: false,
-            targetMedia: 'video',
-            generatedHistory: [],
-            canvasImages: [],
-            uploadedImages: [],
-            studioControls: {} as any
+            targetMedia: 'video'
         };
 
         const params = await WhiskService.getVideoParameters(mockState);

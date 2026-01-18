@@ -147,20 +147,6 @@ export class ImageGenerationService {
                 stack: err?.stack?.substring(0, 500)
             });
 
-            // MOCK FALLBACK FOR DEV/DEMO (When Cloud Function fails or permissions deny)
-            if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-                console.warn("⚠️ Using Mock Fallback for Image Generation");
-                console.warn("This means the Cloud Function call failed. Check the error above.");
-                // Return a generated placeholder
-                const mockId = crypto.randomUUID();
-                results.push({
-                    id: mockId,
-                    url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', // Red dot placeholder
-                    prompt: options.prompt + " (MOCK)"
-                });
-                return results;
-            }
-
             throw err;
         }
 

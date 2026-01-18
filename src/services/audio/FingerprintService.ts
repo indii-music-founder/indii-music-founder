@@ -24,14 +24,17 @@ export class FingerprintService {
                 let features = existingFeatures;
 
                 if (!features) {
-                    features = await audioAnalysisService.analyze(file);
+                    const analysisResult = await audioAnalysisService.analyze(file);
+                    features = analysisResult.features;
                 }
 
                 // Optimization: Use pre-calculated duration if available
                 const duration = features?.duration || await this.getDuration(file);
                 // Format: BPM_KEY_DURATION
                 // We use Math.round for BPM/Duration to allow slight variations in "similar" files if we ever fuzzy match
-                featureTag = `${features.bpm}BPM_${features.key}${features.scale}_${Math.round(duration)}s`;
+                if (features) {
+                    featureTag = `${features.bpm}BPM_${features.key}${features.scale}_${Math.round(duration)}s`;
+                }
 
             } catch (_err) {
                 // FingerprintService: Could not extract features for ID

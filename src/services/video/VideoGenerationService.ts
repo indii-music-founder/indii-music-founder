@@ -98,9 +98,7 @@ export class VideoGenerationService {
         }
 
         // Enforce Authentication
-        // Allow test bypass if user is injected in store but not in firebase auth (e.g. E2E tests)
-        const isTestMode = import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__TEST_MODE__);
-        if (!auth.currentUser && !(isTestMode && useStore.getState().user)) {
+        if (!auth.currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
         }
 

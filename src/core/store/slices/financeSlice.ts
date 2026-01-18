@@ -41,12 +41,13 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [
                     error: null
                 }
             }));
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch earnings';
             set((state) => ({
                 finance: {
                     ...state.finance,
                     loading: false,
-                    error: error.message
+                    error: message
                 }
             }));
         }
