@@ -98,9 +98,11 @@ export const setupDistributionHandlers = () => {
 
             // Security check using audio handler logic
             validateSafeAudioPath(absolutePath);
+            // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files, Audio Extensions)
+            const validatedPath = validateSafeAudioPath(absolutePath);
 
             // Execute Python Script
-            const report = await PythonBridge.runScript('audio', 'audio_forensics.py', [absolutePath]);
+            const report = await PythonBridge.runScript('audio', 'audio_forensics.py', [validatedPath]);
             return { success: true, report };
 
         } catch (error) {

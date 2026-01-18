@@ -46,3 +46,8 @@
 **Risk:** High. Could allow execution of heavy processes on arbitrary files or potential side-channel attacks via the Python script.
 **Learning:** TODO comments are not security controls. Explicit gaps identified during development must be tracked or implemented immediately, as they often persist into production.
 **Prevention:** Implemented strict path validation using `validateSafeAudioPath` in `electron/handlers/distribution.ts`, ensuring only valid audio files in safe directories are processed.
+## 2026-02-15 - [Arbitrary File Access via Forensics IPC]
+**Vulnerability:** The `distribution:run-forensics` IPC handler accepted arbitrary file paths and passed them directly to a Python script without validation. This bypassed existing file security controls, allowing a compromised renderer to potentially trigger processing of sensitive system files or non-audio files.
+**Risk:** High. Bypassed "Defense in Depth" controls, allowing the Python environment to access files outside the intended scope (e.g., system files) if the renderer was compromised.
+**Learning:** "Comments are not code." The code contained a comment acknowledging the need for security checks (`// Ideally we'd reuse validateSafeAudioPath`), but the check was never implemented. Security controls must be explicit and reused, not just documented as TODOs.
+**Prevention:** Enforced `validateSafeAudioPath` in the `distribution:run-forensics` handler. This ensures that only valid audio files (extension allowlist) located in safe directories (blocking system roots) can be passed to the forensics engine, resolving symlinks to prevent path spoofing.
