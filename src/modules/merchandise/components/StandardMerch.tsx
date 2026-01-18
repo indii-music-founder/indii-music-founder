@@ -1,12 +1,12 @@
 import React from 'react';
-import { Tag, Star } from 'lucide-react';
+import { Tag, Star, AlertTriangle } from 'lucide-react';
 import { useMerchandise } from '../hooks/useMerchandise';
 import { StandardProductCard } from './StandardProductCard';
 import { DeptLoader } from '@/components/ui/DeptLoader';
 
 
 export const StandardMerch: React.FC = () => {
-    const { standardProducts: products, loading } = useMerchandise();
+    const { standardProducts: products, loading, error } = useMerchandise();
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-12">
@@ -20,7 +20,8 @@ export const StandardMerch: React.FC = () => {
                     alt="Standard Collection Hero"
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[2000ms] ease-out"
                     // HTML attribute support for high priority
-                    fetchPriority="high"
+                    // @ts-expect-error - React expects lowercase for custom attributes if not in types
+                    fetchpriority="high"
                 />
                 <div className="absolute inset-0 z-20 flex flex-col justify-center px-12 bg-background/30 backdrop-blur-[4px]">
                     <div className="w-fit mb-4 bg-primary text-primary-foreground px-3 py-1 rounded-full text-[10px] font-black tracking-widest uppercase">
@@ -71,6 +72,16 @@ export const StandardMerch: React.FC = () => {
                     {loading && products.length === 0 ? (
                         <div className="col-span-full py-12 flex justify-center" role="status">
                             <DeptLoader message="Loading drops..." moduleId="merch" />
+                        </div>
+                    ) : error ? (
+                        <div className="col-span-full py-12 flex flex-col items-center justify-center text-center space-y-4 animate-in fade-in zoom-in-95 duration-300" role="alert">
+                            <div className="p-4 bg-red-500/10 rounded-full ring-1 ring-red-500/20">
+                                <AlertTriangle className="text-red-500 w-8 h-8" />
+                            </div>
+                            <div>
+                                <h3 className="text-lg font-bold text-foreground">Failed to load drops</h3>
+                                <p className="text-muted-foreground text-sm max-w-[300px]">{error}</p>
+                            </div>
                         </div>
                     ) : (
                         <>

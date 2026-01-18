@@ -65,4 +65,18 @@ describe('StandardMerch Loading States (Pulse)', () => {
 
         expect(screen.getByText('Test Shirt')).toBeInTheDocument();
     });
+
+    it('displays error message when data fetching fails', () => {
+        vi.mocked(useMerchandise).mockReturnValue({
+            ...defaultMockReturn,
+            loading: false,
+            error: 'Failed to fetch products',
+        } as any);
+
+        render(<StandardMerch />);
+
+        expect(screen.getByRole('alert')).toBeInTheDocument();
+        expect(screen.getByText('Failed to load drops')).toBeInTheDocument();
+        expect(screen.getByText('Failed to fetch products')).toBeInTheDocument();
+    });
 });
