@@ -67,6 +67,7 @@ export class MusicLibraryService {
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
+        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[trackId]) {
             return window.__MOCK_LIBRARY__[trackId];
         }

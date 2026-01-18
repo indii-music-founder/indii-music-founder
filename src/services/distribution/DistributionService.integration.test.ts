@@ -20,6 +20,7 @@ const mockElectronAPI = {
 describe('DistributionService Integration', () => {
     beforeEach(() => {
         // @ts-expect-error - Mocking Electron API globally
+        // @ts-expect-error - Mocking Electron API on window
         window.electronAPI = mockElectronAPI;
         vi.clearAllMocks();
     });
@@ -27,6 +28,8 @@ describe('DistributionService Integration', () => {
     afterEach(() => {
         // @ts-expect-error - deleting global property
         delete window.electronAPI;
+        // Clean up Electron API mock
+        (window as any).electronAPI = undefined;
     });
 
     it('should call validateMetadata via IPC', async () => {
