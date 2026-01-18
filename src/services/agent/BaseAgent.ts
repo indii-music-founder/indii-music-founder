@@ -483,8 +483,21 @@ ${task}
         const MAX_ITERATIONS = 5;
         let lastToolCall: { name: string; args: string } | null = null;
 
+        // Lazy import MembershipService for budget checks
+        const { MembershipService } = await import('@/services/MembershipService');
+
         try {
             while (iterations < MAX_ITERATIONS) {
+                // LEDGER: Circuit Breaker - Check Budget before execution
+                const budgetCheck = await MembershipService.checkBudget(0);
+                if (!budgetCheck.allowed) {
+                    console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
+                    return {
+                        text: accumulatedResponse || 'Task halted: Budget exceeded.',
+                        error: 'Budget exceeded'
+                    };
+                }
+
                 iterations++;
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
