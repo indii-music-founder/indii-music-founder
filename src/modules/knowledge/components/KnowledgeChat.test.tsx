@@ -186,7 +186,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
         // mocked scrollHeight (500) and setting scrollTop to it.
         expect(scrollContainer.scrollTop).toBe(500);
 
-        // Clean up
-        if (resolveNext) resolveNext();
+        // Clean up - use type assertion because TS loses track of variable type after async operations
+        (resolveNext as (() => void) | null)?.();
     });
 });

@@ -213,9 +213,20 @@ export class FirebaseAIService {
                     await TokenUsageService.checkQuota(userId);
                 }
 
-                const modelName = modelOverride || this.model!.model;
+                const modelName = this.getModelName(modelOverride);
                 // Validate & Sanitize
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
+
+                // ============================================================
+                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
+                // ============================================================
+                if (this.useFallbackMode && this.fallbackClient) {
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                }
+
+                // ============================================================
+                // NORMAL MODE: Use Firebase AI SDK with App Check
+                // ============================================================
 
                 // 1. Check for Cached Content if systemInstruction is large
                 let cachedContent = options?.cachedContent;
@@ -224,7 +235,6 @@ export class FirebaseAIService {
                     const existingCache = await CachedContextService.findCache(hash);
                     if (existingCache) {
                         cachedContent = existingCache;
-                        // console.info('[FirebaseAIService] Using cached context:', cachedContent);
                     }
                 }
 
@@ -263,10 +273,54 @@ export class FirebaseAIService {
 
                     return result;
                 } catch (error) {
+                    // If we hit an App Check error during normal mode, switch to fallback
+                    if (isAppCheckError(error) && !this.useFallbackMode) {
+                        console.warn('[FirebaseAIService] App Check error during generation, switching to fallback mode');
+                        await this.initializeFallbackMode();
+                        return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    }
                     throw this.handleError(error);
                 }
             }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
+    }
+
+    /**
+     * Generate content using direct Gemini SDK (fallback mode).
+     * This bypasses Firebase AI SDK and App Check requirements.
+     */
+    private async generateWithFallback(
+        prompt: string | Content[],
+        modelName: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[]
+    ): Promise<GenerateContentResult> {
+        if (!this.fallbackClient) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
+        }
+
+        try {
+            const model = this.fallbackClient.getGenerativeModel({
+                model: modelName,
+                generationConfig: config as any,
+                systemInstruction: systemInstruction,
+                tools: tools as any
+            });
+
+            const result = await model.generateContent(
+                typeof prompt === 'string'
+                    ? prompt
+                    : { contents: prompt as any }
+            );
+
+            // Convert to Firebase AI SDK format for compatibility
+            return {
+                response: result.response as any
+            } as GenerateContentResult;
+        } catch (error) {
+            throw this.handleError(error);
+        }
     }
 
     /**
@@ -290,8 +344,19 @@ export class FirebaseAIService {
                     await TokenUsageService.checkQuota(userId);
                 }
 
-                const modelName = modelOverride || this.model!.model;
+                const modelName = this.getModelName(modelOverride);
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
+
+                // ============================================================
+                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
+                // ============================================================
+                if (this.useFallbackMode && this.fallbackClient) {
+                    return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                }
+
+                // ============================================================
+                // NORMAL MODE: Use Firebase AI SDK with App Check
+                // ============================================================
 
                 // 1. Check for Cached Content if systemInstruction is large
                 let cachedContent: string | undefined;
@@ -375,10 +440,81 @@ export class FirebaseAIService {
 
                     return { stream, response: wrappedResponsePromise };
                 } catch (error) {
+                    // If we hit an App Check error during normal mode, switch to fallback
+                    if (isAppCheckError(error) && !this.useFallbackMode) {
+                        console.warn('[FirebaseAIService] App Check error during streaming, switching to fallback mode');
+                        await this.initializeFallbackMode();
+                        return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    }
                     throw this.handleError(error);
                 }
             }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
+    }
+
+    /**
+     * Stream content using direct Gemini SDK (fallback mode).
+     * This bypasses Firebase AI SDK and App Check requirements.
+     */
+    private async streamWithFallback(
+        prompt: string | Content[],
+        modelName: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[]
+    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
+        if (!this.fallbackClient) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
+        }
+
+        const model = this.fallbackClient.getGenerativeModel({
+            model: modelName,
+            generationConfig: config as any,
+            systemInstruction: systemInstruction,
+            tools: tools as any
+        });
+
+        const result = await model.generateContentStream(
+            typeof prompt === 'string'
+                ? prompt
+                : { contents: prompt as any }
+        );
+
+        // Wrap the final response promise
+        const wrappedResponsePromise = result.response.then(async (aggResult) => {
+            return {
+                response: aggResult as any,
+                text: () => aggResult.text?.() ?? '',
+                functionCalls: () => {
+                    const part = aggResult.candidates?.[0]?.content?.parts?.find((p: any): p is FunctionCallPart => 'functionCall' in p);
+                    return part ? [part.functionCall] : [];
+                },
+                usage: () => aggResult.usageMetadata
+            };
+        });
+
+        const stream = new ReadableStream<StreamChunk>({
+            async start(controller) {
+                try {
+                    for await (const chunk of result.stream) {
+                        controller.enqueue({
+                            text: () => {
+                                try { return chunk.text(); } catch { return ''; }
+                            },
+                            functionCalls: () => {
+                                const part = chunk.candidates?.[0]?.content?.parts?.find((p: any): p is FunctionCallPart => 'functionCall' in p);
+                                return part ? [part.functionCall] : [];
+                            }
+                        });
+                    }
+                    controller.close();
+                } catch (streamError) {
+                    controller.error(streamError);
+                }
+            }
+        });
+
+        return { stream, response: wrappedResponsePromise };
     }
 
     /**
