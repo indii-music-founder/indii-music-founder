@@ -11,7 +11,9 @@ import {
     GenerationConfig as FirebaseGenerationConfig,
     Tool
 } from 'firebase/ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { ai, remoteConfig, functions } from '@/services/firebase';
+import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
@@ -40,6 +42,33 @@ import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
 import { CachedContextService } from './context/CachedContextService';
+
+// ============================================================================
+// App Check Detection & Fallback Mode
+// ============================================================================
+
+/**
+ * Checks if an error indicates App Check is not properly configured.
+ * When this happens, we should fall back to direct Gemini SDK.
+ */
+function isAppCheckError(error: any): boolean {
+    const msg = error?.message || String(error);
+    return (
+        msg.includes('installations/request-failed') ||
+        msg.includes('PERMISSION_DENIED') ||
+        msg.includes('permission-denied') ||
+        msg.includes('app-check-token') ||
+        msg.includes('The caller does not have permission')
+    );
+}
+
+/**
+ * Check if App Check is configured in the environment.
+ * If not, we should use direct Gemini SDK from the start.
+ */
+function isAppCheckConfigured(): boolean {
+    return !!(env.appCheckKey || env.appCheckDebugToken);
+}
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
@@ -78,6 +107,10 @@ export class FirebaseAIService {
     private model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
 
+    // Fallback mode: use direct Gemini SDK when App Check is not available
+    private useFallbackMode = false;
+    private fallbackClient: GoogleGenerativeAI | null = null;
+
     // Circuit Breakers
     private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
     private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
@@ -87,11 +120,19 @@ export class FirebaseAIService {
 
     /**
      * Bootstrap the AI service:
-     * 1. Fetch Remote Config to get the latest model name.
-     * 2. Initialize the GenerativeModel using the pre-configured AI instance.
+     * 1. Check if App Check is configured - if not, use direct Gemini SDK
+     * 2. Fetch Remote Config to get the latest model name.
+     * 3. Initialize the GenerativeModel using the pre-configured AI instance.
      */
     async bootstrap(): Promise<void> {
         if (this.isInitialized) return;
+
+        // Check if App Check is configured - if not, use direct Gemini SDK
+        if (!isAppCheckConfigured()) {
+            console.warn('[FirebaseAIService] App Check not configured, using direct Gemini SDK fallback');
+            await this.initializeFallbackMode();
+            return;
+        }
 
         try {
             // 1. Fetch Remote Config
@@ -101,7 +142,7 @@ export class FirebaseAIService {
             const modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
 
             // 3. Initialize SDK
-            // Note: 'ai' is already initialized in @/services/firebase with 
+            // Note: 'ai' is already initialized in @/services/firebase with
             // VertexAIBackend and useLimitedUseAppCheckTokens: true.
             this.model = getGenerativeModel(ai, {
                 model: modelName
@@ -112,11 +153,45 @@ export class FirebaseAIService {
             }
 
             this.isInitialized = true;
-            // Initialized with model: ${modelName}
+            console.log('[FirebaseAIService] Initialized with Firebase AI SDK');
 
         } catch (error) {
+            // If we hit an App Check error, fall back to direct Gemini SDK
+            if (isAppCheckError(error)) {
+                console.warn('[FirebaseAIService] App Check error detected, switching to direct Gemini SDK fallback');
+                await this.initializeFallbackMode();
+                return;
+            }
             throw this.handleError(error);
         }
+    }
+
+    /**
+     * Initialize fallback mode using direct Gemini SDK (no App Check required).
+     * This is used in development or when App Check is not configured.
+     */
+    private async initializeFallbackMode(): Promise<void> {
+        const apiKey = env.VITE_API_KEY || env.apiKey;
+        if (!apiKey) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'No API key found. Please set VITE_API_KEY in your .env file.'
+            );
+        }
+
+        this.fallbackClient = new GoogleGenerativeAI(apiKey);
+        this.useFallbackMode = true;
+        this.isInitialized = true;
+        console.log('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
+    }
+
+    /**
+     * Get the model name, either from remote config or fallback
+     */
+    private getModelName(modelOverride?: string): string {
+        if (modelOverride) return modelOverride;
+        if (this.model) return this.model.model;
+        return FALLBACK_MODEL;
     }
 
     async rawGenerateContent(

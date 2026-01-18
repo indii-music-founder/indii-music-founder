@@ -12,6 +12,34 @@ export interface CircuitBreakerConfig {
     fallbackResponse?: any;
 }
 
+/**
+ * Checks if an error is a non-recoverable configuration/permission error.
+ * These errors should fail fast and NOT trip the circuit breaker.
+ */
+function isNonRecoverableError(error: any): boolean {
+    const msg = error?.message || String(error);
+    const code = error?.code || '';
+
+    // Firebase App Check / Installations errors - configuration issue, won't recover with retry
+    if (msg.includes('installations/request-failed') ||
+        msg.includes('PERMISSION_DENIED') ||
+        msg.includes('permission-denied') ||
+        msg.includes('app-check-token') ||
+        msg.includes('The caller does not have permission')) {
+        return true;
+    }
+
+    // Firebase configuration errors
+    if (code === 'auth/invalid-api-key' ||
+        code === 'auth/api-key-not-valid' ||
+        msg.includes('Invalid API key') ||
+        msg.includes('API key not valid')) {
+        return true;
+    }
+
+    return false;
+}
+
 export class CircuitBreaker {
     private state: CircuitState = CircuitState.CLOSED;
     private failureCount: number = 0;
@@ -39,6 +67,13 @@ export class CircuitBreaker {
             this.onSuccess();
             return result;
         } catch (error) {
+            // Non-recoverable errors should fail fast WITHOUT tripping the circuit
+            // These are configuration issues that won't be fixed by retrying
+            if (isNonRecoverableError(error)) {
+                console.error('[CircuitBreaker] Non-recoverable error detected, failing fast:', error);
+                throw error;
+            }
+
             this.onFailure(error);
             if (fallback !== undefined) return fallback;
             if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse;
@@ -73,5 +108,14 @@ export class CircuitBreaker {
 
     public getState(): CircuitState {
         return this.state;
+    }
+
+    /**
+     * Manually reset the circuit breaker (useful for testing or manual recovery)
+     */
+    public reset(): void {
+        this.state = CircuitState.CLOSED;
+        this.failureCount = 0;
+        this.lastFailureTime = 0;
     }
 }
