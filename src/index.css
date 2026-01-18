@@ -243,17 +243,19 @@
 
   /* Neon Glow Utilities */
   .glow-text {
-    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+    text-shadow: 0 0 10px hsl(var(--sonic-purple) / 0.5);
   }
 
   .glow-border {
-    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 15px hsl(var(--sonic-purple) / 0.3);
   }
 
   html {
     /* Prevent IOS bounce and ensure full height */
     height: 100%;
     overflow-x: hidden;
+    /* Prevent text zooming on orientation change */
+    -webkit-text-size-adjust: 100%;
     transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   }
 
@@ -283,6 +285,7 @@
   select,
   textarea {
     font-size: 16px !important;
+    touch-action: manipulation;
   }
 
   /* Ensure adequate touch targets */
@@ -291,6 +294,7 @@
   [role="button"] {
     min-height: 44px;
     min-width: 44px;
+    touch-action: manipulation;
   }
 }
 
@@ -382,7 +386,7 @@
 }
 
 .shine-text {
-  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, hsl(var(--sonic-purple) / 0.5), transparent);
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;

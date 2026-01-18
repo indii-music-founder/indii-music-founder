@@ -4,7 +4,7 @@ import logging
 import os
 import re
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 # Configure logging
 logging.basicConfig(
@@ -12,6 +12,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("tax_engine")
+
 
 class TaxComplianceOfficer:
     """Manages tax compliance, treaty application, and withholding calculations.
@@ -36,14 +37,24 @@ class TaxComplianceOfficer:
         """Loads treaty data from the specified path."""
         try:
             if not os.path.exists(self.treaty_path):
-                logger.warning(f"Treaty file not found at {self.treaty_path}. Loading defaults.")
-                return {"DEFAULT": {"rates": {"royalties_copyright": 30.0}, "treaty_article": "None"}}
+                logger.warning(
+                    f"Treaty file not found at {
+                        self.treaty_path}. Loading defaults.")
+                return {
+                    "DEFAULT": {
+                        "rates": {
+                            "royalties_copyright": 30.0},
+                        "treaty_article": "None"}}
             with open(self.treaty_path, 'r') as f:
                 data = json.load(f)
                 return data.get("treaties", {})
         except Exception as e:
             logger.error(f"Failed to load treaty file: {e}")
-            return {"DEFAULT": {"rates": {"royalties_copyright": 30.0}, "treaty_article": "None"}}
+            return {
+                "DEFAULT": {
+                    "rates": {
+                        "royalties_copyright": 30.0},
+                    "treaty_article": "None"}}
 
     def _load_compliance(self) -> Dict[str, Any]:
         """Loads user compliance data from the specified store."""
@@ -81,21 +92,25 @@ class TaxComplianceOfficer:
         """
         if not tin or not tin.strip():
             return False, "TIN Match Fail: TIN is missing or empty."
-            
+
         tin = tin.strip()
-            
+
         if country == "US":
             # SSN (999-99-9999) or EIN (99-9999999)
-            if re.match(r'^\d{3}-\d{2}-\d{4}$', tin) or re.match(r'^\d{2}-\d{7}$', tin):
+            if re.match(
+                    r'^\d{3}-\d{2}-\d{4}$',
+                    tin) or re.match(
+                    r'^\d{2}-\d{7}$',
+                    tin):
                 return True, "Valid US TIN Format verified."
             return False, "TIN Match Fail: Invalid US SSN/EIN format (Use XXX-XX-XXXX or XX-XXXXXXX)."
-            
+
         # Common foreign TIN formats (simplified)
         if country in ["UK", "DE", "FR", "CA", "JP", "AU"]:
             if len(tin) >= 8 and re.match(r'^[A-Z0-9]+$', tin):
                 return True, f"Valid {country} TIN Format verified."
             return False, f"TIN Match Fail: Invalid {country} FTIN format specifications."
-            
+
         # Generic fallback
         if len(tin) >= 5:
             return True, "Generic foreign TIN validation applied."
@@ -110,19 +125,23 @@ class TaxComplianceOfficer:
         user = self.compliance_data["users"].get(user_id)
         if not user:
             return "HELD", "Action Required: No tax profile found for this beneficiary."
-        
+
         if not user.get("certified"):
-            return "HELD", "Action Required: Missing certification under penalties of perjury."
-            
+            return "HELD", (
+                "Action Required: Missing certification under "
+                "penalties of perjury."
+            )
+
         if not user.get("tin_valid"):
-            return "HELD", f"Action Required: {user.get('tin_message', 'Invalid Tax ID.')}"
-            
+            msg = user.get('tin_message', 'Invalid Tax ID.')
+            return "HELD", f"Action Required: {msg}"
+
         return "ACTIVE", "Tax documentation successfully verified."
 
     def calculate_withholding(
-        self, 
-        user_id: str, 
-        income_amount: float, 
+        self,
+        user_id: str,
+        income_amount: float,
         income_type: str = "royalties_copyright"
     ) -> Dict[str, Any]:
         """Calculates effective withholding and net payable amounts.
@@ -137,11 +156,11 @@ class TaxComplianceOfficer:
         """
         user = self.compliance_data["users"].get(user_id)
         status, msg = self.check_payout_eligibility(user_id)
-        
+
         # Default behavior: 30% withholding if uncertified or invalid
         country = user.get("country", "DEFAULT") if user else "DEFAULT"
         treaty = self.treaties.get(country, self.treaties.get("DEFAULT", {}))
-        
+
         if status == "HELD":
             withheld_amt = income_amount * 0.30
             return {
@@ -150,7 +169,9 @@ class TaxComplianceOfficer:
                 "withholding_rate": 30.0,
                 "withheld_amount": float(withheld_amt),
                 "payable_amount": 0.0,
-                "reason": f"Payout Locked: {msg} (Fallback to 30% US Withholding)"
+                "reason": (
+                    f"Payout Locked: {msg} (Fallback to 30% US Withholding)"
+                )
             }
 
         effective_rate_percent = treaty.get("rates", {}).get(income_type, 30.0)
@@ -166,12 +187,16 @@ class TaxComplianceOfficer:
             "payable_amount": float(income_amount * (1 - rate_multiplier))
         }
 
-    def certify_user(self, user_id: str, certification_data: Dict[str, Any]) -> Dict[str, Any]:
+    def certify_user(self,
+                     user_id: str,
+                     certification_data: Dict[str,
+                                              Any]) -> Dict[str,
+                                                            Any]:
         """Processes a new tax certification for a user.
 
         Args:
             user_id: The ID of the user.
-            certification_data: Dictionary containing is_us_person, is_entity, country, tin, 
+            certification_data: Dictionary containing is_us_person, is_entity, country, tin,
                                 and signed_under_perjury flag.
 
         Returns:
@@ -182,54 +207,62 @@ class TaxComplianceOfficer:
         country = certification_data.get("country", "DEFAULT").upper()
         tin = certification_data.get("tin", "")
         signed = certification_data.get("signed_under_perjury", False)
-        
+
         form = self.route_form_type(is_us, is_entity)
         tin_valid, tin_msg = self.validate_tin(tin, country)
-        
+
         # User is only fully certified if TIN is valid AND perjury signed
         certified = signed and tin_valid
-        
+
         user_record = {
             "user_id": user_id,
             "form_type": form,
             "country": country,
             "tin_masked": f"...{tin[-4:]}" if len(tin) > 4 else "***",
-            "tin": tin, # Stored securely in this mock store
+            "tin": tin,  # Stored securely in this mock store
             "tin_valid": tin_valid,
             "tin_message": tin_msg,
             "certified": certified,
             "payout_status": "ACTIVE" if certified else "HELD",
             "cert_timestamp": datetime.datetime.now().isoformat() if certified else None
         }
-        
+
         self.compliance_data["users"][user_id] = user_record
         self._save_compliance()
-        logger.info(f"Certified user {user_id}: Status={user_record['payout_status']}")
-        
+        logger.info(
+            f"Certified user {user_id}: Status={
+                user_record['payout_status']}")
+
         return user_record
+
 
 if __name__ == "__main__":
     # Base paths
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    BASE_DIR = os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__))))
     TREATY_FILE = os.path.join(BASE_DIR, "resources/finance/tax_treaties.json")
     STORE_FILE = os.path.join(BASE_DIR, "tax_compliance_store.json")
-    
+
     officer = TaxComplianceOfficer(TREATY_FILE, STORE_FILE)
-    
+
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: tax_engine.py [certify|calculate] ..."}))
+        print(json.dumps(
+            {"error": "Usage: tax_engine.py [certify|calculate] ..."}))
         sys.exit(1)
 
     command = sys.argv[1].lower()
-    
+
     try:
         if command == "certify":
-            # Usage: python3 tax_engine.py certify "usr_123" '{"is_us_person": false, ...}'
+            # Usage: python3 tax_engine.py certify "usr_123" '{"is_us_person":
+            # false, ...}'
             uid = sys.argv[2]
             payload = json.loads(sys.argv[3])
             result = officer.certify_user(uid, payload)
             print(json.dumps(result, indent=2))
-            
+
         elif command == "calculate":
             # Usage: python3 tax_engine.py calculate "usr_123" 1500.50
             uid = sys.argv[2]
@@ -239,7 +272,7 @@ if __name__ == "__main__":
         else:
             print(json.dumps({"error": f"Unknown command: {command}"}))
             sys.exit(1)
-            
+
     except Exception as e:
         logger.exception("Tax Engine Execution Error")
         print(json.dumps({"error": str(e)}))

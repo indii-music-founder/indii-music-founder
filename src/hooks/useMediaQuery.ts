@@ -1,7 +1,7 @@
 import { useSyncExternalStore, useCallback } from 'react';
 
 /**
- * SSR-safe media query hook
+ * SSR-safe media query hook using useSyncExternalStore
  * @param query - CSS media query string (e.g., '(min-width: 768px)')
  * @returns boolean indicating if the query matches
  */

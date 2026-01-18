@@ -13,7 +13,7 @@ export const useStableGroupedClips = (clips: VideoClip[]): Record<string, VideoC
 
     const result = useMemo(() => {
         const nextGrouped = groupClipsByTrack(clips);
-        // eslint-disable-next-line react-hooks/refs
+
         const prevGrouped = prevGroupedRef.current;
         const result: Record<string, VideoClip[]> = {};
 

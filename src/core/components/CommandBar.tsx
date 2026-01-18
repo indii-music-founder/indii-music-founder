@@ -174,7 +174,7 @@ function CommandBar() {
             console.error("CommandBar: Fatal crash in handleSubmit", fatalError);
             setIsProcessing(false);
         }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]); // eslint-disable-line react-hooks/preserve-manual-memoization
+    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]);
 
     return (
         <div className="w-full bg-bg-dark border-t border-white/10 p-4">
