@@ -136,7 +136,47 @@ class DistributionService {
         }
     }
 
-    // ... (waterfall and validate methods unchanged)
+    /**
+     * Execute waterfall revenue distribution
+     */
+    async executeWaterfall(data: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for waterfall execution');
+        }
+        const result = await window.electronAPI.distribution.executeWaterfall(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Waterfall execution failed');
+        }
+        return result.report;
+    }
+
+    /**
+     * Validate release metadata
+     */
+    async validateReleaseMetadata(metadata: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for metadata validation');
+        }
+        const result = await window.electronAPI.distribution.validateMetadata(metadata);
+        if (!result.success) {
+            throw new Error(result.error || 'Metadata validation failed');
+        }
+        return result.report;
+    }
+
+    /**
+     * Generate Content ID CSV assets
+     */
+    async generateContentIdAssets(data: any): Promise<string> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for Content ID generation');
+        }
+        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Content ID generation failed');
+        }
+        return result.csvData;
+    }
 
     /**
      * Generate a new ISRC via Python engine

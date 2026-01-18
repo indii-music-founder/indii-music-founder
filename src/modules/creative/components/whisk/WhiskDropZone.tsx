@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { useStore } from '@/core/store';
 import { Plus, Trash2, Edit3, Image as ImageIcon, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
@@ -22,7 +21,7 @@ interface WhiskDropZoneProps {
     accentColor?: string; // For video-related categories
 }
 
-export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor = 'purple' }: WhiskDropZoneProps) => {
+export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor: _accentColor = 'purple' }: WhiskDropZoneProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -107,7 +106,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
         try {
             const ideas = await WhiskService.generateInspiration(category);
             setInspirations(ideas);
-        } catch (err) {
+        } catch {
             toast.error('Failed to get inspiration');
         } finally {
             setIsInspiring(false);

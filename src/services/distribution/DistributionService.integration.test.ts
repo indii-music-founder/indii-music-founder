@@ -19,13 +19,13 @@ const mockElectronAPI = {
 
 describe('DistributionService Integration', () => {
     beforeEach(() => {
-        // @ts-ignore
+        // @ts-expect-error - mocking electronAPI globally
         window.electronAPI = mockElectronAPI;
         vi.clearAllMocks();
     });
 
     afterEach(() => {
-        // @ts-ignore
+        // @ts-expect-error - deleting global property
         delete window.electronAPI;
     });
 

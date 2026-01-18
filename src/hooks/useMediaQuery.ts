@@ -22,7 +22,10 @@ export function useMediaQuery(query: string): boolean {
         const mediaQuery = window.matchMedia(query);
 
         // Set initial value
-        setMatches(mediaQuery.matches);
+        if (matches !== mediaQuery.matches) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setMatches(mediaQuery.matches);
+        }
 
         // Modern API (addEventListener) with fallback
         if (mediaQuery.addEventListener) {
@@ -33,7 +36,7 @@ export function useMediaQuery(query: string): boolean {
             mediaQuery.addListener(handleChange);
             return () => mediaQuery.removeListener(handleChange);
         }
-    }, [query, handleChange]);
+    }, [query, handleChange, matches]);
 
     return matches;
 }
