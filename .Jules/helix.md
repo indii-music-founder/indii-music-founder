@@ -41,3 +41,7 @@
 ## 2026-06-04 - [The Flaky Universe]
 **Learning:** Testing "Selection Pressure" (Fitness Ranking) with standard random seeds is mathematically flaky. A test that passes 99% of the time because "Alpha is extremely likely to be picked" is a defect in the Verification Layer.
 **Action:** Enforced Strict Determinism in `HelixMicroUniverse.test.ts` by mocking `Math.random` to 0.0, ensuring that "Survival of the Fittest" is a guarantee in the test environment, not a probability.
+
+## 2026-06-05 - [Tournament Selection Verification]
+**Learning:** Mocking `Math.random` to a static `0.0` only validates that the *first* index is picked (Best Case). To truly verify Tournament Selection (Fitness > Contender), we must orchestrate a specific sequence of random values that forces a "Mid-Tier" agent to compete against a "Weak" agent and win.
+**Action:** Implemented `HelixSelectionPressure.test.ts` using `mockReturnValueOnce` sequences to simulate exact tournament brackets.
