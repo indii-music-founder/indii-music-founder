@@ -123,6 +123,7 @@ class DistributionService {
         }
 
         try {
+            // Updated to pass object as single argument matching new IPC signature
             const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
             if (!result.success) {
                 console.error('[Distribution] Tax calculation failed:', result.error);
@@ -186,21 +187,6 @@ class DistributionService {
             console.warn('[Distribution] Electron API missing for Content ID generation');
             throw new Error('Electron environment required for Content ID generation');
         }
-        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Content ID generation failed');
-        }
-        return result.csvData || '';
-        return result.csvData;
-     * Execute revenue waterfall via Electron IPC
-     */
-    async executeWaterfall(data: any): Promise<any> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for waterfall execution');
-        }
-        const result = await window.electronAPI.distribution.executeWaterfall(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Waterfall execution failed');
 
         try {
             const result = await window.electronAPI.distribution.generateContentIdCSV(data);
