@@ -1,36 +1,28 @@
-import { useSyncExternalStore, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 /**
- * SSR-safe media query hook using useSyncExternalStore
+ * SSR-safe media query hook
  * @param query - CSS media query string (e.g., '(min-width: 768px)')
  * @returns boolean indicating if the query matches
  */
 export function useMediaQuery(query: string): boolean {
-    const subscribe = useCallback(
-        (callback: () => void) => {
-            const mediaQuery = window.matchMedia(query);
+    const [matches, setMatches] = useState<boolean>(() => {
+        // SSR-safe: return false on server
+        if (typeof window === 'undefined') return false;
+        return window.matchMedia(query).matches;
+    });
 
-            const listener = () => {
-                callback();
-            };
+    const handleChange = useCallback((event: MediaQueryListEvent) => {
+        setMatches(event.matches);
+    }, []);
 
-            if (mediaQuery.addEventListener) {
-                mediaQuery.addEventListener('change', listener);
-                return () => mediaQuery.removeEventListener('change', listener);
-            } else {
-                // Legacy Safari
-                mediaQuery.addListener(listener);
-                return () => mediaQuery.removeListener(listener);
-            }
-        },
-        [query]
-    );
+    useEffect(() => {
+        if (typeof window === 'undefined') return;
+
+        const mediaQuery = window.matchMedia(query);
 
         // Set initial value
-        if (matches !== mediaQuery.matches) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
-            setMatches(mediaQuery.matches);
-        }
+        setMatches(mediaQuery.matches);
 
         // Modern API (addEventListener) with fallback
         if (mediaQuery.addEventListener) {
@@ -41,14 +33,7 @@ export function useMediaQuery(query: string): boolean {
             mediaQuery.addListener(handleChange);
             return () => mediaQuery.removeListener(handleChange);
         }
-    }, [query, handleChange, matches]);
-    const getSnapshot = () => {
-        return window.matchMedia(query).matches;
-    };
+    }, [query, handleChange]);
 
-    const getServerSnapshot = () => {
-        return false;
-    };
-
-    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+    return matches;
 }

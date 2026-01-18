@@ -1,5 +1,5 @@
 import { db, auth } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
+import { collection, doc, setDoc, getDoc, query, where, getDocs } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
 
 export interface AnalyzedTrack {
@@ -23,29 +23,23 @@ export class MusicLibraryService {
         features: AudioFeatures,
         fileHash?: string
     ): Promise<void> {
-        // E2E Mock Support
-        const mockData: AnalyzedTrack = {
+        const data: AnalyzedTrack = {
             id: trackId,
-            userId: 'mock-user',
+            userId: auth.currentUser?.uid || 'mock-user',
             filename,
             features,
             analyzedAt: new Date().toISOString(),
             fileHash
         };
 
-        // @ts-expect-error - using window mock for E2E
+        // E2E Mock Support
+        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__) {
-            // @ts-expect-error - using window mock for E2E
-            window.__MOCK_LIBRARY__[trackId] = mockData;
+            // @ts-expect-error - Mocking global window property for E2E tests
+            window.__MOCK_LIBRARY__[trackId] = data;
             if (fileHash) {
-                // @ts-expect-error - using window mock for E2E
-        // @ts-expect-error - Mocking global window property
-        if (window.__MOCK_LIBRARY__) {
-            // @ts-expect-error - Mocking global window property
-            window.__MOCK_LIBRARY__[trackId] = mockData;
-            if (fileHash) {
-                // @ts-expect-error - Mocking global window property
-                window.__MOCK_LIBRARY__[`hash:${fileHash}`] = mockData;
+                // @ts-expect-error - Mocking global window property for E2E tests
+                window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
             return;
@@ -53,36 +47,9 @@ export class MusicLibraryService {
 
         if (!auth.currentUser) return;
         const userId = auth.currentUser.uid;
+
         try {
             const trackRef = doc(db, this.COLLECTION, userId, 'analyzed_tracks', trackId);
-            const data: AnalyzedTrack = {
-                id: trackId,
-                userId,
-                filename,
-                features,
-                analyzedAt: new Date().toISOString(),
-                fileHash
-            };
-
-            // E2E Mock Support
-            // @ts-expect-error - using window mock for E2E
-            if (window.__MOCK_LIBRARY__) {
-                // @ts-expect-error - using window mock for E2E
-                window.__MOCK_LIBRARY__[trackId] = data;
-                if (fileHash) {
-                    // @ts-expect-error - using window mock for E2E
-            // @ts-expect-error - Mocking global window property
-            if (window.__MOCK_LIBRARY__) {
-                // @ts-expect-error - Mocking global window property
-                window.__MOCK_LIBRARY__[trackId] = data;
-                if (fileHash) {
-                    // @ts-expect-error - Mocking global window property
-                    window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
-                }
-                console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
-                return;
-            }
-
             await setDoc(trackRef, data, { merge: true });
             console.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
         } catch (error) {
@@ -96,12 +63,9 @@ export class MusicLibraryService {
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-expect-error - using window mock for E2E
+        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-expect-error - using window mock for E2E
-        // @ts-expect-error - Mocking global window property
-        if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-expect-error - Mocking global window property
+            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -128,12 +92,9 @@ export class MusicLibraryService {
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-expect-error - using window mock for E2E
+        // @ts-expect-error - Mocking global window property for E2E tests
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-expect-error - using window mock for E2E
-        // @ts-expect-error - Mocking global window property
-        if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-expect-error - Mocking global window property
+            // @ts-expect-error - Mocking global window property for E2E tests
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 
