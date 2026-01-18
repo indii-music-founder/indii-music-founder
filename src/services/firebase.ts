@@ -78,10 +78,18 @@ if (typeof window !== 'undefined') {
     }
 
     // Initialize App Check if we have a valid key
-    if (env.appCheckKey) {
+    // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
+    const isElectron = !!window.electronAPI;
+    const shouldInitAppCheck = env.appCheckKey && (!isElectron || env.appCheckDebugToken);
+
+    if (shouldInitAppCheck) {
+        if (isElectron && env.appCheckDebugToken) {
+            console.log('[App Check] Initializing in Electron with Debug Token');
+        }
+
         try {
             appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey),
+                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
                 isTokenAutoRefreshEnabled: true
             });
         } catch (e) {
@@ -91,6 +99,8 @@ if (typeof window !== 'undefined') {
                 throw e;
             }
         }
+    } else if (isElectron && env.appCheckKey) {
+        console.log('[App Check] Skipped initialization in Electron (missing debug token)');
     }
 }
 export { appCheck };
