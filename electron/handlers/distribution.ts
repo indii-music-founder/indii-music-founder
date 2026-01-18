@@ -96,6 +96,8 @@ export const setupDistributionHandlers = () => {
             const rawPath = filePath.startsWith('file://') ? new URL(filePath).pathname : filePath;
             const absolutePath = decodeURIComponent(rawPath);
 
+            // Security check using audio handler logic
+            validateSafeAudioPath(absolutePath);
             // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files, Audio Extensions)
             const validatedPath = validateSafeAudioPath(absolutePath);
 

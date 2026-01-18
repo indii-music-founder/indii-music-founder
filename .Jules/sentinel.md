@@ -41,6 +41,11 @@
 **Learning:** "Convenience breeds vulnerability." Utility scripts often bypass standard configuration management (like `.env` loading) for quick execution, leading to hardcoded secrets that are easily forgotten and committed.
 **Prevention:** Removed the hardcoded key and integrated `dotenv` to load the `VITE_FIREBASE_API_KEY` from the environment, ensuring the script fails safely if the configuration is missing.
 
+## 2026-03-03 - [Missing Validation in Distribution Forensics]
+**Vulnerability:** The `distribution:run-forensics` IPC handler acknowledged the need for security validation via a TODO comment but failed to implement it, allowing arbitrary file paths (including system files) to be passed to the Python execution layer.
+**Risk:** High. Could allow execution of heavy processes on arbitrary files or potential side-channel attacks via the Python script.
+**Learning:** TODO comments are not security controls. Explicit gaps identified during development must be tracked or implemented immediately, as they often persist into production.
+**Prevention:** Implemented strict path validation using `validateSafeAudioPath` in `electron/handlers/distribution.ts`, ensuring only valid audio files in safe directories are processed.
 ## 2026-02-15 - [Arbitrary File Access via Forensics IPC]
 **Vulnerability:** The `distribution:run-forensics` IPC handler accepted arbitrary file paths and passed them directly to a Python script without validation. This bypassed existing file security controls, allowing a compromised renderer to potentially trigger processing of sensitive system files or non-audio files.
 **Risk:** High. Bypassed "Defense in Depth" controls, allowing the Python environment to access files outside the intended scope (e.g., system files) if the renderer was compromised.
