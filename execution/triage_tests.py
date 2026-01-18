@@ -3,7 +3,7 @@ import logging
 import re
 import sys
 from collections import Counter
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 # Configure logging
 logging.basicConfig(
@@ -11,6 +11,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("test_triage")
+
 
 class TestTriageSystem:
     """Analyzes test logs to identify patterns in failures and errors.
@@ -33,12 +34,14 @@ class TestTriageSystem:
             A report dictionary with summarized failure metrics.
         """
         logger.info(f"Analyzing log file: {self.log_path}")
-        
+
         try:
             with open(self.log_path, "r", encoding="utf-8", errors="ignore") as f:
                 content = f.read()
         except FileNotFoundError:
-            logger.error(f"Triage Error: Log file not found at {self.log_path}")
+            logger.error(
+                f"Triage Error: Log file not found at {
+                    self.log_path}")
             return {"error": "Log file not found"}
 
         # Regex patterns for Vitest/Jest/NPM errors
@@ -75,34 +78,36 @@ class TestTriageSystem:
 
         return report
 
+
 def print_triage_report(report: Dict[str, Any]) -> None:
     """Prints a human-readable summary of the triage report."""
     if "error" in report:
         print(f"Error: {report['error']}")
         return
 
-    print("\n" + "="*60)
+    print("\n" + "=" * 60)
     print(" INDUSTRIAL TEST TRIAGE REPORT ")
-    print("="*60)
+    print("=" * 60)
     print(f"Total Test Failures: {report['summary']['total_failures']}")
     print(f"Failing Files:       {report['summary']['unique_failing_files']}")
     print("-" * 60)
-    
+
     print("\n[ TOP FAILING FILES ]")
     for item in report["top_failing_files"]:
         print(f"  ({item['count']}) {item['file']}")
-        
+
     print("\n[ TOP ERROR PATTERNS ]")
     for item in report["top_error_messages"]:
         print(f"  ({item['count']}) {item['message']}")
-    print("="*60 + "\n")
+    print("=" * 60 + "\n")
+
 
 if __name__ == "__main__":
     target_log = sys.argv[1] if len(sys.argv) > 1 else "test_failures.log"
-    
+
     triager = TestTriageSystem(target_log)
     analysis_report = triager.analyze()
-    
+
     # Check for CLI flag for raw JSON output
     if "--json" in sys.argv:
         print(json.dumps(analysis_report, indent=2))

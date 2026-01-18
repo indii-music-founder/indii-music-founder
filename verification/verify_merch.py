@@ -1,5 +1,6 @@
 from playwright.sync_api import sync_playwright, expect
 
+
 def run():
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
@@ -15,7 +16,10 @@ def run():
         # Wait for login button
         print("Waiting for login button...")
         try:
-            page.get_by_role("button", name="Guest Login (Dev)").click(timeout=10000)
+            page.get_by_role(
+                "button",
+                name="Guest Login (Dev)").click(
+                timeout=10000)
         except Exception as e:
             print("Login button not found or timeout. Dumping page content.")
             print(page.content())
@@ -39,9 +43,9 @@ def run():
             page.get_by_test_id("merch-dashboard-content").wait_for()
             page.get_by_test_id("new-design-btn").click()
         except Exception as e:
-             print("Merch dashboard not loaded. Dumping page content.")
-             page.screenshot(path="verification/dashboard_fail.png")
-             raise e
+            print("Merch dashboard not loaded. Dumping page content.")
+            page.screenshot(path="verification/dashboard_fail.png")
+            raise e
 
         # 4. Verify Showroom and Manufacturing Panel
         print("Verifying Showroom...")
@@ -52,15 +56,18 @@ def run():
 
             # Handle Export Dialog if it appears
             try:
-                 export_btn = page.get_by_role("button", name="Export", exact=True)
-                 if export_btn.is_visible(timeout=2000):
-                     print("Export dialog appeared. Clicking Export...")
-                     export_btn.click()
+                export_btn = page.get_by_role(
+                    "button", name="Export", exact=True)
+                if export_btn.is_visible(timeout=2000):
+                    print("Export dialog appeared. Clicking Export...")
+                    export_btn.click()
             except Exception:
-                 print("Export dialog did not appear or was skipped.")
+                print("Export dialog did not appear or was skipped.")
 
             # Check for Showroom header
-            expect(page.get_by_text("Product Showroom")).to_be_visible(timeout=15000)
+            expect(page.get_by_text("Product Showroom")).to_be_visible(
+                timeout=15000
+            )
 
             # Check for Manufacturing Panel elements (Production column)
             # "Item Spec" is a label in the ManufacturingPanel
@@ -81,6 +88,7 @@ def run():
             raise e
 
         browser.close()
+
 
 if __name__ == "__main__":
     run()
