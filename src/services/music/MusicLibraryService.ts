@@ -33,12 +33,12 @@ export class MusicLibraryService {
             fileHash
         };
 
-        // @ts-ignore
+        // @ts-expect-error - Mocking global window property
         if (window.__MOCK_LIBRARY__) {
-            // @ts-ignore
+            // @ts-expect-error - Mocking global window property
             window.__MOCK_LIBRARY__[trackId] = mockData;
             if (fileHash) {
-                // @ts-ignore
+                // @ts-expect-error - Mocking global window property
                 window.__MOCK_LIBRARY__[`hash:${fileHash}`] = mockData;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -58,19 +58,6 @@ export class MusicLibraryService {
                 fileHash
             };
 
-            // E2E Mock Support
-            // @ts-ignore
-            if (window.__MOCK_LIBRARY__) {
-                // @ts-ignore
-                window.__MOCK_LIBRARY__[trackId] = data;
-                if (fileHash) {
-                    // @ts-ignore
-                    window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
-                }
-                console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
-                return;
-            }
-
             await setDoc(trackRef, data, { merge: true });
             console.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
         } catch (error) {
@@ -84,9 +71,9 @@ export class MusicLibraryService {
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-ignore
+        // @ts-expect-error - Mocking global window property
         if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-ignore
+            // @ts-expect-error - Mocking global window property
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -113,9 +100,9 @@ export class MusicLibraryService {
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-ignore
+        // @ts-expect-error - Mocking global window property
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-ignore
+            // @ts-expect-error - Mocking global window property
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 

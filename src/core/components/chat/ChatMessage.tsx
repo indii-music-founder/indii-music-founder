@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 
@@ -111,7 +111,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                                         {JSON.stringify(innerJson, null, 2)}
                                     </div>
                                 );
-                            } catch (e) { }
+                            } catch (e) { /* ignore */ }
                         }
                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
                     }
@@ -127,7 +127,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return <>{children}</>;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return <>{children}</>; } catch (e) { } }
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return <>{children}</>; } catch (e) { /* ignore */ } }
             }
             return (
                 <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
@@ -154,7 +154,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                     if (data.elements && data.elements[0]?.type === 'slugline') return <ScreenplayRenderer data={data} />;
                     if (data.callTime && data.nearestHospital) return <CallSheetRenderer data={data} />;
                     return <JsonViewer data={data} />;
-                } catch (e) { }
+                } catch (e) { /* ignore */ }
             }
             return <code className={className} {...props}>{children}</code>
         }
