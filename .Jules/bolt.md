@@ -13,3 +13,6 @@
 ## 2025-05-24 - Zustand Store Selectors
 **Learning:** Calling `useStore()` without selectors subscribes the component to the entire state tree. This causes re-renders on *any* state change (even unrelated ones), which is a critical bottleneck for complex root components like `VideoWorkflow`.
 **Action:** Always use granular selectors (e.g., `useStore(useShallow(state => ({ ... })))`) to subscribe only to the specific state slices a component actually needs.
+## 2025-05-24 - Duplicate useEffect Hooks
+**Learning:** Large components often accumulate duplicate 'setup' effects over time (e.g. from partial refactors), causing double-fetching of data on mount.
+**Action:** Audit complex components for multiple `useEffect` hooks with identical dependency arrays and consolidate them.
