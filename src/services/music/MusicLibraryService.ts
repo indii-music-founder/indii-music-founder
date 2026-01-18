@@ -2,6 +2,12 @@ import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
 
+declare global {
+    interface Window {
+        __MOCK_LIBRARY__?: Record<string, AnalyzedTrack>;
+    }
+}
+
 export interface AnalyzedTrack {
     id: string; // Typically a hash of the file or consistent local ID
     userId: string;
@@ -33,12 +39,9 @@ export class MusicLibraryService {
             fileHash
         };
 
-        // @ts-ignore
         if (window.__MOCK_LIBRARY__) {
-            // @ts-ignore
             window.__MOCK_LIBRARY__[trackId] = mockData;
             if (fileHash) {
-                // @ts-ignore
                 window.__MOCK_LIBRARY__[`hash:${fileHash}`] = mockData;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -59,12 +62,9 @@ export class MusicLibraryService {
             };
 
             // E2E Mock Support
-            // @ts-ignore
             if (window.__MOCK_LIBRARY__) {
-                // @ts-ignore
                 window.__MOCK_LIBRARY__[trackId] = data;
                 if (fileHash) {
-                    // @ts-ignore
                     window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
                 }
                 console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -84,9 +84,7 @@ export class MusicLibraryService {
      */
     async getAnalysis(trackId: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-ignore
         if (window.__MOCK_LIBRARY__?.[trackId]) {
-            // @ts-ignore
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -113,9 +111,7 @@ export class MusicLibraryService {
      */
     async getAnalysisByHash(fileHash: string): Promise<AnalyzedTrack | null> {
         // E2E Mock Support
-        // @ts-ignore
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
-            // @ts-ignore
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 

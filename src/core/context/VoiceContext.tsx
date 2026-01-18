@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { audioService } from '@/services/audio/AudioService';
 
 interface VoiceContextType {
@@ -20,7 +20,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const [recognition, setRecognition] = useState<any>(null);
+    const recognitionRef = useRef<any>(null);
 
     const setVoiceEnabled = (enabled: boolean) => {
         setVoiceEnabledState(enabled);
@@ -63,24 +63,24 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     setIsListening(false);
                 };
 
-                setRecognition(recognitionInstance);
+                recognitionRef.current = recognitionInstance;
             }
         }
     }, []);
 
     const toggleListening = useCallback(() => {
-        if (!recognition) {
+        if (!recognitionRef.current) {
             console.warn('Speech recognition not supported in this browser.');
             return;
         }
 
         if (isListening) {
-            recognition.stop();
+            recognitionRef.current.stop();
         } else {
             setTranscript('');
-            recognition.start();
+            recognitionRef.current.start();
         }
-    }, [isListening, recognition]);
+    }, [isListening]);
 
     return (
         <VoiceContext.Provider value={{
