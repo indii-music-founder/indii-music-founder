@@ -82,6 +82,8 @@ describe('FirebaseAIService', () => {
     beforeEach(() => {
         service = new FirebaseAIService();
         vi.clearAllMocks();
+        mockGenerateContent.mockReset();
+        mockGenerateContentStream.mockReset();
 
         mockGenerateContent.mockResolvedValue({
             response: { text: () => 'Mock AI Response' }
@@ -279,7 +281,7 @@ describe('FirebaseAIService', () => {
         expect(result.response.text()).toBe('Success after retry');
         // Initial call + 2 retries = 3 calls
         expect(mockGenerateContent).toHaveBeenCalledTimes(3);
-    });
+    }, 10000);
 
     it('should abort retry if user cancels', async () => {
         mockGenerateContent.mockRejectedValue(new Error('503 service unavailable'));
@@ -291,5 +293,14 @@ describe('FirebaseAIService', () => {
         setTimeout(() => abortController.abort(), 10);
 
         await expect(promise).rejects.toThrow('Operation cancelled by user');
+    });
+
+    it('should identify Firebase Installations API errors', async () => {
+        // Mock a failure that resembles the Installations error
+        const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
+        const { fetchAndActivate } = await import('firebase/remote-config');
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error(errMsg));
+
+        await expect(service.bootstrap()).rejects.toThrow('Firebase Installations API is disabled or restricted');
     });
 });

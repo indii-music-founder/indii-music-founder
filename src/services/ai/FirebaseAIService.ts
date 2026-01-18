@@ -314,9 +314,10 @@ export class FirebaseAIService {
         modelOverride?: string,
         config?: any,
         systemInstruction?: string,
-        tools?: any[]
+        tools?: any[],
+        options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
-        return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools);
+        return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
     /**
@@ -719,7 +720,17 @@ export class FirebaseAIService {
             );
         }
 
-        if (msg.includes('permission-denied') || msg.includes('app-check-token')) {
+        // Handle Firebase Installations API specific errors (missing API config)
+        if (msg.includes('Installations') || msg.includes('installations')) {
+            return new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.',
+                { originalError: msg }
+            );
+        }
+
+        const lowerMsg = msg.toLowerCase();
+        if (lowerMsg.includes('permission-denied') || lowerMsg.includes('app-check-token')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
         }
         if (msg.includes('Recaptcha')) {
@@ -761,22 +772,28 @@ export class FirebaseAIService {
             }
 
             const msg = error?.message || '';
+            const lowerMsg = msg.toLowerCase();
             const isRetryable =
-                msg.includes('429') ||
-                msg.includes('503') ||
-                msg.includes('service unavailable') ||
-                msg.includes('overloaded') ||
+                lowerMsg.includes('429') ||
+                lowerMsg.includes('503') ||
+                lowerMsg.includes('service unavailable') ||
+                lowerMsg.includes('temporarily unavailable') ||
+                lowerMsg.includes('overloaded') ||
                 // Retry abort/network errors (usually transient)
-                msg.includes('aborted') ||
-                msg.includes('fetch failed') ||
-                msg.includes('network error') ||
-                error?.code === 'resource-exhausted';
+                lowerMsg.includes('aborted') ||
+                lowerMsg.includes('fetch failed') ||
+                lowerMsg.includes('network error') ||
+                error?.code === 'resource-exhausted' ||
+                error?.details?.retryable;
 
             if (retries > 0 && isRetryable) {
                 // Exponential backoff with jitter and 10s cap
                 const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
                 // Wait for backoff, but listen for abort signal
                 await new Promise((resolve, reject) => {
+                    if (signal?.aborted) {
+                        return reject(new Error('Operation cancelled by user during retry backoff'));
+                    }
                     const timer = setTimeout(resolve, backoff);
                     if (signal) {
                         signal.addEventListener('abort', () => {
