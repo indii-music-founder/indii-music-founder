@@ -2,7 +2,7 @@ import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Bot, Sparkles } from 'lucide-react';
+import { Bot } from 'lucide-react';
 import { AgentMessage } from '@/core/store';
 import { useStore } from '@/core/store';
 

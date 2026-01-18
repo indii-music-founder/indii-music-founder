@@ -153,7 +153,7 @@ export default function VideoWorkflow() {
 
     // Sync pending prompt
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
         if (pendingPrompt) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
@@ -177,7 +177,7 @@ export default function VideoWorkflow() {
 
     // Set initial active video
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect
+
         if (selectedItem?.type === 'video') {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);

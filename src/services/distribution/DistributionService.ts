@@ -137,6 +137,25 @@ class DistributionService {
     }
 
     /**
+     * Execute waterfall revenue distribution
+     */
+    async executeWaterfall(data: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for waterfall execution');
+        }
+        const result = await window.electronAPI.distribution.executeWaterfall(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Waterfall execution failed');
+        }
+        return result.report;
+    }
+
+    /**
+     * Validate release metadata
+     */
+    async validateReleaseMetadata(metadata: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for metadata validation');
      * Validate release metadata via Electron IPC
      */
     async validateReleaseMetadata(metadata: any): Promise<any> {
@@ -151,6 +170,17 @@ class DistributionService {
     }
 
     /**
+     * Generate Content ID CSV assets
+     */
+    async generateContentIdAssets(data: any): Promise<string> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for Content ID generation');
+        }
+        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Content ID generation failed');
+        }
+        return result.csvData;
      * Execute revenue waterfall via Electron IPC
      */
     async executeWaterfall(data: any): Promise<any> {
