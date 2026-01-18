@@ -1,55 +1,55 @@
 {
   "users": {
-    "usr_uk_001": {
-      "user_id": "usr_uk_001",
-      "form_type": "W-8BEN",
-      "country": "UK",
-      "tin": "AB123456C",
-      "tin_valid": true,
-      "certified": true,
-      "payout_status": "ACTIVE"
-    },
-    "usr_fr_002": {
-      "user_id": "usr_fr_002",
-      "form_type": "W-8BEN-E",
-      "country": "FR",
-      "tin": "12345678901",
-      "tin_valid": true,
-      "certified": true,
-      "payout_status": "ACTIVE"
-    },
     "user_fraud_123": {
-      "user_id": "user_fraud_123",
-      "form_type": "W-9",
+      "cert_timestamp": null,
+      "certified": false,
       "country": "US",
+      "form_type": "W-9",
+      "payout_status": "HELD",
       "tin": "INVALID_TIN",
-      "tin_valid": false,
       "tin_message": "TIN Match Fail: Invalid US SSN/EIN format",
-      "certified": false,
-      "payout_status": "HELD",
-      "cert_timestamp": null
-    },
-    "user_unsigned_456": {
-      "user_id": "user_unsigned_456",
-      "form_type": "W-8BEN",
-      "country": "UK",
-      "tin": "ABC12345678",
-      "tin_valid": true,
-      "tin_message": "Valid Foreign TIN Format",
-      "certified": false,
-      "payout_status": "HELD",
-      "cert_timestamp": null
+      "tin_valid": false,
+      "user_id": "user_fraud_123"
     },
     "user_legal_789": {
-      "user_id": "user_legal_789",
-      "form_type": "W-8BEN",
-      "country": "UK",
-      "tin": "GBA123456789",
-      "tin_valid": true,
-      "tin_message": "Valid Foreign TIN Format",
+      "cert_timestamp": "2026-01-17T17:17:11.718425",
       "certified": true,
+      "country": "UK",
+      "form_type": "W-8BEN",
       "payout_status": "ACTIVE",
-      "cert_timestamp": "2026-01-17T17:17:11.718425"
+      "tin": "GBA123456789",
+      "tin_message": "Valid Foreign TIN Format",
+      "tin_valid": true,
+      "user_id": "user_legal_789"
+    },
+    "user_unsigned_456": {
+      "cert_timestamp": null,
+      "certified": false,
+      "country": "UK",
+      "form_type": "W-8BEN",
+      "payout_status": "HELD",
+      "tin": "ABC12345678",
+      "tin_message": "Valid Foreign TIN Format",
+      "tin_valid": true,
+      "user_id": "user_unsigned_456"
+    },
+    "usr_fr_002": {
+      "certified": true,
+      "country": "FR",
+      "form_type": "W-8BEN-E",
+      "payout_status": "ACTIVE",
+      "tin": "12345678901",
+      "tin_valid": true,
+      "user_id": "usr_fr_002"
+    },
+    "usr_uk_001": {
+      "certified": true,
+      "country": "UK",
+      "form_type": "W-8BEN",
+      "payout_status": "ACTIVE",
+      "tin": "AB123456C",
+      "tin_valid": true,
+      "user_id": "usr_uk_001"
     }
   }
 }

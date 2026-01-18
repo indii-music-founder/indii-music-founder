@@ -1,48 +1,68 @@
 {
-  "name": "indiiOS - AI Creative Studio",
-  "short_name": "indiiOS",
-  "description": "AI-native creative platform for image generation, video production, music analysis, and campaign management",
-  "start_url": "/",
-  "display": "standalone",
   "background_color": "#0f0f0f",
-  "theme_color": "#0f0f0f",
-  "orientation": "portrait-primary",
-  "scope": "/",
-  "categories": ["productivity", "entertainment", "music", "photo"],
+  "categories": [
+    "productivity",
+    "entertainment",
+    "music",
+    "photo"
+  ],
+  "description": "AI-native creative platform for image generation, video production, music analysis, and campaign management",
+  "display": "standalone",
   "icons": [
     {
-      "src": "/indiiOS-logo.svg",
+      "purpose": "any maskable",
       "sizes": "any",
-      "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "src": "/indiiOS-logo.svg",
+      "type": "image/svg+xml"
     },
     {
-      "src": "/vite.svg",
       "sizes": "any",
+      "src": "/vite.svg",
       "type": "image/svg+xml"
     }
   ],
+  "name": "indiiOS - AI Creative Studio",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "short_name": "indiiOS",
   "shortcuts": [
     {
+      "description": "Open Creative Studio for image generation",
+      "icons": [
+        {
+          "sizes": "any",
+          "src": "/indiiOS-logo.svg"
+        }
+      ],
       "name": "Creative Studio",
       "short_name": "Studio",
-      "description": "Open Creative Studio for image generation",
-      "url": "/?module=creative",
-      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
+      "url": "/?module=creative"
     },
     {
+      "description": "Open Video Studio",
+      "icons": [
+        {
+          "sizes": "any",
+          "src": "/indiiOS-logo.svg"
+        }
+      ],
       "name": "Video Studio",
       "short_name": "Video",
-      "description": "Open Video Studio",
-      "url": "/?module=video",
-      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
+      "url": "/?module=video"
     },
     {
+      "description": "Open Music Analysis",
+      "icons": [
+        {
+          "sizes": "any",
+          "src": "/indiiOS-logo.svg"
+        }
+      ],
       "name": "Music Analysis",
       "short_name": "Music",
-      "description": "Open Music Analysis",
-      "url": "/?module=music",
-      "icons": [{ "src": "/indiiOS-logo.svg", "sizes": "any" }]
+      "url": "/?module=music"
     }
-  ]
+  ],
+  "start_url": "/",
+  "theme_color": "#0f0f0f"
 }

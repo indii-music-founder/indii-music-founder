@@ -4,6 +4,7 @@ import os
 import shutil
 import hashlib
 import logging
+import time
 
 # Ensure we can import sibling modules
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
@@ -38,9 +39,6 @@ def package_itmsp(release_id, staging_path):
     3. Generates DDEX ERN 4.3 XML.
     4. Creates .itmsp directory structure.
     5. Moves assets and XML into the bundle.
-    Simulates the creation of an Apple ITMSP bundle.
-    In production, this would use lxml to build the metadata.xml
-    and verify the checksums of all audio files.
     """
     logger.info(f"Starting ITMSP packaging for release {release_id} from {staging_path}")
 
@@ -119,15 +117,6 @@ def package_itmsp(release_id, staging_path):
         # Verify Bundle
         files_in_bundle = os.listdir(bundle_path)
         logger.info(f"Bundle created with files: {files_in_bundle}")
-        # 2. Simulate processing
-        time.sleep(1.5)  # Simulate IO heavy task
-
-        bundle_path = os.path.join(
-            os.path.dirname(staging_path),
-            f"{release_id}.itmsp")
-
-        # In a real scenario, we'd do os.mkdir(bundle_path) etc.
-        # But here we just return success to prove the bridge works.
 
         return {
             "status": "PASS",
@@ -136,12 +125,6 @@ def package_itmsp(release_id, staging_path):
             "details": f"Successfully created ITMSP bundle at {bundle_path} with {len(processed_tracks)} tracks.",
             "delivery_ready": True
         }
-
-            "details": (
-                f"Packaged assets from {staging_path} "
-                "into Apple ITMSP bundle."
-            ),
-            "delivery_ready": True}
     except Exception as e:
         logger.exception("Packaging failed")
         return {"status": "FAIL", "error": str(e)}

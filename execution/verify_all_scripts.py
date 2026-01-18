@@ -123,6 +123,42 @@ def test_ddex_generator():
         print(f"❌ DDEX Generator Failed: {res.stderr}")
 
 
+def test_keys_manager_bwarm():
+    print("Testing keys_manager.py (BWARM)...")
+    input_data = json.dumps({
+        "works": [
+            {"title": "Test Song", "writer_last": "Doe", "writer_first": "Jane", "writer_ipi": "00123456789"}
+        ]
+    })
+    res = run_script("execution/distribution/keys_manager.py", ["bwarm", input_data])
+    if res.returncode == 0:
+        data = json.loads(res.stdout)
+        assert data["status"] == "SUCCESS"
+        assert "csv" in data
+        assert "Test Song" in data["csv"]
+        print("✅ BWARM CSV Generation Passed")
+    else:
+        print(f"❌ BWARM Generation Failed: {res.stderr}")
+
+
+def test_keys_manager_merlin():
+    print("Testing keys_manager.py (Merlin Check)...")
+    input_data = json.dumps({
+        "total_tracks": 60,
+        "has_isrcs": True,
+        "has_upcs": True,
+        "exclusive_rights": True
+    })
+    res = run_script("execution/distribution/keys_manager.py", ["merlin_check", input_data])
+    if res.returncode == 0:
+        data = json.loads(res.stdout)
+        assert data["status"] == "READY"
+        assert data["score"] == 100
+        print("✅ Merlin Compliance Check Passed")
+    else:
+        print(f"❌ Merlin Check Failed: {res.stderr}")
+
+
 if __name__ == "__main__":
     print("\n" + "=" * 60)
     print(" EXECUTING GLOBAL SCRIPT VERIFICATION ")
@@ -133,4 +169,6 @@ if __name__ == "__main__":
     test_upc_manager()
     test_content_id()
     test_ddex_generator()
+    test_keys_manager_bwarm()
+    test_keys_manager_merlin()
     print("=" * 60 + "\n")

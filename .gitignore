@@ -67,3 +67,7 @@ dist-electron-studio/
 upc_store.json
 identity_store.json
 .mypy_cache/
+
+# Python
+__pycache__/
+*.pyc

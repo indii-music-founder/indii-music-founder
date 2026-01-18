@@ -123,7 +123,6 @@ class DistributionService {
         }
 
         try {
-            // Updated to pass object as single argument matching new IPC signature
             const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
             if (!result.success) {
                 console.error('[Distribution] Tax calculation failed:', result.error);
@@ -137,61 +136,68 @@ class DistributionService {
     }
 
     /**
-     * Execute waterfall revenue distribution
-     */
-    async executeWaterfall(data: any): Promise<any> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for waterfall execution');
-        }
-        const result = await window.electronAPI.distribution.executeWaterfall(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Waterfall execution failed');
-        }
-        return result.report;
-    }
-
-    /**
-     * Validate release metadata
-     */
-    async validateReleaseMetadata(metadata: any): Promise<any> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for metadata validation');
-     * Validate release metadata via Electron IPC
-     */
-    async validateReleaseMetadata(metadata: any): Promise<any> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for validation');
-        }
-        const result = await window.electronAPI.distribution.validateMetadata(metadata);
-        if (!result.success) {
-            throw new Error(result.error || 'Metadata validation failed');
-        }
-        return result.report;
-    }
-
-    /**
-     * Generate Content ID CSV assets
-     */
-    async generateContentIdAssets(data: any): Promise<string> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for Content ID generation');
-        }
-        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Content ID generation failed');
-        }
-        return result.csvData;
      * Execute revenue waterfall via Electron IPC
      */
     async executeWaterfall(data: any): Promise<any> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for waterfall execution');
         }
-        const result = await window.electronAPI.distribution.executeWaterfall(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Waterfall execution failed');
+
+        try {
+            const result = await window.electronAPI.distribution.executeWaterfall(data);
+            if (!result.success) {
+                throw new Error(result.error || 'Waterfall execution failed');
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Waterfall engine error:', error);
+            throw error;
         }
-        return result.report;
+    }
+
+    /**
+     * Validate release metadata via Electron IPC
+     */
+    async validateReleaseMetadata(metadata: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for metadata validation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.validateMetadata(metadata);
+            if (!result.success) {
+                console.warn('[Distribution] Metadata validation failed:', result.report);
+                // Don't throw error if validation fails, just return report so UI can show errors
+                // Unless it's an execution error
+                if (result.error) throw new Error(result.error);
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Validation engine error:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Generate Content ID CSV Assets
+     */
+    async generateContentIdAssets(data: any): Promise<string> {
+        if (!window.electronAPI) {
+            console.warn('[Distribution] Electron API missing for Content ID generation');
+            throw new Error('Electron environment required for Content ID generation');
+        }
+
+        try {
+            const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+            if (!result.success || (!result.csvData && !result.report)) {
+                console.error('[Distribution] Content ID generation failed:', result.error);
+                throw new Error(result.error || 'Content ID generation failed');
+            }
+            return result.csvData || JSON.stringify(result.report);
+        } catch (error) {
+            console.error('[Distribution] Content ID engine error:', error);
+            throw error;
+        }
     }
 
     /**
@@ -217,61 +223,83 @@ class DistributionService {
     }
 
     /**
-     * Generate Content ID assets via Electron IPC
+     * Generate a new UPC via Python engine
      */
-    async generateContentIdAssets(data: any): Promise<string> {
-        if (!window.electronAPI) {
-            throw new Error('Electron environment required for Content ID generation');
-        }
-        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Content ID generation failed');
-        }
-        return result.csvData || '';
-    }
-
     async generateUPC(options?: any): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for UPC generation');
         }
-        const result = await window.electronAPI.distribution.generateUPC(options);
-        if (!result.success || !result.upc) {
-            throw new Error(result.error || 'UPC Generation failed');
+
+        try {
+            const result = await window.electronAPI.distribution.generateUPC(options);
+            if (!result.success || !result.upc) {
+                throw new Error(result.error || 'UPC Generation failed');
+            }
+            return result.upc;
+        } catch (error) {
+            console.error('[Distribution] UPC engine error:', error);
+            throw error;
         }
-        return result.upc;
     }
 
+    /**
+     * Generate DDEX ERN 4.3 XML via Python engine
+     */
     async generateDDEX(metadata: any): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for DDEX generation');
         }
-        const result = await window.electronAPI.distribution.generateDDEX(metadata);
-        if (!result.success || !result.xml) {
-            throw new Error(result.error || 'DDEX Generation failed');
+
+        try {
+            const result = await window.electronAPI.distribution.generateDDEX(metadata);
+            if (!result.success || !result.xml) {
+                throw new Error(result.error || 'DDEX Generation failed');
+            }
+            return result.xml;
+        } catch (error) {
+            console.error('[Distribution] DDEX engine error:', error);
+            throw error;
         }
-        return result.xml;
     }
 
+    /**
+     * Check Merlin Network compliance status
+     */
     async checkMerlinStatus(data: any): Promise<any> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for Merlin check');
         }
-        const result = await window.electronAPI.distribution.checkMerlinStatus(data);
-        if (!result.success) {
-            throw new Error(result.error || 'Merlin status check failed');
+
+        try {
+            const result = await window.electronAPI.distribution.checkMerlinStatus(data);
+            if (!result.success) {
+                throw new Error(result.error || 'Merlin status check failed');
+            }
+            return result.report;
+        } catch (error) {
+            console.error('[Distribution] Merlin engine error:', error);
+            throw error;
         }
-        return result.report;
     }
 
+    /**
+     * Generate BWARM CSV report
+     */
     async generateBWARM(data: any): Promise<string> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for BWARM generation');
         }
-        const result = await window.electronAPI.distribution.generateBWARM(data);
-        if (!result.success || (!result.csv && !result.report)) {
-            throw new Error(result.error || 'BWARM generation failed');
+
+        try {
+            const result = await window.electronAPI.distribution.generateBWARM(data);
+            if (!result.success || (!result.csv && !result.report)) {
+                throw new Error(result.error || 'BWARM generation failed');
+            }
+            return result.csv || JSON.stringify(result.report);
+        } catch (error) {
+            console.error('[Distribution] BWARM engine error:', error);
+            throw error;
         }
-        return result.csv || JSON.stringify(result.report);
     }
 }
 

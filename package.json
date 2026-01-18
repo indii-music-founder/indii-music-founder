@@ -1,45 +1,42 @@
 {
   "name": "indii-os",
+  "version": "0.1.0-beta.2",
   "description": "The Operating System for Independent Artists",
   "author": "IndiiOS LLC",
   "private": true,
-  "version": "0.1.0-beta.2",
   "type": "module",
   "main": "dist-electron/main.cjs",
-  "engines": {
-    "node": ">=22.0.0"
-  },
   "scripts": {
-    "dev": "vite",
-    "typecheck": "tsc --noEmit",
     "build": "npm run typecheck && npm run lint && vite build",
-    "build:landing": "cd landing-page && npm install && npm run build",
-    "build:studio": "vite build",
     "build:all": "npm run build:landing && npm run build:studio",
-    "preview": "vite preview",
-    "electron:dev": "npm run build:electron && VITE_DEV_SERVER_URL=http://localhost:4242 npx electron dist-electron/main.cjs",
-    "build:electron": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron --external:keytar --external:fluent-ffmpeg --external:ffmpeg-static --external:ffprobe-static --external:electron-squirrel-startup --external:cpu-features --external:ssh2 --external:ssh2-sftp-client --external:*.node && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron",
-    "electron:build": "npm run build:electron && electron-builder --publish never",
-    "desktop:dev": "npm run build:electron && VITE_DEV_SERVER_URL=http://localhost:4242 npx electron dist-electron/main.cjs",
     "build:desktop": "bash scripts/build-desktop.sh release all",
+    "build:desktop:linux": "bash scripts/build-desktop.sh linux",
     "build:desktop:mac": "bash scripts/build-desktop.sh release mac",
     "build:desktop:win": "bash scripts/build-desktop.sh release win",
-    "build:desktop:linux": "bash scripts/build-desktop.sh linux",
+    "build:electron": "npx esbuild electron/main.ts --bundle --platform=node --outfile=dist-electron/main.cjs --format=cjs --external:electron --external:keytar --external:fluent-ffmpeg --external:ffmpeg-static --external:ffprobe-static --external:electron-squirrel-startup --external:cpu-features --external:ssh2 --external:ssh2-sftp-client --external:*.node && npx esbuild electron/preload.ts --bundle --platform=node --outfile=dist-electron/preload.cjs --format=cjs --external:electron",
+    "build:landing": "cd landing-page && npm install && npm run build",
+    "build:studio": "vite build",
+    "build:studio:all": "vite build && electron-builder --config electron-builder-studio.json -mlw --publish never",
+    "build:studio:linux": "vite build && electron-builder --config electron-builder-studio.json --linux AppImage --publish never",
     "build:studio:mac": "vite build && electron-builder --config electron-builder-studio.json --publish never",
     "build:studio:win": "vite build && electron-builder --config electron-builder-studio.json --win --publish never",
-    "build:studio:linux": "vite build && electron-builder --config electron-builder-studio.json --linux AppImage --publish never",
-    "build:studio:all": "vite build && electron-builder --config electron-builder-studio.json -mlw --publish never",
-    "test": "vitest",
-    "test:e2e": "playwright test",
+    "check:merge": "node scripts/check-merge-integrity.js",
+    "deploy": "npm run build:studio && firebase deploy --only hosting:app",
+    "desktop:dev": "npm run build:electron && VITE_DEV_SERVER_URL=http://localhost:4242 npx electron dist-electron/main.cjs",
+    "dev": "vite",
+    "electron:build": "npm run build:electron && electron-builder --publish never",
+    "electron:dev": "npm run build:electron && VITE_DEV_SERVER_URL=http://localhost:4242 npx electron dist-electron/main.cjs",
+    "generate:icons": "node scripts/generate-pwa-icons.cjs",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
-    "generate:icons": "node scripts/generate-pwa-icons.cjs",
-    "start": "electron-forge start",
-    "package": "electron-forge package",
     "make": "electron-forge make",
+    "package": "electron-forge package",
+    "preview": "vite preview",
     "rebuild": "npx @electron/rebuild",
-    "deploy": "npm run build:studio && firebase deploy --only hosting:app",
-    "check:merge": "node scripts/check-merge-integrity.js"
+    "start": "electron-forge start",
+    "test": "vitest",
+    "test:e2e": "playwright test",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
@@ -191,8 +188,14 @@
     "cpu-features": "0.0.10",
     "lightningcss-linux-x64-gnu": "^1.30.2"
   },
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "build": {
-    "npmRebuild": false,
+    "asarUnpack": [
+      "**/node_modules/ffmpeg-static/**",
+      "**/node_modules/ffprobe-static/**"
+    ],
     "files": [
       "dist/**/*",
       "dist-electron/**/*",
@@ -200,25 +203,11 @@
       "!node_modules/@rollup/rollup-linux-x64-gnu",
       "!node_modules/@esbuild"
     ],
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "the-walking-agency-det",
-        "repo": "indiiOS-Alpha-Electron",
-        "private": true
-      }
-    ],
-    "asarUnpack": [
-      "**/node_modules/ffmpeg-static/**",
-      "**/node_modules/ffprobe-static/**"
-    ],
-    "win": {
-      "verifyUpdateCodeSignature": true
-    },
     "mac": {
-      "hardenedRuntime": true,
-      "gatekeeperAssess": true
+      "gatekeeperAssess": true,
+      "hardenedRuntime": true
     },
+    "npmRebuild": false,
     "protocols": [
       {
         "name": "indii-os",
@@ -226,6 +215,17 @@
           "indii-os"
         ]
       }
-    ]
+    ],
+    "publish": [
+      {
+        "owner": "the-walking-agency-det",
+        "private": true,
+        "provider": "github",
+        "repo": "indiiOS-Alpha-Electron"
+      }
+    ],
+    "win": {
+      "verifyUpdateCodeSignature": true
+    }
   }
 }
