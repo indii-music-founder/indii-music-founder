@@ -5,6 +5,9 @@ def run():
         browser = p.chromium.launch(headless=True)
         page = browser.new_page(viewport={"width": 1500, "height": 900})
 
+        page.on("console", lambda msg: print(f"BROWSER CONSOLE: {msg.text}"))
+        page.on("pageerror", lambda exc: print(f"BROWSER ERROR: {exc}"))
+
         # 1. Login
         print("Navigating to login...")
         page.goto("http://localhost:4242")
