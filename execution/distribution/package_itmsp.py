@@ -119,15 +119,6 @@ def package_itmsp(release_id, staging_path):
         # Verify Bundle
         files_in_bundle = os.listdir(bundle_path)
         logger.info(f"Bundle created with files: {files_in_bundle}")
-        # 2. Simulate processing
-        time.sleep(1.5)  # Simulate IO heavy task
-
-        bundle_path = os.path.join(
-            os.path.dirname(staging_path),
-            f"{release_id}.itmsp")
-
-        # In a real scenario, we'd do os.mkdir(bundle_path) etc.
-        # But here we just return success to prove the bridge works.
 
         return {
             "status": "PASS",
@@ -136,12 +127,6 @@ def package_itmsp(release_id, staging_path):
             "details": f"Successfully created ITMSP bundle at {bundle_path} with {len(processed_tracks)} tracks.",
             "delivery_ready": True
         }
-
-            "details": (
-                f"Packaged assets from {staging_path} "
-                "into Apple ITMSP bundle."
-            ),
-            "delivery_ready": True}
     except Exception as e:
         logger.exception("Packaging failed")
         return {"status": "FAIL", "error": str(e)}
