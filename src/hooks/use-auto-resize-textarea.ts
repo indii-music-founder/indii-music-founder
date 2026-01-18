@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { debounce } from "@/lib/debounce";
 
 interface UseAutoResizeTextareaProps {
     minHeight: number;
@@ -48,7 +49,8 @@ export function useAutoResizeTextarea({
 
     // Adjust height on window resize
     useEffect(() => {
-        const handleResize = () => adjustHeight();
+        // Debounce resize to prevent layout thrashing
+        const handleResize = debounce(() => adjustHeight(), 100);
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
     }, [adjustHeight]);
