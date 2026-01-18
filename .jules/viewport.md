@@ -1,0 +1,3 @@
+## 2026-02-xx - Tool Output Injection & Markdown Escaping
+**Learning:** When injecting simulated Tool Outputs (JSON) into the chat store for testing, `ReactMarkdown` processes the text first. If the component relies on regex matching against the *rendered* text content (like `ChatMessage.tsx`), you must double-escape quotes in the inner JSON string (`replace(/"/g, '\\"')`) so that they survive Markdown's unescaping behavior and remain valid JSON for `JSON.parse`.
+**Action:** When writing tests for tool outputs, verify if the component parses raw markdown or rendered text, and escape JSON strings accordingly.
