@@ -23,7 +23,7 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     id: 'gene-template',
     name: 'Agent Template',
     systemPrompt: 'Base Prompt',
-    parameters: { temp: 0.7 },
+    parameters: { temperature: 0.7 },
     generation: 0,
     lineage: []
   };
@@ -34,20 +34,29 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     // Default favorable mocks
     mockFitnessFn.mockImplementation(async (gene) => gene.fitness || 0);
 
-    // Mock Crossover: Combine names and prompts
+    // Mock Crossover: Combine names, prompts, AND parameters (Blending Inheritance)
     mockCrossoverFn.mockImplementation(async (p1, p2) => ({
       ...p1,
       id: 'offspring-temp',
       name: `Child of ${p1.name} & ${p2.name}`,
       systemPrompt: p1.systemPrompt + ' + ' + p2.systemPrompt,
+      parameters: {
+        // Average temperature (Smart Crossover)
+        temperature: (p1.parameters.temperature + p2.parameters.temperature) / 2
+      },
       generation: Math.max(p1.generation, p2.generation), // Engine increments this
       lineage: [p1.id, p2.id]
     }));
 
-    // Mock Gemini 3 Pro Mutation: Return predictable mutated string
+    // Mock Gemini 3 Pro Mutation: Return predictable mutated string AND shift parameters
     mockMutationFn.mockImplementation(async (g) => ({
       ...g,
-      systemPrompt: g.systemPrompt + ' [GEMINI_MUTATION]'
+      systemPrompt: g.systemPrompt + ' [GEMINI_MUTATION]',
+      parameters: {
+        ...g.parameters,
+        // Drift: Add 0.1 to temperature
+        temperature: g.parameters.temperature + 0.1
+      }
     }));
 
     engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
@@ -57,7 +66,7 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     vi.restoreAllMocks();
   });
 
-  it('Runs ONE step of evolution (Select 2, Breed 1) and produces valid offspring', async () => {
+  it('Runs ONE step of evolution (Select 2, Breed 1) and verifies Genotype/Phenotype evolution', async () => {
     // 0. Enforce Determinism (Helix Philosophy: Randomness is for Evolution, not for Testing)
     // We mock Math.random to always return 0.
     // Effect on Selection: Always picks index 0 (The Best Available Agent).
@@ -66,9 +75,9 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // 1. Setup Micro-Universe (3 Mock Agents)
     const population: AgentGene[] = [
-      { ...mockGene, id: 'agent-1', name: 'Alpha', fitness: 1.0, systemPrompt: 'PROMPT_A' },
-      { ...mockGene, id: 'agent-2', name: 'Beta', fitness: 0.8, systemPrompt: 'PROMPT_B' },
-      { ...mockGene, id: 'agent-3', name: 'Gamma', fitness: 0.5, systemPrompt: 'PROMPT_C' }
+      { ...mockGene, id: 'agent-1', name: 'Alpha', fitness: 1.0, systemPrompt: 'PROMPT_A', parameters: { temperature: 0.8 } },
+      { ...mockGene, id: 'agent-2', name: 'Beta', fitness: 0.8, systemPrompt: 'PROMPT_B', parameters: { temperature: 0.6 } },
+      { ...mockGene, id: 'agent-3', name: 'Gamma', fitness: 0.5, systemPrompt: 'PROMPT_C', parameters: { temperature: 0.1 } }
     ];
 
     // 2. Run ONE step
@@ -106,15 +115,20 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     // Parent 2: Beta (Index 0 of Remaining Pool)
     expect(offspring.lineage).toEqual(['agent-1', 'agent-2']);
 
-    // Valid Mutation (Mocked Gemini Call)
+    // Valid Mutation (Mocked Gemini Call) - Phenotype Check
     expect(offspring.systemPrompt).toContain('[GEMINI_MUTATION]');
 
-    // Verify Crossover Logic happened (Prompt Combination)
-    // The prompt should contain parts of parents.
-    // Since we forced mutation on top of crossover, it should be complex.
-    // e.g. "PROMPT_A + PROMPT_B [GEMINI_MUTATION]"
+    // Verify Crossover Logic happened (Prompt Combination) - Phenotype Check
     expect(offspring.systemPrompt).toContain('PROMPT_A');
     expect(offspring.systemPrompt).toContain('PROMPT_B');
     expect(offspring.systemPrompt).toContain('+');
+
+    // Verify Parameter Evolution (Genotype Check)
+    // Parent 1 (Alpha) Temp: 0.8
+    // Parent 2 (Beta) Temp: 0.6
+    // Crossover Average: (0.8 + 0.6) / 2 = 0.7
+    // Mutation Drift: 0.7 + 0.1 = 0.8
+    // Note: Floating point precision might need CloseTo
+    expect(offspring.parameters.temperature).toBeCloseTo(0.8);
   });
 });
