@@ -2,7 +2,7 @@ import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
-import { getAI, VertexAIBackend } from 'firebase/ai';
+import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
@@ -21,13 +21,52 @@ const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
 
 export const app = initializeApp(safeConfig);
 
+// ============================================================================
+// LAZY Firebase AI Initialization
+// Only initialize when App Check is configured to avoid Installations API errors
+// ============================================================================
+let _aiInstance: AI | null = null;
 
+/**
+ * Check if App Check is configured (must match FirebaseAIService logic)
+ */
+function isAppCheckConfigured(): boolean {
+    return !!(env.appCheckKey || env.appCheckDebugToken);
+}
 
-// Initialize Firebase AI with Production Security (App Check + Vertex AI Backend)
-export const ai = getAI(app, {
-    backend: new VertexAIBackend('global'),
-    useLimitedUseAppCheckTokens: false
-});
+/**
+ * Get the Firebase AI instance. Returns null if App Check is not configured,
+ * which signals FirebaseAIService to use direct Gemini SDK fallback.
+ */
+export function getFirebaseAI(): AI | null {
+    if (_aiInstance) return _aiInstance;
+
+    // Only initialize Firebase AI if App Check is configured
+    // This prevents the Installations API error when App Check isn't set up
+    if (!isAppCheckConfigured()) {
+        console.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
+        return null;
+    }
+
+    try {
+        _aiInstance = getAI(app, {
+            backend: new VertexAIBackend('global'),
+            useLimitedUseAppCheckTokens: false
+        });
+        console.log('[Firebase] Firebase AI initialized with Vertex AI backend');
+        return _aiInstance;
+    } catch (error) {
+        console.error('[Firebase] Failed to initialize Firebase AI:', error);
+        return null;
+    }
+}
+
+// For backwards compatibility - lazy getter
+export const ai = {
+    get instance(): AI | null {
+        return getFirebaseAI();
+    }
+};
 
 /**
  * Firestore with offline persistence enabled (modern API).

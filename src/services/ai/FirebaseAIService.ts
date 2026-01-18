@@ -12,7 +12,7 @@ import {
     Tool
 } from 'firebase/ai';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { ai, remoteConfig, functions } from '@/services/firebase';
+import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
 import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
@@ -135,16 +135,22 @@ export class FirebaseAIService {
         }
 
         try {
-            // 1. Fetch Remote Config
+            // 1. Get Firebase AI instance (lazy initialized)
+            const firebaseAI = getFirebaseAI();
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available, using fallback');
+                await this.initializeFallbackMode();
+                return;
+            }
+
+            // 2. Fetch Remote Config
             await fetchAndActivate(remoteConfig);
 
-            // 2. Get Model Name and Location
+            // 3. Get Model Name and Location
             const modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
 
-            // 3. Initialize SDK
-            // Note: 'ai' is already initialized in @/services/firebase with
-            // VertexAIBackend and useLimitedUseAppCheckTokens: true.
-            this.model = getGenerativeModel(ai, {
+            // 4. Initialize SDK
+            this.model = getGenerativeModel(firebaseAI, {
                 model: modelName
             });
 
@@ -250,7 +256,7 @@ export class FirebaseAIService {
                     modelOptions.cachedContent = cachedContent;
                 }
 
-                const modelCallback = getGenerativeModel(ai, modelOptions);
+                const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
 
                 try {
                     const result = await modelCallback.generateContent(
@@ -379,7 +385,7 @@ export class FirebaseAIService {
                     modelOptions.cachedContent = cachedContent;
                 }
 
-                const modelCallback = getGenerativeModel(ai, modelOptions);
+                const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
 
                 try {
 
@@ -705,7 +711,7 @@ export class FirebaseAIService {
      */
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
         await this.ensureInitialized();
-        return getLiveGenerativeModel(ai, {
+        return getLiveGenerativeModel(getFirebaseAI()!, {
             model: AI_MODELS.TEXT.AGENT,
             systemInstruction
         });
@@ -784,7 +790,7 @@ export class FirebaseAIService {
             }
 
             const modelName = modelOverride || 'text-embedding-004';
-            const modelCallback = getGenerativeModel(ai, { model: modelName });
+            const modelCallback = getGenerativeModel(getFirebaseAI()!, { model: modelName });
 
             try {
                 // If batchEmbedContents is available, use it
@@ -852,7 +858,7 @@ export class FirebaseAIService {
                 }
             };
 
-            const modelCallback = getGenerativeModel(ai, {
+            const modelCallback = getGenerativeModel(getFirebaseAI()!, {
                 model: modelName,
                 generationConfig: config as unknown as Record<string, unknown>
             });
@@ -891,7 +897,7 @@ export class FirebaseAIService {
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
-            const modelCallback = getGenerativeModel(ai, {
+            const modelCallback = getGenerativeModel(getFirebaseAI()!, {
                 model: options.model
             });
 
