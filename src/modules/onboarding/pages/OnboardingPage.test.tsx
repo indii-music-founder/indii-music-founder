@@ -127,4 +127,18 @@ describe('OnboardingPage', () => {
             expect(screen.getByLabelText('View profile progress')).toBeInTheDocument();
         });
     });
+
+    it('Renders accessible labels on interactive elements', () => {
+        render(<OnboardingPage />);
+
+        // Existing label
+        expect(screen.getByLabelText('Send message')).toBeInTheDocument();
+
+        // New labels
+        expect(screen.getByLabelText('Attach file')).toBeInTheDocument();
+        expect(screen.getByLabelText('Type your message')).toBeInTheDocument();
+
+        // Mobile view button - label includes progress
+        expect(screen.getByLabelText('View profile progress, 0% complete')).toBeInTheDocument();
+    });
 });
