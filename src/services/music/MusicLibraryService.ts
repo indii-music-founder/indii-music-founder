@@ -39,6 +39,12 @@ export class MusicLibraryService {
             window.__MOCK_LIBRARY__[trackId] = mockData;
             if (fileHash) {
                 // @ts-expect-error - using window mock for E2E
+        // @ts-expect-error - Mocking global window property
+        if (window.__MOCK_LIBRARY__) {
+            // @ts-expect-error - Mocking global window property
+            window.__MOCK_LIBRARY__[trackId] = mockData;
+            if (fileHash) {
+                // @ts-expect-error - Mocking global window property
                 window.__MOCK_LIBRARY__[`hash:${fileHash}`] = mockData;
             }
             console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -65,6 +71,12 @@ export class MusicLibraryService {
                 window.__MOCK_LIBRARY__[trackId] = data;
                 if (fileHash) {
                     // @ts-expect-error - using window mock for E2E
+            // @ts-expect-error - Mocking global window property
+            if (window.__MOCK_LIBRARY__) {
+                // @ts-expect-error - Mocking global window property
+                window.__MOCK_LIBRARY__[trackId] = data;
+                if (fileHash) {
+                    // @ts-expect-error - Mocking global window property
                     window.__MOCK_LIBRARY__[`hash:${fileHash}`] = data;
                 }
                 console.info(`[MusicLibrary] [MOCK] Saved analysis for track: ${filename} (${trackId})`);
@@ -87,6 +99,9 @@ export class MusicLibraryService {
         // @ts-expect-error - using window mock for E2E
         if (window.__MOCK_LIBRARY__?.[trackId]) {
             // @ts-expect-error - using window mock for E2E
+        // @ts-expect-error - Mocking global window property
+        if (window.__MOCK_LIBRARY__?.[trackId]) {
+            // @ts-expect-error - Mocking global window property
             return window.__MOCK_LIBRARY__[trackId];
         }
 
@@ -116,6 +131,9 @@ export class MusicLibraryService {
         // @ts-expect-error - using window mock for E2E
         if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
             // @ts-expect-error - using window mock for E2E
+        // @ts-expect-error - Mocking global window property
+        if (window.__MOCK_LIBRARY__?.[`hash:${fileHash}`]) {
+            // @ts-expect-error - Mocking global window property
             return window.__MOCK_LIBRARY__[`hash:${fileHash}`];
         }
 

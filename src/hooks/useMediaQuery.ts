@@ -1,25 +1,30 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 
 /**
- * SSR-safe media query hook
+ * SSR-safe media query hook using useSyncExternalStore
  * @param query - CSS media query string (e.g., '(min-width: 768px)')
  * @returns boolean indicating if the query matches
  */
 export function useMediaQuery(query: string): boolean {
-    const [matches, setMatches] = useState<boolean>(() => {
-        // SSR-safe: return false on server
-        if (typeof window === 'undefined') return false;
-        return window.matchMedia(query).matches;
-    });
+    const subscribe = useCallback(
+        (callback: () => void) => {
+            const mediaQuery = window.matchMedia(query);
 
-    const handleChange = useCallback((event: MediaQueryListEvent) => {
-        setMatches(event.matches);
-    }, []);
+            const listener = () => {
+                callback();
+            };
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return;
-
-        const mediaQuery = window.matchMedia(query);
+            if (mediaQuery.addEventListener) {
+                mediaQuery.addEventListener('change', listener);
+                return () => mediaQuery.removeEventListener('change', listener);
+            } else {
+                // Legacy Safari
+                mediaQuery.addListener(listener);
+                return () => mediaQuery.removeListener(listener);
+            }
+        },
+        [query]
+    );
 
         // Set initial value
         if (matches !== mediaQuery.matches) {
@@ -37,6 +42,13 @@ export function useMediaQuery(query: string): boolean {
             return () => mediaQuery.removeListener(handleChange);
         }
     }, [query, handleChange, matches]);
+    const getSnapshot = () => {
+        return window.matchMedia(query).matches;
+    };
 
-    return matches;
+    const getServerSnapshot = () => {
+        return false;
+    };
+
+    return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
 }

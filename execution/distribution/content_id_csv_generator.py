@@ -3,7 +3,7 @@ import io
 import json
 import logging
 import sys
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
 
 # Configure logging
 logging.basicConfig(
@@ -11,6 +11,7 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger("content_id_gen")
+
 
 def generate_content_id_csv(asset_data: Dict[str, Any]) -> str:
     """Generates a YouTube Content ID Bulk Metadata CSV.
@@ -25,20 +26,21 @@ def generate_content_id_csv(asset_data: Dict[str, Any]) -> str:
         A string containing the formatted CSV data.
     """
     logger.info("Generating Content ID CSV bulk metadata.")
-    
+
     output = io.StringIO()
     writer = csv.writer(output, quoting=csv.QUOTE_MINIMAL)
-    
+
     # YouTube standard headers for sound_recording assets
     headers = [
-        "Asset Type", "Custom ID", "ISRC", "UPC", "Title", 
+        "Asset Type", "Custom ID", "ISRC", "UPC", "Title",
         "Artist", "Album", "Label", "Match Policy", "Territories"
     ]
     writer.writerow(headers)
 
     tracks = asset_data.get("tracks", [])
     if not tracks:
-        logger.warning("No tracks found in asset data. Generating header-only CSV.")
+        logger.warning(
+            "No tracks found in asset data. Generating header-only CSV.")
 
     for track in tracks:
         # Extract metadata with defaults
@@ -48,16 +50,16 @@ def generate_content_id_csv(asset_data: Dict[str, Any]) -> str:
         title = track.get("title", "Untitled Track")
         artist = asset_data.get("artist", "Various Artists")
         album = asset_data.get("album_title", "Single")
-        
+
         row = [
             "sound_recording",
-            f"INDII-{track_id}", # Unique Internal identifier
+            f"INDII-{track_id}",  # Unique Internal identifier
             isrc,
             upc,
             title,
             artist,
             album,
-            "Indii OS Distribution", # Managed Label
+            "Indii OS Distribution",  # Managed Label
             "Monetize",               # Default YouTube CID match policy
             "Worldwide"               # Standard territory availability
         ]
@@ -67,10 +69,14 @@ def generate_content_id_csv(asset_data: Dict[str, Any]) -> str:
     logger.info(f"CSV generation complete. Total records: {len(tracks)}")
     return csv_content
 
+
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         print(json.dumps({
-            "error": "Input JSON string required. Usage: python3 content_id_csv_generator.py '<json_data>'"
+            "error": (
+                "Input JSON string required. "
+                "Usage: python3 content_id_csv_generator.py '<json_data>'"
+            )
         }))
         sys.exit(1)
 
@@ -78,12 +84,12 @@ if __name__ == "__main__":
         # Attempt to parse input JSON
         raw_input = sys.argv[1]
         data = json.loads(raw_input)
-        
+
         csv_result = generate_content_id_csv(data)
-        
+
         # Output the raw CSV data to stdout
         sys.stdout.write(csv_result)
-        
+
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON input: {e}")
         print(json.dumps({"error": f"JSON Decode Error: {e}"}))
