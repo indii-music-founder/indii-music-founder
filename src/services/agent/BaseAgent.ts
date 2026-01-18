@@ -478,7 +478,7 @@ ${task}
             }]
             : [];
 
-        let accumulatedResponse = '';
+        const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 5;
         let lastToolCall: { name: string; args: string } | null = null;
