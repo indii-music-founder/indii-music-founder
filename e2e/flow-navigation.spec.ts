@@ -178,4 +178,28 @@ test.describe('Flow: Routing & Navigation', () => {
         const socialBtn = page.getByTestId('nav-item-social');
         await expect(socialBtn).not.toHaveAttribute('aria-current', 'page');
     });
+
+    test('Modal Integrity: Closing modal preserves underlying route', async ({ page }) => {
+        // 1. Navigate to Marketing
+        await page.getByTestId('nav-item-marketing').click();
+        await expect(page).toHaveURL(/.*\/marketing/);
+
+        // 2. Open a modal (New Campaign)
+        const createBtn = page.getByRole('button', { name: 'New Campaign' });
+        await createBtn.click();
+
+        const modal = page.getByRole('dialog');
+        await expect(modal).toBeVisible();
+
+        // 3. Close Modal
+        await page.keyboard.press('Escape');
+        await expect(modal).not.toBeVisible();
+
+        // 4. Verify Route is still /marketing
+        await expect(page).toHaveURL(/.*\/marketing/);
+
+        // 5. Verify UI State is restored (Marketing Header)
+        await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
+    });
+
 });
