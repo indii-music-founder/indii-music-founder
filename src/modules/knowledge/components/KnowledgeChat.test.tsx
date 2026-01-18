@@ -93,6 +93,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
     });
 
     it('handles streaming errors gracefully', async () => {
+        // eslint-disable-next-line require-yield
         const mockErrorStream = async function* () {
             throw new Error("Neural Link Severed");
         };

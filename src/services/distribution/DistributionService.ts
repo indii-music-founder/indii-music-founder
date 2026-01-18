@@ -136,7 +136,33 @@ class DistributionService {
         }
     }
 
-    // ... (waterfall and validate methods unchanged)
+    /**
+     * Validate release metadata via Electron IPC
+     */
+    async validateReleaseMetadata(metadata: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for validation');
+        }
+        const result = await window.electronAPI.distribution.validateMetadata(metadata);
+        if (!result.success) {
+            throw new Error(result.error || 'Metadata validation failed');
+        }
+        return result.report;
+    }
+
+    /**
+     * Execute revenue waterfall via Electron IPC
+     */
+    async executeWaterfall(data: any): Promise<any> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for waterfall execution');
+        }
+        const result = await window.electronAPI.distribution.executeWaterfall(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Waterfall execution failed');
+        }
+        return result.report;
+    }
 
     /**
      * Generate a new ISRC via Python engine
@@ -160,7 +186,19 @@ class DistributionService {
         }
     }
 
-    // ... (content id method unchanged)
+    /**
+     * Generate Content ID assets via Electron IPC
+     */
+    async generateContentIdAssets(data: any): Promise<string> {
+        if (!window.electronAPI) {
+            throw new Error('Electron environment required for Content ID generation');
+        }
+        const result = await window.electronAPI.distribution.generateContentIdCSV(data);
+        if (!result.success) {
+            throw new Error(result.error || 'Content ID generation failed');
+        }
+        return result.csvData || '';
+    }
 
     async generateUPC(options?: any): Promise<string> {
         if (!window.electronAPI) {
