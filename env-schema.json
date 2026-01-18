@@ -1,41 +1,41 @@
 {
-    "type": "object",
-    "properties": {
-        "VITE_API_KEY": {
-            "type": "string",
-            "minLength": 1
-        },
-        "VITE_VERTEX_PROJECT_ID": {
-            "type": "string",
-            "minLength": 1
-        },
-        "VITE_VERTEX_LOCATION": {
-            "type": "string",
-            "default": "us-central1"
-        },
-        "VITE_USE_VERTEX": {
-            "type": "string",
-            "enum": [
-                "true",
-                "false"
-            ],
-            "default": "false"
-        },
-        "VITE_FUNCTIONS_URL": {
-            "type": "string",
-            "format": "uri"
-        },
-        "VITE_RAG_PROXY_URL": {
-            "type": "string",
-            "format": "uri"
-        },
-        "GCLOUD_PROJECT": {
-            "type": "string"
-        }
+  "additionalProperties": true,
+  "properties": {
+    "GCLOUD_PROJECT": {
+      "type": "string"
     },
-    "required": [
-        "VITE_API_KEY",
-        "VITE_VERTEX_PROJECT_ID"
-    ],
-    "additionalProperties": true
+    "VITE_API_KEY": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "VITE_FUNCTIONS_URL": {
+      "format": "uri",
+      "type": "string"
+    },
+    "VITE_RAG_PROXY_URL": {
+      "format": "uri",
+      "type": "string"
+    },
+    "VITE_USE_VERTEX": {
+      "default": "false",
+      "enum": [
+        "true",
+        "false"
+      ],
+      "type": "string"
+    },
+    "VITE_VERTEX_LOCATION": {
+      "default": "us-central1",
+      "type": "string"
+    },
+    "VITE_VERTEX_PROJECT_ID": {
+      "minLength": 1,
+      "type": "string"
+    }
+  },
+  "required": [
+    "VITE_API_KEY",
+    "VITE_VERTEX_PROJECT_ID"
+  ],
+  "type": "object"
 }
