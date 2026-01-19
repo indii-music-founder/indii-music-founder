@@ -251,4 +251,20 @@ function thisIsAVeryLongFunctionNameThatShouldDefinitelyOverflowTheViewportIfItD
 
         expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
     });
+
+    test('should toggle mobile navigation menu', async ({ page }) => {
+        // Open Navigation
+        await page.getByLabel('Open Navigation').click();
+
+        // Check if menu is visible
+        // Use last() because 'Return to HQ' might appear in the hidden desktop sidebar too
+        const menu = page.getByRole('button', { name: 'Return to HQ' }).last();
+        await expect(menu).toBeVisible();
+
+        // Close Navigation
+        await page.getByLabel('Close menu').click();
+
+        // Check if menu is hidden (or detached)
+        await expect(menu).not.toBeVisible();
+    });
 });
