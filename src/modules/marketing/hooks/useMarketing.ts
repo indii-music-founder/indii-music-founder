@@ -58,10 +58,21 @@ export function useMarketing() {
             );
 
             unsubscribeCampaigns = onSnapshot(campaignsQuery, (snapshot) => {
-                const campaignsData = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as CampaignAsset[];
+                const campaignsData = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let startDate = data.startDate;
+
+                    // Normalize Firestore Timestamp to ISO string to prevent UI crashes
+                    if (startDate && typeof startDate === 'object' && 'toDate' in startDate) {
+                        startDate = (startDate as any).toDate().toISOString();
+                    }
+
+                    return {
+                        id: doc.id,
+                        ...data,
+                        startDate
+                    };
+                }) as CampaignAsset[];
 
                 // Client-side Sort
                 campaignsData.sort((a, b) => {
