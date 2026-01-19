@@ -21,3 +21,7 @@
 ## 2025-02-18 - [Mixed State Mocking]
 **Learning:** When a component relies on both global store state (via hooks like `useStore`) and local state (via `useState`) for the same feature (e.g., loading indicators), mocking the store hook with a static return value prevents re-renders when the "store" updates.
 **Action:** If the component triggers a local state update (e.g., `setScanStatus`) alongside the store update, it will force a re-render that reads the new mock store value. Ensure your mock store logic allows modifying the returned value before the component re-renders.
+
+## 2025-06-26 - [Mocking Framer Motion & ForwardRef]
+**Learning:** When mocking libraries like `framer-motion`, ensure to filter out library-specific props (e.g., `drag`, `dragControls`) from the mocked DOM elements to avoid React "unknown prop" warnings. Also, when mocking components that are passed refs (like `Virtuoso` inside `ChatOverlay`), the mock *must* handle the ref (e.g., using `React.forwardRef`) to avoid warnings about functional components not accepting refs.
+**Action:** Use `vi.mock('lib', async () => { const React = await import('react'); return { Comp: React.forwardRef(...) } })` pattern to correctly handle refs in hoisted mocks.
