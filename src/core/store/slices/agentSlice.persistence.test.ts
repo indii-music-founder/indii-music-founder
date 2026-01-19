@@ -1,7 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { createStore } from 'zustand';
-import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
-import { sessionService } from '@/services/agent/SessionService';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock must be defined before imports that use it
 vi.mock('@/services/agent/SessionService', () => ({
@@ -13,10 +10,14 @@ vi.mock('@/services/agent/SessionService', () => ({
     }
 }));
 
+import { createStore } from 'zustand';
+import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { sessionService } from '@/services/agent/SessionService';
+
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
     let useStore: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         // Create a fresh store for each test
         useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
@@ -24,6 +25,9 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Setup initial active session state for the store
         const store = useStore.getState();
         store.createSession('Test Session', ['agent-1']);
+
+        // Wait for potential async persistence in setup
+        await new Promise(resolve => setTimeout(resolve, 50));
     });
 
     it('should persist new messages to SessionService', async () => {
@@ -42,7 +46,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(newMessage);
 
         // Wait for async import and promise resolution
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         // Expectation: The message should be persisted to storage
         expect(sessionService.updateSession).toHaveBeenCalledWith(
@@ -64,7 +68,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(msg);
 
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         (sessionService.updateSession as any).mockClear(); // Clear the call from addAgentMessage
 
@@ -72,7 +76,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.updateAgentMessage('msg-1', { text: 'New text' });
 
         // Wait for async
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The update should be persisted
         expect(sessionService.updateSession).toHaveBeenCalledWith(
@@ -91,7 +95,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
         store.addAgentMessage({ id: 'msg-1', role: 'user', text: 'Hi', timestamp: Date.now() });
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 50));
 
         (sessionService.updateSession as any).mockClear();
 
@@ -99,7 +103,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.clearAgentHistory();
 
         // Wait for async
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The empty message list should be persisted
         expect(sessionService.updateSession).toHaveBeenCalledWith(
