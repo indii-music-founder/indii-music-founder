@@ -414,11 +414,35 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
-        const MAX_HISTORY_CHARS = 32000;
         let safeHistory = context?.chatHistoryString || '';
-        if (safeHistory.length > MAX_HISTORY_CHARS) {
-            safeHistory = safeHistory.slice(-MAX_HISTORY_CHARS);
-            safeHistory = `[...Older history truncated...]\n${safeHistory}`;
+
+        // KEEPER: Intelligent Context Truncation
+        // Prefer structured history with token-aware truncation over raw character slicing.
+        if (context?.chatHistory && Array.isArray(context.chatHistory) && context.chatHistory.length > 0) {
+            const { ContextManager } = await import('@/services/ai/context/ContextManager');
+            // Convert AgentMessage[] to Content[] for ContextManager
+            const contentHistory = context.chatHistory.map(msg => ({
+                role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
+                parts: [{ text: msg.text }]
+            }));
+
+            // Truncate to safe token limit (e.g. 15k tokens reserved for history out of 32k/1M context)
+            // Keeping it relatively tight to save cost/latency, though models support more.
+            const SAFE_TOKEN_LIMIT = 15000;
+            const truncated = ContextManager.truncateContext(contentHistory, SAFE_TOKEN_LIMIT);
+
+            // Reconstruct string for the prompt
+            safeHistory = truncated.map(c => {
+                const text = c.parts.map(p => 'text' in p ? p.text : '').join('');
+                return `${c.role.toUpperCase()}: ${text}`;
+            }).join('\n\n');
+        } else {
+            // Fallback: Naive slicing if no structured history is available
+            const MAX_HISTORY_CHARS = 32000;
+            if (safeHistory.length > MAX_HISTORY_CHARS) {
+                safeHistory = safeHistory.slice(-MAX_HISTORY_CHARS);
+                safeHistory = `[...Older history truncated...]\n${safeHistory}`;
+            }
         }
 
         let fullPrompt = `
