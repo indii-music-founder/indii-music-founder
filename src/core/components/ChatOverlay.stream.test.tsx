@@ -29,7 +29,7 @@ vi.mock('react-virtuoso', async () => {
         Virtuoso: React.forwardRef(({ data, itemContent, atBottomStateChange }: any, ref: any) => {
             // Mock scroll behavior
             if (atBottomStateChange) {
-               setTimeout(() => atBottomStateChange(true), 0);
+                setTimeout(() => atBottomStateChange(true), 0);
             }
             return (
                 <div data-testid="stream-list" ref={ref}>
@@ -47,7 +47,7 @@ vi.mock('react-virtuoso', async () => {
 
 // Mock Framer Motion
 vi.mock('framer-motion', async (importOriginal) => {
-    const actual = await importOriginal();
+    const actual = await importOriginal<typeof import('framer-motion')>();
     return {
         ...actual,
         motion: {
@@ -161,7 +161,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
     });
 
     it('Scenario 4: Handles Thought Chain updates', () => {
-         const thoughts = [
+        const thoughts = [
             { id: 't1', text: 'Analyzing request...', type: 'thought' },
             { id: 't2', text: 'Searching knowledge base...', type: 'tool' }
         ];
