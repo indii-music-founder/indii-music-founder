@@ -13,7 +13,3 @@
 ## 2024-05-24 - Race Condition: Store Initialization vs Deep Links
 **Learning:** `useURLSync` (Store -> URL effect) creates a race condition on initial load if the Store initializes with a default value ('dashboard') different from the URL (e.g., '/legal'). This causes an immediate redirect to the default route, breaking deep links.
 **Action:** Initialize the Store's `currentModule` state by reading `window.location.pathname` directly in the state creator (`appSlice.ts`), ensuring the Store and URL are aligned from the moment the app mounts. This eliminates the race condition and respects deep links.
-
-## 2026-01-19 - Guest Login Blocking E2E Navigation Tests
-**Learning:** The "Guest Login" button was visible in Dev/E2E but non-functional due to a hardcoded disable in `authSlice`. This prevented all navigation tests from executing as they couldn't bypass the login screen.
-**Action:** Enabled `loginAsGuest` in `authSlice` to populate a mock user, allowing E2E tests to verify routing and deep linking logic.

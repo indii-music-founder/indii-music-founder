@@ -1,3 +1,3 @@
-## 2024-05-22 - VideoTools Returns Original Prompt
-**Learning:** The `generate_video` tool logic synthesizes a new prompt using `WhiskService` (e.g. adding style modifiers), but the return value to the Agent (`toolSuccess`) contains the *original* user prompt.
-**Action:** Be aware that the Agent history might reflect the original intent rather than the exact prompt sent to the model. Tests must assert against input prompt for return values, but verify service calls with synthesized prompt.
+## 2026-01-14 - Video Generation Tool ignored duration
+**Learning:** The `VideoTools.generate_video` tool accepted a `duration` argument in its schema but failed to pass it to the underlying `VideoGeneration.generateVideo` service. This meant users (or the AI) specifying a duration would silently get the default duration.
+**Action:** When auditing tools that wrap service calls, explicitely verify that *every* argument in the tool signature is actually passed to the service function. Added a unit test to enforce this parameter passing.

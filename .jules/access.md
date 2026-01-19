@@ -13,7 +13,3 @@
 ## 2025-05-19 - Vitest Axe Integration
 **Learning:** `vitest-axe` matchers are not exported from the package root in this environment, causing test crashes. Additionally, `jsdom` lacks full `getComputedStyle` support for pseudo-elements, causing noisy (but non-fatal) errors during `axe-core` execution.
 **Action:** Import matchers from `vitest-axe/matchers` explicitly. For clean test output, consider mocking `getComputedStyle` or filtering console errors if color contrast checks are not the primary target.
-
-## 2025-05-23 - Interactive Divs vs Semantics
-**Learning:** Visual components like `ThreeDCard` often implement interaction via `onClick` on a `div`, creating a keyboard trap where the element is clickable but unreachable via Tab.
-**Action:** Detect interactivity (presence of `onClick`) to conditionally apply `role="button"`, `tabIndex={0}`, and `onKeyDown` (mapping Enter/Space to click), ensuring the component works for both mouse and keyboard users.
