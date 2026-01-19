@@ -1,7 +1,7 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Minimize2, RefreshCw, Bot, GripHorizontal } from 'lucide-react';
-import { useStore } from '@/core/store';
+import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
@@ -18,7 +18,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     // ⚡ Bolt Optimization: Selective store subscription
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
-    const activeSessionId = useStore(state => state.activeSessionId);
     const chatChannel = useStore(state => state.chatChannel);
     const dragControls = useDragControls();
 
@@ -35,6 +34,37 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
+
+    // No avatar property on SpecializedAgent, use null
+    const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
+        // Avatar functionality removed - SpecializedAgent doesn't have avatar
+        return undefined;
+    }, []);
+
+    const itemContent = useCallback((index: number, msg: AgentMessage) => {
+        // Determine identity for this message
+        // If model, it could be INDII or SPECIALIST
+        // We can look at activeAgent state, BUT message history might contain mixed messages?
+        // For now, assume the current context applies or we'd need 'agentId' stored in message.
+        // Existing system stores 'role' but not 'agentId'.
+        // We'll use the 'displayAgent' logic derived from chatChannel for consistency in current session.
+        // A robust solution would store agentId on the message object.
+
+        const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
+            ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
+            : undefined;
+
+        return (
+            <div className="px-6 py-2">
+                <MessageItem
+                    key={msg.id}
+                    msg={msg}
+                    avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : undefined}
+                    agentIdentity={msgIdentity}
+                />
+            </div>
+        );
+    }, [chatChannel, activeAgent, activeAgentId, getAgentAvatar]);
 
     // Auto-scroll effect
     useEffect(() => {
@@ -55,12 +85,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const agentName = displayAgent?.name || 'indii';
     const agentRole = displayAgent?.description || 'Creative Orchestrator';
     const agentColor = displayAgent?.color || 'purple';
-
-    // No avatar property on SpecializedAgent, use null
-    const getAgentAvatar = (_agentId: string): string | undefined => {
-        // Avatar functionality removed - SpecializedAgent doesn't have avatar
-        return undefined;
-    };
 
     return (
         <AnimatePresence mode="wait">
@@ -164,30 +188,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 atBottomStateChange={(atBottom) => {
                                     setIsAutoScrolling(atBottom);
                                 }}
-                                itemContent={(index, msg) => {
-                                    // Determine identity for this message
-                                    // If model, it could be INDII or SPECIALIST
-                                    // We can look at activeAgent state, BUT message history might contain mixed messages?
-                                    // For now, assume the current context applies or we'd need 'agentId' stored in message.
-                                    // Existing system stores 'role' but not 'agentId'.
-                                    // We'll use the 'displayAgent' logic derived from chatChannel for consistency in current session.
-                                    // A robust solution would store agentId on the message object.
-
-                                    const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
-                                        ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
-                                        : undefined;
-
-                                    return (
-                                        <div className="px-6 py-2">
-                                            <MessageItem
-                                                key={msg.id}
-                                                msg={msg}
-                                                avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : undefined}
-                                                agentIdentity={msgIdentity}
-                                            />
-                                        </div>
-                                    );
-                                }}
+                                itemContent={itemContent}
                                 components={{
                                     Header: () => <div className="h-4" />,
                                     Footer: () => <div className="h-4" />
