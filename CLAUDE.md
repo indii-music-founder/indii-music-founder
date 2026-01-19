@@ -278,10 +278,44 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 
 ### Operating Principles
 
-**1. Check for tools first**
+**1. Complete Build Policy (MANDATORY)**
+
+> **RULE: If you build something, you MUST finish it.**
+
+When implementing any feature, you are responsible for the **full stack**:
+
+- **Frontend feature?** → Build the backend integration too
+- **Backend function?** → Build the frontend UI to use it
+- **New module?** → Create the service, store slice, types, and tests
+- **API endpoint?** → Implement error handling, validation, and client-side calls
+
+**What "complete" means:**
+1. The feature works end-to-end (user can interact with it)
+2. Data flows correctly between frontend ↔ backend ↔ database
+3. Error states are handled gracefully
+4. Loading states exist where needed
+5. The code compiles without errors
+
+**Never leave a feature half-done.** If you start building a UI component that needs to call a Cloud Function, you build both. If you create a new agent tool, you wire it up to the frontend. Always assume full-stack responsibility unless explicitly told otherwise.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    COMPLETE BUILD CHECKLIST                  │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ Frontend component/UI                                      │
+│ ☐ Service layer (src/services/)                              │
+│ ☐ Backend function (functions/src/) if needed                │
+│ ☐ Store slice updates if state is involved                   │
+│ ☐ Type definitions (src/shared/types/)                       │
+│ ☐ Error handling on both ends                                │
+│ ☐ Works when tested manually                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**2. Check for tools first**
 Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
 
-**2. Self-anneal when things break**
+**3. Self-anneal when things break**
 
 - Read error message and stack trace
 - Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
