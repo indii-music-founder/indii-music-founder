@@ -63,4 +63,11 @@ export class StateManager {
             console.debug(`[StateManager] Snapshot discarded (committed) for ${transactionId}`);
         }
     }
+
+    /**
+     * Checks if a snapshot exists (for testing).
+     */
+    hasSnapshot(transactionId: string): boolean {
+        return this.snapshots.has(transactionId);
+    }
 }
