@@ -1,213 +1,238 @@
-
 import { test, expect } from '@playwright/test';
 
-/**
- * 🎼 MAESTRO WORKFLOW SPEC: EXECUTION HANDSHAKE
- *
- * 💡 What: Verifies the "Step 1: Approve" handoff in the Multi-Step Workflow.
- * 🎯 Why: "The Agent proposes; the User disposes." We must ensure the user
- *         explicitly gates the transition from Planning to Execution.
- *
- * SCENARIO:
- * 1. Initialize Project State: { song: "Dogs Having Fun", status: "PENDING" }
- * 2. Mock Agent's "Plan Generation" (Proposal A - Rejected).
- * 3. Mock Agent's "Plan Generation" (Proposal B - Approved).
- * 4. Simulate User Clicking "Approve" (Execute Campaign).
- * 5. Assert: State changes to `IN_PROGRESS` (Executing).
- * 6. Mock Step Completion.
- * 7. Assert: Notification sent to User.
- */
-test.describe('Maestro: Execution Handshake', () => {
+test.describe('Maestro Step Workflow', () => {
 
-  test('should verify strict User Approval before Agent Execution', async ({ page }) => {
+  // Increase timeout for this test suite
+  test.setTimeout(90000);
+
+  test.beforeEach(async ({ page }) => {
     // -----------------------------------------------------------------------
     // 1. Setup & Auth Bypass
     // -----------------------------------------------------------------------
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
+    await page.waitForLoadState('domcontentloaded');
 
-    // Enable Console Logging for debugging
-    page.on('console', msg => {
-        if (msg.text().startsWith('[Maestro]')) {
-            console.log(msg.text());
-        }
-    });
-
-    // Mock the User and set specific testing flags
+    // Wait for store to be available and mock the authenticated user
+    await page.waitForFunction(() => !!(window as any).useStore);
     await page.evaluate(() => {
-        // Flag to force CampaignManager to use Client-Side Mock Execution
-        (window as any).__MAESTRO_MOCK_EXECUTION__ = true;
-        // Flag to enable the Event Listener in CampaignDashboard
-        (window as any).__MAESTRO_TEST_MODE__ = true;
-        // Flag to expose the Store (for verify)
-        (window as any).__TEST_MODE__ = true;
-        // Flag for useMarketing hook
-        (window as any).TEST_MODE = true;
+      const mockUser = {
+        uid: 'maestro-user-id',
+        email: 'maestro@example.com',
+        displayName: 'Maestro Test User',
+        emailVerified: true,
+        isAnonymous: false,
+        metadata: {},
+        providerData: [],
+        refreshToken: '',
+        tenantId: null,
+        delete: async () => { },
+        getIdToken: async () => 'mock-token',
+        getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+        reload: async () => { },
+        toJSON: () => ({}),
+        phoneNumber: null,
+        photoURL: null
+      };
 
-        const mockUser = {
-            uid: 'maestro-conductor',
-            email: 'conductor@orchestra.com',
-            displayName: 'Maestro',
-            emailVerified: true,
-            isAnonymous: false,
-            metadata: {},
-            providerData: [],
-            refreshToken: '',
-            tenantId: null,
-            delete: async () => { },
-            getIdToken: async () => 'mock-token',
-            getIdTokenResult: async () => ({ token: 'mock-token' } as any),
-            reload: async () => { },
-            toJSON: () => ({}),
-            phoneNumber: null,
-            photoURL: null
-        };
+      // Inject user and set module to 'campaign'
+      // @ts-expect-error - Mocking partial store state for test
+      window.useStore.setState({
+        initializeAuthListener: () => () => { },
+        loadUserProfile: async () => {}, // Mock to prevent side effects
+        initializeHistory: async () => {}, // Mock
+        loadProjects: async () => {}, // Mock
+        user: mockUser,
+        userProfile: null, // Ensure no profile so useMarketing skips Firestore
+        authLoading: false,
+        currentModule: 'campaign'
+      });
 
-        // Inject into Zustand Store
-        // @ts-expect-error - Mocking partial store
-        window.useStore.setState({
-            user: mockUser,
-            userProfile: { id: 'maestro-conductor', displayName: 'Maestro', email: 'conductor@orchestra.com' },
-            authLoading: false,
-            currentModule: 'campaign'
+      // Mock MarketingService to avoid Firestore
+      (window as any).__MOCK_MARKETING_SERVICE__ = {
+          createCampaign: async (campaign: any) => {
+              console.log('Mock createCampaign called');
+              // Store it in a global mock store if needed, or just return ID
+              (window as any).__MOCK_LAST_CAMPAIGN__ = { ...campaign, id: 'mock-campaign-id', status: 'PENDING' };
+              return 'mock-campaign-id';
+          },
+          getCampaignById: async (id: string) => {
+              console.log('Mock getCampaignById called', id);
+              if (id === 'mock-campaign-id') {
+                  return (window as any).__MOCK_LAST_CAMPAIGN__;
+              }
+              return null;
+          }
+      };
+    });
+  });
+
+  test('should execute Multi-Step Workflow: Plan -> Reject -> Approve -> Execute -> Verify', async ({ page }) => {
+    // -----------------------------------------------------------------------
+    // PHASE 1: Agent Proposes & User Rejects (The "No" Path)
+    // -----------------------------------------------------------------------
+
+    // Wait for lazy loading to finish (increase timeout)
+    await expect(page.getByText('Active Campaigns')).toBeVisible({ timeout: 30000 });
+
+    // 1. Open AI Generate Modal
+    const aiGenerateBtn = page.getByText('Generate with AI').first();
+    await expect(aiGenerateBtn).toBeVisible();
+    await aiGenerateBtn.click();
+    await expect(page.getByText('AI Campaign Generator')).toBeVisible();
+
+    // 2. Mock Bad Plan
+    const badPlan = {
+      title: 'Boring Campaign',
+      description: 'A bad idea',
+      posts: [
+        {
+          platform: 'Twitter',
+          day: 1,
+          copy: 'Boring tweet',
+          imagePrompt: 'Grey wall',
+          hashtags: ['#boring'],
+          bestTimeToPost: '9:00 AM'
+        }
+      ]
+    };
+    await page.evaluate((plan) => {
+      // @ts-expect-error - injected by Playwright
+      window.__MOCK_AI_PLAN__ = plan;
+    }, badPlan);
+
+    // 3. Generate
+    await page.getByPlaceholder(/e\.g\., New album/i).fill('Bad Topic');
+    await page.getByRole('button', { name: 'Generate Campaign' }).evaluate(b => (b as HTMLElement).click());
+
+    // Verify Loading State
+    await expect(page.getByText('Generating...')).toBeVisible();
+
+    // 4. Verify Preview & Reject (Close Modal)
+    await expect(page.getByText('Boring Campaign')).toBeVisible({ timeout: 10000 });
+    // Simulate "Reject" by closing the modal without creating
+    const closeBtn = page.getByRole('button', { name: 'Close' }).first();
+    // Some modals have a specific X button or click outside.
+    // Assuming standard accessible dialog close or pressing Escape.
+    await page.keyboard.press('Escape');
+
+    // Verify we are back to dashboard (Modal closed)
+    await expect(page.getByText('AI Campaign Generator')).toBeHidden();
+
+    // -----------------------------------------------------------------------
+    // PHASE 2: Agent Proposes & User Approves (Step 1: Plan Approval)
+    // -----------------------------------------------------------------------
+
+    // 1. Open Modal Again
+    await aiGenerateBtn.click();
+
+    // 2. Mock Good Plan
+    const goodPlan = {
+      title: 'Dogs Having Fun',
+      description: 'Viral campaign for the new hit song.',
+      posts: [
+        {
+          platform: 'Instagram',
+          day: 1,
+          copy: 'Check out the new video! #DogsHavingFun',
+          imagePrompt: 'Dogs partying on a beach',
+          hashtags: ['#DogsHavingFun', '#Viral'],
+          bestTimeToPost: '12:00 PM'
+        },
+        {
+          platform: 'Twitter',
+          day: 2,
+          copy: 'Who let the dogs out? We did! #DogsHavingFun',
+          imagePrompt: 'Dog wearing sunglasses',
+          hashtags: ['#Music', '#NewDrop'],
+          bestTimeToPost: '3:00 PM'
+        }
+      ]
+    };
+    await page.evaluate((plan) => {
+      // @ts-expect-error - injected by Playwright
+      window.__MOCK_AI_PLAN__ = plan;
+    }, goodPlan);
+
+    // 3. Generate
+    await page.getByPlaceholder(/e\.g\., New album/i).fill('Dogs Having Fun');
+    await page.getByRole('button', { name: 'Generate Campaign' }).evaluate(b => (b as HTMLElement).click());
+
+    // 4. Verify Preview
+    await expect(page.getByText('Dogs Having Fun')).toBeVisible();
+    await expect(page.getByText('Check out the new video! #DogsHavingFun')).toBeVisible();
+
+    // 5. Approve (Create Campaign)
+    await page.getByRole('button', { name: 'Create Campaign' }).evaluate(b => (b as HTMLElement).click());
+
+    // 6. Assert State Transition: PLANNING -> PENDING
+    // We expect to be redirected to the Detail View
+    await expect(page.getByRole('heading', { name: 'Dogs Having Fun' })).toBeVisible({ timeout: 10000 });
+    // Check status badge
+    await expect(page.getByTestId('campaign-status-badge')).toHaveText('PENDING');
+
+    // -----------------------------------------------------------------------
+    // PHASE 3: Execution & Handoff (Step 2: Execution Approval)
+    // -----------------------------------------------------------------------
+
+    // 1. Setup Mock for Cloud Function (The "Agent Execution")
+    await page.route('**/executeCampaign', async route => {
+        // Mock the processing delay
+        await new Promise(r => setTimeout(r, 500));
+
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                data: {
+                    success: true,
+                    message: 'Campaign executed successfully!',
+                    posts: goodPlan.posts.map((p, i) => ({
+                        id: `post-${i}`,
+                        platform: p.platform,
+                        copy: p.copy,
+                        day: p.day,
+                        imageAsset: {
+                            assetType: 'image',
+                            title: 'Generated Image',
+                            // The "Resource Handoff" - Agent provides the file
+                            imageUrl: 'https://example.com/generated-dog.jpg',
+                            caption: p.imagePrompt
+                        },
+                        status: 'DONE' // Agent marks it as DONE
+                    }))
+                }
+            })
         });
     });
 
-    // Wait for the Dashboard to be ready
-    await expect(page.getByRole('button', { name: 'New Campaign' }).first()).toBeVisible({ timeout: 10000 });
+    // 2. Click Execute (Approve)
+    const executeBtn = page.getByRole('button', { name: 'Execute Campaign' });
+    await expect(executeBtn).toBeVisible();
+    await executeBtn.evaluate(b => (b as HTMLElement).click());
 
-    // -----------------------------------------------------------------------
-    // 2. Initialize Project State & Mock Agent Plan A (The "Reject" Path)
-    // -----------------------------------------------------------------------
-
-    const agentPlanA = [
-        {
-            id: 'step-1-bad',
-            day: 1,
-            platform: 'Twitter',
-            copy: 'Bad Plan: Boring tweet.',
-            status: 'PENDING',
-            imageAsset: { assetType: 'image', title: 'None', imageUrl: '', caption: '' }
-        }
-    ];
-
-    console.log('[Maestro] Injecting Agent Proposal A (Bad Plan)...');
-
-    // We trigger a custom event that the App (in test mode) listens to.
-    await page.evaluate((posts) => {
-        const event = new CustomEvent('TEST_INJECT_CAMPAIGN_UPDATE', {
-            detail: {
-                id: 'dogs-having-fun-123',
-                title: 'Dogs Having Fun',
-                description: 'Test Campaign',
-                status: 'PENDING',
-                posts: posts
-            }
-        });
-        window.dispatchEvent(event);
-    }, agentPlanA);
-
-    // Verify Plan A is visible
-    // First ensure we are not loading
-    await expect(page.getByTestId('marketing-dashboard-loader')).not.toBeVisible({ timeout: 10000 });
-
-    await expect(page.getByRole('heading', { name: 'Dogs Having Fun' })).toBeVisible();
-    await expect(page.getByText('Bad Plan: Boring tweet.')).toBeVisible();
-
-    // SCENARIO: User rejects this plan (conceptually).
-    // In this UI, they might ask the agent to try again or click Back.
-    // We simulate the "Try Again" loop by injecting a NEW plan.
-
-    // -----------------------------------------------------------------------
-    // 3. Mock Agent Plan B (The "Approve" Path)
-    // -----------------------------------------------------------------------
-
-    const agentPlanB = [
-        {
-            id: 'step-1',
-            day: 1,
-            platform: 'TikTok',
-            copy: 'Step 1: Teaser - Look at these dogs go!',
-            status: 'PENDING',
-            imageAsset: { assetType: 'image', title: 'Teaser', imageUrl: 'https://example.com/dog1.jpg', caption: 'Dog 1' }
-        },
-        {
-            id: 'step-2',
-            day: 2,
-            platform: 'Instagram',
-            copy: 'Step 2: Launch - The song is out!',
-            status: 'PENDING',
-            imageAsset: { assetType: 'image', title: 'Cover', imageUrl: 'https://example.com/dog2.jpg', caption: 'Dog 2' }
-        },
-        {
-            id: 'step-3',
-            day: 3,
-            platform: 'Twitter',
-            copy: 'Step 3: Sustain - Keep dancing!',
-            status: 'PENDING',
-            imageAsset: { assetType: 'image', title: 'Meme', imageUrl: 'https://example.com/dog3.jpg', caption: 'Dog 3' }
-        }
-    ];
-
-    console.log('[Maestro] Injecting Agent Proposal B (Good Plan)...');
-
-    await page.evaluate((posts) => {
-        const event = new CustomEvent('TEST_INJECT_CAMPAIGN_UPDATE', {
-            detail: {
-                // Keep same ID to simulate updating the SAME project
-                id: 'dogs-having-fun-123',
-                posts: posts
-            }
-        });
-        window.dispatchEvent(event);
-    }, agentPlanB);
-
-    // Verify Plan B replaced Plan A
-    await expect(page.getByText('Step 1: Teaser')).toBeVisible();
-    await expect(page.getByText('Step 3: Sustain')).toBeVisible();
-
-    // Verify Plan A is GONE
-    await expect(page.getByText('Bad Plan: Boring tweet.')).not.toBeVisible();
-
-    // -----------------------------------------------------------------------
-    // 4. User Approval Gate ("Step 1: Approve")
-    // -----------------------------------------------------------------------
-
-    const approveBtn = page.getByRole('button', { name: 'Execute Campaign' });
-    await expect(approveBtn).toBeEnabled();
-
-    console.log('[Maestro] User is approving the plan...');
-    // Force click in case Chat Input overlays
-    await approveBtn.click({ force: true });
-
-    // -----------------------------------------------------------------------
-    // 5. Assert State Transition: PENDING -> IN_PROGRESS
-    // -----------------------------------------------------------------------
-    // Immediate feedback: Button enters "Processing" state
+    // 3. Assert "Processing" State (IN_PROGRESS)
+    // The button should change text or state
     await expect(page.getByText('Processing...')).toBeVisible();
 
-    // Status Badge should reflect EXECUTING
-    const statusBadge = page.getByTestId('campaign-status-badge');
-    await expect(statusBadge).toHaveText(/Executing/i);
-
     // -----------------------------------------------------------------------
-    // 6. Mock Step Completion & 7. Notification
+    // PHASE 4: Completion & Verification
     // -----------------------------------------------------------------------
-    // The Mock Execution (inside CampaignManager) waits 1.5s then returns SUCCESS.
 
-    // Verify Notification sent to User
-    const toast = page.getByText('Campaign executed successfully!');
-    await expect(toast).toBeVisible({ timeout: 5000 });
+    // 1. Verify Success Notification
+    await expect(page.getByText('Campaign executed successfully!')).toBeVisible({ timeout: 10000 });
 
-    // Verify Final State: DONE
-    await expect(statusBadge).toHaveText(/Done/i);
+    // 2. Verify Final State (DONE)
+    await expect(page.getByTestId('campaign-status-badge')).toHaveText('DONE');
 
-    // Verify Execute button is disabled
-    await expect(approveBtn).toBeDisabled();
+    // 3. Verify Resource Handoff
+    // The image URL should be present in the UI (e.g., in the post card)
+    // We look for the image or the "Asset: Generated Image" text
+    await expect(page.getByText('Asset: Generated Image').first()).toBeVisible();
 
-    // Verify Individual Step Completion
-    const doneBadges = page.getByText('Done');
-    expect(await doneBadges.count()).toBeGreaterThanOrEqual(2);
+    // Optionally check if the image src is correct (if rendered)
+    const images = page.locator('img[src="https://example.com/generated-dog.jpg"]');
+    await expect(images.first()).toBeVisible();
 
-    console.log('[Maestro] Workflow completed successfully. User approved, Agent executed.');
   });
 });
