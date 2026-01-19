@@ -18,17 +18,33 @@ export class PythonBridge {
         return path.join(process.cwd(), 'execution', scriptName);
     }
 
+    private static redactArgs(args: string[]): string {
+        const sensitiveFlags = ['--password', '--key', '--token', '-p', '--api-key'];
+        const redacted = [...args];
+        for (let i = 0; i < redacted.length; i++) {
+            if (sensitiveFlags.includes(redacted[i])) {
+                if (i + 1 < redacted.length) {
+                    redacted[i + 1] = '[REDACTED]';
+                }
+            }
+        }
+        return redacted.join(' ');
+    }
+
     static async runScript(
         category: string,
         scriptName: string,
         args: string[] = [],
         onProgress?: (progress: number, log?: string) => void,
+        env: NodeJS.ProcessEnv = {}
         env: Record<string, string> = {}
     ): Promise<any> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
             // Construct path: execution/<category>/<scriptName>
             const fullScriptPath = path.join(this.getScriptPath(path.join(category, scriptName)));
+
+            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${this.redactArgs(args)}`);
 
             // Redact sensitive args for logging
             const redactedArgs = args.map((arg, index) => {

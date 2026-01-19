@@ -364,6 +364,16 @@ export const setupDistributionHandlers = () => {
             const storagePath = getStoragePath();
             const scriptName = (protocol === 'ASPERA') ? 'aspera_uploader.py' : 'sftp_uploader.py';
 
+            // Security: Pass sensitive data via Environment Variables, NOT command line arguments.
+            const env: NodeJS.ProcessEnv = {};
+            if (protocol === 'ASPERA') {
+                if (password) env.ASPERA_PASSWORD = password;
+                if (key) env.ASPERA_KEY_PATH = key;
+            } else {
+                if (password) env.SFTP_PASSWORD = password;
+                if (key) env.SFTP_KEY_PATH = key;
+            }
+
             const args = [
                 '--host', host,
                 '--user', user,
@@ -373,6 +383,7 @@ export const setupDistributionHandlers = () => {
             ];
 
             if (port) args.push('--port', String(port));
+            // Note: Password/Key are now passed via env vars, not CLI args
 
             // SECURITY: Pass sensitive credentials via Environment Variables only
             const env: Record<string, string> = {};
@@ -403,6 +414,7 @@ export const setupDistributionHandlers = () => {
                         event.sender.send('distribution:transmit-progress', { log });
                     }
                 },
+                env // Pass the secure environment
                 env
             );
             return { success: report.status === 'SUCCESS', report };
