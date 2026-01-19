@@ -11,9 +11,7 @@ import {
     Video,
     Plus,
     Loader2,
-    Upload,
-    Check,
-    X
+    Upload
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { FileNode } from '@/services/FileSystemService';
@@ -168,6 +166,18 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
             setSelectedFileNode(node.id);
         };
 
+        const handleKeyDown = (e: React.KeyboardEvent) => {
+            if (isEditing) return;
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                e.stopPropagation();
+                if (node.type === 'folder') {
+                    toggleFolder(node.id);
+                }
+                setSelectedFileNode(node.id);
+            }
+        };
+
         const handleDragStart = (e: React.DragEvent) => {
             if (isEditing) {
                 e.preventDefault();
@@ -259,13 +269,19 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
         return (
             <div key={node.id} className="select-none text-xs">
                 <div
+                    role="treeitem"
+                    aria-expanded={node.type === 'folder' ? isExpanded : undefined}
+                    aria-selected={isSelected}
+                    aria-label={node.name}
+                    tabIndex={0}
                     className={cn(
-                        "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 transition-colors rounded-sm group relative border border-transparent",
+                        "flex items-center gap-1 py-1 px-2 cursor-pointer hover:bg-white/5 transition-colors rounded-sm group relative border border-transparent outline-none focus-visible:ring-1 focus-visible:ring-blue-500",
                         isSelected && !isEditing && "bg-blue-500/20 hover:bg-blue-500/20 text-blue-200",
                         dragOverId === node.id && "bg-blue-500/10 border-blue-500/50"
                     )}
                     style={{ paddingLeft: `${depth * 12 + 8}px` }}
                     onClick={handleToggle}
+                    onKeyDown={handleKeyDown}
                     draggable={!isEditing}
                     onDragStart={handleDragStart}
                     onDragOver={handleDragOver}
@@ -320,6 +336,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                                 <button
                                     className="opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 hover:bg-white/10 rounded transition-opacity"
                                     onClick={(e) => e.stopPropagation()}
+                                    aria-label={`Options for ${node.name}`}
                                 >
                                     <MoreVertical size={12} />
                                 </button>
@@ -363,7 +380,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 </div>
 
                 {isExpanded && node.type === 'folder' && (
-                    <div className="flex flex-col">
+                    <div role="group" className="flex flex-col">
                         {children.length > 0 ? (
                             children.map((child: FileNode) => renderNode(child, depth + 1))
                         ) : (
@@ -430,6 +447,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         onClick={() => triggerUpload(null)}
                         className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
                         title="Upload File"
+                        aria-label="Upload File"
                     >
                         <Upload size={14} />
                     </button>
@@ -437,6 +455,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                         onClick={handleCreateRootFolder}
                         className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
                         title="New Folder"
+                        aria-label="New Folder"
                     >
                         <Plus size={14} />
                     </button>
@@ -447,6 +466,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 className="flex-1 overflow-y-auto custom-scrollbar"
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={handleRootDrop}
+                role="tree"
             >
                 {rootNodes.length === 0 ? (
                     <div className="text-center py-8 text-gray-600 text-xs">
@@ -467,6 +487,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 className="hidden"
                 multiple
                 onChange={handleFileInputChange}
+                aria-label="Upload files"
             />
         </div>
     );
