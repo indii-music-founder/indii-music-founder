@@ -97,6 +97,12 @@ export default function MerchDesigner() {
         { interval: 30000, enabled: true }
     );
 
+    // Handle canvas initialization
+    const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {
+        fabricCanvasRef.current = canvas;
+        setFabricCanvas(canvas);
+    }, []);
+
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
         try {
@@ -478,10 +484,7 @@ export default function MerchDesigner() {
                             <DesignCanvas
                                 onLayersChange={setLayers}
                                 onSelectionChange={setSelectedLayer}
-                                onCanvasReady={useCallback((canvas: fabric.Canvas) => {
-                                    fabricCanvasRef.current = canvas;
-                                    setFabricCanvas(canvas);
-                                }, [])}
+                                onCanvasReady={handleCanvasReady}
                                 onRequestDelete={handleDeleteLayers}
                             />
 

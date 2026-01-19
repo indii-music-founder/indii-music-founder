@@ -51,7 +51,7 @@ vi.mock('uuid', () => ({
 
 describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
     let service: VideoGenerationService;
-    let snapshotCallbacks: Record<string, Function> = {};
+    let snapshotCallbacks: Record<string, (...args: any[]) => void> = {};
 
     beforeEach(() => {
         vi.useFakeTimers();
