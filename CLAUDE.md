@@ -1,6 +1,6 @@
 # CLAUDE.md - AI Assistant's Guide to indiiOS
 
-**Last Updated:** 2026-01-16
+**Last Updated:** 2026-01-19
 **Repository:** indiiOS-Alpha-Electron (indiiOS - The Operating System for Independent Artists)
 **Version:** 0.1.0-beta.2
 **Purpose:** Comprehensive guide for AI assistants to understand codebase structure, conventions, and development workflows.
@@ -71,9 +71,9 @@ indiiOS-Alpha-Electron/
 │   │   ├── components/          # Core UI (Sidebar, CommandBar, ChatOverlay)
 │   │   ├── config/              # AI model configs
 │   │   ├── context/             # VoiceContext, ToastContext
-│   │   ├── constants.ts         # 30 module IDs
+│   │   ├── constants.ts         # 25 module IDs
 │   │   └── theme/               # Module color schemes
-│   ├── modules/                  # Feature modules (22 directories)
+│   ├── modules/                  # Feature modules (24 directories)
 │   │   ├── agent/               # Agent dashboard & monitoring
 │   │   ├── creative/            # Creative Studio (image generation)
 │   │   ├── dashboard/           # Main dashboard
@@ -278,10 +278,44 @@ You operate within a 3-layer architecture that separates concerns to maximize re
 
 ### Operating Principles
 
-**1. Check for tools first**
+**1. Complete Build Policy (MANDATORY)**
+
+> **RULE: If you build something, you MUST finish it.**
+
+When implementing any feature, you are responsible for the **full stack**:
+
+- **Frontend feature?** → Build the backend integration too
+- **Backend function?** → Build the frontend UI to use it
+- **New module?** → Create the service, store slice, types, and tests
+- **API endpoint?** → Implement error handling, validation, and client-side calls
+
+**What "complete" means:**
+1. The feature works end-to-end (user can interact with it)
+2. Data flows correctly between frontend ↔ backend ↔ database
+3. Error states are handled gracefully
+4. Loading states exist where needed
+5. The code compiles without errors
+
+**Never leave a feature half-done.** If you start building a UI component that needs to call a Cloud Function, you build both. If you create a new agent tool, you wire it up to the frontend. Always assume full-stack responsibility unless explicitly told otherwise.
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    COMPLETE BUILD CHECKLIST                  │
+├─────────────────────────────────────────────────────────────┤
+│ ☐ Frontend component/UI                                      │
+│ ☐ Service layer (src/services/)                              │
+│ ☐ Backend function (functions/src/) if needed                │
+│ ☐ Store slice updates if state is involved                   │
+│ ☐ Type definitions (src/shared/types/)                       │
+│ ☐ Error handling on both ends                                │
+│ ☐ Works when tested manually                                 │
+└─────────────────────────────────────────────────────────────┘
+```
+
+**2. Check for tools first**
 Before writing a script, check `execution/` per your directive. Only create new scripts if none exist.
 
-**2. Self-anneal when things break**
+**3. Self-anneal when things break**
 
 - Read error message and stack trace
 - Fix the script and test it again (unless it uses paid tokens/credits/etc—in which case you check w user first)
@@ -390,6 +424,9 @@ If a feature requires backend connectivity, you MUST implement the backend logic
 | Fast tasks | `AI_MODELS.TEXT.FAST` | `gemini-3-flash-preview` |
 | Image generation | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
 | Video generation | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview` |
+| Audio (Pro) | `AI_MODELS.AUDIO.PRO` | `gemini-2.5-pro-tts` |
+| Audio (Flash) | `AI_MODELS.AUDIO.FLASH` | `gemini-2.5-flash-tts` |
+| Browser Agent | `AI_MODELS.BROWSER.AGENT` | `gemini-2.5-pro-ui-checkpoint` |
 
 **Forbidden Models (WILL CRASH APP):**
 
@@ -870,9 +907,24 @@ interface ToolFunctionResult {
 }
 ```
 
-### 10.9 Tool Registry (50+ Tools)
+### 10.9 Tool Registry (50+ Tools from 18 Sources)
 
 **Location:** `src/services/agent/tools/` and `src/services/agent/tools.ts`
+
+The TOOL_REGISTRY aggregates tools from 18 different sources:
+
+```typescript
+// From src/services/agent/tools.ts
+export const TOOL_REGISTRY = {
+    ...CoreTools,        ...DirectorTools,    ...VideoTools,
+    ...CREATIVE_TOOLS,   ...MemoryTools,      ...AnalysisTools,
+    ...SocialTools,      ...OrganizationTools,...StorageTools,
+    ...KnowledgeTools,   ...ProjectTools,     ...NavigationTools,
+    ...MapsTools,        ...BrandTools,       ...MarketingTools,
+    ...RoadTools,        ...SecurityTools,    ...DevOpsTools,
+    ...PUBLICIST_TOOLS,  ...FinanceTools
+};
+```
 
 | Tool File | Domain | Key Functions |
 |-----------|--------|---------------|
@@ -895,11 +947,8 @@ interface ToolFunctionResult {
 | `SecurityTools.ts` | Security | `audit_permissions`, `scan_for_vulnerabilities`, `rotate_credentials` |
 | `DevOpsTools.ts` | DevOps | `check_api_status`, `verify_zero_touch_prod` |
 | `PublicistTools.ts` | PR | `write_press_release`, `generate_crisis_response` |
-| `LegalTools.ts` | Legal | `analyze_contract` |
-| `BigQueryTools.ts` | Analytics | BigQuery integrations |
-| `NarrativeTools.ts` | Narrative | Story/content generation |
-| `ProducerTools.ts` | Music | Production advice |
-| `ScreenwriterTools.ts` | Scripts | Script generation |
+| `CREATIVE_TOOLS` | Creative Studio | `generate_image`, `batch_edit_images`, `get_studio_assets` |
+| `PUBLICIST_TOOLS` | Publicist Module | Press release generation |
 
 ### 10.10 Agent Observability
 
@@ -1231,6 +1280,18 @@ Auth protocol: `indii-os://` for OAuth callbacks
 | `checkLogistics` | Validate tour logistics |
 | `findPlaces` | Search venues/hotels |
 | `calculateFuelLogistics` | Calculate travel costs |
+
+**Subscription Management (Gen 2):**
+
+| Function | Purpose |
+|----------|---------|
+| `getSubscription` | Get current subscription status |
+| `createCheckoutSession` | Create Stripe checkout session |
+| `getCustomerPortal` | Get Stripe customer portal URL |
+| `cancelSubscription` | Cancel active subscription |
+| `resumeSubscription` | Resume cancelled subscription |
+| `getUsageStats` | Get usage statistics |
+| `trackUsage` | Track feature usage |
 
 ### 13.3 Security Model
 
