@@ -138,6 +138,9 @@ def setup_args():
 if __name__ == "__main__":
     args = setup_args()
 
+    # Security: Prioritize Environment Variables
+    password = os.environ.get("SFTP_PASSWORD", args.password)
+    key_path = os.environ.get("SFTP_KEY_PATH", args.key)
     # Prioritize environment variables for secrets if arguments are not provided
     password = args.password or os.environ.get("SFTP_PASSWORD")
     key_path = args.key or os.environ.get("SFTP_KEY")

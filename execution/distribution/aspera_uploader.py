@@ -153,6 +153,9 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Security: Prioritize Environment Variables
+    password = os.environ.get("ASPERA_PASSWORD", args.password)
+    key_path = os.environ.get("ASPERA_KEY_PATH", args.key)
     # Prioritize environment variables for secrets if arguments are not provided
     password = args.password or os.environ.get("ASPERA_SCP_PASS")
     key_path = args.key or os.environ.get("ASPERA_KEY")
