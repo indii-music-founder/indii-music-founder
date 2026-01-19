@@ -1,5 +1,6 @@
 
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 
 export interface ProjectMetadata {
     id: string;
@@ -400,5 +401,59 @@ export class DashboardService {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+    }
+
+    static async getSalesAnalytics(period: string = '30d'): Promise<SalesAnalyticsData> {
+        try {
+            const { useStore } = await import('@/core/store');
+            const { db } = await import('@/services/firebase');
+            const { doc, getDoc } = await import('firebase/firestore');
+
+            const userProfile = useStore.getState().userProfile;
+
+            // Allow public/guest access for now with default data if no user
+            // But if user is logged in, try to fetch
+            if (userProfile?.id) {
+                 // Attempt to fetch from Firestore
+                const statsRef = doc(db, 'users', userProfile.id, 'stats', 'sales_analytics');
+                try {
+                    const snapshot = await getDoc(statsRef);
+                    if (snapshot.exists()) {
+                        const data = snapshot.data();
+                        const parseResult = SalesAnalyticsSchema.safeParse(data);
+                        if (parseResult.success) {
+                            return parseResult.data;
+                        } else {
+                            console.warn("Invalid sales analytics data:", parseResult.error);
+                        }
+                    }
+                } catch (e) {
+                    console.warn("Failed to fetch sales analytics doc, falling back to simulation", e);
+                }
+            }
+
+            // Fallback / Simulation (Preserving the "Mock" behavior but through a typed service)
+            // This is the "Bridge" - providing a structure that mirrors what the backend WILL provide
+            return {
+                conversionRate: { value: 4.2, change: 0.5, trend: 'up', formatted: '4.2%' },
+                totalVisitors: { value: 12500, change: 12, trend: 'up', formatted: '12.5k' },
+                clickRate: { value: 18.3, change: 0, trend: 'neutral', formatted: '18.3%' },
+                avgOrderValue: { value: 24.00, change: 2, trend: 'up', formatted: '$24.00' },
+                revenueChart: [30, 45, 35, 60, 55, 70, 65, 80, 75, 90],
+                period: period
+            };
+
+        } catch (error) {
+            console.error("Failed to fetch sales analytics:", error);
+            // Return safe default
+            return {
+                conversionRate: { value: 0, trend: 'neutral', formatted: '0%' },
+                totalVisitors: { value: 0, trend: 'neutral', formatted: '0' },
+                clickRate: { value: 0, trend: 'neutral', formatted: '0%' },
+                avgOrderValue: { value: 0, trend: 'neutral', formatted: '$0.00' },
+                revenueChart: [],
+                period: period
+            };
+        }
     }
 }
