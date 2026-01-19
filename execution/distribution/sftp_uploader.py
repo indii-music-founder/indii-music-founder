@@ -141,6 +141,9 @@ if __name__ == "__main__":
     # Security: Prioritize Environment Variables
     password = os.environ.get("SFTP_PASSWORD", args.password)
     key_path = os.environ.get("SFTP_KEY_PATH", args.key)
+    # Prioritize environment variables for secrets if arguments are not provided
+    password = args.password or os.environ.get("SFTP_PASSWORD")
+    key_path = args.key or os.environ.get("SFTP_KEY")
 
     uploader = SFTPUploader(storage_path=args.storage_path)
     result = uploader.upload(
