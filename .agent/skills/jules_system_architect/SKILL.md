@@ -33,6 +33,14 @@ This skill synthesizes the historical learnings, security vulnerabilities, and d
 * **The Law:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement the backend logic immediately.
 * **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
 
+### 1.5 The Law of Naming (Strict Standard)
+
+* **Goal:** Eliminate case-sensitivity conflicts across environments (macOS/Unix).
+* **The Law:** Directories MUST be `kebab-case` and strictly **lowercase**.
+  * ✅ Correct: `.jules`, `src/services/video`, `.github`
+  * ❌ FORBIDDEN: `.Jules`, `src/Services/Video`, `.Github`
+* **Reasoning:** macOS is case-preserving but case-insensitive; Linux (CI) is case-sensitive. "Split-brain" git states break deployment.
+
 ---
 
 ## 2. The Laws of UI & Experience (Bolt, Pixel & Viewport)
