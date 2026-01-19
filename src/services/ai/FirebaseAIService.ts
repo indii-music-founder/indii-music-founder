@@ -143,15 +143,18 @@ export class FirebaseAIService {
                 return;
             }
 
-            // 2. Fetch Remote Config
-            await fetchAndActivate(remoteConfig);
+            // 2. Fetch Remote Config (Safe Mode)
+            let modelName: string = FALLBACK_MODEL;
+            try {
+                await fetchAndActivate(remoteConfig);
+                modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+            } catch (configError) {
+                console.warn('[FirebaseAIService] Failed to fetch remote config, using default model:', configError);
+            }
 
-            // 3. Get Model Name and Location
-            const modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
-
-            // 4. Initialize SDK
+            // 3. Initialize SDK
             this.model = getGenerativeModel(firebaseAI, {
-                model: modelName
+                model: modelName as any
             });
 
             if (!this.model) {
@@ -162,13 +165,13 @@ export class FirebaseAIService {
             console.log('[FirebaseAIService] Initialized with Firebase AI SDK');
 
         } catch (error) {
-            // If we hit an App Check error, fall back to direct Gemini SDK
-            if (isAppCheckError(error)) {
-                console.warn('[FirebaseAIService] App Check error detected, switching to direct Gemini SDK fallback');
+            console.error('[FirebaseAIService] Bootstrap failed, attempting fallback:', error);
+            // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
+            try {
                 await this.initializeFallbackMode();
-                return;
+            } catch (fallbackError) {
+                throw this.handleError(fallbackError);
             }
-            throw this.handleError(error);
         }
     }
 

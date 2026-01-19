@@ -19,8 +19,8 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
     const isDone = campaign.status === CampaignStatus.DONE;
 
     // Calculate progress based on posts done vs total posts
-    const completedPosts = campaign.posts.filter(p => p.status === CampaignStatus.DONE).length;
-    const progress = Math.round((completedPosts / campaign.posts.length) * 100) || 0;
+    const completedPosts = (campaign.posts || []).filter(p => p.status === CampaignStatus.DONE).length;
+    const progress = Math.round((completedPosts / (campaign.posts?.length || 1)) * 100) || 0;
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' || e.key === ' ') {
@@ -81,7 +81,7 @@ const CampaignCard: React.FC<CampaignCardProps> = ({ campaign, onSelect }) => {
                             <ActivityIcon size={12} className="text-purple-400" />
                             <span>Posts</span>
                         </div>
-                        <span className="text-lg font-semibold text-gray-200">{campaign.posts.length}</span>
+                        <span className="text-lg font-semibold text-gray-200">{campaign.posts?.length || 0}</span>
                     </div>
                     <div className="bg-black/20 rounded-xl p-3 border border-white/5 group-hover:border-pink-500/20 transition-colors">
                         <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
@@ -155,12 +155,12 @@ function arePropsEqual(prevProps: CampaignCardProps, nextProps: CampaignCardProp
     if (prev.durationDays !== next.durationDays) return false;
 
     // 4. Check posts length
-    if (prev.posts.length !== next.posts.length) return false;
+    if ((prev.posts?.length || 0) !== (next.posts?.length || 0)) return false;
 
     // 5. Check completed posts count (determines progress bar)
     // Use reduce instead of filter to avoid array allocation
-    const prevCompleted = prev.posts.reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
-    const nextCompleted = next.posts.reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
+    const prevCompleted = (prev.posts || []).reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
+    const nextCompleted = (next.posts || []).reduce((count, p) => p.status === CampaignStatus.DONE ? count + 1 : count, 0);
 
     return prevCompleted === nextCompleted;
 }
