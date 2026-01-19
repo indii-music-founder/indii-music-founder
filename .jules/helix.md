@@ -1,3 +1,6 @@
+## 2026-01-19 - Schema Compliance (The Brainless Check)
+**Learning:** Mutations in the wild can occasionally strip agents of critical structural properties (e.g., `parameters` becoming null), leading to "Brainless" agents that crash the execution engine.
+**Action:** Always verify structural integrity (existence of `parameters`, `systemPrompt`) immediately after mutation. If invalid, reject the offspring and retry the breeding step.
 ## HELIX'S JOURNAL - CRITICAL LEARNINGS ONLY
 
 ## 2024-05-23 - [Mutation Rate & Clonal Stagnation]
