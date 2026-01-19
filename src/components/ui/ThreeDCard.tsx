@@ -2,14 +2,14 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface ThreeDCardProps {
+interface ThreeDCardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
     containerClassName?: string;
     onClick?: () => void;
 }
 
-export const ThreeDCard = ({ children, className, containerClassName, onClick }: ThreeDCardProps) => {
+export const ThreeDCard = ({ children, className, containerClassName, onClick, ...rest }: ThreeDCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
 
@@ -70,6 +70,16 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
         y.set(0);
     };
 
+    const isInteractive = !!onClick;
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onClick?.();
+        }
+        rest.onKeyDown?.(e);
+    };
+
     return (
         <div
             className={cn(
@@ -86,10 +96,15 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onClick={onClick}
+                role={isInteractive ? "button" : rest.role}
+                tabIndex={isInteractive ? 0 : rest.tabIndex}
+                onKeyDown={isInteractive ? handleKeyDown : rest.onKeyDown}
+                {...rest}
                 style={{
                     rotateX,
                     rotateY,
                     transformStyle: "preserve-3d",
+                    ...rest.style
                 }}
                 className={cn(
                     "relative transition-all duration-200 ease-linear",
