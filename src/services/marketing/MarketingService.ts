@@ -81,6 +81,10 @@ export class MarketingService {
      * Get a single campaign by ID
      */
     static async getCampaignById(id: string): Promise<CampaignAsset | null> {
+        if ((window as any).__MOCK_MARKETING_SERVICE__) {
+            return (window as any).__MOCK_MARKETING_SERVICE__.getCampaignById(id);
+        }
+
         try {
             const docRef = doc(db, 'campaigns', id);
             const snapshot = await getDoc(docRef);
@@ -103,6 +107,10 @@ export class MarketingService {
      * Create a new campaign
      */
     static async createCampaign(campaign: Omit<CampaignAsset, 'id'>): Promise<string> {
+        if ((window as any).__MOCK_MARKETING_SERVICE__) {
+            return (window as any).__MOCK_MARKETING_SERVICE__.createCampaign(campaign);
+        }
+
         const userProfile = useStore.getState().userProfile;
 
         if (!userProfile?.id) throw new Error("User not authenticated");
@@ -138,4 +146,9 @@ export class MarketingService {
             throw error;
         }
     }
+}
+
+// Expose for E2E testing
+if (typeof window !== 'undefined') {
+    (window as any).MarketingService = MarketingService;
 }
