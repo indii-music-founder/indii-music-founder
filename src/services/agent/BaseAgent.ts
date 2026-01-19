@@ -583,14 +583,25 @@ ${task}
                     const { name, args } = functionCall;
                     const argsStr = JSON.stringify(args);
 
-                    // Loop detection
+                    // Enhanced loop detection
+                    // 1. Check for exact same tool+args twice in a row
                     if (lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
-                        console.warn(`[BaseAgent] Loop detected in ${this.id}: same tool ${name} called twice`);
+                        console.warn(`[BaseAgent] Loop detected in ${this.id}: same tool ${name} called twice with same args`);
                         return {
                             text: accumulatedResponse || 'Task ended due to potential loop.',
                             error: 'Loop detected'
                         };
                     }
+
+                    // 2. Check for speak being called excessively (anti-spam)
+                    if (name === 'speak' && lastToolCall?.name === 'speak') {
+                        console.warn(`[BaseAgent] Loop detected in ${this.id}: speak called multiple times consecutively`);
+                        return {
+                            text: accumulatedResponse || 'Task ended: excessive speak calls.',
+                            error: 'Loop detected (speak spam)'
+                        };
+                    }
+
                     lastToolCall = { name, args: argsStr };
 
                     onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
