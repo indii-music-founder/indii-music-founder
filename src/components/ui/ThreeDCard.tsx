@@ -70,6 +70,13 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
         y.set(0);
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <div
             className={cn(
@@ -86,6 +93,9 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onClick={onClick}
+                role={onClick ? "button" : undefined}
+                tabIndex={onClick ? 0 : undefined}
+                onKeyDown={onClick ? handleKeyDown : undefined}
                 style={{
                     rotateX,
                     rotateY,
@@ -93,6 +103,7 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
                 }}
                 className={cn(
                     "relative transition-all duration-200 ease-linear",
+                    onClick && "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl",
                     className
                 )}
             >
@@ -231,6 +242,13 @@ export const ThreeDCardContainer = ({
         containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
     };
 
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <MouseEnterContext.Provider value={[isMouseEntered, setIsMouseEntered]}>
             <div
@@ -248,8 +266,12 @@ export const ThreeDCardContainer = ({
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                     onClick={onClick}
+                    role={onClick ? "button" : undefined}
+                    tabIndex={onClick ? 0 : undefined}
+                    onKeyDown={onClick ? handleKeyDown : undefined}
                     className={cn(
                         "flex items-center justify-center relative transition-all duration-200 ease-linear",
+                        onClick && "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl",
                         className
                     )}
                     style={{
