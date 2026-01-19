@@ -29,7 +29,17 @@ export class PythonBridge {
             // Construct path: execution/<category>/<scriptName>
             const fullScriptPath = path.join(this.getScriptPath(path.join(category, scriptName)));
 
-            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${args.join(' ')}`);
+            // Redact sensitive args for logging
+            const sensitiveFlags = ['--password', '--key', '--access-token', '--refresh-token', '--api-key', '--secret'];
+            const redactedArgs = args.map((arg, index) => {
+                // Check if the PREVIOUS argument was a sensitive flag
+                if (index > 0 && sensitiveFlags.includes(args[index - 1])) {
+                    return '[REDACTED]';
+                }
+                return arg;
+            });
+
+            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
             const process = spawn(python, [fullScriptPath, ...args]);
 

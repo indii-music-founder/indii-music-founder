@@ -148,7 +148,6 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         }));
 
         try {
-            await fileSystemService.deleteNode(nodeId);
             await fileSystemService.deleteFolderRecursive(nodeId, previousNodes);
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to delete node';
