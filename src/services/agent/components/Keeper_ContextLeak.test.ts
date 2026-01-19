@@ -7,7 +7,8 @@ const mockUpdateSession = vi.fn().mockResolvedValue(undefined);
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: (...args: any[]) => mockUpdateSession(...args),
-        getSessionsForUser: vi.fn().mockResolvedValue([])
+        getSessionsForUser: vi.fn().mockResolvedValue([]),
+        createSession: vi.fn().mockResolvedValue(true)
     }
 }));
 
