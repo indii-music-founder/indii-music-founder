@@ -138,13 +138,17 @@ def setup_args():
 if __name__ == "__main__":
     args = setup_args()
 
+    # Prioritize environment variables for secrets if arguments are not provided
+    password = args.password or os.environ.get("SFTP_PASSWORD")
+    key_path = args.key or os.environ.get("SFTP_KEY")
+
     uploader = SFTPUploader(storage_path=args.storage_path)
     result = uploader.upload(
         host=args.host,
         port=args.port,
         username=args.user,
-        password=args.password,
-        key_path=args.key,
+        password=password,
+        key_path=key_path,
         local_path=args.local,
         remote_path=args.remote
     )

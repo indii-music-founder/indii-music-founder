@@ -373,8 +373,23 @@ export const setupDistributionHandlers = () => {
             ];
 
             if (port) args.push('--port', String(port));
-            if (password) args.push('--password', password);
-            if (key) args.push('--key', key);
+
+            // SECURITY: Pass sensitive credentials via Environment Variables only
+            const env: Record<string, string> = {};
+            if (password) {
+                if (protocol === 'ASPERA') {
+                    env['ASPERA_SCP_PASS'] = password;
+                } else {
+                    env['SFTP_PASSWORD'] = password;
+                }
+            }
+            if (key) {
+                if (protocol === 'ASPERA') {
+                    env['ASPERA_KEY'] = key;
+                } else {
+                    env['SFTP_KEY'] = key;
+                }
+            }
 
             const report = await PythonBridge.runScript(
                 'distribution',
@@ -387,7 +402,8 @@ export const setupDistributionHandlers = () => {
                     if (log) {
                         event.sender.send('distribution:transmit-progress', { log });
                     }
-                }
+                },
+                env
             );
             return { success: report.status === 'SUCCESS', report };
         } catch (error) {

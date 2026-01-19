@@ -153,13 +153,17 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    # Prioritize environment variables for secrets if arguments are not provided
+    password = args.password or os.environ.get("ASPERA_SCP_PASS")
+    key_path = args.key or os.environ.get("ASPERA_KEY")
+
     uploader = AsperaUploader(storage_path=args.storage_path)
     result = uploader.upload(
         host=args.host,
         port=args.port,
         username=args.user,
-        password=args.password,
-        key_path=args.key,
+        password=password,
+        key_path=key_path,
         local_path=args.local,
         remote_path=args.remote,
         target_rate=args.rate
