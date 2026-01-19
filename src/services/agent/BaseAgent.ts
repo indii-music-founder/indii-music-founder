@@ -1,7 +1,8 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
-import { LoopDetector } from './LoopDetector';
+import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
+import { AgentExecutionContext } from './context/AgentExecutionContext';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -437,6 +438,13 @@ export class BaseAgent implements SpecializedAgent {
             projectId: context?.projectId
         };
 
+        // Phase 3: Execution Context (Transactions)
+        const executionContext = new AgentExecutionContext(enrichedContext);
+        await executionContext.start();
+
+        // Phase 2: Clear loop detector for new task execution
+        this.loopDetector.clear();
+
         const SUPERPOWER_PROMPT = `
         ## CAPABILITIES & PROTOCOLS
         You have access to the following advanced capabilities ("Superpowers"):
@@ -574,6 +582,7 @@ ${task}
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
+                    await executionContext.rollback();
                     return {
                         text: accumulatedResponse || 'Task halted: Budget exceeded.',
                         error: 'Budget exceeded'
@@ -607,7 +616,7 @@ ${task}
                     if (loopCheck.isLoop) {
                         console.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
                         console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
-                        console.warn(`[BaseAgent] Recent calls: ${this.loopDetector.getRecentPattern()}`);
+                        await executionContext.rollback();
                         return {
                             text: accumulatedResponse || `Task ended: ${loopCheck.reason}`,
                             error: 'Loop detected'
@@ -659,6 +668,7 @@ ${task}
                     const finalResponse = response.text?.() || '';
                     const usage = response.usage?.();
 
+                    await executionContext.commit();
                     return {
                         text: finalResponse,
                         usage: usage ? {
@@ -670,11 +680,14 @@ ${task}
                 }
             }
 
+            await executionContext.commit();
+
             return {
                 text: accumulatedResponse || 'Maximum iterations reached.',
                 error: 'Max iterations reached'
             };
         } catch (error: unknown) {
+            await executionContext.rollback();
             const errorMessage = error instanceof Error ? error.message : String(error);
             return { text: `Error: ${errorMessage}` };
         }
