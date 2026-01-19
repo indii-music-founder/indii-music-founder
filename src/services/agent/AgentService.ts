@@ -187,8 +187,26 @@ export class AgentService {
      * @param attachments Optional file attachments.
      */
     async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<any> {
-        // Build a pipeline context from the parent context or fresh
-        const context = parentContext || await this.contextPipeline.buildContext();
+        // CRITICAL: Deep clone context to prevent mutation affecting parent agent
+        // Context objects are passed by reference and can be mutated during execution,
+        // causing parent agents to lose their execution state ("dismantling")
+        let context: AgentContext;
+
+        if (parentContext) {
+            // Deep clone to isolate execution contexts
+            context = JSON.parse(JSON.stringify(parentContext));
+
+            // Restore non-serializable properties after cloning
+            // (chatHistory and attachments contain references we want to preserve)
+            if (parentContext.chatHistory) {
+                context.chatHistory = [...parentContext.chatHistory];
+            }
+            if (parentContext.attachments) {
+                context.attachments = [...parentContext.attachments];
+            }
+        } else {
+            context = await this.contextPipeline.buildContext();
+        }
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];
