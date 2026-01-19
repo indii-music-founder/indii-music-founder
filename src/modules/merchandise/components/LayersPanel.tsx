@@ -208,6 +208,11 @@ export const LayersPanel: React.FC<LayersPanelProps> = ({
                                     aria-selected={isSelected}
                                     onClick={() => onSelectLayer(layer)}
                                     onKeyDown={(e) => {
+                                        // 🎨 Palette: Prevent parent row from hijacking Enter/Space keys intended for child buttons
+                                        if ((e.target as HTMLElement).tagName === 'BUTTON') {
+                                            return;
+                                        }
+
                                         if (e.key === 'Enter' || e.key === ' ') {
                                             e.preventDefault();
                                             onSelectLayer(layer);
