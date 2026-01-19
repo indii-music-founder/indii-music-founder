@@ -7,8 +7,14 @@ interface ThreeDCardProps extends React.HTMLAttributes<HTMLDivElement> {
     className?: string;
     containerClassName?: string;
     onClick?: () => void;
+    /**
+     * Optional ARIA label for the card.
+     * Recommended when the card is interactive (has onClick).
+     */
+    'aria-label'?: string;
 }
 
+export const ThreeDCard = ({ children, className, containerClassName, onClick, 'aria-label': ariaLabel }: ThreeDCardProps) => {
 export const ThreeDCard = ({ children, className, containerClassName, onClick, ...rest }: ThreeDCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
@@ -86,6 +92,13 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick, .
         }
     };
 
+    const interactiveProps = onClick ? {
+        role: 'button',
+        tabIndex: 0,
+        onKeyDown: handleKeyDown,
+        'aria-label': ariaLabel,
+    } : {};
+
     return (
         <div
             className={cn(
@@ -102,6 +115,7 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick, .
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onClick={onClick}
+                {...interactiveProps}
                 role={onClick ? "button" : undefined}
                 tabIndex={onClick ? 0 : undefined}
                 onKeyDown={handleKeyDown}
@@ -116,6 +130,7 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick, .
                     rotateX,
                     rotateY,
                     transformStyle: "preserve-3d",
+                    cursor: onClick ? 'pointer' : undefined
                     ...rest.style
                 }}
                 className={cn(
