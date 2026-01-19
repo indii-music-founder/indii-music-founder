@@ -353,6 +353,14 @@ export const setupDistributionHandlers = () => {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
             }
 
+            // Security: Validate source path
+            validateSafeDistributionSource(localPath);
+
+            // Security: If key is a path, validate it
+            if (key && (key.includes('/') || key.includes('\\'))) {
+                validateSafeDistributionSource(key);
+            }
+
             const storagePath = getStoragePath();
             const scriptName = (protocol === 'ASPERA') ? 'aspera_uploader.py' : 'sftp_uploader.py';
 
@@ -364,11 +372,13 @@ export const setupDistributionHandlers = () => {
                 '--storage-path', storagePath
             ];
 
-            if (port && protocol !== 'ASPERA') args.push('--port', String(port));
+            if (port) args.push('--port', String(port));
             if (password) args.push('--password', password);
             if (key) args.push('--key', key);
 
-            const report = await PythonBridge.runScript('distribution', scriptName, args);
+            const report = await PythonBridge.runScript('distribution', scriptName, args, (progress) => {
+                event.sender.send('distribution:transmit-progress', { progress, host, protocol });
+            });
             return { success: report.status === 'SUCCESS', report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Send, Server, Shield, Loader2, CheckCircle, XCircle, Terminal, HardDrive } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { distributionService } from '@/services/distribution/DistributionService';
@@ -10,20 +10,51 @@ export const TransferPanel: React.FC = () => {
     const [loading, setLoading] = useState(false);
     const [report, setReport] = useState<SFTPReport | null>(null);
     const [logs, setLogs] = useState<string[]>([]);
+    const [progress, setProgress] = useState<number>(0);
+    const [authMode, setAuthMode] = useState<'PASSWORD' | 'KEY'>('PASSWORD');
     const [protocol, setProtocol] = useState<'SFTP' | 'ASPERA'>('SFTP');
-
-    // SFTP Config State
     const [config, setConfig] = useState<SFTPConfig>({
         host: '',
         port: 22,
         user: '',
         password: '',
+        key: '',
         localPath: '',
         remotePath: ''
     });
 
+    useEffect(() => {
+        // Handle progress updates from Electron
+        const removeListener = window.electronAPI?.on?.('distribution:transmit-progress', (data: any) => {
+            setProgress(data.progress);
+        });
+        return () => removeListener?.();
+    }, []);
+
     const addLog = (message: string) => {
         setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${message}`, ...prev].slice(0, 50));
+    };
+
+    const selectLocalPath = async () => {
+        const path = await window.electronAPI?.selectFile({
+            title: 'Select Release Package',
+            filters: [{ name: 'Packages', extensions: ['itmsp', 'zip', 'xml'] }]
+        });
+        if (path) {
+            setConfig({ ...config, localPath: path });
+            addLog(`Selected local package: ${path}`);
+        }
+    };
+
+    const selectKeyPath = async () => {
+        const path = await window.electronAPI?.selectFile({
+            title: 'Select Private Key',
+            filters: [{ name: 'Keys', extensions: ['pem', 'key', 'ppk', '*'] }]
+        });
+        if (path) {
+            setConfig({ ...config, key: path });
+            addLog(`Selected private key: ${path}`);
+        }
     };
 
     const handleTransmit = async () => {
@@ -34,14 +65,15 @@ export const TransferPanel: React.FC = () => {
 
         setLoading(true);
         setReport(null);
+        setProgress(0);
         addLog(`Initiating ${protocol} transmission to ${config.host}...`);
 
         try {
-            // Updated transmit to include protocol if needed, though handler currently uses sftp_uploader.py
-            // We'll update the handler to switch based on protocol
             const result = await window.electronAPI!.distribution.transmit({
                 ...config,
-                protocol // Pass protocol to IPC handler
+                protocol,
+                // Ensure only selected auth mode is passed if necessary, 
+                // but IPC handler already checks priority
             });
 
             setReport(result.report || null);
@@ -132,14 +164,41 @@ export const TransferPanel: React.FC = () => {
                                 />
                             </div>
                             <div className="text-left">
-                                <label className={labelClasses}>Authentication</label>
-                                <input
-                                    type="password"
-                                    className={inputClasses}
-                                    placeholder="Secret Key/Password"
-                                    value={config.password}
-                                    onChange={e => setConfig({ ...config, password: e.target.value })}
-                                />
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Authentication</label>
+                                    <button
+                                        onClick={() => setAuthMode(authMode === 'PASSWORD' ? 'KEY' : 'PASSWORD')}
+                                        className="text-[9px] font-bold text-blue-500 hover:text-blue-400 uppercase tracking-tighter"
+                                    >
+                                        Use {authMode === 'PASSWORD' ? 'Private Key' : 'Password'}
+                                    </button>
+                                </div>
+                                {authMode === 'PASSWORD' ? (
+                                    <input
+                                        type="password"
+                                        className={inputClasses}
+                                        placeholder="Secret Key/Password"
+                                        value={config.password || ''}
+                                        onChange={e => setConfig({ ...config, password: e.target.value })}
+                                    />
+                                ) : (
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            className={`${inputClasses} pr-10`}
+                                            placeholder="id_rsa"
+                                            value={config.key || ''}
+                                            readOnly
+                                            onClick={selectKeyPath}
+                                        />
+                                        <button
+                                            onClick={selectKeyPath}
+                                            className="absolute right-3 top-2.5 text-gray-500 hover:text-white transition-colors"
+                                        >
+                                            <Shield className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
 
@@ -154,7 +213,12 @@ export const TransferPanel: React.FC = () => {
                                         value={config.localPath}
                                         onChange={e => setConfig({ ...config, localPath: e.target.value })}
                                     />
-                                    <HardDrive className="absolute left-3 top-2.5 w-4 h-4 text-gray-500" />
+                                    <button
+                                        onClick={selectLocalPath}
+                                        className="absolute left-3 top-2.5 text-gray-500 hover:text-white transition-colors"
+                                    >
+                                        <HardDrive className="w-4 h-4" />
+                                    </button>
                                 </div>
                             </div>
 
@@ -173,6 +237,7 @@ export const TransferPanel: React.FC = () => {
                             </div>
                         </div>
 
+
                         <button
                             onClick={handleTransmit}
                             disabled={loading}
@@ -182,10 +247,18 @@ export const TransferPanel: React.FC = () => {
                                     : 'bg-white text-black hover:bg-gray-200 active:scale-[0.98]'}`}
                         >
                             {loading ? (
-                                <>
-                                    <Loader2 className="w-5 h-5 animate-spin" />
-                                    Transmitting...
-                                </>
+                                <div className="w-full space-y-2">
+                                    <div className="flex items-center justify-center gap-3">
+                                        <Loader2 className="w-5 h-5 animate-spin" />
+                                        <span>Transmitting {progress.toFixed(0)}%</span>
+                                    </div>
+                                    <div className="w-full bg-gray-800 h-1 rounded-full overflow-hidden">
+                                        <div
+                                            className="bg-white h-full transition-all duration-300 shadow-[0_0_10px_rgba(255,255,255,0.5)]"
+                                            style={{ width: `${progress}%` }}
+                                        />
+                                    </div>
+                                </div>
                             ) : (
                                 <>
                                     <Shield className="w-5 h-5" />

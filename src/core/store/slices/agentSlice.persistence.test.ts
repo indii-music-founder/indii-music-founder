@@ -1,16 +1,23 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { createStore } from 'zustand';
 
 // Mock must be defined before imports that use it
+const { mockUpdateSession, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+    mockUpdateSession: vi.fn().mockResolvedValue(undefined),
+    mockGetSessionsForUser: vi.fn().mockResolvedValue([]),
+    mockCreateSession: vi.fn().mockResolvedValue('new-session-id'),
+    mockDeleteSession: vi.fn().mockResolvedValue(undefined)
+}));
+
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
-        updateSession: vi.fn().mockResolvedValue(undefined),
-        getSessionsForUser: vi.fn().mockResolvedValue([]),
-        createSession: vi.fn().mockResolvedValue('new-session-id'),
-        deleteSession: vi.fn().mockResolvedValue(undefined)
+        updateSession: mockUpdateSession,
+        getSessionsForUser: mockGetSessionsForUser,
+        createSession: mockCreateSession,
+        deleteSession: mockDeleteSession
     }
 }));
 
-import { createStore } from 'zustand';
 import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
 import { sessionService } from '@/services/agent/SessionService';
 
@@ -27,7 +34,8 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.createSession('Test Session', ['agent-1']);
 
         // Wait for potential async persistence in setup
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
+        vi.clearAllMocks();
     });
 
     it('should persist new messages to SessionService', async () => {
@@ -46,7 +54,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(newMessage);
 
         // Wait for async import and promise resolution
-        await new Promise(resolve => setTimeout(resolve, 150));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Expectation: The message should be persisted to storage
         expect(sessionService.updateSession).toHaveBeenCalledWith(
@@ -68,7 +76,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(msg);
 
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         (sessionService.updateSession as any).mockClear(); // Clear the call from addAgentMessage
 
@@ -95,7 +103,7 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
         store.addAgentMessage({ id: 'msg-1', role: 'user', text: 'Hi', timestamp: Date.now() });
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         (sessionService.updateSession as any).mockClear();
 

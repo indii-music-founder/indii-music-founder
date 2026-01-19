@@ -1,4 +1,5 @@
-import { IpcMainInvokeEvent } from 'electron';
+import { IpcMainInvokeEvent, app } from 'electron';
+import path from 'path';
 
 export function validateSender(event: IpcMainInvokeEvent): void {
     const frame = event.senderFrame;
@@ -20,15 +21,11 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     // 3. Allow Dev Server (Strict Origin Check)
     const devServerUrl = process.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
-        // Handle potential lack of trailing slash for safer matching
         const normalizedDevUrl = devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`;
-
-        // Exact match or subpath match
         if (url === devServerUrl || url.startsWith(normalizedDevUrl)) {
             return;
         }
     }
 
-    // 4. Reject everything else
     throw new Error(`Security: Unauthorized sender URL: ${url}`);
 }

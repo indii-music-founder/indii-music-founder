@@ -18,7 +18,7 @@ export class PythonBridge {
         return path.join(process.cwd(), 'execution', scriptName);
     }
 
-    static async runScript(category: string, scriptName: string, args: string[] = []): Promise<any> {
+    static async runScript(category: string, scriptName: string, args: string[] = [], onProgress?: (progress: number) => void): Promise<any> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
             // Construct path: execution/<category>/<scriptName>
@@ -32,7 +32,21 @@ export class PythonBridge {
             let stderr = '';
 
             process.stdout.on('data', (data) => {
-                stdout += data.toString();
+                const chunk = data.toString();
+                stdout += chunk;
+
+                if (onProgress) {
+                    // Check for progress pattern PROGRESS:XX.XX
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.includes('PROGRESS:')) {
+                            const match = line.match(/PROGRESS:(\d+\.?\d*)/);
+                            if (match && match[1]) {
+                                onProgress(parseFloat(match[1]));
+                            }
+                        }
+                    }
+                }
             });
 
             process.stderr.on('data', (data) => {

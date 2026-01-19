@@ -8,7 +8,8 @@ const SYSTEM_ROOTS = [
 const ALLOWED_EXTENSIONS = new Set([
     '.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg', '.m4a',
     '.jpg', '.jpeg', '.png', '.gif', '.webp',
-    '.pdf', '.xml', '.txt', '.json', '.zip'
+    '.pdf', '.xml', '.txt', '.json', '.zip', '.itmsp',
+    '.pem', '.key', '.ppk'
 ]);
 
 export function validateSafeDistributionSource(filePath: string): void {
@@ -17,14 +18,14 @@ export function validateSafeDistributionSource(filePath: string): void {
 
     // 2. Check for Path Traversal (redundant with normalize, but explicit)
     if (normalized.includes('..')) {
-         throw new Error("Security Violation: Path traversal detected");
+        throw new Error("Security Violation: Path traversal detected");
     }
 
     // 3. Block Hidden Files and Directories
     // We split by the OS separator. On Windows this is '\', on Linux '/'.
     const segments = normalized.split(path.sep);
     if (segments.some(segment => segment.startsWith('.') && segment !== '.' && segment !== '..')) {
-         throw new Error("Security Violation: Access to hidden files or directories is denied");
+        throw new Error("Security Violation: Access to hidden files or directories is denied");
     }
 
     // 4. Block System Directories

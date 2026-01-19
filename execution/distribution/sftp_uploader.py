@@ -45,8 +45,20 @@ class SFTPUploader:
             transport = paramiko.Transport((host, port))
             
             if key_path:
-                private_key = paramiko.RSAKey.from_private_key_file(key_path)
-                transport.connect(username=username, pkey=private_key)
+                # Try multiple key types
+                pkey = None
+                errors = []
+                for key_class in [paramiko.Ed25519Key, paramiko.RSAKey, paramiko.ECDSAKey, paramiko.DSSKey]:
+                    try:
+                        pkey = key_class.from_private_key_file(key_path)
+                        break
+                    except Exception as e:
+                        errors.append(f"{key_class.__name__}: {str(e)}")
+                
+                if not pkey:
+                    return {"status": "FAIL", "error": f"Failed to load private key. Errors: {'; '.join(errors)}"}
+                
+                transport.connect(username=username, pkey=pkey)
             else:
                 transport.connect(username=username, password=password)
 
@@ -56,8 +68,8 @@ class SFTPUploader:
             def progress_callback(transferred, total):
                 if total > 0:
                     percent = (transferred / total) * 100
-                    # For larger files, we might want to throttle this output
-                    # logger.info(f"Progress: {percent:.2f}%")
+                    if transferred % (1024 * 1024) == 0 or transferred == total: # Log every MB or at completion
+                        logger.info(f"PROGRESS:{percent:.2f}")
 
             if os.path.isfile(local_path):
                 filename = os.path.basename(local_path)

@@ -20,6 +20,8 @@ export interface ElectronAPI {
     getPlatform: () => Promise<string>;
     getAppVersion: () => Promise<string>;
     setPrivacyMode: (enabled: boolean) => Promise<void>;
+    selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
+    selectDirectory: (options?: { title?: string }) => Promise<string | null>;
 
     // Auth (Secure Main Process Flow)
     auth: {
@@ -82,6 +84,7 @@ export interface ElectronAPI {
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
         transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
     };
+    on: (channel: string, callback: (...args: any[]) => void) => () => void;
 }
 
 declare global {

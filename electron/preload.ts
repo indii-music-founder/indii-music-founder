@@ -24,6 +24,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPlatform: () => ipcRenderer.invoke('get-platform'),
     getAppVersion: () => ipcRenderer.invoke('get-app-version'),
     setPrivacyMode: (enabled: boolean) => ipcRenderer.invoke('privacy:toggle-protection', enabled),
+    selectFile: (options?: any) => ipcRenderer.invoke('system:select-file', options),
+    selectDirectory: (options?: any) => ipcRenderer.invoke('system:select-directory', options),
 
     // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {
@@ -87,4 +89,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
+    on: (channel: string, callback: (...args: any[]) => void) => {
+        const subscription = (_event: any, ...args: any[]) => callback(...args);
+        ipcRenderer.on(channel, subscription);
+        return () => ipcRenderer.removeListener(channel, subscription);
+    }
 });

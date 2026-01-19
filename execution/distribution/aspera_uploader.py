@@ -25,9 +25,31 @@ class AsperaUploader:
             file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
             logger.addHandler(file_handler)
 
+    def _find_ascp(self) -> Optional[str]:
+        """Attempts to locate the ascp binary."""
+        # 1. Check PATH
+        try:
+            subprocess.run(["ascp", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False)
+            return "ascp"
+        except FileNotFoundError:
+            pass
+
+        # 2. Check common installation paths (macOS)
+        mac_paths = [
+            os.path.expanduser("~/Applications/Aspera Connect.app/Contents/Resources/ascp"),
+            "/Applications/Aspera Connect.app/Contents/Resources/ascp",
+            os.path.expanduser("~/Library/Application Support/Aspera/Aspera Connect/bin/ascp")
+        ]
+        for p in mac_paths:
+            if os.path.exists(p):
+                return p
+        
+        return None
+
     def upload(self, 
                host: str, 
                username: str, 
+               port: int = 33001,
                password: Optional[str] = None, 
                key_path: Optional[str] = None,
                local_path: str = "", 
@@ -42,46 +64,76 @@ class AsperaUploader:
             if not os.path.exists(local_path):
                 return {"status": "FAIL", "error": f"Local path {local_path} does not exist"}
 
-            # Check for ascp
-            try:
-                subprocess.run(["ascp", "--version"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-                ascp_available = True
-            except FileNotFoundError:
-                ascp_available = False
-                logger.warning("ascp binary not found in PATH")
+            ascp_path = self._find_ascp()
 
-            if not ascp_available:
-                # Mock success for simulation if in dev, or fail in prod
-                # For this implementation, we will simulate the command structure
-                logger.info("SIMULATION MODE: generating ascp command")
-                cmd = [
-                    "ascp",
-                    "-P", "33001", # Default Aspera port
-                    "-O", "33001",
-                    "-l", target_rate,
-                    f"--user={username}",
-                    f"--host={host}"
-                ]
-                if key_path:
-                    cmd.extend(["-i", key_path])
-                
-                cmd.append(local_path)
-                cmd.append(remote_path)
-                
-                logger.info(f"Command: {' '.join(cmd)}")
-                
-                # Since ascp is missing, we return a failure with the attempted command
+            if not ascp_path:
+                logger.warning("ascp binary not found")
                 return {
                     "status": "FAIL",
-                    "error": "Aspera (ascp) binary not found on system.",
-                    "command_attempted": " ".join(cmd)
+                    "error": "Aspera (ascp) binary not found on system. Please install Aspera Connect."
                 }
 
-            # Real execution (if ascp existed)
-            # cmd = ["ascp", ...]
-            # result = subprocess.run(cmd, capture_output=True, text=True)
+            # Build ascp command
+            # -l: target rate, -P: SSH port (33001), -O: UDP port (33001)
+            # -Q: adaptive rate control, -k 1: resume
+            cmd = [
+                ascp_path,
+                "-P", str(port),
+                "-O", str(port),
+                "-l", target_rate,
+                "-Q", "-k", "1"
+            ]
+
+            if key_path:
+                cmd.extend(["-i", key_path])
             
-            return {"status": "SUCCESS", "message": "Aspera transmission placeholder"}
+            # Destination format: user@host:path
+            remote_spec = f"{username}@{host}:{remote_path}"
+            cmd.append(local_path)
+            cmd.append(remote_spec)
+
+            logger.info(f"Executing: {' '.join(cmd)}")
+            
+            # Handle password if provided via env var (ascp standard)
+            env = os.environ.copy()
+            if password:
+                env["ASPERA_SCP_PASS"] = password
+
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                env=env
+            )
+
+            full_output = []
+            for line in process.stdout:
+                line = line.strip()
+                if line:
+                    logger.info(f"[ascp] {line}")
+                    full_output.append(line)
+                    
+                    # Extract progress (e.g., " 25% ")
+                    import re
+                    match = re.search(r"(\d+)%", line)
+                    if match:
+                        logger.info(f"PROGRESS:{match.group(1)}")
+
+            process.wait()
+
+            if process.returncode == 0:
+                return {
+                    "status": "SUCCESS",
+                    "message": f"Aspera transmission complete for {local_path}",
+                    "output": "\n".join(full_output[-10:])
+                }
+            else:
+                return {
+                    "status": "FAIL",
+                    "error": f"ascp exited with code {process.returncode}",
+                    "output": "\n".join(full_output)
+                }
 
         except Exception as e:
             logger.exception("Aspera Upload Failed")
@@ -90,6 +142,7 @@ class AsperaUploader:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="IndiiOS Aspera Transmission Engine")
     parser.add_argument("--host", required=True, help="Aspera Host")
+    parser.add_argument("--port", type=int, default=33001, help="Aspera Port")
     parser.add_argument("--user", required=True, help="Aspera Username")
     parser.add_argument("--password", help="Aspera Password")
     parser.add_argument("--key", help="Path to Private Key file")
@@ -103,6 +156,7 @@ if __name__ == "__main__":
     uploader = AsperaUploader(storage_path=args.storage_path)
     result = uploader.upload(
         host=args.host,
+        port=args.port,
         username=args.user,
         password=args.password,
         key_path=args.key,
