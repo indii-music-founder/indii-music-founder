@@ -18,25 +18,41 @@ export class PythonBridge {
         return path.join(process.cwd(), 'execution', scriptName);
     }
 
+    private static redactArgs(args: string[]): string {
+        const sensitiveFlags = ['--password', '--key', '--token', '-p', '--api-key'];
+        const redacted = [...args];
+        for (let i = 0; i < redacted.length; i++) {
+            if (sensitiveFlags.includes(redacted[i])) {
+                if (i + 1 < redacted.length) {
+                    redacted[i + 1] = '[REDACTED]';
+                }
+            }
+        }
+        return redacted.join(' ');
+    }
+
     static async runScript(
         category: string,
         scriptName: string,
         args: string[] = [],
-        onProgress?: (progress: number, log?: string) => void
+        onProgress?: (progress: number, log?: string) => void,
+        env: NodeJS.ProcessEnv = {}
     ): Promise<any> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
             // Construct path: execution/<category>/<scriptName>
             const fullScriptPath = path.join(this.getScriptPath(path.join(category, scriptName)));
 
-            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${args.join(' ')}`);
+            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${this.redactArgs(args)}`);
 
-            const process = spawn(python, [fullScriptPath, ...args]);
+            const childProcess = spawn(python, [fullScriptPath, ...args], {
+                env: { ...process.env, ...env }
+            });
 
             let stdout = '';
             let stderr = '';
 
-            process.stdout.on('data', (data) => {
+            childProcess.stdout.on('data', (data) => {
                 const chunk = data.toString();
                 stdout += chunk;
 
@@ -57,11 +73,11 @@ export class PythonBridge {
                 }
             });
 
-            process.stderr.on('data', (data) => {
+            childProcess.stderr.on('data', (data) => {
                 stderr += data.toString();
             });
 
-            process.on('close', (code) => {
+            childProcess.on('close', (code) => {
                 if (code !== 0) {
                     console.error(`[PythonBridge] Script failed with code ${code}. Stderr: ${stderr}`);
                     return reject(new Error(`Python script execution failed: ${stderr || 'Unknown error'}`));
@@ -80,7 +96,7 @@ export class PythonBridge {
                 }
             });
 
-            process.on('error', (err) => {
+            childProcess.on('error', (err) => {
                 reject(err);
             });
         });
