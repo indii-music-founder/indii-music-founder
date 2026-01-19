@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image, Activity } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Sidebar() {
@@ -52,7 +52,6 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'observability', icon: Globe, label: 'System Observability' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
@@ -186,6 +185,15 @@ export default function Sidebar() {
                             data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
+                        </button>
+
+                        <button
+                            onClick={() => setModule('observability')}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-green-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                            title="System Observability"
+                            data-testid="observability-footer-btn"
+                        >
+                            <Activity size={14} />
                         </button>
                     </div>
                 )}

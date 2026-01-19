@@ -63,10 +63,39 @@ vi.mock('firebase/ai', () => {
 vi.mock('@/services/firebase', () => ({
     app: {},
     remoteConfig: {},
-    ai: {},
+    ai: {}, // The raw firebase instance
+    getFirebaseAI: () => ({}), // The accessor function
     functions: {},
     db: {},
     auth: { currentUser: { uid: 'test-user-id' } }
+}));
+
+vi.mock('@google/generative-ai', () => {
+    return {
+        GoogleGenerativeAI: class {
+            getGenerativeModel() {
+                return {
+                    generateContent: mockGenerateContent,
+                    generateContentStream: vi.fn().mockResolvedValue({
+                        stream: (async function* () { yield { text: () => 'Fallback Stream' }; })(),
+                        response: Promise.resolve({ candidates: [] })
+                    }),
+                    embedContent: vi.fn().mockResolvedValue({
+                        embedding: { values: [0.1, 0.2, 0.3] }
+                    })
+                };
+            }
+        }
+    };
+});
+
+vi.mock('@/config/env', () => ({
+    env: {
+        VITE_API_KEY: 'mock-google-api-key',
+        apiKey: 'mock-google-api-key',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token'
+    }
 }));
 
 vi.mock('./billing/TokenUsageService', () => ({
@@ -215,32 +244,42 @@ describe('FirebaseAIService', () => {
         }));
     });
 
-    it('should handle App Check failures gracefully', async () => {
-        await service.bootstrap();
-        mockGenerateContent.mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
+    it('should fall back to direct SDK on App Check failure', async () => {
+        // Force primary model to fail with App Check error during bootstrap
+        const { fetchAndActivate } = await import('firebase/remote-config');
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        await expect(service.generateContent('fail')).rejects.toThrow('AI Verification Failed (App Check)');
+        await service.bootstrap();
+        expect(service['useFallbackMode']).toBe(true);
     });
 
     it('should handle content streams', async () => {
         const { stream } = await service.generateContentStream('Stream me');
         const reader = stream.getReader();
         const { value } = await reader.read();
+        // Expect "Stream" (Standard Mode due to mock env)
         expect(value?.text()).toBe('Stream');
     });
 
-    it('should throw AppException if bootstrap fails', async () => {
+    it('should falling back if bootstrap fails (Resilience)', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error('API key not valid'));
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        await expect(service.bootstrap()).rejects.toThrow('AI Service Failure: API key not valid');
+        // Should NOT throw, but enter fallback mode
+        await service.bootstrap();
+        expect(service['useFallbackMode']).toBe(true);
     });
 
-    it('should throw if called without successful initialization', async () => {
+    it('should throw if BOTH primary and fallback fail', async () => {
+        // Force fallback mode, but with a broken client
         const { fetchAndActivate } = await import('firebase/remote-config');
-        (fetchAndActivate as any).mockRejectedValueOnce(new Error('Fail'));
+        (fetchAndActivate as any).mockRejectedValueOnce(new Error('firebase-app-check-token-invalid'));
 
-        await expect(service.generateText('test')).rejects.toThrow('AI Service Failure: Fail');
+        // Corrupt the fallback client to simulate total failure
+        await service.bootstrap();
+        service['fallbackClient'] = null;
+
+        await expect(service.generateText('test')).rejects.toThrow('AI Service not properly initialized');
     });
 
     it('should handle generateVideo with polling', async () => {
@@ -266,6 +305,7 @@ describe('FirebaseAIService', () => {
     });
 
     it('should retry on transient errors', async () => {
+        vi.useFakeTimers();
         // Fail twice with "signal is aborted", then succeed
         mockGenerateContent
             .mockRejectedValueOnce(new Error('signal is aborted without reason'))
@@ -277,30 +317,45 @@ describe('FirebaseAIService', () => {
                 }
             });
 
-        const result = await service.generateContent('Retry me');
+        const promise = service.generateContent('Retry me');
+
+        // Advance timers to trigger retries
+        // Wait for backoff loops (approx 2000 + 4000 ms)
+        await vi.advanceTimersByTimeAsync(10000);
+
+        const result = await promise;
         expect(result.response.text()).toBe('Success after retry');
-        // Initial call + 2 retries = 3 calls
         expect(mockGenerateContent).toHaveBeenCalledTimes(3);
-    }, 10000);
+        vi.useRealTimers();
+    });
 
     it('should abort retry if user cancels', async () => {
+        vi.useFakeTimers();
         mockGenerateContent.mockRejectedValue(new Error('503 service unavailable'));
         const abortController = new AbortController();
 
         const promise = service.generateContent('Cancel me', undefined, undefined, undefined, undefined, { signal: abortController.signal });
+        const expectation = expect(promise).rejects.toThrow('Operation cancelled by user');
 
-        // Abort while it's "retrying" (shortly after start)
-        setTimeout(() => abortController.abort(), 10);
+        // Advance slightly to let it enter retry loop
+        await vi.advanceTimersByTimeAsync(10);
+        abortController.abort();
 
-        await expect(promise).rejects.toThrow('Operation cancelled by user');
+        // Must advance timer to trigger the abort check inside the sleep
+        await vi.advanceTimersByTimeAsync(1000);
+
+        await expectation;
+        vi.useRealTimers();
     });
 
-    it('should identify Firebase Installations API errors', async () => {
+    it('should fallback on Firebase Installations API errors', async () => {
         // Mock a failure that resembles the Installations error
         const errMsg = 'Installations: Create Installation request failed with error "403 PERMISSION_DENIED"';
         const { fetchAndActivate } = await import('firebase/remote-config');
         (fetchAndActivate as any).mockRejectedValueOnce(new Error(errMsg));
 
-        await expect(service.bootstrap()).rejects.toThrow('Firebase Installations API is disabled or restricted');
+        // Should NOT throw
+        await service.bootstrap();
+        expect(service['useFallbackMode']).toBe(true);
     });
 });

@@ -148,7 +148,10 @@ export class FirebaseAIService {
             try {
                 await fetchAndActivate(remoteConfig);
                 modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
-            } catch (configError) {
+            } catch (configError: any) {
+                if (isAppCheckError(configError)) {
+                    throw configError;
+                }
                 console.warn('[FirebaseAIService] Failed to fetch remote config, using default model:', configError);
             }
 
@@ -199,8 +202,7 @@ export class FirebaseAIService {
      */
     private getModelName(modelOverride?: string): string {
         if (modelOverride) return modelOverride;
-        if (this.model) return this.model.model;
-        return FALLBACK_MODEL;
+        return this.model?.model || FALLBACK_MODEL;
     }
 
     async rawGenerateContent(
@@ -540,14 +542,9 @@ export class FirebaseAIService {
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
+
     /**
-        options?: { signal?: AbortSignal, cachedContent?: string }
-    ): Promise<GenerateContentResult> {
-        return this.withRetry(() => {
-            return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
-        }, 3, 1000, options?.signal);
-    }/**
-     * CORE: Generate content stream (Used by AIService)
+     * CORE: Generate content stream(Used by AIService)
      */
     async generateContentStream(
         prompt: string | Content[],
@@ -823,7 +820,6 @@ export class FirebaseAIService {
             }
 
             // NORMAL MODE: Use Firebase AI SDK
-            // NORMAL MODE: Use Firebase AI SDK
             const firebaseAI = getFirebaseAI();
             if (!firebaseAI) {
                 console.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
@@ -991,9 +987,7 @@ export class FirebaseAIService {
     /**
      * CORE: Embed content
      */
-    /**
-     * CORE: Embed content
-     */
+
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
@@ -1060,7 +1054,7 @@ export class FirebaseAIService {
         if (!this.isInitialized) {
             await this.bootstrap();
         }
-        if (!this.model) {
+        if (!this.model && !this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service not properly initialized');
         }
     }

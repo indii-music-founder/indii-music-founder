@@ -45,7 +45,6 @@ export const MobileNav = () => {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'observability', icon: Globe, label: 'System Observability' },
     ];
 
     const handleItemClick = (id: ModuleId) => {
