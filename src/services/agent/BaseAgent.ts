@@ -180,6 +180,10 @@ export class BaseAgent implements SpecializedAgent {
     protected functions: Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>;
     private toolSchemas: Map<string, ZodType> = new Map();
 
+    // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
+    // Prevents race conditions that cause agents to "dismantle" each other
+    private static executionLocks: Map<string, Promise<any>> = new Map();
+
     constructor(config: AgentConfig) {
         this.id = config.id;
         this.name = config.name;
@@ -366,6 +370,40 @@ export class BaseAgent implements SpecializedAgent {
      * @returns Standardized AgentResponse
      */
     async execute(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
+        // CRITICAL: Execution Lock Implementation
+        // Prevents concurrent execution for same user/project/agent combination
+        // This eliminates race conditions that cause "agent dismantling"
+        const lockKey = `${context?.userId || 'unknown'}-${context?.projectId || 'unknown'}-${this.id}`;
+
+        // If another execution is in progress for this key, wait for it
+        if (BaseAgent.executionLocks.has(lockKey)) {
+            console.log(`[BaseAgent] ${this.name} waiting for existing execution to complete...`);
+            try {
+                await BaseAgent.executionLocks.get(lockKey);
+            } catch (err) {
+                // Previous execution failed, but we can proceed
+                console.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
+            }
+        }
+
+        // Create a promise for this execution and store it
+        const executionPromise = (async () => {
+            try {
+                return await this._executeInternal(task, context, onProgress, signal, attachments);
+            } finally {
+                // Clean up lock when done
+                BaseAgent.executionLocks.delete(lockKey);
+            }
+        })();
+
+        BaseAgent.executionLocks.set(lockKey, executionPromise);
+        return executionPromise;
+    }
+
+    /**
+     * Internal execution method (separated to support locking mechanism)
+     */
+    private async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
         const { AI } = await import('@/services/ai/AIService');
 
