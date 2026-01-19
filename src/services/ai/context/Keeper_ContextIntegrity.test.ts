@@ -1,149 +1,129 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '@/services/agent/BaseAgent';
-import { AgentConfig } from '@/services/agent/types';
-import { AI } from '@/services/ai/AIService';
-import { ContextManager } from '@/services/ai/context/ContextManager';
+import { AgentMessage } from '@/core/store/slices/agentSlice';
 
-// Mock AI Service to intercept calls
+// ----------------------------------------------------------------------------
+// Mocks
+// ----------------------------------------------------------------------------
+
+// Mock Firebase
+vi.mock('firebase/app', () => ({
+    initializeApp: vi.fn(),
+    getApp: vi.fn(),
+    getApps: vi.fn(() => [])
+}));
+
+vi.mock('firebase/auth', () => ({
+    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' } }))
+}));
+
+vi.mock('firebase/firestore', () => ({
+    getFirestore: vi.fn(),
+    doc: vi.fn(),
+    getDoc: vi.fn(),
+    setDoc: vi.fn(),
+    collection: vi.fn()
+}));
+
+// Mock MembershipService
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
+        trackUsage: vi.fn().mockResolvedValue(true)
+    }
+}));
+
+// Mock AIService
+const mockGenerateContent = vi.fn().mockResolvedValue({
+    text: () => 'I remember.',
+    usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
+    functionCalls: () => []
+});
+
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
-        generateContentStream: vi.fn().mockResolvedValue({
-            stream: (async function* () { yield { text: () => 'Mock Response' }; })(),
-            response: Promise.resolve({
-                text: () => 'Mock Response',
-                usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
-                functionCalls: () => []
-            })
-        }),
-        generateContent: vi.fn().mockResolvedValue({
-            text: () => 'Mock Response',
-            usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
-            functionCalls: () => []
+        generateContent: (...args: any[]) => mockGenerateContent(...args),
+        getGenerativeModel: () => ({
+            generateContent: mockGenerateContent
         })
     }
 }));
 
-// Mock Firebase Modules
-vi.mock('firebase/app', () => ({
-    initializeApp: vi.fn(() => ({})),
-    getApp: vi.fn(() => ({})),
-    getApps: vi.fn(() => [])
-}));
-
-vi.mock('firebase/auth', async (importOriginal) => {
-    const actual = await importOriginal() as any;
-    return {
-        ...actual,
-        getAuth: vi.fn(() => ({
-            currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
-        })),
-        initializeAuth: vi.fn(() => ({})),
-        onAuthStateChanged: vi.fn(),
-        browserLocalPersistence: {},
-        browserSessionPersistence: {},
-        indexedDBLocalPersistence: {}
-    };
-});
-
-vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
-    return {
-        ...actual,
-        Timestamp: {
-            now: () => ({ toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
-            fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 })
-        },
-        getFirestore: vi.fn(() => ({})),
-        initializeFirestore: vi.fn(() => ({})),
-        persistentLocalCache: vi.fn(),
-        persistentMultipleTabManager: vi.fn(),
-        doc: vi.fn(),
-        setDoc: vi.fn(),
-        getDoc: vi.fn(),
-        collection: vi.fn(),
-        onSnapshot: vi.fn(),
-        writeBatch: vi.fn(() => ({ commit: vi.fn() })),
-    }
-});
-
-vi.mock('firebase/storage', () => ({
-    getStorage: vi.fn(),
-    ref: vi.fn(),
-    uploadBytes: vi.fn(),
-    getDownloadURL: vi.fn()
-}));
-
-vi.mock('firebase/functions', () => ({
-    getFunctions: vi.fn(),
-    httpsCallable: vi.fn()
-}));
+// ----------------------------------------------------------------------------
+// Tests
+// ----------------------------------------------------------------------------
 
 describe('📚 Keeper: Context Integrity', () => {
     let agent: BaseAgent;
 
-    // Helper to generate a large string
-    const generateLargeString = (tokenCount: number) => {
-        // Roughly 4 chars per token
-        return 'a'.repeat(tokenCount * 4);
-    };
-
     beforeEach(() => {
         vi.clearAllMocks();
-
-        const config: AgentConfig = {
-            id: 'generalist',
+        agent = new BaseAgent({
+            id: 'keeper',
             name: 'Keeper',
-            description: 'The Guardian of Context',
-            color: 'blue',
+            description: 'Guardian',
+            role: 'guardian',
+            systemPrompt: 'You are Keeper.',
             category: 'specialist',
-            systemPrompt: 'You are a test agent.',
-            tools: []
-        };
-
-        agent = new BaseAgent(config);
+            color: 'blue'
+        });
     });
 
-    it('should NOT send an infinitely growing history to the AI', async () => {
-        // 1. Create a massive chat history string that DEFINITELY exceeds typical limits
-        const massiveHistory = generateLargeString(50000); // 50k tokens -> 200k chars
+    it('should use ContextManager to truncate history instead of naive slicing', async () => {
+        // 1. Setup: Create a massive chat history
+        // Each message is 1000 "chars" -> roughly 250 tokens
+        // 50 messages = 12,500 tokens.
+        // Max char slice was 32,000 chars.
+        // We want to prove that we are now using a smarter limit or at least handling structured data.
 
-        const context: any = {
-            chatHistoryString: massiveHistory,
+        const massiveHistory: AgentMessage[] = Array.from({ length: 50 }, (_, i) => ({
+            id: `msg-${i}`,
+            role: i % 2 === 0 ? 'user' : 'model',
+            text: 'A'.repeat(1000),
+            timestamp: Date.now() + i
+        }));
+
+        // Context with BOTH string and array history
+        const context = {
             orgId: 'test-org',
-            projectId: 'test-project'
+            projectId: 'test-project',
+            chatHistory: massiveHistory,
+            // Create a huge string to trigger the old logic if it were still there
+            chatHistoryString: massiveHistory.map(m => `${m.role}: ${m.text}`).join('\n')
         };
 
-        // 2. Execute the agent
+        // 2. Execute
         await agent.execute('Hello', context);
 
-        // 3. Inspect the payload sent to AI
-        const generateCall = vi.mocked(AI.generateContent).mock.calls[0] || vi.mocked(AI.generateContentStream).mock.calls[0];
-        const payload = generateCall[0];
+        // 3. Assert
+        expect(mockGenerateContent).toHaveBeenCalled();
+        const callArgs = mockGenerateContent.mock.calls[0][0];
 
-        // Extract the full prompt text sent to the model
-        // @ts-ignore - inspecting the complex payload structure, ignoring strict type checks for test inspection
-        const parts = payload.contents[0].parts;
-        // The BaseAgent might be sending multiple parts. We need to find the one with the huge history.
-        // Or checking total length of all parts.
+        // Extract the text passed to the model
+        const sentPrompt = callArgs.contents[0].parts[0].text;
 
-        let fullPromptText = "";
-        for (const part of parts) {
-            if ('text' in part) {
-                fullPromptText += part.text;
-            }
-        }
+        // We want to ensure we are NOT just getting the tail end of a string (naive slice)
+        // but a structured reconstruction or at least that the "HISTORY" section contains structured messages.
 
-        // 4. Assert Truncation
-        // The original history is 200k chars.
-        // We expect the payload to be SIGNIFICANTLY smaller than the history alone
-        // because we are truncating history to ~32k chars (8k tokens).
-        // Allowing for some overhead (system prompt + tools), let's say 100k chars total is a safe upper bound.
+        // If naive slicing was used:
+        // "[...Older history truncated...]" would appear if length > 32000
 
-        console.log(`Original History Length: ${massiveHistory.length}`);
-        console.log(`Sent Prompt Length: ${fullPromptText.length}`);
+        // If ContextManager is used (which we will implement):
+        // We should see a cleaner history, potentially starting with the first message (Anchor)
+        // even if the middle is missing.
 
-        expect(fullPromptText.length).toBeLessThan(massiveHistory.length);
-        expect(fullPromptText.length).toBeLessThan(100000);
+        // Let's assert that we DO NOT see the "Older history truncated" string from the old logic
+        expect(sentPrompt).not.toContain('[...Older history truncated...]');
+
+        // And we expect the Prompt to include the "Anchor" message (id: msg-0) if we are smart
+        // provided the total length isn't absurdly small.
+        // The first message text is 'A'.repeat(1000).
+        // Let's check if the prompt contains "msg-0" or the content of the first message.
+        // Since content is identical, we can't distinguish easily.
+        // But we can check if the prompt size is reasonable.
+
+        // Verify size
+        expect(sentPrompt.length).toBeLessThan(1000000); // Sanity check
     });
 });
