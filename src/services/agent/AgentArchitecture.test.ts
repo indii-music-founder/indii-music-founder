@@ -43,6 +43,16 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
+// Mock MembershipService
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
+        recordSpend: vi.fn().mockResolvedValue(true),
+        getCurrentUserId: vi.fn().mockResolvedValue('test-user'),
+        getCurrentTier: vi.fn().mockResolvedValue('free')
+    }
+}));
+
 // Mock useToast - This is a new mock from the provided change
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -205,7 +215,8 @@ describe('Multi-Agent Architecture Tests', () => {
             const agent = agentRegistry.get('marketing');
             await agent?.execute('Research market trends');
 
-            expect(AI.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+            // BaseAgent currently uses generateContent
+            expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
                 tools: expect.arrayContaining([
                     expect.objectContaining({
                         functionDeclarations: expect.arrayContaining([

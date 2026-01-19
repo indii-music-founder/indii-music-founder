@@ -21,7 +21,8 @@ vi.mock('@/core/store', () => ({
             agentHistory: [],
             addAgentMessage: vi.fn(),
             updateAgentMessage: vi.fn()
-        })
+        }),
+        setState: vi.fn()
     }
 }));
 

@@ -569,6 +569,8 @@ ${task}
         const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 5;
+        const toolCalls: any[] = [];
+        let lastToolResult: any = undefined;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -584,8 +586,9 @@ ${task}
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
                     await executionContext.rollback();
                     return {
-                        text: accumulatedResponse || 'Task halted: Budget exceeded.',
-                        error: 'Budget exceeded'
+                        text: 'Task halted: Budget exceeded.',
+                        error: 'Budget exceeded',
+                        toolCalls
                     };
                 }
 
@@ -618,8 +621,9 @@ ${task}
                         console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
                         await executionContext.rollback();
                         return {
-                            text: accumulatedResponse || `Task ended: ${loopCheck.reason}`,
-                            error: 'Loop detected'
+                            text: `Task ended: ${loopCheck.reason}`,
+                            error: 'Loop detected',
+                            toolCalls
                         };
                     }
 
@@ -648,6 +652,10 @@ ${task}
                         }
                     }
 
+                    // Store tool call and result
+                    lastToolResult = result;
+                    toolCalls.push({ name, args, result });
+
                     const outputText = typeof result === 'string'
                         ? result
                         : (result.success === false
@@ -671,6 +679,8 @@ ${task}
                     await executionContext.commit();
                     return {
                         text: finalResponse,
+                        data: lastToolResult,
+                        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
                         usage: usage ? {
                             promptTokens: usage.promptTokenCount || 0,
                             completionTokens: usage.candidatesTokenCount || 0,
@@ -683,7 +693,9 @@ ${task}
             await executionContext.commit();
 
             return {
-                text: accumulatedResponse || 'Maximum iterations reached.',
+                text: 'Maximum iterations reached.',
+                data: lastToolResult,
+                toolCalls,
                 error: 'Max iterations reached'
             };
         } catch (error: unknown) {

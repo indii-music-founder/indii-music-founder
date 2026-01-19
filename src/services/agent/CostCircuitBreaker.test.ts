@@ -17,8 +17,8 @@ vi.mock('@/services/ai/AIService', () => ({
 
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
-        checkBudget: vi.fn(),
-        recordSpend: vi.fn(),
+        checkBudget: vi.fn(() => Promise.resolve({ allowed: true })),
+        recordSpend: vi.fn().mockResolvedValue(true),
         getCurrentUserId: vi.fn().mockResolvedValue('ledger-test-user'),
         getCurrentTier: vi.fn().mockResolvedValue('free')
     }
@@ -41,7 +41,10 @@ vi.mock('@/services/audio/AudioService', () => ({
     audioService: { play: vi.fn() }
 }));
 vi.mock('@/core/store', () => ({
-    useStore: { getState: () => ({ projects: [] }) }
+    useStore: {
+        getState: () => ({ projects: [] }),
+        setState: vi.fn()
+    }
 }));
 vi.mock('./tools', () => ({
     TOOL_REGISTRY: {}
