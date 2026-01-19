@@ -1,4 +1,4 @@
-import { Schema } from 'firebase/ai';
+import { Schema, Tool } from 'firebase/ai';
 import {
     Content,
     ContentPart,
@@ -197,7 +197,7 @@ export class AIService {
                             model,
                             options.config,
                             options.systemInstruction,
-                            options.tools
+                            options.tools as unknown as Tool[]
                         );
 
                         // Map firebase/ai candidate to legacy Candidate
@@ -358,7 +358,7 @@ export class AIService {
                 options.model,
                 options.config,
                 options.systemInstruction,
-                tools,
+                tools as unknown as Tool[],
                 { signal: options.signal } // Pass the abort signal to Firebase AI
             );
         } catch (error: any) {
@@ -392,7 +392,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateImage(
                 options.prompt,
                 options.model,
-                options.config
+                options.config as any
             ));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
