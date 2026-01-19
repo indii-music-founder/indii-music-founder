@@ -63,10 +63,11 @@ describe('📚 Keeper: Context Integrity', () => {
             id: 'keeper',
             name: 'Keeper',
             description: 'Guardian',
-            role: 'guardian',
+
             systemPrompt: 'You are Keeper.',
             category: 'specialist',
-            color: 'blue'
+            color: 'blue',
+            tools: []
         });
     });
 
