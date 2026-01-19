@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from '../FirebaseAIService';
 
-// Mock Firebase
+const mockGenerateContentStream = vi.fn();
+const mockGenerateContent = vi.fn();
+
+// Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
+    getFirebaseAI: vi.fn(() => ({})),
     functions: {},
     ai: {},
     remoteConfig: {},
@@ -24,10 +28,19 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
-// Mock firebase/ai wrapped
-const mockGenerateContentStream = vi.fn();
-const mockGenerateContent = vi.fn();
+// Mock Google Generative AI (Fallback)
+vi.mock('@google/generative-ai', () => ({
+    GoogleGenerativeAI: vi.fn(function () {
+        return {
+            getGenerativeModel: vi.fn(() => ({
+                generateContentStream: mockGenerateContentStream,
+                generateContent: mockGenerateContent
+            }))
+        };
+    })
+}));
 
+// Mock firebase/ai
 vi.mock('firebase/ai', () => ({
     __esModule: true,
     getGenerativeModel: vi.fn(() => ({

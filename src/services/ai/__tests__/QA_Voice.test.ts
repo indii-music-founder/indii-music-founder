@@ -1,17 +1,30 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from '../FirebaseAIService';
 
-// Mock Firebase
+// Hoist mocks
+const mockGenerateContent = vi.fn();
+
+// Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
+    getFirebaseAI: vi.fn(() => ({})), // Return truthy to simulate "App Check Configured" or at least normal mode intent
     functions: {},
     ai: {},
     remoteConfig: {},
     auth: { currentUser: { uid: 'user-123' } }
 }));
 
-// Mock firebase/ai
-const mockGenerateContent = vi.fn();
+// Mock Google Generative AI (Fallback)
+vi.mock('@google/generative-ai', () => ({
+    GoogleGenerativeAI: vi.fn(function () {
+        return {
+            getGenerativeModel: vi.fn(() => ({
+                generateContent: mockGenerateContent
+            }))
+        };
+    })
+}));
 
+// Mock firebase/ai
 vi.mock('firebase/ai', () => ({
     __esModule: true,
     getGenerativeModel: vi.fn(() => ({
