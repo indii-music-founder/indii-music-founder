@@ -376,9 +376,19 @@ export const setupDistributionHandlers = () => {
             if (password) args.push('--password', password);
             if (key) args.push('--key', key);
 
-            const report = await PythonBridge.runScript('distribution', scriptName, args, (progress) => {
-                event.sender.send('distribution:transmit-progress', { progress, host, protocol });
-            });
+            const report = await PythonBridge.runScript(
+                'distribution',
+                scriptName,
+                args,
+                (progress, log) => {
+                    if (progress >= 0) {
+                        event.sender.send('distribution:transmit-progress', { progress });
+                    }
+                    if (log) {
+                        event.sender.send('distribution:transmit-progress', { log });
+                    }
+                }
+            );
             return { success: report.status === 'SUCCESS', report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
