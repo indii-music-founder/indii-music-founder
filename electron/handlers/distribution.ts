@@ -385,6 +385,23 @@ export const setupDistributionHandlers = () => {
             if (port) args.push('--port', String(port));
             // Note: Password/Key are now passed via env vars, not CLI args
 
+            // SECURITY: Pass sensitive credentials via Environment Variables only
+            const env: Record<string, string> = {};
+            if (password) {
+                if (protocol === 'ASPERA') {
+                    env['ASPERA_SCP_PASS'] = password;
+                } else {
+                    env['SFTP_PASSWORD'] = password;
+                }
+            }
+            if (key) {
+                if (protocol === 'ASPERA') {
+                    env['ASPERA_KEY'] = key;
+                } else {
+                    env['SFTP_KEY'] = key;
+                }
+            }
+
             const report = await PythonBridge.runScript(
                 'distribution',
                 scriptName,
@@ -398,6 +415,7 @@ export const setupDistributionHandlers = () => {
                     }
                 },
                 env // Pass the secure environment
+                env
             );
             return { success: report.status === 'SUCCESS', report };
         } catch (error) {
