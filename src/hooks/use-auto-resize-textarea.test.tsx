@@ -45,9 +45,10 @@ describe('useAutoResizeTextarea', () => {
         // Should not have updated immediately due to debounce
         expect(textarea.style.height).toBe('50px');
 
-        // Fast-forward time
+        // Fast-forward time for debounce + RAF
         act(() => {
-            vi.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100); // debounce
+            vi.advanceTimersByTime(50); // RAF
         });
 
         expect(textarea.style.height).toBe('100px');
@@ -61,7 +62,8 @@ describe('useAutoResizeTextarea', () => {
 
         act(() => {
             window.dispatchEvent(new Event('resize'));
-            vi.advanceTimersByTime(100);
+            vi.advanceTimersByTime(100); // debounce
+            vi.advanceTimersByTime(50); // RAF
         });
 
         expect(textarea.style.height).toBe('80px');
