@@ -1,6 +1,7 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
+import { LoopDetector } from './LoopDetector';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -184,6 +185,9 @@ export class BaseAgent implements SpecializedAgent {
     // Prevents race conditions that cause agents to "dismantle" each other
     private static executionLocks: Map<string, Promise<any>> = new Map();
 
+    // Phase 2: Advanced loop detection to prevent stuck agents
+    private loopDetector: LoopDetector = new LoopDetector();
+
     constructor(config: AgentConfig) {
         this.id = config.id;
         this.name = config.name;
@@ -213,6 +217,7 @@ export class BaseAgent implements SpecializedAgent {
             delegate_task: async ({ targetAgentId, task }, context) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
+                const { DelegationLoopDetector } = await import('./LoopDetector');
 
                 if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
                     return toolError('Invalid delegation parameters', 'INVALID_ARGS');
@@ -224,6 +229,19 @@ export class BaseAgent implements SpecializedAgent {
                         'INVALID_AGENT_ID'
                     );
                 }
+
+                // Phase 2: Check for delegation loops
+                const traceId = context?.traceId || 'unknown';
+                const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
+                if (delegationCheck.isLoop) {
+                    console.warn(`[BaseAgent] Delegation loop detected: ${delegationCheck.reason}`);
+                    console.warn(`[BaseAgent] Chain: ${delegationCheck.pattern}`);
+                    return toolError(
+                        `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
+                        'DELEGATION_LOOP'
+                    );
+                }
+
                 const result = await agentService.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
                 // AgentService.runAgent returns AgentResponse, we wrap it
                 return {
@@ -543,7 +561,9 @@ ${task}
         const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 5;
-        let lastToolCall: { name: string; args: string } | null = null;
+
+        // Phase 2: Clear loop detector for new task execution
+        this.loopDetector.clear();
 
         // Lazy import MembershipService for budget checks
         const { MembershipService } = await import('@/services/MembershipService');
@@ -581,29 +601,23 @@ ${task}
 
                 if (functionCall) {
                     const { name, args } = functionCall;
-                    const argsStr = JSON.stringify(args);
 
-                    // Enhanced loop detection
-                    // 1. Check for exact same tool+args twice in a row
-                    if (lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
-                        console.warn(`[BaseAgent] Loop detected in ${this.id}: same tool ${name} called twice with same args`);
+                    // Phase 2: Advanced loop detection
+                    const loopCheck = this.loopDetector.detectLoop(name, args);
+                    if (loopCheck.isLoop) {
+                        console.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
+                        console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
+                        console.warn(`[BaseAgent] Recent calls: ${this.loopDetector.getRecentPattern()}`);
                         return {
-                            text: accumulatedResponse || 'Task ended due to potential loop.',
+                            text: accumulatedResponse || `Task ended: ${loopCheck.reason}`,
                             error: 'Loop detected'
                         };
                     }
 
-                    // 2. Check for speak being called excessively (anti-spam)
-                    if (name === 'speak' && lastToolCall?.name === 'speak') {
-                        console.warn(`[BaseAgent] Loop detected in ${this.id}: speak called multiple times consecutively`);
-                        return {
-                            text: accumulatedResponse || 'Task ended: excessive speak calls.',
-                            error: 'Loop detected (speak spam)'
-                        };
-                    }
+                    // Record this tool call for future loop detection
+                    this.loopDetector.recordToolCall(name, args);
 
-                    lastToolCall = { name, args: argsStr };
-
+                    const argsStr = JSON.stringify(args);
                     onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
                     let result: any;
