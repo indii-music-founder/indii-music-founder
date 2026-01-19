@@ -38,6 +38,16 @@ export class PythonBridge {
                 }
                 return arg;
             });
+            const sensitiveFlags = ['--password', '--key', '--access-token', '--refresh-token', '--api-key', '--secret'];
+            const redactedArgs = args.map((arg, index) => {
+                // Check if the PREVIOUS argument was a sensitive flag
+                if (index > 0 && sensitiveFlags.includes(args[index - 1])) {
+                    return '[REDACTED]';
+                }
+                return arg;
+            });
+
+            console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
             console.log(`[PythonBridge] Executing: ${python} ${fullScriptPath} ${redactedArgs.join(' ')}`);
 
