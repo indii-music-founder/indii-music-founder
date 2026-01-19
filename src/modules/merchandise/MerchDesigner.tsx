@@ -51,19 +51,6 @@ const ColorSwatch = ({ color, active, onClick, className }: { color: string, act
     />
 );
 
-const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
-    <div className={`p-2 rounded flex items-center justify-between text-[11px] font-medium tracking-tight ${active ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' : 'text-neutral-500 hover:bg-white/5'}`}>
-        <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-yellow-400' : 'bg-neutral-700'}`} />
-            <span>{label}</span>
-        </div>
-        <div className="flex gap-2">
-            {locked && <span className="text-[10px] opacity-20">🔒</span>}
-            {visible && <span className="text-[10px] opacity-20">👁️</span>}
-        </div>
-    </div>
-);
-
 export default function MerchDesigner() {
     // View State
     const [viewMode, setViewMode] = useState<ViewMode>('design');
