@@ -63,8 +63,36 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     loginAsGuest: async () => {
-        // SECURE: Guest login is disabled to enforce real authentication
-        console.error('Guest login is currently disabled.');
+        // Allow guest login if DEV
+        if (import.meta.env.DEV) {
+            const mockUser = {
+                uid: 'guest-user-123',
+                email: 'guest@indiios.com',
+                displayName: 'Guest Artist',
+                emailVerified: true,
+                isAnonymous: true,
+                metadata: {},
+                providerData: [],
+                refreshToken: '',
+                tenantId: null,
+                delete: async () => { },
+                getIdToken: async () => 'mock-token',
+                getIdTokenResult: async () => ({
+                    token: 'mock-token',
+                    signInProvider: 'custom',
+                    claims: {},
+                    authTime: Date.now().toString(),
+                    issuedAtTime: Date.now().toString(),
+                    expirationTime: (Date.now() + 3600000).toString(),
+                }),
+                reload: async () => { },
+                toJSON: () => ({}),
+            } as unknown as User;
+
+            set({ user: mockUser, authLoading: false });
+        } else {
+            console.error('Guest login is currently disabled.');
+        }
     },
 
     logout: async () => {
