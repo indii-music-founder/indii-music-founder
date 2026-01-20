@@ -209,14 +209,16 @@ export class BaseAgent implements SpecializedAgent {
         });
 
         this.functions = {
-            get_project_details: async ({ projectId }) => {
-                const { useStore } = await import('@/core/store');
-                const { projects } = useStore.getState();
-                const project = projects.find(p => p.id === projectId);
+            // Phase 3.5: Migrated to use execution context for isolated state access
+            get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
+                // Use execution context if available, fallback to direct store access for backwards compatibility
+                const projects = toolContext ? toolContext.get('projects') : (await import('@/core/store')).useStore.getState().projects;
+                const project = projects?.find((p: any) => p.id === projectId);
                 if (!project) return { error: 'Project not found' };
                 return project;
             },
-            delegate_task: async ({ targetAgentId, task }, context) => {
+            // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
+            delegate_task: async ({ targetAgentId, task }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -252,7 +254,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Delegated task to ${targetAgentId}`
                 };
             },
-            consult_experts: async ({ consultations }, context) => {
+            // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
+            consult_experts: async ({ consultations }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
 
@@ -281,7 +284,8 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError(`Consultation failed: ${message}`, 'EXECUTION_ERROR');
                 }
             },
-            schedule_task: async (args: Record<string, unknown>) => {
+            // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
+            schedule_task: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { targetAgentId, task, delayMinutes } = args as { targetAgentId: string; task: string; delayMinutes: number };
                 const { proactiveService } = await import('./ProactiveService');
                 const executeAt = Date.now() + (delayMinutes * 60000);
@@ -292,7 +296,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Task scheduled for ${new Date(executeAt).toLocaleString()}`
                 };
             },
-            subscribe_to_event: async (args: Record<string, unknown>) => {
+            // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
+            subscribe_to_event: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { eventType, task } = args as { eventType: string; task: string };
                 const { proactiveService } = await import('./ProactiveService');
                 // @ts-expect-error - eventType is dynamically checked in proactiveService
@@ -303,7 +308,8 @@ export class BaseAgent implements SpecializedAgent {
                     message: `Agent ${this.name} subscribed to ${eventType}`
                 };
             },
-            send_notification: async (args: Record<string, unknown>) => {
+            // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
+            send_notification: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { type, message } = args as { type: 'info' | 'success' | 'warning' | 'error'; message: string };
                 const { events } = await import('@/core/events');
                 events.emit('SYSTEM_ALERT', { level: type, message });
@@ -312,7 +318,7 @@ export class BaseAgent implements SpecializedAgent {
                     message: 'Notification sent'
                 };
             },
-            speak: async (args: Record<string, unknown>) => {
+            speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
                 const { AI } = await import('@/services/ai/AIService');
                 const { audioService } = await import('@/services/audio/AudioService');
@@ -638,7 +644,8 @@ ${task}
                         try {
                             const schema = this.toolSchemas.get(name);
                             if (schema) schema.parse(args);
-                            result = await this.functions[name](args, enrichedContext);
+                            // Phase 3.5: Pass execution context to tools for isolated state access
+                            result = await this.functions[name](args, enrichedContext, toolContext);
                         } catch (err: unknown) {
                             const msg = err instanceof Error ? err.message : String(err);
                             result = { success: false, error: msg };
@@ -646,7 +653,8 @@ ${task}
                     } else {
                         const { TOOL_REGISTRY } = await import('./tools');
                         if (TOOL_REGISTRY[name]) {
-                            result = await TOOL_REGISTRY[name](args);
+                            // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
+                            result = await TOOL_REGISTRY[name](args, toolContext);
                         } else {
                             result = { success: false, error: `Tool '${name}' not found.` };
                         }
