@@ -59,6 +59,12 @@ export interface ElectronAPI {
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
     };
 
+    // Video (Local Asset Management)
+    video: {
+        saveAsset: (url: string, filename: string) => Promise<string>;
+        openFolder: (filePath?: string) => Promise<void>;
+    };
+
     // Credentials
     credentials: {
         save: (id: string, creds: any) => Promise<void>;

@@ -9,6 +9,7 @@ import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
+import { registerVideoHandlers } from './handlers/video';
 import { configureSecurity } from './security';
 
 // Configure logging
@@ -153,6 +154,7 @@ if (!gotTheLock) {
         registerSFTPHandlers();
         registerDistributionHandlers();
         registerAgentHandlers();
+        registerVideoHandlers();
 
         createWindow();
     });

@@ -65,29 +65,29 @@ export class AgentExecutionContext {
             // App state
             currentModule: state.currentModule,
             currentProjectId: state.currentProjectId,
-            projects: state.projects ? (typeof structuredClone === 'function' ? structuredClone(state.projects) : [...state.projects]) : [],
+            projects: state.projects ? JSON.parse(JSON.stringify(state.projects)) : [],
 
             // Auth/Profile state
-            user: state.user ? (typeof structuredClone === 'function' ? structuredClone(state.user) : { ...state.user } as any) : null,
-            userProfile: state.userProfile ? (typeof structuredClone === 'function' ? structuredClone(state.userProfile) : { ...state.userProfile } as any) : null,
+            user: state.user ? JSON.parse(JSON.stringify(state.user)) : null,
+            userProfile: state.userProfile ? JSON.parse(JSON.stringify(state.userProfile)) : null,
             currentOrganizationId: state.currentOrganizationId,
-            organizations: state.organizations ? (typeof structuredClone === 'function' ? structuredClone(state.organizations) : [...state.organizations]) : [],
+            organizations: state.organizations ? JSON.parse(JSON.stringify(state.organizations)) : [],
 
             // Agent state
-            agentHistory: state.agentHistory ? (typeof structuredClone === 'function' ? structuredClone(state.agentHistory) : [...state.agentHistory]) : [],
+            agentHistory: state.agentHistory ? JSON.parse(JSON.stringify(state.agentHistory)) : [],
             agentMode: state.agentMode,
             chatChannel: state.chatChannel,
 
             // Creative state
-            canvasImages: state.canvasImages ? (typeof structuredClone === 'function' ? structuredClone(state.canvasImages) : [...state.canvasImages]) : [],
-            generatedHistory: state.generatedHistory ? (typeof structuredClone === 'function' ? structuredClone(state.generatedHistory) : [...state.generatedHistory]) : [],
+            canvasImages: state.canvasImages ? JSON.parse(JSON.stringify(state.canvasImages)) : [],
+            generatedHistory: state.generatedHistory ? JSON.parse(JSON.stringify(state.generatedHistory)) : [],
 
             // Finance state
-            finance: state.finance ? (typeof structuredClone === 'function' ? structuredClone(state.finance) : { ...state.finance } as any) : undefined,
+            finance: state.finance ? JSON.parse(JSON.stringify(state.finance)) : undefined,
 
             // Workflow state
-            nodes: state.nodes ? (typeof structuredClone === 'function' ? structuredClone(state.nodes) : [...state.nodes]) : [],
-            edges: state.edges ? (typeof structuredClone === 'function' ? structuredClone(state.edges) : [...state.edges]) : [],
+            nodes: state.nodes ? JSON.parse(JSON.stringify(state.nodes)) : [],
+            edges: state.edges ? JSON.parse(JSON.stringify(state.edges)) : [],
         };
 
         return Object.freeze(snapshot);

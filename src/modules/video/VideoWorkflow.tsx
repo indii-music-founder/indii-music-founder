@@ -42,6 +42,7 @@ export const processJobUpdate = (
         currentOrganizationId: string | undefined,
         localPrompt: string,
         addToHistory: (item: HistoryItem) => void,
+        updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void,
         setActiveVideo: (item: HistoryItem) => void,
         setJobId: (id: string | null) => void,
         setJobStatus: (status: JobStatus) => void,
@@ -69,9 +70,26 @@ export const processJobUpdate = (
         }
 
         if (newStatus === 'completed' && data.videoUrl) {
+            // ⚡ Automatic Local Save (Veo 3.1 Requirement)
+            // The AI community/app needs access to this file locally first.
+            const filename = `veo_${currentJobId}.mp4`;
+            let localPath = '';
+
+            // Trigger background download via Electron
+            // We don't await this to avoid blocking the UI update, but we log it
+            if (window.electronAPI?.video?.saveAsset) {
+                window.electronAPI.video.saveAsset(data.videoUrl, filename)
+                    .then((path: string) => {
+                        console.log('Video saved locally to:', path);
+                        deps.updateHistoryItem(currentJobId, { localPath: path });
+                    })
+                    .catch((err: any) => console.error('Failed to save to local folder:', err));
+            }
+
             const newAsset = {
                 id: currentJobId,
                 url: data.videoUrl,
+                localPath: '', // Will be updated async
                 prompt: data.prompt || deps.localPrompt,
                 type: 'video' as const,
                 timestamp: Date.now(),
@@ -100,6 +118,7 @@ export default function VideoWorkflow() {
     const {
         generatedHistory,
         addToHistory,
+        updateHistoryItem,
         setPrompt,
         studioControls,
         currentProjectId,
@@ -113,6 +132,7 @@ export default function VideoWorkflow() {
     } = useStore(useShallow((state) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
+        updateHistoryItem: state.updateHistoryItem,
         setPrompt: state.setPrompt,
         studioControls: state.studioControls,
         currentProjectId: state.currentProjectId,
@@ -231,6 +251,16 @@ export default function VideoWorkflow() {
                     // Extract metadata from Veo 3.1 output (enforcing contract)
                     const metadata = data.output?.metadata || data.metadata;
 
+                    // ⚡ Automatic Local Save (Veo 3.1 Requirement)
+                    const filename = `veo_${jobId}.mp4`;
+
+                    // Trigger background download via Electron
+                    if (window.electronAPI?.video?.saveAsset) {
+                        window.electronAPI.video.saveAsset(data.videoUrl, filename)
+                            .then((path: string) => console.log('Video saved locally to:', path))
+                            .catch((err: any) => console.error('Failed to save to local folder:', err));
+                    }
+
                     const newAsset = {
                         id: jobId,
                         url: data.videoUrl,
@@ -259,6 +289,7 @@ export default function VideoWorkflow() {
                 currentOrganizationId,
                 localPrompt: localPromptRef.current,
                 addToHistory,
+                updateHistoryItem,
                 setActiveVideo,
                 setJobId,
                 setJobStatus,
@@ -330,9 +361,21 @@ export default function VideoWorkflow() {
                 // If the URL is provided immediately, complete it. Otherwise, set jobId to listen for updates.
                 if (firstResult.url) {
                     results.forEach(res => {
+                        const filename = `veo_${res.id}.mp4`;
+
+                        if (window.electronAPI?.video?.saveAsset) {
+                            window.electronAPI.video.saveAsset(res.url, filename)
+                                .then((path: string) => {
+                                    console.log('Video saved locally to:', path);
+                                    updateHistoryItem(res.id, { localPath: path });
+                                })
+                                .catch((err: any) => console.error('Failed to save to local folder:', err));
+                        }
+
                         const newAsset = {
                             id: res.id,
                             url: res.url,
+                            localPath: '', // Will be updated async
                             prompt: res.prompt,
                             type: 'video' as const,
                             timestamp: Date.now(),
