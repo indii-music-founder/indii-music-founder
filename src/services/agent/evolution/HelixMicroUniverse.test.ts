@@ -131,4 +131,42 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     // Note: Floating point precision might need CloseTo
     expect(offspring.parameters.temperature).toBeCloseTo(0.8);
   });
+
+  it('Mutation Safety: Rejects invalid JSON/Empty Mutations and Retries (Death to the buggy)', async () => {
+    // 1. Setup Flaky Mutation Logic
+    // Simulate that the LLM returns broken JSON or empty prompts for the first 2 attempts,
+    // then finally succeeds.
+    const error = new Error("Helix Guardrail: Invalid JSON Syntax");
+    mockMutationFn
+        .mockRejectedValueOnce(error) // Fail 1 (Invalid JSON)
+        .mockResolvedValueOnce({ ...mockGene, systemPrompt: '' }) // Fail 2 (Empty Prompt - Logic should catch this)
+        .mockResolvedValue({ ...mockGene, id: 'child-valid', systemPrompt: 'VALID_MUTATION', parameters: { temperature: 0.5 } }); // Success
+
+    // 2. Setup Population (Need breeding)
+    const population: AgentGene[] = [
+      { ...mockGene, id: 'p1', fitness: 1.0 },
+      { ...mockGene, id: 'p2', fitness: 0.9 },
+      { ...mockGene, id: 'p3', fitness: 0.8 } // extra to ensure pool size
+    ];
+
+    // 3. Evolve
+    const nextGen = await engine.evolve(population);
+
+    // 4. Assertions
+
+    // Check Population Integrity (Still need 3 agents)
+    expect(nextGen).toHaveLength(3);
+
+    // Check that we eventually got a valid offspring
+    const offspring = nextGen[2];
+    expect(offspring.systemPrompt).toBe('VALID_MUTATION');
+
+    // Verify Retries happened
+    // Should be called at least 3 times (Fail, Fail, Success)
+    // Actually:
+    // 1. mockRejectedValueOnce -> throws error inside mutationFn
+    // 2. mockResolvedValueOnce -> returns empty prompt -> Caught by "Empty Soul" check in Engine
+    // 3. mockResolvedValue -> returns valid
+    expect(mockMutationFn.mock.calls.length).toBeGreaterThanOrEqual(3);
+  });
 });
