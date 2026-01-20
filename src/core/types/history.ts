@@ -13,4 +13,5 @@ export interface HistoryItem {
     tags?: string[];
     subject?: string;
     origin?: 'generated' | 'uploaded';
+    localPath?: string; // Path to locally saved file (Electron/Veo)
 }

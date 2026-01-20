@@ -69,6 +69,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
     },
 
+    // Video (Local Asset Management)
+    video: {
+        saveAsset: (url: string, filename: string) => ipcRenderer.invoke('video:save-asset', url, filename),
+        openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
+    },
+
     // Distribution
     distribution: {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),

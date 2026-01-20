@@ -41,7 +41,8 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     instances: [{ prompt: prompt }],
                     parameters: {
                         sampleCount: 1,
-                        aspectRatio: options?.aspectRatio || "16:9"
+                        aspectRatio: options?.aspectRatio || "16:9",
+                        personGeneration: "allow_adult"
                     }
                 };
 
@@ -62,50 +63,65 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
 
                 // VEO 3.1: First Frame (Image-to-Video)
-                // options.image comes from VideoService as { imageBytes: string, mimeType: string }
-                // options.firstFrame comes from VideoGenerationService as Data URI string
                 let startImageBytes: string | undefined;
+
+                const fetchImageAsBase64 = async (input: string | undefined): Promise<string | undefined> => {
+                    if (!input) return undefined;
+                    if (input.startsWith('data:image')) {
+                        return input.replace(/^data:image\/\w+;base64,/, '');
+                    }
+                    if (input.startsWith('http')) {
+                        try {
+                            const res = await fetch(input);
+                            if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
+                            const buffer = await res.arrayBuffer();
+                            return Buffer.from(buffer).toString('base64');
+                        } catch (err) {
+                            console.error(`[Inngest] Failed to fetch frame from URL: ${input}`, err);
+                            return undefined;
+                        }
+                    }
+                    return input; // Assume raw base64
+                };
 
                 if (options?.image?.imageBytes) {
                     startImageBytes = options.image.imageBytes;
-                } else if (options?.firstFrame) {
-                    startImageBytes = options.firstFrame.replace(/^data:image\/\w+;base64,/, '');
+                } else {
+                    startImageBytes = await fetchImageAsBase64(options?.firstFrame);
                 }
 
                 if (startImageBytes) {
                     requestBody.instances[0].image = {
                         bytesBase64Encoded: startImageBytes
                     };
-                    // Required for image generation
                     requestBody.parameters.personGeneration = "allow_adult";
                 }
 
                 // VEO 3.1: Last Frame (Interpolation)
-                // options.lastFrame comes as Data URI string: "data:image/png;base64,..."
                 if (options?.lastFrame) {
-                    const cleanLastFrame = options.lastFrame.replace(/^data:image\/\w+;base64,/, '');
-                    requestBody.parameters.lastFrame = {
-                        bytesBase64Encoded: cleanLastFrame
-                    };
-                    // Ensure personGeneration is set if not already
-                    requestBody.parameters.personGeneration = "allow_adult";
+                    const lastImageBytes = await fetchImageAsBase64(options.lastFrame);
+                    if (lastImageBytes) {
+                        requestBody.parameters.lastFrame = {
+                            bytesBase64Encoded: lastImageBytes
+                        };
+                        requestBody.parameters.personGeneration = "allow_adult";
+                    }
                 }
 
                 // VEO 3.1: Ingredients (Reference Images - Up to 3)
                 const refImages = options?.referenceImages || options?.ingredients;
                 if (refImages && Array.isArray(refImages)) {
-                    requestBody.parameters.referenceImages = refImages.slice(0, 3).map((ref: any) => {
-                        // Extract bytes if it's a nested object (VideoService formats it this way)
-                        const rawBytes = ref.image?.imageBytes || ref.data || ref || "";
-                        const cleanBytes = typeof rawBytes === 'string' ? rawBytes.replace(/^data:image\/\w+;base64,/, '') : rawBytes;
+                    requestBody.parameters.referenceImages = await Promise.all(refImages.slice(0, 3).map(async (ref: any) => {
+                        const rawContent = ref.image?.imageBytes || ref.data || ref || "";
+                        const cleanBytes = await fetchImageAsBase64(rawContent);
 
                         return {
                             image: {
-                                bytesBase64Encoded: cleanBytes
+                                bytesBase64Encoded: cleanBytes || ""
                             },
                             referenceType: ref.referenceType || "ASSET"
                         };
-                    });
+                    }));
                     requestBody.parameters.personGeneration = "allow_adult";
                 }
 
@@ -211,8 +227,17 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                             }
                         }
 
+                        let downloadUrl = sample.video.uri;
+
+                        // Convert gs:// to public HTTPS URL if needed
+                        if (downloadUrl.startsWith('gs://')) {
+                            const path = downloadUrl.replace('gs://', '').split('/').slice(1).join('/');
+                            const bucketName = downloadUrl.replace('gs://', '').split('/')[0];
+                            downloadUrl = `https://storage.googleapis.com/${bucketName}/${path}`;
+                        }
+
                         return {
-                            videoUri: sample.video.uri,
+                            videoUri: downloadUrl,
                             metadata: {
                                 mime_type: videoMetadata.mimeType || "video/mp4",
                                 duration_seconds: durationSeconds,
