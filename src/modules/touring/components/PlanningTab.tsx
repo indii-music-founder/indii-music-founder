@@ -88,9 +88,10 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
                             </div>
 
                             <div className="space-y-2">
-                                <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Route Waypoints</label>
+                                <label htmlFor="newLocation" className="text-xs text-gray-400 font-bold uppercase tracking-wider">Route Waypoints</label>
                                 <div className="flex gap-2">
                                     <input
+                                        id="newLocation"
                                         type="text"
                                         value={newLocation}
                                         onChange={(e) => setNewLocation(e.target.value)}
@@ -290,16 +291,18 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
 
                             <div className="grid grid-cols-2 gap-4 mb-4">
                                 <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">City</label>
+                                    <label htmlFor="editCity" className="text-xs text-gray-400 font-bold uppercase tracking-wider">City</label>
                                     <input
+                                        id="editCity"
                                         value={selectedStop.city}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, city: e.target.value })}
                                         className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
                                     />
                                 </div>
                                 <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Venue</label>
+                                    <label htmlFor="editVenue" className="text-xs text-gray-400 font-bold uppercase tracking-wider">Venue</label>
                                     <input
+                                        id="editVenue"
                                         value={selectedStop.venue}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, venue: e.target.value })}
                                         className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"
@@ -309,8 +312,9 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
 
                             <div className="grid grid-cols-2 gap-4 mb-6">
                                 <div className="space-y-1">
-                                    <label className="text-xs text-gray-400 font-bold uppercase tracking-wider">Activity Type</label>
+                                    <label htmlFor="editActivityType" className="text-xs text-gray-400 font-bold uppercase tracking-wider">Activity Type</label>
                                     <select
+                                        id="editActivityType"
                                         value={selectedStop.type}
                                         onChange={(e) => setSelectedStop({ ...selectedStop, type: e.target.value })}
                                         className="w-full bg-bg-dark border border-gray-700 rounded p-2 text-sm text-white focus:border-yellow-500 outline-none transition-colors"

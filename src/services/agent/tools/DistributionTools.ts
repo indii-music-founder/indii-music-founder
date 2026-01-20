@@ -12,6 +12,8 @@ import { db, auth } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
+import type { AnyToolFunction } from '../types';
 
 // ISRC Registry counter (in production, this would be in Firestore)
 let isrcSequence = Math.floor(Math.random() * 90000) + 10000;
@@ -25,14 +27,14 @@ let isrcSequence = Math.floor(Math.random() * 90000) + 10000;
 /**
  * Prepare a release for distribution using the Industrial Engine (Python/DDEX).
  */
-async function prepare_release(args: {
+const prepare_release = wrapTool('prepare_release', async (args: {
     title: string;
     artist: string;
     upc: string;
     isrc: string;
     label?: string;
     releaseType?: string;
-}): Promise<string> {
+}) => {
     const { title, artist, upc, isrc, label = 'indii Records', releaseType = 'Single' } = args;
 
     // 1. Try Industrial Engine (Electron)
@@ -55,15 +57,11 @@ async function prepare_release(args: {
                 genre: 'Pop'
             });
 
-            // The python script returns a string or object. The handler returns it directly.
-            // If success, it returns { success: true, file: ... } or similar.
-            // Actually generateDDEX returns Promise<any>, let's assume standard IPC response format.
-
-            return JSON.stringify({
-                success: true,
-                data: rawDdex, // Contains .xml file path and content validation
+            return {
+                engine: 'Industrial (Python)',
+                ddex: rawDdex,
                 message: `Industrial DDEX ERN 4.3 generated via Python Engine.`
-            });
+            };
         } catch (e) {
             console.warn('Industrial DDEX generation failed, falling back to JS Service:', e);
         }
@@ -71,12 +69,11 @@ async function prepare_release(args: {
 
     // 2. Fallback to JS Service (Web Mode)
     try {
-        // ... (Existing JS implementation)
         if (!IdentifierService.validateISRC(isrc)) {
-            return JSON.stringify({ success: false, error: `Invalid ISRC format: ${isrc}` });
+            return toolError(`Invalid ISRC format: ${isrc}`, 'INVALID_ISRC');
         }
         if (!IdentifierService.validateUPC(upc)) {
-            return JSON.stringify({ success: false, error: `Invalid UPC format: ${upc}` });
+            return toolError(`Invalid UPC format: ${upc}`, 'INVALID_UPC');
         }
 
         const metadata: ExtendedGoldenMetadata = {
@@ -105,7 +102,7 @@ async function prepare_release(args: {
         };
 
         const ernResult = await ernService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: false });
-        if (!ernResult.success) return JSON.stringify({ success: false, error: ernResult.error });
+        if (!ernResult.success) return toolError(ernResult.error || 'ERN Generation Failed', 'ERN_ERROR');
 
         // Persist (Mirroring existing logic)
         const userId = auth.currentUser?.uid;
@@ -116,27 +113,23 @@ async function prepare_release(args: {
             });
         }
 
-        return JSON.stringify({
-            success: true,
-            data: {
-                engine: 'JS (Web Fallback)',
-                ern_version: '4.3',
-                message_id: `MSG-${Date.now()}`,
-                release: { title, artist, upc, isrc },
-                xml_length: ernResult.xml?.length || 0
-            },
-            message: `DDEX ERN 4.3 generated (Web Fallback)`
-        });
+        return {
+            engine: 'JS (Web Fallback)',
+            ern_version: '4.3',
+            message_id: `MSG-${Date.now()}`,
+            release: { title, artist, upc, isrc },
+            xml_length: ernResult.xml?.length || 0
+        };
     } catch (error) {
-        return JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'Unknown error' });
+        return toolError(error instanceof Error ? error.message : 'Unknown error', 'EXECUTION_ERROR');
     }
-}
+});
 
 // ... (run_audio_qc restored)
 async function run_audio_qc(args: {
     filePath: string;
     checkAtmos?: boolean;
-}): Promise<string> {
+}) {
     const { filePath, checkAtmos = false } = args;
 
     // Check if we're in Electron environment
@@ -150,46 +143,38 @@ async function run_audio_qc(args: {
             // Execute forensics via service (which handles IPC and progress updates)
             const report = await distributionService.runLocalForensics(taskId, filePath);
 
-            return JSON.stringify({
-                success: true,
-                data: report,
+            return {
+                report,
                 message: `Audio QC completed for ${filePath}`
-            });
+            };
         } catch (error) {
-            return JSON.stringify({
-                success: false,
-                error: error instanceof Error ? error.message : 'Audio analysis failed'
-            });
+            return toolError(error instanceof Error ? error.message : 'Audio analysis failed', 'QC_FAILED');
         }
     }
 
     // Browser fallback - return basic validation
-    return JSON.stringify({
-        success: true,
-        data: {
-            file: filePath,
-            environment: 'browser',
-            checks: {
-                bit_depth: { value: 'unknown', status: 'SKIPPED' },
-                sample_rate: { value: 'unknown', status: 'SKIPPED' },
-                spectral_cutoff: { detected: false, status: 'SKIPPED' },
-                atmos_compliance: checkAtmos ? { status: 'SKIPPED', reason: 'Requires Electron' } : null
-            },
-            overall: 'PARTIAL',
-            warnings: ['Full audio QC requires Electron environment']
+    return {
+        file: filePath,
+        environment: 'browser',
+        checks: {
+            bit_depth: { value: 'unknown', status: 'SKIPPED' },
+            sample_rate: { value: 'unknown', status: 'SKIPPED' },
+            spectral_cutoff: { detected: false, status: 'SKIPPED' },
+            atmos_compliance: checkAtmos ? { status: 'SKIPPED', reason: 'Requires Electron' } : null
         },
-        message: 'Partial QC - full analysis requires desktop app'
-    });
+        overall: 'PARTIAL',
+        warnings: ['Full audio QC requires Electron environment']
+    };
 }
 
 /**
  * Issue an ISRC using the Authority Layer (Python/Registry).
  */
-async function issue_isrc(args: {
+const issue_isrc = wrapTool('issue_isrc', async (args: {
     trackTitle: string;
     artist: string;
     year?: number;
-}): Promise<string> {
+}) => {
     const { trackTitle, artist, year = new Date().getFullYear() } = args;
 
     // 1. Try Authority Layer (Electron)
@@ -211,15 +196,11 @@ async function issue_isrc(args: {
                 year: year
             });
 
-            return JSON.stringify({
-                success: true,
-                data: {
-                    isrc: result.isrc,
-                    source: 'Authority Layer (Python)',
-                    registry: 'Local'
-                },
-                message: `ISRC ${result.isrc} issued and registered via Authority Layer.`
-            });
+            return {
+                isrc: result.isrc,
+                source: 'Authority Layer (Python)',
+                registry: 'Local'
+            };
         } catch (e) {
             console.warn('Authority Layer ISRC generation failed, falling back to JS:', e);
         }
@@ -238,27 +219,29 @@ async function issue_isrc(args: {
             });
         }
 
-        return JSON.stringify({
-            success: true,
-            data: { isrc, source: 'JS Service', valid: true },
-            message: `ISRC ${isrc} issued (Web Fallback)`
-        });
+        return {
+            isrc,
+            source: 'JS Service',
+            valid: true,
+            track_title: trackTitle,
+            registry_status: 'REGISTERED'
+        };
     } catch (error) {
-        return JSON.stringify({ success: false, error: error instanceof Error ? error.message : 'ISRC failed' });
+        return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
-}
+});
 
 /**
  * Certify tax profile using the Bank Layer (Python/Compliance).
  */
-async function certify_tax_profile(args: {
+const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     userId: string;
     isUsPerson: boolean;
     isEntity?: boolean;
     country: string;
     tin: string;
     signedUnderPerjury: boolean;
-}): Promise<string> {
+}) => {
     const { userId, isUsPerson, isEntity = false, country, tin, signedUnderPerjury } = args;
 
     // 1. Try Bank Layer (Electron)
@@ -278,16 +261,11 @@ async function certify_tax_profile(args: {
 
             // Use 'certified' boolean and valid properties from TaxReport interface
             if (certResult.report?.certified && taxResult.report) {
-                return JSON.stringify({
-                    success: true,
-                    data: {
-                        status: certResult.report.payout_status, // "status" -> "payout_status"
-                        withholding_rate: taxResult.report.withholding_rate,
-                        // treaty_ben_claimed not in interface, omitting or mapping if known
-                        engine: 'Bank Layer (Python)'
-                    },
-                    message: `Tax profile certified via Bank Layer. Withholding Rate: ${taxResult.report.withholding_rate}%.`
-                });
+                return {
+                    status: certResult.report.payout_status, // "status" -> "payout_status"
+                    withholding_rate: taxResult.report.withholding_rate,
+                    engine: 'Bank Layer (Python)'
+                };
             }
         } catch (e) {
             console.warn('Bank Layer certification failed, falling back to JS:', e);
@@ -295,38 +273,60 @@ async function certify_tax_profile(args: {
     }
 
     // 2. Fallback to JS Service
-    // ... (Existing JS implementation)
     let tinValid = false;
     let tinMessage = 'Unknown';
     if (!tin) {
         tinMessage = 'Missing TIN';
     } else if (isUsPerson) {
         tinValid = /^\d{3}-\d{2}-\d{4}$/.test(tin) || /^\d{2}-\d{7}$/.test(tin);
-        tinMessage = tinValid ? 'Valid US TIN' : 'Invalid US TIN';
+        tinMessage = tinValid ? 'Valid US TIN' : 'TIN Match Fail (Invalid Format)';
     } else {
         tinValid = tin.length >= 8;
-        tinMessage = tinValid ? 'Valid Foreign TIN' : 'Invalid Foreign TIN';
+        tinMessage = tinValid ? 'Valid Foreign TIN' : 'TIN Match Fail (Invalid Foreign Format)';
     }
 
     const certified = signedUnderPerjury && tinValid;
 
-    // ... (Persistence logic tailored for brevity in this replacement)
-    return JSON.stringify({
-        success: certified,
-        message: certified ? `Tax profile certified (Web Fallback)` : `Certification failed: ${tinMessage}`
-    });
-}
+    // Determine form type
+    let formType = 'Unknown';
+    if (isUsPerson) {
+        formType = 'W-9';
+    } else if (isEntity) {
+        formType = 'W-8BEN-E';
+    } else {
+        formType = 'W-8BEN';
+    }
+
+    // Determine payout status
+    let payoutStatus = 'HELD';
+    if (certified) {
+        payoutStatus = 'ACTIVE';
+    }
+
+    if (!certified) {
+        return toolError(`Certification failed: ${tinMessage}`, 'CERTIFICATION_FAILED');
+    }
+
+    return {
+        form_type: formType,
+        tin_valid: tinValid,
+        payout_status: payoutStatus,
+        tin_message: tinMessage,
+        certified: certified,
+        withholding_rate: isUsPerson ? 0 : 30 // Simplified mock
+    };
+});
 
 /**
  * Calculate payout using the Bank Layer (Python/Waterfall).
  */
-async function calculate_payout(args: {
+const calculate_payout = wrapTool('calculate_payout', async (args: {
     grossRevenue: number;
     isrc?: string;
     indiiFeePercent?: number;
     recoupableExpenses?: number;
     splits: { name: string; email?: string; percentage: number; role?: string }[];
-}): Promise<string> {
+}) => {
     const { grossRevenue, isrc, indiiFeePercent = 10, recoupableExpenses = 0, splits } = args;
 
     // 1. Try Bank Layer (Electron)
@@ -343,39 +343,38 @@ async function calculate_payout(args: {
                 expenses: recoupableExpenses
             });
 
-            const netRevenue = waterfallResult.report ? waterfallResult.report.net_revenue : 0;
-
-            return JSON.stringify({
-                success: true,
-                data: waterfallResult.report,
-                message: `Industrial Waterfall Executed. Net Distributable: $${netRevenue}`
-            });
+            return {
+                ...waterfallResult.report,
+                message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
+            };
         } catch (e) {
             console.warn('Bank Layer waterfall failed, falling back to JS:', e);
         }
     }
 
     // 2. Fallback to JS (RoyaltyService)
-    // ... (Existing logic shortened for clarity)
     const indiiFee = grossRevenue * (indiiFeePercent / 100);
     const net = grossRevenue - indiiFee - recoupableExpenses;
     const totalPaid = net > 0 ? net : 0;
 
-    return JSON.stringify({
-        success: true,
-        data: { gross: grossRevenue, paid: totalPaid, engine: 'JS Service' },
-        message: `Payout calculated (Web Fallback). Total Distributed: $${totalPaid.toFixed(2)}`
-    });
-}
+    return {
+        gross_revenue: grossRevenue,
+        indii_fee: indiiFee,
+        recouped_expenses: recoupableExpenses,
+        net_distributable: totalPaid,
+        paid: totalPaid,
+        engine: 'JS Service'
+    };
+});
 
 /**
  * Run metadata QC using the Brain Layer (Python/Validator).
  */
-async function run_metadata_qc(args: {
+const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
     title: string;
     artist: string;
     artworkUrl?: string;
-}): Promise<string> {
+}) => {
     const { title, artist, artworkUrl } = args;
 
     // 1. Try Brain Layer (Electron)
@@ -390,36 +389,57 @@ async function run_metadata_qc(args: {
             });
 
             if (result.report) {
-                return JSON.stringify({
-                    success: result.report.valid,
-                    data: result.report,
+                return {
+                    ...result.report,
                     message: result.report.valid ? 'QC Passed' : `QC Failed: ${result.report.errors.length} errors`
-                });
+                };
             }
         } catch (e) {
             console.warn('Brain Layer QC failed, falling back to JS:', e);
         }
     }
 
-    // 2. Fallback to JS
-    const errors = [];
+    // 2. Fallback to JS - Robust Validation to match Python logic
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    let status = 'PASS';
+
     if (!title) errors.push('Missing Title');
     if (!artist) errors.push('Missing Artist');
+    if (!artworkUrl) errors.push('Missing artwork URL - required for distribution');
 
-    return JSON.stringify({
-        success: errors.length === 0,
-        data: { errors, engine: 'JS Simple Check' },
-        message: errors.length === 0 ? 'Basic QC Passed' : 'Basic QC Failed'
-    });
-}
+    if (artist && (artist.toLowerCase() === 'various artists' || artist.toLowerCase() === 'unknown artist')) {
+        errors.push('Generic artist name detected - will be rejected by DSPs');
+    }
+
+    if (title && title === title.toUpperCase() && /[a-zA-Z]/.test(title)) {
+        warnings.push('ALL CAPS title detected - Apple/Spotify recommend Title Case');
+        if (status === 'PASS') status = 'WARN';
+    }
+
+    if (title && (title.toLowerCase().includes('feat.') || title.toLowerCase().includes('ft.'))) {
+        errors.push('Featured artist in title - must be in artist field per DDEX standard');
+    }
+
+    if (errors.length > 0) {
+        status = 'FAIL';
+    }
+
+    return {
+        status,
+        errors,
+        warnings,
+        engine: 'JS Robust Check'
+    };
+});
 
 
 /**
  * Generate (The MLC) BWARM CSV via Keys Layer.
  */
-async function generate_bwarm(args: {
+const generate_bwarm = wrapTool('generate_bwarm', async (args: {
     works: Array<{ title: string; writer_last: string; writer_first: string; writer_ipi?: string }>;
-}): Promise<string> {
+}) => {
     const { works } = args;
 
     // 1. Try Keys Layer (Electron)
@@ -429,41 +449,33 @@ async function generate_bwarm(args: {
                 title: w.title,
                 writers: [`${w.writer_first} ${w.writer_last}`.trim()],
                 isrc: '', // Optional/Unknown
-                // Pass through other props if needed by Python, but ensure strict typing matches BWarmWork
             }));
 
             const result = await window.electronAPI.distribution.generateBWARM({ works: mappedWorks });
 
-            return JSON.stringify({
-                success: true,
-                data: {
-                    csv: result.csv, // Raw CSV string
-                    report: result.report,
-                    engine: 'Keys Layer (Python)'
-                },
-                message: `BWARM CSV generated successfully with ${works.length} works.`
-            });
+            return {
+                csv: result.csv, // Raw CSV string
+                report: result.report,
+                engine: 'Keys Layer (Python)'
+            };
         } catch (e) {
             console.warn('Keys Layer BWARM generation failed:', e);
-            return JSON.stringify({ success: false, error: e instanceof Error ? e.message : 'Unknown error' });
+            throw e;
         }
     }
 
-    return JSON.stringify({
-        success: false,
-        message: 'BWARM generation requires Electron environment (Keys Layer).'
-    });
-}
+    return toolError('BWARM generation requires Electron environment (Keys Layer).', 'ELECTRON_REQUIRED');
+});
 
 /**
  * Check Merlin Network compliance via Keys Layer.
  */
-async function check_merlin_status(args: {
+const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     total_tracks: number;
     has_isrcs: boolean;
     has_upcs: boolean;
     exclusive_rights: boolean;
-}): Promise<string> {
+}) => {
     const { total_tracks, has_isrcs, has_upcs, exclusive_rights } = args;
 
     // 1. Try Keys Layer (Electron)
@@ -471,34 +483,26 @@ async function check_merlin_status(args: {
         try {
             const result = await window.electronAPI.distribution.checkMerlinStatus({
                 tracks: [], // Add required 'tracks' array (empty for simple pre-check if supported by python, or mock)
-                // If python requires tracks to calculate score, this might fail logic-wise but pass types
                 ...args
             });
 
             if (result.report) {
-                return JSON.stringify({
-                    success: true,
-                    data: result.report,
-                    message: `Merlin Check Complete: ${result.report.status} (Score: ${result.report.passed_count})`
-                });
+                return result.report;
             }
             throw new Error("No report returned");
 
         } catch (e) {
             console.warn('Keys Layer Merlin check failed:', e);
-            return JSON.stringify({ success: false, error: e instanceof Error ? e.message : 'Unknown error' });
+            throw e;
         }
     }
 
-    return JSON.stringify({
-        success: false,
-        message: 'Merlin check requires Electron environment (Keys Layer).'
-    });
-}
+    return toolError('Merlin check requires Electron environment (Keys Layer).', 'ELECTRON_REQUIRED');
+});
 
-export const DistributionTools: Record<string, (args: any) => Promise<string>> = {
+export const DistributionTools: Record<string, AnyToolFunction> = {
     prepare_release,
-    run_audio_qc,
+    run_audio_qc: wrapTool('run_audio_qc', run_audio_qc),
     issue_isrc,
     certify_tax_profile,
     calculate_payout,

@@ -10,7 +10,7 @@
  * - Better debugging and change tracking
  */
 
-import type { AgentExecutionContext } from './AgentExecutionContext';
+import type { AgentExecutionContext } from './context/AgentExecutionContext';
 import type { StoreState } from '@/core/store';
 
 /**
@@ -18,7 +18,7 @@ import type { StoreState } from '@/core/store';
  * but routes through ExecutionContext for isolation
  */
 export class ToolExecutionContext {
-    constructor(private executionContext: AgentExecutionContext) {}
+    constructor(private executionContext: AgentExecutionContext) { }
 
     /**
      * Get state (routes through execution context)

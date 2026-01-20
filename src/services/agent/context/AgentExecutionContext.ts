@@ -48,29 +48,49 @@ export class AgentExecutionContext {
     }
 
     /**
+     * Starts the execution context (architectural compatibility).
+     * The snapshot is already taken in the constructor, so this is a no-op
+     * but provided for consistency with modular transaction managers.
+     */
+    async start(): Promise<void> {
+        return Promise.resolve();
+    }
+
+    /**
      * Create deep snapshot of relevant state
      * (Only snapshot what agents actually need to avoid memory bloat)
      */
     private createSnapshot(state: StoreState): Readonly<Partial<StoreState>> {
-        return Object.freeze({
-            // User/project context
-            user: state.user ? { ...state.user } : undefined,
-            activeOrg: state.activeOrg,
+        const snapshot: any = {
+            // App state
+            currentModule: state.currentModule,
             currentProjectId: state.currentProjectId,
-            projects: state.projects ? [...state.projects] : [],
+            projects: state.projects ? (typeof structuredClone === 'function' ? structuredClone(state.projects) : [...state.projects]) : [],
 
-            // Agent state (read-only for most agents)
-            agentHistory: state.agentHistory ? [...state.agentHistory] : [],
+            // Auth/Profile state
+            user: state.user ? (typeof structuredClone === 'function' ? structuredClone(state.user) : { ...state.user } as any) : null,
+            userProfile: state.userProfile ? (typeof structuredClone === 'function' ? structuredClone(state.userProfile) : { ...state.userProfile } as any) : null,
+            currentOrganizationId: state.currentOrganizationId,
+            organizations: state.organizations ? (typeof structuredClone === 'function' ? structuredClone(state.organizations) : [...state.organizations]) : [],
+
+            // Agent state
+            agentHistory: state.agentHistory ? (typeof structuredClone === 'function' ? structuredClone(state.agentHistory) : [...state.agentHistory]) : [],
             agentMode: state.agentMode,
+            chatChannel: state.chatChannel,
 
-            // Creative state (for creative agents)
-            images: state.images ? [...state.images] : [],
-            history: state.history ? [...state.history] : [],
+            // Creative state
+            canvasImages: state.canvasImages ? (typeof structuredClone === 'function' ? structuredClone(state.canvasImages) : [...state.canvasImages]) : [],
+            generatedHistory: state.generatedHistory ? (typeof structuredClone === 'function' ? structuredClone(state.generatedHistory) : [...state.generatedHistory]) : [],
 
-            // Financial state (for finance agents)
-            revenue: state.revenue ? [...state.revenue] : [],
-            expenses: state.expenses ? [...state.expenses] : [],
-        });
+            // Finance state
+            finance: state.finance ? (typeof structuredClone === 'function' ? structuredClone(state.finance) : { ...state.finance } as any) : undefined,
+
+            // Workflow state
+            nodes: state.nodes ? (typeof structuredClone === 'function' ? structuredClone(state.nodes) : [...state.nodes]) : [],
+            edges: state.edges ? (typeof structuredClone === 'function' ? structuredClone(state.edges) : [...state.edges]) : [],
+        };
+
+        return Object.freeze(snapshot);
     }
 
     /**
@@ -216,7 +236,22 @@ export class AgentExecutionContext {
         }
 
         const summary = Array.from(this.modifications.keys())
-            .map(key => `${key}: ${JSON.stringify(this.modifications.get(key)).substring(0, 50)}...`)
+            .map(key => {
+                const val = this.modifications.get(key);
+                let valStr: string;
+                try {
+                    valStr = JSON.stringify(val);
+                } catch (e) {
+                    valStr = `[Non-serializable: ${typeof val}]`;
+                }
+
+                // Truncate if too long to avoid flooding logs
+                const truncated = valStr.length > 50
+                    ? valStr.substring(0, 50) + '...'
+                    : valStr;
+
+                return `${String(key)}: ${truncated}`;
+            })
             .join(', ');
 
         return `${this.modifications.size} changes: ${summary}`;

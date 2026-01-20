@@ -1,5 +1,5 @@
 import { AI_MODELS } from '@/core/config/ai-models';
-import { wrapTool, toolError } from '../utils/ToolUtils';
+import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 export const FinanceTools: Record<string, AnyToolFunction> = {
@@ -53,5 +53,54 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
             party_id: distConfig.ddexPartyId,
             message: `Distribution channel '${distConfig.name}' verified. Recipient Party ID: ${distConfig.ddexPartyId}. Ready to generate ERN.`
         };
+    }),
+
+    forecast_revenue: wrapTool('forecast_revenue', async (args: { currentStreams: number, platform: string, rightsHolderSplit: number }) => {
+        // Industry average payout rates (approximate)
+        const PAYOUT_RATES: Record<string, number> = {
+            'Spotify': 0.004,
+            'Apple Music': 0.008,
+            'YouTube Music': 0.002,
+            'Amazon Music': 0.004,
+            'Tidal': 0.013,
+            'Deezer': 0.006,
+            'Pandora': 0.001,
+            'Other': 0.003
+        };
+
+        const rate = PAYOUT_RATES[args.platform] || PAYOUT_RATES['Other'];
+        const gross = args.currentStreams * rate;
+
+        // Standard management fee is ~20%
+        const MANAGER_FEE_PERCENT = 0.20;
+
+        const projections = {
+            month_1: gross,
+            month_6: gross * 6,
+            year_1: gross * 12
+        };
+
+        const managerFeeSaved = {
+            month_1: projections.month_1 * MANAGER_FEE_PERCENT,
+            month_6: projections.month_6 * MANAGER_FEE_PERCENT,
+            year_1: projections.year_1 * MANAGER_FEE_PERCENT
+        };
+
+        const netRevenue = {
+            month_1: projections.month_1 * (args.rightsHolderSplit / 100),
+            month_6: projections.month_6 * (args.rightsHolderSplit / 100),
+            year_1: projections.year_1 * (args.rightsHolderSplit / 100)
+        };
+
+        return toolSuccess({
+            platform: args.platform,
+            rate_per_stream: rate,
+            projections: {
+                gross: projections,
+                manager_fee_saved: managerFeeSaved,
+                net_to_rights_holder: netRevenue
+            },
+            message: `Revenue forecast generated for ${args.currentStreams} streams on ${args.platform}. Estimated annual savings on manager fees: $${managerFeeSaved.year_1.toFixed(2)}.`
+        }, `Revenue forecast generated.`);
     })
 };

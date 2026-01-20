@@ -1,14 +1,16 @@
 
 import { StorageService } from '@/services/StorageService';
 import { HistoryItem } from '@/core/store';
+import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
+import type { AnyToolFunction } from '@/services/agent/types';
 
 /**
  * Creative Studio Tools
  * Allows agents to access and utilize generated/uploaded assets.
  */
 
-export const CREATIVE_TOOLS = {
-    get_studio_assets: async (args: {
+export const CREATIVE_TOOLS: Record<string, AnyToolFunction> = {
+    get_studio_assets: wrapTool('get_studio_assets', async (args: {
         query?: string,
         limit?: number,
         type?: 'image' | 'video'
@@ -42,13 +44,13 @@ export const CREATIVE_TOOLS = {
             }));
 
             if (simplified.length === 0) {
-                return "No matching assets found in Creative Studio history.";
+                return toolSuccess([], "No matching assets found in Creative Studio history.");
             }
 
-            return JSON.stringify(simplified, null, 2);
+            return toolSuccess(simplified, `Retrieved ${simplified.length} studio assets.`);
         } catch (e) {
             console.error('CREATIVE_TOOLS.get_studio_assets error:', e);
-            return "Error retrieving studio assets.";
+            return toolError("Error retrieving studio assets.", 'RETRIEVAL_ERROR');
         }
-    }
+    })
 };
