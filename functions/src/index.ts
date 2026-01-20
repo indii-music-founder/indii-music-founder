@@ -7,6 +7,7 @@ import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
+import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
@@ -572,7 +573,10 @@ export const inngestApi = functions
 // Image Generation (Gemini)
 // ----------------------------------------------------------------------------
 
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
 export const generateImageV3 = functions
+    .region("us-west1")
     .runWith({
         secrets: [geminiApiKey],
         timeoutSeconds: 120,
@@ -749,6 +753,67 @@ export const editImage = functions
                 throw new functions.https.HttpsError('internal', error.message);
             }
             throw new functions.https.HttpsError('internal', "An unknown error occurred");
+        }
+    });
+
+export const generateSpeech = functions
+    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
+    .https.onCall(async (data: unknown, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+        }
+
+        const validation = GenerateSpeechRequestSchema.safeParse(data);
+        if (!validation.success) {
+            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+        }
+        const { text, voice, model } = validation.data;
+
+        try {
+            console.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            const apiKey = getGeminiApiKey();
+
+            // Use REST API for precise control over TTS config
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: voice
+                                }
+                            }
+                        }
+                    }
+                })
+            });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
+            }
+
+            const result = await response.json();
+
+            // Extract audio data (inlineData)
+            const part = result.candidates?.[0]?.content?.parts?.[0];
+            const audioContent = part?.inlineData?.data;
+
+            if (!audioContent) {
+                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                throw new Error("No audio content returned from API");
+            }
+
+            return { audioContent };
+
+        } catch (error: any) {
+            console.error("[generateSpeech] Error:", error);
+            throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
 

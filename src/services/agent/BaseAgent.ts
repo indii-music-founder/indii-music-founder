@@ -220,7 +220,6 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: any, context, _toolContext?: ToolExecutionContext) => {
-            delegate_task: async ({ targetAgentId, task }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -256,7 +255,6 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
-            consult_experts: async ({ consultations }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
 

@@ -118,7 +118,13 @@ export class AgentExecutor {
 
             const response = await agent.execute(userGoal, context, interceptedOnProgress, signal, attachments);
 
-            await TraceService.completeTrace(traceId, response);
+            // Sanitize response to remove functions before persistence
+            const safeResponse = JSON.parse(JSON.stringify(response, (key, value) => {
+                if (typeof value === 'function') return undefined; // Explicitly drop functions
+                return value;
+            }));
+
+            await TraceService.completeTrace(traceId, safeResponse);
             return response;
         } catch (e: unknown) {
             const errorMsg = e instanceof Error ? e.message : String(e);
