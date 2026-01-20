@@ -202,4 +202,26 @@ test.describe('Flow: Routing & Navigation', () => {
         await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
     });
 
+    test('Navigation: Return to HQ works correctly', async ({ page }) => {
+        // 1. Navigate to Brand Manager
+        await page.getByTestId('nav-item-brand').click();
+        await expect(page.getByText('BRAND HQ')).toBeVisible();
+        expect(page.url()).toContain('/brand');
+
+        // 2. Click "Return to HQ"
+        // Note: Sidebar must be open for this button to be visible, but active state test implies it works.
+        // If sidebar is collapsed on smaller screens, this might fail, but default E2E viewport is usually desktop.
+        await page.getByTestId('return-hq-btn').click();
+
+        // 3. Verify URL and UI
+        await expect(page.getByText('Agent Workspace')).toBeVisible();
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/');
+
+        // 4. Verify History (Back button should return to Brand)
+        await page.goBack();
+        await expect(page.getByText('BRAND HQ')).toBeVisible();
+        await expect(page).toHaveURL(/.*\/brand/);
+    });
+
 });
