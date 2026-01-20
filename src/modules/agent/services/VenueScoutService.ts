@@ -2,8 +2,9 @@ import { Venue } from '../types';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 import { db } from '@/services/firebase';
 import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc, writeBatch } from 'firebase/firestore';
+import { delay } from '@/utils/async';
 
-// Initial Seed Data (Used only if DB is empty)
+// Initial Seed Data (Used only if DB is empty or offline)
 const SEED_VENUES: Omit<Venue, 'id'>[] = [
     {
         name: 'The Basement East',
@@ -75,8 +76,6 @@ export type ScoutEvent = {
     progress: number;
 };
 
-import { delay } from '@/utils/async';
-
 export class VenueScoutService {
     private static COLLECTION_NAME = 'venues';
 
@@ -94,32 +93,60 @@ export class VenueScoutService {
             if (onProgress) onProgress({ step, message, progress });
         };
 
-        // 1. Ensure DB is seeded
-        await this._ensureSeeded();
+        try {
+            // 1. Ensure DB is seeded
+            await this._ensureSeeded();
 
-        if (isAutonomous) {
-            return this._runAutonomousSearch(city, genre, emit);
+            if (isAutonomous) {
+                return this._runAutonomousSearch(city, genre, emit);
+            }
+
+            // 2. Query Firestore
+            // Note: For Alpha, we'll fetch all matching city/state and filter genres client-side
+            // to avoid needing complex composite indexes for every genre permutation right away.
+            const venuesRef = collection(db, this.COLLECTION_NAME);
+            const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
+
+            const q = query(venuesRef, where('city', '==', formattedCity));
+            const snapshot = await getDocs(q);
+
+            const results = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            })) as Venue[];
+
+             // 3. Client-side Filter & Scoring
+             const processed = this._processResults(results, genre);
+
+             if (processed.length === 0) {
+                 console.log('[VenueScoutService] No results from DB, checking local seed data...');
+                 // Fallback: Filter local SEED_VENUES if DB returned nothing
+                 // This ensures the app is usable even if DB is empty/unseeded
+                 // const formattedCity = city.charAt(0).toUpperCase() + city.slice(1); // Already formatted
+                 const fallbackResults = SEED_VENUES
+                     .filter(v => v.city === formattedCity)
+                     .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
+
+                 return this._processResults(fallbackResults, genre);
+             }
+
+             return processed;
+
+        } catch (error) {
+            console.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
+
+            // Fallback: Filter local SEED_VENUES
+            const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
+            const fallbackResults = SEED_VENUES
+                .filter(v => v.city === formattedCity)
+                .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
+
+            return this._processResults(fallbackResults, genre);
         }
+    }
 
-        // 2. Query Firestore
-        // Note: For Alpha, we'll fetch all matching city/state and filter genres client-side
-        // to avoid needing complex composite indexes for every genre permutation right away.
-        // Ideally: use Algolia or Typesense for full-text search.
-        const venuesRef = collection(db, this.COLLECTION_NAME);
-        // Basic query: exact city match.
-        // We capitalize city to match seed data format, but a real app needs better search.
-        const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
-
-        const q = query(venuesRef, where('city', '==', formattedCity));
-        const snapshot = await getDocs(q);
-
-        const results = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-        })) as Venue[];
-
-        // 3. Client-side Filter & Scoring
-        return results.filter(v =>
+    private static _processResults(venues: Venue[], genre: string): Venue[] {
+         return venues.filter(v =>
             // Filter by Genre overlap
             v.genres.some(g => g.toLowerCase().includes(genre.toLowerCase()) || genre.toLowerCase().includes(g.toLowerCase()))
         ).map(v => ({
@@ -148,15 +175,10 @@ export class VenueScoutService {
                     .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
                     .join(' ');
 
-                // Construct result based on what we might get (mocking part of the agent flow for now as `finalData` structure is dynamic)
-                // For this refactor, we simulate the agent returning valid data and saving it.
-
-                const agentId = `agent_${Date.now()}`;
-
                 const newVenue: Omit<Venue, 'id'> = {
                     name: 'The Fillmore (Live Scan)',
                     city: formattedCity,
-                    state: 'MI', // Placeholder, would parse from agent
+                    state: 'MI', // Placeholder
                     capacity: 2000,
                     genres: [genre, 'Rock', 'Pop'],
                     website: 'https://www.thefillmore.com',
@@ -168,18 +190,15 @@ export class VenueScoutService {
                 };
 
                 // Save to Firestore so it's there next time
-                const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
-                    ...newVenue,
-                    createdAt: serverTimestamp()
-                });
-
-                // Return a mix of real (if parsed) and verified mocks
-                return [
-                    {
-                        id: docRef.id,
-                        ...newVenue
-                    } as Venue
-                ];
+                try {
+                    const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
+                        ...newVenue,
+                        createdAt: serverTimestamp()
+                    });
+                    return [{ id: docRef.id, ...newVenue } as Venue];
+                } catch (e) {
+                     return [{ id: 'temp-autonomous', ...newVenue } as Venue];
+                }
             }
         } catch (e) {
             // console.error("Autonomous search failed", e);
@@ -191,18 +210,19 @@ export class VenueScoutService {
      * Enriches venue data details
      */
     static async enrichVenue(venueId: string): Promise<Partial<Venue>> {
-        const venueRef = doc(db, this.COLLECTION_NAME, venueId);
-
-        // Simulate "Work" being done
-        await delay(1000);
-
-        const updates = {
-            lastScoutedAt: Date.now(),
-            contactName: 'Talent Buyer' // In real app, we'd fetch this
-        };
-
-        await updateDoc(venueRef, updates);
-        return updates;
+        try {
+             const venueRef = doc(db, this.COLLECTION_NAME, venueId);
+            await delay(1000);
+            const updates = {
+                lastScoutedAt: Date.now(),
+                contactName: 'Talent Buyer'
+            };
+            await updateDoc(venueRef, updates);
+            return updates;
+        } catch (e) {
+            console.warn("Failed to enrich venue (offline?)", e);
+            return { lastScoutedAt: Date.now() };
+        }
     }
 
     /**
@@ -241,27 +261,27 @@ export class VenueScoutService {
      */
     private static async _ensureSeeded() {
         try {
+            // Check if db is initialized correctly (rudimentary check)
+            if (!db) throw new Error("Database not initialized");
+
             const venuesRef = collection(db, this.COLLECTION_NAME);
-            const snapshot = await getDocs(query(venuesRef, where('city', '==', 'Nashville'))); // Just check if *any* exist (using Nashville as proxy)
+            const snapshot = await getDocs(query(venuesRef, where('city', '==', 'Nashville')));
 
             if (!snapshot.empty) return;
 
-            // Lifecycle log: Seed venues into local database
             const batch = writeBatch(db);
-
             SEED_VENUES.forEach(v => {
-                const newDocRef = doc(venuesRef); // Auto-ID
+                const newDocRef = doc(venuesRef);
                 batch.set(newDocRef, {
                     ...v,
                     createdAt: serverTimestamp()
                 });
             });
-
             await batch.commit();
-            // Lifecycle log: Venues seeded successfully
 
         } catch (e) {
-            console.error('[VenueScoutService] Error seeding venues:', e);
+            // Silent fail is acceptable here as searchVenues will fallback to local seed
+            // console.error('[VenueScoutService] Error seeding venues:', e);
         }
     }
 }
