@@ -16,10 +16,10 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     toggleMagicFill,
     isMagicFillMode
 }) => {
-    const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none";
+    const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none";
 
     return (
-        <div className="w-16 bg-[#1a1a1a] border-r border-gray-800 flex flex-col items-center py-4 gap-4">
+        <div className="w-16 bg-background border-r border-gray-800 flex flex-col items-center py-4 gap-4">
             <button
                 onClick={addRectangle}
                 data-testid="add-rect-btn"
@@ -51,7 +51,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
             <button
                 onClick={toggleMagicFill}
                 data-testid="magic-fill-toggle"
-                className={`p-2 rounded transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none ${isMagicFillMode ? 'bg-purple-600 text-white' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`}
+                className={`p-2 rounded transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none ${isMagicFillMode ? 'bg-dept-creative text-white shadow-[0_0_15px_var(--color-dept-creative-glow)]' : 'hover:bg-gray-800 text-gray-400 hover:text-white'}`}
                 title="Magic Fill"
                 aria-label="Magic Fill"
                 aria-pressed={isMagicFillMode}

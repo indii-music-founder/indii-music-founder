@@ -43,7 +43,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     const toast = useToast();
 
     return (
-        <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-[#1a1a1a]">
+        <div className="flex items-center justify-between p-4 border-b border-gray-800 bg-background">
             <div className="flex-1 mr-4 flex items-center gap-2">
                 <h3 className="text-sm font-bold text-white">
                     {isEditing ? "Fabric.js Editor" : "Preview"}
@@ -56,7 +56,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         <button
                             onClick={() => { setIsEditing(true); toast.success("Editor mode active"); }}
                             data-testid="edit-canvas-btn"
-                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                            className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/80 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                         >
                             <Brush size={14} /> Edit in Canvas
                         </button>
@@ -64,7 +64,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             <button
                                 onClick={onRefine}
                                 data-testid="refine-btn"
-                                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-dept-distribution hover:bg-dept-distribution/80 text-white text-[10px] font-bold rounded-lg transition-colors flex items-center gap-2"
                             >
                                 <Sparkles size={14} /> Refine
                             </button>
@@ -97,7 +97,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             <button
                                 onClick={saveCanvas}
                                 data-testid="save-canvas-btn"
-                                className="px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-l-lg transition-colors flex items-center gap-2"
+                                className="px-4 py-2 bg-dept-licensing hover:bg-dept-licensing/80 text-white text-xs font-bold rounded-l-lg transition-colors flex items-center gap-2"
                             >
                                 <Save size={14} /> Save
                             </button>
@@ -109,14 +109,14 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                             data-testid="use-first-frame-btn"
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
-                                            <Film size={14} className="text-blue-400" /> Use as First Frame
+                                            <Film size={14} className="text-dept-distribution" /> Use as First Frame
                                         </button>
                                         <button
                                             onClick={() => onSendToWorkflow('lastFrame', item)}
                                             data-testid="use-last-frame-btn"
                                             className="w-full text-left px-4 py-2 text-xs text-gray-300 hover:text-white hover:bg-gray-700 flex items-center gap-2"
                                         >
-                                            <Clapperboard size={14} className="text-green-400" /> Use as Last Frame
+                                            <Clapperboard size={14} className="text-dept-licensing" /> Use as Last Frame
                                         </button>
                                         <div className="border-t border-gray-700 my-1"></div>
                                     </>
@@ -164,7 +164,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         <button
                             onClick={handleAnimate}
                             data-testid="animate-btn"
-                            className="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                            className="px-4 py-2 bg-dept-marketing hover:bg-dept-marketing/80 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
                         >
                             <Play size={14} /> Animate
                         </button>

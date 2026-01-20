@@ -358,7 +358,7 @@ export default function VideoWorkflow() {
     };
 
     return (
-        <div className={`flex-1 flex overflow-hidden h-full bg-[#0a0a0a] relative`}>
+        <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
             {/* Main Stage (Director View) */}
             <div className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}>
 
@@ -392,7 +392,7 @@ export default function VideoWorkflow() {
 
             {/* Editor Container (Full Screen Overlay) */}
             {viewMode === 'editor' && (
-                <div className="absolute inset-0 z-50 bg-[#0a0a0a]">
+                <div className="absolute inset-0 z-50 bg-background">
                     <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">

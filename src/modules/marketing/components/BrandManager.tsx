@@ -176,19 +176,19 @@ const BrandManager: React.FC = () => {
     ];
 
     return (
-        <div className="flex h-screen w-full bg-[#0f0f0f] text-gray-200 font-sans overflow-hidden selection:bg-purple-500/30 relative">
+        <div className="flex h-screen w-full bg-background text-gray-200 font-sans overflow-hidden selection:bg-dept-marketing/30 relative">
             {/* Global Background Ambience */}
             {/* Global Background Ambience - Toned down for professional feel */}
             <div className="fixed inset-0 pointer-events-none z-0">
-                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/5 blur-[150px]" />
-                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-900/5 blur-[150px]" />
+                <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-dept-marketing/5 blur-[150px]" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-dept-marketing/5 blur-[150px]" />
             </div>
 
             {/* Sidebar Navigation */}
             <aside className="w-64 border-r border-gray-800 bg-[#0a0a0a] flex flex-col h-full z-20">
                 {/* Brand Header */}
-                <div className="p-4 border-b border-gray-800 flex items-center gap-2 h-14">
-                    <Shield className="text-purple-500" size={16} />
+                <div className="p-4 border-b border-white/5 flex items-center gap-2 h-14">
+                    <Shield className="text-dept-marketing" size={16} />
                     <span className="text-xs font-bold text-white tracking-widest uppercase">Brand HQ</span>
                 </div>
 
@@ -201,8 +201,8 @@ const BrandManager: React.FC = () => {
                         </div>
                         <div>
                             <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-1">Current Goal</div>
-                            <div className="text-xs font-bold text-purple-400 flex items-center gap-2">
-                                <Zap size={12} className="text-purple-500" />
+                            <div className="text-xs font-bold text-dept-marketing/80 flex items-center gap-2">
+                                <Zap size={12} className="text-dept-marketing" />
                                 {userProfile?.goals?.[0] || 'World Domination'}
                             </div>
                         </div>
@@ -219,17 +219,17 @@ const BrandManager: React.FC = () => {
                             className={`
                                     w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all group relative
                                     ${activeTab === tab.id
-                                    ? 'bg-purple-900/10 text-white border border-purple-500/30'
-                                    : 'text-gray-500 hover:text-gray-300 hover:bg-[#151515]'
+                                    ? 'bg-dept-marketing/10 text-white border border-dept-marketing/30'
+                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
                                 }
                                 `}
                         >
                             <tab.icon
                                 size={14}
-                                className={`transition-colors ${activeTab === tab.id ? 'text-purple-400' : 'text-gray-500 group-hover:text-gray-400'}`}
+                                className={`transition-colors ${activeTab === tab.id ? 'text-dept-marketing' : 'text-gray-500 group-hover:text-gray-400'}`}
                             />
                             <span>{tab.label}</span>
-                            {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-purple-500 rounded-r-full" />}
+                            {activeTab === tab.id && <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-4 bg-dept-marketing rounded-r-full" />}
                         </button>
                     ))}
                 </div>
@@ -241,7 +241,7 @@ const BrandManager: React.FC = () => {
                 <header className="h-14 shrink-0 px-6 flex items-center justify-between border-b border-gray-800 bg-[#0a0a0a] z-20">
                     <div className="flex items-center gap-3">
                         <div className="flex items-center gap-2 text-gray-400">
-                            {tabs.find(t => t.id === activeTab) && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { size: 16, className: "text-purple-400" })}
+                            {tabs.find(t => t.id === activeTab) && React.createElement(tabs.find(t => t.id === activeTab)!.icon, { size: 16, className: "text-dept-marketing" })}
                             <h2 className="text-sm font-bold text-gray-200 tracking-tight">
                                 {tabs.find(t => t.id === activeTab)?.label}
                             </h2>
@@ -305,7 +305,7 @@ const BrandManager: React.FC = () => {
                                             <textarea
                                                 value={bioDraft}
                                                 onChange={(e) => setBioDraft(e.target.value)}
-                                                className="w-full h-80 bg-[#0a0a0a] border border-gray-800 rounded-lg p-4 text-sm text-gray-300 focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 outline-none transition-all leading-relaxed custom-scrollbar"
+                                                className="w-full h-80 bg-black/40 border border-white/10 rounded-lg p-4 text-sm text-gray-300 focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none transition-all leading-relaxed custom-scrollbar"
                                                 placeholder="Tell your story..."
                                             />
                                         ) : (
@@ -330,10 +330,10 @@ const BrandManager: React.FC = () => {
                                             <div className="p-3 rounded-lg bg-[#0a0a0a] border border-gray-800">
                                                 <label className="text-[9px] text-gray-500 font-bold uppercase tracking-wider block mb-2">A&R Sentiment</label>
                                                 <div className="flex items-center gap-2">
-                                                    <div className="h-1.5 flex-1 bg-gray-800 rounded-full overflow-hidden">
-                                                        <div className="h-full bg-purple-500" style={{ width: '75%' }} />
+                                                    <div className="h-1.5 flex-1 bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full bg-dept-marketing" style={{ width: '75%' }} />
                                                     </div>
-                                                    <span className="text-[10px] font-bold text-purple-400">75%</span>
+                                                    <span className="text-[10px] font-bold text-dept-marketing">75%</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -364,7 +364,7 @@ const BrandManager: React.FC = () => {
                                         </div>
                                         <button
                                             onClick={handleAddColor}
-                                            className="flex items-center gap-2 px-3 py-1.5 bg-purple-600 text-white rounded-lg text-[10px] font-bold hover:bg-purple-500 transition-all active:scale-95 border border-purple-500/50"
+                                            className="flex items-center gap-2 px-3 py-1.5 bg-dept-marketing text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-all active:scale-95 border border-white/10"
                                         >
                                             <Plus size={12} />
                                             <span>Add Color</span>
@@ -449,9 +449,9 @@ const BrandManager: React.FC = () => {
                                 className="bg-[#111] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl relative"
                             >
                                 <div className="p-8 border-b border-gray-800 bg-[#0a0a0a] relative overflow-hidden">
-                                    <div className="absolute top-0 right-0 p-32 bg-purple-900/5 blur-[80px] rounded-full pointer-events-none" />
+                                    <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
                                     <div className="relative z-10">
-                                        <label className="text-[9px] text-purple-500 font-bold uppercase tracking-[0.2em] mb-3 block">Mission Architect</label>
+                                        <label className="text-[9px] text-dept-marketing font-bold uppercase tracking-[0.2em] mb-3 block">Mission Architect</label>
                                         <input
                                             type="text"
                                             value={release.title}
@@ -461,8 +461,8 @@ const BrandManager: React.FC = () => {
                                             placeholder="MISSION_UNTITLED"
                                         />
                                         <div className="flex flex-wrap items-center gap-4 mt-6">
-                                            <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2">
-                                                <Disc size={14} className="text-purple-500" />
+                                            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                                                <Disc size={14} className="text-dept-marketing" />
                                                 <select
                                                     value={release.type}
                                                     onChange={(e) => { handleUpdateRelease('type', e.target.value); handleSaveRelease(); }}
@@ -499,7 +499,7 @@ const BrandManager: React.FC = () => {
                                             value={release.mood}
                                             onChange={(e) => handleUpdateRelease('mood', e.target.value)}
                                             onBlur={handleSaveRelease}
-                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
                                             placeholder="Describe the sonic and visual atmosphere..."
                                         />
                                     </div>
@@ -512,7 +512,7 @@ const BrandManager: React.FC = () => {
                                             value={release.themes}
                                             onChange={(e) => handleUpdateRelease('themes', e.target.value)}
                                             onBlur={handleSaveRelease}
-                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-purple-500/30 focus:ring-1 focus:ring-purple-500/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
                                             placeholder="Translate the artistry into narrative goals..."
                                         />
                                     </div>
@@ -625,7 +625,7 @@ const BrandManager: React.FC = () => {
                                     ) : (
                                         <div className="glass-panel rounded-3xl h-full flex flex-col items-center justify-center text-slate-600 border border-white/5 p-12 text-center bg-white/[0.01] backdrop-blur-xl">
                                             <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-8 border border-white/10 shadow-[0_0_50px_rgba(255,255,255,0.02)]">
-                                                <Activity size={40} className="text-amber-500 animate-pulse" />
+                                                <Activity size={40} className="text-dept-marketing animate-pulse" />
                                             </div>
                                             <h3 className="text-2xl font-black text-white mb-4 tracking-tight">DNA Scanner Standby</h3>
                                             <p className="max-w-md mx-auto text-sm leading-relaxed font-medium opacity-60">
