@@ -35,6 +35,7 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useDragControls: () => ({ start: vi.fn() }),
 }));
 
 // Mock TextEffect
@@ -55,6 +56,9 @@ vi.mock('lucide-react', () => ({
     History: () => <span data-testid="icon-history" />,
     Plus: () => <span data-testid="icon-plus" />,
     UserPlus: () => <span data-testid="icon-user-plus" />,
+    GripHorizontal: () => <span data-testid="icon-grip-horizontal" />,
+    Minimize2: () => <span data-testid="icon-minimize-2" />,
+    RefreshCw: () => <span data-testid="icon-refresh-cw" />,
 }));
 
 // Mock Child Renderers (Keep these simple)

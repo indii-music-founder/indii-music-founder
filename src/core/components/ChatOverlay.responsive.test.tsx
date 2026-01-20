@@ -38,6 +38,7 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useDragControls: () => ({ start: vi.fn() }),
 }));
 
 describe('📱 Viewport: ChatOverlay Responsiveness', () => {
