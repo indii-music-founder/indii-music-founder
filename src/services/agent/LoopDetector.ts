@@ -113,16 +113,16 @@ export class LoopDetector {
             }
         }
 
-        // Check 6: Unnecessary tool chaining after generation tools
+        // Check 6: After generation tools, only allow 'speak' - block everything else
         const FINAL_TOOLS = ['generate_image', 'generate_video'];
         const finalToolCalls = this.toolCallHistory.filter(c => FINAL_TOOLS.includes(c.name));
-        if (finalToolCalls.length > 0 && !FINAL_TOOLS.includes(name)) {
-            // If we already called a generation tool and now calling something else like delegate_task or send_notification
-            const UNNECESSARY_FOLLOWUPS = ['delegate_task', 'send_notification', 'create_organization', 'switch_organization'];
-            if (UNNECESSARY_FOLLOWUPS.includes(name)) {
+        if (finalToolCalls.length > 0) {
+            // After a generation tool, only 'speak' is allowed to announce the result
+            const ALLOWED_AFTER_GENERATION = ['speak'];
+            if (!ALLOWED_AFTER_GENERATION.includes(name)) {
                 return {
                     isLoop: true,
-                    reason: `Unnecessary '${name}' after generation task completed`,
+                    reason: `Task complete - '${name}' blocked after generation`,
                     pattern: `${finalToolCalls[0].name} → ${name} (blocked)`
                 };
             }
