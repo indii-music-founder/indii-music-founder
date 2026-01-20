@@ -98,7 +98,7 @@ export const firebaseDefaultConfig = {
 const firebaseEnv = processEnv;
 
 export const firebaseConfig = {
-    apiKey: firebaseEnv.firebaseApiKey || firebaseEnv.apiKey || "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
+    apiKey: "AIzaSyD9SmSp-2TIxw5EV9dfQSOdx4yRNNxU0RM",
     authDomain: (firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1") + ".firebaseapp.com",
     databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1",

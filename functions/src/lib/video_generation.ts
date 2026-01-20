@@ -45,6 +45,21 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     }
                 };
 
+                // VEO 3.1: Resolution support
+                if (options?.resolution) {
+                    requestBody.parameters.resolution = options.resolution;
+                }
+
+                // VEO 3.1: Duration support (4, 6, 8 seconds)
+                if (options?.durationSeconds) {
+                    // Clamp to supported values or default to 8
+                    let dur = options.durationSeconds;
+                    if (dur <= 4) dur = 4;
+                    else if (dur <= 6) dur = 6;
+                    else dur = 8;
+                    requestBody.parameters.duration = dur;
+                }
+
                 // VEO 3.1: First Frame (Image-to-Video)
                 // options.image comes from VideoService as { imageBytes: string, mimeType: string }
                 // options.firstFrame comes from VideoGenerationService as Data URI string
@@ -72,6 +87,23 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                         bytesBase64Encoded: cleanLastFrame
                     };
                     // Ensure personGeneration is set if not already
+                    requestBody.parameters.personGeneration = "allow_adult";
+                }
+
+                // VEO 3.1: Ingredients (Reference Images - Up to 3)
+                if (options?.referenceImages && Array.isArray(options.referenceImages)) {
+                    requestBody.parameters.referenceImages = options.referenceImages.slice(0, 3).map((ref: any) => {
+                        // Extract bytes if it's a nested object (VideoService formats it this way)
+                        const rawBytes = ref.image?.imageBytes || ref.data || ref;
+                        const cleanBytes = typeof rawBytes === 'string' ? rawBytes.replace(/^data:image\/\w+;base64,/, '') : rawBytes;
+
+                        return {
+                            image: {
+                                bytesBase64Encoded: cleanBytes
+                            },
+                            referenceType: ref.referenceType || "ASSET"
+                        };
+                    });
                     requestBody.parameters.personGeneration = "allow_adult";
                 }
 
@@ -139,8 +171,16 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
             }
 
-            if (!isCompleted || !finalResult || !finalResult.response) {
-                throw new Error(`Video generation timed out after ${attempts} attempts`);
+            if (!isCompleted || !finalResult) {
+                throw new Error(`Video generation timed out after ${attempts} attempts. Operation may still be running in Vertex AI.`);
+            }
+
+            if (finalResult.error) {
+                throw new Error(`Vertex AI Operation Failed: ${finalResult.error.code} - ${finalResult.error.message}`);
+            }
+
+            if (!finalResult.response) {
+                throw new Error("No response data in final result after operation completed.");
             }
 
             // Process Result
