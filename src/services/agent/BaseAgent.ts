@@ -1,11 +1,9 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
-import { LoopDetector } from './LoopDetector';
-import { ExecutionContextFactory } from './AgentExecutionContext';
-import { ToolExecutionContext } from './ToolExecutionContext';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
-import { AgentExecutionContext } from './context/AgentExecutionContext';
+import { AgentExecutionContext, ExecutionContextFactory } from './AgentExecutionContext';
+import { ToolExecutionContext } from './ToolExecutionContext';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -441,10 +439,6 @@ export class BaseAgent implements SpecializedAgent {
             projectId: context?.projectId
         };
 
-        // Phase 3: Execution Context (Transactions)
-        const executionContext = new AgentExecutionContext(enrichedContext);
-        await executionContext.start();
-
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
 
@@ -696,7 +690,6 @@ ${task}
                         executionContext.commit();
                     }
 
-                    await executionContext.commit();
                     return {
                         text: finalResponse,
                         data: lastToolResult,
@@ -715,7 +708,6 @@ ${task}
                 console.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
                 executionContext.rollback();
             }
-            await executionContext.commit();
 
             return {
                 text: 'Maximum iterations reached.',
@@ -730,7 +722,6 @@ ${task}
                 executionContext.rollback();
             }
 
-            await executionContext.rollback();
             const errorMessage = error instanceof Error ? error.message : String(error);
             return { text: `Error: ${errorMessage}` };
         }
