@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -33,7 +33,7 @@ interface MessageItemProps {
 export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
     // ... existing components ...
-    const markdownComponents: Components = {
+    const markdownComponents: Components = useMemo(() => ({
         img: ({ src, alt }: { src?: string; alt?: string }) => <ImageRenderer src={src} alt={alt} />,
         p: ({ children }: { children?: React.ReactNode }) => {
             const text = getText(children);
@@ -157,7 +157,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
             }
             return <code className={className} {...props}>{children}</code>
         }
-    };
+    }), []);
 
     return (
         <motion.div

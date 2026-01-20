@@ -4,6 +4,8 @@ import { ZodType } from 'zod';
 import { LoopDetector } from './LoopDetector';
 import { ExecutionContextFactory } from './AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
+import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
+import { AgentExecutionContext } from './context/AgentExecutionContext';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -439,6 +441,13 @@ export class BaseAgent implements SpecializedAgent {
             projectId: context?.projectId
         };
 
+        // Phase 3: Execution Context (Transactions)
+        const executionContext = new AgentExecutionContext(enrichedContext);
+        await executionContext.start();
+
+        // Phase 2: Clear loop detector for new task execution
+        this.loopDetector.clear();
+
         const SUPERPOWER_PROMPT = `
         ## CAPABILITIES & PROTOCOLS
         You have access to the following advanced capabilities ("Superpowers"):
@@ -563,6 +572,8 @@ ${task}
         const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 5;
+        const toolCalls: any[] = [];
+        let lastToolResult: any = undefined;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -587,9 +598,11 @@ ${task}
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
+                    await executionContext.rollback();
                     return {
-                        text: accumulatedResponse || 'Task halted: Budget exceeded.',
-                        error: 'Budget exceeded'
+                        text: 'Task halted: Budget exceeded.',
+                        error: 'Budget exceeded',
+                        toolCalls
                     };
                 }
 
@@ -620,10 +633,11 @@ ${task}
                     if (loopCheck.isLoop) {
                         console.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
                         console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
-                        console.warn(`[BaseAgent] Recent calls: ${this.loopDetector.getRecentPattern()}`);
+                        await executionContext.rollback();
                         return {
-                            text: accumulatedResponse || `Task ended: ${loopCheck.reason}`,
-                            error: 'Loop detected'
+                            text: `Task ended: ${loopCheck.reason}`,
+                            error: 'Loop detected',
+                            toolCalls
                         };
                     }
 
@@ -652,6 +666,10 @@ ${task}
                         }
                     }
 
+                    // Store tool call and result
+                    lastToolResult = result;
+                    toolCalls.push({ name, args, result });
+
                     const outputText = typeof result === 'string'
                         ? result
                         : (result.success === false
@@ -678,8 +696,11 @@ ${task}
                         executionContext.commit();
                     }
 
+                    await executionContext.commit();
                     return {
                         text: finalResponse,
+                        data: lastToolResult,
+                        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
                         usage: usage ? {
                             promptTokens: usage.promptTokenCount || 0,
                             completionTokens: usage.candidatesTokenCount || 0,
@@ -694,9 +715,12 @@ ${task}
                 console.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
                 executionContext.rollback();
             }
+            await executionContext.commit();
 
             return {
-                text: accumulatedResponse || 'Maximum iterations reached.',
+                text: 'Maximum iterations reached.',
+                data: lastToolResult,
+                toolCalls,
                 error: 'Max iterations reached'
             };
         } catch (error: unknown) {
@@ -706,6 +730,7 @@ ${task}
                 executionContext.rollback();
             }
 
+            await executionContext.rollback();
             const errorMessage = error instanceof Error ? error.message : String(error);
             return { text: `Error: ${errorMessage}` };
         }

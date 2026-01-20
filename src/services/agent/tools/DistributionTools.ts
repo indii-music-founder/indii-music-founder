@@ -240,7 +240,13 @@ async function issue_isrc(args: {
 
         return JSON.stringify({
             success: true,
-            data: { isrc, source: 'JS Service', valid: true },
+            data: {
+                isrc,
+                source: 'JS Service',
+                valid: true,
+                track_title: trackTitle,
+                registry_status: 'REGISTERED'
+            },
             message: `ISRC ${isrc} issued (Web Fallback)`
         });
     } catch (error) {
@@ -302,17 +308,42 @@ async function certify_tax_profile(args: {
         tinMessage = 'Missing TIN';
     } else if (isUsPerson) {
         tinValid = /^\d{3}-\d{2}-\d{4}$/.test(tin) || /^\d{2}-\d{7}$/.test(tin);
-        tinMessage = tinValid ? 'Valid US TIN' : 'Invalid US TIN';
+        tinMessage = tinValid ? 'Valid US TIN' : 'TIN Match Fail (Invalid Format)';
     } else {
         tinValid = tin.length >= 8;
-        tinMessage = tinValid ? 'Valid Foreign TIN' : 'Invalid Foreign TIN';
+        tinMessage = tinValid ? 'Valid Foreign TIN' : 'TIN Match Fail (Invalid Foreign Format)';
     }
 
     const certified = signedUnderPerjury && tinValid;
 
     // ... (Persistence logic tailored for brevity in this replacement)
+    // Determine form type
+    let formType = 'Unknown';
+    if (isUsPerson) {
+        formType = 'W-9';
+    } else if (isEntity) {
+        formType = 'W-8BEN-E';
+    } else {
+        formType = 'W-8BEN';
+    }
+
+    // Determine payload status
+    let payoutStatus = 'HELD';
+    if (certified) {
+        payoutStatus = 'ACTIVE';
+    }
+
+    // ... (Persistence logic tailored for brevity in this replacement)
     return JSON.stringify({
         success: certified,
+        data: {
+            form_type: formType,
+            tin_valid: tinValid,
+            payout_status: payoutStatus,
+            tin_message: tinMessage,
+            certified: certified,
+            withholding_rate: isUsPerson ? 0 : 30 // Simplified mock
+        },
         message: certified ? `Tax profile certified (Web Fallback)` : `Certification failed: ${tinMessage}`
     });
 }
@@ -363,7 +394,14 @@ async function calculate_payout(args: {
 
     return JSON.stringify({
         success: true,
-        data: { gross: grossRevenue, paid: totalPaid, engine: 'JS Service' },
+        data: {
+            gross_revenue: grossRevenue,
+            indii_fee: indiiFee,
+            recouped_expenses: recoupableExpenses,
+            net_distributable: totalPaid,
+            paid: totalPaid,
+            engine: 'JS Service'
+        },
         message: `Payout calculated (Web Fallback). Total Distributed: $${totalPaid.toFixed(2)}`
     });
 }
@@ -401,15 +439,41 @@ async function run_metadata_qc(args: {
         }
     }
 
-    // 2. Fallback to JS
-    const errors = [];
+    // 2. Fallback to JS - Robust Validation to match Python logic
+    const errors: string[] = [];
+    const warnings: string[] = [];
+    let status = 'PASS';
+
     if (!title) errors.push('Missing Title');
     if (!artist) errors.push('Missing Artist');
+    if (!artworkUrl) errors.push('Missing artwork URL - required for distribution');
+
+    if (artist && (artist.toLowerCase() === 'various artists' || artist.toLowerCase() === 'unknown artist')) {
+        errors.push('Generic artist name detected - will be rejected by DSPs');
+    }
+
+    if (title && title === title.toUpperCase() && /[a-zA-Z]/.test(title)) {
+        warnings.push('ALL CAPS title detected - Apple/Spotify recommend Title Case');
+        if (status === 'PASS') status = 'WARN';
+    }
+
+    if (title && (title.toLowerCase().includes('feat.') || title.toLowerCase().includes('ft.'))) {
+        errors.push('Featured artist in title - must be in artist field per DDEX standard');
+    }
+
+    if (errors.length > 0) {
+        status = 'FAIL';
+    }
 
     return JSON.stringify({
-        success: errors.length === 0,
-        data: { errors, engine: 'JS Simple Check' },
-        message: errors.length === 0 ? 'Basic QC Passed' : 'Basic QC Failed'
+        success: status !== 'FAIL',
+        data: {
+            status,
+            errors,
+            warnings,
+            engine: 'JS Robust Check'
+        },
+        message: status === 'PASS' ? 'QC Passed' : `QC ${status}: ${errors.length} errors, ${warnings.length} warnings`
     });
 }
 

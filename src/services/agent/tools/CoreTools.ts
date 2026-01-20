@@ -14,9 +14,43 @@ const VALID_AGENT_MODES: AgentMode[] = ['assistant', 'autonomous', 'creative', '
 // ============================================================================
 
 export const CoreTools: Record<string, AnyToolFunction> = {
-    // delegate_task REMOVED - Use BaseAgent.functions implementation instead
-    // The BaseAgent version properly handles async agent loading and context passing
-    // via AgentService.runAgent(). This prevents "agent not found" errors.
+    delegate_task: wrapTool('delegate_task', async (args: {
+        targetAgentId: string;
+        task: string;
+    }, context) => {
+        const { agentService } = await import('../AgentService');
+        const { toolError } = await import('../utils/ToolUtils');
+        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await import('../types');
+        const { DelegationLoopDetector } = await import('../LoopDetector');
+
+        if (typeof args.targetAgentId !== 'string' || typeof args.task !== 'string') {
+            return toolError('Invalid delegation parameters', 'INVALID_ARGS');
+        }
+
+        if (!VALID_AGENT_IDS.includes(args.targetAgentId as any)) {
+            return toolError(
+                `Invalid agent ID: "${args.targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
+                'INVALID_AGENT_ID'
+            );
+        }
+
+        // Detect loops
+        const traceId = context?.traceId || 'unknown';
+        const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, args.targetAgentId);
+        if (delegationCheck.isLoop) {
+            return toolError(
+                `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
+                'DELEGATION_LOOP'
+            );
+        }
+
+        const result = await agentService.runAgent(args.targetAgentId, args.task, context, context?.traceId, context?.attachments);
+        return {
+            success: true,
+            data: result,
+            message: `Delegated to ${args.targetAgentId}. Result: ${result.text.substring(0, 500)}${result.text.length > 500 ? '...' : ''}`
+        };
+    }),
 
     request_approval: wrapTool('request_approval', async (args: {
         content: string;

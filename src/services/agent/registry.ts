@@ -84,7 +84,7 @@ export class AgentRegistry {
             console.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
         }
 
-        // Register Config-based Agents
+        // Register config-based agents
         AGENT_CONFIGS.forEach(config => {
             try {
                 const meta = {
@@ -104,6 +104,33 @@ export class AgentRegistry {
                 console.warn(`[AgentRegistry] Failed to register agent '${config.id}':`, e);
             }
         });
+
+        // Register Keeper (Context Integrity Guardian)
+        try {
+            const keeperMeta = {
+                id: 'keeper',
+                name: 'Keeper',
+                description: 'Context Integrity Guardian. Maintains coherence and recalls critical context/rules.',
+                color: '#4B0082', // Indigo
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(keeperMeta, async () => {
+                const { BaseAgent } = await import('./BaseAgent');
+                return new BaseAgent({
+                    id: 'keeper',
+                    name: 'Keeper',
+                    description: 'Context Integrity Guardian',
+                    color: '#4B0082',
+                    category: 'specialist',
+                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indiiOS. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
+                    tools: []
+                });
+            });
+        } catch (e) {
+            console.warn("[AgentRegistry] Failed to register Keeper agent:", e);
+        }
     }
 
     register(agent: SpecializedAgent) {

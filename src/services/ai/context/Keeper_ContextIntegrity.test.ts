@@ -15,11 +15,22 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' } }))
+    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' } })),
+    initializeAuth: vi.fn(),
+    browserLocalPersistence: {},
+    browserSessionPersistence: {}
 }));
 
 vi.mock('firebase/firestore', () => ({
     getFirestore: vi.fn(),
+    initializeFirestore: vi.fn(),
+    persistentLocalCache: vi.fn(),
+    persistentMultipleTabManager: vi.fn(),
+    Timestamp: {
+        now: vi.fn(() => ({ toMillis: () => Date.now() })),
+        fromDate: vi.fn(),
+        fromMillis: vi.fn(),
+    },
     doc: vi.fn(),
     getDoc: vi.fn(),
     setDoc: vi.fn(),
@@ -63,10 +74,11 @@ describe('📚 Keeper: Context Integrity', () => {
             id: 'keeper',
             name: 'Keeper',
             description: 'Guardian',
-            role: 'guardian',
+
             systemPrompt: 'You are Keeper.',
             category: 'specialist',
-            color: 'blue'
+            color: 'blue',
+            tools: []
         });
     });
 

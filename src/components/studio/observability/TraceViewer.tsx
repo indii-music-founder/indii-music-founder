@@ -82,10 +82,12 @@ export function TraceViewer() {
                                 <ScrollArea className="h-full">
                                     <div className="space-y-1 p-2">
                                         {traces.map((trace) => (
-                                            <div
+                                            <button
                                                 key={trace.id}
+                                                type="button"
                                                 onClick={() => setSelectedTrace(trace)}
-                                                className={`p-3 rounded-md border border-transparent cursor-pointer hover:bg-white/5 transition-all ${selectedTrace?.id === trace.id ? 'bg-white/10 border-white/10 shadow-lg ring-1 ring-white/10' : ''
+                                                aria-pressed={selectedTrace?.id === trace.id}
+                                                className={`w-full text-left p-3 rounded-md border border-transparent cursor-pointer hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${selectedTrace?.id === trace.id ? 'bg-white/10 border-white/10 shadow-lg ring-1 ring-white/10' : ''
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start mb-1">
@@ -99,7 +101,7 @@ export function TraceViewer() {
                                                 <div className="text-xs line-clamp-1 text-muted-foreground font-mono">
                                                     {trace.input}
                                                 </div>
-                                            </div>
+                                            </button>
                                         ))}
                                     </div>
                                 </ScrollArea>

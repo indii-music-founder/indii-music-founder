@@ -6,7 +6,8 @@ import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 // Mock AI
 vi.mock('../../ai/AIService', () => ({
     AI: {
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
     }
 }));
 
@@ -48,12 +49,6 @@ describe('Agent Multimodal Support', () => {
     });
 
     it('should include attachments in AI requests', async () => {
-        const mockStream = new ReadableStream<StreamChunk>({
-            start(controller) {
-                controller.close();
-            }
-        });
-
         const mockResponse: WrappedResponse = {
             response: {} as any,
             text: () => 'I see a red car.',
@@ -61,10 +56,7 @@ describe('Agent Multimodal Support', () => {
             usage: () => undefined
         };
 
-        (AI.generateContentStream as any).mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve(mockResponse)
-        });
+        (AI.generateContent as any).mockResolvedValue(mockResponse);
 
         const attachments = [
             { mimeType: 'image/jpeg', base64: 'base64-data-here' }
@@ -73,7 +65,7 @@ describe('Agent Multimodal Support', () => {
         const result = await agent.execute('What is in this image?', {}, undefined, undefined, attachments);
 
         // Verify AI call contains the image part
-        expect(AI.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+        expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
             contents: [
                 expect.objectContaining({
                     parts: expect.arrayContaining([
