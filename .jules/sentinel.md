@@ -1,0 +1,4 @@
+## 2025-02-18 - [CRITICAL] Symlink Traversal in Distribution Handlers
+**Vulnerability:** The `validateSafeDistributionSource` function in `electron/utils/security-checks.ts` validated file paths using `path.normalize()` but failed to resolve symbolic links. This allowed a malicious user (or compromised project) to bypass the system directory blocklist by creating a symlink (e.g., `song.wav -> /etc/passwd`) with a valid extension, leading to Local File Inclusion (LFI) via `distribution:stage-release` or `distribution:transmit`.
+**Learning:** Checking paths purely as strings (`path.normalize`) is insufficient for security when the underlying file system supports symlinks. An attacker can mask the true target of a path.
+**Prevention:** Always use `fs.realpathSync` (or async equivalent) to resolve the canonical path *before* applying blocklists or allowlists (extensions, directories). This ensures validation is performed on the actual file being accessed.
