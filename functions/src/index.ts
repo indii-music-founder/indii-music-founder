@@ -61,6 +61,36 @@ const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
+/**
+ * Helper function to get the Gemini API key with fallback for local development.
+ * In production, this uses Firebase secrets. In local development, it falls back
+ * to environment variables (from functions/.env).
+ *
+ * @returns The Gemini API key string
+ * @throws Error if no API key is found
+ */
+function getGeminiApiKey(): string {
+    // Try secret first (production)
+    try {
+        const secretValue = geminiApiKey.value();
+        if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
+            console.log('[getGeminiApiKey] Using secret from Firebase');
+            return secretValue;
+        }
+    } catch (secretError) {
+        console.log('[getGeminiApiKey] Secret not available, checking environment...');
+    }
+
+    // Fallback to environment variable (local development)
+    const envKey = process.env.GEMINI_API_KEY;
+    if (envKey && envKey.trim().length > 0) {
+        console.log('[getGeminiApiKey] Using environment variable (local development)');
+        return envKey;
+    }
+
+    throw new Error('Gemini API key not found. Please set GEMINI_API_KEY in Firebase Cloud Secret or functions/.env');
+}
+
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
     return new Inngest({
@@ -565,7 +595,47 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            // Initialize Vertex AI Client (Enterprise / Quota Aware)
+            // DEVELOPMENT MODE: Use GoogleGenAI SDK with API key from environment variable
+            // This is simpler and works well in local development with Firebase emulator
+            if (process.env.GEMINI_API_KEY) {
+                console.log("[generateImageV3] Development mode: Using GoogleGenAI SDK with API key");
+                const apiKey = process.env.GEMINI_API_KEY;
+                const client = new GoogleGenAI({ apiKey });
+                const model = client.getGenerativeModel({ model: FUNCTION_AI_MODELS.IMAGE.GENERATION });
+
+                const parts: any[] = [{ text: prompt }];
+                if (images) {
+                    images.forEach(img => {
+                        parts.push({
+                            inlineData: {
+                                mimeType: img.mimeType || "image/png",
+                                data: img.data
+                            }
+                        });
+                    });
+                }
+
+                const result = await model.generateContent({
+                    contents: [{ role: "user", parts }],
+                    generationConfig: {
+                        candidateCount: count || 1,
+                        responseModalities: ["IMAGE"],
+                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                    }
+                });
+
+                const processedImages = result.response.candidates?.[0]?.content?.parts
+                    ?.filter((p: any) => p.inlineData)
+                    ?.map((p: any) => ({
+                        bytesBase64Encoded: p.inlineData.data,
+                        mimeType: p.inlineData.mimeType || "image/png"
+                    })) || [];
+
+                return { images: processedImages };
+            }
+
+            // PRODUCTION MODE: Use Vertex AI (Enterprise / Quota Aware)
+            console.log("[generateImageV3] Production mode: Using Vertex AI with service account credentials");
             const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
             const location = 'us-central1';
             const vertexAI = new VertexAI({ project, location });
@@ -764,7 +834,7 @@ export const generateContentStream = functions
 
                 // Initialize SDK Client
                 // Initialize SDK Client
-                const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
+                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
@@ -861,7 +931,7 @@ export const ragProxy = functions
                 }
 
                 const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,

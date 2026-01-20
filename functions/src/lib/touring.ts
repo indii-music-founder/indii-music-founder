@@ -8,11 +8,41 @@ import { Client } from "@googlemaps/google-maps-services-js";
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 const googleMapsApiKey = defineSecret("GOOGLE_MAPS_API_KEY"); // Assumption: This secret exists or needs to be set.
 
+/**
+ * Helper function to get the Gemini API key with fallback for local development.
+ * In production, this uses Firebase secrets. In local development, it falls back
+ * to environment variables (from functions/.env).
+ *
+ * @returns The Gemini API key string
+ * @throws Error if no API key is found
+ */
+function getGeminiApiKey(): string {
+    // Try secret first (production)
+    try {
+        const secretValue = geminiApiKey.value();
+        if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
+            console.log('[getGeminiApiKey] Using secret from Firebase');
+            return secretValue;
+        }
+    } catch (secretError) {
+        console.log('[getGeminiApiKey] Secret not available, checking environment...');
+    }
+
+    // Fallback to environment variable (local development)
+    const envKey = process.env.GEMINI_API_KEY;
+    if (envKey && envKey.trim().length > 0) {
+        console.log('[getGeminiApiKey] Using environment variable (local development)');
+        return envKey;
+    }
+
+    throw new Error('Gemini API key not found. Please set GEMINI_API_KEY in Firebase Cloud Secret or functions/.env');
+}
+
 // Helper for Gemini Calls (similar to generateImageV3 pattern)
 async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
     const modelId = "gemini-3-pro-preview";
     // We access the secret value inside the function execution
-    const key = geminiApiKey.value();
+    const key = getGeminiApiKey();
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
 
     const body: any = {
