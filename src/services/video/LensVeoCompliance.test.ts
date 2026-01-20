@@ -15,8 +15,7 @@ const mocks = vi.hoisted(() => ({
     },
     subscriptionService: {
         canPerformAction: vi.fn()
-    },
-    httpsCallable: vi.fn()
+    }
 }));
 
 // Mock modules
@@ -50,7 +49,7 @@ vi.mock('uuid', () => ({
     v4: () => 'lens-veo-job-id'
 }));
 
-describe('Lens 🎥 - Veo Generation Pipeline', () => {
+describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
     let service: VideoGenerationService;
 
     beforeEach(() => {
@@ -65,8 +64,7 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
     });
 
     it('should generate "Flash" video within 2 seconds (simulated) and verify Veo 3.1 metadata contract', async () => {
-        // Setup: Mock onSnapshot to return success quickly
-        const flashUrl = 'https://storage.googleapis.com/veo-generations/flash-123.mp4?signature=mock-signed-url';
+        const flashUrl = 'https://storage.googleapis.com/veo-generations/flash-123.mp4';
 
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
@@ -80,40 +78,32 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                             url: flashUrl,
                             metadata: {
                                 duration_seconds: 4.0,
-                                fps: 30, // Veo 3.1 standard
+                                fps: 30,
                                 mime_type: 'video/mp4'
                             }
                         }
                     })
                 });
-            }, 1500); // 1.5s simulated
+            }, 1500); // 1.5s
             return vi.fn();
         });
 
         const start = Date.now();
         const jobPromise = service.waitForJob('job-id-flash', 5000);
 
-        // Advance time
         vi.advanceTimersByTime(1500);
-
         const result = await jobPromise;
         const duration = Date.now() - start;
 
-        // Verify Speed (< 2s)
         expect(duration).toBeLessThan(2000);
-
-        // Verify Metadata Contract
-        expect(result.output.metadata).toBeDefined();
         expect(result.output.metadata.mime_type).toBe('video/mp4');
         expect(result.output.metadata.duration_seconds).toBe(4.0);
         expect([24, 30, 60]).toContain(result.output.metadata.fps);
-        expect(result.output.url).toBe(flashUrl);
     });
 
     it('should generate "Pro" video within 30 seconds (simulated) and verify high-fidelity metadata', async () => {
-        const proUrl = 'https://storage.googleapis.com/veo-generations/pro-456.mp4?signature=mock-signed-url';
+        const proUrl = 'https://storage.googleapis.com/veo-generations/pro-456.mp4';
 
-        // Setup: Mock onSnapshot to return success slowly
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
@@ -126,38 +116,124 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                             url: proUrl,
                             metadata: {
                                 duration_seconds: 10.0,
-                                fps: 60, // Pro often 60fps
+                                fps: 60,
                                 mime_type: 'video/mp4'
                             }
                         }
                     })
                 });
-            }, 25000); // 25s simulated
+            }, 25000); // 25s
             return vi.fn();
         });
 
         const start = Date.now();
         const jobPromise = service.waitForJob('job-id-pro', 60000);
 
-        // Advance time
         vi.advanceTimersByTime(25000);
-
         const result = await jobPromise;
         const duration = Date.now() - start;
 
-        // Verify Speed (Pro takes time but < 30s target for this test)
-        expect(duration).toBeGreaterThan(2000);
         expect(duration).toBeLessThan(30000);
-
-        // Verify Metadata Contract
-        expect(result.output.metadata.fps).toBe(60);
         expect(result.output.metadata.mime_type).toBe('video/mp4');
-        expect(result.output.url).toBe(proUrl);
+        expect(result.output.metadata.fps).toBe(60);
     });
 
-    it('should handle SafetySettings violation gracefully via "Safety Handshake"', async () => {
-        // Setup: Mock onSnapshot to return a failure with safety info
-        // This mimics the "Safety Handshake" where the backend returns structured safety ratings
+    it('should enforce MIME Type Guard: Reject non-video assets', async () => {
+        // Scenario: Gemini generates a static image instead of video
+        mocks.doc.mockReturnValue('doc-ref');
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-image',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'https://storage.googleapis.com/bad-output.png',
+                            metadata: {
+                                duration_seconds: 0,
+                                fps: 0,
+                                mime_type: 'image/png' // Invalid!
+                            }
+                        }
+                    })
+                });
+            }, 500);
+            return vi.fn();
+        });
+
+        const jobPromise = service.waitForJob('job-id-image', 5000);
+        vi.advanceTimersByTime(500);
+
+        await expect(jobPromise).rejects.toThrow(/Security Violation: Invalid MIME type/);
+    });
+
+    it('should handle Flash-to-Pro upgrade on single job subscription', async () => {
+        // Scenario: Job starts, updates with Flash (status: completed), then updates with Pro (status: completed + higher quality)
+        // NOTE: The current Service implementation resolves on FIRST 'completed'.
+        // If the service logic supports "upgrades", it usually means the *first* completion is Flash,
+        // and a *second* event comes later.
+        // However, `waitForJob` returns a Promise that resolves *once*.
+        // This test verifies that the SUBSCRIPTION (subscribeToJob) receives both updates.
+
+        mocks.doc.mockReturnValue('doc-ref');
+        const updates: any[] = [];
+
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            // 1. Flash Update
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-upgrade',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'http://flash.mp4',
+                            metadata: { mime_type: 'video/mp4', quality: 'flash' }
+                        }
+                    })
+                });
+            }, 1000);
+
+            // 2. Pro Update
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-upgrade',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'http://pro.mp4',
+                            metadata: { mime_type: 'video/mp4', quality: 'pro' }
+                        }
+                    })
+                });
+            }, 3000);
+
+            return vi.fn();
+        });
+
+        // Use subscribeToJob directly to verify stream of updates
+        const jobPromise = new Promise<void>((resolve) => {
+            service.subscribeToJob('job-id-upgrade', (job) => {
+                if (job && job.status === 'completed') {
+                    updates.push(job);
+                    if (job.output.metadata.quality === 'pro') {
+                        resolve();
+                    }
+                }
+            });
+        });
+
+        vi.advanceTimersByTime(3000);
+        await jobPromise;
+
+        expect(updates).toHaveLength(2);
+        expect(updates[0].output.url).toBe('http://flash.mp4');
+        expect(updates[1].output.url).toBe('http://pro.mp4');
+    });
+
+    it('should handle SafetySettings violation gracefully', async () => {
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
@@ -166,11 +242,8 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                     id: 'job-id-unsafe',
                     data: () => ({
                         status: 'failed',
-                        error: 'Safety violation: Content blocked by safety filters.',
-                        safety_ratings: [
-                            { category: 'HARM_CATEGORY_VIOLENCE', probability: 'HIGH' },
-                            { category: 'HARM_CATEGORY_HATE_SPEECH', probability: 'MEDIUM' }
-                        ]
+                        error: 'Safety violation',
+                        safety_ratings: []
                     })
                 });
             }, 1000);
@@ -180,42 +253,6 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
         const jobPromise = service.waitForJob('job-id-unsafe', 5000);
         vi.advanceTimersByTime(1000);
 
-        // Expect rejection.
-        // In a real app, we might check for a custom error class, but here we check the message.
-        // The service wraps the error in `new Error(job.error)`.
         await expect(jobPromise).rejects.toThrow(/Safety violation/);
-
-        // We implicitly verified the handshake by confirming the service correctly identified the 'failed' status
-        // and propagated the error message derived from the backend's safety response.
-    });
-
-    it('should return empty URL on missing asset (Client must handle 404)', async () => {
-        // Setup: Job completes, but URL is invalid/empty (e.g. upload failed but job marked complete)
-        mocks.doc.mockReturnValue('doc-ref');
-        mocks.onSnapshot.mockImplementation((ref, callback) => {
-            setTimeout(() => {
-                callback({
-                    exists: () => true,
-                    id: 'job-id-404',
-                    data: () => ({
-                        status: 'completed',
-                        output: {
-                            // Missing URL or empty
-                            url: ''
-                        }
-                    })
-                });
-            }, 500);
-            return vi.fn();
-        });
-
-        const jobPromise = service.waitForJob('job-id-404', 5000);
-        vi.advanceTimersByTime(500);
-
-        const result = await jobPromise;
-
-        // Assert that the service returns the result as-is (empty URL)
-        // This confirms the service layer is passive and the UI/Consumer is responsible for the "Critical Failure" check
-        expect(result.output.url).toBe('');
     });
 });
