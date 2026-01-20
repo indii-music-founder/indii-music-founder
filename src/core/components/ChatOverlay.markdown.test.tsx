@@ -59,6 +59,7 @@ vi.mock('lucide-react', () => ({
     GripHorizontal: () => <span data-testid="icon-grip-horizontal" />,
     Minimize2: () => <span data-testid="icon-minimize-2" />,
     RefreshCw: () => <span data-testid="icon-refresh-cw" />,
+    Copy: () => <span data-testid="icon-copy" />,
 }));
 
 // Mock Child Renderers

@@ -1,32 +1,32 @@
-# Walkthrough: UI Standardization (Distribution & Core)
+# Walkthrough: AI Service & Backend Alignment
 
 ## Overview
 
-This walkthrough documents the standardization of UI tokens and styles across the Distribution module and Core layout components. The goal was to remove hardcoded hex values and consistent apply the `indiiOS` design system (department tokens, glassmorphism, etc.).
+ This walkthrough documents the systematic alignment of the Firebase Cloud Functions backend with the `FirebaseAIService` client SDK. The goal was to resolve runtime errors caused by mismatched parameters, missing functions, and region availability issues.
 
 ## Key Changes
 
-### 1. Distribution Module Components
+### 1. Backend (`functions/`)
 
-- **`BankPanel.tsx`**: Updated Revenue Simulator, Tax Engine, and Waterfall inputs to use `bg-black/40`, `bg-white/5` surfaces, and `dept-licensing`/`dept-distribution` accents.
-- **`QCPanel.tsx`**: Standardized Metadata inputs and QC results with `dept-marketing` (errors) and `dept-licensing` (pass) tokens.
-- **`AuthorityPanel.tsx`**: Applied `dept-creative`, `dept-distribution`, and `dept-royalties` scheme to ISRC, UPC, and DDEX generators.
-- **`KeysPanel.tsx`**: Updated Merlin and MLC bridge cards to use `bg-white/5` and department tokens.
-- **`DistributorConnectionsPanel.tsx`**: Fixed background opacities and token usage.
+- **`src/index.ts`**:
+  - **Moved** `generateImageV3` to `us-west1` to access `gemini-3-pro-image-preview`.
+  - **Implemented** `generateSpeech` function (previously missing) using the Gemini REST API for Text-to-Speech support.
+- **`src/lib/audio.ts`**: Created new Zod schema `GenerateSpeechRequestSchema` to validate TTS requests.
+- **`src/config/models.ts`**: Added `SPEECH` model configuration (`gemini-2.5-pro-tts`).
 
-### 2. Mobile Navigation (`MobileNav.tsx`)
+### 2. Frontend (`src/services/ai/`)
 
-- **FAB**: Replaced hardcoded `#1a1a1a` with `bg-background` and `hover:bg-white/10`.
-- **Drawer**: Updated menu items to dynamic use `colors.hoverBg` and `colors.hoverText` based on the module, ensuring consistency with the desktop Sidebar.
+- **`FirebaseAIService.ts`**:
+  - **Fixed** `generateImage`: The `GenerateImageBackendPayload` interface now explicitly maps nested `config.aspectRatio` and `config.numberOfImages` to the flat structure (`aspectRatio`, `count`) expected by the backend validation schema.
+- **`AIService.ts`**: Confirmed correct routing of configuration options.
 
-## Verification Results
+## Verification
 
-### Browser Smoke Test
-
-- **Desktop**: Verified consistent layout and department branding across all Distribution tabs.
-- **Mobile**: Confirmed correct background colors and interative states for the FAB and navigation drawer.
+- **Backend Build**: `npm run build` in `functions/` passed successfully.
+- **Frontend Types**: `npm run typecheck` passed, confirming type safety of the new payload interfaces.
+- **Video Logic**: Verified that `generateVideo` correctly spreads configuration options, matching the backend's expected flat structure.
 
 ## Next Steps
 
-- **Docs**: Keep strict adherence to `moduleColors.ts` for any new components.
-- **Audit**: Periodically scan for `#` hex values in `.tsx` files to catch regressions.
+- **Test**: Manually verify "Generate Campaign" (Image) and "Voice" features in the UI.
+- **Feature**: Consider implementing `editImage` in the frontend service if image editing UI is added later.

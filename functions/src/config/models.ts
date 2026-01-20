@@ -15,6 +15,9 @@ export const FUNCTION_AI_MODELS = {
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-preview',
+    },
+    SPEECH: {
+        GENERATION: 'gemini-2.5-pro-tts',
     }
 } as const;
 

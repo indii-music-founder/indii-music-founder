@@ -1,23 +1,24 @@
-# Task: UI Standardization (Distribution Module)
+# Task: AI Service & Backend Alignment
 
 ## Objectives
 
-Standardize the UI/UX design program across the indiiOS application, specifically targeting the Distribution module. Replace hardcoded colors and styles with semantic variables and department-specific tokens.
+Ensure the backend Firebase Cloud Functions are perfectly aligned with the `FirebaseAIService.ts` frontend client. Fix parameter mismatches, missing functions, and region configuration issues to enable robust AI generation features (Image, Video, Speech).
 
 ## Status
 
-- [x] **Distribution Module**
-  - [x] Standardize `DistributorConnectionsPanel.tsx` (backgrounds, text tokens).
-  - [x] Standardize `DistributorCard.tsx` (card styles, tokens).
-  - [x] Standardize `BankPanel.tsx` (glassmorphism, department branding).
-  - [x] Standardize `QCPanel.tsx` (backgrounds, inputs, tokens).
-  - [x] Standardize `AuthorityPanel.tsx` (ISRC/UPC/DDEX sections).
-  - [x] Standardize `KeysPanel.tsx` (Merlin/MLC cards).
-- [x] **Mobile Navigation**
-  - [x] Update `MobileNav.tsx` FAB and drawer to use `bg-background` and standardized hover tokens.
+- [x] **Image Generation (`generateImage`)**
+  - [x] Move Cloud Function to `us-west1` for `gemini-3-pro-image-preview` availability.
+  - [x] Fix parameter mismatch: Frontend now correctly maps nested `config` (aspectRatio, count) to the flat payload expected by the backend.
+- [x] **Speech Generation (`generateSpeech`)**
+  - [x] Diagnose missing backend function (Frontend call existed, backend implementation was absent).
+  - [x] Implement `generateSpeech` Cloud Function using robust REST API pattern for Gemini TTS.
+  - [x] Create `functions/src/lib/audio.ts` with Zod validation schema.
+- [x] **Video Generation (`generateVideo`)**
+  - [x] Verify alignment of `triggerVideoJob` parameters (Verified: Spread syntax handles flattening correctly).
 - [x] **Verification**
-  - [x] Run browser smoke test to verify visual consistency.
+  - [x] `npm run build` (Functions) - PASSED
+  - [x] `npm run typecheck` (Frontend) - PASSED
 
 ## Context
 
-This standardization ensures a consistent, premium feel across the application, leveraging the established design system tokens and removing legacy hardcoded values.
+This task resolves critical 500/404 errors in AI features by ensuring the contract between client and server is strictly honored.

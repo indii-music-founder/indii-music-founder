@@ -861,8 +861,31 @@ export class FirebaseAIService {
      */
     async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: Record<string, unknown>): Promise<string> {
         return this.mediaBreaker.execute(async () => {
-            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImageV3');
-            const response = await generateImageFn({ model, prompt, config });
+            // Lazily import to avoid circular dependencies or initialization issues
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const { app } = await import('@/services/firebase');
+
+            // Explicitly use us-west1 where the function is deployed
+            const functionsWest1 = getFunctions(app, 'us-west1');
+
+            // Backend expects flat parameters, not nested config objects
+            interface GenerateImageBackendPayload {
+                prompt: string;
+                aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
+                count?: number;
+                images?: { mimeType: string; data: string }[];
+            }
+
+            const generateImageFn = httpsCallable<GenerateImageBackendPayload, GenerateImageResponse>(functionsWest1, 'generateImageV3');
+
+            // Map frontend config to backend payload
+            const payload: GenerateImageBackendPayload = {
+                prompt,
+                aspectRatio: (config?.aspectRatio as any) || undefined,
+                count: (config?.numberOfImages as number) || (config?.candidateCount as number) || 1,
+            };
+
+            const response = await generateImageFn(payload);
             const image = response.data.images?.[0];
             if (!image) throw new Error('No image returned');
             return image.bytesBase64Encoded;
