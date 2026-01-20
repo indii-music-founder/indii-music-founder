@@ -119,9 +119,22 @@ function LoadingFallback() {
  * while the app uses isAgentOpen from the store. This wrapper connects them.
  */
 function ChatOverlayWrapper() {
-    const isAgentOpen = useStore(state => state.isAgentOpen);
-    const toggleAgentWindow = useStore(state => state.toggleAgentWindow);
+    const { isAgentOpen, toggleAgentWindow, isRightPanelOpen, toggleRightPanel } = useStore(
+        useShallow(state => ({
+            isAgentOpen: state.isAgentOpen,
+            toggleAgentWindow: state.toggleAgentWindow,
+            isRightPanelOpen: state.isRightPanelOpen,
+            toggleRightPanel: state.toggleRightPanel
+        }))
+    );
     const [isMinimized, setIsMinimized] = useState(false);
+
+    // Platinum Polish: Auto-close right panel when agent opens to prevent UI overlap
+    useEffect(() => {
+        if (isAgentOpen && isRightPanelOpen) {
+            toggleRightPanel();
+        }
+    }, [isAgentOpen]);
 
     if (!isAgentOpen) return null;
 
