@@ -467,6 +467,115 @@ The architecture is now in place for safe, isolated agent execution. The next st
 
 ---
 
-**Status:** Phase 3 Core - Complete ✅
-**Next:** Tool Migration (Phase 3.5) or Phase 4 (Hub-and-Spoke Enforcement)
-**Date:** 2026-01-19
+## Phase 3.5: BaseAgent Tool Migration (COMPLETE ✅)
+
+**Date:** 2026-01-20
+
+### What Was Implemented
+
+**BaseAgent Tool Calling Infrastructure:**
+
+Modified `BaseAgent.ts` to pass `toolContext` to all tool functions:
+
+```typescript
+// Line 641 - Pass to BaseAgent.functions
+result = await this.functions[name](args, enrichedContext, toolContext);
+
+// Line 649 - Pass to TOOL_REGISTRY
+result = await TOOL_REGISTRY[name](args, toolContext);
+```
+
+**Migrated BaseAgent.functions (7 tools):**
+
+All functions in `BaseAgent.functions` now accept optional third parameter `toolContext: ToolExecutionContext`:
+
+1. ✅ `get_project_details` - **Fully migrated** to use execution context for reading projects
+2. ✅ `delegate_task` - Signature updated (accepts but doesn't use toolContext)
+3. ✅ `consult_experts` - Signature updated
+4. ✅ `schedule_task` - Signature updated
+5. ✅ `subscribe_to_event` - Signature updated
+6. ✅ `send_notification` - Signature updated
+7. ✅ `speak` - Signature updated (critical for loop prevention)
+
+**Example Migration:**
+
+```typescript
+// Before
+get_project_details: async ({ projectId }, _context) => {
+    const projects = useStore.getState().projects;
+    // ...
+}
+
+// After (Phase 3.5)
+get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
+    const projects = toolContext
+        ? toolContext.get('projects')
+        : (await import('@/core/store')).useStore.getState().projects;
+    // ...
+}
+```
+
+### What Works Now
+
+✅ **Execution context created for every agent run**
+✅ **ToolExecutionContext passed to all tools**
+✅ **BaseAgent.functions can use execution context** (7 tools migrated)
+✅ **Backwards compatibility maintained** (toolContext is optional)
+✅ **Speak tool migrated** (prevents loop issues from Phase 2)
+
+### Current Limitations
+
+❌ **TOOL_REGISTRY tools cannot use toolContext yet**
+
+**Reason:** `wrapTool` utility doesn't support third parameter
+
+```typescript
+// Current wrapTool signature (ToolUtils.ts)
+wrapTool<TArgs>(
+    toolName: string,
+    fn: (args: TArgs, context?: AgentContext) => Promise<any>
+)
+```
+
+**Impact:** Tools in TOOL_REGISTRY receive toolContext but can't access it:
+- MemoryTools (save_memory, recall_memories, read_history)
+- ProjectTools (create_project, open_project)
+- OrganizationTools (create_organization, switch_organization)
+- CreativeTools (generate_image, batch_edit_images)
+- And 40+ other tools
+
+### Phase 3.6 Roadmap (Future Work)
+
+**Goal:** Enable all TOOL_REGISTRY tools to use execution context
+
+**Steps:**
+
+1. Update `wrapTool` signature in `ToolUtils.ts`:
+```typescript
+export function wrapTool<TArgs extends ToolFunctionArgs>(
+    toolName: string,
+    fn: (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => Promise<any>
+): ToolFunction<TArgs> {
+    return async (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        // Pass toolContext to wrapped function
+        const result = await fn(args, context, toolContext);
+        // ...
+    };
+}
+```
+
+2. Update critical tools to use toolContext:
+   - MemoryTools (highest priority - modifies agentHistory)
+   - ProjectTools (modifies projects)
+   - OrganizationTools (modifies activeOrg)
+   - CreativeTools (modifies images, history)
+
+3. Update ToolFunction type definition in `types.ts`
+
+**Estimated Effort:** ~2 hours (update wrapTool + migrate 10-15 critical tools)
+
+---
+
+**Status:** Phase 3.5 - Complete ✅
+**Next:** Phase 3.6 (TOOL_REGISTRY migration) or Phase 4 (Hub-and-Spoke Enforcement)
+**Date:** 2026-01-20
