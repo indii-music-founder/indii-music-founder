@@ -339,8 +339,9 @@ export class DashboardService {
             for (const item of history) {
                 if (!item.prompt) continue;
 
-                const itemWords = item.prompt.toLowerCase().split(/\s+/);
-                for (const word of itemWords) {
+                // Bolt: Use matchAll to avoid creating large intermediate strings and arrays
+                for (const match of item.prompt.matchAll(/\S+/g)) {
+                    const word = match[0].toLowerCase();
                     if (word.length > 3 && !STOP_WORDS.has(word)) {
                         wordCounts[word] = (wordCounts[word] || 0) + 1;
                     }
