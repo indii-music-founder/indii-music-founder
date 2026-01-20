@@ -1,0 +1,7 @@
+## 2026-05-22 - Mobile Stacking Contexts & Navigation
+**Learning:** Fixed positioning (`fixed inset-0`) for the ChatOverlay on mobile creates a new stacking context that can obscure other "always-on" UI elements like the CommandBar if z-indices are not explicitly managed. The CommandBar (static/relative) was hidden behind the ChatOverlay (fixed z-100).
+**Action:** Ensure global UI elements (CommandBar, FABs) have explicit z-indices higher than full-screen overlays on mobile. Added `z-[101]` to CommandBar and `z-[102]` to MobileNav FAB.
+
+## 2026-05-22 - E2E Auth & UI Evolution
+**Learning:** Legacy mobile E2E tests were failing because they assumed a deprecated "Bottom Tab Bar" UI (replaced by FAB) and lacked authentication steps.
+**Action:** Updated tests to use the new FAB selectors (`button[aria-label="Open Navigation"]`) and implemented `Guest Login (Dev)` bypass in `beforeEach` hooks to ensure tests run against the actual app state.
