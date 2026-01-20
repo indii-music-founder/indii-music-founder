@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -151,7 +152,16 @@ function DevPortWarning() {
 // ============================================================================
 
 function useAppInitialization() {
-    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore();
+    // ⚡ Bolt Optimization: useShallow
+    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore(
+        useShallow(state => ({
+            initializeAuthListener: state.initializeAuthListener,
+            loadUserProfile: state.loadUserProfile,
+            user: state.user,
+            initializeHistory: state.initializeHistory,
+            loadProjects: state.loadProjects
+        }))
+    );
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
@@ -209,7 +219,14 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 // ============================================================================
 
 export default function App() {
-    const { currentModule, user, authLoading } = useStore();
+    // ⚡ Bolt Optimization: useShallow
+    const { currentModule, user, authLoading } = useStore(
+        useShallow(state => ({
+            currentModule: state.currentModule,
+            user: state.user,
+            authLoading: state.authLoading
+        }))
+    );
 
     // Initialize app
     useAppInitialization();
@@ -217,7 +234,7 @@ export default function App() {
     // Log module changes in dev
 
     // Handle Theme Switching
-    const { userProfile } = useStore();
+    const userProfile = useStore(useShallow(state => state.userProfile));
     useEffect(() => {
         const theme = userProfile?.preferences?.theme || 'dark';
 
