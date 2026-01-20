@@ -595,47 +595,8 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            // DEVELOPMENT MODE: Use GoogleGenAI SDK with API key from environment variable
-            // This is simpler and works well in local development with Firebase emulator
-            if (process.env.GEMINI_API_KEY) {
-                console.log("[generateImageV3] Development mode: Using GoogleGenAI SDK with API key");
-                const apiKey = process.env.GEMINI_API_KEY;
-                const client = new GoogleGenAI({ apiKey });
-                const model = client.getGenerativeModel({ model: FUNCTION_AI_MODELS.IMAGE.GENERATION });
-
-                const parts: any[] = [{ text: prompt }];
-                if (images) {
-                    images.forEach(img => {
-                        parts.push({
-                            inlineData: {
-                                mimeType: img.mimeType || "image/png",
-                                data: img.data
-                            }
-                        });
-                    });
-                }
-
-                const result = await model.generateContent({
-                    contents: [{ role: "user", parts }],
-                    generationConfig: {
-                        candidateCount: count || 1,
-                        responseModalities: ["IMAGE"],
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                    }
-                });
-
-                const processedImages = result.response.candidates?.[0]?.content?.parts
-                    ?.filter((p: any) => p.inlineData)
-                    ?.map((p: any) => ({
-                        bytesBase64Encoded: p.inlineData.data,
-                        mimeType: p.inlineData.mimeType || "image/png"
-                    })) || [];
-
-                return { images: processedImages };
-            }
-
-            // PRODUCTION MODE: Use Vertex AI (Enterprise / Quota Aware)
-            console.log("[generateImageV3] Production mode: Using Vertex AI with service account credentials");
+            // Initialize Vertex AI Client (works with API key for development)
+            console.log("[generateImageV3] Using Vertex AI with provided credentials");
             const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
             const location = 'us-central1';
             const vertexAI = new VertexAI({ project, location });
