@@ -1,4 +1,4 @@
-// Using global console
+import { logger } from '@/utils/logger';
 
 export enum CircuitState {
     CLOSED = 'CLOSED',
@@ -70,7 +70,7 @@ export class CircuitBreaker {
             // Non-recoverable errors should fail fast WITHOUT tripping the circuit
             // These are configuration issues that won't be fixed by retrying
             if (isNonRecoverableError(error)) {
-                console.error('[CircuitBreaker] Non-recoverable error detected, failing fast:', error);
+                logger.error('[CircuitBreaker] Non-recoverable error detected, failing fast:', error);
                 throw error;
             }
 
