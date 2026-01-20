@@ -44,34 +44,36 @@ export function XRayPanel({ trace }: XRayPanelProps) {
             </div>
 
             <ScrollArea className="flex-1">
-                <div className="p-4 space-y-4">
+                <div className="p-4">
                     {trace.steps.length === 0 && (
                         <p className="text-sm text-muted-foreground italic">No steps recorded yet...</p>
                     )}
 
-                    {trace.steps.map((step, idx) => (
-                        <div key={step.id || idx} className="space-y-2 group">
-                            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
-                                {getStepIcon(step.type)}
-                                {step.type.replace('_', ' ')}
-                                <span className="ml-auto font-normal opacity-50">
-                                    {new Date(step.timestamp).toLocaleTimeString()}
-                                </span>
-                            </div>
+                    <ol className="space-y-4 list-none m-0 p-0">
+                        {trace.steps.map((step, idx) => (
+                            <li key={step.id || idx} className="space-y-2 group">
+                                <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 group-hover:text-muted-foreground transition-colors">
+                                    {getStepIcon(step.type)}
+                                    {step.type.replace('_', ' ')}
+                                    <span className="ml-auto font-normal opacity-50">
+                                        {new Date(step.timestamp).toLocaleTimeString()}
+                                    </span>
+                                </div>
 
-                            <div className={`text-sm p-3 rounded-lg border ${step.type === 'thought' ? 'bg-purple-900/10 border-purple-500/20 text-purple-100/90 italic quote' :
-                                step.type === 'tool_call' ? 'bg-blue-900/10 border-blue-500/20 font-mono text-blue-100/90' :
-                                    step.type === 'error' ? 'bg-red-900/10 border-red-500/20 text-red-100/90' :
-                                        'bg-white/5 border-white/10 text-gray-300'
-                                }`}>
-                                {typeof step.content === 'string'
-                                    ? step.content
-                                    : JSON.stringify(step.content, null, 2)}
-                            </div>
+                                <div className={`text-sm p-3 rounded-lg border ${step.type === 'thought' ? 'bg-purple-900/10 border-purple-500/20 text-purple-100/90 italic quote' :
+                                    step.type === 'tool_call' ? 'bg-blue-900/10 border-blue-500/20 font-mono text-blue-100/90' :
+                                        step.type === 'error' ? 'bg-red-900/10 border-red-500/20 text-red-100/90' :
+                                            'bg-white/5 border-white/10 text-gray-300'
+                                    }`}>
+                                    {typeof step.content === 'string'
+                                        ? step.content
+                                        : JSON.stringify(step.content, null, 2)}
+                                </div>
 
-                            {idx < trace.steps.length - 1 && <div className="h-px bg-white/5 opacity-50 my-4" />}
-                        </div>
-                    ))}
+                                {idx < trace.steps.length - 1 && <div className="h-px bg-white/5 opacity-50 my-4" />}
+                            </li>
+                        ))}
+                    </ol>
                 </div>
             </ScrollArea>
         </div>

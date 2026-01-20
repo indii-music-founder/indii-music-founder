@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 
 const SYSTEM_ROOTS = [
     '/etc', '/var', '/usr', '/bin', '/sbin', '/proc', '/sys', '/root',
@@ -13,27 +14,35 @@ const ALLOWED_EXTENSIONS = new Set([
 ]);
 
 export function validateSafeDistributionSource(filePath: string): void {
-    // 1. Normalize Path
-    const normalized = path.normalize(filePath);
+    // 1. Resolve Path (Canonicalize & Resolve Symlinks) to prevent LFI via symlinks
+    let resolvedPath: string;
+    try {
+        resolvedPath = fs.realpathSync(filePath);
+    } catch (error) {
+        throw new Error(`Security Violation: Invalid file path or file not found`);
+    }
 
-    // 2. Check for Path Traversal (redundant with normalize, but explicit)
+    // 2. Normalize Path
+    const normalized = path.normalize(resolvedPath);
+
+    // 3. Check for Path Traversal (redundant with realpath, but defense in depth)
     if (normalized.includes('..')) {
         throw new Error("Security Violation: Path traversal detected");
     }
 
-    // 3. Block Hidden Files and Directories
+    // 4. Block Hidden Files and Directories
     // We split by the OS separator. On Windows this is '\', on Linux '/'.
     const segments = normalized.split(path.sep);
     if (segments.some(segment => segment.startsWith('.') && segment !== '.' && segment !== '..')) {
         throw new Error("Security Violation: Access to hidden files or directories is denied");
     }
 
-    // 4. Block System Directories
+    // 5. Block System Directories
     if (SYSTEM_ROOTS.some(root => normalized.startsWith(root))) {
         throw new Error("Security Violation: Access to system directories is denied");
     }
 
-    // 5. Enforce Extension Whitelist
+    // 6. Enforce Extension Whitelist
     const ext = path.extname(normalized).toLowerCase();
     if (!ALLOWED_EXTENSIONS.has(ext)) {
         throw new Error(`Security Violation: File type '${ext}' is not allowed for distribution`);
