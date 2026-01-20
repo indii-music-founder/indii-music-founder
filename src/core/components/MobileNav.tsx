@@ -84,7 +84,7 @@ export const MobileNav = () => {
                     haptic('medium');
                     setIsOpen(true);
                 }}
-                className="md:hidden fixed bottom-6 right-6 z-50 p-3.5 bg-[#1a1a1a] border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-[#252525] text-white"
+                className="md:hidden fixed bottom-24 right-6 z-[102] p-3.5 bg-[#1a1a1a] border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-[#252525] text-white"
                 aria-label="Open Navigation"
             >
                 <Menu size={24} />
@@ -92,7 +92,7 @@ export const MobileNav = () => {
 
             {/* Full Screen Drawer */}
             {isOpen && (
-                <div className="md:hidden fixed inset-0 z-[60] flex items-end justify-center animate-in fade-in duration-200">
+                <div className="md:hidden fixed inset-0 z-[103] flex items-end justify-center animate-in fade-in duration-200">
                     {/* Backdrop */}
                     <div
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
