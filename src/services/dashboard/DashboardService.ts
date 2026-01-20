@@ -300,28 +300,43 @@ export class DashboardService {
             const history = state.generatedHistory || [];
             const agentMessages = state.agentMessages || [];
 
-            // Count generations
-            const imageCount = history.filter((h) => h.type === 'image').length;
-            const videoItems = history.filter((h) => h.type === 'video');
-            const totalVideoSeconds = videoItems.reduce((sum: number, v) => {
-                // Check if the history item effectively has a duration property
-                // Currently HistoryItem type doesn't support duration, so we default to 5
-                // In a real implementation, we should update HistoryItem interface
-                const duration = (v as unknown as { duration?: number }).duration || 5;
-                return sum + duration;
-            }, 0);
-
-            // Weekly activity (last 7 days)
+            // Bolt Optimization: Calculate all analytics in a single pass to reduce iteration overhead
+            let imageCount = 0;
+            let totalVideoSeconds = 0;
             const now = Date.now();
             const dayMs = 24 * 60 * 60 * 1000;
             const weeklyActivity = Array(7).fill(0);
+            const wordCounts: Record<string, number> = {};
 
-            history.forEach((item) => {
+            for (const item of history) {
+                // 1. Counts and Duration
+                if (item.type === 'image') {
+                    imageCount++;
+                } else if (item.type === 'video') {
+                    // Check if the history item effectively has a duration property
+                    // Currently HistoryItem type doesn't support duration, so we default to 5
+                    const duration = (item as unknown as { duration?: number }).duration || 5;
+                    totalVideoSeconds += duration;
+                }
+
+                // 2. Weekly Activity
+                // Using (item.timestamp || now) to handle missing timestamp safely
                 const daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
                 if (daysAgo >= 0 && daysAgo < 7) {
                     weeklyActivity[6 - daysAgo]++;
                 }
-            });
+
+                // 3. Word Cloud
+                if (item.prompt) {
+                    // Bolt: Use matchAll to avoid creating large intermediate strings and arrays
+                    for (const match of item.prompt.matchAll(/\S+/g)) {
+                        const word = match[0].toLowerCase();
+                        if (word.length > 3 && !STOP_WORDS.has(word)) {
+                            wordCounts[word] = (wordCounts[word] || 0) + 1;
+                        }
+                    }
+                }
+            }
 
             // Calculate streak (consecutive days with activity)
             let streak = 0;
@@ -330,21 +345,6 @@ export class DashboardService {
                     streak++;
                 } else if (i < 6) {
                     break; // Only break if not today
-                }
-            }
-
-            // Word cloud from prompts - Optimized
-            const wordCounts: Record<string, number> = {};
-
-            for (const item of history) {
-                if (!item.prompt) continue;
-
-                // Bolt: Use matchAll to avoid creating large intermediate strings and arrays
-                for (const match of item.prompt.matchAll(/\S+/g)) {
-                    const word = match[0].toLowerCase();
-                    if (word.length > 3 && !STOP_WORDS.has(word)) {
-                        wordCounts[word] = (wordCounts[word] || 0) + 1;
-                    }
                 }
             }
 
