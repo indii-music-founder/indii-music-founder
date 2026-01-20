@@ -23,6 +23,7 @@ import { CampaignDetailsModal } from './components/CampaignDetailsModal';
 import { ContactDetailsModal } from './components/ContactDetailsModal';
 import { ProTipsModal } from './components/ProTipsModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { ReleaseKitModal } from './components/ReleaseKitModal';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { Campaign, Contact } from './types';
 
@@ -47,6 +48,7 @@ export default function PublicistDashboard() {
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [isTipsOpen, setIsTipsOpen] = useState(false);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+    const [isReleaseKitOpen, setIsReleaseKitOpen] = useState(false);
 
     if (loading) {
         return (
@@ -347,6 +349,10 @@ export default function PublicistDashboard() {
             <OnboardingModal
                 isOpen={isOnboardingOpen}
                 onClose={() => setIsOnboardingOpen(false)}
+            />
+            <ReleaseKitModal
+                isOpen={isReleaseKitOpen}
+                onClose={() => setIsReleaseKitOpen(false)}
             />
         </ModuleErrorBoundary >
     );

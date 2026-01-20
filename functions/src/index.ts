@@ -14,7 +14,7 @@ import { generateVideoFn } from "./lib/video_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
 
 // Vertex AI SDK
-import { VertexAI } from "@google-cloud/vertexai";
+// import { VertexAI } from "@google-cloud/vertexai";
 import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
 // Initialize Firebase Admin
@@ -71,6 +71,7 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
  */
 function getGeminiApiKey(): string {
     // Try secret first (production)
+    /*
     try {
         const secretValue = geminiApiKey.value();
         if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
@@ -80,6 +81,7 @@ function getGeminiApiKey(): string {
     } catch (secretError) {
         console.log('[getGeminiApiKey] Secret not available, checking environment...');
     }
+    */
 
     // Fallback to environment variable (local development)
     const envKey = process.env.GEMINI_API_KEY;
@@ -595,14 +597,12 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            // Initialize Vertex AI Client (works with API key for development)
-            console.log("[generateImageV3] Using Vertex AI with provided credentials");
-            const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
-            const location = 'us-central1';
-            const vertexAI = new VertexAI({ project, location });
+            console.log("[generateImageV3] Initializing GoogleGenAI with API Key");
+            // Use GoogleGenAI (AI Studio) instead of VertexAI to access gemini-3-pro-image-preview
+            // which appears to be available via the global AI Studio endpoint but not Vertex us-central1.
+            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-            const generativeModel = vertexAI.getGenerativeModel({ model: modelId });
 
             const parts: any[] = [{ text: prompt }];
 
@@ -617,27 +617,36 @@ export const generateImageV3 = functions
                 });
             }
 
-            // NOTE: Vertex AI SDK `generateContent` signature differs slightly from GoogleGenAI
-            const result = await generativeModel.generateContent({
+            console.log(`[generateImageV3] Calling model: ${modelId}`);
+
+            const result = await client.models.generateContent({
+                model: modelId,
                 contents: [{ role: "user", parts }],
-                generationConfig: {
+                config: {
                     candidateCount: count || 1,
-                    // @ts-expect-error - imageConfig is valid for image models but not strictly typed in all SDK versions yet
                     responseModalities: ["IMAGE"],
                     ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
                 }
             });
 
-            if (!result.response.candidates || result.response.candidates.length === 0) {
-                throw new functions.https.HttpsError('internal', 'No candidates returned from Vertex AI');
+            if (!result.candidates || result.candidates.length === 0) {
+                // Fallback check for raw response structure if SDK differs
+                throw new functions.https.HttpsError('internal', 'No candidates returned from Gemini API');
             }
 
-            const processedImages = (result.response.candidates[0].content?.parts || [])
+            // Map candidates to internal format
+            // Note: GoogleGenAI candidates structure:
+            // candidates: [{ content: { parts: [{ inlineData: { mimeType:..., data:... } }] } }]
+            const processedImages = (result.candidates[0].content?.parts || [])
                 .filter((p: any) => p.inlineData)
                 .map((p: any) => ({
                     bytesBase64Encoded: p.inlineData.data,
                     mimeType: p.inlineData.mimeType || "image/png"
                 }));
+
+            if (processedImages.length === 0) {
+                throw new functions.https.HttpsError('internal', 'No image data found in candidates');
+            }
 
             return { images: processedImages };
 
@@ -671,13 +680,10 @@ export const editImage = functions
         const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
 
         try {
-            // Initialize Vertex AI Client
-            const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
-            const location = 'us-central1';
-            const vertexAI = new VertexAI({ project, location });
+            console.log("[editImage] Initializing GoogleGenAI with API Key");
+            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-            const generativeModel = vertexAI.getGenerativeModel({ model: modelId });
 
             const parts: any[] = [
                 {
@@ -715,25 +721,27 @@ export const editImage = functions
 
             parts.push({ text: prompt });
 
-            const result = await generativeModel.generateContent({
+            console.log(`[editImage] Calling model: ${modelId}`);
+
+            const result = await client.models.generateContent({
+                model: modelId,
                 contents: [{
                     role: "user",
                     parts: parts
                 }],
-                generationConfig: {
-                    // @ts-expect-error - imageConfig/responseModalities valid for image models
+                config: {
                     responseModalities: ["IMAGE"],
                 }
             });
 
-            if (!result.response.candidates) {
-                throw new functions.https.HttpsError('internal', "No candidates returned.");
+            if (!result.candidates || result.candidates.length === 0) {
+                throw new functions.https.HttpsError('internal', "No candidates returned from Gemini API.");
             }
 
-            return { candidates: result.response.candidates };
+            return { candidates: result.candidates };
 
         } catch (error: unknown) {
-            console.error("Function Error:", error);
+            console.error("[editImage] Error:", error);
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }

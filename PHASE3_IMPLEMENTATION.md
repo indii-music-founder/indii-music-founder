@@ -13,6 +13,7 @@ Phase 3 introduces **execution context isolation** to prevent agents from interf
 **Purpose:** Provides isolated state environment for each agent execution.
 
 **Features:**
+
 - **State Snapshots:** Creates immutable snapshot of global state at execution start
 - **Copy-on-Write:** Modifications tracked separately, not applied to global state immediately
 - **Conflict Detection:** Detects if global state changed since snapshot
@@ -20,6 +21,7 @@ Phase 3 introduces **execution context isolation** to prevent agents from interf
 - **Change Tracking:** Full history of all modifications with timestamps
 
 **Key Methods:**
+
 ```typescript
 // Get state (returns snapshot + modifications)
 getState(key: keyof StoreState): any
@@ -41,6 +43,7 @@ getChangeSummary(): string
 ```
 
 **Architecture:**
+
 ```
 Agent Execution Start
   ↓
@@ -62,11 +65,13 @@ Execution Completes Successfully?
 **Purpose:** Wrapper that provides store-like interface to tools but routes through ExecutionContext.
 
 **Features:**
+
 - **Store-like API:** Tools interact with familiar `getState()`/`setState()` interface
 - **Automatic Routing:** All calls route through execution context instead of global store
 - **Legacy Adapter:** Supports gradual migration of existing tools
 
 **Key Methods:**
+
 ```typescript
 // Get full state
 getState(): Partial<StoreState>
@@ -83,6 +88,7 @@ hasChanges(): boolean
 ```
 
 **Tool Migration Path:**
+
 ```typescript
 // OLD (Legacy) - Direct global store access
 async function legacyTool(args: any) {
@@ -106,12 +112,14 @@ async function newTool(args: any, ctx: ToolExecutionContext) {
 **Changes Made:**
 
 **3.1 Imports:**
+
 ```typescript
 import { ExecutionContextFactory } from './AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 ```
 
 **3.2 Context Creation (before execution loop):**
+
 ```typescript
 // Phase 3: Create isolated execution context for this agent run
 const executionContext = ExecutionContextFactory.fromAgentContext(
@@ -126,6 +134,7 @@ const toolContext = new ToolExecutionContext(executionContext);
 ```
 
 **3.3 Commit on Success:**
+
 ```typescript
 // Phase 3: Commit execution context changes on successful completion
 if (executionContext.hasUncommittedChanges()) {
@@ -135,6 +144,7 @@ if (executionContext.hasUncommittedChanges()) {
 ```
 
 **3.4 Rollback on Failure:**
+
 ```typescript
 // Phase 3: Max iterations reached - rollback any uncommitted changes
 if (executionContext.hasUncommittedChanges()) {
@@ -154,21 +164,25 @@ if (executionContext.hasUncommittedChanges()) {
 ## Benefits
 
 ### 1. **State Corruption Prevention**
+
 - Agents cannot corrupt global state during execution
 - Failed executions leave no side effects
 - Partial work is automatically discarded on error
 
 ### 2. **Better Debugging**
+
 - Full change tracking with timestamps
 - Clear visibility into what each agent modified
 - Change summaries in console logs
 
 ### 3. **Conflict Detection**
+
 - Detects when multiple agents modify same state
 - Logs conflicts for investigation
 - Foundation for future merge strategies
 
 ### 4. **Transaction Safety**
+
 - All-or-nothing state updates
 - Atomic commits prevent partial state
 - Rollback on any error
@@ -180,16 +194,19 @@ if (executionContext.hasUncommittedChanges()) {
 ### Limitation 1: Tools Still Use Global Store
 
 **Current State:**
+
 - Execution context is created but not yet passed to most tools
 - Tools still call `useStore.getState()` directly
 - This is legacy behavior, works but doesn't benefit from isolation
 
 **Future Work (Phase 3.5):**
+
 - Migrate all tools to accept `ToolExecutionContext` parameter
 - Update TOOL_REGISTRY to pass context to tools
 - Deprecate direct `useStore` access in tools
 
 **Migration Strategy:**
+
 ```typescript
 // Step 1: Update tool signature
 async function myTool(
@@ -209,16 +226,19 @@ async function myTool(
 ### Limitation 2: No Merge Strategy
 
 **Current State:**
+
 - Conflicts are detected but not resolved
 - Last-write-wins strategy (commits happen despite conflicts)
 - Conflicts are logged but not handled
 
 **Future Work:**
+
 - Implement merge strategies for different state keys
 - Allow conflict resolution callbacks
 - Per-key merge policies (e.g., array concatenation, object merge)
 
 **Example Merge Strategy:**
+
 ```typescript
 class AgentExecutionContext {
     private mergeStrategies: Map<keyof StoreState, MergeStrategy> = new Map();
@@ -241,11 +261,13 @@ class AgentExecutionContext {
 ### Limitation 3: No Nested Transactions
 
 **Current State:**
+
 - Only one execution context per agent execution
 - Delegated agents create new contexts (no nesting)
 - No savepoints or nested rollback
 
 **Future Work (Advanced):**
+
 - Support nested execution contexts
 - Savepoint API for partial rollback
 - Parent-child context relationships
@@ -259,11 +281,13 @@ class AgentExecutionContext {
 **Scenario:** Agent throws error mid-execution after modifying state
 
 **Expected:**
+
 - State modifications are rolled back
 - Global state unchanged
 - Console shows rollback message
 
 **Test Code:**
+
 ```typescript
 test('Execution context rolls back on error', async () => {
     const initialState = useStore.getState();
@@ -284,6 +308,7 @@ test('Execution context rolls back on error', async () => {
 **Scenario:** Agent completes successfully after modifying state
 
 **Expected:**
+
 - State modifications are committed
 - Global state updated
 - Console shows commit message
@@ -293,6 +318,7 @@ test('Execution context rolls back on error', async () => {
 **Scenario:** Two agents modify same state concurrently
 
 **Expected:**
+
 - Both agents create separate contexts
 - Conflict is detected and logged
 - Second commit succeeds (last-write-wins)
@@ -306,11 +332,13 @@ test('Execution context rolls back on error', async () => {
 **Issue:** Creating deep snapshots may be expensive for large state
 
 **Optimization:**
+
 - Only snapshot relevant parts of state (not entire store)
 - Consider shallow snapshots for immutable data
 - Profile snapshot creation time
 
 **Current Implementation:**
+
 ```typescript
 // Only snapshots what agents need
 private createSnapshot(state: StoreState) {
@@ -328,11 +356,13 @@ private createSnapshot(state: StoreState) {
 **Issue:** Each execution context holds a snapshot + modifications
 
 **Mitigation:**
+
 - Contexts are short-lived (duration of agent execution)
 - Automatic cleanup when execution completes
 - No persistent storage of contexts
 
 **Typical Memory:**
+
 - Snapshot: ~10-50 KB (depends on state size)
 - Modifications: ~1-10 KB (depends on tool usage)
 - Total per agent: ~11-60 KB
@@ -346,21 +376,25 @@ private createSnapshot(state: StoreState) {
 **What to Watch For:**
 
 **Successful Commit:**
+
 ```
 [BaseAgent] Committing changes for marketing: 2 changes: images: [...], history: [...]
 ```
 
 **Rollback on Error:**
+
 ```
 [BaseAgent] Error occurred, rolling back 3 changes: revenue: [...], expenses: [...]
 ```
 
 **Rollback on Max Iterations:**
+
 ```
 [BaseAgent] Max iterations reached, rolling back 1 changes: agentHistory: [...]
 ```
 
 **Conflict Detection:**
+
 ```
 [ExecutionContext] Conflicts detected: images, history
 ```
@@ -370,26 +404,31 @@ private createSnapshot(state: StoreState) {
 ## Future Enhancements (Phase 3.5 and beyond)
 
 ### 1. Tool Context Passing (Immediate Priority)
+
 - Update all tools to accept `ToolExecutionContext`
 - Modify BaseAgent to pass context to tools
 - Deprecate direct store access
 
 ### 2. Merge Strategies
+
 - Implement configurable merge strategies
 - Per-key conflict resolution
 - Custom merge functions
 
 ### 3. Observability
+
 - Execution context traces in FireStore
 - Change history persistence
 - Conflict analytics
 
 ### 4. Performance Optimization
+
 - Lazy snapshot creation
 - Incremental snapshots
 - Copy-on-write optimization
 
 ### 5. Advanced Transactions
+
 - Nested contexts
 - Savepoints
 - Distributed transactions (multi-agent coordination)
@@ -399,22 +438,25 @@ private createSnapshot(state: StoreState) {
 ## Files Created/Modified
 
 **New Files:**
+
 - `src/services/agent/AgentExecutionContext.ts` (300+ lines)
 - `src/services/agent/ToolExecutionContext.ts` (80+ lines)
 - `PHASE3_IMPLEMENTATION.md` (this file)
 
 **Modified Files:**
-- `src/services/agent/BaseAgent.ts`
-  - Added imports (lines 5-6)
-  - Context creation (lines 570-579)
-  - Commit logic (lines 675-679)
-  - Rollback logic (lines 692-696, 703-707)
+
+- [BaseAgent.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/agent/BaseAgent.ts)
+  - Added imports (near top of file)
+  - Context creation (in `execute` method, before loop)
+  - Commit logic (in `execute` method, on success)
+  - Rollback logic (in `execute` method, on error or max iterations)
 
 ---
 
 ## Summary
 
 Phase 3 establishes the **foundation for transactional agent execution** with:
+
 - ✅ State isolation via execution contexts
 - ✅ Copy-on-write state management
 - ✅ Commit/rollback transaction support

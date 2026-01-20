@@ -44,7 +44,7 @@ describe('DistributionTools', () => {
                 year: 2026
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(true);
             expect(parsed.data.isrc).toMatch(/^USIND26\d{5}$/);
             expect(parsed.data.track_title).toBe('Test Track');
@@ -64,7 +64,7 @@ describe('DistributionTools', () => {
                 signedUnderPerjury: true
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(true);
             expect(parsed.data.form_type).toBe('W-9');
             expect(parsed.data.tin_valid).toBe(true);
@@ -82,7 +82,7 @@ describe('DistributionTools', () => {
                 signedUnderPerjury: true
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.data.tin_valid).toBe(false);
             expect(parsed.data.payout_status).toBe('HELD');
@@ -100,7 +100,7 @@ describe('DistributionTools', () => {
                 signedUnderPerjury: false
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.data.certified).toBe(false);
             expect(parsed.data.payout_status).toBe('HELD');
@@ -118,7 +118,7 @@ describe('DistributionTools', () => {
                 signedUnderPerjury: true
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.form_type).toBe('W-8BEN');
         });
 
@@ -134,7 +134,7 @@ describe('DistributionTools', () => {
                 signedUnderPerjury: true
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.form_type).toBe('W-8BEN-E');
         });
     });
@@ -153,7 +153,7 @@ describe('DistributionTools', () => {
                 ]
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(true);
             expect(parsed.data.gross_revenue).toBe(10000);
             expect(parsed.data.indii_fee).toBe(1000);
@@ -172,7 +172,7 @@ describe('DistributionTools', () => {
                 ]
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.recouped_expenses).toBe(2000);
             expect(parsed.data.net_distributable).toBe(7000); // 10000 - 1000 fee - 2000 recoup
         });
@@ -188,7 +188,7 @@ describe('DistributionTools', () => {
                 artworkUrl: 'https://example.com/artwork.jpg'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(true);
             expect(parsed.data.status).toBe('PASS');
             expect(parsed.data.errors).toHaveLength(0);
@@ -203,7 +203,7 @@ describe('DistributionTools', () => {
                 artworkUrl: 'https://example.com/artwork.jpg'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.data.status).toBe('FAIL');
             expect(parsed.data.errors).toContain('Generic artist name detected - will be rejected by DSPs');
@@ -218,7 +218,7 @@ describe('DistributionTools', () => {
                 artworkUrl: 'https://example.com/artwork.jpg'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.status).toBe('WARN');
             expect(parsed.data.warnings).toContain('ALL CAPS title detected - Apple/Spotify recommend Title Case');
         });
@@ -232,7 +232,7 @@ describe('DistributionTools', () => {
                 artworkUrl: 'https://example.com/artwork.jpg'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.status).toBe('FAIL');
             expect(parsed.data.errors).toContain('Featured artist in title - must be in artist field per DDEX standard');
         });
@@ -245,7 +245,7 @@ describe('DistributionTools', () => {
                 artist: 'Good Artist'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.data.status).toBe('FAIL');
             expect(parsed.data.errors).toContain('Missing artwork URL - required for distribution');
         });
@@ -262,7 +262,7 @@ describe('DistributionTools', () => {
                 isrc: 'INVALID'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.error).toContain('Invalid ISRC format');
         });
@@ -277,7 +277,7 @@ describe('DistributionTools', () => {
                 isrc: 'USIND2600001'
             });
 
-            const parsed = JSON.parse(result);
+            const parsed = result;
             expect(parsed.success).toBe(false);
             expect(parsed.error).toContain('Invalid UPC format');
         });

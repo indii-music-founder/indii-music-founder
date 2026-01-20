@@ -1,0 +1,74 @@
+[dotenv@17.2.3] injecting env (18) from .env -- tip: 🔐 encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (2) from functions/.env -- tip: ⚙️  specify custom .env file path with { path: '/custom/path/.env' }
+Diagnosing Vertex AI Models
+Project: indiios-v-1-1
+
+=========================================
+TESTING MODEL: gemini-3-pro-image-preview
+=========================================
+
+--- Checking Region: us-central1 ---
+Attempting generation with gemini-3-pro-image-preview in us-central1...
+❌ 404 Not Found in us-central1
+
+--- Checking Region: us-east4 ---
+Attempting generation with gemini-3-pro-image-preview in us-east4...
+❌ 404 Not Found in us-east4
+
+--- Checking Region: us-west1 ---
+Attempting generation with gemini-3-pro-image-preview in us-west1...
+❌ 404 Not Found in us-west1
+
+--- Checking Region: europe-west4 ---
+Attempting generation with gemini-3-pro-image-preview in europe-west4...
+❌ 404 Not Found in europe-west4
+
+=========================================
+TESTING MODEL: imagen-3.0-generate-001
+=========================================
+
+--- Checking Region: us-central1 ---
+Attempting generation with imagen-3.0-generate-001 in us-central1...
+⚠️ Error in us-central1 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagen-3.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: us-east4 ---
+Attempting generation with imagen-3.0-generate-001 in us-east4...
+⚠️ Error in us-east4 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagen-3.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: us-west1 ---
+Attempting generation with imagen-3.0-generate-001 in us-west1...
+⚠️ Error in us-west1 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagen-3.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: europe-west4 ---
+Attempting generation with imagen-3.0-generate-001 in europe-west4...
+⚠️ Error in europe-west4 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagen-3.0-generate. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+=========================================
+TESTING MODEL: imagegeneration@006
+=========================================
+
+--- Checking Region: us-central1 ---
+Attempting generation with imagegeneration@006 in us-central1...
+⚠️ Error in us-central1 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagegeneration. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: us-east4 ---
+Attempting generation with imagegeneration@006 in us-east4...
+⚠️ Error in us-east4 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagegeneration. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: us-west1 ---
+Attempting generation with imagegeneration@006 in us-west1...
+⚠️ Error in us-west1 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagegeneration. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Checking Region: europe-west4 ---
+Attempting generation with imagegeneration@006 in europe-west4...
+⚠️ Error in europe-west4 (but likely found): [VertexAI.ClientError]: got status: 429 Too Many Requests. {"error":{"code":429,"message":"Quota exceeded for aiplatform.googleapis.com/generate_content_requests_per_minute_per_project_per_base_model with base model: imagegeneration. Please submit a quota increase request. https://cloud.google.com/vertex-ai/docs/generative-ai/quotas-genai.","status":"RESOURCE_EXHAUSTED"}}
+   -> FOUND (but failed generation). This is good!
+
+--- Diagnosis Complete ---
