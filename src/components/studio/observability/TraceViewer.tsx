@@ -92,6 +92,7 @@ export function TraceViewer() {
                                             >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <Badge variant={getStatusColor(trace.status) as any} className="text-[10px] py-0 px-1.5 h-4">
+                                                        <span className="sr-only">Status: {trace.status}</span>
                                                         {trace.agentId}
                                                     </Badge>
                                                     <span className="text-[10px] text-muted-foreground">
