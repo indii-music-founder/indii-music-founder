@@ -12,6 +12,11 @@ const mocks = vi.hoisted(() => ({
         copyFile: vi.fn(),
         readFile: vi.fn(),
     },
+    // New mock for fs (sync)
+    fsSync: {
+        realpathSync: vi.fn((p) => p), // Default to returning path as-is
+        existsSync: vi.fn(() => true)
+    },
     os: { tmpdir: vi.fn(() => '/mock/tmp') },
     pythonBridge: { runScript: vi.fn() }
 }));
@@ -22,6 +27,16 @@ vi.mock('electron', () => ({
     app: mocks.app
 }));
 vi.mock('fs/promises', () => mocks.fs);
+// Mock fs default export for synchronous methods used in security checks
+vi.mock('fs', () => ({
+    default: {
+        ...mocks.fsSync,
+        ...mocks.fs // include promise methods if default export has them (node fs usually does)
+    },
+    realpathSync: mocks.fsSync.realpathSync,
+    existsSync: mocks.fsSync.existsSync
+}));
+
 vi.mock('os', () => mocks.os);
 vi.mock('../utils/python-bridge', () => ({ PythonBridge: mocks.pythonBridge }));
 
@@ -33,6 +48,9 @@ describe('🛡️ Shield: Distribution Security Test', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Reset realpathSync to identity function by default
+        mocks.fsSync.realpathSync.mockImplementation((p) => p);
+
         handlers = {};
         mocks.ipcMain.handle.mockImplementation((channel, handler) => {
             handlers[channel] = handler;
@@ -92,6 +110,10 @@ describe('🛡️ Shield: Distribution Security Test', () => {
         // This passes Zod (file.name is valid), but fails validateSafeDistributionSource
         const releaseId = validUUID;
         const sensitivePath = process.platform === 'win32' ? 'C:\\Windows\\System32\\cmd.exe' : '/etc/passwd';
+
+        // Mock realpathSync to return the sensitive path (identity)
+        mocks.fsSync.realpathSync.mockReturnValue(sensitivePath);
+
         const files = [{
             type: 'path',
             name: 'stolen_file.txt', // Valid destination name
@@ -106,7 +128,46 @@ describe('🛡️ Shield: Distribution Security Test', () => {
         expect(mocks.fs.copyFile).not.toHaveBeenCalled();
     });
 
-    it('should ALLOW safe file staging', async () => {
+    it('should BLOCK Symlink Attack (Bypass via valid extension)', async () => {
+        const releaseId = validUUID;
+        const symlinkPath = '/Users/alice/music/song.wav'; // Looks valid
+        const targetPath = '/etc/passwd'; // System file
+
+        // Mock realpathSync to simulate symlink resolution
+        mocks.fsSync.realpathSync.mockReturnValue(targetPath);
+
+        const files = [{
+            type: 'path',
+            name: 'stolen_config.xml',
+            data: symlinkPath
+        }];
+
+        const result = await invoke('distribution:stage-release', releaseId, files);
+
+        expect(result.success).toBe(false);
+        // Should block based on resolved path
+        expect(result.error).toMatch(/Security Violation/);
+        expect(mocks.fs.copyFile).not.toHaveBeenCalled();
+    });
+
+    it('should ALLOW safe file staging via path', async () => {
+        const releaseId = validUUID;
+        const sourcePath = '/Users/alice/music/song.wav';
+        mocks.fsSync.realpathSync.mockReturnValue(sourcePath);
+
+        const files = [{
+            type: 'path',
+            name: 'song.wav',
+            data: sourcePath
+        }];
+
+        const result = await invoke('distribution:stage-release', releaseId, files);
+
+        expect(result.success).toBe(true);
+        expect(mocks.fs.copyFile).toHaveBeenCalled();
+    });
+
+    it('should ALLOW safe file staging via content', async () => {
         const releaseId = validUUID;
         const files = [{
             type: 'content',
