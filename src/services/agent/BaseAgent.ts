@@ -1,9 +1,10 @@
-import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
-import { AgentExecutionContext, ExecutionContextFactory } from './AgentExecutionContext';
+import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
+import { wrapTool, toolError } from './utils/ToolUtils';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -180,7 +181,7 @@ export class BaseAgent implements SpecializedAgent {
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
     public tools: ToolDefinition[];
-    protected functions: Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>;
+    protected functions: Record<string, AnyToolFunction> = {};
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -209,14 +210,14 @@ export class BaseAgent implements SpecializedAgent {
         });
 
         this.functions = {
-            get_project_details: async ({ projectId }) => {
+            get_project_details: wrapTool('get_project_details', async ({ projectId }: any) => {
                 const { useStore } = await import('@/core/store');
                 const { projects } = useStore.getState();
                 const project = projects.find(p => p.id === projectId);
-                if (!project) return { error: 'Project not found' };
+                if (!project) throw new Error('Project not found');
                 return project;
-            },
-            delegate_task: async ({ targetAgentId, task }, context) => {
+            }),
+            delegate_task: wrapTool('delegate_task', async ({ targetAgentId, task }: any, context) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -246,12 +247,8 @@ export class BaseAgent implements SpecializedAgent {
 
                 const result = await agentService.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
                 // AgentService.runAgent returns AgentResponse, we wrap it
-                return {
-                    success: true,
-                    data: result,
-                    message: `Delegated task to ${targetAgentId}`
-                };
-            },
+                return result;
+            }),
             consult_experts: async ({ consultations }, context) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
@@ -646,7 +643,7 @@ ${task}
                         try {
                             const schema = this.toolSchemas.get(name);
                             if (schema) schema.parse(args);
-                            result = await this.functions[name](args, enrichedContext);
+                            result = await this.functions[name](args, enrichedContext, toolContext);
                         } catch (err: unknown) {
                             const msg = err instanceof Error ? err.message : String(err);
                             result = { success: false, error: msg };
@@ -654,7 +651,9 @@ ${task}
                     } else {
                         const { TOOL_REGISTRY } = await import('./tools');
                         if (TOOL_REGISTRY[name]) {
-                            result = await TOOL_REGISTRY[name](args);
+                            // Cast to any because TOOL_REGISTRY might not yet be updated to ContextAwareTool
+                            const toolFunc = TOOL_REGISTRY[name] as any;
+                            result = await toolFunc(args, enrichedContext, toolContext);
                         } else {
                             result = { success: false, error: `Tool '${name}' not found.` };
                         }

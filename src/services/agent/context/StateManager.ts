@@ -27,16 +27,27 @@ export class StateManager {
             if (typeof value === 'function') return;
 
             try {
-                // deep clone to ensure we have a detached copy
-                snapshot[key] = JSON.parse(JSON.stringify(value));
+                // Phase 3 Improvement: Use structuredClone for true deep cloning
+                // Falls back to JSON if structuredClone isn't available or fails
+                if (typeof structuredClone === 'function') {
+                    (snapshot as any)[key] = structuredClone(value);
+                } else {
+                    (snapshot as any)[key] = JSON.parse(JSON.stringify(value));
+                }
             } catch (e) {
-                console.warn(`[StateManager] Failed to clone slice ${String(key)}:`, e);
-                // Fallback to shallow copy if serializable fails
-                snapshot[key] = value as any;
+                console.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
+                try {
+                    snapshot[key] = JSON.parse(JSON.stringify(value));
+                } catch (jsonErr) {
+                    // Final fallback to shallow copy if all else fails
+                    snapshot[key] = value as any;
+                }
             }
         });
 
-        this.snapshots.set(transactionId, snapshot);
+        // Prevent unintentional mutations of the snapshot
+        const frozenSnapshot = Object.freeze(snapshot);
+        this.snapshots.set(transactionId, frozenSnapshot);
         console.debug(`[StateManager] Snapshot captured for ${transactionId}`);
     }
 
