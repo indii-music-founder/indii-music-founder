@@ -28,13 +28,21 @@ vi.mock('@/services/ai/VoiceService', () => ({
 // Since itemContent returns a MessageItem which is a motion.div (mocked to div),
 // we should ensure the structure is correct for the mock.
 vi.mock('react-virtuoso', () => ({
-    Virtuoso: ({ data, itemContent }: any) => (
-        <div role="feed" aria-label="Chat history">
-            {data?.map((item: any, index: number) => (
-                <article role="article" aria-label={`Message ${index + 1}`} key={item.id || index}>
-                    {itemContent(index, item)}
-                </article>
-            ))}
+    Virtuoso: ({ data, itemContent, atBottomStateChange }: any) => (
+        <div>
+            <button
+                data-testid="simulate-scroll-up"
+                onClick={() => atBottomStateChange && atBottomStateChange(false)}
+            >
+                Simulate Scroll Up
+            </button>
+            <div role="feed" aria-label="Chat history">
+                {data?.map((item: any, index: number) => (
+                    <article role="article" aria-label={`Message ${index + 1}`} key={item.id || index}>
+                        {itemContent(index, item)}
+                    </article>
+                ))}
+            </div>
         </div>
     ),
 }));
@@ -44,8 +52,12 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
         span: ({ children, className, ...props }: any) => <span className={className} {...props}>{children}</span>,
+        button: ({ children, className, ...props }: any) => <button className={className} {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useDragControls: () => ({
+        start: vi.fn(),
+    }),
 }));
 
 // Mock TextEffect to avoid motion issues in test
@@ -120,17 +132,13 @@ describe('ChatOverlay Accessibility', () => {
     it('should have aria-label on icon-only buttons', () => {
         render(<ChatOverlay onClose={vi.fn()} />);
 
-        // Invite button
-        expect(screen.getByTitle('Invite')).toHaveAttribute('aria-label', 'Invite');
-
-        // History button
-        expect(screen.getByTitle('History')).toHaveAttribute('aria-label', 'History');
+        // Minimize button (by icon, but usually best to find by role and label)
+        const minimizeBtn = screen.getByLabelText('Minimize chat');
+        expect(minimizeBtn).toBeInTheDocument();
 
         // Close button
-        expect(screen.getByTitle('Close')).toHaveAttribute('aria-label', 'Close Agent');
-
-        // New Session button
-        expect(screen.getByTitle('New')).toHaveAttribute('aria-label', 'New Session');
+        const closeBtn = screen.getByLabelText('Close Agent');
+        expect(closeBtn).toBeInTheDocument();
     });
 
     it('should announce streaming messages politely', () => {
@@ -158,5 +166,34 @@ describe('ChatOverlay Accessibility', () => {
         // Also check for the thinking status
         const statusIndicator = screen.getByRole('status');
         expect(statusIndicator).toHaveAttribute('aria-label', 'AI is thinking');
+    });
+
+    it('should show accessible "Resume Feed" button when scrolled up', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Initially not visible
+        expect(screen.queryByText('Resume Feed')).not.toBeInTheDocument();
+
+        // Simulate scroll up via the mock
+        fireEvent.click(screen.getByTestId('simulate-scroll-up'));
+
+        // Should be visible
+        const resumeBtn = screen.getByText('Resume Feed');
+        expect(resumeBtn).toBeInTheDocument();
+
+        // Should use a button element for keyboard access
+        expect(resumeBtn.closest('button')).toBeInTheDocument();
+    });
+
+    it('should have accessible name for ThoughtChain region', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        const toggleButton = screen.getByText('Cognitive Logic').closest('button');
+        const region = screen.getByRole('region');
+
+        expect(toggleButton).toHaveAttribute('id');
+        const buttonId = toggleButton?.getAttribute('id');
+
+        expect(region).toHaveAttribute('aria-labelledby', buttonId);
     });
 });
