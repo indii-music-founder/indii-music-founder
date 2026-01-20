@@ -54,6 +54,8 @@ const STORAGE_QUOTAS = {
     enterprise: 107_374_182_400  // 100 GB
 };
 
+const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'it', 'as', 'be', 'this', 'that', 'from']);
+
 export class DashboardService {
 
     static async getProjects(): Promise<ProjectMetadata[]> {
@@ -331,21 +333,19 @@ export class DashboardService {
                 }
             }
 
-            // Word cloud from prompts
-            const allPrompts = history
-                .map((h) => h.prompt || '')
-                .join(' ')
-                .toLowerCase();
-
-            const stopWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'it', 'as', 'be', 'this', 'that', 'from']);
-            const words = allPrompts
-                .split(/\s+/)
-                .filter(w => w.length > 3 && !stopWords.has(w));
-
+            // Word cloud from prompts - Optimized
             const wordCounts: Record<string, number> = {};
-            words.forEach(word => {
-                wordCounts[word] = (wordCounts[word] || 0) + 1;
-            });
+
+            for (const item of history) {
+                if (!item.prompt) continue;
+
+                const itemWords = item.prompt.toLowerCase().split(/\s+/);
+                for (const word of itemWords) {
+                    if (word.length > 3 && !STOP_WORDS.has(word)) {
+                        wordCounts[word] = (wordCounts[word] || 0) + 1;
+                    }
+                }
+            }
 
             const topPromptWords = Object.entries(wordCounts)
                 .sort((a, b) => b[1] - a[1])
