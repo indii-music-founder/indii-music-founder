@@ -68,7 +68,7 @@ const CampaignDashboard: React.FC = () => {
 
 
     return (
-        <div className="flex h-full bg-slate-950 overflow-hidden text-slate-200 font-sans selection:bg-purple-500/30">
+        <div className="flex h-full bg-background overflow-hidden text-foreground font-sans selection:bg-dept-marketing/30">
             {/* Sidebar */}
             <MarketingSidebar
                 activeTab={activeTab}
@@ -76,7 +76,7 @@ const CampaignDashboard: React.FC = () => {
             />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-950 to-slate-900/50">
+            <div className="flex-1 flex flex-col min-w-0 bg-background">
                 <MarketingToolbar
                     onAction={handleCreateNew}
                     actionLabel="New Campaign"
@@ -84,7 +84,7 @@ const CampaignDashboard: React.FC = () => {
 
                 <div className="flex-1 overflow-hidden relative">
                     {/* Background Ambient Glow */}
-                    <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none" />
+                    <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
 
                     {activeTab === 'campaigns' || activeTab === 'overview' ? (
                         isLoading ? (

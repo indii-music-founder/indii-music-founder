@@ -9,7 +9,7 @@ const mocks = vi.hoisted(() => ({
     httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
-    auth: { currentUser: { uid: 'test-user' } },
+    auth: { currentUser: { uid: 'test-user' } as { uid: string } | null },
     subscriptionService: {
         canPerformAction: vi.fn(),
         getCurrentSubscription: vi.fn()
@@ -87,8 +87,8 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
         it('should accept valid inputs', async () => {
             const validOptions = {
                 prompt: 'A beautiful sunset',
-                aspectRatio: '16:9',
-                resolution: '1920x1080',
+                aspectRatio: '16:9' as const,
+                resolution: '1920x1080' as const,
                 fps: 24,
                 duration: 5
             };
@@ -170,53 +170,53 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
     });
 
     describe('Input Sanitization & Edge Cases', () => {
-         it('should handle unauthenticated user gracefully', async () => {
-             mocks.auth.currentUser = null;
+        it('should handle unauthenticated user gracefully', async () => {
+            mocks.auth.currentUser = null;
 
-             await expect(service.generateVideo({ prompt: 'test' }))
-                 .rejects.toThrow('You must be signed in to generate video. Please log in.');
-         });
+            await expect(service.generateVideo({ prompt: 'test' }))
+                .rejects.toThrow('You must be signed in to generate video. Please log in.');
+        });
 
-         it('should handle extra fields by stripping them (Zod default behavior) or ignoring them', async () => {
-             // Zod .parse() strips unknown keys by default if strict() is not used.
-             // If safeParse is used, it might keep them depending on configuration,
-             // but here we are testing that the service doesn't crash.
+        it('should handle extra fields by stripping them (Zod default behavior) or ignoring them', async () => {
+            // Zod .parse() strips unknown keys by default if strict() is not used.
+            // If safeParse is used, it might keep them depending on configuration,
+            // but here we are testing that the service doesn't crash.
 
-             const extraOptions = {
-                 prompt: 'test',
-                 secretKey: 'should-not-be-here'
-             };
+            const extraOptions = {
+                prompt: 'test',
+                secretKey: 'should-not-be-here'
+            };
 
-             // Setup mock to verify what is actually passed to the cloud function
-             const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
-             mocks.httpsCallable.mockReturnValue(triggerMock);
+            // Setup mock to verify what is actually passed to the cloud function
+            const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
+            mocks.httpsCallable.mockReturnValue(triggerMock);
 
-             // @ts-ignore
-             await service.generateVideo(extraOptions);
+            // @ts-ignore
+            await service.generateVideo(extraOptions);
 
-             // Check what was passed to triggerVideoJob
-             // The service destructs options and passes them.
-             // We want to ensure 'secretKey' didn't make it to the backend function
-             // OR if it did, the service didn't crash locally.
-             // Ideally Zod cleans it.
+            // Check what was passed to triggerVideoJob
+            // The service destructs options and passes them.
+            // We want to ensure 'secretKey' didn't make it to the backend function
+            // OR if it did, the service didn't crash locally.
+            // Ideally Zod cleans it.
 
-             // Actually, VideoGenerationService passes ...options to triggerVideoGeneration
-             // which passes ...options to the cloud function.
-             // If Zod validation passes (it ignores unknown keys by default), the extra key MIGHT still be passed
-             // because the service uses the original 'options' object in triggerVideoGeneration({ ...options })
-             // UNLESS it uses the PARSED output.
+            // Actually, VideoGenerationService passes ...options to triggerVideoGeneration
+            // which passes ...options to the cloud function.
+            // If Zod validation passes (it ignores unknown keys by default), the extra key MIGHT still be passed
+            // because the service uses the original 'options' object in triggerVideoGeneration({ ...options })
+            // UNLESS it uses the PARSED output.
 
-             // Let's check the code:
-             // const validation = VideoGenerationOptionsSchema.safeParse(options);
-             // ...
-             // await this.triggerVideoGeneration({ ...options, ... });
+            // Let's check the code:
+            // const validation = VideoGenerationOptionsSchema.safeParse(options);
+            // ...
+            // await this.triggerVideoGeneration({ ...options, ... });
 
-             // Ah! It uses 'options' (the raw input), NOT 'validation.data'.
-             // This means extra fields ARE passed to the backend.
-             // Forge Insight: This is a potential issue if we want strict schema compliance passed to backend.
-             // However, for this test, we just want to ensure it doesn't crash.
+            // Ah! It uses 'options' (the raw input), NOT 'validation.data'.
+            // This means extra fields ARE passed to the backend.
+            // Forge Insight: This is a potential issue if we want strict schema compliance passed to backend.
+            // However, for this test, we just want to ensure it doesn't crash.
 
-             expect(triggerMock).toHaveBeenCalled();
-         });
+            expect(triggerMock).toHaveBeenCalled();
+        });
     });
 });

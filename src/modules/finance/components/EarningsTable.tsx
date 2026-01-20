@@ -24,7 +24,7 @@ export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
                         <TableHead className="text-gray-400 font-semibold py-4">ISRC</TableHead>
                         <TableHead className="text-right text-gray-400 font-semibold py-4">Streams</TableHead>
                         <TableHead className="text-right text-gray-400 font-semibold py-4">Downloads</TableHead>
-                        <TableHead className="text-right text-teal-400 font-semibold py-4">Revenue</TableHead>
+                        <TableHead className="text-right text-dept-licensing font-semibold py-4">Revenue</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -37,7 +37,7 @@ export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
                             className="border-white/5 hover:bg-white/5 transition-colors group cursor-default"
                         >
                             <TableCell className="py-5">
-                                <span className="font-medium text-white group-hover:text-purple-400 transition-colors">
+                                <span className="font-medium text-white group-hover:text-dept-royalties transition-colors">
                                     {row.releaseName}
                                 </span>
                             </TableCell>
@@ -49,7 +49,7 @@ export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
                                 {row.downloads.toLocaleString()}
                             </TableCell>
                             <TableCell className="text-right">
-                                <span className="font-bold text-white bg-emerald-500/10 px-2 py-1 rounded-md border border-emerald-500/20">
+                                <span className="font-bold text-white bg-dept-licensing/10 px-2 py-1 rounded-md border border-dept-licensing/20">
                                     ${row.revenue.toFixed(2)}
                                 </span>
                             </TableCell>

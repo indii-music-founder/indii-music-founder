@@ -9,24 +9,24 @@ interface PromptBuilderProps {
 }
 
 // Memoized tag button to prevent re-renders
-const TagButton = memo(({ tag, onClick, variant = 'purple' }: { tag: string; onClick: () => void; variant?: 'purple' | 'yellow' }) => (
+const TagButton = memo(({ tag, onClick, variant = 'creative' }: { tag: string; onClick: () => void; variant?: 'creative' | 'royalties' }) => (
     <button
         onClick={onClick}
         role="menuitem"
         data-testid={`tag-${tag}-btn`}
-        className={`px-2 py-1 text-[10px] bg-[#222] hover:${variant === 'yellow' ? 'bg-yellow-900/50' : 'bg-purple-900/50'} text-gray-300 hover:text-white rounded border border-gray-800 hover:border-${variant === 'yellow' ? 'yellow' : 'purple'}-500 transition-colors text-left`}
+        className={`px-2 py-1 text-[10px] bg-background/40 hover:${variant === 'royalties' ? 'bg-dept-royalties/20' : 'bg-dept-creative/20'} text-gray-300 hover:text-white rounded border border-white/5 hover:border-${variant === 'royalties' ? 'dept-royalties' : 'dept-creative'}/50 transition-colors text-left backdrop-blur-sm`}
     >
         {tag}
     </button>
 ));
 
-const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick, variant = 'purple' }: {
+const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick, variant = 'creative' }: {
     category: string;
     values: string[] | Record<string, string[]>;
     isOpen: boolean;
     onToggle: () => void;
     onTagClick: (tag: string) => void;
-    variant?: 'purple' | 'yellow';
+    variant?: 'creative' | 'royalties';
 }) => {
     const dropdownId = useId();
 
@@ -39,8 +39,8 @@ const CategoryDropdown = memo(({ category, values, isOpen, onToggle, onTagClick,
                 aria-controls={dropdownId}
                 data-testid={`category-${category}-trigger`}
                 className={`px-3 py-1.5 text-xs rounded-full border transition-all flex items-center gap-1 ${isOpen
-                    ? variant === 'yellow' ? 'bg-yellow-900/50 border-yellow-500 text-yellow-200' : 'bg-purple-900/50 border-purple-500 text-purple-200'
-                    : 'bg-[#1a1a1a] border-gray-700 text-gray-400 hover:border-gray-500'
+                    ? variant === 'royalties' ? 'bg-dept-royalties/20 border-dept-royalties/50 text-dept-royalties' : 'bg-dept-creative/20 border-dept-creative/50 text-dept-creative'
+                    : 'bg-background/40 border-white/10 text-gray-400 hover:border-white/30 backdrop-blur-md'
                     }`}
             >
                 {category === 'Brand' && <Sparkles size={10} />}
@@ -107,7 +107,7 @@ function PromptBuilder({ onAddTag }: PromptBuilderProps) {
     }, [onAddTag]);
 
     return (
-        <div className="flex flex-col gap-2 p-2 bg-[#111] border-b border-gray-800">
+        <div className="flex flex-col gap-2 p-2 bg-background/20 border-b border-white/5">
             <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2">Prompt Engineering</p>
             <div className="flex flex-wrap gap-2">
                 {/* Brand Category */}
@@ -117,7 +117,7 @@ function PromptBuilder({ onAddTag }: PromptBuilderProps) {
                     isOpen={openCategory === 'Brand'}
                     onToggle={() => setOpenCategory(openCategory === 'Brand' ? null : 'Brand')}
                     onTagClick={handleTagClick}
-                    variant="yellow"
+                    variant="royalties"
                 />
 
                 {/* Studio Categories */}

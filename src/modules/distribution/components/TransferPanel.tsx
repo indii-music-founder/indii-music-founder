@@ -93,7 +93,7 @@ export const TransferPanel: React.FC = () => {
         }
     };
 
-    const inputClasses = "w-full bg-[#1A1A1A] border border-gray-800 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-white transition-colors uppercase tracking-widest font-bold placeholder:text-gray-600";
+    const inputClasses = "w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-sm text-gray-200 focus:outline-none focus:border-dept-distribution/50 transition-colors uppercase tracking-widest font-bold placeholder:text-gray-600 backdrop-blur-sm";
     const labelClasses = "block text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1.5 ml-1";
 
     return (
@@ -103,8 +103,8 @@ export const TransferPanel: React.FC = () => {
                 <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
                     <div className="flex items-center justify-between mb-8">
                         <div className="flex items-center gap-3">
-                            <div className="p-2.5 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                                <Server className="w-5 h-5 text-blue-500" />
+                            <div className="p-2.5 bg-dept-distribution/10 border border-dept-distribution/20 rounded-xl">
+                                <Server className="w-5 h-5 text-dept-distribution" />
                             </div>
                             <div>
                                 <h3 className="text-xl font-bold text-white uppercase tracking-tighter italic">Bridge Control</h3>
@@ -112,7 +112,7 @@ export const TransferPanel: React.FC = () => {
                             </div>
                         </div>
 
-                        <div className="flex items-center bg-black p-1 rounded-lg border border-gray-800">
+                        <div className="flex items-center bg-black/40 p-1 rounded-lg border border-white/5 backdrop-blur-sm">
                             <button
                                 onClick={() => setProtocol('SFTP')}
                                 className={`px-4 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest transition-all ${protocol === 'SFTP' ? 'bg-white text-black' : 'text-gray-500 hover:text-gray-300'}`}
@@ -168,7 +168,7 @@ export const TransferPanel: React.FC = () => {
                                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Authentication</label>
                                     <button
                                         onClick={() => setAuthMode(authMode === 'PASSWORD' ? 'KEY' : 'PASSWORD')}
-                                        className="text-[9px] font-bold text-blue-500 hover:text-blue-400 uppercase tracking-tighter"
+                                        className="text-[9px] font-bold text-dept-distribution hover:text-dept-distribution/80 uppercase tracking-tighter"
                                     >
                                         Use {authMode === 'PASSWORD' ? 'Private Key' : 'Password'}
                                     </button>
@@ -272,14 +272,14 @@ export const TransferPanel: React.FC = () => {
                 {/* Status Section */}
                 <div className="flex flex-col gap-6">
                     {/* Status Card */}
-                    <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-8">
+                    <div className="bg-white/5 border border-white/10 rounded-2xl p-8 backdrop-blur-sm">
                         <h4 className={labelClasses}>Transmission Status</h4>
                         {report ? (
-                            <div className="flex items-start gap-4 p-4 bg-[#1A1A1A] border border-gray-800 rounded-xl italic">
+                            <div className="flex items-start gap-4 p-4 bg-black/20 border border-white/5 rounded-xl italic">
                                 {report.status === 'SUCCESS' ? (
-                                    <CheckCircle className="w-6 h-6 text-green-500 flex-shrink-0" />
+                                    <CheckCircle className="w-6 h-6 text-dept-publishing flex-shrink-0" />
                                 ) : (
-                                    <XCircle className="w-6 h-6 text-red-500 flex-shrink-0" />
+                                    <XCircle className="w-6 h-6 text-dept-marketing flex-shrink-0" />
                                 )}
                                 <div>
                                     <p className="text-sm font-bold text-white uppercase tracking-widest leading-tight">
@@ -289,7 +289,7 @@ export const TransferPanel: React.FC = () => {
                                 </div>
                             </div>
                         ) : (
-                            <div className="p-4 border border-dashed border-gray-800 rounded-xl text-center">
+                            <div className="p-4 border border-dashed border-white/10 rounded-xl text-center">
                                 <p className="text-xs text-gray-500 uppercase font-black tracking-widest">Awaiting Bridge Initialization</p>
                             </div>
                         )}
@@ -297,7 +297,7 @@ export const TransferPanel: React.FC = () => {
 
                     {/* Console Log */}
                     <div className="flex-1 bg-black border border-gray-800 rounded-2xl flex flex-col overflow-hidden min-h-[300px]">
-                        <div className="px-4 py-2 bg-[#0D0D0D] border-b border-gray-800 flex items-center gap-2">
+                        <div className="px-4 py-2 bg-black/40 border-b border-white/10 flex items-center gap-2">
                             <Terminal className="w-3.5 h-3.5 text-gray-500" />
                             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Secure Transport Log</span>
                         </div>

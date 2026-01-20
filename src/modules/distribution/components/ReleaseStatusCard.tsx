@@ -15,20 +15,20 @@ const getStatusColor = (status: ReleaseStatus): string => {
     switch (status) {
         case 'live':
         case 'delivered':
-            return 'text-[#4ade80] bg-[#4ade80]/10 border-[#4ade80]/20';
+            return 'text-dept-publishing bg-dept-publishing-muted border-dept-publishing-glow/20';
         case 'failed':
         case 'rejected':
         case 'taken_down':
-            return 'text-[#f87171] bg-[#f87171]/10 border-[#f87171]/20';
+            return 'text-dept-marketing bg-dept-marketing-muted border-dept-marketing-glow/20';
         case 'processing':
         case 'delivering':
         case 'validating':
-            return 'text-[#60a5fa] bg-[#60a5fa]/10 border-[#60a5fa]/20';
+            return 'text-dept-distribution bg-dept-distribution-muted border-dept-distribution-glow/20';
         case 'in_review':
         case 'pending_review':
-            return 'text-[#fbbf24] bg-[#fbbf24]/10 border-[#fbbf24]/20';
+            return 'text-dept-brand bg-dept-brand-muted border-dept-brand-glow/20';
         default:
-            return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
+            return 'text-dept-default bg-dept-default-muted border-dept-default-glow/20';
     }
 };
 
@@ -49,7 +49,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     const overallStatus = deploymentList.length > 0 ? deploymentList[0].status : 'draft';
 
     return (
-        <Card className="group relative overflow-hidden bg-[#121212] border-gray-800/50 hover:border-gray-700/50 transition-all duration-300 hover:shadow-2xl hover:shadow-white/5">
+        <Card className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 hover:shadow-2xl hover:shadow-dept-distribution/10 backdrop-blur-sm">
             <div className="flex flex-col">
                 {/* Header with Cover Art */}
                 <div className="relative aspect-square overflow-hidden bg-gray-900">
@@ -78,7 +78,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                 {/* Info Section */}
                 <div className="p-5">
                     <div className="mb-4">
-                        <h3 className="font-bold text-lg text-white leading-tight line-clamp-1 group-hover:text-blue-400 transition-colors">
+                        <h3 className="font-bold text-lg text-white leading-tight line-clamp-1 group-hover:text-dept-distribution transition-colors uppercase tracking-tight">
                             {releaseTitle}
                         </h3>
                         <p className="text-sm text-gray-500 font-medium mb-1">{artistName}</p>
@@ -112,7 +112,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                         {upc && (
                             <span className="text-[10px] text-gray-600 font-mono">UPC: {upc}</span>
                         )}
-                        <button className="text-[11px] font-bold text-white hover:text-blue-400 transition-colors ml-auto group/btn flex items-center gap-1">
+                        <button className="text-[11px] font-bold text-white hover:text-dept-distribution transition-colors ml-auto group/btn flex items-center gap-1 uppercase tracking-widest">
                             VIEW DETAILS
                             <svg className="w-3 h-3 transform transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
