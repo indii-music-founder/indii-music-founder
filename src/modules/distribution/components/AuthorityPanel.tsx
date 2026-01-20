@@ -84,8 +84,8 @@ export const AuthorityPanel: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {/* ISRC Generator */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center gap-2 text-purple-400">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-dept-creative">
                         <Key className="w-5 h-5" />
                         <span className="font-bold uppercase tracking-wider text-sm">ISRC Manager</span>
                     </div>
@@ -94,22 +94,22 @@ export const AuthorityPanel: React.FC = () => {
                     <button
                         onClick={handleGenerateISRC}
                         disabled={loading === 'isrc'}
-                        className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        className="w-full bg-dept-creative hover:bg-dept-creative/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                         {loading === 'isrc' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Key className="w-4 h-4" />}
                         Generate ISRC
                     </button>
 
                     {isrc && (
-                        <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg text-center">
-                            <span className="font-mono text-purple-300 text-lg">{isrc}</span>
+                        <div className="p-3 bg-dept-creative/10 border border-dept-creative/20 rounded-lg text-center">
+                            <span className="font-mono text-dept-creative text-lg">{isrc}</span>
                         </div>
                     )}
                 </div>
 
                 {/* UPC Generator */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center gap-2 text-blue-400">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-dept-distribution">
                         <Barcode className="w-5 h-5" />
                         <span className="font-bold uppercase tracking-wider text-sm">UPC Registry</span>
                     </div>
@@ -118,22 +118,22 @@ export const AuthorityPanel: React.FC = () => {
                     <button
                         onClick={handleGenerateUPC}
                         disabled={loading === 'upc'}
-                        className="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        className="w-full bg-dept-distribution hover:bg-dept-distribution/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                         {loading === 'upc' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Barcode className="w-4 h-4" />}
                         Generate UPC
                     </button>
 
                     {upc && (
-                        <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-center">
-                            <span className="font-mono text-blue-300 text-lg">{upc}</span>
+                        <div className="p-3 bg-dept-distribution/10 border border-dept-distribution/20 rounded-lg text-center">
+                            <span className="font-mono text-dept-distribution text-lg">{upc}</span>
                         </div>
                     )}
                 </div>
 
                 {/* DDEX Generator */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-4">
-                    <div className="flex items-center gap-2 text-orange-400">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-dept-royalties">
                         <FileCode className="w-5 h-5" />
                         <span className="font-bold uppercase tracking-wider text-sm">DDEX Packager</span>
                     </div>
@@ -142,7 +142,7 @@ export const AuthorityPanel: React.FC = () => {
                     <button
                         onClick={handleGenerateDDEX}
                         disabled={loading === 'ddex'}
-                        className="w-full bg-orange-600 hover:bg-orange-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                        className="w-full bg-dept-royalties hover:bg-dept-royalties/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                     >
                         {loading === 'ddex' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                         Generate DDEX
@@ -152,9 +152,9 @@ export const AuthorityPanel: React.FC = () => {
 
             {/* DDEX Output */}
             {ddexXml && (
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 animate-in fade-in slide-in-from-bottom-4 backdrop-blur-sm">
                     <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-orange-400 uppercase tracking-widest">DDEX ERN 4.3 Output</span>
+                        <span className="text-xs font-bold text-dept-royalties uppercase tracking-widest">DDEX ERN 4.3 Output</span>
                         <button
                             onClick={() => navigator.clipboard.writeText(ddexXml)}
                             className="text-xs text-gray-500 hover:text-white transition-colors"
@@ -162,7 +162,7 @@ export const AuthorityPanel: React.FC = () => {
                             Copy to Clipboard
                         </button>
                     </div>
-                    <pre className="p-4 bg-black/50 rounded-lg overflow-x-auto text-xs text-green-400 font-mono max-h-64 overflow-y-auto custom-scrollbar">
+                    <pre className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-64 overflow-y-auto custom-scrollbar">
                         {ddexXml}
                     </pre>
                 </div>
