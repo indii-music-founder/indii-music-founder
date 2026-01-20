@@ -219,15 +219,7 @@ export class BaseAgent implements SpecializedAgent {
                 return project;
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
-            delegate_task: async ({ targetAgentId, task }, context, _toolContext?: ToolExecutionContext) => {
-            get_project_details: wrapTool('get_project_details', async ({ projectId }: any) => {
-                const { useStore } = await import('@/core/store');
-                const { projects } = useStore.getState();
-                const project = projects.find(p => p.id === projectId);
-                if (!project) throw new Error('Project not found');
-                return project;
-            }),
-            delegate_task: wrapTool('delegate_task', async ({ targetAgentId, task }: any, context) => {
+            delegate_task: async ({ targetAgentId, task }: any, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -264,10 +256,7 @@ export class BaseAgent implements SpecializedAgent {
                 };
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
-            consult_experts: async ({ consultations }, context, _toolContext?: ToolExecutionContext) => {
-                return result;
-            }),
-            consult_experts: async ({ consultations }, context) => {
+            consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
 
