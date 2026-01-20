@@ -103,7 +103,7 @@ export const MobileNav = () => {
                     />
 
                     {/* Menu Content */}
-                    <div className="relative w-full max-w-lg bg-[#1a1a1a] border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl">
+                    <div className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl">
                         {/* Drag Handle */}
                         <div className="flex justify-center pt-3 pb-1">
                             <div className="w-12 h-1 bg-white/20 rounded-full" />
@@ -133,7 +133,7 @@ export const MobileNav = () => {
                                 className={`
                                     w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-4
                                     ${currentModule === 'dashboard'
-                                        ? 'bg-white/10 text-white ring-1 ring-white/20'
+                                        ? 'bg-white/10 text-white ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
                                         : 'bg-white/5 text-gray-300 hover:bg-white/10'
                                     }
                                 `}
