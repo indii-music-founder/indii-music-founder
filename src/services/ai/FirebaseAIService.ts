@@ -33,6 +33,7 @@ import {
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
 import { BREAKER_CONFIGS } from './config/breaker-configs';
+import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
@@ -142,7 +143,8 @@ export class FirebaseAIService {
 
             // 3. Initialize SDK
             this.model = getGenerativeModel(firebaseAI, {
-                model: modelName
+                model: modelName,
+                safetySettings: STANDARD_SAFETY_SETTINGS
             });
 
             if (!this.model) {
@@ -238,7 +240,8 @@ export class FirebaseAIService {
                     model: modelName,
                     generationConfig: config,
                     systemInstruction,
-                    tools
+                    tools,
+                    safetySettings: STANDARD_SAFETY_SETTINGS
                 };
 
                 // Inject cachedContent if supported/available
@@ -299,7 +302,8 @@ export class FirebaseAIService {
                 model: modelName,
                 generationConfig: config as unknown as undefined, // Type mismatch workaround
                 systemInstruction: systemInstruction,
-                tools: tools as unknown as undefined
+                tools: tools as unknown as undefined,
+                safetySettings: STANDARD_SAFETY_SETTINGS
             });
 
             const result = await model.generateContent(
@@ -366,7 +370,8 @@ export class FirebaseAIService {
                     model: modelName,
                     generationConfig: config,
                     systemInstruction,
-                    tools
+                    tools,
+                    safetySettings: STANDARD_SAFETY_SETTINGS
                 };
 
                 if (cachedContent) {
@@ -466,7 +471,8 @@ export class FirebaseAIService {
             model: modelName,
             generationConfig: config as unknown as undefined,
             systemInstruction: systemInstruction,
-            tools: tools as unknown as undefined
+            tools: tools as unknown as undefined,
+            safetySettings: STANDARD_SAFETY_SETTINGS
         });
 
         const result = await model.generateContentStream(
