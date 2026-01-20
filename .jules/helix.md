@@ -1,3 +1,8 @@
+# HELIX'S JOURNAL - CRITICAL LEARNINGS ONLY
+
+## 2024-05-23 - [Fitness Validation]
+**Learning:** Zero-fitness agents must be strictly culled from the breeding pool to prevent regression.
+**Action:** Enforced strict filtering in `HelixFitnessValidator` test suite.
 ## 2024-05-23 - Helix Evolutionary Loop Verification
 **Learning:** Verified the integrity of the Helix Evolutionary Loop. Specifically, confirmed that:
 1. Selection Pressure works deterministically when random seed is controlled.
