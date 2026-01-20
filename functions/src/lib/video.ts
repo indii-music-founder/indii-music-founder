@@ -14,6 +14,10 @@ export const VideoJobSchema = z.object({
     motionStrength: z.number().optional().nullable(),
     shotList: z.array(z.any()).optional().nullable(),
     firstFrame: z.string().optional().nullable(),
+    image: z.object({
+        imageBytes: z.string(),
+        mimeType: z.string().optional()
+    }).optional().nullable(),
     lastFrame: z.string().optional().nullable(),
     timeOffset: z.number().optional().nullable(),
     ingredients: z.array(z.string()).optional().nullable(),

@@ -19,10 +19,14 @@ export const VideoGenerationOptionsSchema = z.object({
     seed: z.number().int().optional(),
     negativePrompt: z.string().optional(),
     model: z.string().optional(),
-    firstFrame: z.string().url().optional(),
-    lastFrame: z.string().url().optional(),
+    firstFrame: z.string().optional(), // Allow Data URI or URL
+    lastFrame: z.string().optional(),  // Allow Data URI or URL
+    image: z.object({
+        imageBytes: z.string(),
+        mimeType: z.string().optional()
+    }).optional(),
     timeOffset: z.number().optional(),
-    ingredients: z.array(z.string().url()).optional(),
+    ingredients: z.array(z.string()).optional(),
     duration: z.number().min(1).max(300).optional(), // 5 minutes max per atomic job
     fps: z.number().int().min(1).max(60).optional(),
     cameraMovement: z.string().optional(),

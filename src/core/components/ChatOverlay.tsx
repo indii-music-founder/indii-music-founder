@@ -191,7 +191,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 itemContent={itemContent}
                                 components={{
                                     Header: () => <div className="h-4" />,
-                                    Footer: () => <div className="h-4" />
+                                    Footer: () => <div className="h-32" />
                                 }}
                                 className="custom-scrollbar"
                             />
