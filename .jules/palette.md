@@ -10,3 +10,7 @@
 ## 2025-02-20 - Nested Interactive Elements Conflict
 **Learning:** In the `LayersPanel`, the parent `div` had `role="button"` and an `onKeyDown` handler for selection, which inadvertently intercepted `Enter` key events from nested action buttons (visibility, lock, etc.), breaking their keyboard accessibility.
 **Action:** Added a check in the parent's `onKeyDown` handler to ignore events originating from nested `BUTTON` elements, ensuring that child actions remain accessible while preserving row selection.
+
+## 2025-05-24 - File Input Accessibility
+**Learning:** File inputs hidden with `display: none` (or `.hidden`) inside labels cannot be focused via keyboard, breaking accessibility for uploaders.
+**Action:** Use `.sr-only` on the input to keep it in the DOM/accessibility tree, and apply `focus-within:ring` to the parent label to provide visual focus indication.
