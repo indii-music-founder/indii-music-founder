@@ -28,8 +28,8 @@ admin.initializeApp();
  * Prevents IDOR/Injection attacks where users create jobs for orgs they don't belong to.
  */
 const validateOrgAccess = async (userId: string, orgId?: string | null) => {
-    // 1. Personal workspace is always allowed (scoped to user in logic)
-    if (!orgId || orgId === 'personal') {
+    // 1. Personal workspace and default org are always allowed (scoped to user in logic)
+    if (!orgId || orgId === 'personal' || orgId === 'org-default') {
         return;
     }
 
