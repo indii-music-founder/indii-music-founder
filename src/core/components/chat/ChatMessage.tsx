@@ -16,6 +16,7 @@ import ContractRenderer from '../ContractRenderer';
 import { ThoughtChain } from './ThoughtChain';
 import { JsonViewer } from './JsonViewer';
 import { ImageRenderer, ToolImageOutput } from './ToolOutputRenderer';
+import { CodeBlock } from './CodeBlock';
 import { getText } from './utils';
 
 // Types
@@ -128,11 +129,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                 if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return <>{children}</>;
                 if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return <>{children}</>; } catch (e) { /* ignore */ } }
             }
-            return (
-                <div className="overflow-x-auto custom-scrollbar my-2 rounded-lg border border-white/5 bg-black/30">
-                    <pre {...props} className="p-4 min-w-full">{children}</pre>
-                </div>
-            );
+            return <CodeBlock {...props}>{children}</CodeBlock>;
         },
         table: ({ children, ...props }: { children?: React.ReactNode }) => (
             <div className="overflow-x-auto custom-scrollbar my-4 border border-white/5 rounded-lg bg-black/20">
