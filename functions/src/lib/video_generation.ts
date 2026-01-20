@@ -37,14 +37,43 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
 
                 const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
-                const requestBody = {
+                const requestBody: any = {
                     instances: [{ prompt: prompt }],
                     parameters: {
                         sampleCount: 1,
                         aspectRatio: options?.aspectRatio || "16:9"
-                    },
-                    // Vertex AI Safety Settings Structure (slightly different from Gemini API if needed, but usually compatible)
+                    }
                 };
+
+                // VEO 3.1: First Frame (Image-to-Video)
+                // options.image comes from VideoService as { imageBytes: string, mimeType: string }
+                // options.firstFrame comes from VideoGenerationService as Data URI string
+                let startImageBytes: string | undefined;
+
+                if (options?.image?.imageBytes) {
+                    startImageBytes = options.image.imageBytes;
+                } else if (options?.firstFrame) {
+                    startImageBytes = options.firstFrame.replace(/^data:image\/\w+;base64,/, '');
+                }
+
+                if (startImageBytes) {
+                    requestBody.instances[0].image = {
+                        bytesBase64Encoded: startImageBytes
+                    };
+                    // Required for image generation
+                    requestBody.parameters.personGeneration = "allow_adult";
+                }
+
+                // VEO 3.1: Last Frame (Interpolation)
+                // options.lastFrame comes as Data URI string: "data:image/png;base64,..."
+                if (options?.lastFrame) {
+                    const cleanLastFrame = options.lastFrame.replace(/^data:image\/\w+;base64,/, '');
+                    requestBody.parameters.lastFrame = {
+                        bytesBase64Encoded: cleanLastFrame
+                    };
+                    // Ensure personGeneration is set if not already
+                    requestBody.parameters.personGeneration = "allow_adult";
+                }
 
                 const response = await fetch(endpoint, {
                     method: 'POST',

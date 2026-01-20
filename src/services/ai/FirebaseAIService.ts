@@ -144,7 +144,7 @@ export class FirebaseAIService {
             // 3. Initialize SDK
             this.model = getGenerativeModel(firebaseAI, {
                 model: modelName,
-                safetySettings: STANDARD_SAFETY_SETTINGS
+                safetySettings: STANDARD_SAFETY_SETTINGS as any
             });
 
             if (!this.model) {
@@ -303,7 +303,7 @@ export class FirebaseAIService {
                 generationConfig: config as unknown as undefined, // Type mismatch workaround
                 systemInstruction: systemInstruction,
                 tools: tools as unknown as undefined,
-                safetySettings: STANDARD_SAFETY_SETTINGS
+                safetySettings: STANDARD_SAFETY_SETTINGS as any
             });
 
             const result = await model.generateContent(
@@ -472,7 +472,7 @@ export class FirebaseAIService {
             generationConfig: config as unknown as undefined,
             systemInstruction: systemInstruction,
             tools: tools as unknown as undefined,
-            safetySettings: STANDARD_SAFETY_SETTINGS
+            safetySettings: STANDARD_SAFETY_SETTINGS as any
         });
 
         const result = await model.generateContentStream(
