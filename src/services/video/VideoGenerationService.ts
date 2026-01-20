@@ -173,7 +173,13 @@ export class VideoGenerationService {
                 if (!job) return;
                 if (job.status === 'completed' || job.status === 'failed') {
                     if (job.status === 'completed') {
-                        resolve(job);
+                        // Enforce MIME Type Guard for Veo 3.1 Compliance
+                        const mimeType = job.output?.metadata?.mime_type;
+                        if (mimeType && mimeType !== 'video/mp4') {
+                            reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
+                        } else {
+                            resolve(job);
+                        }
                     } else {
                         reject(new Error(job.error || 'Video generation failed.'));
                     }
