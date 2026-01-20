@@ -39,6 +39,7 @@ import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
+import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 
 // ============================================================================
@@ -152,10 +153,10 @@ export class FirebaseAIService {
             }
 
             this.isInitialized = true;
-            console.log('[FirebaseAIService] Initialized with Firebase AI SDK');
+            logger.info('[FirebaseAIService] Initialized with Firebase AI SDK');
 
         } catch (error) {
-            console.error('[FirebaseAIService] Bootstrap failed, attempting fallback:', error);
+            logger.error('[FirebaseAIService] Bootstrap failed, attempting fallback:', error);
             // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
             try {
                 await this.initializeFallbackMode();
@@ -181,7 +182,7 @@ export class FirebaseAIService {
         this.fallbackClient = new GoogleGenerativeAI(apiKey);
         this.useFallbackMode = true;
         this.isInitialized = true;
-        console.log('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
+        logger.info('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
     }
 
     /**

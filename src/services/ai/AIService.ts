@@ -28,6 +28,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // import { trace } from '../agent/observability/TraceService';
 import { RateLimiter } from './RateLimiter';
 import { delay as asyncDelay } from '@/utils/async';
+import { logger } from '@/utils/logger';
 import { firebaseAI } from './FirebaseAIService';
 import { AIResponseCache } from './context/AIResponseCache';
 
@@ -235,7 +236,7 @@ export class AIService {
                         }
 
                         const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-                        console.error('[AIService] Generate Content Failed:', err.message);
+                        logger.error('[AIService] Generate Content Failed:', err.message);
                         throw err;
                     }
                 };
@@ -366,7 +367,7 @@ export class AIService {
             if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
                 throw new AppException(AppErrorCode.CANCELLED, 'Streaming request was cancelled');
             }
-            console.error('[AIService] Stream Response Error:', error);
+            logger.error('[AIService] Stream Response Error:', error);
             throw AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
         }
     }
@@ -379,7 +380,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateVideo(options));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Video Gen Error:', err.message);
+            logger.error('[AIService] Video Gen Error:', err.message);
             throw err;
         }
     }
@@ -396,7 +397,7 @@ export class AIService {
             ));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Image Gen Error:', err.message);
+            logger.error('[AIService] Image Gen Error:', err.message);
             throw err;
         }
     }
@@ -409,7 +410,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateSpeech(text, voice, modelOverride));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Speech Gen Error:', err.message);
+            logger.error('[AIService] Speech Gen Error:', err.message);
             throw err;
         }
     }
@@ -455,7 +456,7 @@ export class AIService {
         try {
             return JSON.parse(cleanJSON(text)) as T;
         } catch {
-            console.error('[AIService] Failed to parse JSON:', text);
+            logger.error('[AIService] Failed to parse JSON:', text);
             return {};
         }
     }
