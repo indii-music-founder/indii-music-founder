@@ -1,19 +1,23 @@
-# Task: Perfect Video Process (Veo 3.1)
+# Task: UI Standardization (Distribution Module)
 
 ## Objectives
 
-Implement robust Veo 3.1 video generation with support for "First and Last Frame" interpolation, fixing previous high-level placeholders.
+Standardize the UI/UX design program across the indiiOS application, specifically targeting the Distribution module. Replace hardcoded colors and styles with semantic variables and department-specific tokens.
 
 ## Status
 
-- [x] **Video Generation Infrastructure**
-  - [x] Fix `VideoJobSchema` in `functions/src/lib/video.ts` to support `image` object.
-  - [x] Update `functions/src/lib/video_generation.ts` to construct correct Veo 3.1 payload.
-  - [x] Implement fallback support for `firstFrame` (string) and `image` (object).
-  - [x] Add robust mapping for `referenceImages`, `resolution`, and `duration`.
-  - [x] Sync UI (CreativePanel) with Veo 3 capabilities.
-  - [x] Verify build of Cloud Functions.
+- [x] **Distribution Module**
+  - [x] Standardize `DistributorConnectionsPanel.tsx` (backgrounds, text tokens).
+  - [x] Standardize `DistributorCard.tsx` (card styles, tokens).
+  - [x] Standardize `BankPanel.tsx` (glassmorphism, department branding).
+  - [x] Standardize `QCPanel.tsx` (backgrounds, inputs, tokens).
+  - [x] Standardize `AuthorityPanel.tsx` (ISRC/UPC/DDEX sections).
+  - [x] Standardize `KeysPanel.tsx` (Merlin/MLC cards).
+- [x] **Mobile Navigation**
+  - [x] Update `MobileNav.tsx` FAB and drawer to use `bg-background` and standardized hover tokens.
+- [x] **Verification**
+  - [x] Run browser smoke test to verify visual consistency.
 
 ## Context
 
-This task ensures that the "First and Last Frame" interpolation feature of Veo 3.1 is correctly implemented in the backend, allowing users to generate smooth transitions between two images.
+This standardization ensures a consistent, premium feel across the application, leveraging the established design system tokens and removing legacy hardcoded values.

@@ -64,7 +64,7 @@ export const MobileNav = () => {
                     w-full flex items-center gap-3 p-3 rounded-xl transition-all
                     ${isActive
                         ? `${colors.bg} ${colors.text} ring-1 ${colors.border}`
-                        : 'hover:bg-white/5 text-gray-300'
+                        : `text-gray-300 ${colors.hoverBg} ${colors.hoverText}`
                     }
                 `}
             >
@@ -84,7 +84,7 @@ export const MobileNav = () => {
                     haptic('medium');
                     setIsOpen(true);
                 }}
-                className="md:hidden fixed bottom-24 right-6 z-[102] p-3.5 bg-[#1a1a1a] border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-[#252525] text-white"
+                className="md:hidden fixed bottom-24 right-6 z-[102] p-3.5 bg-background border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-white/10 text-white"
                 aria-label="Open Navigation"
             >
                 <Menu size={24} />

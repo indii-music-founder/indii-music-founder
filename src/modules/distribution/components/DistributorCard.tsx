@@ -19,7 +19,7 @@ const getDistributorColor = (id: string) => {
 
 export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, onConnect, isConnecting }) => {
     return (
-        <Card className="group relative overflow-hidden bg-[#121212] border-gray-800/50 hover:border-gray-700/50 transition-all duration-300">
+        <Card className="group relative overflow-hidden bg-white/5 border-white/10 hover:border-dept-distribution/30 transition-all duration-300 backdrop-blur-sm">
             {/* Top Gradient Banner */}
             <div className={`h-1.5 w-full bg-gradient-to-r ${getDistributorColor(connection.distributorId)} transition-opacity duration-300 opacity-80 group-hover:opacity-100`} />
 
@@ -36,8 +36,8 @@ export const DistributorCard: React.FC<DistributorCardProps> = ({ connection, on
                                 {connection.distributorId}
                             </h3>
                             <div className="flex items-center gap-1.5">
-                                <div className={`w-1.5 h-1.5 rounded-full ${connection.isConnected ? 'bg-green-500 animate-pulse' : 'bg-gray-600'}`} />
-                                <span className={`text-[10px] font-bold tracking-tighter uppercase ${connection.isConnected ? 'text-green-500/80' : 'text-gray-500'}`}>
+                                <div className={`w-1.5 h-1.5 rounded-full ${connection.isConnected ? 'bg-dept-publishing animate-pulse' : 'bg-gray-600'}`} />
+                                <span className={`text-[10px] font-bold tracking-tighter uppercase ${connection.isConnected ? 'text-dept-publishing' : 'text-gray-500'}`}>
                                     {connection.isConnected ? 'Registered' : 'Disconnected'}
                                 </span>
                             </div>

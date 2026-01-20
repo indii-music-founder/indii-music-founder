@@ -87,8 +87,8 @@ export const QCPanel: React.FC = () => {
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Input Panel */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-6">
-                    <div className="flex items-center gap-2 text-cyan-400 mb-4">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-6 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-dept-distribution mb-4">
                         <FileText className="w-5 h-5" />
                         <span className="font-bold uppercase tracking-wider text-sm">Metadata Input</span>
                     </div>
@@ -101,7 +101,7 @@ export const QCPanel: React.FC = () => {
                                 value={metadata.isrc}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, isrc: e.target.value }))}
                                 placeholder="US-XXX-25-XXXXX (Leave empty to auto-generate)"
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-zinc-600 font-mono"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600 font-mono"
                             />
                         </div>
 
@@ -112,7 +112,7 @@ export const QCPanel: React.FC = () => {
                                 value={metadata.title}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, title: e.target.value }))}
                                 placeholder="Enter title (avoid feat/prod in title)"
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-zinc-600"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600"
                             />
                         </div>
 
@@ -123,7 +123,7 @@ export const QCPanel: React.FC = () => {
                                 value={metadata.artist}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, artist: e.target.value }))}
                                 placeholder="Avoid generic names (Chill Beats, etc.)"
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-zinc-600"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600"
                             />
                         </div>
 
@@ -134,7 +134,7 @@ export const QCPanel: React.FC = () => {
                                 value={metadata.artwork_url}
                                 onChange={(e) => setMetadata(prev => ({ ...prev, artwork_url: e.target.value }))}
                                 placeholder="https://..."
-                                className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500/50 transition-colors placeholder:text-zinc-600"
+                                className="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-dept-distribution/50 transition-colors placeholder:text-zinc-600"
                             />
                         </div>
 
@@ -142,16 +142,15 @@ export const QCPanel: React.FC = () => {
                             <button
                                 onClick={handleValidate}
                                 disabled={loading === 'qc'}
-                                className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                className="bg-dept-distribution hover:bg-dept-distribution/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                             >
                                 {loading === 'qc' ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                                 Run QC
                             </button>
-
                             <button
                                 onClick={handleGenerateCID}
                                 disabled={loading === 'cid'}
-                                className="bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                                className="bg-dept-marketing hover:bg-dept-marketing/80 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all disabled:opacity-50"
                             >
                                 {loading === 'cid' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Youtube className="w-4 h-4" />}
                                 Gen CID CSV
@@ -161,7 +160,7 @@ export const QCPanel: React.FC = () => {
                 </div>
 
                 {/* Output Panel */}
-                <div className="bg-zinc-900/50 border border-white/5 rounded-2xl p-6 space-y-4 relative overflow-hidden">
+                <div className="bg-white/5 border border-white/10 rounded-2xl p-6 space-y-4 relative overflow-hidden backdrop-blur-sm">
                     {!qcResult && !csvOutput ? (
                         <div className="h-full flex flex-col items-center justify-center text-zinc-600 space-y-4 min-h-[300px]">
                             <div className="p-4 rounded-full bg-white/5">
@@ -174,20 +173,20 @@ export const QCPanel: React.FC = () => {
                             {qcResult && (
                                 <div className="space-y-4">
                                     <div className="flex items-center justify-between border-b border-white/5 pb-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${qcResult.valid ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${qcResult.valid ? 'bg-dept-licensing/10 text-dept-licensing border border-dept-licensing/20' : 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
                                             }`}>
                                             {qcResult.valid ? 'PASSED' : 'FAILED'}
                                         </span>
-                                        <span className="text-xs text-zinc-500">{qcResult.summary}</span>
+                                        <span className="text-xs text-gray-500">{qcResult.summary}</span>
                                     </div>
 
                                     {qcResult.errors.length > 0 && (
                                         <div className="space-y-2">
-                                            <span className="text-xs font-bold text-rose-400 uppercase tracking-widest">Errors</span>
+                                            <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">Errors</span>
                                             {qcResult.errors.map((err, i) => (
-                                                <div key={i} className="flex items-start gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-lg">
-                                                    <XCircle className="w-4 h-4 text-rose-400 mt-0.5 flex-shrink-0" />
-                                                    <span className="text-xs text-rose-300">{err}</span>
+                                                <div key={i} className="flex items-start gap-2 p-3 bg-dept-marketing/10 border border-dept-marketing/20 rounded-lg">
+                                                    <XCircle className="w-4 h-4 text-dept-marketing mt-0.5 flex-shrink-0" />
+                                                    <span className="text-xs text-dept-marketing/80">{err}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -195,11 +194,11 @@ export const QCPanel: React.FC = () => {
 
                                     {(qcResult.warnings?.length ?? 0) > 0 && (
                                         <div className="space-y-2">
-                                            <span className="text-xs font-bold text-amber-400 uppercase tracking-widest">Warnings</span>
+                                            <span className="text-xs font-bold text-dept-royalties uppercase tracking-widest">Warnings</span>
                                             {qcResult.warnings?.map((warn, i) => (
-                                                <div key={i} className="flex items-start gap-2 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg">
-                                                    <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-                                                    <span className="text-xs text-amber-300">{warn}</span>
+                                                <div key={i} className="flex items-start gap-2 p-3 bg-dept-royalties/10 border border-dept-royalties/20 rounded-lg">
+                                                    <AlertTriangle className="w-4 h-4 text-dept-royalties mt-0.5 flex-shrink-0" />
+                                                    <span className="text-xs text-dept-royalties/80">{warn}</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -210,7 +209,7 @@ export const QCPanel: React.FC = () => {
                             {csvOutput && (
                                 <div className="space-y-3">
                                     <div className="flex items-center justify-between">
-                                        <span className="text-xs font-bold text-red-400 uppercase tracking-widest">YouTube Content ID CSV</span>
+                                        <span className="text-xs font-bold text-dept-marketing uppercase tracking-widest">YouTube Content ID CSV</span>
                                         <button
                                             onClick={() => navigator.clipboard.writeText(csvOutput)}
                                             className="text-xs text-gray-500 hover:text-white transition-colors"
@@ -218,7 +217,7 @@ export const QCPanel: React.FC = () => {
                                             Copy
                                         </button>
                                     </div>
-                                    <pre className="p-4 bg-black/50 rounded-lg overflow-x-auto text-xs text-green-400 font-mono max-h-48 overflow-y-auto custom-scrollbar">
+                                    <pre className="p-4 bg-black/40 rounded-lg overflow-x-auto text-xs text-dept-licensing font-mono max-h-48 overflow-y-auto custom-scrollbar">
                                         {csvOutput}
                                     </pre>
                                 </div>

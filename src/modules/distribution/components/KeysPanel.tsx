@@ -117,9 +117,9 @@ export const KeysPanel: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                 {/* Merlin Readiness Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 backdrop-blur-sm">
                     <div className="flex items-center gap-2 mb-4">
-                        <ShieldCheck className="w-5 h-5 text-purple-400" />
+                        <ShieldCheck className="w-5 h-5 text-dept-creative" />
                         <h3 className="font-bold text-white">Merlin Network Compliance</h3>
                     </div>
 
@@ -133,7 +133,7 @@ export const KeysPanel: React.FC = () => {
                             <button
                                 onClick={handleCheckMerlin}
                                 disabled={loading || !dataLoaded || catalog.length === 0}
-                                className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto disabled:cursor-not-allowed"
+                                className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/80 text-white text-sm font-bold rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 mx-auto disabled:cursor-not-allowed"
                             >
                                 {loading && <Loader2 className="w-4 h-4 animate-spin" />}
                                 Run Compliance Audit
@@ -142,7 +142,7 @@ export const KeysPanel: React.FC = () => {
                     ) : (
                         <div className="space-y-4">
                             <div className="flex items-center justify-between">
-                                <span className={`text-sm font-bold ${statusReport.status === 'READY' ? 'text-green-400' : 'text-amber-400'
+                                <span className={`text-sm font-bold ${statusReport.status === 'READY' ? 'text-dept-licensing' : 'text-dept-royalties'
                                     }`}>
                                     Status: {statusReport.status}
                                 </span>
@@ -154,14 +154,14 @@ export const KeysPanel: React.FC = () => {
                             {/* Progress Bar */}
                             <div className="w-full bg-gray-800 rounded-full h-2 overflow-hidden">
                                 <div
-                                    className="bg-purple-500 h-full rounded-full transition-all duration-500"
+                                    className="bg-dept-creative h-full rounded-full transition-all duration-500"
                                     style={{ width: `${(statusReport.passed_count / (statusReport.passed_count + statusReport.failed_count)) * 100}%` }}
                                 />
                             </div>
 
                             <div className="bg-black/30 rounded-lg p-3 text-xs space-y-2 max-h-32 overflow-y-auto">
                                 {statusReport.issues.length === 0 ? (
-                                    <div className="flex items-center gap-2 text-green-400">
+                                    <div className="flex items-center gap-2 text-dept-licensing">
                                         <CheckCircle className="w-4 h-4" />
                                         <span>All checks passed. Catalog is ready for registration.</span>
                                     </div>
@@ -177,7 +177,7 @@ export const KeysPanel: React.FC = () => {
 
                             <button
                                 onClick={() => setStatusReport(null)}
-                                className="w-full mt-4 px-4 py-2 border border-gray-700 hover:bg-gray-800 text-gray-300 rounded-lg text-sm transition-colors"
+                                className="w-full mt-4 px-4 py-2 border border-white/10 hover:bg-white/5 text-gray-300 rounded-lg text-sm transition-colors"
                             >
                                 Run Check Again
                             </button>
@@ -186,10 +186,10 @@ export const KeysPanel: React.FC = () => {
                 </div>
 
                 {/* MLC / Keys Card */}
-                <div className="bg-gray-900/50 rounded-xl p-6 border border-gray-800">
+                <div className="bg-white/5 rounded-xl p-6 border border-white/10 backdrop-blur-sm">
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-3 bg-blue-900/20 rounded-lg">
-                            <Key className="w-6 h-6 text-blue-400" />
+                        <div className="p-3 bg-dept-distribution/20 rounded-lg">
+                            <Key className="w-6 h-6 text-dept-distribution" />
                         </div>
                         <div>
                             <h3 className="text-lg font-semibold text-white">The MLC Bridge</h3>
@@ -198,7 +198,7 @@ export const KeysPanel: React.FC = () => {
                     </div>
 
                     <div className="space-y-6">
-                        <div className="p-4 bg-gray-900/80 rounded-lg border border-gray-700">
+                        <div className="p-4 bg-black/40 rounded-lg border border-white/10">
                             <h4 className="text-sm font-medium text-white mb-2">BWARM Generation</h4>
                             <p className="text-xs text-gray-400 mb-4">
                                 Generate Bulk Works Registration (BWARM) CSV files compliant with The MLC standards for royalty collection.
@@ -206,12 +206,12 @@ export const KeysPanel: React.FC = () => {
 
                             {bwarmCsv ? (
                                 <div className="space-y-3">
-                                    <div className="p-3 bg-green-900/20 border border-green-900/30 rounded text-xs font-mono text-green-300 truncate">
+                                    <div className="p-3 bg-dept-licensing/10 border border-dept-licensing/20 rounded text-xs font-mono text-dept-licensing truncate">
                                         CSV Generated ({bwarmCsv.length} bytes)
                                     </div>
                                     <button
                                         onClick={downloadCSV}
-                                        className="w-full px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                        className="w-full px-3 py-2 bg-dept-licensing hover:bg-dept-licensing/80 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
                                     >
                                         <FileText className="w-4 h-4" />
                                         Download CSV
@@ -227,7 +227,7 @@ export const KeysPanel: React.FC = () => {
                                 <button
                                     onClick={handleGenerateBWARM}
                                     disabled={loading}
-                                    className="w-full px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
+                                    className="w-full px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg text-sm font-medium border border-white/10 transition-colors flex items-center justify-center gap-2"
                                 >
                                     {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
                                     Generate BWARM CSV
@@ -238,10 +238,10 @@ export const KeysPanel: React.FC = () => {
                         <div className="pt-4 border-t border-gray-800">
                             <h4 className="text-sm font-medium text-white mb-2">External Connections</h4>
                             <div className="flex gap-2">
-                                <button disabled className="flex-1 py-2 bg-gray-800 text-gray-500 rounded border border-gray-700 text-xs cursor-not-allowed">
+                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
                                     Connect MLC Account
                                 </button>
-                                <button disabled className="flex-1 py-2 bg-gray-800 text-gray-500 rounded border border-gray-700 text-xs cursor-not-allowed">
+                                <button disabled className="flex-1 py-2 bg-white/5 text-gray-500 rounded border border-white/10 text-xs cursor-not-allowed">
                                     Connect SoundExchange
                                 </button>
                             </div>

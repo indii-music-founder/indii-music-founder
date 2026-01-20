@@ -1,65 +1,32 @@
-# Walkthrough: AI Service Refactoring (Client-Side SDK Transition)
+# Walkthrough: UI Standardization (Distribution & Core)
 
 ## Overview
 
-This walkthrough documents the successful refactoring of the AI service layer to transition from a server-proxy pattern to the `firebase/ai` client-side SDK. This change improves latency, reduces costs, and leverages the new capabilities of the Gemini 3 models on Vertex AI.
+This walkthrough documents the standardization of UI tokens and styles across the Distribution module and Core layout components. The goal was to remove hardcoded hex values and consistent apply the `indiiOS` design system (department tokens, glassmorphism, etc.).
 
 ## Key Changes
 
-### 1. Firebase Service Initialization (`src/services/firebase.ts`)
+### 1. Distribution Module Components
 
-- **Updated Initialization**: Configured the global `ai` instance using `getAI` with `VertexAIBackend` and `useLimitedUseAppCheckTokens: true`.
-- **Remote Config**: Set default model to `AI_MODELS.TEXT.FAST` (Gemini 3 Flash Preview) and established failover logic.
+- **`BankPanel.tsx`**: Updated Revenue Simulator, Tax Engine, and Waterfall inputs to use `bg-black/40`, `bg-white/5` surfaces, and `dept-licensing`/`dept-distribution` accents.
+- **`QCPanel.tsx`**: Standardized Metadata inputs and QC results with `dept-marketing` (errors) and `dept-licensing` (pass) tokens.
+- **`AuthorityPanel.tsx`**: Applied `dept-creative`, `dept-distribution`, and `dept-royalties` scheme to ISRC, UPC, and DDEX generators.
+- **`KeysPanel.tsx`**: Updated Merlin and MLC bridge cards to use `bg-white/5` and department tokens.
+- **`DistributorConnectionsPanel.tsx`**: Fixed background opacities and token usage.
 
-### 2. New Service Architecture (`src/services/ai/FirebaseAIService.ts`)
+### 2. Mobile Navigation (`MobileNav.tsx`)
 
-- **Direct SDK Integration**: Implemented `FirebaseAIService` to wrap `firebase/ai` SDK methods:
-  - `generateContent` (Raw access)
-  - `generateText` (High-level text generation)
-  - `generateStructuredData` (Type-safe JSON generation with Zod)
-  - `chat` (Multi-turn conversations)
-  - `getLiveModel` (Real-time WebSockets)
-- **Security**: Integrated App Check handling and user-bound verification.
-- **Model Policy**: Strictly enforces `AI_MODELS` configuration, banning legacy models (Gemini 1.5, etc.).
-
-### 3. Legacy Compatibility Layer (`src/services/ai/AIService.ts`)
-
-- Refactored `AIService` to delegate core generation logic (`generateContent`, `generateContentStream`) to `FirebaseAIService`.
-- Maintained the singleton pattern (`AI`) and `WrappedResponse` structure to ensure no breaking changes for existing consumers (`BrandTools`, `MarketingTools`, etc.).
-
-### 4. Test Updates
-
-- **BrandTools**: Updated mocks to use `generateStructuredData`.
-- **VideoTools**: Updated parameter names (`firstFrame` instead of `startImage`, removed `orgId`) to align with refactored `VideoGenerationService`.
-- **Specialists**: Corrected agent ID reference from `road` to `road-manager`.
-- **FirebaseAIService**: Added comprehensive unit tests for all methods.
+- **FAB**: Replaced hardcoded `#1a1a1a` with `bg-background` and `hover:bg-white/10`.
+- **Drawer**: Updated menu items to dynamic use `colors.hoverBg` and `colors.hoverText` based on the module, ensuring consistency with the desktop Sidebar.
 
 ## Verification Results
 
-### Unit Tests
+### Browser Smoke Test
 
-All relevant test suites passed successfully:
-
-- `src/services/ai/FirebaseAIService.test.ts` ✅
-- `src/services/agent/tools/BrandTools.test.ts` ✅
-- `src/services/agent/tools/VideoTools.test.ts` ✅
-- `src/services/agent/specialists/specialists.test.ts` ✅
-- `src/services/agent/specialists/specialists_tools.test.ts` ✅
-
-### Integration Checks
-
-- **EditingService**: Verified correct usage of `firebaseAI.generateContent` and response structure.
-- **Remote Config**: Verified bootstrapping and model fallback logic.
+- **Desktop**: Verified consistent layout and department branding across all Distribution tabs.
+- **Mobile**: Confirmed correct background colors and interative states for the FAB and navigation drawer.
 
 ## Next Steps
 
-- **Production Key**: [x] Implemented handling for `VITE_FIREBASE_APP_CHECK_KEY` in production.
-- **Monitoring**: Watch Firebase Console for App Check metrics and Vertex AI quota usage.
-
-## Conflict Resolution
-
-### walkthrough.md Conflict
-
-- **Issue**: `walkthrough.md` was deleted in `origin/main` but modified in the local branch.
-- **Resolution**: Restored the local version of `walkthrough.md` to preserve the detailed documentation of the refactoring process.
-- **Verification**: Confirmed file content integrity and passed regression tests (`FirebaseAIService.test.ts`).
+- **Docs**: Keep strict adherence to `moduleColors.ts` for any new components.
+- **Audit**: Periodically scan for `#` hex values in `.tsx` files to catch regressions.
