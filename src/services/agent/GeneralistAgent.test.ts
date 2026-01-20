@@ -119,7 +119,8 @@ describe('GeneralistAgent', () => {
         expect(vi.mocked(TOOL_REGISTRY.test_tool).mock.calls.length).toBeLessThanOrEqual(2);
     });
 
-    it('has proper tool declarations for native function calling', () => {
+    it('has proper tool declarations for native function calling', async () => {
+        await generalistAgent.initialize();
         expect(generalistAgent.tools).toBeDefined();
         expect(generalistAgent.tools.length).toBeGreaterThan(0);
 

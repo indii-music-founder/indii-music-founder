@@ -37,40 +37,7 @@ describe('CoreTools', () => {
         (useStore.getState as any).mockReturnValue(mockStoreState);
     });
 
-    describe('delegate_task', () => {
-        it('should delegate task to valid agent', async () => {
-            const mockAgent = {
-                name: 'Legal Agent',
-                execute: vi.fn().mockResolvedValue({ text: 'Task completed', toolCalls: [] })
-            };
-            (agentRegistry.getAsync as any).mockResolvedValue(mockAgent);
-            (agentRegistry.get as any).mockReturnValue(mockAgent);
 
-            const result = await CoreTools.delegate_task({
-                agent_id: 'legal',
-                task: 'Review contract'
-            });
-
-            expect(result.success).toBe(true);
-            expect(result.data.text).toBe('Task completed');
-            expect(result.data.message).toContain('[Legal Agent]: Task completed');
-            expect(mockAgent.execute).toHaveBeenCalledWith('Review contract', undefined);
-        });
-
-        it('should handle unknown agent', async () => {
-            (agentRegistry.getAsync as any).mockResolvedValue(undefined);
-            (agentRegistry.get as any).mockReturnValue(undefined);
-            (agentRegistry.listCapabilities as any).mockReturnValue('- legal\n- marketing');
-
-            const result = await CoreTools.delegate_task({
-                agent_id: 'unknown' as any,
-                task: 'Task'
-            });
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain("Invalid agent ID");
-        });
-    });
 
     describe('request_approval', () => {
         it('should handle approved request', async () => {

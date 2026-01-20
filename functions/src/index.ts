@@ -61,6 +61,36 @@ const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
 const geminiApiKey = defineSecret("GEMINI_API_KEY");
 
+/**
+ * Helper function to get the Gemini API key with fallback for local development.
+ * In production, this uses Firebase secrets. In local development, it falls back
+ * to environment variables (from functions/.env).
+ *
+ * @returns The Gemini API key string
+ * @throws Error if no API key is found
+ */
+function getGeminiApiKey(): string {
+    // Try secret first (production)
+    try {
+        const secretValue = geminiApiKey.value();
+        if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
+            console.log('[getGeminiApiKey] Using secret from Firebase');
+            return secretValue;
+        }
+    } catch (secretError) {
+        console.log('[getGeminiApiKey] Secret not available, checking environment...');
+    }
+
+    // Fallback to environment variable (local development)
+    const envKey = process.env.GEMINI_API_KEY;
+    if (envKey && envKey.trim().length > 0) {
+        console.log('[getGeminiApiKey] Using environment variable (local development)');
+        return envKey;
+    }
+
+    throw new Error('Gemini API key not found. Please set GEMINI_API_KEY in Firebase Cloud Secret or functions/.env');
+}
+
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
     return new Inngest({
@@ -565,7 +595,8 @@ export const generateImageV3 = functions
         const { prompt, aspectRatio, count, images } = validation.data;
 
         try {
-            // Initialize Vertex AI Client (Enterprise / Quota Aware)
+            // Initialize Vertex AI Client (works with API key for development)
+            console.log("[generateImageV3] Using Vertex AI with provided credentials");
             const project = process.env.GCLOUD_PROJECT || admin.instanceId().app.options.projectId;
             const location = 'us-central1';
             const vertexAI = new VertexAI({ project, location });
@@ -764,7 +795,7 @@ export const generateContentStream = functions
 
                 // Initialize SDK Client
                 // Initialize SDK Client
-                const client = new GoogleGenAI({ apiKey: geminiApiKey.value() });
+                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
                 // Generate Content Stream
                 const result = await client.models.generateContentStream({
@@ -861,7 +892,7 @@ export const ragProxy = functions
                 }
 
                 const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,

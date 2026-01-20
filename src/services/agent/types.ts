@@ -65,6 +65,7 @@ export const VALID_AGENT_IDS = [
     'security',
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
+    'keeper',       // Context Integrity Guardian
     'generalist'  // Agent Zero
 ] as const;
 
