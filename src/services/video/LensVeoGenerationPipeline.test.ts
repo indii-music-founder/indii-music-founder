@@ -64,8 +64,10 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
         vi.useRealTimers();
     });
 
-    it('should generate "Flash" video within 2 seconds (simulated) and verify metadata', async () => {
+    it('should generate "Flash" video within 2 seconds (simulated) and verify Veo 3.1 metadata contract', async () => {
         // Setup: Mock onSnapshot to return success quickly
+        const flashUrl = 'https://storage.googleapis.com/veo-generations/flash-123.mp4?signature=mock-signed-url';
+
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
@@ -75,11 +77,11 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                     data: () => ({
                         status: 'completed',
                         output: {
-                            url: 'http://mock-flash-url.mp4',
+                            url: flashUrl,
                             metadata: {
                                 duration_seconds: 4.0,
-                                fps: 30,
-                                mime_type: 'video/mp4' // Veo 3.1 contract
+                                fps: 30, // Veo 3.1 standard
+                                mime_type: 'video/mp4'
                             }
                         }
                     })
@@ -97,16 +99,20 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
         const result = await jobPromise;
         const duration = Date.now() - start;
 
-        // Verify Speed
-        expect(duration).toBeLessThan(2000); // Should be fast
+        // Verify Speed (< 2s)
+        expect(duration).toBeLessThan(2000);
 
         // Verify Metadata Contract
         expect(result.output.metadata).toBeDefined();
         expect(result.output.metadata.mime_type).toBe('video/mp4');
+        expect(result.output.metadata.duration_seconds).toBe(4.0);
         expect([24, 30, 60]).toContain(result.output.metadata.fps);
+        expect(result.output.url).toBe(flashUrl);
     });
 
-    it('should generate "Pro" video within 30 seconds (simulated) and verify metadata', async () => {
+    it('should generate "Pro" video within 30 seconds (simulated) and verify high-fidelity metadata', async () => {
+        const proUrl = 'https://storage.googleapis.com/veo-generations/pro-456.mp4?signature=mock-signed-url';
+
         // Setup: Mock onSnapshot to return success slowly
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
@@ -117,10 +123,10 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                     data: () => ({
                         status: 'completed',
                         output: {
-                            url: 'http://mock-pro-url.mp4',
+                            url: proUrl,
                             metadata: {
                                 duration_seconds: 10.0,
-                                fps: 60,
+                                fps: 60, // Pro often 60fps
                                 mime_type: 'video/mp4'
                             }
                         }
@@ -145,10 +151,13 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
 
         // Verify Metadata Contract
         expect(result.output.metadata.fps).toBe(60);
+        expect(result.output.metadata.mime_type).toBe('video/mp4');
+        expect(result.output.url).toBe(proUrl);
     });
 
-    it('should handle SafetySettings violation gracefully', async () => {
+    it('should handle SafetySettings violation gracefully via "Safety Handshake"', async () => {
         // Setup: Mock onSnapshot to return a failure with safety info
+        // This mimics the "Safety Handshake" where the backend returns structured safety ratings
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
@@ -157,9 +166,10 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
                     id: 'job-id-unsafe',
                     data: () => ({
                         status: 'failed',
-                        error: 'Safety violation',
+                        error: 'Safety violation: Content blocked by safety filters.',
                         safety_ratings: [
-                            { category: 'HARM_CATEGORY_VIOLENCE', probability: 'HIGH' }
+                            { category: 'HARM_CATEGORY_VIOLENCE', probability: 'HIGH' },
+                            { category: 'HARM_CATEGORY_HATE_SPEECH', probability: 'MEDIUM' }
                         ]
                     })
                 });
@@ -170,12 +180,17 @@ describe('Lens 🎥 - Veo Generation Pipeline', () => {
         const jobPromise = service.waitForJob('job-id-unsafe', 5000);
         vi.advanceTimersByTime(1000);
 
-        // Expect rejection with error message
-        await expect(jobPromise).rejects.toThrow('Safety violation');
+        // Expect rejection.
+        // In a real app, we might check for a custom error class, but here we check the message.
+        // The service wraps the error in `new Error(job.error)`.
+        await expect(jobPromise).rejects.toThrow(/Safety violation/);
+
+        // We implicitly verified the handshake by confirming the service correctly identified the 'failed' status
+        // and propagated the error message derived from the backend's safety response.
     });
 
     it('should return empty URL on missing asset (Client must handle 404)', async () => {
-        // Setup: Job completes, but URL is invalid/empty
+        // Setup: Job completes, but URL is invalid/empty (e.g. upload failed but job marked complete)
         mocks.doc.mockReturnValue('doc-ref');
         mocks.onSnapshot.mockImplementation((ref, callback) => {
             setTimeout(() => {
