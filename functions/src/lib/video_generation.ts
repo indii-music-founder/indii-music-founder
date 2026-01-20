@@ -51,9 +51,10 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
 
                 // VEO 3.1: Duration support (4, 6, 8 seconds)
-                if (options?.durationSeconds) {
+                const rawDuration = options?.durationSeconds || options?.duration;
+                if (rawDuration) {
                     // Clamp to supported values or default to 8
-                    let dur = options.durationSeconds;
+                    let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : rawDuration;
                     if (dur <= 4) dur = 4;
                     else if (dur <= 6) dur = 6;
                     else dur = 8;
@@ -91,10 +92,11 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
 
                 // VEO 3.1: Ingredients (Reference Images - Up to 3)
-                if (options?.referenceImages && Array.isArray(options.referenceImages)) {
-                    requestBody.parameters.referenceImages = options.referenceImages.slice(0, 3).map((ref: any) => {
+                const refImages = options?.referenceImages || options?.ingredients;
+                if (refImages && Array.isArray(refImages)) {
+                    requestBody.parameters.referenceImages = refImages.slice(0, 3).map((ref: any) => {
                         // Extract bytes if it's a nested object (VideoService formats it this way)
-                        const rawBytes = ref.image?.imageBytes || ref.data || ref;
+                        const rawBytes = ref.image?.imageBytes || ref.data || ref || "";
                         const cleanBytes = typeof rawBytes === 'string' ? rawBytes.replace(/^data:image\/\w+;base64,/, '') : rawBytes;
 
                         return {

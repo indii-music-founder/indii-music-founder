@@ -10,6 +10,8 @@ Implement robust Veo 3.1 video generation with support for "First and Last Frame
   - [x] Fix `VideoJobSchema` in `functions/src/lib/video.ts` to support `image` object.
   - [x] Update `functions/src/lib/video_generation.ts` to construct correct Veo 3.1 payload.
   - [x] Implement fallback support for `firstFrame` (string) and `image` (object).
+  - [x] Add robust mapping for `referenceImages`, `resolution`, and `duration`.
+  - [x] Sync UI (CreativePanel) with Veo 3 capabilities.
   - [x] Verify build of Cloud Functions.
 
 ## Context

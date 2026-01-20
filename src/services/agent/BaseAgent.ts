@@ -215,11 +215,12 @@ export class BaseAgent implements SpecializedAgent {
                 // Use execution context if available, fallback to direct store access for backwards compatibility
                 const projects = toolContext ? toolContext.get('projects') : (await import('@/core/store')).useStore.getState().projects;
                 const project = projects?.find((p: any) => p.id === projectId);
-                if (!project) return { error: 'Project not found' };
-                return project;
+                if (!project) return { success: false, error: 'Project not found' };
+                return { success: true, data: project };
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }: any, context, _toolContext?: ToolExecutionContext) => {
+            delegate_task: async ({ targetAgentId, task }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -239,8 +240,7 @@ export class BaseAgent implements SpecializedAgent {
                 const traceId = context?.traceId || 'unknown';
                 const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
                 if (delegationCheck.isLoop) {
-                    console.warn(`[BaseAgent] Delegation loop detected: ${delegationCheck.reason}`);
-                    console.warn(`[BaseAgent] Chain: ${delegationCheck.pattern}`);
+                    console.warn(`[BaseAgent] Delegation loop detected: ${traceId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
                     return toolError(
                         `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
                         'DELEGATION_LOOP'
@@ -248,7 +248,6 @@ export class BaseAgent implements SpecializedAgent {
                 }
 
                 const result = await agentService.runAgent(targetAgentId, task, context, context?.traceId, context?.attachments);
-                // AgentService.runAgent returns AgentResponse, we wrap it
                 return {
                     success: true,
                     data: result,
@@ -257,6 +256,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
+            consult_experts: async ({ consultations }, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
 
@@ -350,7 +350,7 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 }
             },
-            ...(config.functions || {} as Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>)
+            ...(config.functions || {} as Record<string, AnyToolFunction>)
         };
     }
 
@@ -663,10 +663,7 @@ ${task}
                         const { TOOL_REGISTRY } = await import('./tools');
                         if (TOOL_REGISTRY[name]) {
                             // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
-                            result = await TOOL_REGISTRY[name](args, toolContext);
-                            // Cast to any because TOOL_REGISTRY might not yet be updated to ContextAwareTool
-                            const toolFunc = TOOL_REGISTRY[name] as any;
-                            result = await toolFunc(args, enrichedContext, toolContext);
+                            result = await (TOOL_REGISTRY[name] as AnyToolFunction)(args, enrichedContext, toolContext);
                         } else {
                             result = { success: false, error: `Tool '${name}' not found.` };
                         }

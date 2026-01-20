@@ -277,10 +277,8 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
                                 >
                                     <option value={4}>4 seconds</option>
-                                    <option value={5}>5 seconds</option>
                                     <option value={6}>6 seconds</option>
                                     <option value={8}>8 seconds</option>
-                                    <option value={10}>10 seconds</option>
                                 </select>
                                 <ChevronDown size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors" />
                             </div>

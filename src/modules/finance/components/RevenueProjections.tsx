@@ -43,7 +43,7 @@ export const RevenueProjections = () => {
             <div className="p-6 border-b border-white/5 flex justify-between items-center">
                 <div>
                     <h3 className="font-semibold text-white flex items-center gap-2">
-                        <Calculator size={16} className="text-emerald-400" />
+                        <Calculator size={16} className="text-dept-royalties" />
                         Revenue Projections
                     </h3>
                     <p className="text-xs text-gray-500 mt-1">AI-powered earnings forecast</p>
@@ -69,7 +69,7 @@ export const RevenueProjections = () => {
                                     type="number"
                                     value={streams}
                                     onChange={(e) => setStreams(Number(e.target.value))}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-dept-royalties/50 transition-colors"
                                 />
                             </div>
                             <div>
@@ -77,7 +77,7 @@ export const RevenueProjections = () => {
                                 <select
                                     value={platform}
                                     onChange={(e) => setPlatform(e.target.value as any)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-emerald-500/50 transition-colors"
+                                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white text-sm focus:outline-none focus:border-dept-royalties/50 transition-colors"
                                 >
                                     <option value="Spotify">Spotify (Growth)</option>
                                     <option value="Apple Music">Apple Music (High Value)</option>
@@ -89,7 +89,7 @@ export const RevenueProjections = () => {
                         <button
                             onClick={handleForecast}
                             disabled={loading}
-                            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-bold text-sm transition-all shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                            className="w-full py-3 bg-dept-royalties hover:opacity-90 text-black rounded-lg font-bold text-sm transition-all shadow-lg shadow-dept-royalties/20 flex items-center justify-center gap-2"
                         >
                             {loading ? <Loader2 size={16} className="animate-spin" /> : <TrendingUp size={16} />}
                             Calculate Projection
@@ -98,24 +98,24 @@ export const RevenueProjections = () => {
                 ) : (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* 1 Year Projection Highlight */}
-                        <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 text-center relative overflow-hidden group">
-                            <div className="absolute inset-0 bg-emerald-500/5 group-hover:bg-emerald-500/10 transition-colors duration-500" />
-                            <p className="text-emerald-400 text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Revenue</p>
+                        <div className="bg-dept-royalties/10 border border-dept-royalties/20 rounded-xl p-5 text-center relative overflow-hidden group">
+                            <div className="absolute inset-0 bg-dept-royalties/5 group-hover:bg-dept-royalties/10 transition-colors duration-500" />
+                            <p className="text-dept-royalties text-xs font-bold uppercase tracking-wider mb-1 relative z-10">1 Year Net Revenue</p>
                             <h2 className="text-3xl font-black text-white relative z-10">${projections.net_to_rights_holder.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h2>
                         </div>
 
                         {/* Manager Savings Badge - Gamification */}
-                        <div className="bg-purple-500/10 border border-purple-500/20 rounded-xl p-4 flex items-center justify-between">
+                        <div className="bg-dept-royalties/10 border border-dept-royalties/20 rounded-xl p-4 flex items-center justify-between">
                             <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-400">
+                                <div className="w-10 h-10 rounded-full bg-dept-royalties/20 flex items-center justify-center text-dept-royalties">
                                     <DollarSign size={20} />
                                 </div>
                                 <div>
-                                    <p className="text-xs text-purple-300 font-medium">Manager Fees Saved</p>
+                                    <p className="text-xs text-dept-royalties/70 font-medium">Manager Fees Saved</p>
                                     <p className="text-lg font-bold text-white">${projections.manager_fee_saved.year_1.toLocaleString(undefined, { maximumFractionDigits: 0 })}</p>
                                 </div>
                             </div>
-                            <div className="text-[10px] bg-purple-500/20 text-purple-300 px-2 py-1 rounded font-bold">
+                            <div className="text-[10px] bg-dept-royalties/20 text-dept-royalties px-2 py-1 rounded font-bold">
                                 20% KEPT
                             </div>
                         </div>
