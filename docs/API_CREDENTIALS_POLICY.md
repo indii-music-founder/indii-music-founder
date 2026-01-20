@@ -88,7 +88,7 @@ Before modifying API keys, verify:
 
 **Symptom:**
 
-```
+```text
 [GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:streamGenerateContent?alt=sse: [400] API key expired.
 ```
 
@@ -110,6 +110,42 @@ Before modifying API keys, verify:
 - Always verify key belongs to correct project before using
 - Prefer restricted keys over unrestricted
 - Test in browser after any key change
+
+### 2026-01-19: Production Deployment Failure
+
+**Symptom:**
+Deployment pipeline succeeded, but production app (`indii-backend`) was running outdated code (Dec 1st build) and using expired keys.
+
+**Root Cause:**
+
+- `VITE_API_KEY` and other env vars in GitHub Actions were pulled from **stale GitHub Secrets**, not the repo's `.env` file.
+- Deployment workflow was passing old secrets to the build process.
+
+**Resolution:**
+
+- Manually updated GitHub Secrets (`VITE_API_KEY`, `VITE_FIREBASE_API_KEY`) in Repo Settings.
+- Triggered manual re-deploy.
+
+**Lesson Learned:**
+
+- **CI/CD Separation:** Updating local `.env` does NOT update the deployment pipeline.
+- **Secret Sync:** Always update GitHub Secrets immediately after changing local keys.
+
+---
+
+## Deployment & CI/CD
+
+The following secrets must be maintained in **GitHub Repo Settings > Secrets and variables > Actions**:
+
+| Secret Name | Value Origin |
+| --- | --- |
+| `VITE_API_KEY` | `Gemini Developer API key` (Restricted) |
+| `VITE_FIREBASE_API_KEY` | `Browser key` (from Firebase) |
+| `VITE_VERTEX_PROJECT_ID` | `indiios-v-1-1` |
+| `VITE_VERTEX_LOCATION` | `us-central1` |
+
+> [!WARNING]
+> CI/CD Pipeline (`deploy.yml`) injects these secrets at build time. Changing `.env` locally has **NO EFFECT** on production builds. You must update GitHub Secrets manually.
 
 ---
 
