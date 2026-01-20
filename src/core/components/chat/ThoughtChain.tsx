@@ -12,6 +12,7 @@ interface ThoughtChainProps {
 export const ThoughtChain = memo(({ thoughts, messageId }: ThoughtChainProps) => {
     const [isOpen, setIsOpen] = useState(true);
     const contentId = `thought-chain-${messageId}`;
+    const buttonId = `thought-chain-btn-${messageId}`;
 
     if (!thoughts || thoughts.length === 0) return null;
 
@@ -19,6 +20,7 @@ export const ThoughtChain = memo(({ thoughts, messageId }: ThoughtChainProps) =>
         <div className="mb-5 relative">
             <div className="absolute left-0 top-8 bottom-0 w-px bg-gradient-to-b from-purple-500/30 to-transparent" />
             <button
+                id={buttonId}
                 onClick={() => setIsOpen(!isOpen)}
                 aria-expanded={isOpen}
                 aria-controls={contentId}
@@ -41,6 +43,7 @@ export const ThoughtChain = memo(({ thoughts, messageId }: ThoughtChainProps) =>
                         exit={{ height: 0, opacity: 0, x: -5 }}
                         id={contentId}
                         role="region"
+                        aria-labelledby={buttonId}
                         className="space-y-3 pl-6 overflow-hidden"
                     >
                         {thoughts.map(thought => (
