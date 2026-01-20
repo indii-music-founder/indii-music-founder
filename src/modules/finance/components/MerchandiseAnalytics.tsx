@@ -39,12 +39,12 @@ export const MerchandiseAnalytics: React.FC = () => {
                 whileHover={{ y: -5 }}
                 className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
             >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-teal-500/5 blur-[80px] pointer-events-none rounded-full" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-dept-royalties/5 blur-[80px] pointer-events-none rounded-full" />
 
                 <div className="flex justify-between items-start mb-8 relative z-10">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-400">
+                            <div className="p-1.5 rounded-lg bg-dept-royalties/10 text-dept-royalties">
                                 <TrendingUp size={16} />
                             </div>
                             <h3 className="text-xl font-bold text-white tracking-tight">Revenue Velocity</h3>
@@ -58,8 +58,8 @@ export const MerchandiseAnalytics: React.FC = () => {
                         <AreaChart data={revenueTrendData}>
                             <defs>
                                 <linearGradient id="merchRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#14b8a6" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="#14b8a6" stopOpacity={0} />
+                                    <stop offset="5%" stopColor="var(--color-dept-royalties)" stopOpacity={0.3} />
+                                    <stop offset="95%" stopColor="var(--color-dept-royalties)" stopOpacity={0} />
                                 </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
@@ -91,7 +91,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                             <Area
                                 type="monotone"
                                 dataKey="revenue"
-                                stroke="#14b8a6"
+                                stroke="var(--color-dept-royalties)"
                                 strokeWidth={4}
                                 fillOpacity={1}
                                 fill="url(#merchRevenueGradient)"
@@ -108,21 +108,21 @@ export const MerchandiseAnalytics: React.FC = () => {
                 whileHover={{ y: -5 }}
                 className="bg-white/5 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 relative overflow-hidden group shadow-2xl"
             >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 blur-[80px] pointer-events-none rounded-full" />
+                <div className="absolute top-0 right-0 w-64 h-64 bg-dept-creative/5 blur-[80px] pointer-events-none rounded-full" />
 
                 <div className="flex justify-between items-start mb-8 relative z-10">
                     <div>
                         <div className="flex items-center gap-2 mb-1">
-                            <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400">
+                            <div className="p-1.5 rounded-lg bg-dept-creative/10 text-dept-creative">
                                 <BarChart3 size={16} />
                             </div>
                             <h3 className="text-xl font-bold text-white tracking-tight">Active Cycle</h3>
                         </div>
                         <p className="text-gray-500 text-xs font-medium uppercase tracking-widest ml-1">Daily Conversion Performance</p>
                     </div>
-                    <div className="bg-purple-500/10 border border-purple-500/20 px-4 py-2 rounded-2xl flex items-center gap-2">
-                        <Zap size={14} className="text-purple-400 fill-purple-400" />
-                        <span className="text-purple-400 text-xs font-black uppercase">Top Performer</span>
+                    <div className="bg-dept-creative/10 border border-dept-creative/20 px-4 py-2 rounded-2xl flex items-center gap-2">
+                        <Zap size={14} className="text-dept-creative fill-dept-creative" />
+                        <span className="text-dept-creative text-xs font-black uppercase">Top Performer</span>
                     </div>
                 </div>
 
@@ -156,8 +156,8 @@ export const MerchandiseAnalytics: React.FC = () => {
                                 {conversionCycleData.map((entry: ConversionCycle, index: number) => (
                                     <Cell
                                         key={`cell-${index}`}
-                                        fill={entry.revenue > 3000 ? '#A855F7' : '#22d3ee20'}
-                                        stroke={entry.revenue > 3000 ? '#A855F7' : '#22d3ee40'}
+                                        fill={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'}
+                                        stroke={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'}
                                         strokeWidth={1}
                                     />
                                 ))}

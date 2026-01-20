@@ -17,16 +17,16 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8"
     >
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-royalties/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Total Revenue</h3>
-                <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                <div className="w-8 h-8 rounded-full bg-dept-royalties/10 flex items-center justify-center text-dept-royalties">
                     <DollarSign size={16} />
                 </div>
             </div>
             <div className="relative z-10">
                 <div className="text-3xl font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
-                <p className="text-xs text-emerald-400 flex items-center gap-1 mt-1">
+                <p className="text-xs text-dept-royalties flex items-center gap-1 mt-1">
                     <TrendingUp size={12} />
                     +20.1% from last month
                 </p>
@@ -34,10 +34,10 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-creative/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Total Streams</h3>
-                <div className="w-8 h-8 rounded-full bg-purple-500/10 flex items-center justify-center text-purple-400">
+                <div className="w-8 h-8 rounded-full bg-dept-creative/10 flex items-center justify-center text-dept-creative">
                     <Music size={16} />
                 </div>
             </div>
@@ -49,10 +49,10 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
 
         {/* Placeholder Stats */}
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-distribution/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Top Territory</h3>
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center text-blue-400">
+                <div className="w-8 h-8 rounded-full bg-dept-distribution/10 flex items-center justify-center text-dept-distribution">
                     <Globe size={16} />
                 </div>
             </div>
@@ -63,10 +63,10 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute inset-0 bg-gradient-to-br from-dept-touring/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
                 <h3 className="text-sm font-medium text-gray-400">Pending Payout</h3>
-                <div className="w-8 h-8 rounded-full bg-orange-500/10 flex items-center justify-center text-orange-400">
+                <div className="w-8 h-8 rounded-full bg-dept-touring/10 flex items-center justify-center text-dept-touring">
                     <ArrowUpRight size={16} />
                 </div>
             </div>
@@ -129,7 +129,7 @@ export const EarningsDashboard: React.FC = () => {
                         <span className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-xs text-gray-400">
                             Fiscal Year 2024
                         </span>
-                        <span className="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-400">
+                        <span className="px-3 py-1 rounded-full bg-dept-royalties/10 border border-dept-royalties/20 text-xs text-dept-royalties">
                             Active
                         </span>
                     </div>
@@ -139,7 +139,7 @@ export const EarningsDashboard: React.FC = () => {
                     <button className="px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-sm text-gray-300 transition-colors">
                         January 2024
                     </button>
-                    <button className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-purple-500/20">
+                    <button className="px-4 py-2 bg-dept-creative hover:bg-dept-creative/90 text-white text-sm font-medium rounded-lg transition-colors shadow-lg shadow-dept-creative/20">
                         Download Report
                     </button>
                 </div>
@@ -193,7 +193,7 @@ export const EarningsDashboard: React.FC = () => {
                             <div className="flex-1 overflow-y-auto p-6 space-y-5">
                                 {earningsSummary.byTerritory.map((t, i) => (
                                     <div key={t.territoryCode} className="flex items-center group">
-                                        <div className={`w-2 h-8 rounded-full mr-4 ${i === 0 ? 'bg-blue-500' : 'bg-white/10 group-hover:bg-white/20'}`} />
+                                        <div className={`w-2 h-8 rounded-full mr-4 ${i === 0 ? 'bg-dept-distribution' : 'bg-white/10 group-hover:bg-white/20'}`} />
                                         <div className="flex-1 space-y-1">
                                             <p className="text-sm font-medium text-gray-200 leading-none">{t.territoryName}</p>
                                             <p className="text-xs text-gray-500">{t.territoryCode}</p>

@@ -27,7 +27,9 @@ export const VideoGenerationOptionsSchema = z.object({
     }).optional(),
     timeOffset: z.number().optional(),
     ingredients: z.array(z.string()).optional(),
+    referenceImages: z.array(z.any()).optional(), // Veo 3.1 alias
     duration: z.number().min(1).max(300).optional(), // 5 minutes max per atomic job
+    durationSeconds: z.number().optional(), // Alias for consistency
     fps: z.number().int().min(1).max(60).optional(),
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),

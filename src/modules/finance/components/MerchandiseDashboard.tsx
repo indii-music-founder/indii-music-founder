@@ -20,17 +20,17 @@ export const MerchandiseDashboard: React.FC = () => {
                         opacity: [0.1, 0.2, 0.1]
                     }}
                     transition={{ duration: 8, repeat: Infinity }}
-                    className="absolute -top-32 -right-32 w-96 h-96 bg-purple-600/20 blur-[100px] pointer-events-none rounded-full"
+                    className="absolute -top-32 -right-32 w-96 h-96 bg-dept-royalties/20 blur-[100px] pointer-events-none rounded-full"
                 />
 
                 <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
                     <div className="flex items-center gap-5">
-                        <div className="w-14 h-14 rounded-2xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-purple-400">
+                        <div className="w-14 h-14 rounded-2xl bg-dept-royalties/10 border border-dept-royalties/20 flex items-center justify-center text-dept-royalties">
                             <ShoppingBag size={28} />
                         </div>
                         <div>
                             <h2 className="text-3xl font-black text-white tracking-tight flex items-center gap-2">
-                                Merchandise <span className="text-purple-500">Sales</span>
+                                Merchandise <span className="text-dept-royalties">Sales</span>
                             </h2>
                             <p className="text-gray-500 text-sm font-medium uppercase tracking-widest mt-1">Global Commerce Operations</p>
                         </div>
@@ -56,7 +56,7 @@ export const MerchandiseDashboard: React.FC = () => {
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Products</div>
                         <div className="text-xl font-bold text-white flex items-center gap-2">
-                            <Package size={16} className="text-teal-500" />
+                            <Package size={16} className="text-dept-licensing" />
                             24 Items
                         </div>
                     </div>
@@ -73,7 +73,7 @@ export const MerchandiseDashboard: React.FC = () => {
                     </div>
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Average Margin</div>
-                        <div className="text-xl font-bold text-teal-400">62.5%</div>
+                        <div className="text-xl font-bold text-dept-licensing">62.5%</div>
                     </div>
                 </div>
             </motion.div>

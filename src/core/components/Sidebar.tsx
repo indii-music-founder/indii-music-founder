@@ -150,7 +150,7 @@ export default function Sidebar() {
             {/* User Profile Section */}
             <div className="p-4 border-t border-white/5 mt-auto">
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">
                             S
                         </span>
@@ -180,7 +180,7 @@ export default function Sidebar() {
                     <div className="mt-4 flex items-center justify-around bg-black/20 p-2 rounded-lg border border-white/5">
                         <button
                             onClick={() => setTheme('dark')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-indigo-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-dept-creative bg-white/5 shadow-[0_0_10px_rgba(156,39,176,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                             title="Dark Mode"
                             data-testid="theme-btn-dark"
                         >
@@ -189,7 +189,7 @@ export default function Sidebar() {
 
                         <button
                             onClick={() => setModule('observability')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-green-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                             title="System Observability"
                             data-testid="observability-footer-btn"
                         >
