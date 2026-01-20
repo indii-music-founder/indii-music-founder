@@ -14,14 +14,51 @@ const VALID_AGENT_MODES: AgentMode[] = ['assistant', 'autonomous', 'creative', '
 // ============================================================================
 
 export const CoreTools: Record<string, AnyToolFunction> = {
-    // delegate_task REMOVED - Use BaseAgent.functions implementation instead
-    // The BaseAgent version properly handles async agent loading and context passing
-    // via AgentService.runAgent(). This prevents "agent not found" errors.
+    delegate_task: wrapTool('delegate_task', async (args: {
+        targetAgentId: string;
+        task: string;
+    }, context, toolContext) => {
+        const { agentService } = await import('../AgentService');
+        const { toolError } = await import('../utils/ToolUtils');
+        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await import('../types');
+        const { DelegationLoopDetector } = await import('../LoopDetector');
+
+        if (typeof args.targetAgentId !== 'string' || typeof args.task !== 'string') {
+            return toolError('Invalid delegation parameters', 'INVALID_ARGS');
+        }
+
+        if (!VALID_AGENT_IDS.includes(args.targetAgentId as any)) {
+            return toolError(
+                `Invalid agent ID: "${args.targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
+                'INVALID_AGENT_ID'
+            );
+        }
+
+        // Detect loops using traceId from context (or toolContext if we want more isolation)
+        const traceId = context?.traceId || 'unknown';
+        const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, args.targetAgentId);
+        if (delegationCheck.isLoop) {
+            return toolError(
+                `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
+                'DELEGATION_LOOP'
+            );
+        }
+
+        const result = await agentService.runAgent(args.targetAgentId, args.task, context, context?.traceId, context?.attachments);
+        return {
+            success: true,
+            data: result,
+            message: `Delegated to ${args.targetAgentId}. Result: ${result.text.substring(0, 500)}${result.text.length > 500 ? '...' : ''}`
+        };
+    }),
 
     request_approval: wrapTool('request_approval', async (args: {
         content: string;
         type?: string;
-    }) => {
+    }, context, toolContext) => {
+        // Use toolContext to get the state action if possible, 
+        // fall back to global store for actions that mutate outside transaction scope
+        const state = toolContext?.getState() || useStore.getState();
         const { requestApproval } = useStore.getState();
         const actionType = args.type || 'default';
 
@@ -42,19 +79,21 @@ export const CoreTools: Record<string, AnyToolFunction> = {
         }
     }),
 
-    set_mode: wrapTool('set_mode', async (args: { mode: string }) => {
-        const { setAgentMode, agentMode } = useStore.getState();
+    set_mode: wrapTool('set_mode', async (args: { mode: string }, context, toolContext) => {
+        const state = toolContext?.getState() || useStore.getState();
+        const { setAgentMode } = useStore.getState(); // Actions still via global store for now
+        const currentMode = (state as any).agentMode;
         const requestedMode = args.mode.toLowerCase() as AgentMode;
 
         if (!VALID_AGENT_MODES.includes(requestedMode)) {
-            return toolError(`Invalid mode "${args.mode}". Valid modes: ${VALID_AGENT_MODES.join(', ')}. Current mode: ${agentMode}`, "INVALID_MODE");
+            return toolError(`Invalid mode "${args.mode}". Valid modes: ${VALID_AGENT_MODES.join(', ')}. Current mode: ${currentMode}`, "INVALID_MODE");
         }
 
         setAgentMode(requestedMode);
         return {
-            previousMode: agentMode,
+            previousMode: currentMode,
             newMode: requestedMode,
-            message: `Successfully switched to ${requestedMode} mode. Previous mode was ${agentMode}.`
+            message: `Successfully switched to ${requestedMode} mode. Previous mode was ${currentMode}.`
         };
     }),
 

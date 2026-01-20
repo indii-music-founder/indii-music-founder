@@ -1,9 +1,10 @@
-import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
-import { LoopDetector } from './LoopDetector';
-import { ExecutionContextFactory } from './AgentExecutionContext';
+import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
+import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
+import { wrapTool, toolError } from './utils/ToolUtils';
 // TOOL_REGISTRY removed to prevent circular dependency
 
 // Export types for use in definitions
@@ -180,7 +181,7 @@ export class BaseAgent implements SpecializedAgent {
     public category: 'manager' | 'department' | 'specialist';
     public systemPrompt: string;
     public tools: ToolDefinition[];
-    protected functions: Record<string, (args: Record<string, unknown>, context?: AgentContext) => Promise<unknown>>;
+    protected functions: Record<string, AnyToolFunction> = {};
     private toolSchemas: Map<string, ZodType> = new Map();
 
     // CRITICAL: Execution lock to prevent concurrent agent execution for same user/project
@@ -219,6 +220,14 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             delegate_task: async ({ targetAgentId, task }, context, _toolContext?: ToolExecutionContext) => {
+            get_project_details: wrapTool('get_project_details', async ({ projectId }: any) => {
+                const { useStore } = await import('@/core/store');
+                const { projects } = useStore.getState();
+                const project = projects.find(p => p.id === projectId);
+                if (!project) throw new Error('Project not found');
+                return project;
+            }),
+            delegate_task: wrapTool('delegate_task', async ({ targetAgentId, task }: any, context) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -256,6 +265,9 @@ export class BaseAgent implements SpecializedAgent {
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
             consult_experts: async ({ consultations }, context, _toolContext?: ToolExecutionContext) => {
+                return result;
+            }),
+            consult_experts: async ({ consultations }, context) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
 
@@ -445,6 +457,9 @@ export class BaseAgent implements SpecializedAgent {
             projectId: context?.projectId
         };
 
+        // Phase 2: Clear loop detector for new task execution
+        this.loopDetector.clear();
+
         const SUPERPOWER_PROMPT = `
         ## CAPABILITIES & PROTOCOLS
         You have access to the following advanced capabilities ("Superpowers"):
@@ -569,6 +584,8 @@ ${task}
         const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 5;
+        const toolCalls: any[] = [];
+        let lastToolResult: any = undefined;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -593,9 +610,11 @@ ${task}
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
+                    await executionContext.rollback();
                     return {
-                        text: accumulatedResponse || 'Task halted: Budget exceeded.',
-                        error: 'Budget exceeded'
+                        text: 'Task halted: Budget exceeded.',
+                        error: 'Budget exceeded',
+                        toolCalls
                     };
                 }
 
@@ -626,10 +645,11 @@ ${task}
                     if (loopCheck.isLoop) {
                         console.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
                         console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
-                        console.warn(`[BaseAgent] Recent calls: ${this.loopDetector.getRecentPattern()}`);
+                        await executionContext.rollback();
                         return {
-                            text: accumulatedResponse || `Task ended: ${loopCheck.reason}`,
-                            error: 'Loop detected'
+                            text: `Task ended: ${loopCheck.reason}`,
+                            error: 'Loop detected',
+                            toolCalls
                         };
                     }
 
@@ -655,10 +675,17 @@ ${task}
                         if (TOOL_REGISTRY[name]) {
                             // Phase 3.5: Pass execution context to TOOL_REGISTRY tools
                             result = await TOOL_REGISTRY[name](args, toolContext);
+                            // Cast to any because TOOL_REGISTRY might not yet be updated to ContextAwareTool
+                            const toolFunc = TOOL_REGISTRY[name] as any;
+                            result = await toolFunc(args, enrichedContext, toolContext);
                         } else {
                             result = { success: false, error: `Tool '${name}' not found.` };
                         }
                     }
+
+                    // Store tool call and result
+                    lastToolResult = result;
+                    toolCalls.push({ name, args, result });
 
                     const outputText = typeof result === 'string'
                         ? result
@@ -688,6 +715,8 @@ ${task}
 
                     return {
                         text: finalResponse,
+                        data: lastToolResult,
+                        toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
                         usage: usage ? {
                             promptTokens: usage.promptTokenCount || 0,
                             completionTokens: usage.candidatesTokenCount || 0,
@@ -704,7 +733,9 @@ ${task}
             }
 
             return {
-                text: accumulatedResponse || 'Maximum iterations reached.',
+                text: 'Maximum iterations reached.',
+                data: lastToolResult,
+                toolCalls,
                 error: 'Max iterations reached'
             };
         } catch (error: unknown) {

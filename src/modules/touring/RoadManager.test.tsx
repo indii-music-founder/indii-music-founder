@@ -90,12 +90,12 @@ describe('RoadManager', () => {
     it('renders input fields', () => {
         render(<RoadManager />);
         expect(screen.getByText('Tour Parameters')).toBeInTheDocument();
-        expect(screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)')).toBeInTheDocument();
+        expect(screen.getByLabelText('Route Waypoints')).toBeInTheDocument();
     });
 
     it('allows adding and removing locations', async () => {
         render(<RoadManager />);
-        const input = screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)');
+        const input = screen.getByLabelText('Route Waypoints');
         const addButton = screen.getByLabelText('Add location');
 
         fireEvent.change(input, { target: { value: 'New York' } });
@@ -126,7 +126,7 @@ describe('RoadManager', () => {
         fireEvent.change(endDateInput, { target: { value: '2023-10-10' } });
 
         // Add location
-        const locationInput = screen.getByPlaceholderText('Enter City, State (e.g. Austin, TX)');
+        const locationInput = screen.getByLabelText('Route Waypoints');
         fireEvent.change(locationInput, { target: { value: 'New York' } });
         fireEvent.keyDown(locationInput, { key: 'Enter', code: 'Enter' });
 

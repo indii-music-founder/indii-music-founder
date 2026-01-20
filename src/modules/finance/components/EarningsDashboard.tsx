@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';
+import { RevenueProjections } from './RevenueProjections';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { motion } from 'framer-motion';
 import { TrendingUp, Music, Globe, DollarSign, ArrowUpRight } from 'lucide-react';
@@ -154,12 +155,12 @@ export const EarningsDashboard: React.FC = () => {
                 <TabsContent value="overview" className="space-y-6 outline-none">
                     <OverviewTab data={earningsSummary} />
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7 xl:grid-cols-8">
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.2 }}
-                            className="col-span-4 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
+                            className="col-span-4 xl:col-span-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6"
                         >
                             <RevenueChart
                                 data={earningsSummary.byPlatform.map(p => ({
@@ -173,8 +174,17 @@ export const EarningsDashboard: React.FC = () => {
                         <motion.div
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.25 }}
+                            className="col-span-3 xl:col-span-2 h-full"
+                        >
+                            <RevenueProjections />
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3 }}
-                            className="col-span-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-0 overflow-hidden flex flex-col"
+                            className="col-span-3 xl:col-span-3 bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-0 overflow-hidden flex flex-col"
                         >
                             <div className="p-6 border-b border-white/5">
                                 <h3 className="font-semibold text-white">Top Territories</h3>

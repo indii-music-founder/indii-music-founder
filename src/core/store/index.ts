@@ -56,11 +56,9 @@ export const useStore = create<StoreState>()((...a) => ({
     ...createAudioIntelligenceSlice(...a),
 }));
 
-// Expose store for E2E testing
-if (typeof window !== 'undefined') {
-    (window as any).useStore = useStore;
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
+    // Only expose in development or if specifically requested (could add a flag if needed)
     if (import.meta.env.DEV) {
         (window as any).useStore = useStore;
     }

@@ -65,6 +65,7 @@ export const VALID_AGENT_IDS = [
     'security',
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
+    'keeper',       // Context Integrity Guardian
     'generalist'  // Agent Zero
 ] as const;
 
@@ -154,14 +155,19 @@ export interface ToolFunctionResult {
     metadata?: Record<string, unknown>;
 }
 
+import type { ToolExecutionContext } from './ToolExecutionContext';
+
 /**
  * Tool function type - accepts any args that extend ToolFunctionArgs
  * The runtime will validate args against the tool schema.
  * All tools MUST return a ToolFunctionResult for standardization.
+ *
+ * Phase 3: Added ToolExecutionContext for isolated state management.
  */
 export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
     args: TArgs,
-    context?: AgentContext
+    context?: AgentContext,
+    toolContext?: ToolExecutionContext
 ) => Promise<ToolFunctionResult>;
 
 /**
@@ -169,7 +175,11 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  * Uses contravariance to accept more specific arg types
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyToolFunction = (args: any, context?: AgentContext) => Promise<ToolFunctionResult>;
+export type AnyToolFunction = (
+    args: any,
+    context?: AgentContext,
+    toolContext?: ToolExecutionContext
+) => Promise<ToolFunctionResult>;
 
 // ============================================================================
 // Agent Configuration Types
