@@ -126,12 +126,26 @@ describe('FirebaseAIService', () => {
     it('should bootstrap by fetching remote config and initializing model', async () => {
         const { fetchAndActivate } = await import('firebase/remote-config');
         const { getGenerativeModel } = await import('firebase/ai');
+        const { STANDARD_SAFETY_SETTINGS } = await import('./config/safety-settings');
 
         await service.bootstrap();
 
         expect(fetchAndActivate).toHaveBeenCalled();
         expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
-            model: 'mock-model-v1'
+            model: 'mock-model-v1',
+            safetySettings: STANDARD_SAFETY_SETTINGS
+        }));
+    });
+
+    it('should enforce safety settings in generateContent', async () => {
+        const { getGenerativeModel } = await import('firebase/ai');
+        const { STANDARD_SAFETY_SETTINGS } = await import('./config/safety-settings');
+
+        // Force a call that triggers re-initialization of model (e.g. by passing config)
+        await service.generateContent('Safe Prompt', undefined, { temperature: 0.5 });
+
+        expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
+            safetySettings: STANDARD_SAFETY_SETTINGS
         }));
     });
 
