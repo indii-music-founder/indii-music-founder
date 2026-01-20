@@ -1,6 +1,9 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState } from './types';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
+import { LoopDetector } from './LoopDetector';
+import { ExecutionContextFactory } from './AgentExecutionContext';
+import { ToolExecutionContext } from './ToolExecutionContext';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext } from './context/AgentExecutionContext';
 // TOOL_REGISTRY removed to prevent circular dependency
@@ -575,6 +578,17 @@ ${task}
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
 
+        // Phase 3: Create isolated execution context for this agent run
+        const executionContext = ExecutionContextFactory.fromAgentContext(
+            {
+                userId: context?.userId,
+                projectId: context?.projectId,
+                traceId: context?.traceId
+            },
+            this.id
+        );
+        const toolContext = new ToolExecutionContext(executionContext);
+
         // Lazy import MembershipService for budget checks
         const { MembershipService } = await import('@/services/MembershipService');
 
@@ -676,6 +690,12 @@ ${task}
                     const finalResponse = response.text?.() || '';
                     const usage = response.usage?.();
 
+                    // Phase 3: Commit execution context changes on successful completion
+                    if (executionContext.hasUncommittedChanges()) {
+                        console.log(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
+                        executionContext.commit();
+                    }
+
                     await executionContext.commit();
                     return {
                         text: finalResponse,
@@ -690,6 +710,11 @@ ${task}
                 }
             }
 
+            // Phase 3: Max iterations reached - rollback any uncommitted changes
+            if (executionContext.hasUncommittedChanges()) {
+                console.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
+                executionContext.rollback();
+            }
             await executionContext.commit();
 
             return {
@@ -699,6 +724,12 @@ ${task}
                 error: 'Max iterations reached'
             };
         } catch (error: unknown) {
+            // Phase 3: Error occurred - rollback any uncommitted changes
+            if (executionContext.hasUncommittedChanges()) {
+                console.error(`[BaseAgent] Error occurred, rolling back ${executionContext.getChangeSummary()}`);
+                executionContext.rollback();
+            }
+
             await executionContext.rollback();
             const errorMessage = error instanceof Error ? error.message : String(error);
             return { text: `Error: ${errorMessage}` };
