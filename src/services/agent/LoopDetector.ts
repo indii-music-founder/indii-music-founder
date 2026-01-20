@@ -113,6 +113,33 @@ export class LoopDetector {
             }
         }
 
+        // Check 6: Unnecessary tool chaining after generation tools
+        const FINAL_TOOLS = ['generate_image', 'generate_video'];
+        const finalToolCalls = this.toolCallHistory.filter(c => FINAL_TOOLS.includes(c.name));
+        if (finalToolCalls.length > 0 && !FINAL_TOOLS.includes(name)) {
+            // If we already called a generation tool and now calling something else like delegate_task or send_notification
+            const UNNECESSARY_FOLLOWUPS = ['delegate_task', 'send_notification', 'create_organization', 'switch_organization'];
+            if (UNNECESSARY_FOLLOWUPS.includes(name)) {
+                return {
+                    isLoop: true,
+                    reason: `Unnecessary '${name}' after generation task completed`,
+                    pattern: `${finalToolCalls[0].name} → ${name} (blocked)`
+                };
+            }
+        }
+
+        // Check 7: Calling generate_image or generate_video twice (unless explicitly chaining)
+        if (FINAL_TOOLS.includes(name)) {
+            const previousGenerations = this.toolCallHistory.filter(c => FINAL_TOOLS.includes(c.name));
+            if (previousGenerations.length >= 1) {
+                return {
+                    isLoop: true,
+                    reason: `Multiple generation calls detected - task should be complete`,
+                    pattern: `${previousGenerations.map(c => c.name).join(' → ')} → ${name}`
+                };
+            }
+        }
+
         return { isLoop: false };
     }
 
