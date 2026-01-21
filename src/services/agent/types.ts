@@ -80,6 +80,63 @@ export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 export type AgentCategory = 'manager' | 'department' | 'specialist';
 
 // ============================================================================
+// Hub-and-Spoke Architecture (Phase 4)
+// ============================================================================
+
+/**
+ * The hub agent in the hub-and-spoke architecture.
+ * All specialist agents must delegate through the hub.
+ */
+export const HUB_AGENT_ID = 'generalist';
+
+/**
+ * Specialist agents (spokes) that can only delegate to the hub.
+ * These agents represent domain expertise and should not delegate to each other directly.
+ */
+export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(id => id !== HUB_AGENT_ID);
+
+/**
+ * Checks if an agent is the hub (generalist/Agent Zero).
+ */
+export function isHubAgent(agentId: string): boolean {
+    return agentId === HUB_AGENT_ID;
+}
+
+/**
+ * Checks if an agent is a spoke (specialist).
+ */
+export function isSpokeAgent(agentId: string): boolean {
+    return SPOKE_AGENT_IDS.includes(agentId as ValidAgentId);
+}
+
+/**
+ * Validates hub-and-spoke architecture rules.
+ * Returns null if valid, or an error message if invalid.
+ *
+ * Rules:
+ * - Hub can delegate to any spoke
+ * - Spokes can only delegate to hub
+ * - Spokes CANNOT delegate to other spokes
+ */
+export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string): string | null {
+    // Hub can delegate to anyone
+    if (isHubAgent(sourceAgentId)) {
+        return null;
+    }
+
+    // Spokes can only delegate to hub
+    if (isSpokeAgent(sourceAgentId)) {
+        if (isHubAgent(targetAgentId)) {
+            return null; // Spoke -> Hub is allowed
+        }
+        return `Hub-and-Spoke violation: Specialist agent '${sourceAgentId}' cannot delegate directly to '${targetAgentId}'. Specialists must delegate to '${HUB_AGENT_ID}' (Agent Zero), who will coordinate with other specialists as needed.`;
+    }
+
+    // Unknown agent (shouldn't happen due to earlier validation)
+    return `Unknown source agent: ${sourceAgentId}`;
+}
+
+// ============================================================================
 // Agent Context Types
 // ============================================================================
 
