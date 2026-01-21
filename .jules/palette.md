@@ -14,3 +14,7 @@
 ## 2025-05-24 - File Input Accessibility
 **Learning:** File inputs hidden with `display: none` (or `.hidden`) inside labels cannot be focused via keyboard, breaking accessibility for uploaders.
 **Action:** Use `.sr-only` on the input to keep it in the DOM/accessibility tree, and apply `focus-within:ring` to the parent label to provide visual focus indication.
+
+## 2025-05-25 - Onboarding Modal Accessibility
+**Learning:** Modal action buttons (Close, Attach, Send) were icon-only and completely invisible to screen readers, creating a "trap" where users couldn't exit or interact.
+**Action:** Added explicit `aria-label`s to all icon buttons in `OnboardingModal.tsx` and ensured the conditional file removal button is focusable (`focus:opacity-100`).
