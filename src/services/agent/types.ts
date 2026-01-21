@@ -174,7 +174,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  * Generic tool function type for agent configs
  * Uses contravariance to accept more specific arg types
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export type AnyToolFunction = (
     args: any,
     context?: AgentContext,
