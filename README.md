@@ -15,6 +15,19 @@ indiiOS is a multi-tenant, AI-native creative platform that unifies image genera
 
 ---
 
+## indii - The AI Agent System
+
+indiiOS is powered by **indii**, an intelligent AI agent orchestration system that provides AI-driven assistance through a hub-and-spoke architecture.
+
+indii consists of:
+- **Agent Zero (Hub)**: Central coordinator for all agent interactions
+- **Specialist Agents (Spokes)**: Domain experts (Marketing, Finance, Video, etc.)
+- **AgentOrchestrator**: Intelligent routing system
+
+Learn more about indii's architecture in [PHASE4_IMPLEMENTATION.md](PHASE4_IMPLEMENTATION.md)
+
+---
+
 ## Table of Contents
 
 - [Features](#features)
