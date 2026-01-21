@@ -1,32 +1,48 @@
-# Walkthrough: AI Service & Backend Alignment
+# Walkthrough: Resolving StructuredClone & Context Integrity
 
 ## Overview
 
- This walkthrough documents the systematic alignment of the Firebase Cloud Functions backend with the `FirebaseAIService` client SDK. The goal was to resolve runtime errors caused by mismatched parameters, missing functions, and region availability issues.
+This walkthrough documents the resolution of the `DataCloneError: Failed to execute 'structuredClone' on 'Window'` during agent execution. The error was caused by attempts to deep-clone non-serializable objects (like the Firebase User object and Store slices with methods) using the native `structuredClone` API.
 
 ## Key Changes
 
-### 1. Backend (`functions/`)
+### 1. Agent Execution Context (`src/services/agent/context/`)
 
-- **`src/index.ts`**:
-  - **Moved** `generateImageV3` to `us-west1` to access `gemini-3-pro-image-preview`.
-  - **Implemented** `generateSpeech` function (previously missing) using the Gemini REST API for Text-to-Speech support.
-- **`src/lib/audio.ts`**: Created new Zod schema `GenerateSpeechRequestSchema` to validate TTS requests.
-- **`src/config/models.ts`**: Added `SPEECH` model configuration (`gemini-2.5-pro-tts`).
+- **`AgentExecutionContext.ts`**:
+  - Replaced all `structuredClone` calls in `createSnapshot` with `JSON.parse(JSON.stringify(...))`.
+  - Extended the snapshot to include missing state slices: `distribution`, `fileNodes`, and `selectedFileNodeId`.
+  - This ensures that agents have a stable, serializable view of the world that can be safely rolled back or committed.
 
-### 2. Frontend (`src/services/ai/`)
+### 2. Evolution Engine (`src/services/agent/evolution/`)
 
-- **`FirebaseAIService.ts`**:
-  - **Fixed** `generateImage`: The `GenerateImageBackendPayload` interface now explicitly maps nested `config.aspectRatio` and `config.numberOfImages` to the flat structure (`aspectRatio`, `count`) expected by the backend validation schema.
-- **`AIService.ts`**: Confirmed correct routing of configuration options.
+- **`EvolutionEngine.ts`**:
+  - Hardened the "Helix Guardrail" for offspring cloning.
+  - Implemented a robust fallback to JSON serialization whenever `structuredClone` fails, ensuring genetic crossover doesn't crash the evolution loop when processing complex agent genes.
+
+### 3. Type Safety & Environment (`src/`)
+
+- **`src/vite-env.d.ts`**:
+  - Removed a redundant and incomplete `ElectronAPI` declaration that was causing type conflicts with the primary definition in `src/types/electron.d.ts`.
+- **`src/modules/video/VideoWorkflow.tsx`**:
+  - Verified and fixed access to `window.electronAPI.video.saveAsset` which was previously flagged by the compiler.
 
 ## Verification
 
-- **Backend Build**: `npm run build` in `functions/` passed successfully.
-- **Frontend Types**: `npm run typecheck` passed, confirming type safety of the new payload interfaces.
-- **Video Logic**: Verified that `generateVideo` correctly spreads configuration options, matching the backend's expected flat structure.
+### 1. Type Check
 
-## Next Steps
+- Ran `npm run typecheck`.
+- **Result**: PASSED (0 errors).
 
-- **Test**: Manually verify "Generate Campaign" (Image) and "Voice" features in the UI.
-- **Feature**: Consider implementing `editImage` in the frontend service if image editing UI is added later.
+### 2. Live Browser Test
+
+- Launched local dev server on `http://localhost:4242`.
+- Used `browser_subagent` to perform a "Marcus Deep" release flow:
+  - Logged in successfully.
+  - Navigated to Brand Manager.
+  - Created "Black Kitty" project.
+  - Navigated to Creative and Distribution departments.
+- **Result**: No `structuredClone` errors detected in the console. Application remained stable throughout the session.
+
+## Conclusion
+
+The `structuredClone` defect is fully mitigated. The agent's "Memory & Perception" system (Context) is now resilient to non-serializable state data, providing a solid foundation for complex multi-agent workflows.

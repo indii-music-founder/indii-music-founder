@@ -51,6 +51,7 @@ export interface AgentSlice {
     chatChannel: 'indii' | 'agent';
 
     isAgentOpen: boolean;
+    isCommandBarDetached: boolean;
     agentMode: AgentMode;
     isAgentProcessing: boolean;
     pendingApproval: ApprovalRequest | null;
@@ -66,6 +67,7 @@ export interface AgentSlice {
     clearAgentHistory: () => void; // Clears ACTIVE session history
 
     toggleAgentWindow: () => void;
+    setCommandBarDetached: (detached: boolean) => void;
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
@@ -84,6 +86,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     chatChannel: 'indii', // Default to indii (main orchestrator)
 
     isAgentOpen: false,
+    isCommandBarDetached: false,
     agentMode: 'assistant',
     isAgentProcessing: false,
     pendingApproval: null,
@@ -246,7 +249,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     }),
 
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
-
+    setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
     setAgentMode: (mode) => set({ agentMode: mode }),
 
     setChatChannel: (channel) => set({ chatChannel: channel }),

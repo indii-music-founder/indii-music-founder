@@ -313,9 +313,7 @@ export default function App() {
                             <div className="flex-shrink-0 z-50 relative">
                                 <ErrorBoundary>
                                     <ChatOverlayWrapper />
-                                    <div className="relative z-[101]">
-                                        <CommandBar />
-                                    </div>
+                                    <CommandBar />
                                 </ErrorBoundary>
                             </div>
                         )}

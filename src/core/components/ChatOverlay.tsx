@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minimize2, RefreshCw, Bot, GripHorizontal } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Minimize2 as MinimizeIcon, Maximize2 } from 'lucide-react';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
 import { MessageItem } from './chat/ChatMessage';
 import { useDragControls } from 'framer-motion';
+import { PromptArea } from './command-bar/PromptArea';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -19,9 +20,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
     const chatChannel = useStore(state => state.chatChannel);
+    const isCommandBarDetached = useStore(state => state.isCommandBarDetached);
+    const setCommandBarDetached = useStore(state => state.setCommandBarDetached);
     const dragControls = useDragControls();
 
-    // Derived state for active agent (defaulting to 'generalist' or first participant)
+    // Derived state for active agent
     const activeAgentId = useStore(state => {
         const session = state.sessions[state.activeSessionId || ''];
         return session?.participants[0] || 'generalist';
@@ -35,21 +38,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
 
-    // No avatar property on SpecializedAgent, use null
     const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
-        // Avatar functionality removed - SpecializedAgent doesn't have avatar
         return undefined;
     }, []);
 
     const itemContent = useCallback((index: number, msg: AgentMessage) => {
-        // Determine identity for this message
-        // If model, it could be INDII or SPECIALIST
-        // We can look at activeAgent state, BUT message history might contain mixed messages?
-        // For now, assume the current context applies or we'd need 'agentId' stored in message.
-        // Existing system stores 'role' but not 'agentId'.
-        // We'll use the 'displayAgent' logic derived from chatChannel for consistency in current session.
-        // A robust solution would store agentId on the message object.
-
         const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
             ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
             : undefined;
@@ -79,8 +72,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
         }
     }, [messages, isAutoScrolling, isProcessing]);
 
-    // Agent Avatar/Header Info - channel-aware
-    // When in 'indii' mode, always show indii. When in 'agent' mode, show the active agent.
     const displayAgent = chatChannel === 'indii' ? null : activeAgent;
     const agentName = displayAgent?.name || 'indii';
     const agentRole = displayAgent?.description || 'Creative Orchestrator';
@@ -98,7 +89,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     dragControls={dragControls}
                     dragListener={false}
                     dragMomentum={false}
-                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[100] isolate ring-0 md:ring-1 ring-white/10"
+                    className="fixed inset-0 md:inset-auto md:bottom-8 md:right-8 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-0 md:ring-1 ring-white/10"
                 >
                     {/* Header */}
                     <div
@@ -106,7 +97,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 cursor-grab active:cursor-grabbing"
                     />
                     <div className="relative z-30 px-6 py-5 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
-                        {/* Drag Handle Overlay for easy grabbing in header area without blocking buttons */}
                         <div
                             onPointerDown={(e) => dragControls.start(e)}
                             className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
@@ -136,13 +126,23 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         </div>
 
                         {/* Right Actions */}
-                        <div className="flex items-center gap-2 relative z-10">
+                        <div className="flex items-center gap-1 relative z-10">
                             <div
                                 onPointerDown={(e) => dragControls.start(e)}
                                 className="p-2 text-white/20 hover:text-white/40 cursor-grab active:cursor-grabbing transition-colors mr-1"
                             >
                                 <GripHorizontal size={20} />
                             </div>
+
+                            <button
+                                onClick={() => setCommandBarDetached(!isCommandBarDetached)}
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
+                                title={isCommandBarDetached ? "Dock Input" : "Detach Input"}
+                                aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"}
+                            >
+                                {isCommandBarDetached ? <Maximize2 size={18} /> : <ExternalLink size={18} />}
+                            </button>
+
                             <button
                                 onClick={onToggleMinimize}
                                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
@@ -162,7 +162,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                     {/* Messages Area */}
                     <div className="flex-1 relative bg-[#0c0c0e]">
-                        {/* Background Ambient Glow */}
                         <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-${agentColor}-900/10 rounded-full blur-[100px] opacity-50 animate-pulse-slow`} />
                         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-900/10 rounded-full blur-[80px] opacity-30 animate-pulse-slow delay-1000" />
 
@@ -197,7 +196,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             />
                         )}
 
-                        {/* Resume Auto-scroll Button */}
                         {!isAutoScrolling && messages.length > 0 && (
                             <motion.button
                                 initial={{ opacity: 0, y: 10 }}
@@ -213,6 +211,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             </motion.button>
                         )}
                     </div>
+
+                    {/* Integrated Prompt Area (Docked Mode) */}
+                    {!isCommandBarDetached && (
+                        <div className="flex-shrink-0">
+                            <PromptArea isDocked />
+                        </div>
+                    )}
 
                     {/* Footer Status Bar (Voice/Processing) */}
                     {(isListening || isProcessing || transcript) && (
