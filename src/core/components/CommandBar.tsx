@@ -31,6 +31,7 @@ function CommandBar() {
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
+    const delegateButtonRef = useRef<HTMLButtonElement>(null);
 
     const { currentModule, setModule, toggleAgentWindow, isAgentOpen, chatChannel, setChatChannel } = useStore();
     const isIndiiMode = chatChannel === 'indii';
@@ -53,7 +54,19 @@ function CommandBar() {
     const departmentAgents = useMemo(() => allAgents.filter(a => a.category === 'department'), [allAgents]);
     const knownAgentIds = useMemo(() => allAgents.map(a => a.id), [allAgents]);
 
-    const handleCloseDelegate = useCallback(() => setOpenDelegate(false), []);
+    const handleCloseDelegate = useCallback(() => {
+        setOpenDelegate(false);
+        // Focus restoration is handled by effect below
+    }, []);
+
+    // Restore focus to delegate button when menu closes
+    const prevOpenDelegate = useRef(openDelegate);
+    useEffect(() => {
+        if (prevOpenDelegate.current && !openDelegate) {
+            delegateButtonRef.current?.focus();
+        }
+        prevOpenDelegate.current = openDelegate;
+    }, [openDelegate]);
 
     const handleMicClick = useCallback(() => {
         if (isListening) {
@@ -243,15 +256,19 @@ function CommandBar() {
                                             ref={fileInputRef}
                                             onChange={handleFileSelect}
                                             className="hidden"
+                                            style={{ display: 'none' }}
                                             multiple
+                                            aria-label="File upload"
                                         />
                                         <input
                                             type="file"
                                             ref={cameraInputRef}
                                             onChange={handleFileSelect}
                                             className="hidden"
+                                            style={{ display: 'none' }}
                                             accept="image/*"
                                             capture="environment"
+                                            aria-label="Camera upload"
                                         />
                                         <PromptInputAction tooltip="Attach files">
                                             <button
@@ -284,6 +301,7 @@ function CommandBar() {
                                 {!isMobile && (
                                     <div className="relative">
                                         <button
+                                            ref={delegateButtonRef}
                                             type="button"
                                             onClick={() => setOpenDelegate(!openDelegate)}
                                             className={cn(
