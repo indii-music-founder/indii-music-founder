@@ -358,7 +358,7 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
-                    console.error('[BaseAgent] Speak failure:', err);
+                    console.error('[indii:BaseAgent] Speak failure:', err);
                     return {
                         success: false,
                         message: `Failed to speak: ${message}`
