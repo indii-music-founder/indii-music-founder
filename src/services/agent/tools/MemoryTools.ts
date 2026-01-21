@@ -1,15 +1,20 @@
 import { useStore } from '@/core/store';
 import { memoryService } from '@/services/agent/MemoryService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
-import type { AnyToolFunction } from '../types';
+import type { AnyToolFunction, AgentContext } from '../types';
+import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 // ============================================================================
 // Types for MemoryTools
 // ============================================================================
 
 export const MemoryTools: Record<string, AnyToolFunction> = {
-    save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' }) => {
-        const { currentProjectId } = useStore.getState();
+    save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        // Phase 3.6: Use execution context when available, fallback to direct store
+        const currentProjectId = toolContext
+            ? toolContext.get('currentProjectId')
+            : useStore.getState().currentProjectId;
+
         if (!currentProjectId) {
             return toolError("No active project found to save memory to.", "PROJ_REQUIRED");
         }
@@ -22,8 +27,12 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         };
     }),
 
-    recall_memories: wrapTool('recall_memories', async (args: { query: string }) => {
-        const { currentProjectId } = useStore.getState();
+    recall_memories: wrapTool('recall_memories', async (args: { query: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        // Phase 3.6: Use execution context when available, fallback to direct store
+        const currentProjectId = toolContext
+            ? toolContext.get('currentProjectId')
+            : useStore.getState().currentProjectId;
+
         if (!currentProjectId) {
             return toolError("No active project found to recall memories from.", "PROJ_REQUIRED");
         }
@@ -60,8 +69,12 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         };
     }),
 
-    read_history: wrapTool('read_history', async () => {
-        const history = useStore.getState().agentHistory;
+    read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        // Phase 3.6: Use execution context when available, fallback to direct store
+        const history = toolContext
+            ? toolContext.get('agentHistory')
+            : useStore.getState().agentHistory;
+
         const recentHistory = history.slice(-10); // Show a bit more than 5
         return {
             history: recentHistory.map(h => ({
