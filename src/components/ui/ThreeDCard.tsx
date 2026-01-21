@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -31,6 +31,7 @@ export const ThreeDCard = ({
 }: ThreeDCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
+    const rectRef = useRef<DOMRect | null>(null);
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -43,13 +44,21 @@ export const ThreeDCard = ({
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
     const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
 
+    const updateRect = useCallback(() => {
+        if (ref.current) {
+            rectRef.current = ref.current.getBoundingClientRect();
+        }
+    }, []);
+
+    // Cleanup listeners on unmount
     useEffect(() => {
         return () => {
+            window.removeEventListener('scroll', updateRect, { capture: true } as any);
             if (frameRef.current) {
                 cancelAnimationFrame(frameRef.current);
             }
         };
-    }, []);
+    }, [updateRect]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!ref.current) return;
@@ -63,7 +72,8 @@ export const ThreeDCard = ({
 
         frameRef.current = requestAnimationFrame(() => {
             if (!ref.current) return;
-            const rect = ref.current.getBoundingClientRect();
+            // Bolt Optimization: Use cached rect to avoid reflow on every frame
+            const rect = rectRef.current || ref.current.getBoundingClientRect();
 
             const width = rect.width;
             const height = rect.height;
@@ -78,10 +88,14 @@ export const ThreeDCard = ({
 
     const handleMouseEnter = () => {
         setHovered(true);
+        updateRect();
+        // Bolt Optimization: Update rect on scroll to handle scrolling while hovering
+        window.addEventListener('scroll', updateRect, { capture: true, passive: true });
     };
 
     const handleMouseLeave = () => {
         setHovered(false);
+        window.removeEventListener('scroll', updateRect, { capture: true } as any);
         if (frameRef.current) {
             cancelAnimationFrame(frameRef.current);
         }
@@ -229,15 +243,24 @@ export const ThreeDCardContainer = ({
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number>(0);
+    const rectRef = useRef<DOMRect | null>(null);
     const [isMouseEntered, setIsMouseEntered] = useState(false);
 
+    const updateRect = useCallback(() => {
+        if (containerRef.current) {
+            rectRef.current = containerRef.current.getBoundingClientRect();
+        }
+    }, []);
+
+    // Cleanup listeners on unmount
     useEffect(() => {
         return () => {
+            window.removeEventListener('scroll', updateRect, { capture: true } as any);
             if (frameRef.current) {
                 cancelAnimationFrame(frameRef.current);
             }
         };
-    }, []);
+    }, [updateRect]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
@@ -251,7 +274,10 @@ export const ThreeDCardContainer = ({
 
         frameRef.current = requestAnimationFrame(() => {
             if (!containerRef.current) return;
-            const { left, top, width, height } = containerRef.current.getBoundingClientRect();
+            // Bolt Optimization: Use cached rect to avoid reflow on every frame
+            const rect = rectRef.current || containerRef.current.getBoundingClientRect();
+
+            const { left, top, width, height } = rect;
             const x = (clientX - left - width / 2) / 25;
             const y = (clientY - top - height / 2) / 25;
             containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
@@ -261,11 +287,15 @@ export const ThreeDCardContainer = ({
     const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
         setIsMouseEntered(true);
         if (!containerRef.current) return;
+        updateRect();
+        // Bolt Optimization: Update rect on scroll to handle scrolling while hovering
+        window.addEventListener('scroll', updateRect, { capture: true, passive: true });
     };
 
     const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
         setIsMouseEntered(false);
+        window.removeEventListener('scroll', updateRect, { capture: true } as any);
         if (frameRef.current) {
             cancelAnimationFrame(frameRef.current);
         }
