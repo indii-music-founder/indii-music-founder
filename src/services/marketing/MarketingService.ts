@@ -51,6 +51,10 @@ export class MarketingService {
      * Fetch campaigns from Firestore
      */
     static async getCampaigns(): Promise<CampaignAsset[]> {
+        if ((window as any).__MOCK_MARKETING_SERVICE__) {
+            return (window as any).__MOCK_MARKETING_SERVICE__.getCampaigns();
+        }
+
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return [];
 
@@ -137,6 +141,10 @@ export class MarketingService {
      * Update an existing campaign
      */
     static async updateCampaign(id: string, updates: Partial<CampaignAsset>) {
+        if ((window as any).__MOCK_MARKETING_SERVICE__) {
+            return (window as any).__MOCK_MARKETING_SERVICE__.updateCampaign(id, updates);
+        }
+
         try {
             const docRef = doc(db, 'campaigns', id);
             const { id: _id, ...cleanUpdates } = updates;
