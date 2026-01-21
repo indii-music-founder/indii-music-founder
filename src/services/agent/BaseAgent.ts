@@ -223,6 +223,7 @@ export class BaseAgent implements SpecializedAgent {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
+                const { validateHubAndSpoke } = await import('./types');
 
                 if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
                     return toolError('Invalid delegation parameters', 'INVALID_ARGS');
@@ -233,6 +234,13 @@ export class BaseAgent implements SpecializedAgent {
                         `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
                         'INVALID_AGENT_ID'
                     );
+                }
+
+                // Phase 4: Enforce hub-and-spoke architecture
+                const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
+                if (hubSpokeError) {
+                    console.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
+                    return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
                 }
 
                 // Phase 2: Check for delegation loops
@@ -257,6 +265,7 @@ export class BaseAgent implements SpecializedAgent {
             consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
+                const { validateHubAndSpoke } = await import('./types');
 
                 if (!Array.isArray(consultations)) {
                     return toolError('Consultations must be an array', 'INVALID_ARGS');
@@ -268,6 +277,14 @@ export class BaseAgent implements SpecializedAgent {
                             if (!VALID_AGENT_IDS.includes(c.targetAgentId as ValidAgentId)) {
                                 return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
                             }
+
+                            // Phase 4: Enforce hub-and-spoke architecture
+                            const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
+                            if (hubSpokeError) {
+                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
+                                return { agentId: c.targetAgentId, error: hubSpokeError };
+                            }
+
                             const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
                             return { agentId: c.targetAgentId, response: res };
                         })
