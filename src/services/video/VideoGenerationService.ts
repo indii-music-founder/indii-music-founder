@@ -152,9 +152,32 @@ export class VideoGenerationService {
      */
     subscribeToJob(jobId: string, callback: (job: any) => void): () => void {
         const jobRef = doc(db, 'videoJobs', jobId);
+        let maxQualityLevel = 0;
+
+        const getQualityLevel = (q?: string): number => {
+            if (q === 'pro') return 2;
+            if (q === 'flash') return 1;
+            return 0;
+        };
+
         return onSnapshot(jobRef, (snapshot) => {
             if (snapshot.exists()) {
-                callback({ id: snapshot.id, ...snapshot.data() });
+                const data = snapshot.data();
+                const quality = data.output?.metadata?.quality;
+                const currentLevel = getQualityLevel(quality);
+
+                // Race Condition Protection:
+                // If we have already seen a higher quality result (e.g. Pro),
+                // ignore any subsequent lower quality updates (e.g. late arriving Flash).
+                if (currentLevel < maxQualityLevel) {
+                    return;
+                }
+
+                if (currentLevel > maxQualityLevel) {
+                    maxQualityLevel = currentLevel;
+                }
+
+                callback({ id: snapshot.id, ...data });
             } else {
                 callback(null);
             }
