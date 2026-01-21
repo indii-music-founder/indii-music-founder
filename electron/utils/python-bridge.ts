@@ -36,7 +36,8 @@ export class PythonBridge {
         scriptName: string,
         args: string[] = [],
         onProgress?: (progress: number, log?: string) => void,
-        env: NodeJS.ProcessEnv = {}
+        env: NodeJS.ProcessEnv = {},
+        sensitiveArgsIndices: number[] = []
     ): Promise<any> {
         return new Promise((resolve, reject) => {
             const python = this.getPythonPath();
@@ -46,6 +47,10 @@ export class PythonBridge {
             // Redact sensitive args for logging
             const sensitiveFlags = ['--password', '--key', '--access-token', '--refresh-token', '--api-key', '--secret'];
             const redactedArgs = args.map((arg, index) => {
+                // Explicitly sensitive argument by index
+                if (sensitiveArgsIndices.includes(index)) {
+                    return '[REDACTED]';
+                }
                 // Check if the PREVIOUS argument was a sensitive flag
                 if (index > 0 && sensitiveFlags.includes(args[index - 1])) {
                     return '[REDACTED]';

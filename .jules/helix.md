@@ -13,3 +13,7 @@
 3. Gene Loss Prevention mechanisms (Deep Cloning and Schema Validation) effectively block "Brainless" mutations and "Mutation by Reference" defects.
 
 **Action:** Continue to enforce strict deterministic seeding in tests to ensure that selection pressure is actually selecting the fittest agents and not just relying on luck. Ensure all future evolutionary features have corresponding "Gene Loss" tests.
+
+## 2026-06-15 - [JSON Safety Guardrails]
+**Learning:** Mutations can produce valid JS objects (like Arrays or Circular References) that are invalid as Agent parameters (which must be strictly Objects and Serializable). Standard checks for truthiness or `typeof object` are insufficient.
+**Action:** Implemented strict `Array.isArray()` checks and `JSON.stringify()` serialization tests in `EvolutionEngine` to prevent non-serializable or malformed agents from entering the persistent gene pool.

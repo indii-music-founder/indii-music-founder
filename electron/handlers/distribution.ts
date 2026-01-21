@@ -184,7 +184,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [2]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -199,7 +199,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -214,7 +214,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact metadata
             return { success: report.valid, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
