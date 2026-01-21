@@ -255,4 +255,65 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
 
         await expect(jobPromise).rejects.toThrow(/Safety violation/);
     });
+
+    it('should prevent "Flash" overwriting "Pro" (Race Condition Protection)', async () => {
+        // Scenario: "Pro" update arrives FIRST (e.g. race condition or just processed),
+        // followed by a delayed "Flash" update. The Flash update should be IGNORED.
+
+        mocks.doc.mockReturnValue('doc-ref');
+        const updates: any[] = [];
+
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            // 1. Pro Update (Quality Level 2)
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-race',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'http://pro.mp4',
+                            metadata: { mime_type: 'video/mp4', quality: 'pro' }
+                        }
+                    })
+                });
+            }, 1000);
+
+            // 2. Flash Update (Quality Level 1) - Arriving LATER
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-id-race',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'http://flash.mp4',
+                            metadata: { mime_type: 'video/mp4', quality: 'flash' }
+                        }
+                    })
+                });
+            }, 2000);
+
+            return vi.fn();
+        });
+
+        const jobPromise = new Promise<void>((resolve) => {
+            // We wait enough time for both to potentially fire
+            setTimeout(resolve, 3000);
+        });
+
+        service.subscribeToJob('job-id-race', (job) => {
+            if (job) {
+                updates.push(job);
+            }
+        });
+
+        vi.advanceTimersByTime(3000);
+        await jobPromise;
+
+        // Current behavior (FAIL): updates = [Pro, Flash]
+        // Desired behavior (PASS): updates = [Pro]
+        const urls = updates.map(u => u.output.url);
+        expect(urls).toEqual(['http://pro.mp4']);
+    });
 });
