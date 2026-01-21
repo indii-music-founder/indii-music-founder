@@ -39,7 +39,7 @@ export class AgentService {
             await agentRegistry.warmup();
             this.isWarmedUp = true;
         } catch (e) {
-            console.warn('[AgentService] Warmup failed, will retry on first message:', e);
+            console.warn('[indii:Service] Warmup failed, will retry on first message:', e);
         }
     }
 
