@@ -12,6 +12,18 @@ While working on Phase 3 (Execution Context) and Phase 3.5 (BaseAgent tool migra
 
 ---
 
+## About indii
+
+**indii** is the brand name for the entire AI agent orchestration system within indiiOS. The indii system encompasses:
+
+- **AgentOrchestrator** - Intelligent routing component (the "traffic cop")
+- **Generalist Agent (Agent Zero)** - The hub in the hub-and-spoke architecture
+- **All Specialist Agents** - The spokes (Marketing, Finance, Video, Legal, etc.)
+
+This document refers to these components collectively as the "indii agent system" or simply "indii."
+
+---
+
 ## Changes by Other Agents (from main branch)
 
 ### 1. Enhanced Loop Detection (Commits 9266560, 4786b60)
