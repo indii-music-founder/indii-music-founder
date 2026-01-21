@@ -3,6 +3,7 @@ export type { WhiskState };
 
 import { AgentMessage } from '@/core/store';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { INDII_MESSAGES } from './constants';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -129,7 +130,7 @@ export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string
         if (isHubAgent(targetAgentId)) {
             return null; // Spoke -> Hub is allowed
         }
-        return `Hub-and-Spoke violation: Specialist agent '${sourceAgentId}' cannot delegate directly to '${targetAgentId}'. Specialists must delegate to '${HUB_AGENT_ID}' (Agent Zero), who will coordinate with other specialists as needed.`;
+        return INDII_MESSAGES.hubSpokeViolation(sourceAgentId, targetAgentId);
     }
 
     // Unknown agent (shouldn't happen due to earlier validation)

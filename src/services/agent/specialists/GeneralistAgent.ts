@@ -460,7 +460,7 @@ CURRENT REQUEST: ${task}
                         }
                     }
                 } catch (streamError) {
-                    console.warn('[GeneralistAgent] Stream read interrupted:', streamError);
+                    console.warn('[indii:AgentZero] Stream read interrupted:', streamError);
                 }
 
                 const response = await responsePromise;
@@ -548,7 +548,7 @@ CURRENT REQUEST: ${task}
 
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.error('[GeneralistAgent] Error:', err);
+                console.error('[indii:AgentZero] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
                 if (iterations >= MAX_ITERATIONS) {
