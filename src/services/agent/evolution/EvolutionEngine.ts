@@ -125,6 +125,20 @@ export class EvolutionEngine {
           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
         }
 
+        // Helix: Schema Integrity
+        // Ensure parameters is a plain object, not an array.
+        if (Array.isArray(offspring.parameters)) {
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Parameters cannot be an Array)");
+        }
+
+        // Helix: Serialization Safety
+        // Ensure the offspring is valid JSON (no cycles, no functions).
+        try {
+          JSON.stringify(offspring);
+        } catch (e) {
+          throw new Error("Helix Guardrail: Mutation produced non-serializable offspring (JSON Error)");
+        }
+
         // Ensure ID is new and lineage is tracked
         offspring.id = uuidv4();
         // Helix: Time Integrity Check
