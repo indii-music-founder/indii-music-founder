@@ -88,7 +88,7 @@ describe('PythonBridge Security', () => {
         );
 
         expect(logSpy).toHaveBeenCalledWith(
-            expect.stringContaining('********')
+            expect.stringContaining('[REDACTED]')
         );
     });
 });

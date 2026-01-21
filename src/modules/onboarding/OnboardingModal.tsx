@@ -187,7 +187,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <Sparkles className="text-white" size={20} />
                             <h2 className="font-bold text-white">Brand Kit Builder</h2>
                         </div>
-                        <button onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                        <button
+                            onClick={onClose}
+                            className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                            aria-label="Close onboarding"
+                        >
                             <X size={20} />
                         </button>
                     </div>
@@ -237,7 +241,8 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     )}
                                     <button
                                         onClick={() => removeFile(file.id)}
-                                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 focus:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                        aria-label={`Remove ${file.file.name}`}
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -259,6 +264,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                                aria-label="Attach files"
                             >
                                 <Paperclip size={20} />
                             </button>
@@ -275,6 +281,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onClick={handleSend}
                                 disabled={isProcessing || (!input.trim() && files.length === 0)}
                                 className="min-w-11 min-h-11 flex items-center justify-center bg-white hover:bg-gray-200 text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Send message"
                             >
                                 <Send size={20} />
                             </button>
