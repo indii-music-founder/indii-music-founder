@@ -88,6 +88,13 @@ export class AgentExecutionContext {
             // Workflow state
             nodes: state.nodes ? JSON.parse(JSON.stringify(state.nodes)) : [],
             edges: state.edges ? JSON.parse(JSON.stringify(state.edges)) : [],
+
+            // Distribution state
+            distribution: state.distribution ? JSON.parse(JSON.stringify(state.distribution)) : undefined,
+
+            // FileSystem state
+            fileNodes: state.fileNodes ? JSON.parse(JSON.stringify(state.fileNodes)) : [],
+            selectedFileNodeId: state.selectedFileNodeId,
         };
 
         return Object.freeze(snapshot);
