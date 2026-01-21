@@ -73,7 +73,7 @@ export const processJobUpdate = (
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The AI community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
-            let localPath = '';
+            const localPath = '';
 
             // Trigger background download via Electron
             // We don't await this to avoid blocking the UI update, but we log it
