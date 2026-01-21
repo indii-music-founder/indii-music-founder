@@ -237,6 +237,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             </div>
                         </div>
                     )}
+
+                    {/* indii Branding Footer */}
+                    <div className="px-6 py-2 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30">
+                        <span className="text-xs text-white/30 font-medium">
+                            Powered by <span className="font-semibold text-white/40">indii</span>
+                        </span>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>

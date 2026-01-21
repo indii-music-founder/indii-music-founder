@@ -1,8 +1,40 @@
-# Phase 4: Hub-and-Spoke Architecture Enforcement - Implementation Notes
+# Phase 4: Hub-and-Spoke Architecture Enforcement (indii Architecture)
 
 ## Overview
 
 Phase 4 implements **hub-and-spoke architecture enforcement** to prevent specialist agents from communicating directly with each other. This architectural pattern ensures proper coordination and prevents unnecessary complexity in agent interactions.
+
+---
+
+## The indii Architecture
+
+**indii** is the brand name for the entire AI agent orchestration system within indiiOS. The indii system consists of:
+
+- **AgentOrchestrator** - Intelligent routing system that determines which agent handles initial user requests
+- **Generalist Agent (Agent Zero)** - The hub that coordinates all specialist agents
+- **Specialist Agents** - Domain experts (Marketing, Finance, Video, etc.) that act as spokes
+
+```
+┌─────────────────────────────────────┐
+│             indii                    │  ← AI Agent System Brand
+│   (AI Orchestration for indiiOS)    │
+│                                      │
+│  ┌────────────────────────────────┐ │
+│  │    AgentOrchestrator           │ │  (Router)
+│  └───────────┬────────────────────┘ │
+│              │                       │
+│              ▼                       │
+│       ┌─────────────┐               │
+│       │ Generalist  │               │  (Hub / Agent Zero)
+│       │ (Agent Zero)│               │
+│       └──────┬──────┘               │
+│              │                       │
+│     ┌────────┴────────┐             │
+│     ▼                 ▼             │
+│  Finance          Marketing  ...    │  (Spokes)
+│                                      │
+└─────────────────────────────────────┘
+```
 
 ---
 
@@ -175,7 +207,7 @@ if (hubSpokeError) {
 
 **Example Message:**
 ```
-Hub-and-Spoke violation: Specialist agent 'marketing' cannot delegate directly to 'finance'.
+indii architecture rule: Specialist agent 'marketing' cannot delegate directly to 'finance'.
 Specialists must delegate to 'generalist' (Agent Zero), who will coordinate with other specialists as needed.
 ```
 
