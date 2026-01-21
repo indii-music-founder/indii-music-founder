@@ -5,7 +5,7 @@
  * AI-driven assistance through a hub-and-spoke architecture.
  */
 
-export const AGENT_SYSTEM_BRANDING = {
+export const AGENT_SYSTEM_BRANDING = Object.freeze({
   /** The brand name of the agent system */
   name: 'indii',
 
@@ -20,12 +20,12 @@ export const AGENT_SYSTEM_BRANDING = {
 
   /** Version (should match package.json or be semantic versioned) */
   version: '1.0.0'
-} as const;
+} as const);
 
 /**
  * User-facing messages that reference the indii brand
  */
-export const INDII_MESSAGES = {
+export const INDII_MESSAGES = Object.freeze({
   welcome: 'Welcome to indii, your AI assistant within indiiOS.',
   orchestrating: 'indii is coordinating specialists to help you...',
   error: 'indii encountered an issue:',
@@ -33,4 +33,4 @@ export const INDII_MESSAGES = {
     `indii architecture rule: Specialist agent '${source}' cannot delegate directly to '${target}'. Specialists must delegate to 'generalist' (Agent Zero), who will coordinate with other specialists as needed.`,
   loopDetected: 'indii detected a potential infinite loop and stopped execution.',
   routingToAgent: (agentName: string) => `indii is routing your request to ${agentName}...`
-} as const;
+} as const);
