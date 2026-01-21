@@ -50,9 +50,16 @@ vi.mock('fs', async (importOriginal) => {
 
 // Mock path for consistent behavior across OS
 vi.mock('path', async () => {
-    const actual = await vi.importActual('path');
+    const actual = await vi.importActual<any>('path');
     const mocked = {
-        ...actual as any,
+        ...actual,
+        basename: (p: string) => p.split(/[\\/]/).pop(),
+        dirname: (p: string) => p.split(/[\\/]/).slice(0, -1).join('/') || '.',
+        extname: (p: string) => {
+            const base = p.split(/[\\/]/).pop() || '';
+            const idx = base.lastIndexOf('.');
+            return idx > 0 ? base.slice(idx) : '';
+        },
         resolve: (...args: string[]) => args.join('/').replace(/\/+/g, '/'),
         join: (...args: string[]) => args.join('/').replace(/\/+/g, '/'),
         normalize: (p: string) => p
@@ -113,6 +120,38 @@ describe('Security: Video Handlers', () => {
             // Should throw due to validation schema
             await expect(handler({ senderFrame: { url: 'file://valid' } }, 'http://127.0.0.1/secret.json', 'test.mp4'))
                 .rejects.toThrow(/Invalid URL/);
+        });
+
+        it('should sanitize filename to prevent path traversal', async () => {
+            const handler = handlers['video:save-asset'];
+            const fs = await import('fs');
+
+            // Mock successful fetch
+            (global.fetch as any).mockResolvedValue({
+                ok: true,
+                body: new ReadableStream(), // Empty stream
+                statusText: 'OK'
+            });
+
+            // Attack: Try to write to /etc/passwd
+            await handler(
+                { senderFrame: { url: 'file:///app/index.html' } },
+                'http://example.com/video.mp4',
+                '../../../../etc/passwd'
+            );
+
+            // Verify: Path should be sanitized to just 'passwd' inside the asset dir
+            // Mock path is /mock/documents/IndiiOS/Assets/Video
+            expect(fs.createWriteStream).toHaveBeenCalledWith(
+                expect.stringMatching(/\/IndiiOS\/Assets\/Video\/passwd$/)
+            );
+
+            // Explicitly verify it did NOT try to write to /etc/passwd
+            // Note: Since we mock path.join, the result is predictable
+            const calls = (fs.createWriteStream as any).mock.calls;
+            const lastCallPath = calls[calls.length - 1][0];
+            expect(lastCallPath).not.toContain('../');
+            expect(lastCallPath).not.toMatch(/^\/etc\/passwd/);
         });
     });
 
