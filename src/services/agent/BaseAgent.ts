@@ -1,5 +1,5 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
@@ -639,6 +639,23 @@ ${task}
                     config: { ...AI_CONFIG.THINKING.LOW },
                     tools: allTools as any
                 });
+
+                // LEDGER: Record Spend based on Token Usage
+                const usage = response.usage?.();
+                if (usage && context?.userId) {
+                    const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
+                    // Ensure we are using a text model pricing schema (input/output)
+                    if (pricing && 'input' in pricing && 'output' in pricing) {
+                        const inputCost = ((usage.promptTokenCount || 0) / 1000000) * pricing.input;
+                        const outputCost = ((usage.candidatesTokenCount || 0) / 1000000) * pricing.output;
+                        const totalCost = inputCost + outputCost;
+
+                        if (totalCost > 0) {
+                            await MembershipService.recordSpend(context.userId, totalCost);
+                        }
+                    }
+                }
+
                 const functionCall = response.functionCalls()?.[0];
 
                 if (functionCall) {
@@ -696,6 +713,13 @@ ${task}
 
                     // Update prompt with tool result for next iteration
                     fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
+
+                    // Emit tool result for UI/Persistence
+                    onProgress?.({
+                        type: 'tool_result',
+                        toolName: name,
+                        content: outputText
+                    });
 
                     if (name === 'speak') {
                         // Keep going - don't let speak terminate the agent turn
