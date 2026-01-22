@@ -28,6 +28,21 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
+vi.mock('@/config/env', () => ({
+    env: {
+        VITE_API_KEY: 'mock-key',
+        apiKey: 'mock-key'
+    }
+}));
+
+vi.mock('../billing/TokenUsageService', () => ({
+    TokenUsageService: {
+        checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(undefined),
+        trackUsage: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
 // Mock Google Generative AI (Fallback)
 vi.mock('@google/generative-ai', () => ({
     GoogleGenerativeAI: vi.fn(function () {
