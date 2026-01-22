@@ -63,4 +63,20 @@ describe('PromptInput Interaction', () => {
     await user.click(sendBtn)
     expect(onActionClick).toHaveBeenCalledTimes(2)
   })
+
+  it('PromptInputAction applies tooltip as aria-label to child button', () => {
+    render(
+      <PromptInput>
+        <PromptInputTextarea />
+        <PromptInputActions>
+          <PromptInputAction tooltip="Run command">
+            <button data-testid="icon-only-btn">Icon</button>
+          </PromptInputAction>
+        </PromptInputActions>
+      </PromptInput>
+    )
+
+    const btn = screen.getByTestId('icon-only-btn')
+    expect(btn).toHaveAttribute('aria-label', 'Run command')
+  })
 })
