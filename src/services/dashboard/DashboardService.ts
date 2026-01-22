@@ -1,6 +1,7 @@
 
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { MOCK_SALES_ANALYTICS } from './mockData';
 
 export interface ProjectMetadata {
     id: string;
@@ -72,6 +73,8 @@ interface CachedStorageStats {
 }
 
 export class DashboardService {
+    private static cache = new Map<string, { data: SalesAnalyticsData; timestamp: number }>();
+    private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
     private static analyticsCache: CachedAnalytics | null = null;
     private static storageCache: CachedStorageStats | null = null;
 
@@ -477,16 +480,45 @@ export class DashboardService {
 
     static async getSalesAnalytics(period: string = '30d'): Promise<SalesAnalyticsData> {
         try {
+            // 1. Check Cache
+            const cached = this.cache.get(period);
+            if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+                return cached.data;
+            }
+
             const { useStore } = await import('@/core/store');
             const { db } = await import('@/services/firebase');
             const { doc, getDoc } = await import('firebase/firestore');
 
             const userProfile = useStore.getState().userProfile;
 
-            // Allow public/guest access for now with default data if no user
-            // But if user is logged in, try to fetch
+            // 2. Attempt Fetch from API
+            // Bolt: "Production Bridge" - prefer API over Firestore/Mock if available
+            const apiUrl = import.meta.env.VITE_API_URL;
+
+            if (apiUrl) {
+                try {
+                    const response = await fetch(`${apiUrl}/api/analytics/sales?period=${period}`);
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+
+                    const rawData = await response.json();
+                    const data = SalesAnalyticsSchema.parse(rawData);
+
+                    // Update Cache
+                    this.cache.set(period, { data, timestamp: Date.now() });
+
+                    return data;
+                } catch (apiError) {
+                    console.warn("API fetch failed, falling back to Firestore/Mock:", apiError);
+                    // Fallthrough to Firestore/Mock
+                }
+            }
+
+            // 3. Fallback to Firestore (Legacy/Hybrid Support)
             if (userProfile?.id) {
-                 // Attempt to fetch from Firestore
                 const statsRef = doc(db, 'users', userProfile.id, 'stats', 'sales_analytics');
                 try {
                     const snapshot = await getDoc(statsRef);
@@ -494,30 +526,23 @@ export class DashboardService {
                         const data = snapshot.data();
                         const parseResult = SalesAnalyticsSchema.safeParse(data);
                         if (parseResult.success) {
+                            // Update Cache
+                            this.cache.set(period, { data: parseResult.data, timestamp: Date.now() });
                             return parseResult.data;
-                        } else {
-                            console.warn("Invalid sales analytics data:", parseResult.error);
                         }
                     }
                 } catch (e) {
-                    console.warn("Failed to fetch sales analytics doc, falling back to simulation", e);
+                    console.warn("Firestore fetch failed:", e);
                 }
             }
 
-            // Fallback / Simulation (Preserving the "Mock" behavior but through a typed service)
-            // This is the "Bridge" - providing a structure that mirrors what the backend WILL provide
-            return {
-                conversionRate: { value: 4.2, change: 0.5, trend: 'up', formatted: '4.2%' },
-                totalVisitors: { value: 12500, change: 12, trend: 'up', formatted: '12.5k' },
-                clickRate: { value: 18.3, change: 0, trend: 'neutral', formatted: '18.3%' },
-                avgOrderValue: { value: 24.00, change: 2, trend: 'up', formatted: '$24.00' },
-                revenueChart: [30, 45, 35, 60, 55, 70, 65, 80, 75, 90],
-                period: period
-            };
+            // 4. Final Fallback: Mock Data (Dev/Offline Mode)
+            // Ensure consistency by updating the period
+            return { ...MOCK_SALES_ANALYTICS, period };
 
         } catch (error) {
-            console.error("Failed to fetch sales analytics:", error);
-            // Return safe default
+            console.error("Critical failure in getSalesAnalytics:", error);
+            // Return safe default to prevent UI crash
             return {
                 conversionRate: { value: 0, trend: 'neutral', formatted: '0%' },
                 totalVisitors: { value: 0, trend: 'neutral', formatted: '0' },
