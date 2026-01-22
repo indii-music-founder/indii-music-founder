@@ -5,3 +5,7 @@
 ## 2026-05-22 - E2E Auth & UI Evolution
 **Learning:** Legacy mobile E2E tests were failing because they assumed a deprecated "Bottom Tab Bar" UI (replaced by FAB) and lacked authentication steps.
 **Action:** Updated tests to use the new FAB selectors (`button[aria-label="Open Navigation"]`) and implemented `Guest Login (Dev)` bypass in `beforeEach` hooks to ensure tests run against the actual app state.
+
+## 2026-05-22 - Virtual Keyboard Layout Squeeze
+**Learning:** Resizing the viewport height to simulate a virtual keyboard (e.g., from 812px to 512px) triggers a layout reflow. The `CommandBar` correctly stays anchored to the bottom of the visual viewport, and the chat container resizes. This confirms that `dvh` or standard flexbox column layouts are handling the height change gracefully without manual resize listeners.
+**Action:** Continue using `page.setViewportSize` to simulate keyboard interactions in E2E tests. No custom "keyboard detection" logic is needed in the app code if CSS is robust.

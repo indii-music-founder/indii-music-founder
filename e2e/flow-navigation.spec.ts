@@ -202,6 +202,60 @@ test.describe('Flow: Routing & Navigation', () => {
         await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
     });
 
+    test('History: Query parameters are preserved on Back/Forward', async ({ page }) => {
+        // 1. Navigate to Marketing with query params
+        // Note: We use client-side navigation or direct load. Direct load is more robust for "Deep Link with Params".
+        const urlWithParams = '/marketing?view=grid&sort=desc';
+        await page.goto(urlWithParams);
+
+        // Handle potential login redirect (if reload clears auth)
+        const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
+        if (await guestLoginBtn.isVisible()) {
+             await guestLoginBtn.click();
+             // Login usually redirects to dashboard or stored return url.
+             // If app doesn't support return url with params, this might fail, revealing a bug.
+             // But based on observation, let's wait for marketing text.
+        }
+
+        // 2. Verify we are on Marketing and Params exist
+        await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
+        // Check params - Note: Login might strip them if not handled carefully in app,
+        // but let's assert they SHOULD be there as per "Flow" philosophy.
+        // If this fails after login, it means we have a bug in Auth Return URL handling.
+        // However, for this test, we assume session might persist or we handle it.
+        // Let's check if we are on marketing first.
+
+        // Note: If login redirect drops params, we might need to re-navigate to prove persistence *during session*.
+        if (!page.url().includes('?')) {
+            console.log('Login stripped params, re-navigating to test in-session history...');
+            await page.goto(urlWithParams);
+        }
+
+        expect(page.url()).toContain('?view=grid&sort=desc');
+
+        // 3. Navigate to Social (Clean URL)
+        await page.getByTestId('nav-item-social').click();
+        await expect(page.getByText('Social Media', { exact: false })).toBeVisible();
+        expect(page.url()).toContain('/social');
+        expect(page.url()).not.toContain('?view=grid');
+
+        // 4. Go Back
+        await page.goBack();
+
+        // 5. Verify Params returned
+        await expect(page.getByText('Marketing Department', { exact: false })).toBeVisible();
+        expect(page.url()).toContain('/marketing');
+        expect(page.url()).toContain('?view=grid&sort=desc');
+
+        // 6. Go Forward
+        await page.goForward();
+
+        // 7. Verify we are back at Social Media (Clean URL)
+        await expect(page.getByText('Social Media', { exact: false })).toBeVisible();
+        expect(page.url()).toContain('/social');
+        expect(page.url()).not.toContain('?view=grid');
+    });
+
     test('Navigation: Return to HQ works correctly', async ({ page }) => {
         // 1. Navigate to Brand Manager
         await page.getByTestId('nav-item-brand').click();

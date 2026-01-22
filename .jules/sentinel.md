@@ -14,3 +14,8 @@
 **Vulnerability:** The `PythonBridge` utility logged all command-line arguments to the console for debugging. While it attempted to redact sensitive flags (like `--password`), it failed to redact sensitive positional arguments, specifically JSON strings containing PII (e.g., tax data, SSNs) passed to scripts like `tax_withholding_engine.py`.
 **Learning:** heuristic-based redaction (checking for `--flag`) is insufficient when sensitive data is passed as positional arguments or complex JSON blobs. Logging command arguments in production is inherently risky.
 **Prevention:** Implement explicit redaction capabilities where the caller defines which arguments are sensitive by index (`sensitiveArgsIndices`). Favor passing sensitive data via environment variables or stdin over command-line arguments where possible.
+
+## 2026-01-22 - [HIGH] Path Traversal in Distribution ITMSP Packaging
+**Vulnerability:** The `distribution:package-itmsp` IPC handler accepted an arbitrary `releaseId` string and used it directly in `path.join` to construct a staging directory path. This allowed an attacker to supply a malicious ID (e.g., `../../etc`) to escape the staging directory and direct the underlying Python script to operate on sensitive system directories (Arbitrary File Write/Read).
+**Learning:** Inconsistent validation across handlers. While `distribution:stage-release` used a Zod schema to validate `releaseId`, `distribution:package-itmsp` did not. Every IPC handler must independently validate all its inputs.
+**Prevention:** Enforced `z.string().uuid()` validation for `releaseId` in the `distribution:package-itmsp` handler, ensuring it is a valid UUID and contains no path traversal characters.

@@ -51,4 +51,14 @@ describe('🛡️ Security Checks Utils', () => {
          mocks.fs.realpathSync.mockReturnValue('/etc/config.json');
          expect(() => validateSafeDistributionSource('/Users/alice/config.json')).toThrow(/Access to system directories is denied/);
     });
+
+    it('should block private keys by default but allow them with option', () => {
+        mocks.fs.realpathSync.mockReturnValue('/Users/alice/secrets/private.pem');
+
+        // Default: Block
+        expect(() => validateSafeDistributionSource('/Users/alice/secrets/private.pem')).toThrow(/File type '\.pem' is not allowed/);
+
+        // With Option: Allow
+        expect(() => validateSafeDistributionSource('/Users/alice/secrets/private.pem', { allowKeys: true })).not.toThrow();
+    });
 });
