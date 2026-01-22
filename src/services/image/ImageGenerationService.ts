@@ -281,6 +281,7 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Bolt Optimization: Run requests in parallel to reduce total latency
         // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
@@ -348,6 +349,16 @@ export class ImageGenerationService {
                     // Return null to indicate failure but allow others to proceed
                     return null;
                 }
+            });
+
+            const results = await Promise.all(promises);
+            // Filter out failures (nulls)
+            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
+
+        } catch (e) {
+            console.error("Batch Remix Error:", e);
+            throw e;
+        }
                 return null;
             } catch (error) {
                 console.error("Individual Batch Remix Error:", error);
