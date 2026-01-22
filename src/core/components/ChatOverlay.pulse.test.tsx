@@ -193,4 +193,46 @@ describe('💓 Pulse: Chat Overlay Status Feedback', () => {
         // Assert Content is there
         expect(screen.getByText('Sure, here it is.')).toBeInTheDocument();
     });
+
+    it('Scenario: The "Error State" - Handling Model Failures Gracefully', () => {
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        // 1. Setup: User sent message, agent processing
+        updateStore({
+            agentHistory: [
+                { id: 'u1', role: 'user', text: 'Analyze this massive dataset', timestamp: 100 }
+            ],
+            isAgentProcessing: true
+        });
+        rerender(<ChatOverlay onClose={vi.fn()} />);
+        expect(screen.getByText(/PROCESSING RESPONSE.../i)).toBeInTheDocument();
+
+        // 2. Simulate Error: Processing stops, Error Thought appears
+        updateStore({
+            agentHistory: [
+                { id: 'u1', role: 'user', text: 'Analyze this massive dataset', timestamp: 100 },
+                {
+                    id: 'a1',
+                    role: 'model',
+                    text: 'I encountered an issue.',
+                    timestamp: 101,
+                    thoughts: [
+                        { id: 't1', text: 'Model Context Exceeded', timestamp: 101, type: 'error' }
+                    ]
+                }
+            ],
+            isAgentProcessing: false
+        });
+        rerender(<ChatOverlay onClose={vi.fn()} />);
+
+        // 3. Assert: Processing indicator is GONE
+        expect(screen.queryByText(/PROCESSING RESPONSE.../i)).not.toBeInTheDocument();
+
+        // 4. Assert: Error message is visible and RED
+        // Note: ThoughtChain renders thoughts. We need to find the thought text.
+        const errorThought = screen.getByText('Model Context Exceeded');
+        expect(errorThought).toBeInTheDocument();
+        // Verified class name from source
+        expect(errorThought).toHaveClass('text-red-400');
+    });
 });
