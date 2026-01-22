@@ -18,3 +18,7 @@
 ## 2025-05-25 - Onboarding Modal Accessibility
 **Learning:** Modal action buttons (Close, Attach, Send) were icon-only and completely invisible to screen readers, creating a "trap" where users couldn't exit or interact.
 **Action:** Added explicit `aria-label`s to all icon buttons in `OnboardingModal.tsx` and ensured the conditional file removal button is focusable (`focus:opacity-100`).
+
+## 2025-05-26 - Auto-Labeling Tooltip Triggers
+**Learning:** Icon-only buttons wrapped in Tooltips often lack `aria-label`, making them inaccessible. Radix UI's `TooltipTrigger` with `asChild` merges props, allowing us to automatically inject `aria-label` from the tooltip text.
+**Action:** Updated `PromptInputAction` to pass `aria-label={tooltip}` to `TooltipTrigger` when tooltip is a string, ensuring all action buttons are automatically labeled without extra code.
