@@ -358,7 +358,7 @@ export const setupDistributionHandlers = () => {
 
             // Security: If key is a path, validate it
             if (key && (key.includes('/') || key.includes('\\'))) {
-                validateSafeDistributionSource(key);
+                validateSafeDistributionSource(key, { allowKeys: true });
             }
 
             const storagePath = getStoragePath();
