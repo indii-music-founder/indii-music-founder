@@ -17,3 +17,7 @@
 ## 2026-06-15 - [JSON Safety Guardrails]
 **Learning:** Mutations can produce valid JS objects (like Arrays or Circular References) that are invalid as Agent parameters (which must be strictly Objects and Serializable). Standard checks for truthiness or `typeof object` are insufficient.
 **Action:** Implemented strict `Array.isArray()` checks and `JSON.stringify()` serialization tests in `EvolutionEngine` to prevent non-serializable or malformed agents from entering the persistent gene pool.
+
+## 2026-10-12 - [Safety Filter Resilience]
+**Learning:** LLM Providers (Gemini, OpenAI) often reject mutation requests with specific Safety Violations (Hate Speech, Dangerous Content) instead of generic 500 errors. The Evolutionary Engine treats these as transient failures and successfully retries to find a safe mutation path.
+**Action:** Added `HelixSafetyFilter.test.ts` to explicitly simulate "Safety Violation" errors and verify that the engine retries breeding until a safe offspring is produced, rather than allowing the population to stagnate or crash.
