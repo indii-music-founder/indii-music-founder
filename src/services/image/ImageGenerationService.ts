@@ -348,6 +348,10 @@ export class ImageGenerationService {
                     // Return null to indicate failure but allow others to proceed
                     return null;
                 }
+                return null;
+            } catch (error) {
+                console.error("Individual Batch Remix Error:", error);
+                // Return null to indicate failure but allow others to proceed
             });
 
             const results = await Promise.all(promises);
@@ -365,6 +369,11 @@ export class ImageGenerationService {
             }
         });
 
+        // Wait for all requests to complete
+        const settledResults = await Promise.all(promises);
+
+        // Filter out failures (nulls)
+        return settledResults.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
         const settledResults = await Promise.all(promises);
 
         // Filter out failures (nulls) and cast to correct return type
