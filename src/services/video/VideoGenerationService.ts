@@ -4,7 +4,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
-import { functions, db, auth } from '@/services/firebase';
+import { functionsWest1 as functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';

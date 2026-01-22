@@ -221,6 +221,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -302,6 +303,7 @@ export const triggerVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -450,6 +452,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
