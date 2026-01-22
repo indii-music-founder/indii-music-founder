@@ -220,8 +220,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     <div className="flex items-center gap-1">
                         {!isMobile && (
                             <>
-                                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple />
-                                <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" />
+                                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple aria-label="Upload files" />
+                                <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" aria-label="Take photo" />
                                 <PromptInputAction tooltip="Attach files">
                                     <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200">
                                         <Paperclip size={14} />
