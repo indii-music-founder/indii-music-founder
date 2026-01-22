@@ -174,21 +174,30 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                     set((state) => {
                         // Merge logic: If an item exists locally with a full data URI, 
                         // and Firestore has a placeholder, keep the local one.
-                        const mergedHistory = [...state.generatedHistory];
+                        // Bolt Optimization: Use Map for O(1) lookups instead of O(N) array search
+                        // This reduces complexity from O(N*M) to O(N+M)
+                        // Bolt Optimization: Use Map for O(N) merging instead of O(N*M)
+                        // Map key: ID, value: HistoryItem
+                        const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
 
                         history.forEach(remItem => {
-                            const localIndex = mergedHistory.findIndex(loc => loc.id === remItem.id);
-                            if (localIndex !== -1) {
+                            const localItem = historyMap.get(remItem.id);
+
+                            if (localItem) {
                                 // If local has data:uri and remote has placeholder, don't overwrite the URL
-                                if (mergedHistory[localIndex].url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
-                                    mergedHistory[localIndex] = { ...remItem, url: mergedHistory[localIndex].url };
+                                if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                    historyMap.set(remItem.id, { ...remItem, url: localItem.url });
                                 } else {
-                                    mergedHistory[localIndex] = remItem;
+                                    historyMap.set(remItem.id, remItem);
                                 }
                             } else {
-                                mergedHistory.push(remItem);
+                                historyMap.set(remItem.id, remItem);
                             }
                         });
+
+                        const mergedHistory = Array.from(historyMap.values());
+                        // Convert back to array and sort by timestamp (newest first)
+                        const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
                         const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
                         const uploadedImages = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'image');
