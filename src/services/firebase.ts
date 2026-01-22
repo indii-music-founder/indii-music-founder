@@ -90,7 +90,7 @@ export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-wes
 
 // Connect to Functions emulator in development (when running locally)
 // Production builds skip this entirely - they call deployed Cloud Functions
-if (import.meta.env.DEV && typeof window !== 'undefined') {
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true' && typeof window !== 'undefined') {
     try {
         connectFunctionsEmulator(functions, '127.0.0.1', 5001);
         connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
