@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
+import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -144,19 +144,31 @@ export class AgentService {
                     updateAgentMessage(responseId, { text: currentStreamedText });
                 }
 
-                if (event.type === 'thought' || event.type === 'tool') {
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                     const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-                    const newThought = {
+
+                    // Firestore explicitly rejects 'undefined' values. We must sanitize.
+                    const newThought: AgentThought = {
                         id: uuidv4(),
-                        text: event.content,
+                        text: event.content || '', // Ensure no undefined text
                         timestamp: Date.now(),
-                        type: event.type as 'tool' | 'logic' | 'error',
-                        toolName: event.toolName
+                        type: event.type as any, // Typed in interface
                     };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) {
+                            newThought.toolName = event.toolName;
+                        }
+                    }
+
+                    // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
+                    // stringify/parse removes all undefined keys.
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    console.log('[AgentService] Adding thought:', safeThought);
 
                     if (currentMsg) {
                         updateAgentMessage(responseId, {
-                            thoughts: [...(currentMsg.thoughts || []), newThought]
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
                         });
                     }
                 }

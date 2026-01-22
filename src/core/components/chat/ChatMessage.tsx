@@ -207,6 +207,55 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
 
                 {msg.role === 'system' && <span>{msg.text}</span>}
 
+                {/* Robust Tool Result Rendering (Persisted via Thoughts) */}
+                {msg.role === 'model' && msg.thoughts?.map((thought, tIdx) => {
+                    if (thought.type !== 'tool_result') return null;
+
+                    try {
+                        let jsonStr = thought.text;
+                        if (jsonStr.startsWith('Success: ')) {
+                            jsonStr = jsonStr.substring(9);
+                        } else if (jsonStr.startsWith('Error: ')) {
+                            return null;
+                        }
+
+                        const json = JSON.parse(jsonStr);
+                        const toolName = thought.toolName || 'unknown_tool';
+
+                        if ((toolName === 'generate_image' || toolName === 'batch_edit_images' || toolName === 'generate_high_res_asset' || toolName === 'remix_image') && (json.urls || json.image_ids)) {
+                            // Prefer URLs from the tool output directly (stateless)
+                            if (json.urls && Array.isArray(json.urls)) {
+                                return (
+                                    <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {json.urls.map((url: string, idx: number) => (
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={url} />
+                                        ))}
+                                    </div>
+                                );
+                            }
+
+                            // Fallback to ID lookup (requires client state)
+                            const { generatedHistory } = useStore.getState();
+                            let imageIds: string[] = [];
+                            if (json.image_ids && Array.isArray(json.image_ids)) imageIds = json.image_ids;
+                            else if (json.asset_id) imageIds = [json.asset_id];
+
+                            const images = imageIds.map(id => generatedHistory.find(h => h.id === id)).filter((img): img is NonNullable<typeof img> => !!img);
+
+                            if (images.length > 0) {
+                                return (
+                                    <div key={`tool-res-${tIdx}`} className="flex flex-col gap-4 my-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        {images.map((img, idx: number) => (
+                                            <ToolImageOutput key={idx} toolName={toolName} idx={idx} url={img.url} prompt={img.prompt} />
+                                        ))}
+                                    </div>
+                                );
+                            }
+                        }
+                    } catch (e) { /* ignore parse errors */ }
+                    return null;
+                })}
+
                 {msg.isStreaming && (
                     <div className="mt-2 flex items-center gap-1.5 h-4" role="status" aria-label="AI is thinking">
                         <motion.div

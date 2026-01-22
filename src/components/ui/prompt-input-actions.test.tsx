@@ -13,15 +13,15 @@ describe('PromptInput Interaction', () => {
       <PromptInput isLoading={isLoading}>
         <PromptInputTextarea />
         <PromptInputActions>
-            <PromptInputAction tooltip="Send Message">
-                <button
-                    data-testid="send-btn"
-                    onClick={onActionClick}
-                    type="button"
-                >
-                    Send
-                </button>
-            </PromptInputAction>
+          <PromptInputAction tooltip="Send Message">
+            <button
+              data-testid="send-btn"
+              onClick={onActionClick}
+              type="button"
+            >
+              Send
+            </button>
+          </PromptInputAction>
         </PromptInputActions>
       </PromptInput>
     )
@@ -58,11 +58,11 @@ describe('PromptInput Interaction', () => {
       <PromptInput>
         <PromptInputTextarea />
         <PromptInputActions>
-            <PromptInputAction tooltip={tooltipText}>
-                <button data-testid="send-btn">
-                    Icon
-                </button>
-            </PromptInputAction>
+          <PromptInputAction tooltip={tooltipText}>
+            <button data-testid="send-btn">
+              Icon
+            </button>
+          </PromptInputAction>
         </PromptInputActions>
       </PromptInput>
     )
@@ -85,6 +85,11 @@ describe('PromptInput Interaction', () => {
                     Icon
                 </button>
             </PromptInputAction>
+          <PromptInputAction tooltip={tooltipText}>
+            <button aria-label={existingLabel} data-testid="send-btn-explicit">
+              Icon
+            </button>
+          </PromptInputAction>
         </PromptInputActions>
       </PromptInput>
     )
@@ -93,5 +98,21 @@ describe('PromptInput Interaction', () => {
 
     // Should keep the explicit label
     expect(sendBtn).toHaveAttribute('aria-label', existingLabel)
+  })
+
+  it('PromptInputAction applies tooltip as aria-label to child button', () => {
+    render(
+      <PromptInput>
+        <PromptInputTextarea />
+        <PromptInputActions>
+          <PromptInputAction tooltip="Run command">
+            <button data-testid="icon-only-btn">Icon</button>
+          </PromptInputAction>
+        </PromptInputActions>
+      </PromptInput>
+    )
+
+    const btn = screen.getByTestId('icon-only-btn')
+    expect(btn).toHaveAttribute('aria-label', 'Run command')
   })
 })
