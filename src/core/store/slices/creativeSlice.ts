@@ -172,6 +172,10 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             StorageService.loadHistory()
                 .then(history => {
                     set((state) => {
+                        // Merge logic: If an item exists locally with a full data URI, 
+                        // and Firestore has a placeholder, keep the local one.
+                        // Bolt Optimization: Use Map for O(1) lookups instead of O(N) array search
+                        // This reduces complexity from O(N*M) to O(N+M)
                         // Bolt Optimization: Use Map for O(N) merging instead of O(N*M)
                         // Map key: ID, value: HistoryItem
                         const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
@@ -191,6 +195,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                             }
                         });
 
+                        const mergedHistory = Array.from(historyMap.values());
                         // Convert back to array and sort by timestamp (newest first)
                         const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
