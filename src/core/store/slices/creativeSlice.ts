@@ -195,7 +195,6 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                             }
                         });
 
-                        const mergedHistory = Array.from(historyMap.values());
                         // Convert back to array and sort by timestamp (newest first)
                         const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
