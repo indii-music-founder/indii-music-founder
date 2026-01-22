@@ -64,11 +64,42 @@ describe('PromptInput Interaction', () => {
     expect(onActionClick).toHaveBeenCalledTimes(2)
   })
 
+  it('automatically uses tooltip as aria-label for the trigger button if aria-label is missing', () => {
+    const tooltipText = "Send Message"
+
+    render(
+      <PromptInput>
+        <PromptInputTextarea />
+        <PromptInputActions>
+            <PromptInputAction tooltip={tooltipText}>
+                <button data-testid="send-btn">
+                    Icon
+                </button>
+            </PromptInputAction>
+        </PromptInputActions>
+      </PromptInput>
+    )
+
+    const sendBtn = screen.getByTestId('send-btn')
+
+    // This is what we want to achieve.
+    expect(sendBtn).toHaveAttribute('aria-label', tooltipText)
+  })
+
+  it('respects existing aria-label', () => {
+    const tooltipText = "Send Message"
+    const existingLabel = "Submit Prompt"
+
   it('PromptInputAction applies tooltip as aria-label to child button', () => {
     render(
       <PromptInput>
         <PromptInputTextarea />
         <PromptInputActions>
+            <PromptInputAction tooltip={tooltipText}>
+                <button aria-label={existingLabel} data-testid="send-btn-explicit">
+                    Icon
+                </button>
+            </PromptInputAction>
           <PromptInputAction tooltip="Run command">
             <button data-testid="icon-only-btn">Icon</button>
           </PromptInputAction>
@@ -76,6 +107,10 @@ describe('PromptInput Interaction', () => {
       </PromptInput>
     )
 
+    const sendBtn = screen.getByTestId('send-btn-explicit')
+
+    // Should keep the explicit label
+    expect(sendBtn).toHaveAttribute('aria-label', existingLabel)
     const btn = screen.getByTestId('icon-only-btn')
     expect(btn).toHaveAttribute('aria-label', 'Run command')
   })
