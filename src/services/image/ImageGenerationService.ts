@@ -261,6 +261,12 @@ export class ImageGenerationService {
         // Create promises for each target image
         const promises = options.targetImages.map(async (target) => {
             try {
+        // Use Cloud Function for image generation (properly uses REST API)
+        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+
+        // Bolt Optimization: Parallelize generation requests
+        try {
+            const promises = options.targetImages.map(async (target) => {
                 // Determine aspect ratio based on target image dimensions
                 let aspectRatio = '1:1';
                 if (target.width && target.height) {
@@ -306,6 +312,17 @@ export class ImageGenerationService {
         });
 
         return results;
+                return null;
+            });
+
+            const results = await Promise.all(promises);
+            // Filter out failures (nulls)
+            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
+
+        } catch (e) {
+            console.error("Batch Remix Error:", e);
+            throw e;
+        }
     }
 
     /**
