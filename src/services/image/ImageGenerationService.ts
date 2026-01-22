@@ -281,51 +281,58 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        const results: { id: string, url: string, prompt: string }[] = [];
         const generateImage = httpsCallable(functions, 'generateImageV3');
 
-        // Bolt Optimization: Run requests in parallel to reduce total latency
-        const promises = options.targetImages.map(async (target) => {
-            try {
-                // Determine aspect ratio based on target image dimensions
-                let aspectRatio = '1:1';
-                if (target.width && target.height) {
-                    if (target.width > target.height * 1.2) aspectRatio = '16:9';
-                    else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+        try {
+            // Bolt Optimization: Parallelize requests to improve batch latency
+            const promises = options.targetImages.map(async (target) => {
+                try {
+                    // Determine aspect ratio based on target image dimensions
+                    let aspectRatio = '1:1';
+                    if (target.width && target.height) {
+                        if (target.width > target.height * 1.2) aspectRatio = '16:9';
+                        else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                    }
+
+                    const result = await generateImage({
+                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        images: [
+                            { mimeType: target.mimeType, data: target.data },
+                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                        ],
+                        aspectRatio
+                    });
+
+                    interface GenerateImageResponse {
+                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+                    }
+                    const data = result.data as GenerateImageResponse;
+
+                    if (data.images?.[0]?.bytesBase64Encoded) {
+                        const mimeType = data.images[0].mimeType || 'image/png';
+                        return {
+                            id: crypto.randomUUID(),
+                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Individual Batch Remix Error:", error);
+                    return null;
                 }
+            });
 
-                const result = await generateImage({
-                    prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                    images: [
-                        { mimeType: target.mimeType, data: target.data },
-                        { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                    ],
-                    aspectRatio
-                });
-
-                interface GenerateImageResponse {
-                    images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-                }
-                const data = result.data as GenerateImageResponse;
-
-                if (data.images?.[0]?.bytesBase64Encoded) {
-                    const mimeType = data.images[0].mimeType || 'image/png';
-                    return {
-                        id: crypto.randomUUID(),
-                        url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                        prompt: `Batch Style: ${options.prompt || "Restyle"}`
-                    };
-                }
-                return null;
-            } catch (error) {
-                console.error("Individual Batch Remix Error:", error);
-                return null;
-            }
-        });
-
-        const settledResults = await Promise.all(promises);
-
-        // Filter out failures (nulls) and cast to correct return type
-        return (settledResults.filter(r => r !== null) as { id: string, url: string, prompt: string }[]);
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
+        } catch (e) {
+            console.error("Batch Remix Error:", e);
+            throw e;
+        }
+        return results;
     }
 
     /**
