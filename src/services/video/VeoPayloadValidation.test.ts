@@ -172,7 +172,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
 
     it('should enforce MIME Type Guard (simulated)', async () => {
         // "Rejecting non-video assets injected into the player"
-        // Since the service just returns data, we verify the data structure allows the consumer to check this.
+        // The service should actively reject the promise if the MIME type is invalid.
 
         const jobId = 'job-malformed';
         mocks.doc.mockReturnValue('doc-ref');
@@ -197,15 +197,12 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
         });
 
         const pendingJob = service.waitForJob(jobId);
+
+        // Suppress unhandled rejection warning by attaching a catch (wait for assertion)
+        pendingJob.catch(() => {});
+
         await vi.advanceTimersByTimeAsync(1100);
 
-        const result = await pendingJob;
-
-        // The service returns the data, but our "Lens" verification logic (represented by this test assertion)
-        // ensures we can detect it.
-        expect(result.output.metadata.mime_type).not.toBe('video/mp4');
-
-        // In a real player component test, we would assert the player doesn't render.
-        // Here we assert the service faithfully delivers the bad news.
+        await expect(pendingJob).rejects.toThrow("Security Violation: Invalid MIME type 'application/javascript'");
     });
 });
