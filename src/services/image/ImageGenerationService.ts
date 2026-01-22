@@ -253,66 +253,48 @@ export class ImageGenerationService {
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Bolt Optimization: Run requests in parallel to reduce total latency
-        const results: { id: string, url: string, prompt: string }[] = [];
-
-        // Use Cloud Function for image generation (properly uses REST API)
-        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-        // Create promises for each target image
-        const promises = options.targetImages.map(async (target) => {
-            try {
         // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
         // Bolt Optimization: Parallelize generation requests
         try {
             const promises = options.targetImages.map(async (target) => {
-                // Determine aspect ratio based on target image dimensions
-                let aspectRatio = '1:1';
-                if (target.width && target.height) {
-                    if (target.width > target.height * 1.2) aspectRatio = '16:9';
-                    else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                try {
+                    // Determine aspect ratio based on target image dimensions
+                    let aspectRatio = '1:1';
+                    if (target.width && target.height) {
+                        if (target.width > target.height * 1.2) aspectRatio = '16:9';
+                        else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                    }
+
+                    const result = await generateImage({
+                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        images: [
+                            { mimeType: target.mimeType, data: target.data },
+                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                        ],
+                        aspectRatio
+                    });
+
+                    interface GenerateImageResponse {
+                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+                    }
+                    const data = result.data as GenerateImageResponse;
+
+                    if (data.images?.[0]?.bytesBase64Encoded) {
+                        const mimeType = data.images[0].mimeType || 'image/png';
+                        return {
+                            id: crypto.randomUUID(),
+                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Individual Batch Remix Error:", error);
+                    // Return null to indicate failure but allow others to proceed
+                    return null;
                 }
-
-                const result = await generateImage({
-                    prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                    images: [
-                        { mimeType: target.mimeType, data: target.data },
-                        { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                    ],
-                    aspectRatio
-                });
-
-                interface GenerateImageResponse {
-                    images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-                }
-                const data = result.data as GenerateImageResponse;
-
-                if (data.images?.[0]?.bytesBase64Encoded) {
-                    const mimeType = data.images[0].mimeType || 'image/png';
-                    return {
-                        id: crypto.randomUUID(),
-                        url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                        prompt: `Batch Style: ${options.prompt || "Restyle"}`
-                    };
-                }
-            } catch (error) {
-                console.error("Individual Batch Remix Error:", error);
-                // Return null to indicate failure but allow others to proceed
-                return null;
-            }
-        });
-
-        // Wait for all requests to complete
-        const settledResults = await Promise.all(promises);
-
-        // Filter out failures (nulls)
-        settledResults.forEach(res => {
-            if (res) results.push(res);
-        });
-
-        return results;
-                return null;
             });
 
             const results = await Promise.all(promises);
