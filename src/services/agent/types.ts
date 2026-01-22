@@ -273,7 +273,7 @@ export interface AgentResponse {
 }
 
 export type AgentProgressCallback = (event: {
-    type: 'thought' | 'tool' | 'token' | 'usage';
+    type: 'thought' | 'tool' | 'token' | 'usage' | 'tool_result';
     content: string;
     toolName?: string;
     usage?: {
