@@ -39,6 +39,21 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
+vi.mock('@/config/env', () => ({
+    env: {
+        VITE_API_KEY: 'mock-key',
+        apiKey: 'mock-key'
+    }
+}));
+
+vi.mock('../billing/TokenUsageService', () => ({
+    TokenUsageService: {
+        checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(undefined),
+        trackUsage: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
 describe('Voice Interface QA', () => {
     let service: FirebaseAIService;
 

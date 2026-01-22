@@ -304,7 +304,19 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
     }
 
     if (!certified) {
-        return toolError(`Certification failed: ${tinMessage}`, 'CERTIFICATION_FAILED');
+        return {
+            success: false,
+            error: `Certification failed: ${tinMessage}`,
+            message: `Certification failed: ${tinMessage}`,
+            data: {
+                form_type: formType,
+                tin_valid: tinValid,
+                payout_status: payoutStatus,
+                tin_message: tinMessage,
+                certified: certified,
+                withholding_rate: isUsPerson ? 0 : 30
+            }
+        };
     }
 
     return {
@@ -425,12 +437,23 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
         status = 'FAIL';
     }
 
-    return {
+    const result = {
         status,
         errors,
         warnings,
         engine: 'JS Robust Check'
     };
+
+    if (status === 'FAIL') {
+        return {
+            success: false,
+            error: `QC Failed: ${errors.join(', ')}`,
+            message: `QC Failed: ${errors.join(', ')}`,
+            data: result
+        };
+    }
+
+    return result;
 });
 
 
