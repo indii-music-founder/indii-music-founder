@@ -17,3 +17,7 @@
 ## 2026-06-15 - [JSON Safety Guardrails]
 **Learning:** Mutations can produce valid JS objects (like Arrays or Circular References) that are invalid as Agent parameters (which must be strictly Objects and Serializable). Standard checks for truthiness or `typeof object` are insufficient.
 **Action:** Implemented strict `Array.isArray()` checks and `JSON.stringify()` serialization tests in `EvolutionEngine` to prevent non-serializable or malformed agents from entering the persistent gene pool.
+
+## 2026-06-15 - [Persistence of Infinite Intelligence]
+**Learning:** Agents attempting to achieve "God Mode" (Fitness = Infinity) are correctly ranked in-memory, but `JSON.stringify(Infinity)` yields `null`. This means "Superintelligent" agents are silently lobotomized (Fitness -> 0) upon database persistence, causing a catastrophic loss of the best genetic material.
+**Action:** Implemented "The Icarus Check" to verify in-memory handling. For persistence, a custom serializer/transformer MUST be used to convert `Infinity` to a special string (e.g., "INF") or a safe maximum number before saving to JSON-based storage (Firestore).
