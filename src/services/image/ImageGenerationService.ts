@@ -1,6 +1,6 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { functions, functionsWest1 } from '@/services/firebase';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
@@ -102,7 +102,7 @@ export class ImageGenerationService {
         }
 
         try {
-            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+            const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
@@ -225,7 +225,7 @@ export class ImageGenerationService {
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
             // Use Cloud Function for image generation (properly uses REST API)
-            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+            const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const result = await generateImage({
                 prompt: `Blend these two images together. Content reference should define the subject/composition. Style reference should define the artistic style, colors, and mood. ${options.prompt || 'Create a cohesive fusion.'}`,
@@ -281,30 +281,7 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        // Bolt Optimization: Run requests in parallel to reduce total latency
-        // Use Cloud Function for image generation (properly uses REST API)
-        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-        // Bolt Optimization: Parallelize generation requests
-        try {
-            const promises = options.targetImages.map(async (target) => {
-                try {
-                    // Determine aspect ratio based on target image dimensions
-                    let aspectRatio = '1:1';
-                    if (target.width && target.height) {
-                        if (target.width > target.height * 1.2) aspectRatio = '16:9';
-                        else if (target.height > target.width * 1.2) aspectRatio = '9:16';
-                    }
-
-                    const result = await generateImage({
-                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                        images: [
-                            { mimeType: target.mimeType, data: target.data },
-                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                        ],
-                        aspectRatio
-                    });
-        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+        const generateImage = httpsCallable(functions, 'generateImageV3');
 
         // Bolt Optimization: Run requests in parallel to reduce total latency
         const promises = options.targetImages.map(async (target) => {
@@ -330,49 +307,14 @@ export class ImageGenerationService {
                 }
                 const data = result.data as GenerateImageResponse;
 
-                    interface GenerateImageResponse {
-                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-                    }
-                    const data = result.data as GenerateImageResponse;
-
-                    if (data.images?.[0]?.bytesBase64Encoded) {
-                        const mimeType = data.images[0].mimeType || 'image/png';
-                        return {
-                            id: crypto.randomUUID(),
-                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
-                        };
-                    }
-                    return null;
-                } catch (error) {
-                    console.error("Individual Batch Remix Error:", error);
-                    // Return null to indicate failure but allow others to proceed
-                    return null;
+                if (data.images?.[0]?.bytesBase64Encoded) {
+                    const mimeType = data.images[0].mimeType || 'image/png';
+                    return {
+                        id: crypto.randomUUID(),
+                        url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                        prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                    };
                 }
-            });
-
-            const results = await Promise.all(promises);
-            // Filter out failures (nulls)
-            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
-
-        } catch (e) {
-            console.error("Batch Remix Error:", e);
-            throw e;
-        }
-                return null;
-            } catch (error) {
-                console.error("Individual Batch Remix Error:", error);
-                // Return null to indicate failure but allow others to proceed
-            });
-
-            const results = await Promise.all(promises);
-            // Filter out failures (nulls)
-            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
-
-        } catch (e) {
-            console.error("Batch Remix Error:", e);
-            throw e;
-        }
                 return null;
             } catch (error) {
                 console.error("Individual Batch Remix Error:", error);
@@ -380,11 +322,6 @@ export class ImageGenerationService {
             }
         });
 
-        // Wait for all requests to complete
-        const settledResults = await Promise.all(promises);
-
-        // Filter out failures (nulls)
-        return settledResults.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
         const settledResults = await Promise.all(promises);
 
         // Filter out failures (nulls) and cast to correct return type

@@ -2,6 +2,7 @@ import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
 import { MODEL_PRICING } from '@/core/config/ai-models';
+import { cleanFirestoreData } from '@/services/utils/firebase';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
@@ -45,7 +46,7 @@ export class TraceService {
                 }
             };
 
-            await setDoc(doc(db, this.COLLECTION, traceId), trace);
+            await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
             return traceId;
         } catch (error) {
             console.error('[TraceService] Failed to start trace:', error);
@@ -109,9 +110,9 @@ export class TraceService {
         const ref = doc(db, this.COLLECTION, traceId);
 
         try {
-            await updateDoc(ref, {
+            await updateDoc(ref, cleanFirestoreData({
                 steps: arrayUnion(step)
-            });
+            }));
 
             // If we have usage, also update the total trace usage
             if (usage) {
@@ -124,14 +125,14 @@ export class TraceService {
                     estimatedCost: 0
                 };
 
-                await updateDoc(ref, {
+                await updateDoc(ref, cleanFirestoreData({
                     totalUsage: {
                         promptTokens: totalUsage.promptTokens + (usage.promptTokens || 0),
                         candidatesTokens: totalUsage.candidatesTokens + (usage.candidatesTokens || 0),
                         totalTokens: totalUsage.totalTokens + (usage.totalTokens || 0),
                         estimatedCost: (totalUsage.estimatedCost || 0) + (usage.estimatedCost || 0)
                     }
-                });
+                }));
             }
         } catch (error) {
             console.error(`[TraceService] Failed to add step with usage to trace ${traceId}:`, error);
@@ -154,11 +155,11 @@ export class TraceService {
         const ref = doc(db, this.COLLECTION, traceId);
 
         try {
-            await updateDoc(ref, {
+            await updateDoc(ref, cleanFirestoreData({
                 status: 'completed',
                 endTime: serverTimestamp(),
                 ...(output ? { output } : {})
-            });
+            }));
         } catch (error) {
             console.error(`[TraceService] Failed to complete trace ${traceId}:`, error);
         }
@@ -173,11 +174,11 @@ export class TraceService {
         const ref = doc(db, this.COLLECTION, traceId);
 
         try {
-            await updateDoc(ref, {
+            await updateDoc(ref, cleanFirestoreData({
                 status: 'failed',
                 endTime: serverTimestamp(),
                 error
-            });
+            }));
         } catch (e) {
             console.error(`[TraceService] Failed to fail trace ${traceId}:`, e);
         }
