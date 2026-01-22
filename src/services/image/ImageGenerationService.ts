@@ -130,10 +130,39 @@ export class ImageGenerationService {
             for (const img of data.images) {
                 if (img.bytesBase64Encoded) {
                     const mimeType = img.mimeType || 'image/png';
-                    const url = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                    const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                    const id = crypto.randomUUID();
+
+                    let finalUrl = dataUri;
+
+                    try {
+                        const { useStore } = await import('@/core/store');
+                        const userId = useStore.getState().userProfile?.id;
+
+                        if (userId) {
+                            const { CloudStorageService } = await import('@/services/CloudStorageService');
+                            const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                            finalUrl = saved.url;
+                        }
+                    } catch (e) {
+                        console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                        try {
+                            const { CloudStorageService } = await import('@/services/CloudStorageService');
+                            // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
+                            const compressed = await CloudStorageService.compressImage(dataUri, {
+                                maxWidth: 512,
+                                maxHeight: 512,
+                                quality: 0.6
+                            });
+                            finalUrl = compressed.dataUri;
+                        } catch (compressionError) {
+                            console.warn("Compression failed, using original size:", compressionError);
+                        }
+                    }
+
                     results.push({
-                        id: crypto.randomUUID(),
-                        url,
+                        id,
+                        url: finalUrl,
                         prompt: options.prompt
                     });
                 }

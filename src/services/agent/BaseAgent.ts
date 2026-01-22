@@ -697,6 +697,13 @@ ${task}
                     // Update prompt with tool result for next iteration
                     fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
 
+                    // Emit tool result for UI/Persistence
+                    onProgress?.({
+                        type: 'tool_result',
+                        toolName: name,
+                        content: outputText
+                    });
+
                     if (name === 'speak') {
                         // Keep going - don't let speak terminate the agent turn
                         continue;

@@ -15,7 +15,7 @@ export interface AgentThought {
     id: string;
     text: string;
     timestamp: number;
-    type?: 'tool' | 'logic' | 'error';
+    type?: 'tool' | 'logic' | 'error' | 'tool_result';
     toolName?: string;
 }
 
