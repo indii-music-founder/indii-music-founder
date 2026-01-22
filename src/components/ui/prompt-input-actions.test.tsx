@@ -90,6 +90,7 @@ describe('PromptInput Interaction', () => {
     const tooltipText = "Send Message"
     const existingLabel = "Submit Prompt"
 
+  it('PromptInputAction applies tooltip as aria-label to child button', () => {
     render(
       <PromptInput>
         <PromptInputTextarea />
@@ -99,6 +100,9 @@ describe('PromptInput Interaction', () => {
                     Icon
                 </button>
             </PromptInputAction>
+          <PromptInputAction tooltip="Run command">
+            <button data-testid="icon-only-btn">Icon</button>
+          </PromptInputAction>
         </PromptInputActions>
       </PromptInput>
     )
@@ -107,5 +111,7 @@ describe('PromptInput Interaction', () => {
 
     // Should keep the explicit label
     expect(sendBtn).toHaveAttribute('aria-label', existingLabel)
+    const btn = screen.getByTestId('icon-only-btn')
+    expect(btn).toHaveAttribute('aria-label', 'Run command')
   })
 })

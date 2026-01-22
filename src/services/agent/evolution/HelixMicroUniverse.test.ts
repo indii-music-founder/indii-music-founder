@@ -97,6 +97,14 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     expect(survivor2.id).toBe('agent-2'); // Beta
     expect(survivor2.fitness).toBe(0.8);
 
+    // Helix: Verify Elites were NOT mutated (Gene Preservation)
+    // The mutation function should NOT have been called for these agents
+    mockMutationFn.mock.calls.forEach(call => {
+        const gene = call[0] as AgentGene;
+        expect(gene.id).not.toBe('agent-1');
+        expect(gene.id).not.toBe('agent-2');
+    });
+
     // Check Offspring (Index 2)
     const offspring = nextGen[2];
 
@@ -162,11 +170,10 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     expect(offspring.systemPrompt).toBe('VALID_MUTATION');
 
     // Verify Retries happened
-    // Should be called at least 3 times (Fail, Fail, Success)
-    // Actually:
+    // Should be called EXACTLY 3 times (Fail, Fail, Success)
     // 1. mockRejectedValueOnce -> throws error inside mutationFn
     // 2. mockResolvedValueOnce -> returns empty prompt -> Caught by "Empty Soul" check in Engine
     // 3. mockResolvedValue -> returns valid
-    expect(mockMutationFn.mock.calls.length).toBeGreaterThanOrEqual(3);
+    expect(mockMutationFn).toHaveBeenCalledTimes(3);
   });
 });
