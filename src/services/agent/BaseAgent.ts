@@ -587,7 +587,7 @@ ${task}
 
         const accumulatedResponse = '';
         let iterations = 0;
-        const MAX_ITERATIONS = 5;
+        const MAX_ITERATIONS = 15;
         const toolCalls: any[] = [];
         let lastToolResult: any = undefined;
 

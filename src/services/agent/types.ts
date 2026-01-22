@@ -107,7 +107,7 @@ export function isHubAgent(agentId: string): boolean {
  * Checks if an agent is a spoke (specialist).
  */
 export function isSpokeAgent(agentId: string): boolean {
-    return SPOKE_AGENT_IDS.includes(agentId as ValidAgentId);
+    return (SPOKE_AGENT_IDS as readonly string[]).includes(agentId);
 }
 
 /**
