@@ -309,16 +309,7 @@ export default function App() {
                             </ErrorBoundary>
                         </div>
 
-                        {showChrome && (
-                            <div className="flex-shrink-0 z-50 relative">
-                                <ErrorBoundary>
-                                    <ChatOverlayWrapper />
-                                    <div className="relative z-[101]">
-                                        <CommandBar />
-                                    </div>
-                                </ErrorBoundary>
-                            </div>
-                        )}
+                        {showChrome && <ChatOverlayWrapper />}
                     </main>
 
                     {/* Right Panel - Hidden for standalone modules and mobile */}
@@ -353,6 +344,13 @@ export default function App() {
 
                     {/* Industrial Transmission Monitor */}
                     <TransmissionMonitor />
+
+                    {/* Global Command Bar (Floating Pill) */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <CommandBar />
+                        </ErrorBoundary>
+                    )}
                 </div>
             </ToastProvider>
         </VoiceProvider>

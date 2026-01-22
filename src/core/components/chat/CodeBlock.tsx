@@ -29,6 +29,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, ...pr
             <div className="absolute right-2 top-2 z-10 opacity-0 group-hover/code:opacity-100 focus-within:opacity-100 transition-opacity">
                 <button
                     onClick={handleCopy}
+                    data-testid="copy-code-btn"
                     className={cn(
                         "flex items-center gap-1.5 px-2 py-1.5 rounded-md text-xs font-medium transition-all backdrop-blur-sm",
                         isCopied

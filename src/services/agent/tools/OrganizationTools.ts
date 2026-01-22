@@ -28,9 +28,9 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
-        const organizations = toolContext
+        const organizations = (toolContext
             ? toolContext.get('organizations')
-            : store.organizations;
+            : store.organizations) || [];
 
         const org = organizations.find(o => o.id === args.orgId);
 
@@ -94,10 +94,9 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
     }),
 
     get_organization_details: wrapTool('get_organization_details', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        // Phase 3.6: Read state through execution context when available
-        const organizations = toolContext
+        const organizations = (toolContext
             ? toolContext.get('organizations')
-            : useStore.getState().organizations;
+            : useStore.getState().organizations) || [];
 
         const currentOrganizationId = toolContext
             ? toolContext.get('currentOrganizationId')
