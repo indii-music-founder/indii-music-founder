@@ -210,6 +210,7 @@ export class FirebaseAIService {
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
                 }
 
                 const modelName = this.getModelName(modelOverride);
@@ -341,6 +342,7 @@ export class FirebaseAIService {
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
                 }
 
                 const modelName = this.getModelName(modelOverride);
