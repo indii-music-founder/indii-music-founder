@@ -41,22 +41,9 @@ describe('PromptInput Interaction', () => {
     rerender(<TestComponent isLoading={true} />)
 
     // 4. Assert disabled state
-    // PromptInput passes disabled=true via context to PromptInputAction
-    // PromptInputAction passes disabled=true to TooltipTrigger
-    // TooltipTrigger (asChild) passes disabled=true to the button
     expect(sendBtn).toBeDisabled()
 
-    // 5. Try to click again
-    // userEvent.click respects disabled attribute and should not trigger onClick.
-    // However, it might throw if pointer-events: none is applied.
-    // If we just want to ensure it's disabled, the above assertion is good.
-    // But let's try to force a click (or check that userEvent ignores it).
-    // To be safe and avoid test errors on "unable to click", we can use fireEvent or try/catch user.click,
-    // or just rely on .toBeDisabled().
-    // But Click's philosophy: "A button that doesn't react is a broken button" -> well, here it SHOULD NOT react.
-    // "Verify the UI returns to a "ready" state after the action completes" -> we can test going back to isLoading=false.
-
-    // Let's verify it goes back to ready.
+    // 5. Verify the UI returns to a "ready" state
     rerender(<TestComponent isLoading={false} />)
     expect(sendBtn).not.toBeDisabled()
 
@@ -82,7 +69,6 @@ describe('PromptInput Interaction', () => {
 
     const sendBtn = screen.getByTestId('send-btn')
 
-    // This is what we want to achieve.
     expect(sendBtn).toHaveAttribute('aria-label', tooltipText)
   })
 
@@ -94,6 +80,11 @@ describe('PromptInput Interaction', () => {
       <PromptInput>
         <PromptInputTextarea />
         <PromptInputActions>
+            <PromptInputAction tooltip={tooltipText}>
+                <button aria-label={existingLabel} data-testid="send-btn-explicit">
+                    Icon
+                </button>
+            </PromptInputAction>
           <PromptInputAction tooltip={tooltipText}>
             <button aria-label={existingLabel} data-testid="send-btn-explicit">
               Icon
