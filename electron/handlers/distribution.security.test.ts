@@ -182,4 +182,19 @@ describe('🛡️ Shield: Distribution Security Test', () => {
         const expectedPath = path.resolve('/mock/tmp/indiiOS-releases', releaseId, 'metadata.xml');
         expect(mocks.fs.writeFile).toHaveBeenCalledWith(expectedPath, '<xml></xml>', 'utf-8');
     });
+
+    it('should BLOCK Path Traversal in package-itmsp', async () => {
+        const maliciousReleaseId = '../../../../etc';
+
+        const result = await invoke('distribution:package-itmsp', maliciousReleaseId);
+
+        // Should return failure
+        expect(result.success).toBe(false);
+        // Should catch validation error
+        // Note: We might need to adjust the error message expectation once we implement the fix
+        // For now, just checking success: false is good enough to prove it fails (currently it will likely succeed or fail differently)
+
+        // CRITICAL: Python script should NOT be executed with malicious path
+        expect(mocks.pythonBridge.runScript).not.toHaveBeenCalled();
+    });
 });
