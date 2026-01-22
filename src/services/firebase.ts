@@ -85,7 +85,8 @@ export const db = initializeFirestore(app, {
     })
 });
 export const storage = getStorage(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app); // Default (us-central1)
+export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
 
 // Use initializeAuth to ensure persistence is correctly configured for Electron
 // This fixes potential hangs where default persistence (IndexedDB) might fail silently

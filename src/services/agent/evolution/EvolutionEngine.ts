@@ -94,11 +94,8 @@ export class EvolutionEngine {
         try {
           offspring = structuredClone(offspring);
         } catch (e) {
-          // Fallback for environments without structuredClone or non-clonable objects
-          // Helix: Reference Integrity Check
-          if (offspring === parent1 || offspring === parent2) {
-            offspring = JSON.parse(JSON.stringify(offspring));
-          }
+          // Helix: Robust fallback for non-clonable objects (e.g. methods attached to genes)
+          offspring = JSON.parse(JSON.stringify(offspring));
         }
 
         // Mutation
