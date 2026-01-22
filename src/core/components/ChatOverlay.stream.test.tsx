@@ -26,6 +26,11 @@ vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: { speak: vi.fn(), stopSpeaking: vi.fn() }
 }));
 
+// Mock Toast Context
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({ toast: vi.fn() })
+}));
+
 // Mock Virtuoso with scrolling controls
 vi.mock('react-virtuoso', async () => {
     const React = await import('react');
@@ -106,7 +111,12 @@ const INITIAL_STATE = {
     createSession: vi.fn(),
     toggleAgentWindow: vi.fn(),
     isAgentProcessing: false,
-    chatChannel: 'indii'
+    chatChannel: 'indii',
+    agentWindowSize: { width: 400, height: 600 },
+    setAgentWindowSize: vi.fn(),
+    isCommandBarDetached: false,
+    setCommandBarDetached: vi.fn(),
+    setChatChannel: vi.fn()
 };
 
 describe('👁️ Pixel: Chat Stream Verification', () => {
@@ -225,7 +235,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         expect(scrollToIndexMock).not.toHaveBeenCalled();
 
         // Expect "Resume Feed" button to appear
-        expect(screen.getByText(/Resume Feed/i)).toBeInTheDocument();
+        expect(screen.getByTitle('Resume Feed')).toBeInTheDocument();
     });
 
     it('Scenario 5: Verifies "Resume Feed" re-enables Auto-Scroll', async () => {
@@ -246,7 +256,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         });
         rerender(<ChatOverlay onClose={vi.fn()} />);
 
-        const resumeBtn = screen.getByText(/Resume Feed/i);
+        const resumeBtn = screen.getByTitle('Resume Feed');
         expect(resumeBtn).toBeInTheDocument();
 
         // Click Resume
@@ -268,7 +278,7 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         // clicking sets isAutoScrolling(true).
 
         rerender(<ChatOverlay onClose={vi.fn()} />);
-        expect(screen.queryByText(/Resume Feed/i)).not.toBeInTheDocument();
+        expect(screen.queryByTitle('Resume Feed')).not.toBeInTheDocument();
     });
 
     it('Scenario 6: Handles Thought Chain updates correctly', () => {

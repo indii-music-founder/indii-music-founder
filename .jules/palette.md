@@ -22,3 +22,6 @@
 ## 2025-05-26 - Auto-Labeling Tooltip Triggers
 **Learning:** Icon-only buttons wrapped in Tooltips often lack `aria-label`, making them inaccessible. Radix UI's `TooltipTrigger` with `asChild` merges props, allowing us to automatically inject `aria-label` from the tooltip text.
 **Action:** Updated `PromptInputAction` to pass `aria-label={tooltip}` to `TooltipTrigger` when tooltip is a string, ensuring all action buttons are automatically labeled without extra code.
+## 2026-01-22 - PromptInputAction Accessibility
+**Learning:** Icon-only buttons wrapped in `PromptInputAction` lacked accessible names because the tooltip text wasn't automatically applied as an `aria-label`.
+**Action:** Updated `PromptInputAction` to automatically pass the tooltip string as `aria-label` to the trigger, ensuring default accessibility while allowing overrides.

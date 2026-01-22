@@ -93,7 +93,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         const triggerSpy = vi.spyOn(service as any, 'triggerVideoGeneration');
         expect(triggerSpy).toHaveBeenCalledTimes(1);
 
-        const callArgs = triggerSpy.mock.calls[0][0];
+        const callArgs = triggerSpy.mock.calls[0][0] as any;
         expect(callArgs.prompt).toContain('A cinematic shot of a cyberpunk city');
         expect(callArgs.prompt).not.toContain('Calculated temporal context');
 
@@ -145,7 +145,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         await service.generateVideo(options);
 
         const triggerSpy = vi.spyOn(service as any, 'triggerVideoGeneration');
-        const callArgs = triggerSpy.mock.calls[0][0];
+        const callArgs = triggerSpy.mock.calls[0][0] as any;
 
         expect(callArgs.prompt).toContain('cinematic pan camera movement');
         expect(callArgs.prompt).toContain('high dynamic motion');
