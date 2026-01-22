@@ -187,7 +187,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
                 return toolSuccess({
                     count: results.length,
-                    image_ids: results.map(r => r.id)
+                    image_ids: results.map(r => r.id),
+                    urls: results.map(r => r.url)
                 }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
             }
             return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
