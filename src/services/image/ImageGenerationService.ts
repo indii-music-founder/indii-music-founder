@@ -130,10 +130,39 @@ export class ImageGenerationService {
             for (const img of data.images) {
                 if (img.bytesBase64Encoded) {
                     const mimeType = img.mimeType || 'image/png';
-                    const url = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                    const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                    const id = crypto.randomUUID();
+
+                    let finalUrl = dataUri;
+
+                    try {
+                        const { useStore } = await import('@/core/store');
+                        const userId = useStore.getState().userProfile?.id;
+
+                        if (userId) {
+                            const { CloudStorageService } = await import('@/services/CloudStorageService');
+                            const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                            finalUrl = saved.url;
+                        }
+                    } catch (e) {
+                        console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                        try {
+                            const { CloudStorageService } = await import('@/services/CloudStorageService');
+                            // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
+                            const compressed = await CloudStorageService.compressImage(dataUri, {
+                                maxWidth: 512,
+                                maxHeight: 512,
+                                quality: 0.6
+                            });
+                            finalUrl = compressed.dataUri;
+                        } catch (compressionError) {
+                            console.warn("Compression failed, using original size:", compressionError);
+                        }
+                    }
+
                     results.push({
-                        id: crypto.randomUUID(),
-                        url,
+                        id,
+                        url: finalUrl,
                         prompt: options.prompt
                     });
                 }
@@ -252,21 +281,11 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        // Bolt Optimization: Run requests in parallel to reduce total latency
-        const results: { id: string, url: string, prompt: string }[] = [];
-
-        // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
-        // Create promises for each target image
+        // Bolt Optimization: Run requests in parallel to reduce total latency
         const promises = options.targetImages.map(async (target) => {
             try {
-        // Use Cloud Function for image generation (properly uses REST API)
-        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-        // Bolt Optimization: Parallelize generation requests
-        try {
-            const promises = options.targetImages.map(async (target) => {
                 // Determine aspect ratio based on target image dimensions
                 let aspectRatio = '1:1';
                 if (target.width && target.height) {
@@ -296,33 +315,17 @@ export class ImageGenerationService {
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
                     };
                 }
+                return null;
             } catch (error) {
                 console.error("Individual Batch Remix Error:", error);
-                // Return null to indicate failure but allow others to proceed
                 return null;
             }
         });
 
-        // Wait for all requests to complete
         const settledResults = await Promise.all(promises);
 
-        // Filter out failures (nulls)
-        settledResults.forEach(res => {
-            if (res) results.push(res);
-        });
-
-        return results;
-                return null;
-            });
-
-            const results = await Promise.all(promises);
-            // Filter out failures (nulls)
-            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
-
-        } catch (e) {
-            console.error("Batch Remix Error:", e);
-            throw e;
-        }
+        // Filter out failures (nulls) and cast to correct return type
+        return (settledResults.filter(r => r !== null) as { id: string, url: string, prompt: string }[]);
     }
 
     /**
