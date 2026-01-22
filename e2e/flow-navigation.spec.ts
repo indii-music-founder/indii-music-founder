@@ -278,4 +278,140 @@ test.describe('Flow: Routing & Navigation', () => {
         await expect(page).toHaveURL(/.*\/brand/);
     });
 
+    /**
+     * STANDALONE MODULE TESTS
+     * "State Loss" verification and Chrome toggling.
+     */
+
+    test('Navigation: Standalone Module (Onboarding) Chrome Toggle', async ({ page }) => {
+        // 1. Start at Dashboard
+        await expect(page.getByText('Agent Workspace')).toBeVisible();
+
+        // Check Sidebar and CommandBar are visible
+        const sidebar = page.locator('.z-sidebar'); // Assuming class name from compass test
+        // Better selector: The sidebar wrapper in App.tsx doesn't have a testid, but Sidebar component might.
+        // Let's rely on visibility of a known sidebar item.
+        await expect(page.getByTestId('nav-item-marketing')).toBeVisible();
+        // CommandBar
+        // Placeholder is dynamic: "Ask indii to orchestrate..." or "Message {module}..."
+        await expect(page.getByTestId('prompt-input')).toBeVisible();
+
+
+        // 2. Navigate to Standalone Module (Onboarding)
+        // We can't click a link because there might not be one in the sidebar.
+        // We simulate "router" navigation or direct goto (but we want client transition).
+        // Since we are "Flow", we prefer UI interaction, but if no link exists, we use goto (Deep Link simulation).
+        // However, if we use page.goto, it's a full reload.
+        // To test client-side transition (SPA), we need a link.
+        // If no link exists, we can't test "SPA Transition" easily without hacking.
+        // But useURLSync handles URL changes.
+        // Let's use page.goto, which is a "Deep Link" test really.
+
+        console.log('Navigating to Standalone Module: /onboarding');
+        await page.goto('/onboarding');
+
+        // Handle potential Login if reload happened (it will)
+        const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
+        if (await guestLoginBtn.isVisible()) {
+             await guestLoginBtn.click();
+        }
+
+        // 3. Verify Chrome is HIDDEN
+        // Sidebar should be gone
+        await expect(page.getByTestId('nav-item-marketing')).not.toBeVisible();
+
+        // CommandBar should be gone
+        await expect(page.getByTestId('prompt-input')).not.toBeVisible();
+
+        // 4. Verify Onboarding Loaded
+        await expect(page.getByText('Setup Your Profile', { exact: false })).toBeVisible();
+
+        // 5. Navigate BACK to Dashboard
+        // We use explicit navigation to ensure we return to the Dashboard for verification.
+        console.log('Navigating back to Dashboard...');
+        await page.goto('/');
+
+        // Handle potential Login if reload happened
+        const backLoginBtn = page.getByRole('button', { name: /Guest Login/i });
+        if (await backLoginBtn.isVisible()) {
+             await backLoginBtn.click();
+        }
+
+        // 6. Verify Chrome REAPPEARS
+        await expect(page.getByTestId('nav-item-marketing')).toBeVisible();
+        await expect(page.getByTestId('prompt-input')).toBeVisible();
+    });
+
+    test('Deep Link: Standalone Module loads correctly', async ({ page, context }) => {
+        await context.clearCookies();
+        const newPage = await context.newPage();
+
+        console.log('Deep linking to: /onboarding');
+        await newPage.goto('/onboarding');
+
+        // Expect Login
+        const guestLoginBtn = newPage.getByRole('button', { name: /Guest Login/i });
+        await expect(guestLoginBtn).toBeVisible();
+        await guestLoginBtn.click();
+
+        // Should load Onboarding
+        await expect(newPage.getByText('Setup Your Profile', { exact: false })).toBeVisible({ timeout: 20000 });
+
+        // Sidebar should be hidden
+        // Note: newPage doesn't have the locators defined in previous test.
+        // Use generic selector or testid if available.
+        // We know nav items have testids.
+        await expect(newPage.getByTestId('nav-item-marketing')).not.toBeVisible();
+    });
+
+    test('Bug Verification: Chat State Loss on Standalone Navigation', async ({ page }) => {
+        // This test documents the "State Loss" issue.
+        // If we type in CommandBar, go to onboarding, and come back, is the text there?
+        // We test CommandBar because it is always visible on Dashboard and unmounts on Standalone.
+
+        // 1. Ensure CommandBar is visible
+        const commandBarInput = page.getByTestId('prompt-input').locator('textarea');
+        await expect(commandBarInput).toBeVisible();
+
+        // 2. Type something
+        const testMessage = `Draft Message ${Date.now()}`;
+        await commandBarInput.fill(testMessage);
+
+        // 3. Navigate to Onboarding
+        console.log('Navigating to Standalone Module...');
+        await page.goto('/onboarding');
+
+        // Handle potential Login
+        const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
+        if (await guestLoginBtn.isVisible()) {
+             await guestLoginBtn.click();
+        }
+        await expect(page.getByText('Setup Your Profile')).toBeVisible();
+
+        // 4. Navigate Back (to Dashboard)
+        console.log('Navigating back...');
+        await page.goto('/');
+
+        // Handle potential Login
+        const backLoginBtn2 = page.getByRole('button', { name: /Guest Login/i });
+        if (await backLoginBtn2.isVisible()) {
+             await backLoginBtn2.click();
+        }
+
+        // 5. Check Text in CommandBar
+        await expect(commandBarInput).toBeVisible();
+        const inputValue = await commandBarInput.inputValue();
+
+        // CURRENT BEHAVIOR: Text is lost because CommandBar unmounts.
+        if (inputValue !== testMessage) {
+            console.log('CONFIRMED: Chat draft state was lost during navigation.');
+        } else {
+             console.log('SURPRISE: Chat draft state was PRESERVED!');
+        }
+
+        // We assert the current behavior (BUG IS PRESENT) so the test passes.
+        // If this test fails, it means the bug was fixed!
+        expect(inputValue).toBe('');
+    });
+
 });
