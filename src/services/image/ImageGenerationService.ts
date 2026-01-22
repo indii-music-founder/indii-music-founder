@@ -281,21 +281,11 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        // Bolt Optimization: Run requests in parallel to reduce total latency
-        const results: { id: string, url: string, prompt: string }[] = [];
-
-        // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
-        // Create promises for each target image
+        // Bolt Optimization: Run requests in parallel to reduce total latency
         const promises = options.targetImages.map(async (target) => {
             try {
-        // Use Cloud Function for image generation (properly uses REST API)
-        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
-
-        // Bolt Optimization: Parallelize generation requests
-        try {
-            const promises = options.targetImages.map(async (target) => {
                 // Determine aspect ratio based on target image dimensions
                 let aspectRatio = '1:1';
                 if (target.width && target.height) {
@@ -325,33 +315,17 @@ export class ImageGenerationService {
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
                     };
                 }
+                return null;
             } catch (error) {
                 console.error("Individual Batch Remix Error:", error);
-                // Return null to indicate failure but allow others to proceed
                 return null;
             }
         });
 
-        // Wait for all requests to complete
         const settledResults = await Promise.all(promises);
 
         // Filter out failures (nulls)
-        settledResults.forEach(res => {
-            if (res) results.push(res);
-        });
-
-        return results;
-                return null;
-            });
-
-            const results = await Promise.all(promises);
-            // Filter out failures (nulls)
-            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
-
-        } catch (e) {
-            console.error("Batch Remix Error:", e);
-            throw e;
-        }
+        return settledResults.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
     }
 
     /**
