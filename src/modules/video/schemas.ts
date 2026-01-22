@@ -4,6 +4,11 @@ export const VideoJobStatusSchema = z.enum([
     'idle', 'queued', 'processing', 'completed', 'failed', 'stitching'
 ]);
 
+export const SafetyRatingSchema = z.object({
+    category: z.string(),
+    threshold: z.string()
+});
+
 export const VideoResolutionSchema = z.enum([
     '1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'
 ]);

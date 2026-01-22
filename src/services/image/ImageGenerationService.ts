@@ -1,6 +1,6 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { functions } from '@/services/firebase';
+import { functions, functionsWest1 } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
@@ -102,7 +102,7 @@ export class ImageGenerationService {
         }
 
         try {
-            const generateImage = httpsCallable(functions, 'generateImageV3');
+            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
@@ -196,7 +196,7 @@ export class ImageGenerationService {
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
             // Use Cloud Function for image generation (properly uses REST API)
-            const generateImage = httpsCallable(functions, 'generateImageV3');
+            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
             const result = await generateImage({
                 prompt: `Blend these two images together. Content reference should define the subject/composition. Style reference should define the artistic style, colors, and mood. ${options.prompt || 'Create a cohesive fusion.'}`,
@@ -252,13 +252,12 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
-        const results: { id: string, url: string, prompt: string }[] = [];
-
         // Use Cloud Function for image generation (properly uses REST API)
-        const generateImage = httpsCallable(functions, 'generateImageV3');
+        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
+        // Bolt Optimization: Parallelize generation requests
         try {
-            for (const target of options.targetImages) {
+            const promises = options.targetImages.map(async (target) => {
                 // Determine aspect ratio based on target image dimensions
                 let aspectRatio = '1:1';
                 if (target.width && target.height) {
@@ -282,18 +281,23 @@ export class ImageGenerationService {
 
                 if (data.images?.[0]?.bytesBase64Encoded) {
                     const mimeType = data.images[0].mimeType || 'image/png';
-                    results.push({
+                    return {
                         id: crypto.randomUUID(),
                         url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
-                    });
+                    };
                 }
-            }
+                return null;
+            });
+
+            const results = await Promise.all(promises);
+            // Filter out failures (nulls)
+            return results.filter((r): r is { id: string, url: string, prompt: string } => r !== null);
+
         } catch (e) {
             console.error("Batch Remix Error:", e);
             throw e;
         }
-        return results;
     }
 
     /**

@@ -22,7 +22,57 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const chatChannel = useStore(state => state.chatChannel);
     const isCommandBarDetached = useStore(state => state.isCommandBarDetached);
     const setCommandBarDetached = useStore(state => state.setCommandBarDetached);
+    const windowSize = useStore(state => state.agentWindowSize);
+    const setAgentWindowSize = useStore(state => state.setAgentWindowSize);
+
     const dragControls = useDragControls();
+
+    // Resize State
+    const [localSize, setLocalSize] = useState(windowSize);
+    const isResizing = useRef(false);
+
+    // Sync local size when store changes (e.g. from another component or initialization)
+    useEffect(() => {
+        setLocalSize(windowSize);
+    }, [windowSize]);
+
+    const handleResize = useCallback((direction: string, e: React.PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        isResizing.current = true;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = localSize.width;
+        const startHeight = localSize.height;
+
+        const onPointerMove = (moveEvent: PointerEvent) => {
+            if (!isResizing.current) return;
+
+            const deltaX = moveEvent.clientX - startX;
+            const deltaY = moveEvent.clientY - startY;
+
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+
+            if (direction.includes('right')) newWidth = Math.max(300, startWidth + deltaX);
+            if (direction.includes('left')) newWidth = Math.max(300, startWidth - deltaX);
+            if (direction.includes('bottom')) newHeight = Math.max(400, startHeight + deltaY);
+            if (direction.includes('top')) newHeight = Math.max(400, startHeight - deltaY);
+
+            setLocalSize({ width: newWidth, height: newHeight });
+        };
+
+        const onPointerUp = () => {
+            isResizing.current = false;
+            setAgentWindowSize(localSize);
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+    }, [localSize, setAgentWindowSize]);
 
     // Derived state for active agent
     const activeAgentId = useStore(state => {
@@ -89,8 +139,31 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     dragControls={dragControls}
                     dragListener={false}
                     dragMomentum={false}
-                    className="fixed inset-0 md:inset-auto md:bottom-8 md:right-8 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-0 md:ring-1 ring-white/10"
+                    dragElastic={0}
+                    style={{
+                        width: localSize.width,
+                        height: localSize.height,
+                        bottom: 32,
+                        right: 32,
+                        position: 'fixed'
+                    }}
+                    className="bg-[#0c0c0e]/80 backdrop-blur-xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-0 md:ring-1 ring-white/10"
                 >
+                    {/* Resize Handles */}
+                    <div className="absolute inset-0 pointer-events-none z-50">
+                        {/* Edges */}
+                        <div onPointerDown={(e) => handleResize('top', e)} className="absolute top-0 left-8 right-8 h-2 cursor-ns-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('bottom', e)} className="absolute bottom-0 left-8 right-8 h-2 cursor-ns-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('left', e)} className="absolute left-0 top-8 bottom-8 w-2 cursor-ew-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('right', e)} className="absolute right-0 top-8 bottom-8 w-2 cursor-ew-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+
+                        {/* Corners */}
+                        <div onPointerDown={(e) => handleResize('top-left', e)} className="absolute top-0 left-0 w-8 h-8 cursor-nwse-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-tl-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('top-right', e)} className="absolute top-0 right-0 w-8 h-8 cursor-nesw-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-tr-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('bottom-left', e)} className="absolute bottom-0 left-0 w-8 h-8 cursor-nesw-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-bl-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('bottom-right', e)} className="absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-br-[2rem]" />
+                    </div>
+
                     {/* Header */}
                     <div
                         onPointerDown={(e) => dragControls.start(e)}
@@ -198,16 +271,16 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                         {!isAutoScrolling && messages.length > 0 && (
                             <motion.button
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 onClick={() => {
                                     setIsAutoScrolling(true);
                                     virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: 'smooth' });
                                 }}
-                                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-20 hover:bg-purple-500 transition-colors"
+                                className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95"
+                                title="Resume Feed"
                             >
-                                <RefreshCw size={12} />
-                                Resume Feed
+                                <RefreshCw size={18} />
                             </motion.button>
                         )}
                     </div>

@@ -9,6 +9,7 @@ import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { DDEX_CONFIG } from '@/core/config/ddex';
 import { StorageService } from '@/services/StorageService';
+import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
 
@@ -177,7 +178,8 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       throw new Error('Missing organization or user context');
     }
 
-    const path = `orgs/${activeOrg.id}/releases/pending/${Date.now()}_${file.name}`;
+    // Use a dedicated 'packaging' path to differentiate from analysis-only uploads
+    const path = `orgs/${activeOrg.id}/releases/packaging/${Date.now()}_${file.name}`;
 
     try {
       const url = await StorageService.uploadFileWithProgress(
@@ -327,12 +329,29 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
       });
 
       // Update status to validating
+      // Update status to complete
       await updateDoc(doc(db, 'ddexReleases', docRef.id), {
         status: 'metadata_complete',
         updatedAt: serverTimestamp()
       });
 
       setReleaseId(docRef.id);
+
+      // Trigger definitive packaging via the Publishing Department Agent
+      // This is the ONLY time music is packaged for distribution.
+      try {
+        await agentService.runAgent(
+          'publishing',
+          `Package the definitive assets for release ID: ${docRef.id}.
+          Audio URL: ${assets.audioFile?.url}
+          Cover Art URL: ${assets.coverArt?.url}`
+        );
+      } catch (agentError) {
+        console.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
+        // We don't fail the whole submission if the agent trigger fails,
+        // since the record is already saved.
+      }
+
       setCurrentStep('complete');
 
       return docRef.id;
