@@ -7,6 +7,7 @@ const mocks = vi.hoisted(() => {
     const mockGet = vi.fn();
     const mockDoc = vi.fn(() => ({
         set: mockSet,
+        create: mockSet,
         get: mockGet,
         update: mockSet
     }));
@@ -98,21 +99,25 @@ vi.mock('inngest/express', () => ({
 }));
 
 // Mock firebase-functions
-vi.mock('firebase-functions/v1', () => ({
-    runWith: vi.fn().mockReturnThis(),
-    https: {
-        onCall: vi.fn((handler) => handler),
-        onRequest: vi.fn((handler) => handler),
-        HttpsError: class extends Error {
-            code: string;
-            constructor(code: string, message: string) {
-                super(message);
-                this.code = code;
+vi.mock('firebase-functions/v1', () => {
+    const mockBuilder = {
+        region: vi.fn().mockReturnThis(),
+        runWith: vi.fn().mockReturnThis(),
+        https: {
+            onCall: vi.fn((handler) => handler),
+            onRequest: vi.fn((handler) => handler),
+            HttpsError: class extends Error {
+                code: string;
+                constructor(code: string, message: string) {
+                    super(message);
+                    this.code = code;
+                }
             }
-        }
-    },
-    config: vi.fn(() => ({}))
-}));
+        },
+        config: vi.fn(() => ({}))
+    };
+    return mockBuilder;
+});
 
 // Mock Stripe to prevent initialization error
 vi.mock('stripe', () => ({
