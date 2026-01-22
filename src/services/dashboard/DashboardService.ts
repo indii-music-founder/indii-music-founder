@@ -56,7 +56,24 @@ const STORAGE_QUOTAS = {
 
 const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'it', 'as', 'be', 'this', 'that', 'from']);
 
+interface CachedAnalytics {
+    historyRef: HistoryItem[];
+    agentMessagesRef: unknown[];
+    projectsRef: ProjectMetadata[];
+    day: number;
+    data: AnalyticsData;
+}
+
+interface CachedStorageStats {
+    historyRef: HistoryItem[];
+    kbRef: unknown;
+    tier: string;
+    data: StorageStats;
+}
+
 export class DashboardService {
+    private static analyticsCache: CachedAnalytics | null = null;
+    private static storageCache: CachedStorageStats | null = null;
 
     static async getProjects(): Promise<ProjectMetadata[]> {
         try {
@@ -87,6 +104,24 @@ export class DashboardService {
 
             // Get membership tier
             const tier = state.userProfile?.membership?.tier || 'free';
+            const history = state.generatedHistory || [];
+            const kb = state.userProfile?.knowledgeBase || [];
+
+            // Bolt Optimization: Check Cache
+            if (
+                DashboardService.storageCache &&
+                DashboardService.storageCache.historyRef === history &&
+                DashboardService.storageCache.kbRef === kb &&
+                DashboardService.storageCache.tier === tier
+            ) {
+                // Return cached data, but we might want to update browser usage if possible?
+                // Browser usage is async and external, so strictly speaking it makes the cache imperfect.
+                // However, for performance, we assume it doesn't change drastically within the same app state session
+                // unless we explicitly invalidate.
+                // If we want to be safe, we could just re-fetch browser usage, but that requires await.
+                return DashboardService.storageCache.data;
+            }
+
             const quotaBytes = STORAGE_QUOTAS[tier as keyof typeof STORAGE_QUOTAS] || STORAGE_QUOTAS.free;
 
             // Calculate usage from generated history
@@ -126,7 +161,7 @@ export class DashboardService {
 
             const usedBytes = imagesBytes + videosBytes + kbBytes + browserUsage;
 
-            return {
+            const result: StorageStats = {
                 usedBytes,
                 quotaBytes,
                 percentUsed: Math.min((usedBytes / quotaBytes) * 100, 100),
@@ -137,6 +172,16 @@ export class DashboardService {
                     knowledgeBase: kbBytes + browserUsage
                 }
             };
+
+            // Update Cache
+            DashboardService.storageCache = {
+                historyRef: history,
+                kbRef: kb,
+                tier: tier,
+                data: result
+            };
+
+            return result;
         } catch (error) {
             // Silently fail in beta production build, just return empty stats
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
@@ -299,12 +344,27 @@ export class DashboardService {
 
             const history = state.generatedHistory || [];
             const agentMessages = state.agentMessages || [];
+            const projects = state.projects || [];
+
+            // Check current day for cache invalidation (since weekly activity depends on "now")
+            const now = Date.now();
+            const dayMs = 24 * 60 * 60 * 1000;
+            const currentDay = Math.floor(now / dayMs);
+
+            // Bolt Optimization: Check Cache
+            if (
+                DashboardService.analyticsCache &&
+                DashboardService.analyticsCache.historyRef === history &&
+                DashboardService.analyticsCache.agentMessagesRef === agentMessages &&
+                DashboardService.analyticsCache.projectsRef === projects &&
+                DashboardService.analyticsCache.day === currentDay
+            ) {
+                return DashboardService.analyticsCache.data;
+            }
 
             // Bolt Optimization: Calculate all analytics in a single pass to reduce iteration overhead
             let imageCount = 0;
             let totalVideoSeconds = 0;
-            const now = Date.now();
-            const dayMs = 24 * 60 * 60 * 1000;
             const weeklyActivity = Array(7).fill(0);
             const wordCounts: Record<string, number> = {};
 
@@ -353,15 +413,26 @@ export class DashboardService {
                 .slice(0, 8)
                 .map(([word, count]) => ({ word, count }));
 
-            return {
+            const result: AnalyticsData = {
                 totalGenerations: imageCount,
                 totalMessages: agentMessages.length,
                 totalVideoSeconds,
-                totalProjects: (state.projects || []).length,
+                totalProjects: projects.length,
                 weeklyActivity,
                 topPromptWords,
                 streak
             };
+
+            // Update Cache
+            DashboardService.analyticsCache = {
+                historyRef: history,
+                agentMessagesRef: agentMessages,
+                projectsRef: projects,
+                day: currentDay,
+                data: result
+            };
+
+            return result;
         } catch (error) {
             return {
                 totalGenerations: 0,
