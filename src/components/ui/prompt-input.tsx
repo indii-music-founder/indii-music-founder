@@ -219,6 +219,7 @@ function PromptInputAction({
         asChild
         disabled={disabled}
         onClick={(event) => event.stopPropagation()}
+        aria-label={typeof tooltip === "string" ? tooltip : undefined}
       >
         {children}
       </TooltipTrigger>
