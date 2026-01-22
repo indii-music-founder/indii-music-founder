@@ -252,6 +252,15 @@ export class ImageGenerationService {
         targetImages: { mimeType: string; data: string; width?: number; height?: number }[];
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Bolt Optimization: Run requests in parallel to reduce total latency
+        const results: { id: string, url: string, prompt: string }[] = [];
+
+        // Use Cloud Function for image generation (properly uses REST API)
+        const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
+
+        // Create promises for each target image
+        const promises = options.targetImages.map(async (target) => {
+            try {
         // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
@@ -287,6 +296,22 @@ export class ImageGenerationService {
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
                     };
                 }
+            } catch (error) {
+                console.error("Individual Batch Remix Error:", error);
+                // Return null to indicate failure but allow others to proceed
+                return null;
+            }
+        });
+
+        // Wait for all requests to complete
+        const settledResults = await Promise.all(promises);
+
+        // Filter out failures (nulls)
+        settledResults.forEach(res => {
+            if (res) results.push(res);
+        });
+
+        return results;
                 return null;
             });
 
