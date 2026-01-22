@@ -6,14 +6,17 @@ const SYSTEM_ROOTS = [
     'C:\\Windows', 'C:\\Program Files', 'C:\\Program Files (x86)'
 ];
 
-const ALLOWED_EXTENSIONS = new Set([
+const MEDIA_EXTENSIONS = new Set([
     '.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg', '.m4a',
     '.jpg', '.jpeg', '.png', '.gif', '.webp',
-    '.pdf', '.xml', '.txt', '.json', '.zip', '.itmsp',
+    '.pdf', '.xml', '.txt', '.json', '.zip', '.itmsp'
+]);
+
+const KEY_EXTENSIONS = new Set([
     '.pem', '.key', '.ppk'
 ]);
 
-export function validateSafeDistributionSource(filePath: string): void {
+export function validateSafeDistributionSource(filePath: string, options: { allowKeys?: boolean } = {}): void {
     // 1. Resolve Path (Canonicalize & Resolve Symlinks) to prevent LFI via symlinks
     let resolvedPath: string;
     try {
@@ -44,7 +47,13 @@ export function validateSafeDistributionSource(filePath: string): void {
 
     // 6. Enforce Extension Whitelist
     const ext = path.extname(normalized).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
+
+    let allowed = MEDIA_EXTENSIONS.has(ext);
+    if (options.allowKeys && KEY_EXTENSIONS.has(ext)) {
+        allowed = true;
+    }
+
+    if (!allowed) {
         throw new Error(`Security Violation: File type '${ext}' is not allowed for distribution`);
     }
 }
