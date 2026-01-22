@@ -127,6 +127,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:package-itmsp', async (event, releaseId: string) => {
         try {
             validateSender(event);
+
+            // Security: Validate releaseId to prevent path traversal
+            if (!z.string().uuid().safeParse(releaseId).success) {
+                throw new Error("Security Error: Invalid releaseId format. Must be a UUID.");
+            }
+
             console.log(`[Distribution] Packaging ITMSP for release: ${releaseId}`);
 
             // Resolve the staging path (using the same logic as stage-release)
