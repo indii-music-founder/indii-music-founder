@@ -258,7 +258,8 @@ export class ImageGenerationService {
         const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
         try {
-            for (const target of options.targetImages) {
+            // Bolt Optimization: Parallelize requests to improve batch latency
+            const promises = options.targetImages.map(async (target) => {
                 // Determine aspect ratio based on target image dimensions
                 let aspectRatio = '1:1';
                 if (target.width && target.height) {
@@ -282,13 +283,19 @@ export class ImageGenerationService {
 
                 if (data.images?.[0]?.bytesBase64Encoded) {
                     const mimeType = data.images[0].mimeType || 'image/png';
-                    results.push({
+                    return {
                         id: crypto.randomUUID(),
                         url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
                         prompt: `Batch Style: ${options.prompt || "Restyle"}`
-                    });
+                    };
                 }
-            }
+                return null;
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (e) {
             console.error("Batch Remix Error:", e);
             throw e;
