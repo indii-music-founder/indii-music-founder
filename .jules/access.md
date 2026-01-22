@@ -13,3 +13,11 @@
 ## 2025-02-18 - Keyboard Trap & Focus Restoration
 **Learning:** Custom menus/modals must manually handle `Escape` key to close and restore focus to the trigger element upon closing to maintain keyboard navigation flow.
 **Action:** Use `useEffect` for `keydown` listeners and `useRef` to track and restore focus to the trigger button.
+
+## 2025-05-24 - Duplicate ARIA Labels in Composition
+**Learning:** Passing `aria-label` to a component that uses `asChild` (like Radix `TooltipTrigger`) while also defining it on the child element can result in duplicate attributes in the rendered DOM, causing React warnings and potential screen reader verbosity.
+**Action:** When using `asChild` composition pattern, ensure `aria-label` is applied only once, preferably on the component that renders the final DOM element or let the parent pass it down cleanly.
+
+## 2025-05-24 - Icon-Only Buttons and Test Queries
+**Learning:** `getByText` fails for icon-only buttons even if they have `title` or `aria-label`. `getByRole('button', { name: '...' })` is the robust way to query these and simultaneously verify the accessible name.
+**Action:** Always use `getByRole` with the `name` option for interactive elements to verify both existence and accessibility compliance.
