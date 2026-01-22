@@ -1,23 +1,7 @@
-import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
-import { agentService } from '@/services/agent/AgentService';
-import { agentRegistry } from '@/services/agent/registry';
+import React, { memo } from 'react';
 import { useStore } from '@/core/store';
-import type { ModuleId } from '@/core/constants';
-import { getColorForModule } from '../theme/moduleColors';
 import { motion, AnimatePresence } from 'framer-motion';
-
-import { voiceService } from '@/services/ai/VoiceService';
-import { cn } from '@/lib/utils';
-import {
-    PromptInput,
-    PromptInputTextarea,
-    PromptInputActions,
-    PromptInputAction
-} from '@/components/ui/prompt-input';
-import { DelegateMenu } from './command-bar/DelegateMenu';
-import { AttachmentList } from './command-bar/AttachmentList';
+import { PromptArea } from './command-bar/PromptArea';
 
 function CommandBar() {
     // Check if device is mobile
@@ -137,74 +121,26 @@ function CommandBar() {
             })
         ));
     }, []);
+    const { isCommandBarDetached, isAgentOpen } = useStore();
 
-    const handleSubmit = useCallback(async (e?: React.FormEvent) => {
-        try {
-            e?.preventDefault();
+    // In docked mode, if the chat overlay is open, we hide this standalone bar 
+    // because it's rendered inside ChatOverlay.
+    if (!isCommandBarDetached && isAgentOpen) return null;
 
-            if (!input.trim() && attachments.length === 0) {
-                return;
-            }
-
-            if (isProcessing) {
-                return;
-            }
-
-            setIsProcessing(true);
-            const currentInput = input;
-            const currentAttachments = [...attachments];
-
-            // Clear immediately for optimistic UI
-            setInput('');
-            setAttachments([]);
-
-            // Auto-open agent window if not already open
-            if (!isAgentOpen) {
-                if (toggleAgentWindow) {
-                    toggleAgentWindow();
-                }
-            }
-
-            try {
-                const processedAttachments = currentAttachments.length > 0 ? await processAttachments(currentAttachments) : undefined;
-
-                // Determine target agent based on Chat Channel
-                // If Indii channel: Send undefined (let Coordinator/Generalist handle it)
-                // If Agent channel: Send currentModule (forces specialist), unless module has no agent
-                const targetAgentId = isIndiiMode ? undefined : (knownAgentIds.includes(currentModule) ? currentModule : undefined);
-
-                await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
-                setIsProcessing(false);
-            } catch (error) {
-                console.error('CommandBar: Failed to send message:', error);
-                toast.error("Failed to send message.");
-                // Restore input on error
-                setInput(currentInput);
-                setAttachments(currentAttachments);
-                setIsProcessing(false);
-            }
-        } catch (fatalError) {
-            console.error("CommandBar: Fatal crash in handleSubmit", fatalError);
-            setIsProcessing(false);
-        }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]);
+    // We show the bar if it's detached OR if the chat window is closed.
+    const shouldShow = isCommandBarDetached || !isAgentOpen;
 
     return (
-        <div className="w-full bg-bg-dark border-t border-white/10 p-4">
-            <div className="max-w-4xl mx-auto">
-                {/* Input Area */}
-                <div
-                    data-testid="command-bar-input-container"
-                    className={cn(
-                        "bg-[#161b22] border rounded-xl transition-all relative focus-within:ring-1",
-                        isIndiiMode
-                            ? "border-purple-500/30 ring-purple-500/30 shadow-[0_0_15px_rgba(168,85,247,0.05)]"
-                            : `${colors.border} ${colors.ring}`,
-                        isDragging && "ring-4 ring-blue-500/50 bg-blue-500/20"
-                    )}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
+        <AnimatePresence>
+            {shouldShow && (
+                <motion.div
+                    key="standalone-command-bar"
+                    initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                    drag={isCommandBarDetached}
+                    dragMomentum={false}
+                    className="fixed bottom-8 left-1/2 -translate-x-1/2 w-full max-w-2xl px-6 md:px-0 z-[500] pointer-events-none flex items-center justify-center"
                 >
                     {/* Drag Overlay */}
                     <AnimatePresence>
@@ -408,6 +344,12 @@ function CommandBar() {
 
             </div>
         </div >
+                    <div className="w-full pointer-events-auto">
+                        <PromptArea />
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
 }
 

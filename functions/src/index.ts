@@ -141,7 +141,8 @@ const getAllowedOrigins = (): string[] => {
         'https://indiios-v-1-1.web.app',
         'https://studio.indiios.com',
         'https://indiios.com',
-        'app://.'  // Electron app
+        'app://.',  // Electron app
+        'http://localhost:4242' // Electron Studio (Vite)
     ];
 
     // Add localhost origins in emulator/development mode
@@ -150,7 +151,8 @@ const getAllowedOrigins = (): string[] => {
             'http://localhost:5173',
             'http://localhost:4173',
             'http://localhost:3000',
-            'http://127.0.0.1:5173'
+            'http://127.0.0.1:5173',
+            'http://localhost:4242'
         );
     }
 

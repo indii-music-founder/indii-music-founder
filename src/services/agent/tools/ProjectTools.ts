@@ -32,17 +32,17 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
-        const projects = toolContext
+        const projects = (toolContext
             ? toolContext.get('projects')
-            : store.projects;
+            : store.projects) || [];
 
         // Ensure projects are loaded if empty
         if (projects.length === 0) {
             await store.loadProjects();
             // Re-read after loading
-            const loadedProjects = toolContext
+            const loadedProjects = (toolContext
                 ? toolContext.get('projects')
-                : useStore.getState().projects;
+                : useStore.getState().projects) || [];
 
             if (loadedProjects.length === 0) {
                 return toolSuccess({ projects: [] }, "No projects found.");
@@ -58,9 +58,9 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
-        const projects = toolContext
+        const projects = (toolContext
             ? toolContext.get('projects')
-            : store.projects;
+            : store.projects) || [];
 
         const project = projects.find(p => p.id === args.projectId);
         if (!project) {

@@ -71,9 +71,9 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
 
     read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
         // Phase 3.6: Use execution context when available, fallback to direct store
-        const history = toolContext
+        const history = (toolContext
             ? toolContext.get('agentHistory')
-            : useStore.getState().agentHistory;
+            : useStore.getState().agentHistory) || [];
 
         const recentHistory = history.slice(-10); // Show a bit more than 5
         return {

@@ -18,3 +18,7 @@
 ## 2025-05-25 - Onboarding Modal Accessibility
 **Learning:** Modal action buttons (Close, Attach, Send) were icon-only and completely invisible to screen readers, creating a "trap" where users couldn't exit or interact.
 **Action:** Added explicit `aria-label`s to all icon buttons in `OnboardingModal.tsx` and ensured the conditional file removal button is focusable (`focus:opacity-100`).
+
+## 2026-01-22 - PromptInputAction Accessibility
+**Learning:** Icon-only buttons wrapped in `PromptInputAction` lacked accessible names because the tooltip text wasn't automatically applied as an `aria-label`.
+**Action:** Updated `PromptInputAction` to automatically pass the tooltip string as `aria-label` to the trigger, ensuring default accessibility while allowing overrides.
