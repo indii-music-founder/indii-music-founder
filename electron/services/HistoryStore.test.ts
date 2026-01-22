@@ -1,5 +1,6 @@
 
 // @vitest-environment node
+/* eslint-disable @typescript-eslint/no-require-imports */
 import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 
 describe('📚 Keeper: Electron HistoryStore Persistence', () => {
@@ -90,7 +91,7 @@ describe('📚 Keeper: Electron HistoryStore Persistence', () => {
                     }
 
                     delete(key: string) {
-                         if (key.includes('.')) {
+                        if (key.includes('.')) {
                             const parts = key.split('.');
                             const last = parts.pop()!;
                             let current = this.data;
