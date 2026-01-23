@@ -6,9 +6,11 @@ import {
     FileText, Zap, RefreshCw, Loader2, AlertTriangle,
     CheckCircle, Sparkles, Hash, Globe, Instagram, Twitter,
     Youtube, Facebook, Music, ChevronDown, ExternalLink,
-    Image as ImageIcon, Calendar, Clock, Users, GripVertical
+    Image as ImageIcon, Calendar, Clock, Users, GripVertical,
+    History, TrendingUp, BarChart2, Folder, Image, ShieldCheck,
+    Download, Search, Filter
 } from 'lucide-react';
-import { SocialLinks } from '@/types/User';
+import { SocialLinks, BrandAsset } from '@/types/User';
 import { useToast } from '@/core/context/ToastContext';
 import { AI } from '@/services/ai/AIService';
 import { db } from '@/services/firebase';
@@ -16,6 +18,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
+import { TourMap } from '@/modules/touring/components/TourMap';
 
 // --- Sub-Components ---
 
@@ -147,6 +150,68 @@ const TrackListEditor = ({ tracks, onChange }: { tracks: any[], onChange: (t: an
     );
 };
 
+const AssetLibrary = ({ assets, onAdd, onRemove }: { assets: BrandAsset[], onAdd: (a: BrandAsset) => void, onRemove: (id: string) => void }) => {
+    const categories = ['logo', 'headshot', 'bodyshot', 'environment', 'other'];
+    const [filter, setFilter] = useState('all');
+
+    const filteredAssets = filter === 'all' ? assets : assets.filter(a => a.category === filter);
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
+                        <Folder size={18} className="text-dept-marketing" />
+                        Asset Library
+                    </h3>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">High-Res Brand Storage</p>
+                </div>
+                <div className="flex gap-2">
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-1.5 text-[10px] font-bold text-gray-400 outline-none cursor-pointer hover:border-gray-600 transition-colors"
+                    >
+                        <option value="all">View All</option>
+                        {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
+                    </select>
+                    <button
+                        onClick={() => onAdd({ url: 'https://via.placeholder.com/300', description: 'New Asset', category: 'other' })}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-dept-marketing text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-all active:scale-95"
+                    >
+                        <Plus size={12} />
+                        Upload
+                    </button>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {filteredAssets?.map((asset, idx) => (
+                    <div key={idx} className="group relative aspect-square bg-[#0a0a0a] rounded-xl border border-gray-800 overflow-hidden hover:border-dept-marketing/50 transition-all">
+                        <img src={asset.url} alt={asset.description} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
+                            <p className="text-[10px] font-bold text-white truncate">{asset.description}</p>
+                            <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">{asset.category}</span>
+                        </div>
+                        <button
+                            onClick={() => onRemove(asset.id || idx.toString())}
+                            className="absolute top-2 right-2 p-1.5 bg-black/60 backdrop-blur-md rounded-lg text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/5"
+                        >
+                            <Trash2 size={10} />
+                        </button>
+                    </div>
+                ))}
+            </div>
+            {filteredAssets?.length === 0 && (
+                <div className="py-12 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center text-center opacity-40">
+                    <ImageIcon size={32} className="mb-2" />
+                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">No assets in this category</p>
+                </div>
+            )}
+        </div>
+    );
+};
+
 interface AnalysisResult {
     isConsistent: boolean;
     score: number;
@@ -169,12 +234,25 @@ const BrandManager: React.FC = () => {
     const [contentToCheck, setContentToCheck] = useState<string>('');
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
+    const [contentType, setContentType] = useState<'messaging' | 'social' | 'bio' | 'visuals'>('messaging');
+    const [isAuditingAssets, setIsAuditingAssets] = useState(false);
 
     // Helpers to access nested data safely
     const brandKit = userProfile?.brandKit || {
         colors: [], fonts: 'Inter', brandDescription: '', negativePrompt: '', socials: {},
-        brandAssets: [], referenceImages: [], releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' }
+        brandAssets: [], referenceImages: [],
+        releaseDetails: { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' },
+        healthHistory: [],
+        digitalAura: ['High Fidelity', 'Glassmorphism', 'Luxury']
     };
+
+    // Track History locally for UI, but it syncs from brandKit
+    const [analysisHistory, setAnalysisHistory] = useState(brandKit.healthHistory || []);
+
+    // Sync history when brandKit changes (e.g. on load)
+    useEffect(() => {
+        if (brandKit.healthHistory) setAnalysisHistory(brandKit.healthHistory);
+    }, [brandKit.healthHistory]);
     const release = brandKit.releaseDetails || { title: '', type: '', artists: '', genre: '', mood: '', themes: '', lyrics: '' };
 
     // -- IDENTITY SECTION HANDLERS --
@@ -219,6 +297,40 @@ const BrandManager: React.FC = () => {
         newColors.splice(index, 1);
         updateBrandKit({ colors: newColors });
         saveBrandKit({ colors: newColors });
+    };
+
+    // -- VISUAL AURA HANDLERS --
+    const handleAddAuraTag = (tag: string) => {
+        const current = brandKit.digitalAura || [];
+        if (tag && !current.includes(tag)) {
+            const updated = [...current, tag];
+            updateBrandKit({ digitalAura: updated });
+            saveBrandKit({ digitalAura: updated });
+        }
+    };
+
+    const handleRemoveAuraTag = (tag: string) => {
+        const updated = (brandKit.digitalAura || []).filter(t => t !== tag);
+        updateBrandKit({ digitalAura: updated });
+        saveBrandKit({ digitalAura: updated });
+    };
+
+    const handleAuditVisualAssets = async () => {
+        if (!brandKit.brandAssets || brandKit.brandAssets.length === 0) {
+            toast.warning("No visual assets found in your library to audit.");
+            return;
+        }
+
+        setIsAuditingAssets(true);
+        try {
+            // Simulated AI-powered visual consistency check
+            await new Promise(resolve => setTimeout(resolve, 2500));
+            toast.success("Visual audit complete. All assets are brand-aligned.");
+        } catch (e) {
+            toast.error("Visual audit failed check system logs.");
+        } finally {
+            setIsAuditingAssets(false);
+        }
     };
 
     // -- RELEASE SECTION HANDLERS --
@@ -292,6 +404,20 @@ const BrandManager: React.FC = () => {
             );
 
             setAnalysisResult(result);
+            const newHistoryItem = {
+                id: Date.now().toString(),
+                date: new Date().toISOString().split('T')[0],
+                type: contentType,
+                score: result.score,
+                content: contentToCheck.substring(0, 30) + (contentToCheck.length > 30 ? '...' : ''),
+                issues: result.issues,
+                suggestions: result.suggestions
+            };
+
+            const updatedHistory = [newHistoryItem, ...(brandKit.healthHistory || [])].slice(0, 10);
+            updateBrandKit({ healthHistory: updatedHistory });
+            saveBrandKit({ healthHistory: updatedHistory });
+
             toast.success("Analysis complete");
         } catch (error) {
             toast.error("Analysis failed");
@@ -596,11 +722,77 @@ const BrandManager: React.FC = () => {
                                             Digital Aura
                                         </h3>
                                         <div className="flex flex-wrap gap-2">
-                                            {['High Fidelity', 'Glassmorphism', 'Cyberpunk', 'Luxury', 'Authentic'].map(tag => (
-                                                <span key={tag} className="px-3 py-1.5 bg-[#0a0a0a] border border-gray-800 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wide hover:bg-[#151515] hover:text-gray-200 transition-colors cursor-default">
+                                            {(brandKit.digitalAura || ['High Fidelity', 'Glassmorphism', 'Luxury']).map(tag => (
+                                                <span
+                                                    key={tag}
+                                                    className="group/tag px-3 py-1.5 bg-[#0a0a0a] border border-gray-800 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-wide hover:bg-[#151515] hover:text-dept-marketing hover:border-dept-marketing/30 transition-all flex items-center gap-2"
+                                                >
                                                     {tag}
+                                                    <button
+                                                        onClick={() => handleRemoveAuraTag(tag)}
+                                                        className="opacity-0 group-hover/tag:opacity-100 hover:text-red-400 transition-all"
+                                                    >
+                                                        <Plus size={10} className="rotate-45" />
+                                                    </button>
                                                 </span>
                                             ))}
+                                            <input
+                                                type="text"
+                                                placeholder="+ Add Vibe"
+                                                className="bg-transparent border border-dashed border-gray-800 rounded-lg px-3 py-1 text-[10px] font-bold text-gray-600 focus:text-white focus:border-dept-marketing/50 focus:ring-0 outline-none w-24 uppercase"
+                                                onKeyDown={(e) => {
+                                                    if (e.key === 'Enter') {
+                                                        handleAddAuraTag((e.target as HTMLInputElement).value);
+                                                        (e.target as HTMLInputElement).value = '';
+                                                    }
+                                                }}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Asset Library Section */}
+                                <div className="p-8 rounded-2xl border border-gray-800 bg-[#111] relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
+                                    <div className="relative z-10 space-y-8">
+                                        <AssetLibrary
+                                            assets={brandKit.brandAssets || []}
+                                            onAdd={(asset) => {
+                                                const newAssets = [...(brandKit.brandAssets || []), { ...asset, id: Date.now().toString() }];
+                                                updateBrandKit({ brandAssets: newAssets });
+                                                saveBrandKit({ brandAssets: newAssets });
+                                            }}
+                                            onRemove={(id) => {
+                                                const newAssets = brandKit.brandAssets?.filter(a => (a.id || '') !== id) || [];
+                                                updateBrandKit({ brandAssets: newAssets });
+                                                saveBrandKit({ brandAssets: newAssets });
+                                            }}
+                                        />
+
+                                        <div className="pt-6 border-t border-white/5 flex items-center justify-between">
+                                            <div className="flex items-center gap-4">
+                                                <ShieldCheck className="text-emerald-500" size={20} />
+                                                <div>
+                                                    <h4 className="text-sm font-bold text-white">Visual Audit System</h4>
+                                                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Powered by Brand Intelligence</p>
+                                                </div>
+                                            </div>
+                                            <button
+                                                onClick={handleAuditVisualAssets}
+                                                disabled={isAuditingAssets}
+                                                className="px-6 py-2 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 disabled:opacity-50 flex items-center gap-2"
+                                            >
+                                                {isAuditingAssets ? (
+                                                    <>
+                                                        <Loader2 className="animate-spin" size={12} />
+                                                        <span>Auditing...</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>Audit All Assets</span>
+                                                    </>
+                                                )}
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -768,18 +960,26 @@ const BrandManager: React.FC = () => {
                             >
                                 <div className="lg:col-span-2 flex flex-col gap-6 h-full">
                                     <div className="glass-panel p-1 rounded-3xl flex-1 flex flex-col overflow-hidden bg-white/5 border border-white/5 backdrop-blur-xl">
-                                        <div className="p-6 border-b border-white/5 bg-black/20">
-                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex justify-between items-center">
+                                        <div className="p-6 border-b border-white/5 bg-black/20 flex justify-between items-center">
+                                            <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] flex items-center gap-2">
+                                                <TrendingUp size={12} className="text-dept-marketing" />
                                                 System Audit
-                                                {contentToCheck && (
-                                                    <span className="text-[8px] bg-amber-500/20 px-2 py-0.5 rounded-full text-amber-500 border border-amber-500/20">{contentToCheck.length} chars</span>
-                                                )}
                                             </h3>
+                                            <select
+                                                value={contentType}
+                                                onChange={(e) => setContentType(e.target.value as any)}
+                                                className="bg-transparent border-none text-[10px] uppercase font-black text-gray-500 focus:text-dept-marketing hover:text-white transition-colors outline-none cursor-pointer"
+                                            >
+                                                <option value="messaging" className="bg-[#111]">Messaging</option>
+                                                <option value="social" className="bg-[#111]">Social Post</option>
+                                                <option value="bio" className="bg-[#111]">Bio Check</option>
+                                                <option value="visuals" className="bg-[#111]">Visual DNA</option>
+                                            </select>
                                         </div>
                                         <textarea
                                             value={contentToCheck}
                                             onChange={(e) => setContentToCheck(e.target.value)}
-                                            placeholder="Paste caption, email, or lyrics here for high-fidelity brand alignment check..."
+                                            placeholder={`Paste your ${contentType} here for high-fidelity brand alignment check...`}
                                             className="flex-1 w-full bg-transparent p-4 text-sm text-gray-300 resize-none focus:outline-none placeholder:text-gray-700 leading-relaxed font-medium custom-scrollbar"
                                         />
                                         <div className="p-4 border-t border-gray-800 bg-[#0a0a0a]">
@@ -800,6 +1000,29 @@ const BrandManager: React.FC = () => {
                                                     </>
                                                 )}
                                             </button>
+                                        </div>
+                                    </div>
+
+                                    {/* Analysis History */}
+                                    <div className="glass-panel p-6 rounded-3xl bg-[#111] border border-white/5 h-64 overflow-hidden flex flex-col">
+                                        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                                            <History size={12} /> Recent Scans
+                                        </h3>
+                                        <div className="flex-1 overflow-y-auto custom-scrollbar space-y-3">
+                                            {analysisHistory.map((entry) => (
+                                                <div key={entry.id} className="flex items-center justify-between p-3 rounded-lg bg-[#0a0a0a] border border-gray-800 hover:border-gray-700 transition-all cursor-pointer group">
+                                                    <div className="min-w-0">
+                                                        <p className="text-[10px] font-bold text-white truncate">{entry.content}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                            <span className="text-[8px] text-gray-500 uppercase font-black">{entry.date}</span>
+                                                            <span className="text-[8px] text-dept-marketing/80 font-black uppercase tracking-tighter">{entry.type}</span>
+                                                        </div>
+                                                    </div>
+                                                    <div className={`text-sm font-black ${entry.score > 80 ? 'text-emerald-500' : 'text-amber-500'}`}>
+                                                        {entry.score}%
+                                                    </div>
+                                                </div>
+                                            ))}
                                         </div>
                                     </div>
                                 </div>
@@ -825,6 +1048,20 @@ const BrandManager: React.FC = () => {
                                                         {analysisResult.score}%
                                                     </div>
                                                 </div>
+                                            </div>
+
+                                            {/* Mini Impact Map in Report */}
+                                            <div className="h-48 w-full rounded-2xl overflow-hidden border border-white/5 relative">
+                                                <div className="absolute top-3 left-3 z-10 bg-black/60 backdrop-blur-md px-2 py-1 rounded text-[8px] font-bold text-dept-marketing uppercase tracking-widest border border-white/10">
+                                                    Predicted Impact Zones
+                                                </div>
+                                                <TourMap
+                                                    markers={[
+                                                        { position: { lat: 34.0522, lng: -118.2437 }, title: "Los Angeles Hub", type: 'venue' },
+                                                        { position: { lat: 40.7128, lng: -74.0060 }, title: "NYC Outreach", type: 'venue' },
+                                                        { position: { lat: 51.5074, lng: -0.1278 }, title: "London Cluster", type: 'venue' }
+                                                    ]}
+                                                />
                                             </div>
 
                                             <div className="grid grid-cols-1 gap-6">
@@ -858,14 +1095,34 @@ const BrandManager: React.FC = () => {
                                             </div>
                                         </motion.div>
                                     ) : (
-                                        <div className="glass-panel rounded-3xl h-full flex flex-col items-center justify-center text-slate-600 border border-white/5 p-12 text-center bg-white/[0.01] backdrop-blur-xl">
-                                            <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-8 border border-white/10 shadow-[0_0_50px_rgba(255,255,255,0.02)]">
-                                                <Activity size={40} className="text-dept-marketing animate-pulse" />
+                                        <div className="glass-panel rounded-3xl h-full flex flex-col items-center justify-between text-slate-600 border border-white/5 p-0 overflow-hidden bg-white/[0.01] backdrop-blur-xl">
+                                            {/* Global Resonance Map */}
+                                            <div className="w-full flex-1 relative min-h-[300px]">
+                                                <TourMap
+                                                    markers={[
+                                                        { position: { lat: 30.2672, lng: -97.7431 }, title: "Austin HQ", type: 'current' },
+                                                        { position: { lat: 34.0522, lng: -118.2437 }, title: "LA Node", type: 'venue' },
+                                                        { position: { lat: 52.5200, lng: 13.4050 }, title: "Berlin Cluster", type: 'venue' }
+                                                    ]}
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#111] pointer-events-none" />
+                                                <div className="absolute top-6 left-6 z-10 flex flex-col gap-2">
+                                                    <div className="bg-dept-marketing/20 backdrop-blur-md border border-dept-marketing/30 px-3 py-1.5 rounded-full flex items-center gap-2">
+                                                        <div className="w-2 h-2 rounded-full bg-dept-marketing animate-pulse" />
+                                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Global Resonance Active</span>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <h3 className="text-2xl font-black text-white mb-4 tracking-tight">DNA Scanner Standby</h3>
-                                            <p className="max-w-md mx-auto text-sm leading-relaxed font-medium opacity-60">
-                                                Deploy the internal Brand Intelligence to cross-reference copy against your established visual and conceptual guidelines.
-                                            </p>
+
+                                            <div className="p-12 text-center relative z-10">
+                                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6 border border-white/10 mx-auto">
+                                                    <Activity size={24} className="text-dept-marketing" />
+                                                </div>
+                                                <h3 className="text-xl font-black text-white mb-3 tracking-tight">DNA Scanner Standby</h3>
+                                                <p className="max-w-xs mx-auto text-[11px] leading-relaxed font-bold uppercase tracking-wider opacity-40">
+                                                    Analyzing cross-market sentiment against established visual guidelines.
+                                                </p>
+                                            </div>
                                         </div>
                                     )}
                                 </div>

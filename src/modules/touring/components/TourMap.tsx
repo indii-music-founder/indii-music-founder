@@ -130,7 +130,7 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
 
         // 1. Handle Pre-defined Markers (Performance Optimization)
         if (markers && markers.length > 0) {
-            markers.forEach(m => {
+            markers.forEach((m: MapMarker) => {
                 // Determine icon based on type
                 // Google Maps default markers are fine for now, but we'd ideally use SVGs
                 // We'll use color coding via standard charts API or built-in symbols
