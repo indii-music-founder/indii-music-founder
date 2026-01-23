@@ -1,5 +1,6 @@
 
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 import { MOCK_SALES_ANALYTICS } from './mockData';
 
@@ -35,7 +36,7 @@ export interface AnalyticsData {
 
 // Local interface for the parts of the store we access
 interface DashboardStoreState {
-    projects: ProjectMetadata[];
+    projects: Project[];
     generatedHistory: HistoryItem[];
     agentMessages?: unknown[]; // Optional as it might be missing
     userProfile?: {
@@ -46,6 +47,7 @@ interface DashboardStoreState {
     removeProject?: (id: string) => void;
     addToHistory?: (item: HistoryItem) => void;
     removeFromHistory?: (id: string) => void;
+    loadProjects: () => Promise<void>;
 }
 
 // Tier-based storage quotas in bytes
@@ -83,12 +85,22 @@ export class DashboardService {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState() as unknown as DashboardStoreState;
 
+            // Bolt Binding: Load if empty
+            if (!state.projects || state.projects.length === 0) {
+                if (typeof state.loadProjects === 'function') {
+                    await state.loadProjects();
+                }
+            }
+
+            // Re-read state after async load
+            const updatedState = useStore.getState() as unknown as DashboardStoreState;
+
             // Get projects from store
-            if (state.projects && state.projects.length > 0) {
-                return state.projects.map((p) => ({
+            if (updatedState.projects && updatedState.projects.length > 0) {
+                return updatedState.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
-                    lastModified: p.lastModified || Date.now(),
+                    lastModified: p.date,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
