@@ -167,6 +167,20 @@ service cloud.firestore {
       match /stats/{statId} {
         allow read, write: if isOwner(userId);
       }
+
+      // User Memory subcollection (long-term persistent memory)
+      match /memories/{memoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update, delete: if isOwner(userId) && resource.data.userId == userId;
+      }
+
+      // User Context subcollection (aggregated memory context)
+      match /context/{contextId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ========================================
