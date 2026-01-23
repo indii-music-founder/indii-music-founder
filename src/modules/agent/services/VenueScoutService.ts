@@ -1,8 +1,9 @@
-import { Venue } from '../types';
+import { Venue } from '../schemas';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
 import { db } from '@/services/firebase';
 import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { delay } from '@/utils/async';
+import { VenueSchema, SearchOptionsSchema } from '../schemas';
 
 // Initial Seed Data (Used only if DB is empty or offline)
 const SEED_VENUES: Omit<Venue, 'id'>[] = [
@@ -76,8 +77,19 @@ export type ScoutEvent = {
     progress: number;
 };
 
+// Cache interface
+interface VenueCacheEntry {
+    data: Venue[];
+    timestamp: number;
+}
+
 export class VenueScoutService {
     private static COLLECTION_NAME = 'venues';
+
+    // In-memory cache: Map<"City-Genre", Entry>
+    private static cache = new Map<string, VenueCacheEntry>();
+    private static readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    private static readonly MAX_CACHE_SIZE = 100;
 
     /**
      * Searches for venues using Firestore (and autonomous agents if requested).
@@ -89,9 +101,26 @@ export class VenueScoutService {
         isAutonomous = false,
         onProgress?: (event: ScoutEvent) => void
     ): Promise<Venue[]> {
+        // Validate Inputs
+        const validation = SearchOptionsSchema.safeParse({ city, genre, isAutonomous });
+        if (!validation.success) {
+            console.error("Invalid search parameters:", validation.error);
+            throw new Error(`Invalid search parameters: ${validation.error.message}`);
+        }
+
         const emit = (step: ScoutEvent['step'], message: string, progress: number) => {
             if (onProgress) onProgress({ step, message, progress });
         };
+
+        // Check Cache (Optimization)
+        const cacheKey = `${city.toLowerCase()}-${genre.toLowerCase()}`;
+        if (!isAutonomous && this.cache.has(cacheKey)) {
+            const entry = this.cache.get(cacheKey)!;
+            if (Date.now() - entry.timestamp < this.CACHE_TTL) {
+                // emit('COMPLETE', 'Returning cached results', 100); // Optional: Emit complete if immediate
+                return entry.data;
+            }
+        }
 
         try {
             // 1. Ensure DB is seeded
@@ -110,39 +139,53 @@ export class VenueScoutService {
             const q = query(venuesRef, where('city', '==', formattedCity));
             const snapshot = await getDocs(q);
 
-            const results = snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            })) as Venue[];
+            const results: Venue[] = [];
+
+            // Validate Results (Data Integrity)
+            snapshot.docs.forEach(doc => {
+                const data = { id: doc.id, ...doc.data() };
+                const parsed = VenueSchema.safeParse(data);
+                if (parsed.success) {
+                    results.push(parsed.data);
+                } else {
+                    console.warn(`Skipping invalid venue ${doc.id}:`, parsed.error);
+                }
+            });
 
              // 3. Client-side Filter & Scoring
              const processed = this._processResults(results, genre);
 
              if (processed.length === 0) {
-                 console.log('[VenueScoutService] No results from DB, checking local seed data...');
-                 // Fallback: Filter local SEED_VENUES if DB returned nothing
-                 // This ensures the app is usable even if DB is empty/unseeded
-                 // const formattedCity = city.charAt(0).toUpperCase() + city.slice(1); // Already formatted
-                 const fallbackResults = SEED_VENUES
-                     .filter(v => v.city === formattedCity)
-                     .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
-
-                 return this._processResults(fallbackResults, genre);
+                 // Fallback to local seed if DB is empty or has no matches
+                 // Use a proper log level, not just console.log for info
+                 return this._getFallbackData(city, genre);
              }
+
+             // Update Cache
+             if (this.cache.size >= this.MAX_CACHE_SIZE) {
+                const oldestKey = this.cache.keys().next().value;
+                if (oldestKey) this.cache.delete(oldestKey);
+             }
+             this.cache.set(cacheKey, { data: processed, timestamp: Date.now() });
 
              return processed;
 
         } catch (error) {
             console.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
-
-            // Fallback: Filter local SEED_VENUES
-            const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
-            const fallbackResults = SEED_VENUES
-                .filter(v => v.city === formattedCity)
-                .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
-
-            return this._processResults(fallbackResults, genre);
+            // Graceful Fallback
+            return this._getFallbackData(city, genre);
         }
+    }
+
+    private static _getFallbackData(city: string, genre: string): Venue[] {
+        const formattedCity = city.charAt(0).toUpperCase() + city.slice(1);
+        const fallbackResults = SEED_VENUES
+            .filter(v => v.city === formattedCity)
+            .map((v, i) => ({ ...v, id: `fallback-${i}` } as Venue));
+
+        // Ensure fallback data is also valid according to schema (it should be, but good practice)
+        // fitScore is added in processResults
+        return this._processResults(fallbackResults, genre);
     }
 
     private static _processResults(venues: Venue[], genre: string): Venue[] {
