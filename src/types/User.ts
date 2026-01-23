@@ -53,6 +53,16 @@ export interface BrandKit {
     visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
     targetAudience?: string; // Target demographic for marketing
     visualIdentity?: string; // Brand visual style/vibe
+    digitalAura?: string[]; // Array of visual vibe tags (e.g. ['Cyberpunk', 'Luxury'])
+    healthHistory?: Array<{
+        id: string;
+        date: string;
+        type: string;
+        score: number;
+        content: string;
+        issues: string[];
+        suggestions: string[];
+    }>;
 }
 
 // Node workflow types needed for SavedWorkflow
