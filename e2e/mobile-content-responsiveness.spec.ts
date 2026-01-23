@@ -253,6 +253,21 @@ function thisIsAVeryLongFunctionNameThatShouldDefinitelyOverflowTheViewportIfItD
     });
 
     test('should toggle mobile navigation menu', async ({ page }) => {
+        // Close Agent Window programmatically if open (it overlaps the FAB)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            if (window.useStore) {
+                // @ts-expect-error - Testing Environment Window Property
+                const state = window.useStore.getState();
+                if (state.isAgentOpen) {
+                    state.toggleAgentWindow();
+                }
+            }
+        });
+
+        const closeAgentBtn = page.locator('button[aria-label="Close chat"], button[aria-label="Close Agent"]').first();
+        await expect(closeAgentBtn).toBeHidden();
+
         // Open Navigation
         await page.getByLabel('Open Navigation').click();
 
