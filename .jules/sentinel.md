@@ -19,3 +19,8 @@
 **Vulnerability:** The `distribution:package-itmsp` IPC handler accepted an arbitrary `releaseId` string and used it directly in `path.join` to construct a staging directory path. This allowed an attacker to supply a malicious ID (e.g., `../../etc`) to escape the staging directory and direct the underlying Python script to operate on sensitive system directories (Arbitrary File Write/Read).
 **Learning:** Inconsistent validation across handlers. While `distribution:stage-release` used a Zod schema to validate `releaseId`, `distribution:package-itmsp` did not. Every IPC handler must independently validate all its inputs.
 **Prevention:** Enforced `z.string().uuid()` validation for `releaseId` in the `distribution:package-itmsp` handler, ensuring it is a valid UUID and contains no path traversal characters.
+
+## 2026-01-23 - [HIGH] Permissive File Protocol in IPC Sender Validation
+**Vulnerability:** The `validateSender` function checked if `url.startsWith('file://')` but did not verify that the file path belonged to the application bundle. This meant any local HTML file opened in the Electron window (e.g., via drag-and-drop or misconfiguration) could bypass the check and invoke privileged IPC handlers.
+**Learning:** `file://` protocol is not inherently safe. Trusting the protocol without validating the path origin breaks the trust boundary between the application and the host file system.
+**Prevention:** Hardened `validateSender` to resolve `file://` URLs using `fileURLToPath` and explicitly verify they reside within `app.getAppPath()` using `path.relative` checks.
