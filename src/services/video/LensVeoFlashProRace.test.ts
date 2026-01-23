@@ -153,4 +153,136 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         expect(proResult.output.metadata.duration_seconds).toBe(10.0);
         expect(proResult.output.metadata.fps).toBe(60);
     });
+
+    it('should ignore "Flash" update if "Pro" update has already been processed for the same job', () => {
+        const jobId = 'job-race-protection';
+        const callbackSpy = vi.fn();
+
+        service.subscribeToJob(jobId, callbackSpy);
+
+        const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
+        expect(internalCallback).toBeDefined();
+
+        // 1. Emit Pro Update (High Quality)
+        internalCallback({
+            exists: () => true,
+            id: jobId,
+            data: () => ({
+                status: 'completed',
+                output: {
+                    url: 'http://veo-pro.mp4',
+                    metadata: {
+                        quality: 'pro',
+                        duration_seconds: 10.0,
+                        fps: 30,
+                        mime_type: 'video/mp4'
+                    }
+                }
+            })
+        });
+
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+            output: expect.objectContaining({
+                metadata: expect.objectContaining({
+                    quality: 'pro',
+                    duration_seconds: 10.0,
+                    fps: 30,
+                    mime_type: 'video/mp4'
+                })
+            })
+        }));
+
+        // 2. Emit Flash Update (Low Quality) - Late Arrival
+        internalCallback({
+            exists: () => true,
+            id: jobId,
+            data: () => ({
+                status: 'completed',
+                output: {
+                    url: 'http://veo-flash.mp4',
+                    metadata: {
+                        quality: 'flash',
+                        duration_seconds: 10.0,
+                        fps: 30,
+                        mime_type: 'video/mp4'
+                    }
+                }
+            })
+        });
+
+        // Should NOT be called again
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should upgrade from "Flash" to "Pro" for the same job', () => {
+        const jobId = 'job-upgrade';
+        const callbackSpy = vi.fn();
+
+        service.subscribeToJob(jobId, callbackSpy);
+
+        const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
+        expect(internalCallback).toBeDefined();
+
+        // 1. Emit Flash Update
+        internalCallback({
+            exists: () => true,
+            id: jobId,
+            data: () => ({
+                status: 'completed',
+                output: {
+                    url: 'http://veo-flash.mp4',
+                    metadata: {
+                        quality: 'flash',
+                        duration_seconds: 4.0,
+                        fps: 24,
+                        mime_type: 'video/mp4'
+                    }
+                }
+            })
+        });
+
+        expect(callbackSpy).toHaveBeenCalledTimes(1);
+        expect(callbackSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+            output: expect.objectContaining({
+                metadata: expect.objectContaining({
+                    quality: 'flash',
+                    duration_seconds: 4.0,
+                    fps: 24,
+                    mime_type: 'video/mp4'
+                })
+            })
+        }));
+
+        // 2. Emit Pro Update
+        internalCallback({
+            exists: () => true,
+            id: jobId,
+            data: () => ({
+                status: 'completed',
+                output: {
+                    url: 'http://veo-pro.mp4',
+                    metadata: {
+                        quality: 'pro',
+                        duration_seconds: 10.0,
+                        fps: 60,
+                        mime_type: 'video/mp4'
+                    }
+                }
+            })
+        });
+
+        // Should be called again (upgrade)
+        expect(callbackSpy).toHaveBeenCalledTimes(2);
+        expect(callbackSpy).toHaveBeenLastCalledWith(expect.objectContaining({
+            output: expect.objectContaining({
+                metadata: expect.objectContaining({
+                    quality: 'pro',
+                    duration_seconds: 10.0,
+                    fps: 60,
+                    mime_type: 'video/mp4'
+                })
+            })
+        }));
+    });
 });
