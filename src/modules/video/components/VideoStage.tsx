@@ -73,14 +73,16 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 <button
                                     onClick={() => setVideoInputs({ firstFrame: activeVideo })}
                                     data-testid="set-anchor-btn"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                    aria-label="Set as anchor frame for next generation"
+                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                                 >
                                     Set Anchor
                                 </button>
                                 <button
                                     onClick={() => setVideoInputs({ lastFrame: activeVideo })}
                                     data-testid="set-end-frame-btn"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                    aria-label="Set as end frame for next generation"
+                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                                 >
                                     Set End Frame
                                 </button>
