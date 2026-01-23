@@ -86,3 +86,26 @@ All agents must adhere to the [API Credentials Policy](file:///Volumes/X%20SSD%2
 - Follow the validation checklist before any credential changes.
 
 **Post-Mortem Note (2025-01-17):** A hardcoded Firebase config was found in `scripts/send-reset.js`. This policy exists to prevent future occurrences. There are no exceptions.
+
+### 6. ⛔ ERROR MEMORY PROTOCOL (MANDATORY)
+
+> Never fix the same error twice. This protocol ensures institutional memory of debugging wins.
+
+Before debugging ANY error, you MUST follow this workflow:
+
+1. **STOP** – Do not immediately attempt a fix.
+2. **CHECK LEDGER** – Open `.agent/skills/error_memory/ERROR_LEDGER.md` and search for matching patterns.
+3. **CHECK MEM0** – Query `mcp_mem0_search-memories(query="<error message>", userId="indiiOS-errors")`.
+4. **APPLY FIX** – If a match is found, apply the documented solution verbatim.
+5. **DOCUMENT NEW** – If this is a genuinely new error, add it to the ledger AND mem0 after solving.
+
+**Adding to mem0:**
+
+```javascript
+mcp_mem0_add-memory(
+  content="ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>",
+  userId="indiiOS-errors"
+)
+```
+
+**Failure to check the ledger first is a protocol violation.**

@@ -134,3 +134,13 @@ export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
 export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
 export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
 export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];
+
+/**
+ * Reverse lookup to find the configuration key for a given model ID.
+ * Used by RemoteConfig to find overrides.
+ */
+export function getModelKey(modelId: string): keyof typeof APPROVED_MODELS | undefined {
+    // @ts-ignore - Object.entries is fine here
+    const entry = Object.entries(APPROVED_MODELS).find(([_, value]) => value === modelId);
+    return entry ? (entry[0] as keyof typeof APPROVED_MODELS) : undefined;
+}
