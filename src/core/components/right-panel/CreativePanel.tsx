@@ -247,6 +247,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     : 'bg-black/40 text-gray-500 border border-transparent hover:text-gray-300'
                                     }`}
                                 title="Enable High-Reasoning Mode"
+                                data-testid="thinking-mode-toggle"
                             >
                                 <Brain size={10} />
                                 Thinking
@@ -262,6 +263,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                         ? 'bg-blue-500/20 text-blue-300'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
+                                    data-testid="model-selector-fast"
                                 >
                                     Flash
                                 </button>
@@ -271,6 +273,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                         ? 'bg-purple-500/20 text-purple-300'
                                         : 'text-gray-500 hover:text-gray-300'
                                         }`}
+                                    data-testid="model-selector-pro"
                                 >
                                     Pro
                                 </button>
@@ -285,6 +288,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     value={studioControls.mediaResolution || 'medium'}
                                     onChange={(e) => setStudioControls({ mediaResolution: e.target.value as any })}
                                     className="w-full bg-black/40 text-white text-[10px] py-1.5 pl-7 pr-6 rounded-lg border border-transparent outline-none appearance-none cursor-pointer hover:bg-black/60 transition-all font-medium"
+                                    data-testid="media-resolution-dropdown"
                                 >
                                     <option value="low">Low Res</option>
                                     <option value="medium">Standard</option>
@@ -321,6 +325,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     value={studioControls.resolution || '1024x1024'}
                                     onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                    data-testid="video-resolution-dropdown"
                                 >
                                     <option value="1024x1024">1K (Square)</option>
                                     <option value="1280x720">HD (720p)</option>
