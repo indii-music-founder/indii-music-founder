@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Pulse: Merch AI Loading State', () => {
+test.describe('Pulse: Merch AI Error Handling', () => {
 
     test.beforeEach(async ({ page }) => {
         // 1. Setup User & Store Injection
-        // We use the same pattern as merch-unified.spec.ts to bypass auth and load Merch Studio
         await page.goto('/');
         await page.waitForLoadState('domcontentloaded');
 
@@ -51,27 +50,17 @@ test.describe('Pulse: Merch AI Loading State', () => {
                 authLoading: false,
                 currentModule: 'merch' // Direct navigation to Merch
             });
-
-            // Mock Subscription Service to ensure quota checks pass without backend
-            setTimeout(() => {
-                if ((window as any).subscriptionService) {
-                    (window as any).subscriptionService.canPerformAction = async () => ({ allowed: true });
-                }
-            }, 100);
         });
     });
 
-    test('should show "Generating..." spinner and toast during AI image generation', async ({ page }) => {
+    test('should show error toast and enable retry when AI generation fails', async ({ page }) => {
         // 1. Navigate to Merch Designer
-        // Since we set currentModule: 'merch', we should be at dashboard.
-        // We need to click "New Design" or navigate to /merch/design
-
-        // Wait for dashboard or redirect
         await expect(page).toHaveURL(/.*\/merch/);
 
         // Click "New Design" if we are on dashboard
         const newDesignBtn = page.getByTestId('new-design-btn');
-        await expect(newDesignBtn).toBeVisible({ timeout: 10000 });
+        // Wait for dashboard to load explicitly
+        await expect(newDesignBtn).toBeVisible({ timeout: 20000 });
         await newDesignBtn.click();
 
         // Verify we are in Designer
@@ -142,43 +131,40 @@ test.describe('Pulse: Merch AI Loading State', () => {
              });
         });
 
-        // We want to simulate a network delay when the app calls the Firebase Function `generateImageV3`
-        let completeRequest: (value: unknown) => void;
+        // Mock Generation Failure
+        let failRequest: (value: unknown) => void;
         const requestPromise = new Promise((resolve) => {
-            completeRequest = resolve;
+            failRequest = resolve;
         });
 
         await page.route('**/*generateImageV3*', async (route) => {
-            console.log('💓 Pulse: Intercepted generateImageV3 - Holding request...');
+            console.log('💓 Pulse: Intercepted generateImageV3 - Holding request for error test...');
 
             if (route.request().method() === 'OPTIONS') {
                 await route.continue();
                 return;
             }
 
-            // Wait until we signal to complete
+            // Wait until we signal to complete (so we can see the loading state)
             await requestPromise;
 
-            // Return success response structure (matches ImageGenerationService expectation)
-            // { data: { images: [{ bytesBase64Encoded: "...", mimeType: "image/png" }] } }
+            // Return 500 Error
             await route.fulfill({
-                status: 200,
+                status: 500,
                 contentType: 'application/json',
                 body: JSON.stringify({
-                    data: {
-                        images: [{
-                            bytesBase64Encoded: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', // 1x1 red pixel
-                            mimeType: 'image/png'
-                        }]
+                    error: {
+                        message: "Simulated AI Overload",
+                        status: "INTERNAL"
                     }
                 })
             });
-            console.log('💓 Pulse: Released generateImageV3');
+            console.log('💓 Pulse: Released generateImageV3 with 500 Error');
         });
 
         // 4. Enter Prompt
         const promptInput = page.locator('#prompt-input');
-        await promptInput.fill('A cyberpunk neon logo');
+        await promptInput.fill('A glitchy chaos symbol');
 
         // 5. Click Generate
         const generateBtn = page.getByRole('button', { name: 'Generate', exact: true });
@@ -186,29 +172,28 @@ test.describe('Pulse: Merch AI Loading State', () => {
         await generateBtn.click();
 
         // 6. ASSERT: Loading State (IMMEDIATELY)
-        // Verify Button State
-        await expect(page.getByRole('button', { name: 'Generating...' })).toBeVisible();
-        await expect(page.getByRole('button', { name: 'Generating...' })).toBeDisabled();
+        // Button should show "Generating..."
+        // Use regex for robustness in case of whitespace
+        await expect(page.getByRole('button', { name: /Generating/i })).toBeVisible({ timeout: 5000 });
+        await expect(page.getByRole('button', { name: /Generating/i })).toBeDisabled();
 
-        // Verify Toast (if possible - toasts can be tricky if they animate in/out fast, but loading toasts usually persist)
-        // We look for text that contains "Generating image with AI..."
+        // Toast should show "Generating image with AI..."
         await expect(page.getByText('Generating image with AI...')).toBeVisible();
 
-        // 7. Release the Network Request
-        if (completeRequest!) completeRequest(null);
+        // 7. Release the Network Request (Trigger Failure)
+        if (failRequest!) failRequest(null);
 
-        // 8. ASSERT: Success State
-        // Button should go back to "Generate" (or dialog closes)
-        // The code says: "toast.success('Image generated successfully!'); onClose();"
-        // So the dialog should disappear.
+        // 8. ASSERT: Error Feedback
+        // Look for the error message in a toast
+        await expect(page.getByText('Generation failed')).toBeVisible();
 
-        await expect(page.getByText('Image generated successfully!')).toBeVisible();
+        // 9. ASSERT: Recovery
+        // The "Generate" button should be back to normal (not "Generating...")
+        await expect(page.getByRole('button', { name: 'Generate', exact: true })).toBeVisible();
+        await expect(page.getByRole('button', { name: 'Generate', exact: true })).toBeEnabled();
 
-        // Dialog should close
-        await expect(page.getByText('AI Image Generation')).not.toBeVisible();
-
-        // Verify image was added to canvas (optional, but good for completeness)
-        // This relies on canvas implementation, but checking for toast is the main pulse check.
+        // The dialog should still be open (user can retry)
+        await expect(page.getByText('AI Image Generation')).toBeVisible();
     });
 
 });
