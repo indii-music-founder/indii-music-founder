@@ -228,6 +228,22 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         <span className="hidden sm:inline">Attach</span>
                                     </button>
                                 </PromptInputAction>
+
+                                <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
+                                    <button
+                                        onClick={handleMicClick}
+                                        className={cn(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                                            isListening
+                                                ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                                : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
+                                        )}
+                                        aria-label={isListening ? "Stop listening" : "Voice Input"}
+                                    >
+                                        <Mic size={14} className={isListening ? "animate-pulse" : ""} />
+                                        <span className="hidden sm:inline">Dictate</span>
+                                    </button>
+                                </PromptInputAction>
                             </>
                         )}
                         {!isMobile && (
@@ -274,8 +290,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 onClick={(e) => handleSubmit(e)}
                                 disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg"
+                                data-testid="command-bar-run-btn"
                             >
-                                {isProcessing ? <Loader2 size={14} className="animate-spin" /> : <><ArrowRight size={14} /></>}
+                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}
                             </button>
                         </PromptInputAction>
                     </div>

@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { spawn } from 'child_process';
-import path from 'path';
 
 // Schema for input validation
 export const ItmspPackagingSchema = z.object({
   releaseId: z.string().min(1, "Release ID is required").regex(/^[a-zA-Z0-9_-]+$/, "Release ID must be alphanumeric (dashes/underscores allowed)"),
   stagingPath: z.string().min(1, "Staging path is required"),
-  // Optional: pythonPath for environment configuration
-  pythonPath: z.string().optional().default('python3'),
 });
 
 export type ItmspPackagingOptions = z.infer<typeof ItmspPackagingSchema>;
@@ -28,15 +24,20 @@ export interface ItmspPackagingResult {
  * Feature: ITMSP Packaging
  * Wraps the execution/distribution/package_itmsp.py script.
  * Ensures strict input validation and standardized output.
+ *
+ * NOTE: This feature must be executed from the Electron main process,
+ * as it requires PythonBridge which uses Electron's app.isPackaged and process.resourcesPath
+ * for correct path resolution in production builds.
  */
 export class ItmspPackagingFeature {
 
   /**
-   * Executes the ITMSP packaging process.
+   * Executes the ITMSP packaging process using PythonBridge.
    * @param options The packaging options (releaseId, stagingPath)
+   * @param pythonBridge Instance of PythonBridge from electron/utils/python-bridge
    * @returns Standardized result object
    */
-  async execute(options: ItmspPackagingOptions): Promise<ItmspPackagingResult> {
+  async execute(options: ItmspPackagingOptions, pythonBridge: any): Promise<ItmspPackagingResult> {
     // 1. Validation
     const validation = ItmspPackagingSchema.safeParse(options);
     if (!validation.success) {
@@ -46,67 +47,33 @@ export class ItmspPackagingFeature {
       };
     }
 
-    const { releaseId, stagingPath, pythonPath } = validation.data;
+    const { releaseId, stagingPath } = validation.data;
 
-    // 2. Resolve script path
-    // Assuming the code runs from repo root or we can locate execution/ folder
-    const scriptPath = path.resolve(process.cwd(), 'execution/distribution/package_itmsp.py');
+    // 2. Execute using PythonBridge
+    // PythonBridge correctly resolves script paths for both dev and production
+    try {
+      const result = await pythonBridge.runScript(
+        'distribution',
+        'package_itmsp.py',
+        [releaseId, stagingPath]
+      );
 
-    // 3. Execution
-    return new Promise((resolve) => {
-      const child = spawn(pythonPath, [scriptPath, releaseId, stagingPath]);
-
-      let stdout = '';
-      let stderr = '';
-
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      child.on('error', (err) => {
-        resolve({
+      if (result.status === 'FAIL' || result.error) {
+        return {
           success: false,
-          error: `Process Execution Error: ${err.message}`
-        });
-      });
+          error: result.error || 'Unknown script error'
+        };
+      }
 
-      child.on('close', (code) => {
-        if (code !== 0) {
-          // Attempt to parse stderr or fallback
-          resolve({
-            success: false,
-            error: `Script failed with code ${code}. Stderr: ${stderr.trim()}`
-          });
-          return;
-        }
-
-        try {
-          // The script prints JSON to stdout
-          const result = JSON.parse(stdout.trim());
-
-          if (result.status === 'FAIL' || result.error) {
-            resolve({
-              success: false,
-              error: result.error || 'Unknown script error'
-            });
-          } else {
-            resolve({
-              success: true,
-              data: result
-            });
-          }
-        } catch (e) {
-            const err = e as Error;
-            resolve({
-            success: false,
-            error: `Failed to parse script output: ${err.message}. Raw output: ${stdout}`
-          });
-        }
-      });
-    });
+      return {
+        success: true,
+        data: result
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error)
+      };
+    }
   }
 }
