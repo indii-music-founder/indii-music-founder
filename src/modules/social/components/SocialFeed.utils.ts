@@ -2,14 +2,12 @@ import { SocialPost } from '@/services/social/types';
 
 export interface FeedItemProps {
     post: SocialPost;
-    formatDate: (ts: number) => string;
 }
 
 // ⚡ Bolt Optimization: Deep comparison to prevent re-renders from Firestore/Store reference instability
 // This allows React.memo to skip re-renders when the post object reference changes but the content is identical.
 // NOTE: If SocialPost type changes (new fields), this function must be updated to avoid stale UI.
 export function areFeedItemPropsEqual(prev: FeedItemProps, next: FeedItemProps): boolean {
-    if (prev.formatDate !== next.formatDate) return false;
 
     const p = prev.post;
     const n = next.post;

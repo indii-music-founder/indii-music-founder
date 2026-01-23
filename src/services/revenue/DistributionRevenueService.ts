@@ -16,7 +16,7 @@ import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdap
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 
-export class RevenueService {
+export class DistributionRevenueService {
     private adapters: Map<DistributorId, IDistributorAdapter>;
 
     constructor() {
@@ -109,4 +109,4 @@ export class RevenueService {
     }
 }
 
-export const revenueService = new RevenueService();
+export const distributionRevenueService = new DistributionRevenueService();

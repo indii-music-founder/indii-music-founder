@@ -118,7 +118,39 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
 
                 {/* Map Display */}
                 <Card className="lg:col-span-2 bg-bg-dark border-gray-800 rounded-xl overflow-hidden relative shadow-2xl p-0">
-                    <TourMap locations={nextStop ? [currentLocation || 'Current Location', nextStop.city] : []} />
+                    <TourMap
+                        // Map nearby places to markers
+                        markers={[
+                            ...(currentLocation ? [{
+                                position: {
+                                    lat: Number(currentLocation.split(',')[0]),
+                                    lng: Number(currentLocation.split(',')[1])
+                                },
+                                title: "My Location",
+                                type: 'current' as const
+                            }] : []),
+                            ...(nextStop ? [{
+                                // We don't have coords for stops yet unless we geocode, so we fall back to string location for this mixed mode
+                                // But since we are upgrading, let's rely on the location string prop for the destination
+                                // and markers for the POIs
+                                position: { lat: 0, lng: 0 }, // Placeholder, won't render without valid coords
+                                title: nextStop.city,
+                                type: 'venue' as const
+                            }] : []).filter(m => m.position.lat !== 0),
+                            ...nearbyPlaces.map(p => ({
+                                position: p.geometry.location,
+                                title: p.name,
+                                type: 'gas' as const
+                            }))
+                        ]}
+                        // Also pass locations for the fallback geocoding of the destination which might not have coords yet
+                        locations={nextStop ? [nextStop.city] : []}
+                        center={currentLocation ? {
+                            lat: Number(currentLocation.split(',')[0]),
+                            lng: Number(currentLocation.split(',')[1])
+                        } : undefined}
+                        rangeRadiusMiles={range}
+                    />
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/90 to-transparent p-4 flex justify-between items-end backdrop-blur-sm">
                         <div>
                             <h3 className="text-white font-bold text-sm">Live Route Tracking</h3>

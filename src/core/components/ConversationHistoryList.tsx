@@ -1,19 +1,10 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { formatSmartDate } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, Archive, Edit2, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Helper to format date relative or absolute
-const formatDate = (ts: number) => {
-    const date = new Date(ts);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
 
-    if (diff < 24 * 60 * 60 * 1000) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-};
 
 export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) => {
     const sessions = useStore(state => state.sessions);
@@ -77,7 +68,7 @@ export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) =>
                             <span className="w-1 h-1 rounded-full bg-white/10"></span>
                             <span className="flex items-center gap-1.5">
                                 <Calendar size={10} className="text-gray-600" />
-                                {formatDate(session.updatedAt)}
+                                {formatSmartDate(session.updatedAt)}
                             </span>
                         </div>
 

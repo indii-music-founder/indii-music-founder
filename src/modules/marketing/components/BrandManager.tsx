@@ -4,8 +4,11 @@ import {
     Shield, Palette, Disc, Activity, Edit2,
     Plus, X, Check, Trash2, User, Layout, Type,
     FileText, Zap, RefreshCw, Loader2, AlertTriangle,
-    CheckCircle, Sparkles, Hash
+    CheckCircle, Sparkles, Hash, Globe, Instagram, Twitter,
+    Youtube, Facebook, Music, ChevronDown, ExternalLink,
+    Image as ImageIcon, Calendar, Clock, Users, GripVertical
 } from 'lucide-react';
+import { SocialLinks } from '@/types/User';
 import { useToast } from '@/core/context/ToastContext';
 import { AI } from '@/services/ai/AIService';
 import { db } from '@/services/firebase';
@@ -13,6 +16,136 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
+
+// --- Sub-Components ---
+
+const CareerStageSelector = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    const stages = ['Emerging', 'Rising', 'Established', 'Icon'];
+    return (
+        <div className="relative group z-30 inline-block w-full">
+            <select
+                value={value || 'Emerging'}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full appearance-none bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-2 text-sm font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none cursor-pointer hover:border-gray-600 transition-colors"
+            >
+                {stages.map(s => <option key={s} value={s} className="bg-[#111] text-gray-200">{s}</option>)}
+            </select>
+            <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-dept-marketing pointer-events-none" />
+        </div>
+    );
+};
+
+const FontSelector = ({ value, onChange }: { value: string, onChange: (val: string) => void }) => {
+    // Curated Google Fonts selection (Safe web fonts + popular Google Fonts)
+    const fonts = [
+        'Inter', 'Roboto', 'Open Sans', 'Lato', 'Montserrat',
+        'Oswald', 'Playfair Display', 'Merriweather', 'Courier Prime',
+        'Space Mono', 'Syne', 'Outfit'
+    ];
+
+    return (
+        <div className="relative group">
+            <select
+                value={value || 'Inter'}
+                onChange={(e) => onChange(e.target.value)}
+                className="w-full bg-[#0a0a0a] border border-gray-800 rounded-lg pl-3 pr-8 py-1.5 text-xs font-bold text-white focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 outline-none appearance-none cursor-pointer hover:border-gray-600 transition-colors"
+                style={{ fontFamily: value || 'Inter' }}
+                aria-label="Select typography"
+            >
+                {fonts.map(f => (
+                    <option key={f} value={f} style={{ fontFamily: f }} className="bg-[#111] py-2">
+                        {f}
+                    </option>
+                ))}
+            </select>
+            <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none group-hover:text-white transition-colors" />
+        </div>
+    );
+};
+
+const SocialLinksManager = ({ socials, onChange }: { socials: SocialLinks, onChange: (s: SocialLinks) => void }) => {
+    const platforms = [
+        { key: 'instagram', icon: Instagram, label: 'Instagram' },
+        { key: 'twitter', icon: Twitter, label: 'Twitter/X' },
+        { key: 'youtube', icon: Youtube, label: 'YouTube' },
+        { key: 'spotify', icon: Music, label: 'Spotify' },
+        { key: 'website', icon: Globe, label: 'Website' },
+    ] as const;
+
+    const handleChange = (key: keyof SocialLinks, val: string) => {
+        onChange({ ...socials, [key]: val });
+    };
+
+    return (
+        <div className="space-y-3">
+            {platforms.map(p => (
+                <div key={p.key} className="flex items-center gap-3 group">
+                    <div className="w-8 h-8 rounded-lg bg-[#0a0a0a] border border-gray-800 flex items-center justify-center text-gray-500 group-hover:text-white group-hover:border-gray-600 transition-all shrink-0">
+                        <p.icon size={14} />
+                    </div>
+                    <input
+                        type="text"
+                        value={socials?.[p.key] || ''}
+                        onChange={(e) => handleChange(p.key, e.target.value)}
+                        placeholder={`Add ${p.label} URL...`}
+                        className="flex-1 bg-transparent border-b border-gray-800 text-xs text-gray-300 py-1.5 focus:border-dept-marketing/50 focus:outline-none transition-colors placeholder:text-gray-700 font-medium min-w-0"
+                    />
+                    {socials?.[p.key] && (
+                        <a href={socials[p.key]} target="_blank" rel="noreferrer" className="text-gray-600 hover:text-dept-marketing transition-colors shrink-0">
+                            <ExternalLink size={12} />
+                        </a>
+                    )}
+                </div>
+            ))}
+        </div>
+    );
+};
+
+const TrackListEditor = ({ tracks, onChange }: { tracks: any[], onChange: (t: any[]) => void }) => {
+    const addTrack = () => onChange([...tracks, { title: '', duration: '', collaborators: '' }]);
+    const updateTrack = (idx: number, field: string, val: string) => {
+        const newTracks = [...tracks];
+        newTracks[idx] = { ...newTracks[idx], [field]: val };
+        onChange(newTracks);
+    };
+    const removeTrack = (idx: number) => {
+        const newTracks = [...tracks];
+        newTracks.splice(idx, 1);
+        onChange(newTracks);
+    };
+
+    return (
+        <div className="space-y-2">
+            {tracks?.map((track, idx) => (
+                <div key={idx} className="flex items-center gap-3 bg-[#0a0a0a] p-2 rounded-lg border border-gray-800 group">
+                    <GripVertical size={14} className="text-gray-600 cursor-grab" />
+                    <span className="text-[10px] text-gray-500 font-mono w-4">{idx + 1}</span>
+                    <input
+                        value={track.title}
+                        onChange={(e) => updateTrack(idx, 'title', e.target.value)}
+                        className="flex-1 bg-transparent border-none text-sm text-white focus:ring-0 p-0 placeholder:text-gray-700 font-medium"
+                        placeholder="Track Title"
+                    />
+                    <div className="flex items-center gap-2 bg-[#111] px-2 py-1 rounded text-gray-400">
+                        <Clock size={10} />
+                        <input
+                            value={track.duration}
+                            onChange={(e) => updateTrack(idx, 'duration', e.target.value)}
+                            className="w-10 bg-transparent border-none text-xs focus:ring-0 p-0 text-center"
+                            placeholder="0:00"
+                        />
+                    </div>
+                    <button onClick={() => removeTrack(idx)} className="text-gray-600 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash2 size={12} />
+                    </button>
+                </div>
+            ))}
+            <button onClick={addTrack} className="w-full py-2 border border-dashed border-gray-800 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-all flex items-center justify-center gap-2">
+                <Plus size={12} /> Add Track
+            </button>
+        </div>
+    );
+};
 
 interface AnalysisResult {
     isConsistent: boolean;
@@ -194,15 +327,24 @@ const BrandManager: React.FC = () => {
 
                 <div className="p-4 overflow-y-auto custom-scrollbar flex-1">
                     {/* Quick Stats / Info */}
-                    <div className="mb-6 p-3 rounded-xl bg-[#111] border border-gray-800 space-y-3">
+                    <div className="mb-6 p-4 rounded-xl bg-[#111] border border-gray-800 space-y-4 shadow-lg shadow-black/20">
                         <div>
-                            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-1">Career Stage</div>
-                            <div className="text-sm font-bold text-white">{userProfile?.careerStage || 'Unspecified'}</div>
+                            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2 flex items-center gap-2">
+                                <Sparkles size={10} className="text-dept-marketing" />
+                                Career Stage
+                            </div>
+                            <CareerStageSelector
+                                value={userProfile?.careerStage || 'Emerging'}
+                                onChange={(val) => {
+                                    if (userProfile) setUserProfile({ ...userProfile, careerStage: val });
+                                }}
+                            />
                         </div>
+                        <div className="h-px bg-gray-800/50" />
                         <div>
-                            <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-1">Current Goal</div>
-                            <div className="text-xs font-bold text-dept-marketing/80 flex items-center gap-2">
-                                <Zap size={12} className="text-dept-marketing" />
+                            <div className="text-[9px] uppercase tracking-wider text-gray-500 font-bold mb-2">Primary Goal</div>
+                            <div className="text-xs font-bold text-white flex items-center gap-2 bg-[#0a0a0a] p-2 rounded-lg border border-gray-800">
+                                <Zap size={12} className="text-yellow-500" />
                                 {userProfile?.goals?.[0] || 'World Domination'}
                             </div>
                         </div>
@@ -318,6 +460,20 @@ const BrandManager: React.FC = () => {
 
                                 {/* Stats / Quick Info */}
                                 <div className="space-y-6">
+                                    {/* Socials / Digital Footprint */}
+                                    <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
+                                        <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                                            <Globe size={12} /> Digital Footprint
+                                        </h3>
+                                        <SocialLinksManager
+                                            socials={brandKit.socials || {}}
+                                            onChange={(newSocials) => {
+                                                updateBrandKit({ socials: newSocials });
+                                                saveBrandKit({ socials: newSocials });
+                                            }}
+                                        />
+                                    </div>
+
                                     <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
                                         <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-6">Mission Stats</h3>
                                         <div className="space-y-4">
@@ -409,16 +565,30 @@ const BrandManager: React.FC = () => {
                                 {/* Typography & Style */}
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
-                                        <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                                            Typography
-                                        </h3>
-                                        <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group">
-                                            <div className="absolute top-0 right-0 p-12 bg-purple-500/5 blur-[40px] rounded-full group-hover:bg-purple-500/10 transition-colors" />
-                                            <p className="text-5xl font-bold text-white mb-2 tracking-tight" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
-                                            <p className="text-[10px] text-purple-400 font-mono font-bold tracking-widest">{brandKit.fonts || 'Inter'}</p>
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                Typography
+                                            </h3>
+                                            <div className="w-36">
+                                                <FontSelector
+                                                    value={brandKit.fonts || 'Inter'}
+                                                    onChange={(val) => {
+                                                        updateBrandKit({ fonts: val });
+                                                        saveBrandKit({ fonts: val });
+                                                    }}
+                                                />
+                                            </div>
                                         </div>
-                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-4">
-                                            Global Design System Sync: Active
+                                        <div className="p-6 bg-[#0a0a0a] rounded-xl border border-gray-800 relative overflow-hidden group transition-all hover:border-dept-marketing/30">
+                                            <div className="absolute top-0 right-0 p-12 bg-purple-500/5 blur-[40px] rounded-full group-hover:bg-purple-500/10 transition-colors" />
+                                            <p className="text-5xl font-bold text-white mb-2 tracking-tight transition-all" style={{ fontFamily: brandKit.fonts }}>AaBb</p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                                <span className="text-[10px] bg-white/5 px-2 py-0.5 rounded text-gray-400 font-mono">{brandKit.fonts || 'Inter'}</span>
+                                                <span className="text-[10px] text-emerald-500 flex items-center gap-1"><CheckCircle size={8} /> Active</span>
+                                            </div>
+                                        </div>
+                                        <p className="text-[9px] text-gray-600 font-bold uppercase tracking-wider mt-4 flex items-center gap-2">
+                                            <Activity size={10} /> Global Design System Sync: Active
                                         </p>
                                     </div>
                                     <div className="p-6 rounded-xl border border-gray-800 bg-[#111]">
@@ -448,73 +618,138 @@ const BrandManager: React.FC = () => {
                                 transition={{ duration: 0.2 }}
                                 className="bg-[#111] rounded-2xl border border-gray-800 overflow-hidden shadow-2xl relative"
                             >
+                                {/* Header Section */}
                                 <div className="p-8 border-b border-gray-800 bg-[#0a0a0a] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
-                                    <div className="relative z-10">
-                                        <label className="text-[9px] text-dept-marketing font-bold uppercase tracking-[0.2em] mb-3 block">Mission Architect</label>
-                                        <input
-                                            type="text"
-                                            value={release.title}
-                                            onChange={(e) => handleUpdateRelease('title', e.target.value)}
-                                            onBlur={handleSaveRelease}
-                                            className="text-5xl md:text-7xl font-bold text-white bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-gray-800 tracking-tight"
-                                            placeholder="MISSION_UNTITLED"
-                                        />
-                                        <div className="flex flex-wrap items-center gap-4 mt-6">
-                                            <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
-                                                <Disc size={14} className="text-dept-marketing" />
-                                                <select
-                                                    value={release.type}
-                                                    onChange={(e) => { handleUpdateRelease('type', e.target.value); handleSaveRelease(); }}
-                                                    className="bg-transparent border-none text-xs font-bold text-gray-200 focus:ring-0 p-0 min-w-[60px]"
-                                                >
-                                                    <option value="Single" className="bg-[#111]">Single</option>
-                                                    <option value="EP" className="bg-[#111]">EP</option>
-                                                    <option value="Album" className="bg-[#111]">Album</option>
-                                                </select>
+
+                                    <div className="flex flex-col md:flex-row gap-8 relative z-10">
+                                        {/* Cover Art Placeholder */}
+                                        <div className="shrink-0 group">
+                                            <div className="w-48 h-48 bg-[#111] border border-gray-800 rounded shadow-2xl flex flex-col items-center justify-center text-gray-600 hover:border-dept-marketing/50 transition-colors cursor-pointer relative overflow-hidden">
+                                                {release.coverArtUrl ? (
+                                                    <img src={release.coverArtUrl} alt="Cover" className="w-full h-full object-cover" />
+                                                ) : (
+                                                    <>
+                                                        <ImageIcon size={32} className="mb-2 opacity-50 group-hover:opacity-100 transition-opacity" />
+                                                        <span className="text-[9px] font-bold uppercase tracking-widest text-center px-4">Upload Artwork<br />(3000x3000px)</span>
+                                                    </>
+                                                )}
                                             </div>
-                                            <div className="h-4 w-px bg-gray-800 hidden md:block" />
-                                            <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2 flex-1 max-w-sm hover:border-gray-700 transition-colors">
-                                                <Hash size={14} className="text-purple-500 opacity-50" />
+                                        </div>
+
+                                        {/* Release Info */}
+                                        <div className="flex-1 space-y-4">
+                                            <div>
+                                                <div className="flex items-center justify-between mb-2">
+                                                    <label className="text-[9px] text-dept-marketing font-bold uppercase tracking-[0.2em]">Mission Architect</label>
+                                                    <input
+                                                        type="date"
+                                                        value={release.releaseDate || ''}
+                                                        onChange={(e) => { handleUpdateRelease('releaseDate', e.target.value); handleSaveRelease(); }}
+                                                        className="bg-transparent border-none text-[10px] uppercase font-bold text-gray-500 focus:text-white focus:ring-0 p-0 text-right"
+                                                    />
+                                                </div>
                                                 <input
                                                     type="text"
-                                                    value={release.genre}
-                                                    onChange={(e) => handleUpdateRelease('genre', e.target.value)}
+                                                    value={release.title}
+                                                    onChange={(e) => handleUpdateRelease('title', e.target.value)}
                                                     onBlur={handleSaveRelease}
-                                                    placeholder="Genre (e.g. Neo-Soul)"
-                                                    className="bg-transparent border-none text-white focus:ring-0 p-0 text-xs font-bold w-full placeholder:text-gray-600"
+                                                    className="text-5xl md:text-6xl font-black text-white bg-transparent border-none focus:ring-0 p-0 w-full placeholder:text-gray-800 tracking-tight leading-none"
+                                                    placeholder="UNTITLED PROJECT"
                                                 />
+                                            </div>
+
+                                            <div className="flex flex-wrap items-center gap-4">
+                                                <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-lg px-4 py-2">
+                                                    <Disc size={14} className="text-dept-marketing" />
+                                                    <select
+                                                        value={release.type}
+                                                        onChange={(e) => { handleUpdateRelease('type', e.target.value); handleSaveRelease(); }}
+                                                        className="bg-transparent border-none text-xs font-bold text-gray-200 focus:ring-0 p-0 min-w-[60px] cursor-pointer"
+                                                    >
+                                                        <option value="Single" className="bg-[#111]">Single</option>
+                                                        <option value="EP" className="bg-[#111]">EP</option>
+                                                        <option value="Album" className="bg-[#111]">Album</option>
+                                                    </select>
+                                                </div>
+                                                <div className="h-4 w-px bg-gray-800 hidden md:block" />
+                                                <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2 flex-1 max-w-sm hover:border-gray-700 transition-colors">
+                                                    <Hash size={14} className="text-purple-500 opacity-50" />
+                                                    <input
+                                                        type="text"
+                                                        value={release.genre}
+                                                        onChange={(e) => handleUpdateRelease('genre', e.target.value)}
+                                                        onBlur={handleSaveRelease}
+                                                        placeholder="Genre (e.g. Neo-Soul)"
+                                                        className="bg-transparent border-none text-white focus:ring-0 p-0 text-xs font-bold w-full placeholder:text-gray-600"
+                                                    />
+                                                </div>
+                                                <div className="flex items-center gap-3 bg-[#151515] border border-gray-800 rounded-lg px-4 py-2 hover:border-gray-700 transition-colors">
+                                                    <Users size={14} className="text-blue-500 opacity-50" />
+                                                    <input
+                                                        type="text"
+                                                        value={release.artists}
+                                                        onChange={(e) => handleUpdateRelease('artists', e.target.value)}
+                                                        onBlur={handleSaveRelease}
+                                                        placeholder="feat. Artists"
+                                                        className="bg-transparent border-none text-white focus:ring-0 p-0 text-xs font-bold w-full placeholder:text-gray-600 min-w-[100px]"
+                                                    />
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="p-8 grid grid-cols-1 lg:grid-cols-2 gap-8">
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-2">
-                                            <Activity size={12} className="text-red-400" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Atmosphere & Mood</span>
+                                <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
+                                    {/* Left Column: Vibes */}
+                                    <div className="lg:col-span-7 space-y-6">
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 text-gray-500 mb-2">
+                                                <Activity size={12} className="text-red-400" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Atmosphere & Mood</span>
+                                            </div>
+                                            <textarea
+                                                value={release.mood}
+                                                onChange={(e) => handleUpdateRelease('mood', e.target.value)}
+                                                onBlur={handleSaveRelease}
+                                                className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                                                placeholder="Describe the sonic and visual atmosphere..."
+                                            />
                                         </div>
-                                        <textarea
-                                            value={release.mood}
-                                            onChange={(e) => handleUpdateRelease('mood', e.target.value)}
-                                            onBlur={handleSaveRelease}
-                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
-                                            placeholder="Describe the sonic and visual atmosphere..."
-                                        />
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-2 text-gray-500 mb-2">
+                                                <Shield size={12} className="text-blue-400" />
+                                                <span className="text-[10px] font-bold uppercase tracking-widest">Conceptual Themes</span>
+                                            </div>
+                                            <textarea
+                                                value={release.themes}
+                                                onChange={(e) => handleUpdateRelease('themes', e.target.value)}
+                                                onBlur={handleSaveRelease}
+                                                className="w-full h-24 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
+                                                placeholder="Translate the artistry into narrative goals..."
+                                            />
+                                        </div>
                                     </div>
-                                    <div className="space-y-3">
-                                        <div className="flex items-center gap-2 text-gray-500 mb-2">
-                                            <Shield size={12} className="text-blue-400" />
-                                            <span className="text-[10px] font-bold uppercase tracking-widest">Conceptual Themes</span>
+
+                                    {/* Right Column: Tracklist */}
+                                    <div className="lg:col-span-5 border-l border-gray-800 pl-8 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest flex items-center gap-2">
+                                                <Disc size={12} />
+                                                Tracklist ({release.tracks?.length || 0})
+                                            </h3>
                                         </div>
-                                        <textarea
-                                            value={release.themes}
-                                            onChange={(e) => handleUpdateRelease('themes', e.target.value)}
-                                            onBlur={handleSaveRelease}
-                                            className="w-full h-40 bg-[#0a0a0a] border border-gray-800 rounded-xl p-4 text-xs font-medium text-gray-300 focus:border-dept-marketing/30 focus:ring-1 focus:ring-dept-marketing/10 outline-none resize-none custom-scrollbar leading-relaxed"
-                                            placeholder="Translate the artistry into narrative goals..."
-                                        />
+                                        {(release.type === 'EP' || release.type === 'Album') ? (
+                                            <TrackListEditor
+                                                tracks={release.tracks || []}
+                                                onChange={(newTracks) => { handleUpdateRelease('tracks', newTracks as any); handleSaveRelease(); }}
+                                            />
+                                        ) : (
+                                            <div className="p-8 border border-dashed border-gray-800 rounded-xl text-center">
+                                                <Disc size={24} className="mx-auto text-gray-700 mb-2" />
+                                                <p className="text-xs text-gray-500">Tracklist available for<br />EP & Album types.</p>
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </motion.div>
