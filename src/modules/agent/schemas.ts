@@ -14,9 +14,10 @@ export const VenueSchema = z.object({
     status: z.enum(['active', 'blacklisted', 'unknown', 'closed']),
     notes: z.string().optional(),
     // Handles number (Date.now()) or Firestore Timestamp object (has seconds/nanoseconds)
+    // Handles number (Date.now()) or Firestore Timestamp object (has seconds/nanoseconds)
     lastScoutedAt: z.union([
         z.number(),
-        z.object({ seconds: z.number(), nanoseconds: z.number() })
+        z.object({ seconds: z.number(), nanoseconds: z.number() }).transform(val => val.seconds * 1000 + val.nanoseconds / 1000000)
     ]).optional(),
     imageUrl: z.string().url().optional().or(z.literal('')),
     fitScore: z.number().min(0).max(100).optional()
