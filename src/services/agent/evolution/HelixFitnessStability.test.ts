@@ -66,6 +66,7 @@ describe('🧬 Helix: Fitness Stability & Edge Cases', () => {
     // Infinity - 100 = Infinity (Positive). So God comes before Mortal.
     expect(nextGen[0].id).toBe('God');
     // Helix: We sanitize Infinity to Number.MAX_VALUE for safety
+    // Helix: God Mode Safety clamps Infinity to MAX_VALUE for serialization
     expect(nextGen[0].fitness).toBe(Number.MAX_VALUE);
 
     // 2. Breeding Check

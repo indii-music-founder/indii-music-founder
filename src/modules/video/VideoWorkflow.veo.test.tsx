@@ -67,7 +67,7 @@ vi.mock('./components/DirectorPromptBar', () => ({
     DirectorPromptBar: ({ onGenerate, onPromptChange }: any) => (
         <div>
             <input placeholder="Describe your scene" onChange={(e) => onPromptChange(e.target.value)} />
-            <button onClick={onGenerate}>Generate</button>
+            <button onClick={() => onGenerate()}>Generate</button>
         </div>
     )
 }));
