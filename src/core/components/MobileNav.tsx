@@ -84,7 +84,7 @@ export const MobileNav = () => {
                     haptic('medium');
                     setIsOpen(true);
                 }}
-                className="md:hidden fixed bottom-24 right-6 z-[102] p-3.5 bg-background border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-white/10 text-white"
+                className="md:hidden fixed bottom-32 right-6 z-[102] p-3.5 bg-background border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-white/10 text-white"
                 aria-label="Open Navigation"
             >
                 <Menu size={24} />
