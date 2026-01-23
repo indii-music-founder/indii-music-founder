@@ -228,6 +228,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         <span className="hidden sm:inline">Attach</span>
                                     </button>
                                 </PromptInputAction>
+
                                 <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
                                     <button
                                         onClick={handleMicClick}
