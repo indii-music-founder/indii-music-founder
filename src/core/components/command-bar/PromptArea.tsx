@@ -253,6 +253,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             onClick={() => setCommandBarDetached(!isCommandBarDetached)}
                             className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all"
                             title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
+                            aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
                         >
                             {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
                         </button>
@@ -263,6 +264,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase",
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
                             )}
+                            aria-label="Toggle indii mode"
                         >
                             <div className={cn("w-1.5 h-1.5 rounded-full", isIndiiMode ? "bg-purple-400" : "bg-gray-600")} />
                             indii
