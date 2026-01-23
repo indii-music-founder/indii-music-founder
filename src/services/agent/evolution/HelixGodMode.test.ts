@@ -70,4 +70,74 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
     expect(json).toContain(`"fitness":${Number.MAX_VALUE}`);
     expect(json).not.toContain('"fitness":null');
   });
+
+  it('Serialization Safety: Converts -Infinity fitness to -MAX_VALUE to prevent JSON nullification', async () => {
+    // Scenario: An agent has catastrophic failure (-Infinity Fitness).
+    // JSON.stringify(-Infinity) results in "null", causing database corruption.
+    // Helix must prevent this by clamping -Infinity to -Number.MAX_VALUE.
+
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'Doomed', fitness: undefined }, // Will get -Infinity
+      { ...baseGene, id: 'Mortal', fitness: undefined } // Will get 1.0
+    ];
+
+    // Mock Fitness: Return -Infinity for Doomed
+    mockFitnessFn.mockImplementation(async (g) => {
+      if (g.id === 'Doomed') return -Infinity;
+      return 1.0;
+    });
+
+    // Evolve
+    const nextGen = await engine.evolve(population);
+
+    // Verify the Doomed agent is in the population (not excluded)
+    const doomed = nextGen.find(g => g.id === 'Doomed');
+    expect(doomed).toBeDefined();
+
+    // CRITICAL ASSERTION: Fitness must be clamped
+    expect(doomed!.fitness).toBe(-Number.MAX_VALUE);
+    expect(doomed!.fitness).not.toBe(-Infinity);
+
+    // Verify JSON safety
+    const json = JSON.stringify(doomed);
+    expect(json).toContain(`"fitness":${-Number.MAX_VALUE}`);
+    expect(json).not.toContain('"fitness":null');
+  });
+
+  it('Serialization Safety: Converts NaN fitness to 0 to prevent JSON nullification', async () => {
+    // Scenario: An agent has invalid fitness calculation (NaN).
+    // JSON.stringify(NaN) results in "null", causing database corruption.
+    // Helix must prevent this by converting NaN to 0 (failure state).
+
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'Broken', fitness: undefined }, // Will get NaN
+      { ...baseGene, id: 'Mortal', fitness: undefined } // Will get 1.0
+    ];
+
+    // Mock Fitness: Return NaN for Broken
+    mockFitnessFn.mockImplementation(async (g) => {
+      if (g.id === 'Broken') return NaN;
+      return 1.0;
+    });
+
+    // Evolve
+    const nextGen = await engine.evolve(population);
+
+    // Verify the Broken agent is in the population
+    const broken = nextGen.find(g => g.id === 'Broken');
+    expect(broken).toBeDefined();
+
+    // CRITICAL ASSERTION: Fitness must be converted to 0
+    expect(broken!.fitness).toBe(0);
+    expect(Number.isNaN(broken!.fitness)).toBe(false);
+
+    // Verify JSON safety
+    const json = JSON.stringify(broken);
+    expect(json).toContain('"fitness":0');
+    expect(json).not.toContain('"fitness":null');
+  });
 });
