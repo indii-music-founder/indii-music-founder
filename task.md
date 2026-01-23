@@ -28,6 +28,7 @@ Execute a complete end-to-end "Live Test" of the song release process for the "D
 
 - **API Rate Limiting (429):** Monitoring for rate limits.
 - **File System Access:** Investigating drag-and-drop support for mock audio.
+- **Deployment In Progress:** Video generation functions (`triggerVideoJob`) are deploying to `us-west1`.
 
 ## Next Steps
 
