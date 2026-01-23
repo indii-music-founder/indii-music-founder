@@ -86,6 +86,11 @@ vi.mock('../utils/ipc-security', () => ({
     validateSender: vi.fn()
 }));
 
+// Mock Network Security
+vi.mock('../utils/network-security', () => ({
+    validateSafeUrlAsync: vi.fn(async () => {})
+}));
+
 describe('Security: Video Handlers', () => {
     let handlers: Record<string, (...args: any[]) => Promise<any>> = {};
 
@@ -120,6 +125,20 @@ describe('Security: Video Handlers', () => {
             // Should throw due to validation schema
             await expect(handler({ senderFrame: { url: 'file://valid' } }, 'http://127.0.0.1/secret.json', 'test.mp4'))
                 .rejects.toThrow(/Invalid URL/);
+        });
+
+        it('should block SSRF via DNS resolution (validateSafeUrlAsync)', async () => {
+            const handler = handlers['video:save-asset'];
+            const { validateSafeUrlAsync } = await import('../utils/network-security');
+
+            // Mock validation failure (Simulate DNS resolving to private IP)
+            (validateSafeUrlAsync as any).mockImplementationOnce(async () => {
+                throw new Error('Security Violation: Domain resolves to private IP');
+            });
+
+            // URL looks valid to schema (public domain) but fails DNS check
+            await expect(handler({ senderFrame: { url: 'file://valid' } }, 'http://localtest.me/secret.json', 'test.mp4'))
+                .rejects.toThrow('Security Violation: Domain resolves to private IP');
         });
 
         it('should sanitize filename to prevent path traversal', async () => {
@@ -178,5 +197,21 @@ describe('Security: Video Handlers', () => {
              await expect(handler({ senderFrame: { url: 'file://valid' } }, '../../../../../etc/passwd'))
                 .rejects.toThrow(/Access Denied|Security/);
         });
+
+        it('should block partial directory name matching', async () => {
+            const handler = handlers['video:open-folder'];
+            const shell = await import('electron').then(m => m.shell);
+
+            // Asset Dir: /mock/documents/IndiiOS/Assets/Video
+            // Attack Path: /mock/documents/IndiiOS/Assets/Video_Secret
+
+            // This simulates a sibling directory that shares the prefix "Video"
+            const attackPath = '/mock/documents/IndiiOS/Assets/Video_Secret';
+
+            await expect(handler({ senderFrame: { url: 'file://valid' } }, attackPath))
+                .rejects.toThrow(/Access Denied/);
+
+            expect(shell.showItemInFolder).not.toHaveBeenCalled();
+       });
     });
 });

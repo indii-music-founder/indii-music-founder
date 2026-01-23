@@ -44,7 +44,7 @@ export class EvolutionEngine {
     // If the population has reached the maximum generation, we halt evolution to prevent infinite loops.
     const currentMaxGeneration = Math.max(...scoredPopulation.map(g => g.generation || 0));
     if (this.config.maxGenerations && currentMaxGeneration >= this.config.maxGenerations) {
-      return scoredPopulation.slice(0, this.config.populationSize);
+      return this.sanitizeForPersistence(scoredPopulation.slice(0, this.config.populationSize));
     }
 
     // 2. Selection (Elitism)
@@ -154,7 +154,34 @@ export class EvolutionEngine {
       }
     }
 
-    return nextGeneration;
+    return this.sanitizeForPersistence(nextGeneration);
+  }
+
+  // Helix: The Icarus Check
+  // Ensures that 'God Mode' agents (Fitness = Infinity) are not lobotomized by JSON serialization.
+  // JSON.stringify(Infinity) -> null, which causes the agent to lose its elite status upon reload.
+  // We convert Infinity to Number.MAX_VALUE which is safe for JSON and still practically infinite.
+  private sanitizeForPersistence(population: AgentGene[]): AgentGene[] {
+    return population.map(gene => {
+      if (gene.fitness === Infinity) {
+        return { ...gene, fitness: Number.MAX_VALUE };
+      }
+      return gene;
+    });
+    // Helix: God Mode Safety
+    // Ensure that non-finite fitness values (Infinity, -Infinity, NaN) are not serialized as null in JSON.
+    // JSON.stringify() converts all three to null, which corrupts the database on reload.
+    return nextGeneration.map(gene => {
+      let safeFitness = gene.fitness;
+      if (safeFitness === Infinity) {
+        safeFitness = Number.MAX_VALUE;
+      } else if (safeFitness === -Infinity) {
+        safeFitness = -Number.MAX_VALUE;
+      } else if (Number.isNaN(safeFitness)) {
+        safeFitness = 0; // NaN is treated as failure (consistent with mating pool filter)
+      }
+      return { ...gene, fitness: safeFitness };
+    });
   }
 
   private selectParent(population: AgentGene[]): AgentGene {
