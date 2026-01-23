@@ -18,6 +18,8 @@ export interface Project {
     type: AppSlice['currentModule'];
     date: number;
     orgId: string;
+    thumbnail?: string;
+    assetCount?: number;
 }
 
 export interface AppSlice {
