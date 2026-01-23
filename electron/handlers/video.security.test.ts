@@ -178,5 +178,21 @@ describe('Security: Video Handlers', () => {
              await expect(handler({ senderFrame: { url: 'file://valid' } }, '../../../../../etc/passwd'))
                 .rejects.toThrow(/Access Denied|Security/);
         });
+
+        it('should block partial directory name matching', async () => {
+            const handler = handlers['video:open-folder'];
+            const shell = await import('electron').then(m => m.shell);
+
+            // Asset Dir: /mock/documents/IndiiOS/Assets/Video
+            // Attack Path: /mock/documents/IndiiOS/Assets/Video_Secret
+
+            // This simulates a sibling directory that shares the prefix "Video"
+            const attackPath = '/mock/documents/IndiiOS/Assets/Video_Secret';
+
+            await expect(handler({ senderFrame: { url: 'file://valid' } }, attackPath))
+                .rejects.toThrow(/Access Denied/);
+
+            expect(shell.showItemInFolder).not.toHaveBeenCalled();
+       });
     });
 });
