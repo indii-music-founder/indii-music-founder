@@ -155,12 +155,19 @@ export class EvolutionEngine {
     }
 
     // Helix: God Mode Safety
-    // Ensure that "Superintelligent" agents (Infinity Fitness) are not serialized as null in JSON.
-    // We clamp Infinity to Number.MAX_VALUE.
-    return nextGeneration.map(gene => ({
-      ...gene,
-      fitness: gene.fitness === Infinity ? Number.MAX_VALUE : gene.fitness
-    }));
+    // Ensure that non-finite fitness values (Infinity, -Infinity, NaN) are not serialized as null in JSON.
+    // JSON.stringify() converts all three to null, which corrupts the database on reload.
+    return nextGeneration.map(gene => {
+      let safeFitness = gene.fitness;
+      if (safeFitness === Infinity) {
+        safeFitness = Number.MAX_VALUE;
+      } else if (safeFitness === -Infinity) {
+        safeFitness = -Number.MAX_VALUE;
+      } else if (Number.isNaN(safeFitness)) {
+        safeFitness = 0; // NaN is treated as failure (consistent with mating pool filter)
+      }
+      return { ...gene, fitness: safeFitness };
+    });
   }
 
   private selectParent(population: AgentGene[]): AgentGene {
