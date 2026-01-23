@@ -21,3 +21,7 @@
 ## 2025-05-24 - Icon-Only Buttons and Test Queries
 **Learning:** `getByText` fails for icon-only buttons even if they have `title` or `aria-label`. `getByRole('button', { name: '...' })` is the robust way to query these and simultaneously verify the accessible name.
 **Action:** Always use `getByRole` with the `name` option for interactive elements to verify both existence and accessibility compliance.
+
+## 2025-05-24 - JSDOM Range Input Interaction
+**Learning:** `userEvent.keyboard` does not trigger value changes on `<input type="range">` in JSDOM environments, unlike real browsers.
+**Action:** Use `userEvent.tab()` to verify focusability, but fallback to `fireEvent.change` to test the `onChange` logic in unit tests, acknowledging the environment limitation.
