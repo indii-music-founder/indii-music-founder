@@ -105,7 +105,7 @@ export const generateVideo = onCall({
 });
 ```
 
-2. Ensure client calls target the correct region endpoint.
+1. Ensure client calls target the correct region endpoint.
 
 **Date Added:** 2026-01-23
 **Related Errors:** VEO-001
@@ -176,4 +176,18 @@ onAuthStateChanged(auth, (user) => {
 
 ---
 
-<!-- Add new errors above this line -->
+## REFF-001 ReferenceError Variable Name Mismatch
+
+**Pattern:** `ReferenceError: X is not defined`
+**Context:** React components after refactoring or merge conflicts
+**Root Cause:** A variable is used in the JSX or logic that hasn't been declared or was renamed in a previous change. In `PromptArea.tsx`, `input` and `attachments` were used instead of `commandBarInput` and `commandBarAttachments`.
+**Fix:**
+
+1. Identify the correct variable name in the current scope (e.g., check `useStore` or `useState` hooks).
+2. Update all occurrences to the correct name.
+3. Clean up any duplicated props that might have been introduced during a bad merge.
+
+**Date Added:** 2026-01-23
+**Related Errors:** BUILD-001
+
+---

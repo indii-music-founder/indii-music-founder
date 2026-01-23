@@ -155,7 +155,7 @@ test.describe('Flow: Routing & Navigation', () => {
 
         const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
         if (await guestLoginBtn.isVisible()) {
-             await guestLoginBtn.click();
+            await guestLoginBtn.click();
         }
 
         // Should redirect to Dashboard (/)
@@ -211,10 +211,10 @@ test.describe('Flow: Routing & Navigation', () => {
         // Handle potential login redirect (if reload clears auth)
         const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
         if (await guestLoginBtn.isVisible()) {
-             await guestLoginBtn.click();
-             // Login usually redirects to dashboard or stored return url.
-             // If app doesn't support return url with params, this might fail, revealing a bug.
-             // But based on observation, let's wait for marketing text.
+            await guestLoginBtn.click();
+            // Login usually redirects to dashboard or stored return url.
+            // If app doesn't support return url with params, this might fail, revealing a bug.
+            // But based on observation, let's wait for marketing text.
         }
 
         // 2. Verify we are on Marketing and Params exist
@@ -313,7 +313,7 @@ test.describe('Flow: Routing & Navigation', () => {
         // Handle potential Login if reload happened (it will)
         const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
         if (await guestLoginBtn.isVisible()) {
-             await guestLoginBtn.click();
+            await guestLoginBtn.click();
         }
 
         // 3. Verify Chrome is HIDDEN
@@ -334,7 +334,7 @@ test.describe('Flow: Routing & Navigation', () => {
         // Handle potential Login if reload happened
         const backLoginBtn = page.getByRole('button', { name: /Guest Login/i });
         if (await backLoginBtn.isVisible()) {
-             await backLoginBtn.click();
+            await backLoginBtn.click();
         }
 
         // 6. Verify Chrome REAPPEARS
@@ -382,9 +382,9 @@ test.describe('Flow: Routing & Navigation', () => {
         // We use the exposed store to trigger client-side navigation, ensuring we test component unmounting
         // rather than full page reload (which would wipe memory state anyway).
         await page.evaluate(() => {
-            // @ts-ignore
+            // @ts-expect-error
             if (window.useStore) {
-                // @ts-ignore
+                // @ts-expect-error
                 window.useStore.setState({ currentModule: 'onboarding' });
             } else {
                 // Fallback for environments where useStore is not exposed (should not happen in Dev)
@@ -400,9 +400,9 @@ test.describe('Flow: Routing & Navigation', () => {
         // 4. Navigate Back (to Dashboard)
         console.log('Navigating back (SPA)...');
         await page.evaluate(() => {
-            // @ts-ignore
+            // @ts-expect-error
             if (window.useStore) {
-                // @ts-ignore
+                // @ts-expect-error
                 window.useStore.setState({ currentModule: 'dashboard' });
             } else {
                 window.location.href = '/';
@@ -421,7 +421,7 @@ test.describe('Flow: Routing & Navigation', () => {
         if (inputValue !== testMessage) {
             console.log('FAILURE: Chat draft state was lost during navigation.');
         } else {
-             console.log('SUCCESS: Chat draft state was PRESERVED!');
+            console.log('SUCCESS: Chat draft state was PRESERVED!');
         }
 
         expect(inputValue).toBe(testMessage);

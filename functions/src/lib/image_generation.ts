@@ -59,12 +59,16 @@ export const generateImageV3Fn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { prompt, aspectRatio, count, images } = validation.data;
+        const { prompt, aspectRatio, count, images, model: requestedModel, mediaResolution, thinking } = validation.data;
 
         try {
             console.log(`[generateImageV3] Initializing Gemini 3 Client`);
             const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
+
+            // Select Model (Pro vs Fast)
+            const modelId = requestedModel === 'fast'
+                ? FUNCTION_AI_MODELS.IMAGE.FAST
+                : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
             // 3. Construct Payload
             const parts: any[] = [{ text: prompt }];
@@ -90,6 +94,8 @@ export const generateImageV3Fn = () => functions
                     candidateCount: count || 1,
                     responseModalities: ["IMAGE"],
                     ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                    ...(mediaResolution ? { mediaResolution: mediaResolution as any } : {}),
+                    ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {})
                 }
             });
 

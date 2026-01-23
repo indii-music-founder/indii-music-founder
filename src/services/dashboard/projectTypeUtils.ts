@@ -22,6 +22,7 @@ export const ProjectSchema = z.object({
 export const ProjectMetadataSchema = z.object({
     id: z.string(),
     name: z.string(),
+    type: z.string(),
     lastModified: z.number(),
     assetCount: z.number(),
     thumbnail: z.string().optional(),
@@ -50,13 +51,14 @@ export function projectToMetadata(
     const metadata: ProjectMetadata = {
         id: validatedProject.id,
         name: validatedProject.name,
+        type: validatedProject.type as any, // Cast to ModuleId (handled by interface)
         lastModified: validatedProject.date, // KEY CONVERSION: date → lastModified
         assetCount,
         thumbnail,
     };
 
     // Validate output to ensure type safety
-    return ProjectMetadataSchema.parse(metadata);
+    return ProjectMetadataSchema.parse(metadata) as ProjectMetadata;
 }
 
 /**

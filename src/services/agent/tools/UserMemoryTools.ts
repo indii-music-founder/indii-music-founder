@@ -33,7 +33,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -43,9 +43,9 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
         ? toolContext.get('currentProjectId')
         : useStore.getState().currentProjectId;
 
-      const currentSessionId = toolContext
-        ? toolContext.get('currentSessionId')
-        : useStore.getState().currentSessionId;
+      const currentSessionId = (toolContext
+        ? toolContext.get('activeSessionId')
+        : useStore.getState().activeSessionId) || undefined;
 
       try {
         const memoryId = await userMemoryService.saveMemory(
@@ -89,7 +89,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -132,7 +132,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
   get_user_context: wrapTool(
     'get_user_context',
     async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -182,7 +182,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -232,7 +232,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -269,7 +269,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -298,7 +298,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -327,7 +327,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');
@@ -361,7 +361,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
   consolidate_user_memories: wrapTool(
     'consolidate_user_memories',
     async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
-      const userId = toolContext ? toolContext.get('userId') : useStore.getState().user?.uid;
+      const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
         return toolError('User not authenticated.', 'AUTH_REQUIRED');

@@ -1,4 +1,4 @@
-
+import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 import { MOCK_SALES_ANALYTICS } from './mockData';
@@ -6,6 +6,7 @@ import { MOCK_SALES_ANALYTICS } from './mockData';
 export interface ProjectMetadata {
     id: string;
     name: string;
+    type: ModuleId;
     lastModified: number;
     assetCount: number;
     thumbnail?: string;

@@ -22,6 +22,10 @@ export interface ImageGenerationOptions {
     // Distributor-aware options
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
+    // Gemini 3 Configuration
+    model?: 'fast' | 'pro';
+    thinking?: boolean;
+    mediaResolution?: 'low' | 'medium' | 'high';
 }
 
 export interface RemixOptions {
@@ -112,6 +116,9 @@ export class ImageGenerationService {
                 aspectRatio: aspectRatio,
                 count: count,
                 images: options.sourceImages?.length ? options.sourceImages : [],
+                model: options.model,
+                thinking: options.thinking,
+                mediaResolution: options.mediaResolution
             });
 
             interface GenerateImageResponse {
