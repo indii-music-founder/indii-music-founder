@@ -58,6 +58,8 @@ export function DeptLoader({
 
     const content = (
         <div
+            role="status"
+            aria-live="polite"
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
             className={`
                 flex flex-col items-center justify-center gap-3 p-6 rounded-lg
@@ -66,6 +68,7 @@ export function DeptLoader({
             `}
         >
             <Loader2
+                aria-hidden="true"
                 className={`${sizeClasses[size]} ${colors.text} animate-spin drop-shadow-[0_0_8px_var(--dept-color)]`}
             />
             {message && (
@@ -115,6 +118,7 @@ export function DeptSkeleton({
 
     return (
         <div
+            aria-hidden="true"
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
             className={`
                 ${width} ${height} ${className}

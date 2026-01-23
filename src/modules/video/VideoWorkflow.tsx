@@ -306,17 +306,22 @@ export default function VideoWorkflow() {
         return () => { if (unsubscribe) unsubscribe(); };
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
 
-    const handleGenerate = async () => {
+    const handleGenerate = async (promptOverride?: string) => {
         setJobStatus('queued');
         const isInterpolation = !!(videoInputs.firstFrame && videoInputs.lastFrame);
         toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
 
+        // ⚡ Bolt Optimization: Use prompt passed from child component (which has local state)
+        // to avoid using stale state due to debounce, falling back to localPrompt.
+        const promptToUse = promptOverride || localPrompt;
+
         try {
             // Update global prompt before generating
-            setPrompt(localPrompt);
+            setPrompt(promptToUse);
+            if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
-            const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
+            const finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 

@@ -17,3 +17,9 @@
 **Action:** Implemented "Scenario 2" in `VideoWorkflow.veo.test.tsx` to verify:
 - **Safety Handshake:** UI correctly identifies `SAFETY_VIOLATION` and shows a specific error toast.
 - **Flash vs Pro Race:** Confirmed that rapid job ID switching (due to user triggering Flash generation) correctly cleans up previous "Pro" subscriptions, preventing stale state updates.
+
+## 2026-01-24 - [Veo 3.1 Quality Tier Protection]
+**Learning:** `VideoGenerationService` implements client-side protection against out-of-order packet delivery where a delayed "Flash" (low quality) update could overwrite a "Pro" (high quality) result.
+**Action:** Enhanced `LensVeoFlashProRace.test.ts` to verify:
+- **Out-of-Order Protection:** Service ignores "Flash" updates if "Pro" metadata (Quality Level 2) has already been processed for the same job.
+- **Upgrade Continuity:** Service correctly accepts "Pro" updates even after "Flash" has been rendered, ensuring the user gets the best available quality.

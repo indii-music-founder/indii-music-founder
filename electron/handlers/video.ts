@@ -5,13 +5,15 @@ import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
 
 /**
  * Downloads a file from a URL to a local path.
  */
 async function downloadFile(url: string, destinationPath: string) {
-    const response = await fetch(url);
+    // Security: Disable redirects to prevent Open Redirect SSRF bypass
+    const response = await fetch(url, { redirect: 'error' });
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
     if (!response.body) throw new Error(`No body in response for ${url}`);
 
@@ -31,6 +33,7 @@ export function registerVideoHandlers() {
 
             // Validate URL (SSRF Protection)
             FetchUrlSchema.parse(url);
+            await validateSafeUrlAsync(url);
 
             // Validate Filename presence
             if (!filename || typeof filename !== 'string') {
