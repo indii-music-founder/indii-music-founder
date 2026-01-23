@@ -38,6 +38,7 @@ vi.mock('firebase-admin', () => ({
 // Mock firebase-functions
 vi.mock('firebase-functions/v1', () => ({
     runWith: vi.fn().mockReturnThis(),
+    region: vi.fn().mockReturnThis(),
     https: {
         onCall: vi.fn((handler) => handler),
         onRequest: vi.fn((handler) => handler),
