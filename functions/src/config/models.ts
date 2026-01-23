@@ -8,6 +8,7 @@
 export const FUNCTION_AI_MODELS = {
     IMAGE: {
         GENERATION: 'gemini-3-pro-image-preview',
+        FAST: 'gemini-2.5-flash-image',
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',

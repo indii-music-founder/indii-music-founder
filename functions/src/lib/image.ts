@@ -8,6 +8,9 @@ export const GenerateImageRequestSchema = z.object({
         mimeType: z.string(),
         data: z.string() // Base64 encoded data
     })).optional(),
+    model: z.enum(["fast", "pro"]).optional().default("fast"),
+    mediaResolution: z.enum(["low", "medium", "high"]).optional().default("medium"),
+    thinking: z.boolean().optional().default(false)
 });
 
 export const EditImageRequestSchema = z.object({

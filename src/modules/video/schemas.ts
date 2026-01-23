@@ -10,7 +10,7 @@ export const SafetyRatingSchema = z.object({
 });
 
 export const VideoResolutionSchema = z.enum([
-    '1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024'
+    '1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024', '4k'
 ]);
 
 export const VideoAspectRatioSchema = z.enum([
@@ -26,6 +26,7 @@ export const VideoGenerationOptionsSchema = z.object({
     model: z.string().optional(),
     firstFrame: z.string().optional(), // Allow Data URI or URL
     lastFrame: z.string().optional(),  // Allow Data URI or URL
+    inputVideo: z.string().optional(), // For video extensions (URL or Base64)
     image: z.object({
         imageBytes: z.string(),
         mimeType: z.string().optional()

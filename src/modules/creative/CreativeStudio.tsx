@@ -91,7 +91,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         sourceImages: sourceImages,
                         // Pass distributor context for cover art mode
                         userProfile: isCoverArt ? userProfile : undefined,
-                        isCoverArt
+                        isCoverArt,
+                        // Gemini 3 Params
+                        model: studioControls.model,
+                        thinking: studioControls.thinking,
+                        mediaResolution: studioControls.mediaResolution
                     });
 
                     if (results.length > 0) {

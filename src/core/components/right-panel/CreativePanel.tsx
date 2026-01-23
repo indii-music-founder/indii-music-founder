@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wand2, History, ChevronRight, ChevronDown, Sliders } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
@@ -232,6 +232,69 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         />
                     </div>
 
+                    {/* Gemini 3 / Veo 3.1 Advanced Controls */}
+                    <div className="p-3 bg-white/5 rounded-xl border border-white/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-1.5">
+                                <Zap size={10} />
+                                MODEL CONFIG
+                            </label>
+                            {/* Thinking Toggle */}
+                            <button
+                                onClick={() => setStudioControls({ thinking: !studioControls.thinking })}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-medium transition-all ${studioControls.thinking
+                                    ? 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                    : 'bg-black/40 text-gray-500 border border-transparent hover:text-gray-300'
+                                    }`}
+                                title="Enable High-Reasoning Mode"
+                            >
+                                <Brain size={10} />
+                                Thinking
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                            {/* Model Selector */}
+                            <div className="bg-black/40 p-1 rounded-lg flex">
+                                <button
+                                    onClick={() => setStudioControls({ model: 'fast' })}
+                                    className={`flex-1 py-1 text-[10px] font-medium rounded-md transition-all ${studioControls.model === 'fast'
+                                        ? 'bg-blue-500/20 text-blue-300'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                >
+                                    Flash
+                                </button>
+                                <button
+                                    onClick={() => setStudioControls({ model: 'pro' })}
+                                    className={`flex-1 py-1 text-[10px] font-medium rounded-md transition-all ${studioControls.model === 'pro'
+                                        ? 'bg-purple-500/20 text-purple-300'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                        }`}
+                                >
+                                    Pro
+                                </button>
+                            </div>
+
+                            {/* Media Resolution */}
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-2 flex items-center pointer-events-none">
+                                    <Layers size={10} className="text-gray-500" />
+                                </div>
+                                <select
+                                    value={studioControls.mediaResolution || 'medium'}
+                                    onChange={(e) => setStudioControls({ mediaResolution: e.target.value as any })}
+                                    className="w-full bg-black/40 text-white text-[10px] py-1.5 pl-7 pr-6 rounded-lg border border-transparent outline-none appearance-none cursor-pointer hover:bg-black/60 transition-all font-medium"
+                                >
+                                    <option value="low">Low Res</option>
+                                    <option value="medium">Standard</option>
+                                    <option value="high">High Res</option>
+                                </select>
+                                <ChevronDown size={10} className="absolute right-2 top-2 text-gray-500 pointer-events-none" />
+                            </div>
+                        </div>
+                    </div>
+
                     {/* Settings Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -262,6 +325,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     <option value="1024x1024">1K (Square)</option>
                                     <option value="1280x720">HD (720p)</option>
                                     <option value="1920x1080">FHD (1080p)</option>
+                                    <option value="4k">UHD (4K)</option>
                                     <option value="1080x1920">Vertical (1080x1920)</option>
                                     <option value="720x1280">Vertical (720x1280)</option>
                                 </select>

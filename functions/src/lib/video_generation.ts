@@ -60,6 +60,45 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     else if (dur <= 6) dur = 6;
                     else dur = 8;
                     requestBody.parameters.duration = dur;
+
+                    // Force 8s for 1080p/4k
+                    if (['1080p', '4k'].includes(options?.resolution)) {
+                        requestBody.parameters.duration = 8;
+                    }
+                }
+
+                // VEO 3.1: Video Extension (Video-to-Video)
+                const inputVideo = options?.inputVideo; // From payload (URL/Base64)
+                if (inputVideo) {
+                    // Note: Extensions are limited to 720p
+                    if (options?.resolution && options.resolution !== '720p') {
+                        console.warn("[VideoGen] Warning: Video extension forces 720p resolution. Overriding.");
+                        requestBody.parameters.resolution = '720p';
+                    }
+
+                    // Handle string input (URL or Base64)
+                    // If it's a URL to a GS path or GCS http, Vertex might accept it directly or we need bytes.
+                    // The docs say: video: Video object from a previous generation
+                    // We'll try to fetch bytes if it's external, or pass if it's GCS URI
+
+                    // For now, let's assume we fetch bytes to be safe as API is tricky
+                    const fetchVideoBytes = async (url: string) => {
+                        const res = await fetch(url);
+                        const buf = await res.arrayBuffer();
+                        return Buffer.from(buf).toString('base64');
+                    };
+
+                    // Check if it's already base64 (no http/gs)
+                    if (!inputVideo.startsWith('http') && !inputVideo.startsWith('gs://')) {
+                        requestBody.instances[0].video = { bytesBase64Encoded: inputVideo };
+                    } else {
+                        // Fetch it
+                        const vBytes = await fetchVideoBytes(inputVideo);
+                        requestBody.instances[0].video = { bytesBase64Encoded: vBytes };
+                    }
+
+                    // Extension uses 'video' param not 'image'
+                    requestBody.parameters.personGeneration = "allow_all";
                 }
 
                 // VEO 3.1: First Frame (Image-to-Video)
@@ -112,17 +151,30 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 const refImages = options?.referenceImages || options?.ingredients;
                 if (refImages && Array.isArray(refImages)) {
                     requestBody.parameters.referenceImages = await Promise.all(refImages.slice(0, 3).map(async (ref: any) => {
-                        const rawContent = ref.image?.imageBytes || ref.data || ref || "";
+                        // Handle both old schema (string) and new schema (object)
+                        let rawContent = "";
+                        let refType = "ASSET";
+
+                        if (typeof ref === 'string') {
+                            rawContent = ref;
+                        } else {
+                            // New schema
+                            rawContent = ref.image?.imageBytes || ref.image?.uri || ref.data || "";
+                            refType = ref.referenceType || "ASSET";
+                        }
+
                         const cleanBytes = await fetchImageAsBase64(rawContent);
 
                         return {
                             image: {
                                 bytesBase64Encoded: cleanBytes || ""
                             },
-                            referenceType: ref.referenceType || "ASSET"
+                            referenceType: refType
                         };
                     }));
                     requestBody.parameters.personGeneration = "allow_adult";
+                    // Reference images force 8s
+                    requestBody.parameters.duration = 8;
                 }
 
                 const response = await fetch(endpoint, {

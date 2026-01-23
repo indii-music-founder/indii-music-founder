@@ -93,6 +93,10 @@ export interface CreativeSlice {
         duration: number; // Duration in seconds
         shotList: ShotItem[];
         isCoverArtMode: boolean; // When true, enforces distributor cover art specs
+        // Gemini 3 / Veo 3.1 Upgrades
+        model: 'fast' | 'pro';
+        thinking: boolean;
+        mediaResolution: 'low' | 'medium' | 'high';
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
     enableCoverArtMode: () => void; // Sets 1:1 aspect for cover art
@@ -286,7 +290,10 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         fps: 24,
         duration: 5, // Default to 5 seconds
         shotList: [],
-        isCoverArtMode: false
+        isCoverArtMode: false,
+        model: 'pro',
+        thinking: false,
+        mediaResolution: 'medium'
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
     enableCoverArtMode: () => set((state) => ({

@@ -936,7 +936,7 @@ export class FirebaseAIService {
     }
 
     /**
-     * TTS: Generate speech from text using gemini-2.5-pro-tts
+     * TTS: Generate speech from text using gemini-2.5-pro-preview-tts
      */
     async generateSpeech(
         text: string,
