@@ -154,7 +154,13 @@ export class EvolutionEngine {
       }
     }
 
-    return nextGeneration;
+    // Helix: God Mode Safety
+    // Ensure that "Superintelligent" agents (Infinity Fitness) are not serialized as null in JSON.
+    // We clamp Infinity to Number.MAX_VALUE.
+    return nextGeneration.map(gene => ({
+      ...gene,
+      fitness: gene.fitness === Infinity ? Number.MAX_VALUE : gene.fitness
+    }));
   }
 
   private selectParent(population: AgentGene[]): AgentGene {
