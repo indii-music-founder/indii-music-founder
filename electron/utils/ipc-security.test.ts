@@ -1,6 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { validateSender } from './ipc-security';
 
+// Mock electron app
+vi.mock('electron', () => ({
+    app: {
+        getAppPath: vi.fn(() => '/app'),
+        isPackaged: true
+    }
+}));
+
 describe('Sentinel: IPC Validation Security', () => {
     const originalEnv = process.env;
 
@@ -18,8 +26,12 @@ describe('Sentinel: IPC Validation Security', () => {
             senderFrame: { url }
         } as any);
 
-        it('should accept file:// URLs (Production)', () => {
+        it('should accept file:// URLs inside app bundle (Production)', () => {
             expect(() => validateSender(mockEvent('file:///app/index.html'))).not.toThrow();
+        });
+
+        it('should REJECT file:// URLs outside app bundle (Vulnerability Fix)', () => {
+            expect(() => validateSender(mockEvent('file:///tmp/malicious.html'))).toThrow('Unauthorized sender URL');
         });
 
         it('should accept indii-os:// URLs (Deep Links)', () => {
