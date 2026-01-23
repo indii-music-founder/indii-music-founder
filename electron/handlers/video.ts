@@ -87,7 +87,8 @@ export function registerVideoHandlers() {
                 // Check for traversal or access outside asset dir
                 // Note: This string comparison is case-sensitive. On Windows/macOS this might be too strict
                 // if the case differs, but it is secure.
-                if (!resolvedPath.startsWith(resolvedAssetDir)) {
+                const safePrefix = resolvedAssetDir.endsWith(path.sep) ? resolvedAssetDir : resolvedAssetDir + path.sep;
+                if (resolvedPath !== resolvedAssetDir && !resolvedPath.startsWith(safePrefix)) {
                     console.error(`[Security] Blocked access to unauthorized path: ${resolvedPath}`);
                     throw new Error("Security: Access Denied. Cannot open folders outside of Assets/Video.");
                 }
