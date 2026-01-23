@@ -27,11 +27,9 @@ interface PromptAreaProps {
 export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
-    const [input, setInput] = useState('');
     const [isProcessing, setIsProcessing] = useState(false);
     const [openDelegate, setOpenDelegate] = useState(false);
     const [isListening, setIsListening] = useState(false);
-    const [attachments, setAttachments] = useState<File[]>([]);
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -44,7 +42,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         chatChannel,
         setChatChannel,
         isCommandBarDetached,
-        setCommandBarDetached
+        setCommandBarDetached,
+        commandBarInput,
+        setCommandBarInput,
+        commandBarAttachments,
+        setCommandBarAttachments
     } = useStore();
 
     const isIndiiMode = chatChannel === 'indii';
@@ -74,14 +76,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             if (voiceService.isSupported()) {
                 setIsListening(true);
                 voiceService.startListening((text) => {
-                    setInput(prev => prev + (prev ? ' ' : '') + text);
+                    setCommandBarInput(commandBarInput + (commandBarInput ? ' ' : '') + text);
                     setIsListening(false);
                 }, () => setIsListening(false));
             } else {
                 toast.error("Voice input not supported in this browser.");
             }
         }
-    }, [isListening, toast]);
+    }, [isListening, toast, commandBarInput, setCommandBarInput]);
 
     const handleDelegate = useCallback((moduleId: string) => {
         if (moduleId !== 'dashboard') {
@@ -95,13 +97,13 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setAttachments(prev => [...prev, ...Array.from(e.target.files!)]);
+            setCommandBarAttachments([...commandBarAttachments, ...Array.from(e.target.files!)]);
         }
-    }, []);
+    }, [commandBarAttachments, setCommandBarAttachments]);
 
     const removeAttachment = useCallback((index: number) => {
-        setAttachments(prev => prev.filter((_, i) => i !== index));
-    }, []);
+        setCommandBarAttachments(commandBarAttachments.filter((_, i) => i !== index));
+    }, [commandBarAttachments, setCommandBarAttachments]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault();
@@ -117,9 +119,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         e.preventDefault();
         setIsDragging(false);
         if (e.dataTransfer.files) {
-            setAttachments(prev => [...prev, ...Array.from(e.dataTransfer.files)]);
+            setCommandBarAttachments([...commandBarAttachments, ...Array.from(e.dataTransfer.files)]);
         }
-    }, []);
+    }, [commandBarAttachments, setCommandBarAttachments]);
 
     const processAttachments = useCallback(async (files: File[]) => {
         return Promise.all(files.map(file =>
@@ -138,15 +140,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
             e?.preventDefault();
-            if (!input.trim() && attachments.length === 0) return;
+            if (!commandBarInput.trim() && commandBarAttachments.length === 0) return;
             if (isProcessing) return;
 
             setIsProcessing(true);
-            const currentInput = input;
-            const currentAttachments = [...attachments];
+            const currentInput = commandBarInput;
+            const currentAttachments = [...commandBarAttachments];
 
-            setInput('');
-            setAttachments([]);
+            setCommandBarInput('');
+            setCommandBarAttachments([]);
 
             if (!isAgentOpen) {
                 toggleAgentWindow();
@@ -160,15 +162,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             } catch (error) {
                 console.error('PromptArea: Failed to send message:', error);
                 toast.error("Failed to send message.");
-                setInput(currentInput);
-                setAttachments(currentAttachments);
+                setCommandBarInput(currentInput);
+                setCommandBarAttachments(currentAttachments);
                 setIsProcessing(false);
             }
         } catch (fatalError) {
             console.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
-    }, [input, attachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode]);
+    }, [commandBarInput, commandBarAttachments, isAgentOpen, toggleAgentWindow, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);
 
     return (
         <div
@@ -203,8 +205,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             </AnimatePresence>
 
             <PromptInput
-                value={input}
-                onValueChange={setInput}
+                value={commandBarInput}
+                onValueChange={setCommandBarInput}
                 onSubmit={() => handleSubmit()}
                 className="bg-transparent border-none shadow-none py-1"
                 disabled={isProcessing}
@@ -214,7 +216,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                 />
 
-                <AttachmentList attachments={attachments} onRemove={removeAttachment} />
+                <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 
                 <PromptInputActions className="px-2 pb-2">
                     <div className="flex items-center gap-1">
@@ -288,6 +290,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <PromptInputAction tooltip="Run command">
                             <button
                                 onClick={(e) => handleSubmit(e)}
+                                disabled={(!commandBarInput.trim() && commandBarAttachments.length === 0) || isProcessing}
                                 disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                                 className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg"
