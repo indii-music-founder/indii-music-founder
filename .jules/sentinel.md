@@ -24,3 +24,9 @@
 **Vulnerability:** The `validateSender` function checked if `url.startsWith('file://')` but did not verify that the file path belonged to the application bundle. This meant any local HTML file opened in the Electron window (e.g., via drag-and-drop or misconfiguration) could bypass the check and invoke privileged IPC handlers.
 **Learning:** `file://` protocol is not inherently safe. Trusting the protocol without validating the path origin breaks the trust boundary between the application and the host file system.
 **Prevention:** Hardened `validateSender` to resolve `file://` URLs using `fileURLToPath` and explicitly verify they reside within `app.getAppPath()` using `path.relative` checks.
+## 2025-05-18 - [HIGH] SSRF in Video Asset Download (DNS Rebinding)
+**Vulnerability:** The `video:save-asset` IPC handler relied solely on `FetchUrlSchema` (regex) to validate URLs. This schema blocks private IPs but cannot detect domains that resolve to private IPs (DNS Rebinding or local domains like `localhost.me`). This allowed potential SSRF attacks where the renderer could force the main process to access internal network resources.
+**Learning:** Regex-based URL validation is insufficient for SSRF protection because it ignores DNS resolution.
+**Prevention:**
+1. Always use `validateSafeUrlAsync(url)` (or equivalent DNS-resolving validator) *before* making network requests in privileged contexts (Electron Main process).
+2. Explicitly disable HTTP redirects (`fetch(url, { redirect: 'error' })`) when downloading untrusted content to prevent Open Redirect bypasses.

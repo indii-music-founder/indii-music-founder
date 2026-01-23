@@ -5,13 +5,15 @@ import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
 
 /**
  * Downloads a file from a URL to a local path.
  */
 async function downloadFile(url: string, destinationPath: string) {
-    const response = await fetch(url);
+    // Security: Disable redirects to prevent Open Redirect SSRF bypass
+    const response = await fetch(url, { redirect: 'error' });
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
     if (!response.body) throw new Error(`No body in response for ${url}`);
 
@@ -31,6 +33,7 @@ export function registerVideoHandlers() {
 
             // Validate URL (SSRF Protection)
             FetchUrlSchema.parse(url);
+            await validateSafeUrlAsync(url);
 
             // Validate Filename presence
             if (!filename || typeof filename !== 'string') {
@@ -84,7 +87,8 @@ export function registerVideoHandlers() {
                 // Check for traversal or access outside asset dir
                 // Note: This string comparison is case-sensitive. On Windows/macOS this might be too strict
                 // if the case differs, but it is secure.
-                if (!resolvedPath.startsWith(resolvedAssetDir)) {
+                const safePrefix = resolvedAssetDir.endsWith(path.sep) ? resolvedAssetDir : resolvedAssetDir + path.sep;
+                if (resolvedPath !== resolvedAssetDir && !resolvedPath.startsWith(safePrefix)) {
                     console.error(`[Security] Blocked access to unauthorized path: ${resolvedPath}`);
                     throw new Error("Security: Access Denied. Cannot open folders outside of Assets/Video.");
                 }
