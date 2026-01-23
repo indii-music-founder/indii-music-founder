@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { type ModuleId, isValidModule } from '@/core/constants';
+import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
 
 // Helper to get initial module from URL
 const getInitialModule = (): ModuleId => {
@@ -23,10 +24,10 @@ export interface Project {
 export interface AppSlice {
     currentModule: ModuleId;
     currentProjectId: string;
-    projects: Project[];
+    projects: ProjectMetadata[]; // Changed from Project[] to enforce UI type
     setModule: (module: AppSlice['currentModule']) => void;
     setProject: (id: string) => void;
-    addProject: (project: Project) => void;
+    addProject: (project: ProjectMetadata) => void; // Changed parameter type
     loadProjects: () => Promise<void>;
     createNewProject: (name: string, type: Project['type'], orgId: string) => Promise<string>;
     pendingPrompt: string | null;
@@ -52,17 +53,23 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     loadProjects: async () => {
         const { ProjectService } = await import('@/services/ProjectService');
         const { OrganizationService } = await import('@/services/OrganizationService');
+        const { projectsToMetadata } = await import('@/services/dashboard/projectTypeUtils');
         const orgId = OrganizationService.getCurrentOrgId();
         if (orgId) {
-            const projects = await ProjectService.getProjectsForOrg(orgId);
+            const firestoreProjects = await ProjectService.getProjectsForOrg(orgId);
+            // Convert Project[] to ProjectMetadata[] at the boundary
+            const projects = projectsToMetadata(firestoreProjects);
             set({ projects });
         }
     },
     createNewProject: async (name, type, orgId) => {
         const { ProjectService } = await import('@/services/ProjectService');
+        const { projectToMetadata } = await import('@/services/dashboard/projectTypeUtils');
         const newProject = await ProjectService.createProject(name, type, orgId);
+        // Convert Project to ProjectMetadata at the boundary
+        const metadata = projectToMetadata(newProject);
         set((state) => ({
-            projects: [newProject, ...state.projects],
+            projects: [metadata, ...state.projects],
             currentProjectId: newProject.id,
             currentModule: type,
             isRightPanelOpen: type === 'creative' || type === 'video'

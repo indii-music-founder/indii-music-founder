@@ -16,7 +16,8 @@ import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey } from '@/core/config/ai-models';
+import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
     InlineDataPart,
     FunctionCallPart,
@@ -103,6 +104,9 @@ export class FirebaseAIService {
     private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
     private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES);
 
+    // Dynamic Configuration
+    private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
+
     constructor() { }
 
     /**
@@ -130,11 +134,30 @@ export class FirebaseAIService {
                 return;
             }
 
-            // 2. Fetch Remote Config (Safe Mode)
+            // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
             let modelName: string = FALLBACK_MODEL;
             try {
                 await fetchAndActivate(remoteConfig);
+
+                // Get the old simple string (legacy)
                 modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+
+                // Get the new JSON config (modern)
+                const jsonString = getValue(remoteConfig, 'ai_system_config').asString();
+                if (jsonString) {
+                    try {
+                        const parsed = JSON.parse(jsonString);
+                        const validated = RemoteAIConfigSchema.safeParse(parsed);
+                        if (validated.success) {
+                            this.remoteConfig = validated.data;
+                            logger.info('[FirebaseAIService] Loaded dynamic AI config from Remote Config');
+                        } else {
+                            logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
+                        }
+                    } catch (e) {
+                        logger.warn('[FirebaseAIService] Failed to parse ai_system_config JSON:', e);
+                    }
+                }
             } catch (configError: unknown) {
                 if (isAppCheckError(configError)) {
                     throw configError;
@@ -187,10 +210,28 @@ export class FirebaseAIService {
 
     /**
      * Get the model name, either from remote config or fallback
+     * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
     private getModelName(modelOverride?: string): string {
-        if (modelOverride) return modelOverride;
-        return this.model?.model || FALLBACK_MODEL;
+        // If the user provided a specific override, checking if WE want to override THAT.
+        // But usually, an explicit override in code means "I need this specific model".
+        // HOWEVER, for "system" defined constants, we might want to swap them too.
+
+        const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
+
+        // Try to reverse-lookup the key (e.g. "gemini-3-pro-preview" -> "TEXT_AGENT")
+        const configKey = getModelKey(candidateModel);
+
+        if (configKey) {
+            // Check if we have a remote override for this key
+            const remoteOverride = this.remoteConfig.overrides[configKey];
+            if (remoteOverride) {
+                // logger.debug(`[FirebaseAIService] Swapping ${configKey}: ${candidateModel} -> ${remoteOverride}`);
+                return remoteOverride;
+            }
+        }
+
+        return candidateModel;
     }
 
     async rawGenerateContent(
@@ -1102,8 +1143,13 @@ export class FirebaseAIService {
         }
 
         const lowerMsg = msg.toLowerCase();
-        if (lowerMsg.includes('permission-denied') || lowerMsg.includes('app-check-token')) {
-            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
+        if (
+            lowerMsg.includes('permission-denied') ||
+            lowerMsg.includes('permission_denied') ||
+            lowerMsg.includes('app-check-token') ||
+            lowerMsg.includes('unauthorized')
+        ) {
+            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
@@ -1113,71 +1159,68 @@ export class FirebaseAIService {
         if (msg.includes('quota') || msg.includes('resource-exhausted')) {
             return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
         }
-        if (msg.includes('429')) {
-            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded');
+        if (msg.includes('429') || lowerMsg.includes('rate limit')) {
+            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded', { retryable: true });
         }
 
         // Service Availability
-        if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded')) {
-            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable');
+        if (msg.includes('503') || msg.includes('500') || msg.includes('service unavailable') || msg.includes('overloaded') || lowerMsg.includes('internal error')) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
     }
 
     private async withRetry<T>(
         operation: () => Promise<T>,
         retries = 3,
-        delay = 1000,
+        initialDelay = 1000,
         signal?: AbortSignal
     ): Promise<T> {
-        try {
-            // Check signal before starting
-            if (signal?.aborted) {
-                throw new Error('Operation cancelled by user');
-            }
-            return await operation();
-        } catch (error: unknown) {
-            // If user explicitly cancelled, DO NOT retry
-            if (signal?.aborted) {
-                throw error;
-            }
+        let lastError: unknown;
+        let currentDelay = initialDelay;
 
-            const msg = error instanceof Error ? error.message : String(error);
-            const lowerMsg = msg.toLowerCase();
-            const isRetryable =
-                lowerMsg.includes('429') ||
-                lowerMsg.includes('503') ||
-                lowerMsg.includes('service unavailable') ||
-                lowerMsg.includes('temporarily unavailable') ||
-                lowerMsg.includes('overloaded') ||
-                // Retry abort/network errors (usually transient)
-                lowerMsg.includes('aborted') ||
-                lowerMsg.includes('fetch failed') ||
-                lowerMsg.includes('network error') ||
-                (error as { code?: string })?.code === 'resource-exhausted' ||
-                (error as { details?: { retryable?: boolean } })?.details?.retryable;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                if (signal?.aborted) {
+                    throw new Error('Operation cancelled by user');
+                }
+                return await operation();
+            } catch (error: unknown) {
+                lastError = error;
 
-            if (retries > 0 && isRetryable) {
-                // Exponential backoff with jitter and 10s cap
-                const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
-                // Wait for backoff, but listen for abort signal
-                await new Promise((resolve, reject) => {
-                    if (signal?.aborted) {
-                        return reject(new Error('Operation cancelled by user during retry backoff'));
-                    }
-                    const timer = setTimeout(resolve, backoff);
-                    if (signal) {
-                        signal.addEventListener('abort', () => {
-                            clearTimeout(timer);
-                            reject(new Error('Operation cancelled by user during retry backoff'));
-                        }, { once: true });
-                    }
-                });
-                return this.withRetry(operation, retries - 1, backoff, signal);
+                if (signal?.aborted) {
+                    throw error;
+                }
+
+                const appException = this.handleError(error);
+                const isRetryable = appException.details?.retryable;
+
+                if (attempt < retries && isRetryable) {
+                    // Exponential backoff with jitter
+                    // currentDelay = initialDelay * 2^attempt + jitter
+                    const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
+                    const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
+
+                    console.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
+
+                    await new Promise((resolve, reject) => {
+                        const timer = setTimeout(resolve, waitTime);
+                        if (signal) {
+                            signal.addEventListener('abort', () => {
+                                clearTimeout(timer);
+                                reject(new Error('Operation cancelled by user during retry backoff'));
+                            }, { once: true });
+                        }
+                    });
+
+                    currentDelay = waitTime;
+                    continue;
+                }
+                throw appException;
             }
-            throw error;
         }
+        throw this.handleError(lastError);
     }
 
     private sanitizePrompt(prompt: string | Content[]): string | Content[] {
