@@ -8,6 +8,7 @@ import { AlertCircle, ArrowUpRight, RefreshCw, Loader2 } from 'lucide-react';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { UsageStats, UsageWarning, UsageWarningLevel } from '@/services/subscription/types';
 import { SubscriptionTier } from '@/services/subscription/SubscriptionTier';
+import { formatDate } from '@/lib/utils';
 
 export const UsageDashboard: React.FC = () => {
   const [stats, setStats] = useState<UsageStats | null>(null);
@@ -49,13 +50,7 @@ export const UsageDashboard: React.FC = () => {
     setRefreshing(false);
   };
 
-  const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
+
 
   if (loading) {
     return (
@@ -248,13 +243,12 @@ const UsageBar: React.FC<UsageBarProps> = ({
           initial={{ width: 0 }}
           animate={{ width: `${percentage}%` }}
           transition={{ duration: 0.5, ease: 'easeOut' }}
-          className={`h-full transition-colors ${
-            isExceeded
+          className={`h-full transition-colors ${isExceeded
               ? 'bg-red-500'
               : isNearLimit
-              ? colorScheme.bg
-              : colorScheme.bg + ' opacity-70'
-          }`}
+                ? colorScheme.bg
+                : colorScheme.bg + ' opacity-70'
+            }`}
         />
       </div>
     </div>
@@ -270,8 +264,8 @@ const UsageWarningCard: React.FC<UsageWarningCardProps> = ({ warning }) => {
     warning.level === UsageWarningLevel.EXCEEDED
       ? 'bg-red-500/20 border-red-500'
       : warning.level === UsageWarningLevel.CRITICAL
-      ? 'bg-orange-500/20 border-orange-500'
-      : 'bg-yellow-500/20 border-yellow-500';
+        ? 'bg-orange-500/20 border-orange-500'
+        : 'bg-yellow-500/20 border-yellow-500';
 
   return (
     <motion.div
@@ -279,14 +273,13 @@ const UsageWarningCard: React.FC<UsageWarningCardProps> = ({ warning }) => {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -10 }}
       className={`p-4 rounded-lg border flex items-start gap-3 ${bgColor} ${warning.dismissible ? 'cursor-pointer hover:opacity-80' : ''
-      }`}
+        }`}
     >
       <AlertCircle
-        className={`flex-shrink-0 mt-0.5 ${
-          warning.level === UsageWarningLevel.EXCEEDED
+        className={`flex-shrink-0 mt-0.5 ${warning.level === UsageWarningLevel.EXCEEDED
             ? 'text-red-500'
             : 'text-orange-500'
-        }`}
+          }`}
         size={18}
       />
       <div className="flex-1 min-w-0">

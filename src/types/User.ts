@@ -13,6 +13,9 @@ export interface SocialLinks {
     beatport?: string;
     pro?: string; // Performing Rights Org
     distributor?: string;
+    youtube?: string;
+    facebook?: string;
+    tiktok?: string;
 }
 
 export interface ReleaseDetails {
@@ -23,6 +26,9 @@ export interface ReleaseDetails {
     mood: string;
     themes: string;
     lyrics: string;
+    coverArtUrl?: string;
+    releaseDate?: string;
+    tracks?: Array<{ title: string; duration: string; collaborators?: string }>;
 }
 
 export interface BrandAsset {

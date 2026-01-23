@@ -3,22 +3,25 @@ import { Wrapper, Status } from "@googlemaps/react-wrapper";
 import { Loader2, MapPinOff } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 
-interface TourMapProps {
-    locations: string[]; // List of location strings to plot
-}
+import { MapMarker } from '../types';
 
+interface TourMapProps {
+    locations?: string[]; // Legacy/Simple mode
+    markers?: MapMarker[]; // Rich mode (Performance)
+    center?: { lat: number; lng: number };
+    rangeRadiusMiles?: number;
+}
 // Internal Map Component that has access to the loaded Google Maps API
-const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
+const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], center, rangeRadiusMiles }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
     const markersRef = useRef<google.maps.Marker[]>([]);
-    const toast = useToast();
 
     // Initialize Map
     useEffect(() => {
         if (ref.current && !map) {
             const initialMap = new google.maps.Map(ref.current, {
-                center: { lat: 39.8283, lng: -98.5795 }, // Center of USA
+                center: center || { lat: 39.8283, lng: -98.5795 }, // Center of USA or provided center
                 zoom: 4,
                 styles: [ // Dark Mode Styles
                     { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
@@ -105,10 +108,13 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
                 backgroundColor: '#0d1117'
             });
             setMap(initialMap);
+        } else if (map && center) {
+            map.panTo(center);
+            map.setZoom(14); // Closer zoom if focused
         }
-    }, [ref, map]);
+    }, [ref, map, center]);
 
-    // Update Markers when locations change
+    // Update Markers and Range Ring
     useEffect(() => {
         if (!map) return;
 
@@ -116,49 +122,132 @@ const MapComponent: React.FC<TourMapProps> = ({ locations }) => {
         markersRef.current.forEach(marker => marker.setMap(null));
         markersRef.current = [];
 
-        if (locations.length === 0) return;
+        // Clear existing circles (if we were tracking them, but for now we'll just clear the specific one we add or re-render)
+        // Ideally we track circles in a ref too, improving this:
+        // const circlesRef = useRef<google.maps.Circle[]>([]);
 
-        const geocoder = new google.maps.Geocoder();
         const bounds = new google.maps.LatLngBounds();
 
-        locations.forEach((location, index) => {
-            geocoder.geocode({ address: location }, (
-                results: google.maps.GeocoderResult[] | null,
-                status: google.maps.GeocoderStatus
-            ) => {
-                if (status === 'OK' && results && results[0]) {
-                    const position = results[0].geometry.location;
-                    const marker = new google.maps.Marker({
-                        position,
+        // 1. Handle Pre-defined Markers (Performance Optimization)
+        if (markers && markers.length > 0) {
+            markers.forEach(m => {
+                // Determine icon based on type
+                // Google Maps default markers are fine for now, but we'd ideally use SVGs
+                // We'll use color coding via standard charts API or built-in symbols
+
+                const marker = new google.maps.Marker({
+                    position: m.position,
+                    map,
+                    title: m.title,
+                    animation: google.maps.Animation.DROP,
+                    // Basic separation of types
+                    icon: m.type === 'current' ? {
+                        path: google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: "#3B82F6",
+                        fillOpacity: 1,
+                        strokeColor: "white",
+                        strokeWeight: 2,
+                    } : m.type === 'gas' ? {
+                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", // Simple pin path or use default
+                        fillColor: "#22c55e",
+                        fillOpacity: 1,
+                        strokeWeight: 1,
+                        strokeColor: "#ffffff",
+                        scale: 1.5,
+                        anchor: new google.maps.Point(12, 24),
+                        // Note: Path-based icons can be tricky without SVG path data.
+                        // Falling back to standard markers with distinct colors if path fails visually.
+                        // For reliability in this iteration:
+                    } : undefined,
+                    // Use standard color markers if SVG path is complex
+                    // label: m.type === 'gas' ? { text: '⛽', color: 'white' } : undefined
+                });
+
+                // Range Ring Logic
+                if (m.type === 'current' && rangeRadiusMiles) {
+                    new google.maps.Circle({
+                        strokeColor: "#F59E0B", // Amber for logistics
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                        fillColor: "#F59E0B",
+                        fillOpacity: 0.15,
                         map,
-                        title: location,
-                        label: {
-                            text: (index + 1).toString(),
-                            color: "white",
-                            fontWeight: "bold"
-                        },
-                        animation: google.maps.Animation.DROP
+                        center: m.position,
+                        radius: rangeRadiusMiles * 1609.34 // Convert miles to meters
                     });
-
-                    markersRef.current.push(marker);
-                    bounds.extend(position);
-
-                    // If it's the last one, confirm set and fit bounds
-                    // Note: Geocoding is async, this logic is a bit naive for order but works for visualization
-                    if (markersRef.current.length > 0) {
-                        map.fitBounds(bounds);
-                        // If only one marker, zoom out a bit so we're not too close
-                        if (locations.length === 1) {
-                            map.setZoom(10);
-                        }
-                    }
-                } else {
-                    console.warn(`Geocode was not successful for the following reason: ${status}`);
-                    // Don't toast for every failure to avoid spam, maybe just log
                 }
+
+                const infoWindow = new google.maps.InfoWindow({
+                    content: `<div style="color:black; padding:4px;"><b>${m.title}</b><br/><small>${m.type.toUpperCase()}</small></div>`
+                });
+
+                marker.addListener("click", () => {
+                    infoWindow.open(map, marker);
+                });
+
+                markersRef.current.push(marker);
+                bounds.extend(m.position);
             });
-        });
-    }, [map, locations]); // Re-run when locations list changes
+        }
+
+        // 2. Handle String Locations (Fallback / Touring Mode)
+        // Only run if we don't have rich markers OR if explicitly mixed (rare case)
+        // Prioritize markers for bounds if present.
+        if (locations && locations.length > 0) {
+            const geocoder = new google.maps.Geocoder();
+
+            // Promise.all to handle multiple async geocodes
+            const geocodeProms = locations.map((location, index) => {
+                return new Promise<void>((resolve) => {
+                    geocoder.geocode({ address: location }, (results, status) => {
+                        if (status === 'OK' && results && results[0]) {
+                            const position = results[0].geometry.location;
+                            const marker = new google.maps.Marker({
+                                position,
+                                map,
+                                title: location,
+                                label: {
+                                    text: (index + 1).toString(),
+                                    color: "white",
+                                    fontWeight: "bold"
+                                },
+                            });
+                            markersRef.current.push(marker);
+                            bounds.extend(position);
+                        }
+                        resolve();
+                    });
+                });
+            });
+
+            // Wait for all, then fit bounds
+            // Note: This mixes async and sync bounds updates.
+            // If we have strict markers, we fit bounds immediately below.
+            // If we depend on geocoding, we might need to wait.
+            // For now, simple "if no markers, wait for location" approach.
+            if (markers.length === 0) {
+                Promise.all(geocodeProms).then(() => {
+                    if (!bounds.isEmpty()) {
+                        map.fitBounds(bounds);
+                        if (locations.length === 1) map.setZoom(10);
+                    }
+                });
+            }
+        }
+
+        // Immediate FitBounds for Markers
+        if (markers.length > 0 && !bounds.isEmpty()) {
+            map.fitBounds(bounds);
+            // Don't zoom in *too* close for a single point unless it's user location
+            if (markers.length === 1 && markers[0].type === 'current') {
+                map.setZoom(15);
+            } else if (markers.length === 1) {
+                map.setZoom(rangeRadiusMiles ? 10 : 12);
+            }
+        }
+
+    }, [map, locations, markers, rangeRadiusMiles]);
 
     return <div ref={ref} className="w-full h-full rounded-xl overflow-hidden" />;
 };
