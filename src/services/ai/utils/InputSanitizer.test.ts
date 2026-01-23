@@ -36,6 +36,34 @@ describe('InputSanitizer', () => {
             const sanitized = InputSanitizer.sanitize(longString);
             expect(sanitized.length).toBe(100000);
         });
+
+        it('should redact potential Credit Card numbers', () => {
+            // Test with a standard 16-digit card format
+            const input = 'Payment details: 4111 2222 3333 4444 expires 12/25';
+            const result = InputSanitizer.sanitize(input);
+            expect(result).toContain('[REDACTED_CREDIT_CARD]');
+            expect(result).not.toContain('4111');
+        });
+
+        it('should redact sensitive keys like API Keys or Passwords', () => {
+            const inputs = [
+                'password: superSecretPassword123',
+                'password = superSecretPassword123',
+                'api_key: AIzaSyD-123456789',
+                'sk_live_1234567890abcdef' // Stripe style
+            ];
+
+            inputs.forEach(input => {
+                const result = InputSanitizer.sanitize(input);
+                if (input.includes('sk_live')) {
+                    expect(result).toContain('[REDACTED_SECRET]');
+                } else {
+                    expect(result).toMatch(/password.*\[REDACTED_SECRET\]|api_key.*\[REDACTED_SECRET\]/);
+                }
+                expect(result).not.toContain('superSecretPassword123');
+                expect(result).not.toContain('AIzaSyD-123456789');
+            });
+        });
     });
 
     describe('validate', () => {
