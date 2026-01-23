@@ -364,8 +364,8 @@ test.describe('Flow: Routing & Navigation', () => {
         await expect(newPage.getByTestId('nav-item-marketing')).not.toBeVisible();
     });
 
-    test('Bug Verification: Chat State Loss on Standalone Navigation', async ({ page }) => {
-        // This test documents the "State Loss" issue.
+    test('Persistence: Chat Draft preserved on Standalone Navigation', async ({ page }) => {
+        // This test verifies that the "State Loss" issue is resolved.
         // If we type in CommandBar, go to onboarding, and come back, is the text there?
         // We test CommandBar because it is always visible on Dashboard and unmounts on Standalone.
 
@@ -377,41 +377,54 @@ test.describe('Flow: Routing & Navigation', () => {
         const testMessage = `Draft Message ${Date.now()}`;
         await commandBarInput.fill(testMessage);
 
-        // 3. Navigate to Onboarding
-        console.log('Navigating to Standalone Module...');
-        await page.goto('/onboarding');
+        // 3. Navigate to Onboarding (Client-Side SPA Transition)
+        console.log('Navigating to Standalone Module (SPA)...');
+        // We use the exposed store to trigger client-side navigation, ensuring we test component unmounting
+        // rather than full page reload (which would wipe memory state anyway).
+        await page.evaluate(() => {
+            // @ts-ignore
+            if (window.useStore) {
+                // @ts-ignore
+                window.useStore.setState({ currentModule: 'onboarding' });
+            } else {
+                // Fallback for environments where useStore is not exposed (should not happen in Dev)
+                console.error('window.useStore not found!');
+                window.location.href = '/onboarding';
+            }
+        });
 
-        // Handle potential Login
-        const guestLoginBtn = page.getByRole('button', { name: /Guest Login/i });
-        if (await guestLoginBtn.isVisible()) {
-             await guestLoginBtn.click();
-        }
+        // Assert URL matches the state change (Boundary: "Always do: Assert that the URL updates correctly")
+        await expect(page).toHaveURL(/.*\/onboarding/);
         await expect(page.getByText('Setup Your Profile')).toBeVisible();
 
         // 4. Navigate Back (to Dashboard)
-        console.log('Navigating back...');
-        await page.goto('/');
+        console.log('Navigating back (SPA)...');
+        await page.evaluate(() => {
+            // @ts-ignore
+            if (window.useStore) {
+                // @ts-ignore
+                window.useStore.setState({ currentModule: 'dashboard' });
+            } else {
+                window.location.href = '/';
+            }
+        });
 
-        // Handle potential Login
-        const backLoginBtn2 = page.getByRole('button', { name: /Guest Login/i });
-        if (await backLoginBtn2.isVisible()) {
-             await backLoginBtn2.click();
-        }
+        // Assert URL matches the state change (Boundary: "Always do: Assert that the URL updates correctly")
+        const url = new URL(page.url());
+        expect(url.pathname).toBe('/');
 
         // 5. Check Text in CommandBar
         await expect(commandBarInput).toBeVisible();
         const inputValue = await commandBarInput.inputValue();
 
-        // CURRENT BEHAVIOR: Text is lost because CommandBar unmounts.
+        // EXPECTED BEHAVIOR: Text is PRESERVED.
         if (inputValue !== testMessage) {
-            console.log('CONFIRMED: Chat draft state was lost during navigation.');
+            console.log('FAILURE: Chat draft state was lost during navigation.');
         } else {
-             console.log('SURPRISE: Chat draft state was PRESERVED!');
+             console.log('SUCCESS: Chat draft state was PRESERVED!');
         }
 
-        // We assert the current behavior (BUG IS PRESENT) so the test passes.
-        // If this test fails, it means the bug was fixed!
-        expect(inputValue).toBe('');
+        expect(inputValue).toBe(testMessage);
     });
 
 });

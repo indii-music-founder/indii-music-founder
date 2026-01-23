@@ -52,6 +52,8 @@ export interface AgentSlice {
 
     isAgentOpen: boolean;
     isCommandBarDetached: boolean;
+    commandBarInput: string;
+    commandBarAttachments: File[];
     agentMode: AgentMode;
     isAgentProcessing: boolean;
     pendingApproval: ApprovalRequest | null;
@@ -71,6 +73,8 @@ export interface AgentSlice {
 
     toggleAgentWindow: () => void;
     setCommandBarDetached: (detached: boolean) => void;
+    setCommandBarInput: (input: string) => void;
+    setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
@@ -91,6 +95,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     isAgentOpen: false,
     isCommandBarDetached: false,
+    commandBarInput: '',
+    commandBarAttachments: [],
     agentMode: 'assistant',
     isAgentProcessing: false,
     pendingApproval: null,
@@ -255,6 +261,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+    setCommandBarInput: (input) => set({ commandBarInput: input }),
+    setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     setAgentMode: (mode) => set({ agentMode: mode }),
 
     setChatChannel: (channel) => set({ chatChannel: channel }),
