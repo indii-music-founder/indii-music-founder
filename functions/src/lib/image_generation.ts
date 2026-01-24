@@ -9,8 +9,19 @@ const geminiApiKey = defineSecret("GEMINI_API_KEY");
 /**
  * Helper to safely retrieve the Gemini API Key
  */
+/**
+ * Helper to safely retrieve the Gemini API Key
+ */
 function getGeminiApiKey(): string {
-    // 1. Try Firebase Secret (Production)
+    // 1. Try Environment Variable (Local/Dev/Emulator)
+    // Check both standard names for compatibility
+    const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
+    if (envKey && envKey.trim().length > 0) {
+        console.log(`[getGeminiApiKey] Using API key from process.env (masked: ${envKey.substring(0, 8)}...)`);
+        return envKey;
+    }
+
+    // 2. Try Firebase Secret (Production)
     try {
         const secret = geminiApiKey.value();
         if (secret && secret.trim().length > 0) {
@@ -20,12 +31,15 @@ function getGeminiApiKey(): string {
         // Secret not available (local emulation)
     }
 
-    // 2. Fallback to Environment Variable (Local/Dev)
-    const envKey = process.env.GEMINI_API_KEY;
-    if (envKey && envKey.trim().length > 0) {
-        return envKey;
+    // 3. Fallback to Runtime Config
+    try {
+        const configKey = functions.config().gemini?.api_key || functions.config().google?.genai_api_key;
+        if (configKey) return configKey;
+    } catch (e) {
+        // Config not available
     }
 
+    console.error("[getGeminiApiKey] FAILED: No key found in secret or .env");
     throw new Error("Gemini API Key not found. Check GEMINI_API_KEY secret or .env");
 }
 
@@ -62,8 +76,8 @@ export const generateImageV3Fn = () => functions
         const { prompt, aspectRatio, count, images, model: requestedModel, mediaResolution, thinking } = validation.data;
 
         try {
-            console.log(`[generateImageV3] Initializing Gemini 3 Client`);
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+            console.log(`[generateImageV3] Using REST API for key preservation`);
+            const apiKey = getGeminiApiKey();
 
             // Select Model (Pro vs Fast)
             const modelId = requestedModel === 'fast'
@@ -86,18 +100,31 @@ export const generateImageV3Fn = () => functions
 
             console.log(`[generateImageV3] Model: ${modelId} | Prompt: "${prompt}"`);
 
-            // 4. Call Model
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents: [{ role: "user", parts }],
-                config: {
-                    candidateCount: count || 1,
-                    responseModalities: ["IMAGE"],
-                    ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                    ...(mediaResolution ? { mediaResolution: mediaResolution as any } : {}),
-                    ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {})
-                }
+            // 4. Call Model via REST
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ role: "user", parts }],
+                    generationConfig: {
+                        candidateCount: count || 1,
+                        responseModalities: ["IMAGE"],
+                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                        ...(mediaResolution ? { mediaResolution: mediaResolution as any } : {}),
+                        ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
+                        ...(validation.data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
+                    }
+                })
             });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Gemini API Error: ${response.status} ${errText}`);
+            }
+
+            const result = await response.json();
 
             // 5. Process Results
             if (!result.candidates || result.candidates.length === 0) {
@@ -105,15 +132,22 @@ export const generateImageV3Fn = () => functions
             }
 
             // Map candidates to internal format
-            // GoogleGenAI Structure: candidates[0].content.parts[0].inlineData
-            const processedImages = (result.candidates[0].content?.parts || [])
-                .filter((p: any) => p.inlineData)
-                .map((p: any) => ({
-                    bytesBase64Encoded: p.inlineData.data,
-                    mimeType: p.inlineData.mimeType || "image/png"
-                }));
+            // REST Structure: candidates[0].content.parts[...].inlineData
+            const processedImages: any[] = [];
+
+            if (result.candidates?.[0]?.content?.parts) {
+                result.candidates[0].content.parts.forEach((p: any) => {
+                    if (p.inlineData) {
+                        processedImages.push({
+                            bytesBase64Encoded: p.inlineData.data,
+                            mimeType: p.inlineData.mimeType || "image/png"
+                        });
+                    }
+                });
+            }
 
             if (processedImages.length === 0) {
+                console.error("[generateImageV3] Raw result:", JSON.stringify(result, null, 2));
                 throw new functions.https.HttpsError("internal", "No image data found in candidates");
             }
 
@@ -127,7 +161,7 @@ export const generateImageV3Fn = () => functions
                 throw error;
             }
 
-            // Handle GoogleGenAI specific errors or general failures
+            // Handle API specific errors or general failures
             const message = error.message || "Unknown internal error";
             throw new functions.https.HttpsError("internal", `Image Generation Failed: ${message}`);
         }

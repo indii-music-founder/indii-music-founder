@@ -10,7 +10,7 @@ export const ProjectSchema = z.object({
     id: z.string(),
     name: z.string(),
     type: z.string(),
-    date: z.number(),
+    date: z.number().optional().default(() => Date.now()),
     orgId: z.string(),
     userId: z.string().optional(),
 });

@@ -25,7 +25,7 @@ class ProjectServiceImpl extends FirestoreService<Project> {
 
         const results = await this.query(
             constraints,
-            (a, b) => b.date - a.date
+            (a, b) => (b.date || 0) - (a.date || 0)
         );
 
         // Auto-seed Demo Project if empty and valid user

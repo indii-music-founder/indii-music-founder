@@ -40,6 +40,7 @@ export const VideoGenerationOptionsSchema = z.object({
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.any()).optional(), // Can refine later
+    generateAudio: z.boolean().optional(),
     orgId: z.string().optional(),
     userProfile: z.any().optional() // Complex object, keep loose for now
 });

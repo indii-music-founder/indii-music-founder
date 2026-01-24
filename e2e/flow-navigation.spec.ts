@@ -382,9 +382,9 @@ test.describe('Flow: Routing & Navigation', () => {
         // We use the exposed store to trigger client-side navigation, ensuring we test component unmounting
         // rather than full page reload (which would wipe memory state anyway).
         await page.evaluate(() => {
-            // @ts-expect-error
+            // @ts-expect-error - Testing invalid input for window.useStore
             if (window.useStore) {
-                // @ts-expect-error
+                // @ts-expect-error - Testing invalid input for window.useStore
                 window.useStore.setState({ currentModule: 'onboarding' });
             } else {
                 // Fallback for environments where useStore is not exposed (should not happen in Dev)
@@ -400,9 +400,9 @@ test.describe('Flow: Routing & Navigation', () => {
         // 4. Navigate Back (to Dashboard)
         console.log('Navigating back (SPA)...');
         await page.evaluate(() => {
-            // @ts-expect-error
+            // @ts-expect-error - Testing invalid input for window.useStore
             if (window.useStore) {
-                // @ts-expect-error
+                // @ts-expect-error - Testing invalid input for window.useStore
                 window.useStore.setState({ currentModule: 'dashboard' });
             } else {
                 window.location.href = '/';

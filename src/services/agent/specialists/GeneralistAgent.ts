@@ -118,7 +118,9 @@ CRITICAL RULES:
                         prompt: { type: 'STRING', description: 'Detailed visual description of the image to generate.' },
                         style: { type: 'STRING', description: 'Optional artistic style (e.g., "photorealistic", "anime", "oil painting").' },
                         aspectRatio: { type: 'STRING', description: 'Aspect ratio (e.g., "16:9", "1:1", "9:16").' },
-                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' }
+                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' },
+                        quality: { type: 'STRING', description: 'Generation quality: "standard" or "hd".' },
+                        count: { type: 'NUMBER', description: 'Number of images to generate (max 4).' }
                     },
                     required: ['prompt']
                 }

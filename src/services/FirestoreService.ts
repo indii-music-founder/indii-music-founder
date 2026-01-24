@@ -39,28 +39,41 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-        const docRef = await addDoc(this.collection, {
+        const docRef = await addDoc(this.collection, this.pruneUndefined({
             ...data,
             createdAt: Timestamp.now(),
             updatedAt: Timestamp.now()
-        });
+        }));
         return docRef.id;
     }
 
     async set(id: string, data: T): Promise<void> {
         const docRef = doc(db, this.collectionPath, id);
-        await setDoc(docRef, {
+        await setDoc(docRef, this.pruneUndefined({
             ...data,
             updatedAt: Timestamp.now()
-        }, { merge: true });
+        }), { merge: true });
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
         const docRef = doc(db, this.collectionPath, id);
-        await updateDoc(docRef, {
+        await updateDoc(docRef, this.pruneUndefined({
             ...data,
             updatedAt: Timestamp.now()
+        }));
+    }
+
+    private pruneUndefined(obj: any): any {
+        if (obj === null || typeof obj !== 'object' || obj instanceof Timestamp) return obj;
+        if (Array.isArray(obj)) return obj.map(item => this.pruneUndefined(item));
+
+        const pruned: any = {};
+        Object.keys(obj).forEach(key => {
+            if (obj[key] !== undefined) {
+                pruned[key] = this.pruneUndefined(obj[key]);
+            }
         });
+        return pruned;
     }
 
     async delete(id: string): Promise<void> {

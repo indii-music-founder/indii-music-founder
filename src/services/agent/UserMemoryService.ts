@@ -51,11 +51,7 @@ class UserMemoryService {
   private embeddingBatcher = new RequestBatcher<string, number[]>(
     async (texts) => {
       try {
-        const contents = texts.map((text) => ({
-          role: 'user',
-          parts: [{ text }],
-        }));
-        return await AI.batchEmbedContents(contents as any, this.embeddingModel);
+        return await AI.batchEmbedContents(texts as any, this.embeddingModel);
       } catch (error) {
         console.error('[UserMemoryService] Batch embedding failed:', error);
         throw error;
@@ -108,7 +104,13 @@ class UserMemoryService {
     const service = this.getService(userId);
 
     // Check for exact duplicates
-    const existingMemories = await service.list();
+    let existingMemories: UserMemory[] = [];
+    try {
+      existingMemories = await service.list();
+    } catch (e) {
+      console.warn('[UserMemoryService] Failed to list memories for dedup: (Non-blocking)', e);
+    }
+
     const duplicate = existingMemories.find((m) => m.content === content);
     if (duplicate) {
       console.log('[UserMemoryService] Duplicate memory detected, skipping');
@@ -138,7 +140,12 @@ class UserMemoryService {
       embeddingModel: embedding.length > 0 ? this.embeddingModel : undefined,
     };
 
-    const memoryId = await service.add(memory);
+    let memoryId = '';
+    try {
+      memoryId = await service.add(memory);
+    } catch (e) {
+      console.error('[UserMemoryService] Failed to save memory: (Non-blocking)', e);
+    }
 
     // Update user context asynchronously
     this.updateUserContext(userId).catch((e) =>
@@ -159,7 +166,7 @@ class UserMemoryService {
     if (memory) {
       // Update access stats
       this.updateAccessStats(userId, [memory]).catch((e) =>
-        console.error('[UserMemoryService] Failed to update access stats:', e)
+        console.warn('[UserMemoryService] Failed to update access stats: (Non-blocking)', e)
       );
     }
 
@@ -214,7 +221,13 @@ class UserMemoryService {
     const service = this.getService(userId);
 
     try {
-      let memories = await service.list();
+      let memories: UserMemory[] = [];
+      try {
+        memories = await service.list();
+      } catch (e) {
+        console.warn('[UserMemoryService] Failed to list memories for search: (Non-blocking)', e);
+        return [];
+      }
 
       // Apply metadata filters
       memories = memories.filter((m) => {
@@ -726,8 +739,8 @@ JSON FORMAT:
     const averageMemoryLifespan =
       inactiveMemories.length > 0
         ? inactiveMemories.reduce((sum, m) => sum + (m.updatedAt.toMillis() - m.createdAt.toMillis()), 0) /
-          inactiveMemories.length /
-          86400000
+        inactiveMemories.length /
+        86400000
         : 0;
 
     // Top tags
