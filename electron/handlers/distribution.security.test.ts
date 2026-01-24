@@ -4,7 +4,7 @@ import path from 'path';
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
-    app: { getPath: vi.fn(() => '/mock/user-data') },
+    app: { getPath: vi.fn(() => '/mock/user-data'), getAppPath: vi.fn(() => '/app') },
     fs: {
         rm: vi.fn(),
         mkdir: vi.fn(),
@@ -18,13 +18,18 @@ const mocks = vi.hoisted(() => ({
         existsSync: vi.fn(() => true)
     },
     os: { tmpdir: vi.fn(() => '/mock/tmp') },
-    pythonBridge: { runScript: vi.fn() }
+    pythonBridge: { runScript: vi.fn() },
+    accessControlService: { verifyAccess: vi.fn(() => true), grantAccess: vi.fn() }
 }));
 
 // Mock modules
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
     app: mocks.app
+}));
+
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: mocks.accessControlService
 }));
 vi.mock('fs/promises', () => mocks.fs);
 // Mock fs default export for synchronous methods used in security checks
