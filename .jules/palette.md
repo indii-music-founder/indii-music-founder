@@ -14,3 +14,7 @@
 ## 2025-05-24 - File Input Accessibility
 **Learning:** File inputs hidden with `display: none` (or `.hidden`) inside labels cannot be focused via keyboard, breaking accessibility for uploaders.
 **Action:** Use `.sr-only` on the input to keep it in the DOM/accessibility tree, and apply `focus-within:ring` to the parent label to provide visual focus indication.
+
+## 2025-05-24 - Semantic Loading States
+**Learning:** Custom visual loaders like `DeptLoader` often rely purely on visual cues (spinners), leaving screen reader users unaware of processing states.
+**Action:** Always wrap custom loaders in `role="status"` with `aria-live="polite"` and include visually hidden text (or `aria-label`) if no visible text is present.
