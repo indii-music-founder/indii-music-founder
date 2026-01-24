@@ -12,8 +12,9 @@ export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
     IMAGE_GEN: 'gemini-3-pro-image-preview',
-    AUDIO_PRO: 'gemini-2.5-pro-tts',
-    AUDIO_FLASH: 'gemini-2.5-flash-tts',
+    IMAGE_FAST: 'gemini-2.5-flash-image',
+    AUDIO_PRO: 'gemini-2.5-pro-preview-tts',
+    AUDIO_FLASH: 'gemini-2.5-flash-preview-tts',
     VIDEO_GEN: 'veo-3.1-generate-preview',
     BROWSER_AGENT: 'gemini-2.5-pro-ui-checkpoint'
 } as const;
@@ -25,6 +26,7 @@ export const AI_MODELS = {
     },
     IMAGE: {
         GENERATION: APPROVED_MODELS.IMAGE_GEN,
+        FAST: APPROVED_MODELS.IMAGE_FAST,
     },
     AUDIO: {
         PRO: APPROVED_MODELS.AUDIO_PRO,
@@ -61,6 +63,11 @@ export const AI_CONFIG = {
         TIMEOUT_PER_SECOND_MS: 12000,
         MAX_TIMEOUT_MS: 600000,
         DEFAULT_DURATION_SECONDS: 8,
+        RESOLUTIONS: {
+            SD: '720p',
+            HD: '1080p',
+            UHD: '4k'
+        }
     }
 } as const;
 
@@ -70,7 +77,8 @@ export const AI_CONFIG = {
 export const MODEL_PRICING = {
     [APPROVED_MODELS.TEXT_AGENT]: { input: 1.25, output: 3.75 },
     [APPROVED_MODELS.TEXT_FAST]: { input: 0.10, output: 0.40 },
-    [APPROVED_MODELS.IMAGE_GEN]: { perGeneration: 0.02 },
+    [APPROVED_MODELS.IMAGE_GEN]: { perGeneration: 0.04 },
+    [APPROVED_MODELS.IMAGE_FAST]: { perGeneration: 0.005 },
     [APPROVED_MODELS.VIDEO_GEN]: { perGeneration: 0.05 },
     [APPROVED_MODELS.AUDIO_PRO]: { perGeneration: 0.01 },
     [APPROVED_MODELS.AUDIO_FLASH]: { perGeneration: 0.005 },
@@ -134,3 +142,12 @@ export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
 export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
 export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
 export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];
+
+/**
+ * Reverse lookup to find the configuration key for a given model ID.
+ * Used by RemoteConfig to find overrides.
+ */
+export function getModelKey(modelId: string): keyof typeof APPROVED_MODELS | undefined {
+    const entry = Object.entries(APPROVED_MODELS).find(([_, value]) => value === modelId);
+    return entry ? (entry[0] as keyof typeof APPROVED_MODELS) : undefined;
+}

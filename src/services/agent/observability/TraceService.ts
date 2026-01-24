@@ -1,8 +1,11 @@
 import { db } from '@/services/firebase';
 import { collection, doc, setDoc, updateDoc, arrayUnion, serverTimestamp, query, where, getDoc } from 'firebase/firestore';
 import { AgentTrace, TraceStep, UsageMetrics } from './types';
-import { MODEL_PRICING } from '@/core/config/ai-models';
+import { MODEL_PRICING, getModelKey } from '@/core/config/ai-models';
 import { cleanFirestoreData } from '@/services/utils/firebase';
+import { remoteConfig } from '@/services/firebase';
+import { getValue } from 'firebase/remote-config';
+import { RemoteAIConfigSchema } from '@/services/ai/config/RemoteAIConfig';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
@@ -49,7 +52,7 @@ export class TraceService {
             await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
             return traceId;
         } catch (error) {
-            console.error('[TraceService] Failed to start trace:', error);
+            console.error('[TraceService] Failed to start trace: (Non-blocking)', error);
             return crypto.randomUUID();
         }
     }
@@ -58,16 +61,54 @@ export class TraceService {
      * Calculate estimated cost for a step
      */
     private static calculateCost(modelId: string, usage: any): number {
-        const pricing: any = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
+        // 1. Validations
+        if (!modelId || !usage) return 0;
+
+        let pricing: any = MODEL_PRICING[modelId as keyof typeof MODEL_PRICING];
+
+        // 2. Check Remote Config for overrides
+        try {
+            const configStr = getValue(remoteConfig, 'ai_system_config').asString();
+            if (configStr) {
+                const parsed = JSON.parse(configStr);
+                const validated = RemoteAIConfigSchema.safeParse(parsed);
+
+                if (validated.success) {
+                    const dynamicConfig = validated.data;
+
+                    // Check logic A: Is the modelId itself an override?
+                    // (Caller usually passes the *actual* modelId used, e.g "gemini-4-ultra")
+                    // If so, we check if there is pricing for it.
+                    if (dynamicConfig.pricing[modelId]) {
+                        pricing = dynamicConfig.pricing[modelId];
+                    }
+                    // Check logic B: Did we override a standard key?
+                    else {
+                        const key = getModelKey(modelId);
+                        if (key && dynamicConfig.overrides[key]) {
+                            const overrideId = dynamicConfig.overrides[key];
+                            if (dynamicConfig.pricing[overrideId]) {
+                                pricing = dynamicConfig.pricing[overrideId];
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            // Ignore config errors, fall back to static pricing
+        }
+
+        // 3. Calculate
         if (!pricing) return 0;
 
         if (pricing.perGeneration) {
             return pricing.perGeneration;
         }
 
-        if (usage.promptTokenCount && usage.candidatesTokenCount) {
-            const inputCost = (usage.promptTokenCount / 1_000_000) * pricing.input;
-            const outputCost = (usage.candidatesTokenCount / 1_000_000) * pricing.output;
+        if (usage.promptTokenCount !== undefined && usage.candidatesTokenCount !== undefined) {
+            // Pricing is usually per 1M tokens
+            const inputCost = (usage.promptTokenCount / 1_000_000) * (pricing.input || 0);
+            const outputCost = (usage.candidatesTokenCount / 1_000_000) * (pricing.output || 0);
             return inputCost + outputCost;
         }
 
@@ -135,7 +176,8 @@ export class TraceService {
                 }));
             }
         } catch (error) {
-            console.error(`[TraceService] Failed to add step with usage to trace ${traceId}:`, error);
+            console.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
+            // Non-blocking: We don't throw here to ensure the main agent flow continues
         }
     }
 
@@ -161,7 +203,7 @@ export class TraceService {
                 ...(output ? { output } : {})
             }));
         } catch (error) {
-            console.error(`[TraceService] Failed to complete trace ${traceId}:`, error);
+            console.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
         }
     }
 
@@ -180,7 +222,7 @@ export class TraceService {
                 error
             }));
         } catch (e) {
-            console.error(`[TraceService] Failed to fail trace ${traceId}:`, e);
+            console.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
         }
     }
 

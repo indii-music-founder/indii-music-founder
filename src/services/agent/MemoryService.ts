@@ -39,15 +39,8 @@ class MemoryService {
     private embeddingBatcher = new RequestBatcher<string, number[]>(
         async (texts) => {
             try {
-                // Map texts to Content objects
-                const contents = texts.map(text => ({
-                    role: 'user',
-                    parts: [{ text }]
-                }));
-
-                // Call batch API
-                // Note: AI.batchEmbedContents returns number[][] (array of vector arrays)
-                return await AI.batchEmbedContents(contents as any, this.embeddingModel);
+                // Pass texts directly to batch API (FirebaseAIService handles the content wrapping)
+                return await AI.batchEmbedContents(texts as any, this.embeddingModel);
             } catch (error) {
                 console.error('[MemoryService] Batch embedding failed:', error);
                 throw error;
@@ -84,7 +77,13 @@ class MemoryService {
         const service = this.getService(projectId);
 
         // Check for duplicates using vector similarity (simple dedup)
-        const existingMemories = await service.list();
+        let existingMemories: MemoryItem[] = [];
+        try {
+            existingMemories = await service.list();
+        } catch (e) {
+            console.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
+        }
+
         if (existingMemories.some(m => m.content === content)) {
             return;
         }
@@ -105,7 +104,11 @@ class MemoryService {
             embedding: embedding.length > 0 ? embedding : undefined
         };
 
-        await service.add(item);
+        try {
+            await service.add(item);
+        } catch (e) {
+            console.error('[MemoryService] Failed to save memory: (Non-blocking)', e);
+        }
     }
 
     async retrieveRelevantMemories(
@@ -123,7 +126,13 @@ class MemoryService {
     ): Promise<string[]> {
         try {
             const service = this.getService(projectId);
-            const memories = await service.list(); // In production, push filters to DB query if possible
+            let memories: MemoryItem[] = [];
+            try {
+                memories = await service.list(); // In production, push filters to DB query if possible
+            } catch (e) {
+                console.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
+                return [];
+            }
 
             if (memories.length === 0) return [];
 

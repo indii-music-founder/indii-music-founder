@@ -1,4 +1,4 @@
-
+import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
@@ -7,6 +7,7 @@ import { MOCK_SALES_ANALYTICS } from './mockData';
 export interface ProjectMetadata {
     id: string;
     name: string;
+    type: ModuleId;
     lastModified: number;
     assetCount: number;
     thumbnail?: string;
@@ -104,6 +105,9 @@ export class DashboardService {
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
+            // Store now strictly contains ProjectMetadata[], no conversion needed
+            if (state.projects && state.projects.length > 0) {
+                return state.projects;
             }
 
             return [];
@@ -208,33 +212,23 @@ export class DashboardService {
             const { useStore } = await import('@/core/store');
             const { ProjectService } = await import('@/services/ProjectService');
             const { OrganizationService } = await import('@/services/OrganizationService');
+            const { projectToMetadata } = await import('./projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
             // Create in Firestore
-            // Defaulting to 'creative' type for generic dashboard creation, or logic might need to be smarter
             const newProject = await ProjectService.createProject(name, 'creative', orgId);
+
+            // Convert Project to ProjectMetadata at the service boundary
+            const metadata = projectToMetadata(newProject, 0);
 
             // Update local store
             if (typeof state.addProject === 'function') {
-                const metadata: ProjectMetadata = {
-                    id: newProject.id,
-                    name: newProject.name,
-                    lastModified: newProject.date,
-                    assetCount: 0,
-                    thumbnail: undefined
-                };
                 state.addProject(metadata);
-                return metadata;
             }
 
-            return {
-                id: newProject.id,
-                name: newProject.name,
-                lastModified: newProject.date,
-                assetCount: 0
-            };
+            return metadata;
 
         } catch (error) {
             console.error("Error creating project:", error);
@@ -248,6 +242,7 @@ export class DashboardService {
             const { ProjectService } = await import('@/services/ProjectService');
             const { StorageService } = await import('@/services/StorageService');
             const { OrganizationService } = await import('@/services/OrganizationService');
+            const { projectToMetadata } = await import('./projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';
@@ -288,13 +283,8 @@ export class DashboardService {
             }));
 
             // 4. Update local store
-            const metadata: ProjectMetadata = {
-                id: newProject.id,
-                name: newProject.name,
-                lastModified: newProject.date,
-                assetCount: historyItems.length,
-                thumbnail: undefined // Logic to copy thumbnail if needed
-            };
+            // Convert Project to ProjectMetadata at the service boundary
+            const metadata = projectToMetadata(newProject, historyItems.length);
 
             if (typeof state.addProject === 'function') {
                 state.addProject(metadata);

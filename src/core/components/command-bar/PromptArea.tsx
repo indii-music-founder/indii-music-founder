@@ -291,9 +291,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={(e) => handleSubmit(e)}
                                 disabled={(!commandBarInput.trim() && commandBarAttachments.length === 0) || isProcessing}
-                                disabled={(!input.trim() && attachments.length === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
-                                className="flex items-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg"
                                 data-testid="command-bar-run-btn"
                             >
                                 {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}

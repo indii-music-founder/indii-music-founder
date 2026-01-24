@@ -22,6 +22,11 @@ export interface ImageGenerationOptions {
     // Distributor-aware options
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
+    // Gemini 3 Configuration
+    model?: 'fast' | 'pro';
+    thinking?: boolean;
+    mediaResolution?: 'low' | 'medium' | 'high';
+    useGrounding?: boolean;
 }
 
 export interface RemixOptions {
@@ -112,6 +117,10 @@ export class ImageGenerationService {
                 aspectRatio: aspectRatio,
                 count: count,
                 images: options.sourceImages?.length ? options.sourceImages : [],
+                model: options.model || 'fast',
+                thinking: options.thinking ?? false,
+                mediaResolution: options.mediaResolution || 'medium',
+                useGrounding: options.useGrounding ?? false
             });
 
             interface GenerateImageResponse {
@@ -333,6 +342,25 @@ export class ImageGenerationService {
             throw e;
         }
         return results;
+    }
+
+    async editImage(options: {
+        image: string;
+        prompt: string;
+        mask?: string;
+        referenceImage?: string;
+        imageMimeType?: string;
+        maskMimeType?: string;
+        refMimeType?: string;
+    }): Promise<any> {
+        try {
+            const editImage = httpsCallable(functions, 'editImage');
+            const result = await editImage(options);
+            return result.data;
+        } catch (e) {
+            console.error("Image Edit Error:", e);
+            throw e;
+        }
     }
 
     /**

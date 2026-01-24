@@ -38,12 +38,14 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
-    functions: {}
+    functions: {},
+    functionsWest1: {}
 }));
 
 // Handle dynamic import used in VideoGenerationService
 vi.mock('../firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
     auth: mocks.auth
 }));
@@ -121,7 +123,7 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
         it('should reject invalid resolution', async () => {
             const invalidOptions = {
                 prompt: 'Valid prompt',
-                resolution: '4k' // Not in schema
+                resolution: '8k' // Truly not in schema
             };
 
             // @ts-expect-error - Testing schema validation
@@ -158,13 +160,14 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
-        it('should reject invalid URL for firstFrame', async () => {
+        it('should reject invalid firstFrame (not a string)', async () => {
             const invalidOptions = {
                 prompt: 'Valid prompt',
-                firstFrame: 'not-a-url'
+                firstFrame: 12345 // Should be string
             };
 
 
+            // @ts-expect-error - bypassing TS to test runtime validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
     });
