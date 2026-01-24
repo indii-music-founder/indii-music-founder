@@ -86,6 +86,62 @@ test.describe('Pulse: Merch AI Loading State', () => {
         await expect(page.getByText('AI Image Generation')).toBeVisible();
 
         // 3. Setup Network Interception
+
+        // Mock Subscription Quota Checks (Pass)
+        await page.route('**/*getSubscription*', async (route) => {
+             if (route.request().method() === 'OPTIONS') { await route.continue(); return; }
+             await route.fulfill({
+                 status: 200,
+                 contentType: 'application/json',
+                 body: JSON.stringify({
+                     data: {
+                        id: 'sub-123',
+                        userId: 'pulse-merch-user',
+                        tier: 'studio',
+                        status: 'active',
+                        currentPeriodStart: Date.now(),
+                        currentPeriodEnd: Date.now() + 86400000,
+                        cancelAtPeriodEnd: false,
+                        createdAt: Date.now(),
+                        updatedAt: Date.now()
+                     }
+                 })
+             });
+        });
+
+        await page.route('**/*getUsageStats*', async (route) => {
+             if (route.request().method() === 'OPTIONS') { await route.continue(); return; }
+             await route.fulfill({
+                 status: 200,
+                 contentType: 'application/json',
+                 body: JSON.stringify({
+                     data: {
+                        tier: 'studio',
+                        resetDate: Date.now() + 86400000,
+                        imagesGenerated: 0,
+                        imagesRemaining: 9999,
+                        imagesPerMonth: 9999,
+                        videoDurationSeconds: 0,
+                        videoDurationMinutes: 0,
+                        videoRemainingMinutes: 9999,
+                        videoTotalMinutes: 9999,
+                        aiChatTokensUsed: 0,
+                        aiChatTokensRemaining: 9999,
+                        aiChatTokensPerMonth: 9999,
+                        storageUsedGB: 0,
+                        storageRemainingGB: 9999,
+                        storageTotalGB: 9999,
+                        projectsCreated: 0,
+                        projectsRemaining: 9999,
+                        maxProjects: 9999,
+                        teamMembersUsed: 0,
+                        teamMembersRemaining: 9999,
+                        maxTeamMembers: 9999
+                     }
+                 })
+             });
+        });
+
         // We want to simulate a network delay when the app calls the Firebase Function `generateImageV3`
         let completeRequest: (value: unknown) => void;
         const requestPromise = new Promise((resolve) => {

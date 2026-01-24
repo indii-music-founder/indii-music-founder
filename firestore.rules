@@ -101,6 +101,7 @@ service cloud.firestore {
              data.payoutStatus in ['ACTIVE', 'HELD'];
     }
 
+
     // ========================================
     // LICENSING (authenticated access)
     // ========================================
@@ -131,7 +132,7 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && (
-        !request.resource.data.diff(resource.data).affectedKeys().has('role') || 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
         request.auth.token.admin == true
       );
 
@@ -167,6 +168,20 @@ service cloud.firestore {
       match /stats/{statId} {
         allow read, write: if isOwner(userId);
       }
+
+      // User Memory subcollection (long-term persistent memory)
+      match /memories/{memoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update, delete: if isOwner(userId) && resource.data.userId == userId;
+      }
+
+      // User Context subcollection (aggregated memory context)
+      match /context/{contextId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ========================================
@@ -195,7 +210,7 @@ service cloud.firestore {
       allow read: if isResourceOrgMember();
       allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
       allow update: if isResourceOrgMember() && (
-          !request.resource.data.diff(resource.data).affectedKeys().has('orgId') || 
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
           request.auth.token.admin == true
       );
       allow delete: if isResourceOrgMember();
@@ -216,9 +231,56 @@ service cloud.firestore {
     // ========================================
 
     match /videoJobs/{jobId} {
-      allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
+      allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+      allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+    }
+
+    // ========================================
+    // OBSERVABILITY & TRACES (user-scoped)
+    // ========================================
+
+    match /agent_traces/{traceId} {
+      // Users can only read their own traces
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create traces for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own traces
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // AI USAGE & RATE LIMITING (user-scoped)
+    // ========================================
+
+    match /user_usage_stats/{docId} {
+      // Users can only read their own usage stats
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create usage stats for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own usage stats
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /user_rate_limits/{docId} {
+      // Document ID format: userId_timestamp
+      // Users can only access their own rate limit documents (docId starts with userId_)
+      allow read, write: if isAuthenticated() &&
+        docId.matches('^' + request.auth.uid + '_[0-9]+$');
+    }
+
+    // ========================================
+    // PROJECT MEMORIES (project-scoped)
+    // ========================================
+
+    match /projects/{projectId}/memories/{memoryId} {
+      // Only members of the project's organization can access memories
+      allow read, write: if canViewProject(projectId);
+    }
+
+    match /projects/{projectId}/context/{contextId} {
+      // Only members of the project's organization can access context
+      allow read, write: if canViewProject(projectId);
     }
 
     // ========================================
@@ -255,10 +317,10 @@ service cloud.firestore {
     // CAMPAIGNS (user-scoped)
     // ========================================
 
-    match /campaigns/{campaignId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
+    // ========================================
+    // CAMPAIGNS (user-scoped) - Handled below in MARKETING CAMPAIGNS
+    // ========================================
+
 
     // ========================================
     // SOCIAL POSTS (user-scoped)
@@ -460,4 +522,3 @@ service cloud.firestore {
     // Any paths not explicitly matched above are denied by default
   }
 }
-

@@ -3,6 +3,7 @@ export type { WhiskState };
 
 import { AgentMessage } from '@/core/store';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
+import { INDII_MESSAGES } from './constants';
 
 export type SchemaType = 'STRING' | 'NUMBER' | 'INTEGER' | 'BOOLEAN' | 'ARRAY' | 'OBJECT' | 'string' | 'number' | 'integer' | 'boolean' | 'array' | 'object';
 
@@ -78,6 +79,63 @@ export type ValidAgentId = typeof VALID_AGENT_IDS[number];
 export const VALID_AGENT_IDS_LIST = VALID_AGENT_IDS.join(', ');
 
 export type AgentCategory = 'manager' | 'department' | 'specialist';
+
+// ============================================================================
+// Hub-and-Spoke Architecture (Phase 4)
+// ============================================================================
+
+/**
+ * The hub agent in the hub-and-spoke architecture.
+ * All specialist agents must delegate through the hub.
+ */
+export const HUB_AGENT_ID = 'generalist';
+
+/**
+ * Specialist agents (spokes) that can only delegate to the hub.
+ * These agents represent domain expertise and should not delegate to each other directly.
+ */
+export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(id => id !== HUB_AGENT_ID);
+
+/**
+ * Checks if an agent is the hub (generalist/Agent Zero).
+ */
+export function isHubAgent(agentId: string): boolean {
+    return agentId === HUB_AGENT_ID;
+}
+
+/**
+ * Checks if an agent is a spoke (specialist).
+ */
+export function isSpokeAgent(agentId: string): boolean {
+    return (SPOKE_AGENT_IDS as readonly string[]).includes(agentId);
+}
+
+/**
+ * Validates hub-and-spoke architecture rules.
+ * Returns null if valid, or an error message if invalid.
+ *
+ * Rules:
+ * - Hub can delegate to any spoke
+ * - Spokes can only delegate to hub
+ * - Spokes CANNOT delegate to other spokes
+ */
+export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string): string | null {
+    // Hub can delegate to anyone
+    if (isHubAgent(sourceAgentId)) {
+        return null;
+    }
+
+    // Spokes can only delegate to hub
+    if (isSpokeAgent(sourceAgentId)) {
+        if (isHubAgent(targetAgentId)) {
+            return null; // Spoke -> Hub is allowed
+        }
+        return INDII_MESSAGES.hubSpokeViolation(sourceAgentId, targetAgentId);
+    }
+
+    // Unknown agent (shouldn't happen due to earlier validation)
+    return `Unknown source agent: ${sourceAgentId}`;
+}
 
 // ============================================================================
 // Agent Context Types
@@ -174,7 +232,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  * Generic tool function type for agent configs
  * Uses contravariance to accept more specific arg types
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 export type AnyToolFunction = (
     args: any,
     context?: AgentContext,
@@ -206,6 +264,7 @@ export interface AgentResponse {
         result: ToolFunctionResult | string;
     }>;
     thoughts?: string[];
+    thoughtSignature?: string;
     error?: string;
     usage?: {
         promptTokens: number;
@@ -215,7 +274,7 @@ export interface AgentResponse {
 }
 
 export type AgentProgressCallback = (event: {
-    type: 'thought' | 'tool' | 'token' | 'usage';
+    type: 'thought' | 'tool' | 'token' | 'usage' | 'tool_result';
     content: string;
     toolName?: string;
     usage?: {

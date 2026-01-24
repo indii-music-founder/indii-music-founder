@@ -141,10 +141,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Track Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="trackTitle" className="block text-sm font-medium text-gray-300 mb-2">
             Track Title <span className="text-red-400">*</span>
           </label>
           <input
+            id="trackTitle"
             type="text"
             value={metadata.trackTitle || ''}
             onChange={e => updateMetadata({ trackTitle: e.target.value })}
@@ -155,10 +156,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Artist Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="artistName" className="block text-sm font-medium text-gray-300 mb-2">
             Artist Name <span className="text-red-400">*</span>
           </label>
           <input
+            id="artistName"
             type="text"
             value={metadata.artistName || ''}
             onChange={e => updateMetadata({ artistName: e.target.value })}
@@ -169,10 +171,11 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
 
         {/* Genre */}
         <div>
-          <label className="block text-sm font-medium text-gray-300 mb-2">
+          <label htmlFor="genre" className="block text-sm font-medium text-gray-300 mb-2">
             Genre <span className="text-red-400">*</span>
           </label>
           <select
+            id="genre"
             value={metadata.genre || ''}
             onChange={e => updateMetadata({ genre: e.target.value })}
             className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"

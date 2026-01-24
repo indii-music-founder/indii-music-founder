@@ -75,6 +75,12 @@ vi.mock('@/core/components/MobileOnlyWarning', () => ({
     MobileOnlyWarning: () => <div>Mobile Warning</div>
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        showToast: vi.fn()
+    })
+}));
+
 describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
 
     beforeEach(() => {

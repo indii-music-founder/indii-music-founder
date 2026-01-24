@@ -72,6 +72,14 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
             setModule: mockSetModule,
             toggleAgentWindow: mockToggleAgentWindow,
             isAgentOpen: false,
+            chatChannel: 'indii',
+            setChatChannel: vi.fn(),
+            commandBarInput: '',
+            setCommandBarInput: vi.fn(),
+            commandBarAttachments: [],
+            setCommandBarAttachments: vi.fn(),
+            isCommandBarDetached: false,
+            setCommandBarDetached: vi.fn(),
         });
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
@@ -87,7 +95,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
 
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText(/Describe your task/i);
+        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i);
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         // 1. Enter text
@@ -121,7 +129,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
 
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText(/Describe your task/i);
+        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i);
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Do something impossible' } });
@@ -144,7 +152,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
         (agentService.sendMessage as any).mockImplementation(() => new Promise(r => setTimeout(r, 100)));
 
         render(<CommandBar />);
-        const input = screen.getByPlaceholderText(/Describe your task/i);
+        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i);
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Quick Command' } });

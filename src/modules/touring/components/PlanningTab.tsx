@@ -164,7 +164,17 @@ export const PlanningTab: React.FC<PlanningTabProps> = ({
 
                 {/* Right: Interactive Map */}
                 <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-1 shadow-2xl relative group overflow-hidden">
-                    <TourMap locations={selectedStop ? [selectedStop.city] : locations} />
+                    <TourMap
+                        // If we have an itinerary, use the stops as markers, otherwise use raw locations
+                        markers={itinerary ? itinerary.stops.map((stop, idx) => ({
+                            position: { lat: 0, lng: 0 }, // Placeholder for geocoding fallback in legacy mode
+                            title: `${idx + 1}. ${stop.venue || stop.city}`,
+                            type: 'venue' as const,
+                            meta: stop
+                        })) : []}
+                        locations={selectedStop ? [selectedStop.city] : (itinerary ? [] : locations)}
+                        center={selectedStop ? undefined : undefined} // Map will handle fitBounds
+                    />
 
                     {/* Floating Info Overlay */}
                     {locations.length > 0 && (

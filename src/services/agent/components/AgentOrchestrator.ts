@@ -23,7 +23,7 @@ export class AgentOrchestrator {
         // 1. Validate Input
         const validation = InputSanitizer.validate(userQuery);
         if (!validation.valid) {
-            console.warn('[AgentOrchestrator] Invalid user query:', validation.error);
+            console.warn('[indii:Orchestrator] Invalid user query:', validation.error);
             await TraceService.failTrace(traceId, `Invalid input: ${validation.error}`);
             return 'generalist';
         }
@@ -43,7 +43,7 @@ export class AgentOrchestrator {
         ];
 
         const prompt = `
-        You are the Orchestrator for indiiOS, the operating system for independent artists.
+        You are indii, the AI agent orchestration system for indiiOS (the operating system for independent artists).
         Your goal is to accurately route user requests to the most appropriate specialist agent.
 
         AVAILABLE AGENTS:
@@ -54,6 +54,11 @@ export class AgentOrchestrator {
         - Project: ${context.projectHandle?.name || 'none'} (${context.projectHandle?.type || 'none'})
 
         USER REQUEST: "${sanitizedQuery}"
+
+        ABOUT INDII:
+        You are part of indii, an intelligent hub-and-spoke agent system. The "generalist"
+        agent acts as the hub (Agent Zero), coordinating with specialist agents (spokes)
+        to provide comprehensive assistance to independent artists.
 
         ROUTING RULES:
         1. You MUST return a JSON object with the following structure:
@@ -90,7 +95,7 @@ export class AgentOrchestrator {
             try {
                 parsedResponse = JSON.parse(textResponse);
             } catch (parseError) {
-                console.warn('[AgentOrchestrator] Failed to parse JSON response:', textResponse);
+                console.warn('[indii:Orchestrator] Failed to parse JSON response:', textResponse);
                 await TraceService.addStep(traceId, 'routing', {
                     selectedAgent: 'generalist',
                     reasoning: 'JSON Parse Error, fallback to generalist',
@@ -129,7 +134,7 @@ export class AgentOrchestrator {
             return finalRoute;
 
         } catch (e: unknown) {
-            console.error('[AgentOrchestrator] Routing failed, defaulting to generalist.', e);
+            console.error('[indii:Orchestrator] Routing failed, defaulting to generalist.', e);
             await TraceService.failTrace(traceId, e instanceof Error ? e.message : String(e));
             return 'generalist';
         }

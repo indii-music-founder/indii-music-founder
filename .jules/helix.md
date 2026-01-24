@@ -13,3 +13,18 @@
 3. Gene Loss Prevention mechanisms (Deep Cloning and Schema Validation) effectively block "Brainless" mutations and "Mutation by Reference" defects.
 
 **Action:** Continue to enforce strict deterministic seeding in tests to ensure that selection pressure is actually selecting the fittest agents and not just relying on luck. Ensure all future evolutionary features have corresponding "Gene Loss" tests.
+
+## 2026-06-15 - [JSON Safety Guardrails]
+**Learning:** Mutations can produce valid JS objects (like Arrays or Circular References) that are invalid as Agent parameters (which must be strictly Objects and Serializable). Standard checks for truthiness or `typeof object` are insufficient.
+**Action:** Implemented strict `Array.isArray()` checks and `JSON.stringify()` serialization tests in `EvolutionEngine` to prevent non-serializable or malformed agents from entering the persistent gene pool.
+
+## 2026-10-12 - [Safety Filter Resilience]
+**Learning:** LLM Providers (Gemini, OpenAI) often reject mutation requests with specific Safety Violations (Hate Speech, Dangerous Content) instead of generic 500 errors. The Evolutionary Engine treats these as transient failures and successfully retries to find a safe mutation path.
+**Action:** Added `HelixSafetyFilter.test.ts` to explicitly simulate "Safety Violation" errors and verify that the engine retries breeding until a safe offspring is produced, rather than allowing the population to stagnate or crash.
+## 2026-06-15 - [Persistence of Infinite Intelligence]
+**Learning:** Agents attempting to achieve "God Mode" (Fitness = Infinity) are correctly ranked in-memory, but `JSON.stringify(Infinity)` yields `null`. This means "Superintelligent" agents are silently lobotomized (Fitness -> 0) upon database persistence, causing a catastrophic loss of the best genetic material.
+**Action:** Implemented "The Icarus Check" to verify in-memory handling. For persistence, a custom serializer/transformer MUST be used to convert `Infinity` to a special string (e.g., "INF") or a safe maximum number before saving to JSON-based storage (Firestore).
+
+## 2026-10-25 - [Population Explosion Control]
+**Learning:** If 'eliteCount' exceeds 'populationSize', the selection phase can accidentally grow the population beyond limits, leading to memory bloat over generations.
+**Action:** Enforced a hard cap in 'EvolutionEngine': effectiveEliteCount = Math.min(eliteCount, populationSize). Added 'HelixPopulationControl.test.ts' to verify strict adherence to population limits.

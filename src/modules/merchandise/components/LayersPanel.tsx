@@ -8,17 +8,7 @@ import type {
     LayerPropertyValue,
 } from '../types/fabric-extensions';
 
-/**
- * Debounce helper for throttling rapid property updates
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const debounce = <T extends (...args: any[]) => void>(fn: T, ms: number): ((...args: Parameters<T>) => void) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => fn(...args), ms);
-    };
-};
+import { debounce } from '@/lib/debounce';
 
 export interface LayersPanelProps {
     layers: CanvasObject[];

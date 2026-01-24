@@ -9,9 +9,9 @@ interface AttachmentListProps {
 export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListProps) => {
     if (attachments.length === 0) return null;
     return (
-        <div className="px-4 pb-2 flex gap-2 flex-wrap">
+        <ul className="px-4 pb-2 flex gap-2 flex-wrap m-0 list-none" aria-label="Attached files">
             {attachments.map((file, index) => (
-                <div key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
+                <li key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
                     {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
                     <span className="max-w-[150px] truncate">{file.name}</span>
                     <button
@@ -22,8 +22,8 @@ export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListPro
                     >
                         <X size={12} />
                     </button>
-                </div>
+                </li>
             ))}
-        </div>
+        </ul>
     );
 });

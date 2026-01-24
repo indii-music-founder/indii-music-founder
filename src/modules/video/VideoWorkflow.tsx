@@ -73,7 +73,7 @@ export const processJobUpdate = (
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The AI community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
-            let localPath = '';
+            const localPath = '';
 
             // Trigger background download via Electron
             // We don't await this to avoid blocking the UI update, but we log it
@@ -306,17 +306,22 @@ export default function VideoWorkflow() {
         return () => { if (unsubscribe) unsubscribe(); };
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
 
-    const handleGenerate = async () => {
+    const handleGenerate = async (promptOverride?: string) => {
         setJobStatus('queued');
         const isInterpolation = !!(videoInputs.firstFrame && videoInputs.lastFrame);
         toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
 
+        // ⚡ Bolt Optimization: Use prompt passed from child component (which has local state)
+        // to avoid using stale state due to debounce, falling back to localPrompt.
+        const promptToUse = promptOverride || localPrompt;
+
         try {
             // Update global prompt before generating
-            setPrompt(localPrompt);
+            setPrompt(promptToUse);
+            if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
-            const finalPrompt = WhiskService.synthesizeVideoPrompt(localPrompt, whiskState);
+            const finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 
@@ -403,7 +408,12 @@ export default function VideoWorkflow() {
     return (
         <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
             {/* Main Stage (Director View) */}
-            <div className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}>
+            <div
+                id="director-panel"
+                role="tabpanel"
+                aria-label="Director Mode"
+                className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}
+            >
 
                 {/* Director Prompt Bar (Top Overlay) */}
                 <DirectorPromptBar
@@ -435,7 +445,12 @@ export default function VideoWorkflow() {
 
             {/* Editor Container (Full Screen Overlay) */}
             {viewMode === 'editor' && (
-                <div className="absolute inset-0 z-50 bg-background">
+                <div
+                    id="editor-panel"
+                    role="tabpanel"
+                    aria-label="Editor Mode"
+                    className="absolute inset-0 z-50 bg-background"
+                >
                     <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
                             <div className="h-full flex flex-col">

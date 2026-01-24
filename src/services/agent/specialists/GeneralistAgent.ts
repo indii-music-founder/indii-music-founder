@@ -68,6 +68,7 @@ CRITICAL RULES:
 2. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
 3. When asked to create video content, use 'generate_video'.
 4. **STOP AFTER COMPLETION:** Once you have fulfilled the user's request, STOP. Do NOT call additional tools. Do NOT generate more content unless explicitly asked. Do NOT send notifications or delegate tasks unless specifically requested.
+5. **NO VIDEO HALLUCINATIONS:** DO NOT generate video content unless the user explicitly asks for "video", "motion", "clip", or "animation". For "album art" or "images", ONLY use 'generate_image'.
 5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
 6. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
 `;
@@ -117,7 +118,9 @@ CRITICAL RULES:
                         prompt: { type: 'STRING', description: 'Detailed visual description of the image to generate.' },
                         style: { type: 'STRING', description: 'Optional artistic style (e.g., "photorealistic", "anime", "oil painting").' },
                         aspectRatio: { type: 'STRING', description: 'Aspect ratio (e.g., "16:9", "1:1", "9:16").' },
-                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' }
+                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' },
+                        quality: { type: 'STRING', description: 'Generation quality: "standard" or "hd".' },
+                        count: { type: 'NUMBER', description: 'Number of images to generate (max 4).' }
                     },
                     required: ['prompt']
                 }
@@ -397,7 +400,7 @@ CURRENT REQUEST: ${task}
 
         // Execution loop with native function calling
         let iterations = 0;
-        const MAX_ITERATIONS = 5;
+        const MAX_ITERATIONS = 15;
         let accumulatedResponse = '';
         let lastToolCall: { name: string; args: string } | null = null;
 
@@ -460,7 +463,7 @@ CURRENT REQUEST: ${task}
                         }
                     }
                 } catch (streamError) {
-                    console.warn('[GeneralistAgent] Stream read interrupted:', streamError);
+                    console.warn('[indii:AgentZero] Stream read interrupted:', streamError);
                 }
 
                 const response = await responsePromise;
@@ -548,7 +551,7 @@ CURRENT REQUEST: ${task}
 
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.error('[GeneralistAgent] Error:', err);
+                console.error('[indii:AgentZero] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
                 if (iterations >= MAX_ITERATIONS) {
