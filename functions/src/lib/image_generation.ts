@@ -1,47 +1,8 @@
 import * as functions from "firebase-functions/v1";
-import { defineSecret } from "firebase-functions/params";
 import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
-
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
-
-/**
- * Helper to safely retrieve the Gemini API Key
- */
-/**
- * Helper to safely retrieve the Gemini API Key
- */
-function getGeminiApiKey(): string {
-    // 1. Try Environment Variable (Local/Dev/Emulator)
-    // Check both standard names for compatibility
-    const envKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GENAI_API_KEY;
-    if (envKey && envKey.trim().length > 0) {
-        console.log(`[getGeminiApiKey] Using API key from process.env (masked: ${envKey.substring(0, 8)}...)`);
-        return envKey;
-    }
-
-    // 2. Try Firebase Secret (Production)
-    try {
-        const secret = geminiApiKey.value();
-        if (secret && secret.trim().length > 0) {
-            return secret;
-        }
-    } catch (e) {
-        // Secret not available (local emulation)
-    }
-
-    // 3. Fallback to Runtime Config
-    try {
-        const configKey = functions.config().gemini?.api_key || functions.config().google?.genai_api_key;
-        if (configKey) return configKey;
-    } catch (e) {
-        // Config not available
-    }
-
-    console.error("[getGeminiApiKey] FAILED: No key found in secret or .env");
-    throw new Error("Gemini API Key not found. Check GEMINI_API_KEY secret or .env");
-}
+import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
 
 /**
  * Generate Image V3 (Nano Banana Pro)

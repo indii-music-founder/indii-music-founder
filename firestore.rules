@@ -132,7 +132,7 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
       allow update: if isOwner(userId) && (
-        !request.resource.data.diff(resource.data).affectedKeys().has('role') || 
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
         request.auth.token.admin == true
       );
 
@@ -210,7 +210,7 @@ service cloud.firestore {
       allow read: if isResourceOrgMember();
       allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
       allow update: if isResourceOrgMember() && (
-          !request.resource.data.diff(resource.data).affectedKeys().has('orgId') || 
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
           request.auth.token.admin == true
       );
       allow delete: if isResourceOrgMember();

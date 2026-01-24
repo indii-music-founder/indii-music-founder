@@ -1,8 +1,6 @@
 import * as functions from "firebase-functions/v1";
 import { z } from "zod";
-import { defineSecret } from "firebase-functions/params";
-
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
+import { geminiApiKey } from "../config/secrets";
 
 export const CampaignStatusSchema = z.enum(['PENDING', 'EXECUTING', 'DONE', 'FAILED']);
 
