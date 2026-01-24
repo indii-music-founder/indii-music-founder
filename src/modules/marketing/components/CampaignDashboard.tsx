@@ -66,6 +66,30 @@ const CampaignDashboard: React.FC = () => {
         setIsAIModalOpen(true);
     }, []);
 
+    // E2E Test Injection Hook
+    useEffect(() => {
+        const handleTestInjection = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            if (customEvent.detail && customEvent.detail.posts) {
+                console.log('CampaignDashboard: Received Test Injection', customEvent.detail);
+
+                setSelectedCampaign(prev => {
+                    if (!prev) {
+                        console.warn('CampaignDashboard: No selected campaign to inject into.');
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        posts: customEvent.detail.posts
+                    };
+                });
+            }
+        };
+
+        window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
+        return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
+    }, []);
+
 
     return (
         <div className="flex h-full bg-background overflow-hidden text-foreground font-sans selection:bg-dept-marketing/30">
