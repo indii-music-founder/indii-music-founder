@@ -36,24 +36,25 @@ export default function CreativeGallery({ compact = false, onSelect, className =
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
 
-    // Filter items based on search query
-    const filteredUploadedImages = (searchQuery
-        ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedImages) || [];
-
-    const filteredUploadedAudio = (searchQuery
-        ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedAudio) || [];
-
-    const filteredGenerated = (searchQuery
-        ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : generatedHistory) || [];
-
     // Combine all items and sort by timestamp (newest first)
     // ⚡ Bolt Optimization: Memoize allItems to prevent expensive sort on every render
     const allItems = useMemo(() => {
+        const lowerQuery = searchQuery.toLowerCase();
+
+        const filteredUploadedImages = (searchQuery
+            ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(lowerQuery))
+            : uploadedImages) || [];
+
+        const filteredUploadedAudio = (searchQuery
+            ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(lowerQuery))
+            : uploadedAudio) || [];
+
+        const filteredGenerated = (searchQuery
+            ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(lowerQuery))
+            : generatedHistory) || [];
+
         return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
-    }, [filteredUploadedImages, filteredUploadedAudio, filteredGenerated]);
+    }, [searchQuery, uploadedImages, uploadedAudio, generatedHistory]);
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;

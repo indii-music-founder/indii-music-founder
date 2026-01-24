@@ -52,6 +52,7 @@ export default function VideoNavbar() {
                             role="tab"
                             aria-selected={viewMode === 'director'}
                             aria-label="Director View"
+                            aria-controls="director-panel"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'director' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
@@ -63,6 +64,7 @@ export default function VideoNavbar() {
                             role="tab"
                             aria-selected={viewMode === 'editor'}
                             aria-label="Editor View"
+                            aria-controls="editor-panel"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'editor' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >

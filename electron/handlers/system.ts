@@ -1,5 +1,6 @@
 import { app, ipcMain, BrowserWindow, dialog } from 'electron';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 
 export function registerSystemHandlers() {
     ipcMain.handle('get-platform', (event) => {
@@ -30,6 +31,11 @@ export function registerSystemHandlers() {
         });
 
         if (result.canceled) return null;
+
+        if (result.filePaths.length > 0) {
+            accessControlService.grantAccess(result.filePaths[0]);
+        }
+
         return result.filePaths[0];
     });
 
@@ -44,6 +50,11 @@ export function registerSystemHandlers() {
         });
 
         if (result.canceled) return null;
+
+        if (result.filePaths.length > 0) {
+            accessControlService.grantAccess(result.filePaths[0]);
+        }
+
         return result.filePaths[0];
     });
 }

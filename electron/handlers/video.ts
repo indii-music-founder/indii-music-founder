@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
+import { accessControlService } from '../security/AccessControlService';
 
 /**
  * Downloads a file from a URL to a local path.
@@ -58,6 +59,9 @@ export function registerVideoHandlers() {
 
             console.log(`[VideoHandler] Downloading video to: ${destinationPath}`);
             await downloadFile(url, destinationPath);
+
+            // Grant access to the saved file
+            accessControlService.grantAccess(destinationPath);
 
             // Return the local file path
             return destinationPath;
