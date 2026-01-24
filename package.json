@@ -55,6 +55,7 @@
     "@remotion/player": "^4.0.382",
     "@remotion/renderer": "^4.0.382",
     "@sentry/react": "^10.32.1",
+    "@tensorflow/tfjs": "^4.22.0",
     "ajv": "^8.17.1",
     "classnames": "^2.5.1",
     "clsx": "^2.1.1",

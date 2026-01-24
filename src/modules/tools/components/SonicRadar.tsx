@@ -34,11 +34,15 @@ export const SonicRadar: React.FC<SonicRadarProps> = ({ features, loading }) => 
         };
     };
 
-    // Generate path for the data shape
-    const pathData = data.map((d, i) => {
-        const point = getPoint(loading ? 0.2 : d.value, d.angle);
-        return `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`;
-    }).join(' ') + ' Z';
+    // Filter and Generate path for the data shape
+    const validPoints = data.map(d => {
+        const val = loading ? 0.2 : (d.value || 0);
+        return getPoint(val, d.angle);
+    }).filter(p => !isNaN(p.x) && !isNaN(p.y));
+
+    const pathData = validPoints.length > 0
+        ? validPoints.map((point, i) => `${i === 0 ? 'M' : 'L'} ${point.x} ${point.y}`).join(' ') + ' Z'
+        : '';
 
     return (
         <div className="relative w-full aspect-square max-w-[300px] mx-auto group">

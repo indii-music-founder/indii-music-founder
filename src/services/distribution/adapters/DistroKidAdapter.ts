@@ -196,7 +196,6 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             streams: 0,
             downloads: 0,
             grossRevenue: 0,
-            distributorFee: 0,
             distributorFee: 0, // 100% Payout
             netRevenue: 0,
             currencyCode: 'USD',

@@ -197,6 +197,12 @@ function useURLSync() {
         const pathSegments = location.pathname.split('/').filter(Boolean);
         const currentPathModule = pathSegments[0] || 'dashboard';
 
+        // Fix: If URL points to a valid module but Store is still default 'dashboard',
+        // allow Effect 1 to update Store instead of overwriting URL.
+        if (currentModule === 'dashboard' && currentPathModule !== 'dashboard' && MODULE_COMPONENTS[currentPathModule as ModuleId]) {
+            return;
+        }
+
         // Only navigate if the module actually CHANGED from what's in the URL
         // This preserves sub-paths (e.g. /creative/123) if the module is still 'creative'
         if (currentModule !== currentPathModule) {
