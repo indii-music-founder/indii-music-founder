@@ -179,4 +179,47 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     // Assert Mutation was called twice (Retry happened)
     expect(mockMutationFn).toHaveBeenCalledTimes(2);
   });
+
+  it('Gene Integrity: Rejects malformed mutation outputs (Arrays, Circular Refs)', async () => {
+    // Scenario: Gemini 3 Pro returns valid JSON that is semantically invalid (Array) or non-serializable (Circular).
+    // The engine must reject these and retry.
+
+    // 1. Mock attempt: Parameters as Array (Schema Integrity)
+    mockMutationFn.mockResolvedValueOnce({
+        ...baseGene,
+        id: 'child-array',
+        parameters: [] as any // Force Array defect
+    });
+
+    // 2. Mock attempt: Circular Reference (Serialization Safety)
+    const circularGene: any = { ...baseGene, id: 'child-circular' };
+    circularGene.self = circularGene; // Create cycle
+    mockMutationFn.mockResolvedValueOnce(circularGene);
+
+    // 3. Mock attempt: Valid
+    mockMutationFn.mockResolvedValueOnce({
+        ...baseGene,
+        id: 'valid-child-2',
+        systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
+        parameters: { temperature: 0.8 }
+    });
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'Agent-A', fitness: 100 },
+      { ...baseGene, id: 'Agent-B', fitness: 80 },
+      { ...baseGene, id: 'Agent-C', fitness: 20 }
+    ];
+
+    const nextGen = await engine.evolve(population);
+
+    expect(nextGen).toHaveLength(3);
+    const offspring = nextGen[2];
+
+    // Assert we got the valid one
+    expect(offspring.systemPrompt).toBe('Valid [GEMINI-3-PRO-EVOLVED]');
+    expect(offspring.parameters.temperature).toBe(0.8);
+
+    // Assert Mutation was called 3 times (2 failures + 1 success)
+    expect(mockMutationFn).toHaveBeenCalledTimes(3);
+  });
 });
