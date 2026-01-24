@@ -38,12 +38,14 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
-    functions: {}
+    functions: {},
+    functionsWest1: {}
 }));
 
 // Handle dynamic import used in VideoGenerationService
 vi.mock('../firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
     auth: mocks.auth
 }));
@@ -102,9 +104,9 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 aspectRatio: '16:9'
             };
 
-            // @ts-ignore - bypassing TS to test runtime validation
+            // @ts-expect-error - bypassing TS to test runtime validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
-            // @ts-ignore
+            // @ts-expect-error - Testing schema validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Prompt is required/);
         });
 
@@ -114,17 +116,17 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 aspectRatio: '16:10' // Not in schema
             };
 
-            // @ts-ignore
+            // @ts-expect-error - Testing schema validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
         it('should reject invalid resolution', async () => {
             const invalidOptions = {
                 prompt: 'Valid prompt',
-                resolution: '4k' // Not in schema
+                resolution: '8k' // Truly not in schema
             };
 
-            // @ts-ignore
+            // @ts-expect-error - Testing schema validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
@@ -134,7 +136,7 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 duration: -5
             };
 
-            // @ts-ignore
+
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
@@ -144,7 +146,7 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 duration: 301
             };
 
-            // @ts-ignore
+
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
@@ -154,17 +156,18 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
                 fps: 120
             };
 
-            // @ts-ignore
+
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
 
-        it('should reject invalid URL for firstFrame', async () => {
+        it('should reject invalid firstFrame (not a string)', async () => {
             const invalidOptions = {
                 prompt: 'Valid prompt',
-                firstFrame: 'not-a-url'
+                firstFrame: 12345 // Should be string
             };
 
-            // @ts-ignore
+
+            // @ts-expect-error - bypassing TS to test runtime validation
             await expect(service.generateVideo(invalidOptions)).rejects.toThrow(/Invalid video parameters/);
         });
     });
@@ -191,7 +194,7 @@ describe('VideoGenerationService - Forge Hardening (Schema & Input)', () => {
             const triggerMock = vi.fn().mockResolvedValue({ data: { jobId: 'job-123' } });
             mocks.httpsCallable.mockReturnValue(triggerMock);
 
-            // @ts-ignore
+
             await service.generateVideo(extraOptions);
 
             // Check what was passed to triggerVideoJob

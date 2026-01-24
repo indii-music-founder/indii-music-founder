@@ -8,6 +8,15 @@
     "dist-electron/**/*",
     "package.json"
   ],
+  "extraResources": [
+    {
+      "from": "execution",
+      "to": "execution",
+      "filter": [
+        "**/*"
+      ]
+    }
+  ],
   "linux": {
     "target": [
       "AppImage"

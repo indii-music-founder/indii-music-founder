@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { CodeBlock } from './CodeBlock';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { axe } from 'vitest-axe';
@@ -18,6 +18,7 @@ describe('CodeBlock', () => {
                 writeText: writeTextMock,
             },
             writable: true,
+            configurable: true,
         });
         writeTextMock.mockReset();
     });
@@ -27,20 +28,46 @@ describe('CodeBlock', () => {
         expect(screen.getByText("console.log('hello')")).toBeInTheDocument();
     });
 
-    it('copies text when button is clicked', async () => {
-        writeTextMock.mockResolvedValue(undefined);
-        render(<CodeBlock>const x = 1;</CodeBlock>);
+    it('Scenario: Copy Button Lifecycle (Click -> Success -> Reset)', async () => {
+        vi.useFakeTimers();
 
-        // Button is initially hidden (opacity 0) but accessible in DOM
-        // The accessible name is "Copy code to clipboard"
-        const button = screen.getByRole('button', { name: /copy code to clipboard/i });
-        fireEvent.click(button);
+        try {
+            writeTextMock.mockResolvedValue(undefined);
+            render(<CodeBlock>const x = 1;</CodeBlock>);
 
-        expect(writeTextMock).toHaveBeenCalledWith('const x = 1;');
+            const copyBtn = screen.getByTestId('copy-code-btn');
 
-        // Check for success state
-        expect(await screen.findByText('Copied!')).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: /copied to clipboard/i })).toBeInTheDocument();
+            // 1. Initial State
+            expect(copyBtn).toHaveTextContent('Copy');
+            expect(copyBtn).toHaveAttribute('title', 'Copy code');
+            expect(screen.queryByText('Copied!')).not.toBeInTheDocument();
+
+            // 2. Click Interaction
+            await act(async () => {
+                fireEvent.click(copyBtn);
+            });
+
+            // 3. Verify Action (Clipboard)
+            expect(writeTextMock).toHaveBeenCalledWith('const x = 1;');
+
+            // 4. Verify Feedback State
+            expect(copyBtn).toHaveTextContent('Copied!');
+            expect(copyBtn).toHaveAttribute('title', 'Copied!');
+            expect(copyBtn).toHaveClass('text-green-400');
+            expect(copyBtn).toHaveClass('bg-green-500/20');
+
+            // 5. Verify Reset after timeout
+            await act(async () => {
+                vi.advanceTimersByTime(2000);
+            });
+
+            // 6. Verify Final Ready State
+            expect(copyBtn).toHaveTextContent('Copy');
+            expect(copyBtn).toHaveAttribute('title', 'Copy code');
+            expect(copyBtn).not.toHaveClass('text-green-400');
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it('is accessible', async () => {

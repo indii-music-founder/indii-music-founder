@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
+import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -39,7 +39,7 @@ export class AgentService {
             await agentRegistry.warmup();
             this.isWarmedUp = true;
         } catch (e) {
-            console.warn('[AgentService] Warmup failed, will retry on first message:', e);
+            console.warn('[indii:Service] Warmup failed, will retry on first message:', e);
         }
     }
 
@@ -144,19 +144,31 @@ export class AgentService {
                     updateAgentMessage(responseId, { text: currentStreamedText });
                 }
 
-                if (event.type === 'thought' || event.type === 'tool') {
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                     const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-                    const newThought = {
+
+                    // Firestore explicitly rejects 'undefined' values. We must sanitize.
+                    const newThought: AgentThought = {
                         id: uuidv4(),
-                        text: event.content,
+                        text: event.content || '', // Ensure no undefined text
                         timestamp: Date.now(),
-                        type: event.type as 'tool' | 'logic' | 'error',
-                        toolName: event.toolName
+                        type: event.type as any, // Typed in interface
                     };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) {
+                            newThought.toolName = event.toolName;
+                        }
+                    }
+
+                    // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
+                    // stringify/parse removes all undefined keys.
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    console.log('[AgentService] Adding thought:', safeThought);
 
                     if (currentMsg) {
                         updateAgentMessage(responseId, {
-                            thoughts: [...(currentMsg.thoughts || []), newThought]
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
                         });
                     }
                 }
@@ -164,10 +176,17 @@ export class AgentService {
 
             if (result && result.text) {
                 if (!result.text.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, { text: result.text, isStreaming: false });
+                    updateAgentMessage(responseId, {
+                        text: result.text,
+                        isStreaming: false,
+                        thoughtSignature: result.thoughtSignature
+                    });
                 }
             } else {
-                updateAgentMessage(responseId, { isStreaming: false });
+                updateAgentMessage(responseId, {
+                    isStreaming: false,
+                    thoughtSignature: result?.thoughtSignature
+                });
             }
 
         } catch (e: unknown) {

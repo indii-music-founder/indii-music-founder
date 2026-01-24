@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { AIGenerationDialog } from './AIGenerationDialog';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -128,6 +128,47 @@ describe('AIGenerationDialog', () => {
 
         await waitFor(() => {
             expect(mockToast.error).toHaveBeenCalledWith('Generation failed: Network error');
+        });
+    });
+
+    it('shows loading state (Spinner + Disabled UI) during generation', async () => {
+        let resolveGeneration: ((value: any) => void) | undefined;
+        const generatePromise = new Promise((resolve) => {
+            resolveGeneration = resolve;
+        });
+
+        (ImageGeneration.generateImages as any).mockReturnValue(generatePromise);
+
+        render(
+            <AIGenerationDialog
+                isOpen={true}
+                onClose={onClose}
+                onImageGenerated={onImageGenerated}
+            />
+        );
+
+        const input = screen.getByLabelText('Describe what you want to create');
+        fireEvent.change(input, { target: { value: 'loading check' } });
+
+        const button = screen.getByRole('button', { name: /generate/i });
+        fireEvent.click(button);
+
+        // Assert Loading State
+        expect(button).toBeDisabled();
+        expect(button).toHaveTextContent(/Generating.../i);
+        expect(input).toBeDisabled();
+
+        // Resolve
+        await act(async () => {
+             resolveGeneration!([
+                { id: '1', url: 'http://example.com/image.png', prompt: 'loading check' }
+            ]);
+        });
+
+        // Assert Success/Idle State
+        await waitFor(() => {
+            expect(mockToast.success).toHaveBeenCalled();
+            expect(onClose).toHaveBeenCalled();
         });
     });
 });

@@ -252,7 +252,57 @@ function thisIsAVeryLongFunctionNameThatShouldDefinitelyOverflowTheViewportIfItD
         expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
     });
 
+    test('should handle long LaTeX formulas without breaking layout', async ({ page }) => {
+        // Inject a long LaTeX formula (simulated as text since no native rendering yet)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            // A very long LaTeX string with no spaces to stress-test text wrapping/overflow
+            const longLatex = `$$ E = mc^2 + \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi} + \\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6} + \\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F}) \\cdot d\\mathbf{S} + \\text{This is a very long text string inside a LaTeX block to ensure it wraps correctly even if it is treated as plain text by the markdown renderer} $$`;
+
+            store.addAgentMessage({
+                id: 'test-latex-msg',
+                role: 'model',
+                text: "Here is a complex formula:\n\n" + longLatex,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Message Exists
+        const msg = page.getByText('Here is a complex formula:');
+        await expect(msg).toBeVisible();
+
+        // Verify the formula text is visible (it might be wrapped)
+        // We search for a substring
+        const formulaPart = page.getByText('E = mc^2');
+        await expect(formulaPart).toBeVisible();
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
+        console.log(`📱 Body: scrollWidth=${bodyScrollWidth}, clientWidth=${bodyClientWidth}`);
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
     test('should toggle mobile navigation menu', async ({ page }) => {
+        // Close Agent Window programmatically if open (it overlaps the FAB)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            if (window.useStore) {
+                // @ts-expect-error - Testing Environment Window Property
+                const state = window.useStore.getState();
+                if (state.isAgentOpen) {
+                    state.toggleAgentWindow();
+                }
+            }
+        });
+
+        const closeAgentBtn = page.locator('button[aria-label="Close chat"], button[aria-label="Close Agent"]').first();
+        await expect(closeAgentBtn).toBeHidden();
+
         // Open Navigation
         await page.getByLabel('Open Navigation').click();
 

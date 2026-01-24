@@ -60,6 +60,12 @@ vi.mock('./ScoutControls', () => ({
     ScoutControls: () => <div data-testid="scout-controls">Scout Controls</div>
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        showToast: vi.fn()
+    })
+}));
+
 describe('AgentDashboard', () => {
     it('renders the sidebar, toolbar and default scout view', () => {
         render(<AgentDashboard />);
@@ -69,6 +75,8 @@ describe('AgentDashboard', () => {
         expect(screen.getByText('Agent Tools')).toBeDefined(); // Inside toolbar logic in dashboard
 
         // Default View is Scout
+        // The text 'The Scout' appears in the Sidebar mock AND the Hero section.
+        // getAllByText returns an array.
         const scoutTexts = screen.getAllByText('The Scout');
         expect(scoutTexts.length).toBeGreaterThan(0);
         expect(screen.getByTestId('scout-controls')).toBeDefined();

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { DistributionSyncService } from './DistributionSyncService';
-import { getDocs } from 'firebase/firestore';
+import { getDocs, getDoc, doc } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
@@ -9,6 +9,8 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn(),
     orderBy: vi.fn(),
     getDocs: vi.fn(),
+    doc: vi.fn(),
+    getDoc: vi.fn(),
 }));
 
 vi.mock('@/services/firebase', () => ({
@@ -84,5 +86,35 @@ describe('DistributionSyncService', () => {
 
         const result = await DistributionSyncService.fetchReleases('org-1');
         expect(result[0].title).toBe('Single Title');
+    });
+
+    it('should fetch a single release by ID', async () => {
+        const mockReleaseData = {
+            metadata: { releaseTitle: 'Test Release' },
+            id: 'release-123'
+        };
+
+        const mockDocSnapshot = {
+            exists: () => true,
+            id: 'release-123',
+            data: () => mockReleaseData
+        };
+
+        (getDoc as any).mockResolvedValueOnce(mockDocSnapshot);
+
+        const result = await DistributionSyncService.getRelease('release-123');
+        expect(result).toEqual(mockReleaseData);
+        expect(doc).toHaveBeenCalled();
+        expect(getDoc).toHaveBeenCalled();
+    });
+
+    it('should return null if release does not exist', async () => {
+        const mockDocSnapshot = {
+            exists: () => false,
+        };
+        (getDoc as any).mockResolvedValueOnce(mockDocSnapshot);
+
+        const result = await DistributionSyncService.getRelease('non-existent');
+        expect(result).toBeNull();
     });
 });

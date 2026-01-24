@@ -6,7 +6,7 @@ import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
 
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, connectFunctionsEmulator, httpsCallable } from 'firebase/functions';
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check';
 import { getRemoteConfig } from 'firebase/remote-config';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -85,7 +85,21 @@ export const db = initializeFirestore(app, {
     })
 });
 export const storage = getStorage(app);
-export const functions = getFunctions(app);
+export const functions = getFunctions(app); // Default (us-central1)
+export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-west1)
+
+// Connect to Functions emulator in development (when running locally)
+// Production builds skip this entirely - they call deployed Cloud Functions
+if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true' && typeof window !== 'undefined') {
+    try {
+        connectFunctionsEmulator(functions, '127.0.0.1', 5001);
+        connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
+        console.log('[Firebase] Connected to Functions emulator on port 5001');
+    } catch (e) {
+        // Emulator connection may fail if already connected or emulator not running
+        console.warn('[Firebase] Functions emulator connection skipped:', e);
+    }
+}
 
 // Use initializeAuth to ensure persistence is correctly configured for Electron
 // This fixes potential hangs where default persistence (IndexedDB) might fail silently

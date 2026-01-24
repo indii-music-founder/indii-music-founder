@@ -49,6 +49,7 @@ const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
+const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 
 
 
@@ -83,6 +84,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'audio-analyzer': AudioAnalyzer,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
+    'history': HistoryDashboard,
 };
 
 // ============================================================================
@@ -309,16 +311,7 @@ export default function App() {
                             </ErrorBoundary>
                         </div>
 
-                        {showChrome && (
-                            <div className="flex-shrink-0 z-50 relative">
-                                <ErrorBoundary>
-                                    <ChatOverlayWrapper />
-                                    <div className="relative z-[101]">
-                                        <CommandBar />
-                                    </div>
-                                </ErrorBoundary>
-                            </div>
-                        )}
+                        {showChrome && <ChatOverlayWrapper />}
                     </main>
 
                     {/* Right Panel - Hidden for standalone modules and mobile */}
@@ -353,6 +346,13 @@ export default function App() {
 
                     {/* Industrial Transmission Monitor */}
                     <TransmissionMonitor />
+
+                    {/* Global Command Bar (Floating Pill) */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <CommandBar />
+                        </ErrorBoundary>
+                    )}
                 </div>
             </ToastProvider>
         </VoiceProvider>

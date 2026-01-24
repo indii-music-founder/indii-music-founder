@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image, Activity } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image, Activity, Clock } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Sidebar() {
@@ -52,6 +52,7 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'history', icon: Clock, label: 'History' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
@@ -75,6 +76,7 @@ export default function Sidebar() {
                             `}
                             data-testid={`nav-item-${item.id}`}
                             aria-current={isActive ? 'page' : undefined}
+                            aria-label={!isSidebarOpen ? item.label : undefined}
                         >
                             <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
                             {isSidebarOpen && <span className="truncate">{item.label}</span>}
@@ -101,6 +103,7 @@ export default function Sidebar() {
                             onClick={() => setModule('dashboard')}
                             className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
                             data-testid="return-hq-btn"
+                            aria-label="Return to HQ"
                         >
                             <Layout size={12} /> Return to HQ
                         </button>
@@ -169,6 +172,7 @@ export default function Sidebar() {
                         onClick={() => logout()}
                         className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
                         title="Reload System"
+                        aria-label="Reload System"
                         data-testid="logout-btn"
                     >
                         <LogOut size={14} />
@@ -182,6 +186,7 @@ export default function Sidebar() {
                             onClick={() => setTheme('dark')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-dept-creative bg-white/5 shadow-[0_0_10px_rgba(156,39,176,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                             title="Dark Mode"
+                            aria-label="Toggle Dark Mode"
                             data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
@@ -191,6 +196,7 @@ export default function Sidebar() {
                             onClick={() => setModule('observability')}
                             className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                             title="System Observability"
+                            aria-label="System Observability"
                             data-testid="observability-footer-btn"
                         >
                             <Activity size={14} />
