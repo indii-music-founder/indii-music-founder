@@ -53,9 +53,14 @@ export const AI_CONFIG = {
             thinkingConfig: { thinkingLevel: "LOW" }
         }
     },
+    MEDIA_RESOLUTION: {
+        DEFAULT: 'MEDIA_RESOLUTION_HIGH',
+        LOW: 'MEDIA_RESOLUTION_LOW'
+    },
     IMAGE: {
         DEFAULT: {
-            imageConfig: { imageSize: '2K' }
+            imageConfig: { imageSize: '2K' },
+            mediaResolution: 'MEDIA_RESOLUTION_HIGH'
         }
     },
     VIDEO: {
