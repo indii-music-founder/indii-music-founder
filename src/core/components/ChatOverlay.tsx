@@ -458,13 +458,13 @@ export default function ChatOverlay() {
         if (showHistory && !ConversationHistoryList) {
             import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
         }
-    }, [showHistory]);
+    }, [showHistory, ConversationHistoryList]);
 
     useEffect(() => {
         if (showInvite && !AgentSelector) {
             import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
         }
-    }, [showInvite]);
+    }, [showInvite, AgentSelector]);
 
     // Get the first available reference image to use as avatar
     const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;

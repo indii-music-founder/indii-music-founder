@@ -174,68 +174,6 @@ function useOnboardingRedirect() {
 }
 
 // ============================================================================
-// Router Synchronization Hook
-// ============================================================================
-
-function useRouterSync() {
-    const { currentModule, setModule, user, authLoading } = useStore();
-
-    // 1. Initial Load: Sync URL to State (Deep Linking)
-    useEffect(() => {
-        if (!user || authLoading) return;
-
-        const path = window.location.pathname.substring(1); // Remove leading slash
-        const parts = path.split('/');
-        const initialModule = parts[0] as ModuleId;
-
-        // If URL has a module and it's different from current, update state
-        if (initialModule && initialModule !== currentModule && MODULE_COMPONENTS[initialModule]) {
-            setModule(initialModule);
-        } else if (!initialModule) {
-            // Ensure dashboard URL if empty
-            window.history.replaceState(null, '', '/dashboard');
-        }
-    }, [user, authLoading, setModule]); // Run only on mount/auth-ready
-
-    // 2. State Change: Sync State to URL
-    useEffect(() => {
-        if (!user || authLoading) return;
-
-        const path = window.location.pathname.substring(1);
-        const parts = path.split('/');
-        const urlModule = parts[0] as ModuleId;
-
-        if (currentModule !== urlModule) {
-            const newPath = `/${currentModule}`;
-            // Use pushState only if we are actually changing contexts,
-            // but we need to avoid fighting with initial load or popstate
-            // Check if the current URL already matches
-            if (path !== currentModule) {
-                window.history.pushState(null, '', newPath);
-            }
-        }
-    }, [currentModule, user, authLoading]);
-
-    // 3. Browser Navigation (Back/Forward): Sync URL to State
-    useEffect(() => {
-        const handlePopState = () => {
-            const path = window.location.pathname.substring(1);
-            const parts = path.split('/');
-            const navModule = parts[0] as ModuleId;
-
-            if (navModule && MODULE_COMPONENTS[navModule]) {
-                setModule(navModule);
-            } else if (path === '' || path === '/') {
-                setModule('dashboard');
-            }
-        };
-
-        window.addEventListener('popstate', handlePopState);
-        return () => window.removeEventListener('popstate', handlePopState);
-    }, [setModule]);
-}
-
-// ============================================================================
 // Module Renderer Component
 // ============================================================================
 
@@ -268,9 +206,6 @@ export default function App() {
     // Initialize app and handle onboarding
     useAppInitialization();
     useOnboardingRedirect();
-
-    // Sync URL with State
-    useRouterSync();
 
     // Log module changes in dev
 

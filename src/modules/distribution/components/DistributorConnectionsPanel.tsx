@@ -14,7 +14,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
 
     useEffect(() => {
         fetchDistributors();
-    }, []);
+    }, [fetchDistributors]);
 
     const handleConnect = (id: string) => {
         const adapter = DistributorService.getAdapter(id as import('@/services/distribution/types/distributor').DistributorId);
