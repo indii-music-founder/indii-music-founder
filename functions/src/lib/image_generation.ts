@@ -34,14 +34,14 @@ export const generateImageV3Fn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { prompt, aspectRatio, count, images, model: requestedModel, mediaResolution, thinking } = validation.data;
+        const { prompt, aspectRatio, count, model, imageSize, thinking, images, useGrounding, mediaResolution } = validation.data;
 
         try {
             console.log(`[generateImageV3] Using REST API for key preservation`);
             const apiKey = getGeminiApiKey();
 
             // Select Model (Pro vs Fast)
-            const modelId = requestedModel === 'fast'
+            const modelId = model === 'fast'
                 ? FUNCTION_AI_MODELS.IMAGE.FAST
                 : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
@@ -49,7 +49,7 @@ export const generateImageV3Fn = () => functions
             const parts: any[] = [{ text: prompt }];
 
             if (images && images.length > 0) {
-                images.forEach(img => {
+                images.forEach((img: any) => {
                     parts.push({
                         inlineData: {
                             mimeType: img.mimeType || "image/png",
@@ -80,10 +80,15 @@ export const generateImageV3Fn = () => functions
                     generationConfig: {
                         candidateCount: count || 1,
                         responseModalities: ["IMAGE"],
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                        ...(aspectRatio || imageSize ? {
+                            imageConfig: {
+                                ...(aspectRatio ? { aspectRatio } : {}),
+                                ...(imageSize ? { imageSize } : {})
+                            }
+                        } : {}),
                         ...(apiMediaResolution ? { mediaResolution: apiMediaResolution } : {}),
                         ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
-                        ...(validation.data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
+                        ...(useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
                     }
                 })
             });

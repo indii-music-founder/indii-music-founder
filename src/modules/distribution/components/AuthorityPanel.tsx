@@ -73,7 +73,7 @@ export const AuthorityPanel: React.FC = () => {
                 releaseId: releaseData.id,
                 title: releaseData.metadata.releaseTitle || releaseData.metadata.trackTitle,
                 artists: [releaseData.metadata.artistName],
-                tracks: releaseData.metadata.tracks?.map((t, idx) => {
+                tracks: (releaseData.metadata.tracks && releaseData.metadata.tracks.length > 0) ? releaseData.metadata.tracks.map((t, idx) => {
                     const trackIsrc = t.isrc || activeIsrc;
                     if (!trackIsrc) throw new Error(`Missing ISRC for track ${idx + 1}: ${t.trackTitle}`);
                     return {
@@ -81,7 +81,7 @@ export const AuthorityPanel: React.FC = () => {
                         title: t.trackTitle,
                         isrc: trackIsrc
                     };
-                }) || (() => {
+                }) : (() => {
                     // Fallback for single-track releases stored without a tracks array
                     const singleTrackIsrc = releaseData.metadata.isrc || activeIsrc;
                     if (!singleTrackIsrc) throw new Error('Missing ISRC for single track release');
