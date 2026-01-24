@@ -103,4 +103,43 @@ describe('RevenueService (Production Logic)', () => {
             })
         );
     });
+
+    it('getUserRevenueStats should return history sorted by date', async () => {
+        // Mock docs with out-of-order dates
+        // Note: getUserRevenueStats uses UTC dates for history keys
+        const mockDocs = [
+             {
+                 data: () => ({
+                     amount: 100,
+                     userId: 'user-123',
+                     createdAt: { toDate: () => new Date('2024-01-05T00:00:00Z') }
+                 })
+            },
+            {
+                 data: () => ({
+                     amount: 50,
+                     userId: 'user-123',
+                     createdAt: { toDate: () => new Date('2024-01-01T00:00:00Z') }
+                 })
+            },
+            {
+                 data: () => ({
+                     amount: 25,
+                     userId: 'user-123',
+                     createdAt: { toDate: () => new Date('2024-01-03T00:00:00Z') }
+                 })
+            }
+        ];
+
+        mocks.getDocs.mockResolvedValue({
+            docs: mockDocs,
+            empty: false,
+            forEach: (callback: (doc: any) => void) => mockDocs.forEach(callback)
+        });
+
+        const stats = await revenueService.getUserRevenueStats('user-123', 'all');
+
+        const dates = stats.history.map(h => h.date);
+        expect(dates).toEqual(['2024-01-01', '2024-01-03', '2024-01-05']);
+    });
 });
