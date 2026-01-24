@@ -170,7 +170,11 @@ describe('FirebaseAIService', () => {
         expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             systemInstruction: 'Be a cat',
             generationConfig: expect.objectContaining({
-                thinkingConfig: { thinkingBudget: 1024 }
+                thinkingConfig: expect.objectContaining({
+                    thinkingBudget: 1024,
+                    budgetTokenCount: 1024,
+                    includeThoughts: true
+                })
             })
         }));
     });

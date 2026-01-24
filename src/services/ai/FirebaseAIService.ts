@@ -626,7 +626,11 @@ export class FirebaseAIService {
         let systemInstruction: string | undefined;
 
         if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+            config.thinkingConfig = {
+                thinkingBudget: thinkingBudgetOrModel,
+                budgetTokenCount: thinkingBudgetOrModel,
+                includeThoughts: true
+            };
             systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
         } else if (typeof thinkingBudgetOrModel === 'string') {
             model = thinkingBudgetOrModel;
@@ -673,7 +677,11 @@ export class FirebaseAIService {
             responseSchema: schema
         };
         if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
+            config.thinkingConfig = {
+                thinkingBudget,
+                budgetTokenCount: thinkingBudget,
+                includeThoughts: true
+            };
         }
 
         const modelName = modelOverride || this.getModelName();
@@ -756,9 +764,18 @@ export class FirebaseAIService {
     /**
      * ADVANCED: Grounding with Google Search.
      */
-    async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
+    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
         await this.ensureInitialized();
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
+        const tools: Tool[] = [{
+            googleSearch: {},
+            googleSearchRetrieval: options?.dynamicThreshold ? {
+                dynamicRetrievalConfig: {
+                    mode: 'MODE_DYNAMIC',
+                    dynamicThreshold: options.dynamicThreshold
+                }
+            } : undefined
+        }];
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools);
     }
 
     /**
@@ -935,7 +952,7 @@ export class FirebaseAIService {
             await this.ensureInitialized();
 
             // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
-            const tools: Tool[] = [{ googleSearch: {} }] as unknown as Tool[];
+            const tools: Tool[] = [{ googleSearch: {} }];
 
             // 2. Setup Config
             const generationConfig: GenerationConfig = {
