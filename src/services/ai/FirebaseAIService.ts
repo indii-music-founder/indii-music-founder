@@ -16,7 +16,7 @@ import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS, getModelKey } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
     InlineDataPart,
@@ -29,7 +29,8 @@ import {
     GenerateImageRequest,
     GenerateImageResponse,
     GenerateSpeechResponse,
-    GenerationConfig
+    GenerationConfig,
+    ContentPart
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -88,7 +89,7 @@ interface ExtendedGenerativeModel extends GenerativeModel {
 
 export interface ChatMessage {
     role: 'user' | 'model';
-    parts: Part[];
+    parts: (Part | ContentPart)[];
 }
 
 export class FirebaseAIService {
@@ -625,7 +626,11 @@ export class FirebaseAIService {
         let systemInstruction: string | undefined;
 
         if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+            config.thinkingConfig = {
+                thinkingBudget: thinkingBudgetOrModel,
+                budgetTokenCount: thinkingBudgetOrModel,
+                includeThoughts: true
+            };
             systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
         } else if (typeof thinkingBudgetOrModel === 'string') {
             model = thinkingBudgetOrModel;
@@ -672,7 +677,11 @@ export class FirebaseAIService {
             responseSchema: schema
         };
         if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
+            config.thinkingConfig = {
+                thinkingBudget,
+                budgetTokenCount: thinkingBudget,
+                includeThoughts: true
+            };
         }
 
         const modelName = modelOverride || this.getModelName();
@@ -710,7 +719,7 @@ export class FirebaseAIService {
         await this.ensureInitialized();
         const contents: Content[] = history.map(h => ({
             role: h.role,
-            parts: h.parts
+            parts: h.parts as Part[] // Cast to satisfy firebase/ai types while preserving extra fields like thoughtSignature
         }));
         contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
@@ -755,9 +764,18 @@ export class FirebaseAIService {
     /**
      * ADVANCED: Grounding with Google Search.
      */
-    async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
+    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
         await this.ensureInitialized();
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
+        const tools: Tool[] = [{
+            googleSearch: {},
+            googleSearchRetrieval: options?.dynamicThreshold ? {
+                dynamicRetrievalConfig: {
+                    mode: 'MODE_DYNAMIC',
+                    dynamicThreshold: options.dynamicThreshold
+                }
+            } : undefined
+        }];
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools);
     }
 
     /**
@@ -934,11 +952,12 @@ export class FirebaseAIService {
             await this.ensureInitialized();
 
             // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
-            const tools: Tool[] = [{ googleSearch: {} }] as unknown as Tool[];
+            const tools: Tool[] = [{ googleSearch: {} }];
 
             // 2. Setup Config
             const generationConfig: GenerationConfig = {
                 responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
                     imageSize: '4K' // "Perfect" quality
