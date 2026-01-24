@@ -331,10 +331,10 @@ class MembershipServiceImpl {
     /**
      * Check if estimated cost is within daily budget
      */
-    async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number }> {
+    async checkBudget(estimatedCost: number): Promise<{ allowed: boolean; remainingBudget: number; requiresApproval: boolean }> {
         const userId = await this.getCurrentUserId();
         if (!userId) {
-            return { allowed: false, remainingBudget: 0 };
+            return { allowed: false, remainingBudget: 0, requiresApproval: false };
         }
 
         const tier = await this.getCurrentTier();
@@ -350,9 +350,13 @@ class MembershipServiceImpl {
         const remainingBudgetFixed = maxSpendFixed - currentSpendFixed;
         const allowed = (currentSpendFixed + estimatedCostFixed) <= maxSpendFixed;
 
+        // Ledger Policy: User must approve every charge over $0.50
+        const requiresApproval = estimatedCost > 0.50;
+
         return {
             allowed,
-            remainingBudget: remainingBudgetFixed / 100
+            remainingBudget: remainingBudgetFixed / 100,
+            requiresApproval
         };
     }
 
