@@ -549,7 +549,6 @@ export const inngestApi = functions
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
 // Deployed to us-west1 for Model Availability
 export const generateImageV3 = generateImageV3Fn();
-
 export const editImage = editImageFn();
 
 export const generateSpeech = functions

@@ -33,17 +33,18 @@ Execute a complete end-to-end "Live Test" of the song release process for the "D
 
 - [x] **System Integrity Recovery**
   - [x] **Bug Fix**: Resolve "API Key not found" in Cloud Functions (SDK mismatch -> REST Fallback).
-  - [/] **Bug Fix**: Robust API Key Resolution (Centralized `secrets.ts`).
+  - [x] **Bug Fix**: Robust API Key Resolution (Centralized `secrets.ts`).
   - [x] **Bug Fix**: Break "Insufficient Permissions" infinite loop (Diagnostic `firestore.rules`).
   - [x] **Feature**: Direct Generation Mode (Isolate APIs from Agent).
     - [x] Create `DirectGenerationTab` component.
     - [x] Add "Direct" view to `CreativeNavbar`.
     - [x] Verify UI loading and layout.
-  - [ ] **Verification**: Live Test of Image and Video Generation in Deployed Environment.
+  - [x] **Verification**: Live Test of Image and Video Generation in Deployed Environment.
+- [ ] **Branch Management**
+  - [ ] Merge `fervent-shamir` into `main`.
+  - [ ] Merge `magical-taussig` into `main`.
 
 ## Next Steps
 
-1. **Deploy Cloud Functions**: Deploy the updated functions with centralized secrets.
-2. **Verify Image Generation**: Perform a live test in the deployed app.
-3. **Verify Video Generation**: Ensure video jobs are correctly processed and displayed.
-4. **Confirm Database Persistence**: Verify that all generations are saved to Firestore.
+1. **Merge Branches**: Resolve any conflicts and merge the requested feature branches.
+2. **Final Verification**: Run a quick build check to ensure system stability after merges.
