@@ -590,6 +590,7 @@ ${task}
         const MAX_ITERATIONS = 15;
         const toolCalls: any[] = [];
         let lastToolResult: any = undefined;
+        let currentThoughtSignature: string | undefined = undefined;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -637,8 +638,13 @@ ${task}
                         ]
                     }],
                     config: { ...AI_CONFIG.THINKING.LOW },
-                    tools: allTools as any
+                    tools: allTools as any,
+                    thoughtSignature: currentThoughtSignature
                 });
+
+                if (response.thoughtSignature) {
+                    currentThoughtSignature = response.thoughtSignature;
+                }
 
                 // LEDGER: Record Spend based on Token Usage
                 const usage = response.usage?.();
@@ -742,6 +748,7 @@ ${task}
                         text: finalResponse,
                         data: lastToolResult,
                         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+                        thoughtSignature: currentThoughtSignature,
                         usage: usage ? {
                             promptTokens: usage.promptTokenCount || 0,
                             completionTokens: usage.candidatesTokenCount || 0,

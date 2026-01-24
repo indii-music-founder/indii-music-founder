@@ -9,6 +9,7 @@ export interface AgentMessage {
     isStreaming?: boolean;
     thoughts?: AgentThought[];
     agentId?: string;
+    thoughtSignature?: string;
 }
 
 export interface AgentThought {

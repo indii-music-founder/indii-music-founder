@@ -176,10 +176,17 @@ export class AgentService {
 
             if (result && result.text) {
                 if (!result.text.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, { text: result.text, isStreaming: false });
+                    updateAgentMessage(responseId, {
+                        text: result.text,
+                        isStreaming: false,
+                        thoughtSignature: result.thoughtSignature
+                    });
                 }
             } else {
-                updateAgentMessage(responseId, { isStreaming: false });
+                updateAgentMessage(responseId, {
+                    isStreaming: false,
+                    thoughtSignature: result?.thoughtSignature
+                });
             }
 
         } catch (e: unknown) {
