@@ -97,7 +97,7 @@ export function SwarmGraph({ swarmId, onNodeClick }: SwarmGraphProps) {
         // We can improve this with d3-hierarchy or dagre later
         setNodes(newNodes);
         setEdges(newEdges);
-    }, [traces]);
+    }, [traces, setNodes, setEdges]);
 
     return (
         <div className="w-full h-full bg-black/20 rounded-xl border border-white/5 relative overflow-hidden">
