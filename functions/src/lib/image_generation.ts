@@ -1,5 +1,5 @@
 import * as functions from "firebase-functions/v1";
-import { GoogleGenAI } from "@google/genai";
+
 import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
 import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
@@ -40,23 +40,44 @@ export const generateImageV3Fn = () => functions
             console.log(`[generateImageV3] Using REST API for key preservation`);
             const apiKey = getGeminiApiKey();
 
+
             // Select Model (Pro vs Fast)
             const modelId = requestedModel === 'fast'
                 ? FUNCTION_AI_MODELS.IMAGE.FAST
                 : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
             // 3. Construct Payload
-            const parts: any[] = [{ text: prompt }];
+            let contents: any[] = [];
 
-            if (images && images.length > 0) {
-                images.forEach(img => {
-                    parts.push({
-                        inlineData: {
-                            mimeType: img.mimeType || "image/png",
-                            data: img.data
-                        }
+            // If we have history, use it. Otherwise, build the initial user message.
+            if (validation.data.history && validation.data.history.length > 0) {
+                contents = validation.data.history.map((c: any) => ({
+                    role: c.role,
+                    parts: c.parts.map((p: any) => ({
+                        ...(p.text ? { text: p.text } : {}),
+                        ...(p.inlineData ? { inlineData: p.inlineData } : {}),
+                        ...(p.thoughtSignature ? { thoughtSignature: p.thoughtSignature } : {})
+                    }))
+                }));
+
+                // Append new prompt if it's not the last message in history
+                const lastMsg = contents[contents.length - 1];
+                if (lastMsg.role !== "user" || !lastMsg.parts.some((p: any) => p.text === prompt)) {
+                    contents.push({ role: "user", parts: [{ text: prompt }] });
+                }
+            } else {
+                const parts: any[] = [{ text: prompt }];
+                if (images && images.length > 0) {
+                    images.forEach((img: any) => {
+                        parts.push({
+                            inlineData: {
+                                mimeType: img.mimeType || "image/png",
+                                data: img.data
+                            }
+                        });
                     });
-                });
+                }
+                contents = [{ role: "user", parts }];
             }
 
             console.log(`[generateImageV3] Model: ${modelId} | Prompt: "${prompt}"`);
@@ -64,20 +85,24 @@ export const generateImageV3Fn = () => functions
             // 4. Call Model via REST
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
+            // Map resolution to proper enum name for REST
+            const resLevel = mediaResolution ? `media_resolution_${mediaResolution}` : undefined;
+
+            const payload = {
+                contents,
+                generationConfig: {
+                    candidateCount: count || 1,
+                    responseModalities: ["IMAGE"],
+                    ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
+                    ...(resLevel ? { mediaResolution: resLevel as any } : {}),
+                    ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
+                }
+            };
+
             const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ role: "user", parts }],
-                    generationConfig: {
-                        candidateCount: count || 1,
-                        responseModalities: ["IMAGE"],
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                        ...(mediaResolution ? { mediaResolution: mediaResolution as any } : {}),
-                        ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
-                        ...(validation.data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
-                    }
-                })
+                body: JSON.stringify(payload)
             });
 
             if (!response.ok) {
@@ -93,7 +118,6 @@ export const generateImageV3Fn = () => functions
             }
 
             // Map candidates to internal format
-            // REST Structure: candidates[0].content.parts[...].inlineData
             const processedImages: any[] = [];
 
             if (result.candidates?.[0]?.content?.parts) {
@@ -101,7 +125,14 @@ export const generateImageV3Fn = () => functions
                     if (p.inlineData) {
                         processedImages.push({
                             bytesBase64Encoded: p.inlineData.data,
-                            mimeType: p.inlineData.mimeType || "image/png"
+                            mimeType: p.inlineData.mimeType || "image/png",
+                            thoughtSignature: p.thoughtSignature // Crucial for editing
+                        });
+                    } else if (p.text && p.thoughtSignature) {
+                        // Sometimes the text part contains the root signature
+                        processedImages.push({
+                            text: p.text,
+                            thoughtSignature: p.thoughtSignature
                         });
                     }
                 });
@@ -117,12 +148,10 @@ export const generateImageV3Fn = () => functions
         } catch (error: any) {
             console.error("[generateImageV3] Error:", error);
 
-            // Pass through existing HttpsErrors
             if (error instanceof functions.https.HttpsError) {
                 throw error;
             }
 
-            // Handle API specific errors or general failures
             const message = error.message || "Unknown internal error";
             throw new functions.https.HttpsError("internal", `Image Generation Failed: ${message}`);
         }
@@ -157,65 +186,110 @@ export const editImageFn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
+        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType, history } = validation.data;
 
         try {
-            console.log(`[editImage] Initializing Gemini 3 Client`);
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+            console.log(`[editImage] Initializing Gemini 3 Client via REST`);
+            const apiKey = getGeminiApiKey();
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-            // 3. Construct Payload
-            const parts: any[] = [
-                {
-                    inlineData: {
-                        mimeType: imageMimeType || "image/png",
-                        data: image
+            // 3. Construct Payload (Conversation Mode)
+            let contents: any[] = [];
+
+            if (history && history.length > 0) {
+                // Use History + Prompt
+                contents = history.map((c: any) => ({
+                    role: c.role,
+                    parts: c.parts.map((p: any) => ({
+                        ...(p.text ? { text: p.text } : {}),
+                        ...(p.inlineData ? { inlineData: p.inlineData } : {}),
+                        ...(p.thoughtSignature ? { thoughtSignature: p.thoughtSignature } : {})
+                    }))
+                }));
+
+                // Append new edit prompt
+                contents.push({ role: "user", parts: [{ text: prompt }] });
+            } else if (image) {
+                // Legacy / Direct Image Mode (Single Turn)
+                const parts: any[] = [
+                    {
+                        inlineData: {
+                            mimeType: imageMimeType || "image/png",
+                            data: image
+                        },
+                        // If we have an image part but no history/signature, use the dummy signature for Gemini 3
+                        thoughtSignature: "context_engineering_is_the_way_to_go"
                     }
+                ];
+
+                if (mask) {
+                    parts.push({
+                        inlineData: { mimeType: maskMimeType || "image/png", data: mask }
+                    });
+                    parts.push({ text: "Use the second image as a mask for inpainting." });
                 }
-            ];
 
-            // Add Mask (if present)
-            if (mask) {
-                parts.push({
-                    inlineData: {
-                        mimeType: maskMimeType || "image/png",
-                        data: mask
-                    }
-                });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
+                if (referenceImage) {
+                    const position = mask ? "third" : "second";
+                    parts.push({
+                        inlineData: { mimeType: refMimeType || "image/png", data: referenceImage }
+                    });
+                    parts.push({ text: `Use this ${position} image as a reference.` });
+                }
+
+                parts.push({ text: prompt });
+                contents = [{ role: "user", parts }];
+            } else {
+                throw new functions.https.HttpsError("invalid-argument", "Either 'image' or 'history' must be provided.");
             }
-
-            // Add Reference Image (if present)
-            if (referenceImage) {
-                const position = mask ? "third" : "second";
-                parts.push({
-                    inlineData: {
-                        mimeType: refMimeType || "image/png",
-                        data: referenceImage
-                    }
-                });
-                parts.push({ text: `Use this ${position} image as a reference.` });
-            }
-
-            // Prompt
-            parts.push({ text: prompt });
 
             console.log(`[editImage] Model: ${modelId} | Prompt: "${prompt}"`);
 
-            // 4. Call Model
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents: [{ role: "user", parts }],
-                config: {
-                    responseModalities: ["IMAGE"],
-                }
+            // 4. Call Model via REST
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
+
+            const response = await fetch(apiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents,
+                    generationConfig: {
+                        responseModalities: ["IMAGE"],
+                    }
+                })
             });
+
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Gemini API Error: ${response.status} ${errText}`);
+            }
+
+            const result = await response.json();
 
             if (!result.candidates || result.candidates.length === 0) {
                 throw new functions.https.HttpsError("internal", "No candidates returned from Gemini API.");
             }
 
-            return { candidates: result.candidates };
+            // Map candidates to internal format
+            const processedImages: any[] = [];
+            if (result.candidates?.[0]?.content?.parts) {
+                result.candidates[0].content.parts.forEach((p: any) => {
+                    if (p.inlineData) {
+                        processedImages.push({
+                            bytesBase64Encoded: p.inlineData.data,
+                            mimeType: p.inlineData.mimeType || "image/png",
+                            thoughtSignature: p.thoughtSignature
+                        });
+                    } else if (p.text && p.thoughtSignature) {
+                        processedImages.push({
+                            text: p.text,
+                            thoughtSignature: p.thoughtSignature
+                        });
+                    }
+                });
+            }
+
+            return { images: processedImages };
 
         } catch (error: any) {
             console.error("[editImage] Error:", error);

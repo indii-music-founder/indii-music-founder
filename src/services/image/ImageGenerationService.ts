@@ -25,8 +25,10 @@ export interface ImageGenerationOptions {
     // Gemini 3 Configuration
     model?: 'fast' | 'pro';
     thinking?: boolean;
-    mediaResolution?: 'low' | 'medium' | 'high';
+    mediaResolution?: 'low' | 'medium' | 'high' | 'ultra_high';
     useGrounding?: boolean;
+    history?: any[]; // For Gemini 3 conversation history
+    thoughtSignature?: string; // Signature for specific turn
 }
 
 export interface RemixOptions {
@@ -127,6 +129,8 @@ export class ImageGenerationService {
                 images: Array<{
                     bytesBase64Encoded?: string;
                     mimeType?: string;
+                    text?: string;
+                    thoughtSignature?: string;
                 }>;
             }
             const data = result.data as GenerateImageResponse;
@@ -175,7 +179,8 @@ export class ImageGenerationService {
                 return {
                     id,
                     url: finalUrl,
-                    prompt: options.prompt
+                    prompt: options.prompt,
+                    thoughtSignature: img.thoughtSignature
                 };
             });
 
@@ -352,13 +357,14 @@ export class ImageGenerationService {
     }
 
     async editImage(options: {
-        image: string;
+        image?: string;
         prompt: string;
         mask?: string;
         referenceImage?: string;
         imageMimeType?: string;
         maskMimeType?: string;
         refMimeType?: string;
+        history?: any[];
     }): Promise<any> {
         try {
             const editImage = httpsCallable(functions, 'editImage');

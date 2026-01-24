@@ -1,5 +1,19 @@
 import { z } from "zod";
 
+export const PartSchema = z.object({
+    text: z.string().optional(),
+    inlineData: z.object({
+        mimeType: z.string(),
+        data: z.string()
+    }).optional(),
+    thoughtSignature: z.string().optional()
+});
+
+export const ContentSchema = z.object({
+    role: z.enum(["user", "model"]),
+    parts: z.array(PartSchema)
+});
+
 export const GenerateImageRequestSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     aspectRatio: z.enum(["1:1", "16:9", "9:16", "3:4", "4:3"]).optional(),
@@ -8,20 +22,23 @@ export const GenerateImageRequestSchema = z.object({
         mimeType: z.string(),
         data: z.string() // Base64 encoded data
     })).optional(),
+    history: z.array(ContentSchema).optional(), // Support for conversational context
     model: z.enum(["fast", "pro"]).optional().default("fast"),
-    mediaResolution: z.enum(["low", "medium", "high"]).optional().default("medium"),
+    mediaResolution: z.enum(["low", "medium", "high", "ultra_high"]).optional().default("medium"),
     thinking: z.boolean().optional().default(false),
     useGrounding: z.boolean().optional().default(false)
 });
 
 export const EditImageRequestSchema = z.object({
-    image: z.string().min(1, "Base image is required"), // Base64
-    imageMimeType: z.string().default("image/png"), // Image format
-    mask: z.string().optional(), // Base64
-    maskMimeType: z.string().optional(), // Mask format
+    image: z.string().optional(), // Optional if history is provided
+    imageMimeType: z.string().optional().default("image/png"),
+    mask: z.string().optional(),
+    maskMimeType: z.string().optional(),
     prompt: z.string().min(1, "Prompt is required"),
-    referenceImage: z.string().optional(), // Base64
-    refMimeType: z.string().optional(), // Reference image format
+    referenceImage: z.string().optional(),
+    refMimeType: z.string().optional(),
+    history: z.array(ContentSchema).optional(), // For conversational editing (linking to previous generation)
+    thoughtSignatures: z.record(z.string()).optional() // Map of part index/ref to signature
 });
 
 export type GenerateImageRequest = z.infer<typeof GenerateImageRequestSchema>;
