@@ -2,7 +2,6 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
-import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
@@ -58,40 +57,8 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
     }
 };
 
-// Define Secrets
-const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
-const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
-
-/**
- * Helper function to get the Gemini API key with fallback for local development.
- * In production, this uses Firebase secrets. In local development, it falls back
- * to environment variables (from functions/.env).
- *
- * @returns The Gemini API key string
- * @throws Error if no API key is found
- */
-function getGeminiApiKey(): string {
-    // Try secret first (production)
-    try {
-        const secretValue = geminiApiKey.value();
-        if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
-            console.log('[getGeminiApiKey] Using secret from Firebase');
-            return secretValue;
-        }
-    } catch (secretError) {
-        console.log('[getGeminiApiKey] Secret not available, checking environment...');
-    }
-
-    // Fallback to environment variable (local development)
-    const envKey = process.env.GEMINI_API_KEY;
-    if (envKey && envKey.trim().length > 0) {
-        console.log('[getGeminiApiKey] Using environment variable (local development)');
-        return envKey;
-    }
-
-    throw new Error('Gemini API key not found. Please set GEMINI_API_KEY in Firebase Cloud Secret or functions/.env');
-}
+// Import Shared Secrets
+import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
