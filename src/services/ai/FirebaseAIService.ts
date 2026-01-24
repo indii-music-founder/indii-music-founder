@@ -16,7 +16,7 @@ import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS, getModelKey } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
     InlineDataPart,
@@ -29,7 +29,8 @@ import {
     GenerateImageRequest,
     GenerateImageResponse,
     GenerateSpeechResponse,
-    GenerationConfig
+    GenerationConfig,
+    ContentPart
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -88,7 +89,7 @@ interface ExtendedGenerativeModel extends GenerativeModel {
 
 export interface ChatMessage {
     role: 'user' | 'model';
-    parts: Part[];
+    parts: (Part | ContentPart)[];
 }
 
 export class FirebaseAIService {
@@ -710,7 +711,7 @@ export class FirebaseAIService {
         await this.ensureInitialized();
         const contents: Content[] = history.map(h => ({
             role: h.role,
-            parts: h.parts
+            parts: h.parts as Part[] // Cast to satisfy firebase/ai types while preserving extra fields like thoughtSignature
         }));
         contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
@@ -939,6 +940,7 @@ export class FirebaseAIService {
             // 2. Setup Config
             const generationConfig: GenerationConfig = {
                 responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
                     imageSize: '4K' // "Perfect" quality
