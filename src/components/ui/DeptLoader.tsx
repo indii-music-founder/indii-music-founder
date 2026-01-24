@@ -58,6 +58,7 @@ export function DeptLoader({
 
     const content = (
         <div
+            // Accessibility: alert screen readers when loading state changes
             role="status"
             aria-live="polite"
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
