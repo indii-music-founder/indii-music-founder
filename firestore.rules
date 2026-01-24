@@ -101,6 +101,7 @@ service cloud.firestore {
              data.payoutStatus in ['ACTIVE', 'HELD'];
     }
 
+
     // ========================================
     // LICENSING (authenticated access)
     // ========================================
@@ -521,4 +522,3 @@ service cloud.firestore {
     // Any paths not explicitly matched above are denied by default
   }
 }
-
