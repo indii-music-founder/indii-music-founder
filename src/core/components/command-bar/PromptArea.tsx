@@ -140,11 +140,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
     const handleSubmit = useCallback(async (e?: React.FormEvent) => {
         try {
             e?.preventDefault();
-            if (!commandBarInput.trim() && commandBarAttachments.length === 0) return;
+            const input = commandBarInput || '';
+            if (!input.trim() && commandBarAttachments.length === 0) return;
             if (isProcessing) return;
 
             setIsProcessing(true);
-            const currentInput = commandBarInput;
+            const currentInput = input;
             const currentAttachments = [...commandBarAttachments];
 
             setCommandBarInput('');
@@ -252,6 +253,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <div className="relative">
                                 <button
                                     onClick={() => setOpenDelegate(!openDelegate)}
+                                    aria-haspopup="true"
+                                    aria-expanded={openDelegate}
+                                    aria-label="Select active agent"
                                     className={cn(
                                         "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-transparent border-transparent text-gray-400 hover:text-white"
@@ -282,7 +286,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center",
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
                             )}
-                            aria-label="Toggle indii mode"
+                            aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
                         >
                             <div className={cn("w-1.5 h-1.5 rounded-full", isIndiiMode ? "bg-purple-400" : "bg-gray-600")} />
                             indii
@@ -290,7 +294,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <PromptInputAction tooltip="Run command">
                             <button
                                 onClick={(e) => handleSubmit(e)}
-                                disabled={(!commandBarInput.trim() && commandBarAttachments.length === 0) || isProcessing}
+                                disabled={(!(commandBarInput || '').trim() && commandBarAttachments.length === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
                                 data-testid="command-bar-run-btn"
                             >
