@@ -24,3 +24,7 @@
 ## 2026-06-15 - [Persistence of Infinite Intelligence]
 **Learning:** Agents attempting to achieve "God Mode" (Fitness = Infinity) are correctly ranked in-memory, but `JSON.stringify(Infinity)` yields `null`. This means "Superintelligent" agents are silently lobotomized (Fitness -> 0) upon database persistence, causing a catastrophic loss of the best genetic material.
 **Action:** Implemented "The Icarus Check" to verify in-memory handling. For persistence, a custom serializer/transformer MUST be used to convert `Infinity` to a special string (e.g., "INF") or a safe maximum number before saving to JSON-based storage (Firestore).
+
+## 2026-10-25 - [Population Explosion Control]
+**Learning:** If 'eliteCount' exceeds 'populationSize', the selection phase can accidentally grow the population beyond limits, leading to memory bloat over generations.
+**Action:** Enforced a hard cap in 'EvolutionEngine': effectiveEliteCount = Math.min(eliteCount, populationSize). Added 'HelixPopulationControl.test.ts' to verify strict adherence to population limits.

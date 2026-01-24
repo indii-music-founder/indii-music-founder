@@ -49,7 +49,10 @@ export class EvolutionEngine {
 
     // 2. Selection (Elitism)
     const nextGeneration: AgentGene[] = [];
-    const elites = scoredPopulation.slice(0, this.config.eliteCount);
+    // Helix Guardrail: Population Control
+    // Cap eliteCount at populationSize to prevent explosion if config is malformed.
+    const effectiveEliteCount = Math.min(this.config.eliteCount, this.config.populationSize);
+    const elites = scoredPopulation.slice(0, effectiveEliteCount);
     nextGeneration.push(...elites);
 
     // Filter out zero-fitness agents for reproduction
