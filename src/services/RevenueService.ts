@@ -178,9 +178,10 @@ export class RevenueService {
         : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
 
       // Convert history map to array and sort
+      // ⚡ OPTIMIZATION: String comparison of YYYY-MM-DD avoids expensive Date parsing in sort loop
       const history = Array.from(historyMap.entries())
         .map(([date, amount]) => ({ date, amount }))
-        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+        .sort((a, b) => a.date.localeCompare(b.date));
 
       const result: RevenueStats = {
         totalRevenue,
