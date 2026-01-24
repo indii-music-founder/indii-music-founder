@@ -193,6 +193,17 @@ export class AIService {
 
                 const generateOp = async () => {
                     try {
+                        // Inject thoughtSignature if present (Critical for Gemini 3 function calling)
+                        if (options.thoughtSignature && contents && (contents as Content[]).length > 0) {
+                            const validContents = contents as Content[];
+                            const lastContent = validContents[validContents.length - 1];
+                            if (lastContent.parts.length > 0) {
+                                const lastPart = lastContent.parts[lastContent.parts.length - 1];
+                                // Attach signature to the last part (Text, InlineData, or FunctionCall)
+                                (lastPart as any).thoughtSignature = options.thoughtSignature;
+                            }
+                        }
+
                         const result = await firebaseAI.generateContent(
                             contents as Content[], // asserted from above logic
                             model,

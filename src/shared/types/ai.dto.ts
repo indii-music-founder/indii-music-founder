@@ -56,8 +56,29 @@ export interface FunctionDeclaration {
     parameters?: FunctionDeclarationSchema;
 }
 
+export interface DynamicRetrievalConfig {
+    mode?: 'MODE_UNSPECIFIED' | 'MODE_DYNAMIC';
+    dynamicThreshold?: number;
+}
+
+export interface GoogleSearchRetrieval {
+    dynamicRetrievalConfig?: DynamicRetrievalConfig;
+}
+
+export interface CodeExecution {}
+
+export interface Tool {
+    functionDeclarations?: FunctionDeclaration[];
+    googleSearch?: Record<string, never>;
+    googleSearchRetrieval?: GoogleSearchRetrieval;
+    codeExecution?: CodeExecution;
+}
+
 export interface ToolConfig {
-    functionDeclarations: FunctionDeclaration[];
+    functionDeclarations?: FunctionDeclaration[];
+    googleSearch?: Record<string, never>;
+    googleSearchRetrieval?: GoogleSearchRetrieval;
+    codeExecution?: CodeExecution;
 }
 
 // ============================================================================
@@ -68,6 +89,7 @@ export interface ThinkingConfig {
     thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
     includeThoughts?: boolean;
     thinkingBudget?: number;
+    budgetTokenCount?: number;
 }
 
 export interface ImageConfig {
@@ -102,7 +124,7 @@ export interface GenerationConfig {
     mediaResolution?: 'MEDIA_RESOLUTION_UNSPECIFIED' | 'MEDIA_RESOLUTION_LOW' | 'MEDIA_RESOLUTION_MEDIUM' | 'MEDIA_RESOLUTION_HIGH' | 'MEDIA_RESOLUTION_ULTRA_HIGH';
     responseModalities?: ('TEXT' | 'IMAGE' | 'AUDIO')[];
     systemInstruction?: string;
-    tools?: ToolConfig[];
+    tools?: Tool[];
     // Image generation specific
     sampleCount?: number;
     numberOfImages?: number;
@@ -128,7 +150,7 @@ export interface GenerateContentRequest {
     contents: Content | Content[];
     config?: GenerationConfig;
     systemInstruction?: string;
-    tools?: ToolConfig[];
+    tools?: Tool[];
     safetySettings?: SafetySetting[];
     apiKey?: string;
 }
@@ -294,7 +316,8 @@ export interface GenerateContentOptions {
     contents?: Content | Content[];
     config?: GenerationConfig;
     systemInstruction?: string;
-    tools?: ToolConfig[];
+    tools?: Tool[];
+    thoughtSignature?: string;
     signal?: AbortSignal;
     timeout?: number;
     // Caching options
@@ -308,7 +331,7 @@ export interface GenerateStreamOptions {
     contents: Content[];
     config?: GenerationConfig;
     systemInstruction?: string;
-    tools?: ToolConfig[];
+    tools?: Tool[];
 }
 
 export interface GenerateVideoOptions {
