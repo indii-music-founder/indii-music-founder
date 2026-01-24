@@ -225,7 +225,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple aria-label="Upload files" />
                                 <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" aria-label="Take photo" />
                                 <PromptInputAction tooltip="Attach files">
-                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200">
+                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-400 hover:bg-white/5 hover:text-gray-200 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none">
                                         <Paperclip size={14} />
                                         <span className="hidden sm:inline">Attach</span>
                                     </button>
@@ -235,7 +235,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     <button
                                         onClick={handleMicClick}
                                         className={cn(
-                                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                             isListening
                                                 ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
                                                 : "text-gray-400 hover:bg-white/5 hover:text-gray-200"
@@ -253,7 +253,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 <button
                                     onClick={() => setOpenDelegate(!openDelegate)}
                                     className={cn(
-                                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border",
+                                        "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-transparent border-transparent text-gray-400 hover:text-white"
                                     )}
                                 >
@@ -269,7 +269,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     <div className="flex items-center gap-2 ml-auto">
                         <button
                             onClick={() => setCommandBarDetached(!isCommandBarDetached)}
-                            className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center"
+                            className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                             title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
                             aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
                         >
@@ -279,7 +279,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <button
                             onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                             className={cn(
-                                "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center",
+                                "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
                             )}
                             aria-label="Toggle indii mode"
@@ -291,7 +291,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={(e) => handleSubmit(e)}
                                 disabled={(!commandBarInput.trim() && commandBarAttachments.length === 0) || isProcessing}
-                                className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0"
+                                className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                                 data-testid="command-bar-run-btn"
                             >
                                 {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}
