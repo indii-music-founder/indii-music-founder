@@ -51,22 +51,24 @@ export default function VideoNavbar() {
                             data-testid="mode-director-btn"
                             role="tab"
                             aria-selected={viewMode === 'director'}
+                            aria-label="Director View"
                             aria-controls="director-panel"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'director' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
-                            <Film size={12} /> Director
+                            <Film size={12} aria-hidden="true" /> Director
                         </button>
                         <button
                             onClick={() => setViewMode('editor')}
                             data-testid="mode-editor-btn"
                             role="tab"
                             aria-selected={viewMode === 'editor'}
+                            aria-label="Editor View"
                             aria-controls="editor-panel"
                             className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all flex items-center gap-1.5 ${viewMode === 'editor' ? 'bg-blue-500/20 text-blue-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
-                            <Scissors size={12} /> Editor
+                            <Scissors size={12} aria-hidden="true" /> Editor
                         </button>
                     </div>
                 </div>
