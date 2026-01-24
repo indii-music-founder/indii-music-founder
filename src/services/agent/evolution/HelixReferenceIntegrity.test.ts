@@ -101,4 +101,51 @@ describe('🧬 Helix: Reference Integrity (Anti-Corruption)', () => {
     // even though Crossover returned the same reference initially.
     expect(offspring).not.toBe(survivor);
   });
+
+  it('Parameter Integrity: Nested objects (parameters) must be deep-cloned to prevent shared mutable state', async () => {
+    // Scenario: The "Quantum Entanglement" Bug.
+    // 1. Crossover returns Parent 1 reference.
+    // 2. Mutation modifies `parameters.temp` IN PLACE.
+    // 3. Since `parameters` is an object, if we only did a shallow copy, the Elite's parameters would change too.
+    // Helix `structuredClone` guardrail must prevent this.
+
+    // Setup: Lazy Crossover (Returns Parent 1 directly)
+    mockCrossoverFn.mockImplementation(async (p1, p2) => {
+      return p1; // DANGER: Reference return
+    });
+
+    // Setup: Rogue Mutation (Modifies nested property in-place)
+    mockMutationFn.mockImplementation(async (g) => {
+      g.parameters.temp = 999.999; // DANGER: Nested In-Place Modification!
+      return g;
+    });
+
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const population = [
+      { ...eliteGene, parameters: { temp: 0.1 } }, // Elite starts with 0.1
+      { ...weakGene },
+      { ...weakGene },
+      { ...weakGene }
+    ];
+
+    // Evolve
+    const nextGen = await engine.evolve(population);
+
+    const survivor = nextGen[0];
+    const offspring = nextGen[1];
+
+    // 1. Elite Integrity
+    expect(survivor.id).toBe('elite-agent');
+    // The Elite must STILL have temp 0.1.
+    // If it is 999.999, the guardrail failed and the Elite was corrupted by its child.
+    expect(survivor.parameters.temp).toBe(0.1);
+
+    // 2. Offspring Check
+    // The offspring SHOULD have the mutation
+    expect(offspring.parameters.temp).toBe(999.999);
+
+    // 3. Deep Independence
+    expect(offspring.parameters).not.toBe(survivor.parameters);
+  });
 });
