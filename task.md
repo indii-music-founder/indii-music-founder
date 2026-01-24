@@ -33,13 +33,17 @@ Execute a complete end-to-end "Live Test" of the song release process for the "D
 
 - [x] **System Integrity Recovery**
   - [x] **Bug Fix**: Resolve "API Key not found" in Cloud Functions (SDK mismatch -> REST Fallback).
+  - [/] **Bug Fix**: Robust API Key Resolution (Centralized `secrets.ts`).
   - [x] **Bug Fix**: Break "Insufficient Permissions" infinite loop (Diagnostic `firestore.rules`).
   - [x] **Feature**: Direct Generation Mode (Isolate APIs from Agent).
     - [x] Create `DirectGenerationTab` component.
     - [x] Add "Direct" view to `CreativeNavbar`.
     - [x] Verify UI loading and layout.
+  - [ ] **Verification**: Live Test of Image and Video Generation in Deployed Environment.
 
 ## Next Steps
 
-1. User to perform final manual confirmation if desired.
-2. Proceed to next feature implementation or bug fix.
+1. **Deploy Cloud Functions**: Deploy the updated functions with centralized secrets.
+2. **Verify Image Generation**: Perform a live test in the deployed app.
+3. **Verify Video Generation**: Ensure video jobs are correctly processed and displayed.
+4. **Confirm Database Persistence**: Verify that all generations are saved to Firestore.
