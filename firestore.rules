@@ -237,15 +237,16 @@ service cloud.firestore {
     }
 
     // ========================================
-    // OBSERVABILITY & TRACES (global)
-    // ========================================
-
-    // ========================================
-    // OBSERVABILITY & TRACES (global)
+    // OBSERVABILITY & TRACES (user-scoped)
     // ========================================
 
     match /agent_traces/{traceId} {
-      allow read, write: if isAuthenticated();
+      // Users can only read their own traces
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create traces for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own traces
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     // ========================================
@@ -253,23 +254,33 @@ service cloud.firestore {
     // ========================================
 
     match /user_usage_stats/{docId} {
-      allow read, write: if isAuthenticated();
+      // Users can only read their own usage stats
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create usage stats for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own usage stats
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
     }
 
     match /user_rate_limits/{docId} {
-      allow read, write: if isAuthenticated();
+      // Document ID format: userId_timestamp
+      // Users can only access their own rate limit documents (docId starts with userId_)
+      allow read, write: if isAuthenticated() &&
+        docId.matches('^' + request.auth.uid + '_[0-9]+$');
     }
 
     // ========================================
-    // PROJECT MEMORIES (collaborative)
+    // PROJECT MEMORIES (project-scoped)
     // ========================================
 
     match /projects/{projectId}/memories/{memoryId} {
-      allow read, write: if isAuthenticated();
+      // Only members of the project's organization can access memories
+      allow read, write: if canViewProject(projectId);
     }
 
     match /projects/{projectId}/context/{contextId} {
-      allow read, write: if isAuthenticated();
+      // Only members of the project's organization can access context
+      allow read, write: if canViewProject(projectId);
     }
 
     // ========================================
