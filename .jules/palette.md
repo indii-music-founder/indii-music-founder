@@ -11,3 +11,7 @@
 ## 2024-05-24 - Semantics of Custom Loaders
 **Learning:** Custom loading components often lack semantic meaning, relying purely on visual cues like spinners. Adding `role="status"` and `aria-live="polite"` makes them immediately accessible to screen readers without changing the visual design.
 **Action:** Always wrap custom loaders in a container with `role="status"` and ensuring inner decorative elements (spinners) are hidden with `aria-hidden="true"`.
+
+## 2024-05-24 - Segmented Controls as Tabs
+**Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
+**Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.

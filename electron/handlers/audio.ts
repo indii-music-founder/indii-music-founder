@@ -8,6 +8,7 @@ import { apiService } from '../services/APIService';
 import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 
 import { z } from 'zod';
 
@@ -53,6 +54,11 @@ export function registerAudioHandlers() {
             validateSender(event);
             // Validation
             const rawPath = AudioAnalyzeSchema.parse(filePath);
+
+            // SECURITY: Verify Access Authorization
+            if (!accessControlService.verifyAccess(rawPath)) {
+                throw new Error(`Security Violation: Access to ${rawPath} is denied. File was not authorized by user.`);
+            }
 
             // SECURITY: Validate Path (Symlinks, System Roots, Hidden Files)
             const validatedPath = validateSafeAudioPath(rawPath);
