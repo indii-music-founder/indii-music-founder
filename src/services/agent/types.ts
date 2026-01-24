@@ -264,6 +264,7 @@ export interface AgentResponse {
         result: ToolFunctionResult | string;
     }>;
     thoughts?: string[];
+    thoughtSignature?: string;
     error?: string;
     usage?: {
         promptTokens: number;

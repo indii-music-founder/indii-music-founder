@@ -104,6 +104,7 @@ vi.mock('@/config/env', () => ({
 vi.mock('./billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(true),
         trackUsage: vi.fn().mockResolvedValue(undefined)
     }
 }));
