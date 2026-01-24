@@ -5,6 +5,7 @@ import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } 
 
 describe('📚 Keeper: Electron HistoryStore Persistence', () => {
     let historyStore: any;
+    let HistoryStoreClass: any;
     let fs: any;
     let path: any;
     let MOCK_TEMP_DIR: string;
@@ -125,6 +126,7 @@ describe('📚 Keeper: Electron HistoryStore Persistence', () => {
         // Import module under test
         const module = await import('./HistoryStore');
         historyStore = module.historyStore;
+        HistoryStoreClass = module.HistoryStore;
 
         // Ensure temp dir exists (redundant but safe)
         if (!fs.existsSync(MOCK_TEMP_DIR)) {
@@ -208,5 +210,27 @@ describe('📚 Keeper: Electron HistoryStore Persistence', () => {
         const expectedFile = path.join(MOCK_TEMP_DIR, 'chat-history.json');
         const json = JSON.parse(fs.readFileSync(expectedFile, 'utf-8'));
         expect(json.sessions[sessionId]).toBeUndefined();
+    });
+
+    it('should persist data across "Cold Boot" (store re-instantiation)', () => {
+        const sessionId = 'session-cold-boot';
+        const data = { id: sessionId, important: 'Must persist' };
+
+        // 1. Create a FRESH instance (simulating first run)
+        const store1 = new HistoryStoreClass();
+        store1.save(sessionId, data);
+
+        // Verify it was written to disk
+        const expectedFile = path.join(MOCK_TEMP_DIR, 'chat-history.json');
+        const json1 = JSON.parse(fs.readFileSync(expectedFile, 'utf-8'));
+        expect(json1.sessions[sessionId]).toEqual(data);
+
+        // 2. Create ANOTHER FRESH instance (simulating restart)
+        // It should read from the same file because we mocked path/electron to point to MOCK_TEMP_DIR
+        const store2 = new HistoryStoreClass();
+
+        // Assert: It loads the data from disk
+        const retrieved = store2.get(sessionId);
+        expect(retrieved).toEqual(data);
     });
 });

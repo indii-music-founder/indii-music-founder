@@ -7,7 +7,7 @@ interface HistorySchema {
     sessions: Record<string, any>; // Session ID -> Session Data
 }
 
-class HistoryStore {
+export class HistoryStore {
     private store: Store<HistorySchema>;
 
     constructor() {

@@ -74,6 +74,12 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
             isAgentOpen: false,
             chatChannel: 'indii',
             setChatChannel: vi.fn(),
+            commandBarInput: '',
+            setCommandBarInput: vi.fn(),
+            commandBarAttachments: [],
+            setCommandBarAttachments: vi.fn(),
+            isCommandBarDetached: false,
+            setCommandBarDetached: vi.fn(),
         });
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
