@@ -92,6 +92,20 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
         return undefined;
     }, []);
 
+    useEffect(() => {
+        if (showHistory && !ConversationHistoryList) {
+            import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
+        }
+    }, [showHistory, ConversationHistoryList]);
+
+    useEffect(() => {
+        if (showInvite && !AgentSelector) {
+            import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
+        }
+    }, [showInvite, AgentSelector]);
+
+    // Get the first available reference image to use as avatar
+    const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
     const itemContent = useCallback((index: number, msg: AgentMessage) => {
         const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
             ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }

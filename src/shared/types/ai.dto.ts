@@ -81,6 +81,10 @@ export interface Tool {
 
 export interface ToolConfig {
     functionCallingConfig?: FunctionCallingConfig;
+    functionDeclarations?: FunctionDeclaration[];
+    googleSearch?: Record<string, never>;
+    googleSearchRetrieval?: GoogleSearchRetrieval;
+    codeExecution?: CodeExecution;
 }
 
 // ============================================================================
@@ -349,6 +353,7 @@ export interface GenerateContentOptions {
     toolConfig?: ToolConfig;
     thoughtSignature?: string;
     safetySettings?: SafetySetting[];
+    thoughtSignature?: string;
     signal?: AbortSignal;
     timeout?: number;
     // Caching options

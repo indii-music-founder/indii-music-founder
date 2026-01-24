@@ -83,6 +83,7 @@ describe('👁️ Pixel: KnowledgeChat Stream Verification', () => {
     });
 
     it('handles streaming errors gracefully', async () => {
+        // eslint-disable-next-line require-yield
          
         const mockErrorStream = async function* () {
             // eslint-disable-next-line no-constant-condition
