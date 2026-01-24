@@ -212,6 +212,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
                                 title={isCommandBarDetached ? "Dock Input" : "Detach Input"}
                                 aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"}
+                                data-testid="detach-input-btn"
                             >
                                 {isCommandBarDetached ? <Maximize2 size={18} /> : <ExternalLink size={18} />}
                             </button>
@@ -220,6 +221,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 onClick={onToggleMinimize}
                                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
                                 aria-label="Minimize chat"
+                                data-testid="minimize-chat-btn"
                             >
                                 <Minimize2 size={18} />
                             </button>
