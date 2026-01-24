@@ -11,9 +11,6 @@ describe('DeptLoader Accessibility', () => {
     it('should have correct role and aria-live attributes', () => {
         render(<DeptLoader message="Loading content..." />);
 
-        // We use queryByRole initially because we expect it might not be there yet before the fix
-        // But for the final state, we want getByRole.
-        // Since this is a test for the desired state, I will use getByRole.
         const status = screen.getByRole('status');
         expect(status).toBeInTheDocument();
         expect(status).toHaveAttribute('aria-live', 'polite');
