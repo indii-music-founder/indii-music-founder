@@ -206,8 +206,18 @@ export class AIService {
                             content: {
                                 role: 'model',
                                 parts: (c.content?.parts || []).map(p => {
-                                    if ('text' in p) return { text: p.text || '' } as TextPart;
-                                    if ('functionCall' in p) return { functionCall: p.functionCall } as FunctionCallPart;
+                                    if ('text' in p) {
+                                        return {
+                                            text: p.text || '',
+                                            thoughtSignature: (p as any).thoughtSignature
+                                        } as TextPart;
+                                    }
+                                    if ('functionCall' in p) {
+                                        return {
+                                            functionCall: p.functionCall,
+                                            thoughtSignature: (p as any).thoughtSignature
+                                        } as FunctionCallPart;
+                                    }
                                     return { text: '' } as TextPart;
                                 })
                             },
