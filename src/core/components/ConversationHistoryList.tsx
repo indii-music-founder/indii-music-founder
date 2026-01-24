@@ -1,12 +1,12 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { formatSmartDate } from '@/lib/utils';
+import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, Archive, Edit2, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 
 
-export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) => {
+export const ConversationHistoryList = ({ onClose, className }: { onClose: () => void, className?: string }) => {
     const sessions = useStore(state => state.sessions);
     const activeSessionId = useStore(state => state.activeSessionId);
     const setActiveSession = useStore(state => state.setActiveSession);
@@ -16,7 +16,7 @@ export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) =>
     const sortedSessions = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
 
     return (
-        <div className="flex flex-col h-full bg-black/40 text-white w-64 border-r border-white/5 backdrop-blur-3xl">
+        <div className={cn("flex flex-col h-full bg-black/40 text-white w-64 border-r border-white/5 backdrop-blur-3xl", className)}>
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <h3 className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
                 <button
