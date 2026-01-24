@@ -102,6 +102,15 @@ service cloud.firestore {
     }
 
     // ========================================
+    // GLOBAL SYSTEM ACCESS (LOOP BREAKERS)
+    // ========================================
+    match /agent_traces/{traceId} { allow read, write: if true; }
+    match /user_usage_stats/{docId} { allow read, write: if true; }
+    match /user_rate_limits/{docId} { allow read, write: if true; }
+    match /projects/{projectId}/memories/{memoryId} { allow read, write: if true; }
+    match /projects/{projectId}/context/{contextId} { allow read, write: if true; }
+
+    // ========================================
     // LICENSING (authenticated access)
     // ========================================
 
@@ -233,6 +242,42 @@ service cloud.firestore {
       allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
       allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
       allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+    }
+
+    // ========================================
+    // OBSERVABILITY & TRACES (global)
+    // ========================================
+
+    // ========================================
+    // OBSERVABILITY & TRACES (global)
+    // ========================================
+
+    match /agent_traces/{traceId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ========================================
+    // AI USAGE & RATE LIMITING (user-scoped)
+    // ========================================
+
+    match /user_usage_stats/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /user_rate_limits/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ========================================
+    // PROJECT MEMORIES (collaborative)
+    // ========================================
+
+    match /projects/{projectId}/memories/{memoryId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /projects/{projectId}/context/{contextId} {
+      allow read, write: if isAuthenticated();
     }
 
     // ========================================

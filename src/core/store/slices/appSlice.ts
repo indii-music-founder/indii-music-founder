@@ -17,7 +17,7 @@ export interface Project {
     id: string;
     name: string;
     type: AppSlice['currentModule'];
-    date: number;
+    date?: number;
     orgId: string;
 }
 

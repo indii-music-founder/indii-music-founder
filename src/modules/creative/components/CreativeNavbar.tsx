@@ -58,6 +58,14 @@ export default function CreativeNavbar() {
                                 Director
                             </button>
                         )}
+                        <button
+                            onClick={() => setViewMode('direct')}
+                            data-testid="direct-view-btn"
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'direct' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                        >
+                            Direct
+                        </button>
                     </div>
                 </div>
 

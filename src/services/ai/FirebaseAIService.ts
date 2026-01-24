@@ -835,9 +835,17 @@ export class FirebaseAIService {
      * BATCHING: Embed multiple documents in parallel
      */
     async batchEmbedContents(
-        contents: Content[],
+        contentsOrStrings: Content[] | string[],
         modelOverride?: string
     ): Promise<number[][]> {
+        // Normalize input to Content[]
+        const contents: Content[] = contentsOrStrings.map(item => {
+            if (typeof item === 'string') {
+                return { role: 'user', parts: [{ text: item }] };
+            }
+            return item;
+        });
+
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
 
@@ -852,7 +860,9 @@ export class FirebaseAIService {
             if (this.useFallbackMode && this.fallbackClient) {
                 const model = this.fallbackClient.getGenerativeModel({ model: modelName });
                 const promises = contents.map(async (c) => {
-                    const result = await model.embedContent(c as unknown as string);
+                    // Extract text from content parts
+                    const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await model.embedContent(text);
                     return result.embedding.values;
                 });
                 return Promise.all(promises);

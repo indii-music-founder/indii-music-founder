@@ -232,6 +232,8 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
+        generateAudio?: boolean;
+        model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
@@ -273,6 +275,8 @@ export class VideoGenerationService {
             aspectRatio: targetAspectRatio,
             resolution: options.resolution,
             seed: options.seed,
+            generateAudio: options.generateAudio,
+            model: options.model,
             negativePrompt: options.negativePrompt,
         });
 
@@ -292,6 +296,7 @@ export class VideoGenerationService {
 
         await triggerVideoJob({
             ...options,
+            generateAudio: options.generateAudio,
             jobId,
         });
 

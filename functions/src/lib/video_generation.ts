@@ -27,7 +27,11 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
 
             // Start Video Generation Operation (Vertex AI)
             const operation = await step.run("trigger-vertex-ai-video", async () => {
-                const modelId = FUNCTION_AI_MODELS.VIDEO.GENERATION;
+                const { model: requestedModel, generateAudio } = options || {};
+                const modelId = requestedModel === 'fast'
+                    ? FUNCTION_AI_MODELS.VIDEO.FAST
+                    : FUNCTION_AI_MODELS.VIDEO.GENERATION;
+
                 const auth = new GoogleAuth({
                     scopes: ['https://www.googleapis.com/auth/cloud-platform']
                 });
@@ -42,7 +46,8 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     parameters: {
                         sampleCount: 1,
                         aspectRatio: options?.aspectRatio || "16:9",
-                        personGeneration: "allow_adult"
+                        personGeneration: "allow_adult",
+                        includeAudio: generateAudio ?? true
                     }
                 };
 
