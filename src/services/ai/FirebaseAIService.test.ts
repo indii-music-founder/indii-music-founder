@@ -75,21 +75,19 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user-id' } }
 }));
 
-vi.mock('@google/generative-ai', () => {
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => {
     return {
-        GoogleGenerativeAI: class {
-            getGenerativeModel() {
-                return {
-                    generateContent: mockGenerateContent,
-                    generateContentStream: vi.fn().mockResolvedValue({
-                        stream: (async function* () { yield { text: () => 'Fallback Stream' }; })(),
-                        response: Promise.resolve({ candidates: [] })
-                    }),
-                    embedContent: vi.fn().mockResolvedValue({
-                        embedding: { values: [0.1, 0.2, 0.3] }
-                    })
-                };
-            }
+        GoogleGenAI: class {
+            models = {
+                generateContent: mockGenerateContent,
+                generateContentStream: vi.fn().mockResolvedValue(
+                    (async function* () { yield { text: 'Fallback Stream', candidates: [] }; })()
+                ),
+                embedContent: vi.fn().mockResolvedValue({
+                    embeddings: [{ values: [0.1, 0.2, 0.3] }]
+                })
+            };
         }
     };
 });

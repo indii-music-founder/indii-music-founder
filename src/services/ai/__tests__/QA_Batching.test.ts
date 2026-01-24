@@ -29,14 +29,15 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
-// Mock Google Generative AI (Fallback)
-vi.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: vi.fn(function () {
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function () {
         return {
-            getGenerativeModel: vi.fn(() => ({
-                embedContent: mockEmbedContent,
-                batchEmbedContents: mockBatchEmbedContents
-            }))
+            models: {
+                generateContent: vi.fn(),
+                generateContentStream: vi.fn(),
+                embedContent: mockEmbedContent
+            }
         };
     })
 }));

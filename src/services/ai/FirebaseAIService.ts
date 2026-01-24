@@ -10,7 +10,7 @@ import {
     Schema,
     Tool
 } from 'firebase/ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
 import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
@@ -97,7 +97,7 @@ export class FirebaseAIService {
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
     private useFallbackMode = false;
-    private fallbackClient: GoogleGenerativeAI | null = null;
+    private fallbackClient: GoogleGenAI | null = null;
 
     // Circuit Breakers
     private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
@@ -202,7 +202,7 @@ export class FirebaseAIService {
             );
         }
 
-        this.fallbackClient = new GoogleGenerativeAI(apiKey);
+        this.fallbackClient = new GoogleGenAI({ apiKey });
         this.useFallbackMode = true;
         this.isInitialized = true;
         logger.info('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
@@ -328,6 +328,7 @@ export class FirebaseAIService {
     /**
      * Generate content using direct Gemini SDK (fallback mode).
      * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
      */
     private async generateWithFallback(
         prompt: string | Content[],
@@ -341,23 +342,28 @@ export class FirebaseAIService {
         }
 
         try {
-            const model = this.fallbackClient.getGenerativeModel({
-                model: modelName,
-                generationConfig: config as unknown as undefined, // Type mismatch workaround
-                systemInstruction: systemInstruction,
-                tools: tools as unknown as undefined,
-                safetySettings: STANDARD_SAFETY_SETTINGS as any
-            });
+            // Build contents array for the new SDK format
+            const contents = typeof prompt === 'string'
+                ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+                : prompt;
 
-            const result = await model.generateContent(
-                typeof prompt === 'string'
-                    ? prompt
-                    : { contents: prompt as unknown as Content[] } as unknown as string
-            );
+            const result = await this.fallbackClient.models.generateContent({
+                model: modelName,
+                contents: contents as any,
+                config: {
+                    ...config,
+                    systemInstruction,
+                    safetySettings: STANDARD_SAFETY_SETTINGS as any,
+                } as any,
+            });
 
             // Convert to Firebase AI SDK format for compatibility
             return {
-                response: result.response as unknown as GenerateContentResponse
+                response: {
+                    candidates: result.candidates,
+                    usageMetadata: result.usageMetadata,
+                    text: () => result.text || ''
+                } as unknown as GenerateContentResponse
             } as GenerateContentResult;
         } catch (error) {
             throw this.handleError(error);
@@ -498,6 +504,7 @@ export class FirebaseAIService {
     /**
      * Stream content using direct Gemini SDK (fallback mode).
      * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
      */
     private async streamWithFallback(
         prompt: string | Content[],
@@ -505,50 +512,40 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        _options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
 
-        const model = this.fallbackClient.getGenerativeModel({
+        // Build contents array for the new SDK format
+        const contents = typeof prompt === 'string'
+            ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+            : prompt;
+
+        const result = await this.fallbackClient.models.generateContentStream({
             model: modelName,
-            generationConfig: config as unknown as undefined,
-            systemInstruction: systemInstruction,
-            tools: tools as unknown as undefined,
-            safetySettings: STANDARD_SAFETY_SETTINGS as any
+            contents: contents as any,
+            config: {
+                ...config,
+                systemInstruction,
+                safetySettings: STANDARD_SAFETY_SETTINGS as any,
+            } as any,
         });
 
-        const result = await model.generateContentStream(
-            typeof prompt === 'string'
-                ? prompt
-                : { contents: prompt as unknown as Content[] } as unknown as string,
-            options
-        );
-
-        // Wrap the final response promise
-        const wrappedResponsePromise = result.response.then(async (aggResult) => {
-            return {
-                response: aggResult as unknown as GenerateContentResponse,
-                text: () => aggResult.text?.() ?? '',
-                functionCalls: () => {
-                    const part = aggResult.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                        typeof p === 'object' && p !== null && 'functionCall' in p
-                    );
-                    return part ? [part.functionCall] : [];
-                },
-                usage: () => aggResult.usageMetadata
-            };
-        });
+        // Collect chunks for final response
+        const chunks: any[] = [];
+        let finalText = '';
 
         const stream = new ReadableStream<StreamChunk>({
             async start(controller) {
                 try {
-                    for await (const chunk of result.stream) {
+                    for await (const chunk of result) {
+                        chunks.push(chunk);
+                        const chunkText = chunk.text || '';
+                        finalText += chunkText;
                         controller.enqueue({
-                            text: () => {
-                                try { return chunk.text(); } catch { return ''; }
-                            },
+                            text: () => chunkText,
                             functionCalls: () => {
                                 const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
                                     typeof p === 'object' && p !== null && 'functionCall' in p
@@ -562,6 +559,24 @@ export class FirebaseAIService {
                     controller.error(streamError);
                 }
             }
+        });
+
+        // Build wrapped response from accumulated chunks
+        const wrappedResponsePromise = Promise.resolve({
+            response: {
+                candidates: chunks[chunks.length - 1]?.candidates || [],
+                usageMetadata: chunks[chunks.length - 1]?.usageMetadata,
+                text: () => finalText
+            } as unknown as GenerateContentResponse,
+            text: () => finalText,
+            functionCalls: () => {
+                const lastChunk = chunks[chunks.length - 1];
+                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                    typeof p === 'object' && p !== null && 'functionCall' in p
+                );
+                return part ? [part.functionCall] : [];
+            },
+            usage: () => chunks[chunks.length - 1]?.usageMetadata
         });
 
         return { stream, response: wrappedResponsePromise };
@@ -856,14 +871,16 @@ export class FirebaseAIService {
 
             const modelName = modelOverride || 'text-embedding-004';
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
-                const model = this.fallbackClient.getGenerativeModel({ model: modelName });
                 const promises = contents.map(async (c) => {
                     // Extract text from content parts
                     const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
-                    const result = await model.embedContent(text);
-                    return result.embedding.values;
+                    const result = await this.fallbackClient!.models.embedContent({
+                        model: modelName,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                    });
+                    return (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [];
                 });
                 return Promise.all(promises);
             }
@@ -989,22 +1006,22 @@ export class FirebaseAIService {
                 }
             };
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
                 try {
-                    const model = this.fallbackClient.getGenerativeModel({
+                    const result = await this.fallbackClient.models.generateContent({
                         model: modelName,
-                        generationConfig: config as unknown as undefined
+                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        config: config as any
                     });
 
-                    const result = await model.generateContent(text);
-                    const candidates = result.response.candidates;
+                    const candidates = result.candidates;
 
                     if (!candidates || candidates.length === 0) {
                         throw new Error('No candidates returned from TTS fallback model');
                     }
 
-                    const audioPart = candidates[0].content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
+                    const audioPart = (candidates[0] as any).content?.parts?.find((p: any) => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
 
                     if (!audioPart || !audioPart.inlineData) {
                         throw new Error('No audio data found in fallback response parts');
@@ -1080,14 +1097,16 @@ export class FirebaseAIService {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
                 try {
-                    const model = this.fallbackClient.getGenerativeModel({
-                        model: options.model
+                    // Extract text from content parts
+                    const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await this.fallbackClient.models.embedContent({
+                        model: options.model,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
                     });
-                    const result = await model.embedContent(options.content as unknown as string);
-                    return { values: result.embedding.values };
+                    return { values: (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [] };
                 } catch (error) {
                     throw this.handleError(error);
                 }
