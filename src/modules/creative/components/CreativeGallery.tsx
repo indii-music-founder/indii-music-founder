@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from 'react';
+import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from 'react';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -15,6 +15,16 @@ interface CreativeGalleryProps {
     searchQuery?: string;
 }
 
+interface GalleryItemProps {
+    item: HistoryItem;
+    onSelect: (item: HistoryItem) => void;
+    setVideoInput: (key: 'firstFrame' | 'lastFrame', value: HistoryItem) => void;
+    setEntityAnchor: (item: HistoryItem | null) => void;
+    setSelectedItem: (item: HistoryItem | null) => void;
+    toast: any;
+    generationMode: string;
+    onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
+}
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
     const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore(useShallow(state => ({
@@ -120,17 +130,16 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         }
     };
 
-    const renderGridItem = (item: HistoryItem) => (
+const GalleryItem = memo(({ item, onSelect, setVideoInput, setEntityAnchor, setSelectedItem, toast, generationMode, onDelete }: GalleryItemProps) => {
+    return (
         <div
-            key={item.id}
             draggable
             onDragStart={(e) => e.dataTransfer.setData('text/plain', item.id)}
-            onClick={() => onSelect ? onSelect(item) : setSelectedItem(item)}
+            onClick={() => onSelect(item)}
             onKeyDown={(e) => {
                 if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-                    onSelect ? onSelect(item) : setSelectedItem(item);
+                    onSelect(item);
                 }
             }}
             tabIndex={0}
@@ -244,7 +253,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             <ThumbsDown size={14} />
                         </button>
                         <button
-                            onClick={(e) => { e.stopPropagation(); handleDelete(item.id, item.type, item.origin as any); }}
+                            onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.type, item.origin as any); }}
                             data-testid="delete-asset-btn"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"
                             title="Delete"
@@ -268,6 +277,126 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             )}
         </div>
     );
+});
+
+export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        removeFromHistory: state.removeFromHistory,
+        uploadedImages: state.uploadedImages,
+        addUploadedImage: state.addUploadedImage,
+        removeUploadedImage: state.removeUploadedImage,
+        uploadedAudio: state.uploadedAudio,
+        addUploadedAudio: state.addUploadedAudio,
+        removeUploadedAudio: state.removeUploadedAudio,
+        currentProjectId: state.currentProjectId,
+        generationMode: state.generationMode,
+        setVideoInput: state.setVideoInput,
+        selectedItem: state.selectedItem,
+        setSelectedItem: state.setSelectedItem,
+        setEntityAnchor: state.setEntityAnchor
+    })));
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const toast = useToast();
+
+    // ⚡ Bolt Optimization: Stable callback reference for onSelect to prevent re-renders when parent passes new arrow function
+    const onSelectRef = useRef(onSelect);
+    useEffect(() => {
+        onSelectRef.current = onSelect;
+    });
+
+    const handleSelect = useCallback((item: HistoryItem) => {
+        if (onSelectRef.current) {
+            onSelectRef.current(item);
+        } else {
+            setSelectedItem(item);
+        }
+    }, [setSelectedItem]);
+
+    // Filter items based on search query
+    const filteredUploadedImages = (searchQuery
+        ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedImages) || [];
+
+    const filteredUploadedAudio = (searchQuery
+        ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : uploadedAudio) || [];
+
+    const filteredGenerated = (searchQuery
+        ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+        : generatedHistory) || [];
+
+    // Combine all items and sort by timestamp (newest first)
+    // ⚡ Bolt Optimization: Memoize allItems to prevent expensive sort on every render
+    const allItems = useMemo(() => {
+        return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
+    }, [filteredUploadedImages, filteredUploadedAudio, filteredGenerated]);
+
+    const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        Array.from(files).forEach(file => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                if (e.target?.result) {
+                    const isVideo = file.type.startsWith('video/');
+                    const isAudio = file.type.startsWith('audio/');
+
+                    const newItem: HistoryItem = {
+                        id: crypto.randomUUID(),
+                        type: isAudio ? 'music' : (isVideo ? 'video' : 'image'),
+                        url: e.target.result as string,
+                        prompt: file.name,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId,
+                        origin: 'uploaded'
+                    };
+
+                    if (isAudio) {
+                        addUploadedAudio(newItem);
+                    } else {
+                        addUploadedImage(newItem);
+                    }
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+        toast.success(`${files.length} asset(s) uploaded.`);
+    }, [addUploadedAudio, addUploadedImage, currentProjectId, toast]);
+
+    const isEmpty = allItems.length === 0;
+
+    // ⚡ Bolt Optimization: Stable delete handler
+    const handleDelete = useCallback((id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => {
+        if (origin === 'uploaded') {
+            if (type === 'music') removeUploadedAudio(id);
+            else removeUploadedImage(id);
+        } else {
+            removeFromHistory(id);
+        }
+    }, [removeUploadedAudio, removeUploadedImage, removeFromHistory]);
+
+    if (isEmpty) {
+        return (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-500">
+                <div onClick={() => fileInputRef.current?.click()} className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-dashed border-gray-800 flex items-center justify-center mb-4 cursor-pointer hover:border-gray-600 hover:text-white transition-all">
+                    <Upload className="w-6 h-6 text-gray-600 group-hover:text-white" />
+                </div>
+                <p className="text-sm font-medium">No assets yet</p>
+                <p className="text-xs opacity-60 mt-1">Upload or generate to see them here</p>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    onChange={handleFileUpload}
+                    accept="image/*,video/*,audio/*"
+                    multiple
+                />
+            </div>
+        );
+    }
 
     const gridClass = compact
         ? "grid grid-cols-2 gap-2"
@@ -303,7 +432,19 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
                 {!compact && <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">All Assets</h2>}
                 <div className={gridClass}>
-                    {allItems.map(item => renderGridItem(item))}
+                    {allItems.map(item => (
+                        <GalleryItem
+                            key={item.id}
+                            item={item}
+                            onSelect={handleSelect}
+                            setVideoInput={setVideoInput}
+                            setEntityAnchor={setEntityAnchor}
+                            setSelectedItem={setSelectedItem}
+                            toast={toast}
+                            generationMode={generationMode}
+                            onDelete={handleDelete}
+                        />
+                    ))}
                 </div>
             </div>
         </div>
