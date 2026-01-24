@@ -4,6 +4,7 @@
 
 export interface TextPart {
     text: string;
+    thoughtSignature?: string;
 }
 
 export interface InlineDataPart {
@@ -11,6 +12,7 @@ export interface InlineDataPart {
         mimeType: string;
         data: string;
     };
+    thoughtSignature?: string;
 }
 
 export interface FunctionCallPart {
@@ -18,6 +20,7 @@ export interface FunctionCallPart {
         name: string;
         args: Record<string, unknown>;
     };
+    thoughtSignature?: string;
 }
 
 export interface FunctionResponsePart {
@@ -96,6 +99,7 @@ export interface GenerationConfig {
     thinkingConfig?: ThinkingConfig;
     imageConfig?: ImageConfig;
     speechConfig?: SpeechConfig;
+    mediaResolution?: 'MEDIA_RESOLUTION_UNSPECIFIED' | 'MEDIA_RESOLUTION_LOW' | 'MEDIA_RESOLUTION_MEDIUM' | 'MEDIA_RESOLUTION_HIGH' | 'MEDIA_RESOLUTION_ULTRA_HIGH';
     responseModalities?: ('TEXT' | 'IMAGE' | 'AUDIO')[];
     systemInstruction?: string;
     tools?: ToolConfig[];
