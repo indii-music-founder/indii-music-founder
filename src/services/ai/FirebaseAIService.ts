@@ -241,7 +241,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, cachedContent?: string }
+        options?: { signal?: AbortSignal, cachedContent?: string, safetySettings?: any[], toolConfig?: any }
     ): Promise<GenerateContentResult> {
         // Wrap in retry logic (internal retries for 503/429/Transient Aborts)
         return this.contentBreaker.execute(async () => {
@@ -263,7 +263,7 @@ export class FirebaseAIService {
                 // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                 // ============================================================
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig);
                 }
 
                 // ============================================================
@@ -285,7 +285,8 @@ export class FirebaseAIService {
                     generationConfig: config,
                     systemInstruction,
                     tools,
-                    safetySettings: STANDARD_SAFETY_SETTINGS
+                    toolConfig: options?.toolConfig,
+                    safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                 };
 
                 // Inject cachedContent if supported/available
@@ -336,7 +337,9 @@ export class FirebaseAIService {
         modelName: string,
         config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: Tool[]
+        tools?: Tool[],
+        safetySettings?: any[],
+        toolConfig?: any
     ): Promise<GenerateContentResult> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
@@ -354,7 +357,9 @@ export class FirebaseAIService {
                 config: {
                     ...config,
                     systemInstruction,
-                    safetySettings: STANDARD_SAFETY_SETTINGS as any,
+                    tools: tools as any,
+                    toolConfig,
+                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
                 } as any,
             });
 
@@ -380,7 +385,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
             return this.withRetry(async () => {
@@ -422,7 +427,8 @@ export class FirebaseAIService {
                     generationConfig: config,
                     systemInstruction,
                     tools,
-                    safetySettings: STANDARD_SAFETY_SETTINGS
+                    toolConfig: options?.toolConfig,
+                    safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                 };
 
                 if (cachedContent) {
@@ -513,7 +519,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        _options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
@@ -530,7 +536,9 @@ export class FirebaseAIService {
             config: {
                 ...config,
                 systemInstruction,
-                safetySettings: STANDARD_SAFETY_SETTINGS as any,
+                tools: tools as any,
+                toolConfig: options?.toolConfig,
+                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as any,
             } as any,
         });
 
@@ -960,7 +968,8 @@ export class FirebaseAIService {
                 mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
-                    imageSize: '4K' // "Perfect" quality
+                    imageSize: '4K', // "Perfect" quality
+                    personGenerationConfig: config?.personGenerationConfig as any
                 } as any
             };
 

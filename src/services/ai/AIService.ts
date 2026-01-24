@@ -209,7 +209,12 @@ export class AIService {
                             model,
                             options.config,
                             options.systemInstruction,
-                            options.tools as unknown as Tool[]
+                            options.tools as unknown as Tool[],
+                            {
+                                signal,
+                                safetySettings: options.safetySettings,
+                                toolConfig: options.toolConfig
+                            }
                         );
 
                         // Map firebase/ai candidate to legacy Candidate
@@ -381,7 +386,11 @@ export class AIService {
                 options.config,
                 options.systemInstruction,
                 tools as unknown as Tool[],
-                { signal: options.signal } // Pass the abort signal to Firebase AI
+                {
+                    signal: options.signal,
+                    safetySettings: options.safetySettings,
+                    toolConfig: options.toolConfig
+                }
             );
         } catch (error: any) {
             // Handle abort errors gracefully

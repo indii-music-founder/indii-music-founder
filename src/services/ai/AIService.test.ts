@@ -89,4 +89,27 @@ describe('AIService', () => {
         const contents = args[0];
         expect(contents[0].parts[0]).not.toHaveProperty('thoughtSignature');
     });
+
+    it('should pass safetySettings and toolConfig to FirebaseAIService', async () => {
+        const prompt = 'Test';
+        const safetySettings = [{ category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' }];
+        const toolConfig = { functionCallingConfig: { mode: 'ANY' } };
+
+        await aiService.generateContent(prompt, {
+            safetySettings,
+            toolConfig
+        });
+
+        expect(firebaseAI.generateContent).toHaveBeenCalledWith(
+            expect.any(Array), // contents
+            expect.any(String), // model
+            undefined, // config
+            undefined, // systemInstruction
+            undefined, // tools
+            expect.objectContaining({
+                safetySettings: safetySettings,
+                toolConfig: toolConfig
+            })
+        );
+    });
 });
