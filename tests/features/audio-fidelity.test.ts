@@ -46,7 +46,7 @@ describe('AudioFidelityFeature', () => {
   };
 
   it('should validate inputs correctly', async () => {
-    // @ts-ignore - testing runtime validation
+    // @ts-expect-error - testing runtime validation
     const result = await feature.execute({
       filePath: '', // Invalid
       targetStandard: 'Invalid' // Invalid enum

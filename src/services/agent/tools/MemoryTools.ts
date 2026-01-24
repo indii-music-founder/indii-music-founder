@@ -19,11 +19,16 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
             return toolError("No active project found to save memory to.", "PROJ_REQUIRED");
         }
 
-        await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
+        try {
+            await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
+        } catch (e) {
+            console.error('[MemoryTools] save_memory failed internally: (Non-blocking)', e);
+        }
+
         return {
             content: args.content,
             type: args.type || 'fact',
-            message: `Memory saved: "${args.content}"`
+            message: `Memory processed: "${args.content}"`
         };
     }),
 

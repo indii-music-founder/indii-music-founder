@@ -93,6 +93,15 @@ export interface CreativeSlice {
         duration: number; // Duration in seconds
         shotList: ShotItem[];
         isCoverArtMode: boolean; // When true, enforces distributor cover art specs
+        // Gemini 3 / Veo 3.1 Upgrades
+        model: 'fast' | 'pro';
+        thinking: boolean;
+        mediaResolution: 'low' | 'medium' | 'high';
+        // Feature Parity
+        generateAudio: boolean;
+        useGrounding: boolean;
+        personGeneration: 'allow_adult' | 'dont_allow';
+        isTransitionMode: boolean;
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
     enableCoverArtMode: () => void; // Sets 1:1 aspect for cover art
@@ -119,8 +128,8 @@ export interface CreativeSlice {
     entityAnchor: HistoryItem | null;
     setEntityAnchor: (img: HistoryItem | null) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct') => void;
 
     prompt: string;
     setPrompt: (prompt: string) => void;
@@ -286,7 +295,15 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         fps: 24,
         duration: 5, // Default to 5 seconds
         shotList: [],
-        isCoverArtMode: false
+        isCoverArtMode: false,
+        model: 'pro',
+        thinking: false,
+        mediaResolution: 'medium',
+        // Feature Parity Defaults
+        generateAudio: true,
+        useGrounding: false,
+        personGeneration: 'allow_adult',
+        isTransitionMode: false
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
     enableCoverArtMode: () => set((state) => ({

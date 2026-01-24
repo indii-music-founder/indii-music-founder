@@ -16,7 +16,12 @@ const {
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn((rc, key) => ({
-        asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1'
+        asString: () => {
+            if (key === 'model_name') return 'mock-model-v1';
+            // Return empty string (valid falsy) for ai_system_config to trigger default fallback
+            // console.log(`[Test Debug] getValue called for ${key}`);
+            return '';
+        }
     }))
 }));
 

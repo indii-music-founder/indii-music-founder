@@ -27,8 +27,9 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
-const getEnv = (metaValue: any, processValue: any): string => {
-    return (metaValue || processValue || "") as string;
+const getEnv = (metaValue: any, processValue: any): string | undefined => {
+    const val = metaValue || processValue;
+    return val || undefined;
 };
 
 const processEnv = {

@@ -31,6 +31,14 @@ Execute a complete end-to-end "Live Test" of the song release process for the "D
   - Drag and Drop: Verified as implemented in `ResourceTree`.
   - Metadata flow: Verified via comprehensive integration tests.
 
+- [x] **System Integrity Recovery**
+  - [x] **Bug Fix**: Resolve "API Key not found" in Cloud Functions (SDK mismatch -> REST Fallback).
+  - [x] **Bug Fix**: Break "Insufficient Permissions" infinite loop (Diagnostic `firestore.rules`).
+  - [x] **Feature**: Direct Generation Mode (Isolate APIs from Agent).
+    - [x] Create `DirectGenerationTab` component.
+    - [x] Add "Direct" view to `CreativeNavbar`.
+    - [x] Verify UI loading and layout.
+
 ## Next Steps
 
 1. User to perform final manual confirmation if desired.

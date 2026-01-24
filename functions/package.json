@@ -10,7 +10,8 @@
     "logs": "firebase functions:log",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
-    "start": "npm run shell"
+    "start": "npm run shell",
+    "test": "vitest"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^8.1.1",

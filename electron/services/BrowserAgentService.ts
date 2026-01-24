@@ -24,16 +24,27 @@ export class BrowserAgentService {
             this.isInitializing = true;
             console.info('[BrowserAgent] Starting Native/Electron session...');
 
+            // Create a unique partition for each session to isolate data
+            const partition = `persist:browser_agent_${Date.now()}`;
+            const ses = session.fromPartition(partition);
+
+            // Harden session with strict permission handlers
+            ses.setPermissionRequestHandler((_webContents, _permission, callback) => {
+                // Deny all sensitive permissions by default
+                callback(false);
+            });
+
             this.window = new BrowserWindow({
                 show: false, // Hidden
                 width: 1280,
                 height: 800,
                 webPreferences: {
-                    offscreen: false, // We can run it hidden without full offscreen rendering
+                    offscreen: false,
                     nodeIntegration: false,
                     contextIsolation: true,
-                    sandbox: true, // Safer
-                    webSecurity: true, // Enforce CORS etc.
+                    sandbox: true,
+                    webSecurity: true,
+                    session: ses
                 }
             });
 
@@ -43,9 +54,11 @@ export class BrowserAgentService {
             // Handle window close
             this.window.on('closed', () => {
                 this.window = null;
+                // Cleanup partition data on close
+                ses.clearStorageData().catch(e => console.warn('[BrowserAgent] Prep cleanup error:', e));
             });
 
-            console.info('[BrowserAgent] Session started.');
+            console.info('[BrowserAgent] Session started with isolated partition.');
 
         } catch (error) {
             console.error('[BrowserAgent] Failed to start session:', error);
