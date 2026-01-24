@@ -1,165 +1,45 @@
 ---
 name: veo-video-expert
-description: Use this skill when the user asks to generate videos, animate images, extend video clips, or use Google's Veo 3.1 model. Covers text-to-video, image-to-video, "Ingredients" (reference images), and First/Last frame interpolation with audio.
+description: Expert in Google Veo 3.1 for Video Generation & Understanding.
 ---
 
-# Veo 3.1 Video Generation Expert
+# Veo 3.1 Video Expert
 
-This skill transforms the agent into a specialist in **Google Veo 3.1**, the state-of-the-art generative video model capable of 4K resolution, native audio, and precise cinematic control.
+## 1. Generation Specs
 
-## 1. Model Selection & Capabilities
+* **Models:** `veo-3.1-generate-preview` (4K/Production), `veo-3.1-fast-generate-preview`.
+* **Params:** `aspect_ratio="16:9"|"9:16"`, `resolution="1080p"|"4k"`.
+* **Audio:** `generate_audio=True` (Native SFX/Dialogue).
 
-### Supported Models
+## 2. Video Understanding (Input)
 
-| Model ID | Best For | Specs | Cost (Est.) |
-| :--- | :--- | :--- | :--- |
-| `veo-3.1-generate-preview` | **Final Production.** Highest fidelity, best prompt adherence, 4K support. | 24fps, <br>4/6/8 sec clips | ~$0.40 - $0.60 / sec |
-| `veo-3.1-fast-generate-preview` | **Prototyping.** Rapid iteration, lower latency. | 24fps, <br>4/6/8 sec clips | ~$0.15 / sec |
+* **Token Usage (v1alpha `media_resolution`):**
+  * `media_resolution_low` / `medium`: **70 tokens/frame** (Standard action recognition).
+  * `media_resolution_high`: **280 tokens/frame** (Text-heavy/OCR).
 
-### Key Capabilities (Veo 3.1 Exclusive)
+## 3. Workflows
 
-1. **Native Audio:** Generates synchronized dialogue, sound effects (SFX), and ambient noise by default.
-2. **Native Vertical:** Supports `9:16` aspect ratio natively (no cropping) for social media.
-3. **Ingredients to Video:** Use up to **3 reference images** to maintain character/object consistency.
-4. **First & Last Frame:** Interpolate a transition between a start and end image.
-5. **4K Resolution:** Upscaling to `3840x2160` (only on Standard model, not Fast).
+* **Text-to-Video:** Direct generation.
+* **Image-to-Video:** First/Last frame interpolation.
+* **Extension:** Extend clips (Max 20x).
+* **Ingredients:** Up to 3 reference images for consistency.
 
-## 2. Technical Configuration Rules
-
-### SDK Initialization
-
-Always use the unified `google-genai` library.
+## 4. Code (Python SDK)
 
 ```python
-from google import genai
-from google.genai import types
-import time
-
-client = genai.Client(vertexai=True, project="YOUR_PROJECT", location="us-central1")
-```
-
-### Critical Parameters (`GenerateVideosConfig`)
-
-* **`aspect_ratio`**: Use `"16:9"` (Cinematic) or `"9:16"` (Vertical/Shorts).
-* **`resolution`**: `"720p"` (Default), `"1080p"`, or `"4k"` (Standard model only).
-* **`generate_audio`**: `True` by default on Veo 3.1. Set to `False` to save costs if audio isn't needed.
-* **`person_generation`**: Must be set to `"allow_adult"` for any workflow involving image inputs.
-* **`negative_prompt`**: Supported. Use for exclusion (e.g., "distorted faces, text overlays").
-
-## 3. Cinematic Prompting Strategy
-
-Veo 3.1 requires directorial precision. Use this 5-part formula:
-**[Cinematography] + [Subject] + [Action] + [Context] + [Style/Audio]**
-
-| Component | Examples |
-| :--- | :--- |
-| **Cinematography** | "Low-angle dolly shot," "Drone tracking shot," "Extreme close-up with shallow depth of field." |
-| **Audio** | "SFX: Thunder cracks," "Ambient noise: Bustling cafe," "Dialogue: 'This is the way,' he whispers." |
-| **Lighting** | "Golden hour," "Volumetric lighting," "Neon noir," "High-contrast chiaroscuro." |
-
-## 4. Specialized Workflows (Code Snippets)
-
-### A. Text-to-Video with Dialogue
-
-```python
-prompt = """
-Cinematic close-up of a rugged space explorer removing his helmet. 
-Sweat drips down his brow. 
-Dialogue: "I've finally found it." 
-SFX: Hiss of air decompression and heavy breathing.
-"""
-
-operation = client.models.generate_videos(
+# Generation
+op = client.models.generate_videos(
     model="veo-3.1-generate-preview",
-    prompt=prompt,
-    config=types.GenerateVideosConfig(
-        aspect_ratio="16:9",
-        resolution="1080p",
-        generate_audio=True
-    )
-)
-# Note: Requires polling loop (see below)
-```
-
-### B. First & Last Frame (Interpolation)
-
-*Use this for precise control of transitions (e.g., a character turning old).*
-**Rules:** Both images MUST have the same resolution/aspect ratio.
-
-```python
-operation = client.models.generate_videos(
-    model="veo-3.1-generate-preview",
-    prompt="The camera morphs smoothly from the sketch to the photorealistic building.",
-    image=first_image_bytes, # Start Frame
-    config=types.GenerateVideosConfig(
-        last_frame=last_image_bytes, # End Frame
-        person_generation="allow_adult"
-    )
-)
-```
-
-### C. Ingredients to Video (Character Consistency)
-
-*Use this to keep a character consistent across scenes using reference images.*
-
-```python
-# Load your reference images (e.g., generated by Gemini 3 Image)
-char_ref = types.VideoGenerationReferenceImage(
-    image=character_image, 
-    reference_type="asset"
+    prompt="Cinematic drone shot...",
+    config=types.GenerateVideosConfig(aspect_ratio="16:9", generate_audio=True)
 )
 
-operation = client.models.generate_videos(
-    model="veo-3.1-generate-preview",
-    prompt="The character runs through a cyberpunk city neon rain.",
-    config=types.GenerateVideosConfig(
-        reference_images=[char_ref], # Up to 3 images allowed
-        aspect_ratio="16:9"
-    )
+# Understanding (Interactions)
+interaction = client.interactions.create(
+    model="gemini-3-flash-preview",
+    input=[
+        {"type": "text", "text": "Describe this video."},
+        {"type": "video", "uri": "...", "mime_type": "video/mp4"}
+    ]
 )
 ```
-
-### D. Video Extension
-
-*Extends a Veo-generated clip by ~7 seconds. Total limit ~148s.*
-
-```python
-# 'previous_video' must be a Video object from a prior generation response
-operation = client.models.generate_videos(
-    model="veo-3.1-generate-preview",
-    video=previous_video, 
-    prompt="The camera continues to pan right, revealing a massive waterfall.",
-    config=types.GenerateVideosConfig(resolution="720p") # Extension locked to 720p currently
-)
-```
-
-## 5. Polling Pattern (Required)
-
-Veo operations are **Long-Running Operations (LRO)**. You must poll for completion.
-
-```python
-import time
-
-print("Generating video...")
-while not operation.done:
-    time.sleep(10) # Poll every 10 seconds
-    operation = client.operations.get(operation)
-
-if operation.response:
-    # Save the result
-    video_result = operation.response.generated_videos
-    video_result.video.save("output_veo.mp4")
-    print(f"Video saved. URI: {video_result.video.uri}")
-else:
-    print("Video generation failed.")
-```
-
-## 6. Troubleshooting & Error Codes
-
-| Error | Cause | Fix |
-| :--- | :--- | :--- |
-| **400 Invalid Argument** | Aspect ratio mismatch between input images and config. | Ensure input images (First/Last) match the `aspect_ratio` config exactly (e.g., both 16:9). |
-| **429 Resource Exhausted** | Quota limit reached. | Implement Exponential Backoff (wait 2s, then 4s, then 8s). Veo has strict concurrency limits. |
-| **Safety Filter (e.g., 58061214)** | Prompt triggered safety guardrails. | Avoid terms related to PII, celebrities (without allowlist), or extreme violence. Use `person_generation="allow_adult"`. |
-| **Public Error Minor** | Temporary internal server error. | Retry the request after 5-10 minutes. |
-| **Ghosting/Blur** | "First" and "Last" frames are too semantically different. | The model cannot interpolate "A cat" to "A building" without a prompt describing the magic/morph. Update prompt to describe the transformation. |

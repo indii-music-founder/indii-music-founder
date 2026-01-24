@@ -4,71 +4,29 @@ description: Automatically identify and run relevant tests based on the current 
 
 # Global Test Workflow (/test)
 
-This workflow triggers a smart discovery process to find and execute tests relevant to your current work.
+**Smart context test runner.**
 
-### 1. Context Analysis
+## 1. Discovery
 
-First, determine which file you are currently working on or which area of the codebase is affected.
+**Match Context -> Test Type:**
 
-- Check `ADDITIONAL_METADATA` for the `Active Document`.
-- Check for other open documents in `ADDITIONAL_METADATA`.
-- If no specific file is active, ask the user: "What area or service would you like to test?"
+* `src/services/X.ts` -> `X.test.ts` or `find("*X*test*")`
+* `src/modules/**/comp.tsx` -> `__tests__/comp.test.tsx`
+* `firestore.rules` -> `firestore.rules.test.ts`
+* `execution/` -> `python3 -m pytest ...`
 
-### 2. Test Discovery
+## 2. Execution Protocol
 
-Search for tests corresponding to the identified context:
+* **Unit (Vitest):** `npm run test -- [path]`
+* **E2E (Playwright):** `npm run test:e2e -- [path]`
+* **Python:** `python3 -m pytest [path]`
 
-- **Specific File**: If you have an active file (e.g., `src/services/MyService.ts`), look for:
-  - Co-located unit test: `src/services/MyService.test.ts` or `src/services/__tests__/MyService.test.ts`.
-  - Related tests using `find_by_name`: Search for `*MyService*test*` or `*MyService*spec*`.
-- **React Components**: If working in `src/modules/**/components/`, look for:
-  - `src/modules/**/components/__tests__/Component.test.tsx`
-- **Firebase Rules**: If `firestore.rules` is modified, use `firestore.rules.test.ts`.
-- **E2E Tests**: Search the `tests/` and `e2e/` directories for relevant `.spec.ts` files.
-- **Python Execution Layer**: If working in `execution/`, look for `ExecutionName_test.py` or similar.
+## 3. Triage
 
-### 3. Test Execution
+* **Fail?** Pipe to `test_failures.log`.
+* **Analyze:** `python3 execution/triage_tests.py test_failures.log`
 
-Apply the correct test runner based on the file type:
+## 4. Fallback
 
-- **Unit/Integration (Vitest)**:
-
-  ```bash
-  npm run test -- [path/to/test_file]
-  ```
-
-- **E2E (Playwright)**:
-
-  ```bash
-  npm run test:e2e -- [path/to/spec_file]
-  ```
-
-- **Python Tests**:
-
-  ```bash
-  python3 -m pytest [path/to/test_file]
-  ```
-
-### 4. Triage and Reporting
-
-If tests fail:
-
-1. Capture the output.
-2. If the failure is complex, pipe the output to a temporary log file (e.g., `test_failures.log`).
-3. Run the triage script to identify patterns:
-
-    ```bash
-    python3 execution/triage_tests.py test_failures.log
-    ```
-
-4. Summarize the failures and propose a fix.
-
-### 5. Fallback Checklist
-
-If no specific test is found:
-
-- Run `npm run typecheck` to ensure no regressions.
-- Search for tests in these common locations:
-  - `src/services/**/__tests__`
-  - `tests/features/`
-  - `functions/src/__tests__`
+* If found matched tests: **Run them**.
+* Else: `npm run typecheck`.

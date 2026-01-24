@@ -914,34 +914,50 @@ export class FirebaseAIService {
      */
     async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: Record<string, unknown>): Promise<string> {
         return this.mediaBreaker.execute(async () => {
-            // Lazily import to avoid circular dependencies or initialization issues
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const { app } = await import('@/services/firebase');
+            await this.ensureInitialized();
 
-            // Explicitly use us-west1 where the function is deployed
-            const functionsWest1 = getFunctions(app, 'us-west1');
+            // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
+            const tools: Tool[] = [{ googleSearch: {} }] as unknown as Tool[];
 
-            // Backend expects flat parameters, not nested config objects
-            interface GenerateImageBackendPayload {
-                prompt: string;
-                aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
-                count?: number;
-                images?: { mimeType: string; data: string }[];
-            }
-
-            const generateImageFn = httpsCallable<GenerateImageBackendPayload, GenerateImageResponse>(functionsWest1, 'generateImageV3');
-
-            // Map frontend config to backend payload
-            const payload: GenerateImageBackendPayload = {
-                prompt,
-                aspectRatio: (config?.aspectRatio as any) || undefined,
-                count: (config?.numberOfImages as number) || (config?.candidateCount as number) || 1,
+            // 2. Setup Config
+            const generationConfig: GenerationConfig = {
+                responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
+                imageConfig: {
+                    aspectRatio: config?.aspectRatio || '1:1',
+                    imageSize: '4K' // "Perfect" quality
+                } as any
             };
 
-            const response = await generateImageFn(payload);
-            const image = response.data.images?.[0];
-            if (!image) throw new Error('No image returned');
-            return image.bytesBase64Encoded;
+            if (config?.numberOfImages) {
+                generationConfig.candidateCount = config.numberOfImages as number;
+            }
+
+            // 3. Generate
+            const result = await this.rawGenerateContent(
+                prompt,
+                model,
+                generationConfig,
+                undefined,
+                tools
+            );
+
+            // 4. Extract Image
+            // Gemini 3 returns images as inlineData in the parts
+            const candidates = result.response.candidates;
+            if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
+
+            const imagePart = candidates[0].content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+
+            if (!imagePart || !imagePart.inlineData) {
+                // Check if it was blocked or just text returned (e.g. "I cannot generate that")
+                const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
+                if (textPart && 'text' in textPart) {
+                    throw new Error(`Generation blocked or failed: ${textPart.text}`);
+                }
+                throw new Error('No image data found in response');
+            }
+
+            return imagePart.inlineData.data;
         });
     }
 

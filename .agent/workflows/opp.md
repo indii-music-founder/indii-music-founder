@@ -1,187 +1,44 @@
 ---
-description: Session bootstrap that activates the Operator persona, audits the environment, and primes the agent for incoming tasks.
+description: Session bootstrap that activates the Operator persona for environment audit and task priming.
 ---
 
 # /opp - Operator Persona Activation
 
-This command initializes the AI agent at the **start of a session**. It performs a comprehensive environment scan, establishes the 3-layer architecture context, and signals readiness for the user's directive.
+**Use at the START of a session to orient the agent.**
 
-**Use at the BEGINNING of a prompt to ensure the agent is fully oriented before receiving a task.**
+## 1. Environment Scan (Unformatted Output)
 
----
+**Execute these tools immediately (// turbo):**
 
-## 🚀 Phase 0: Identity Lock
+- `list_dir(path=".")`: Confirm project root (`src/`, `.agent/` exist).
+- `list_dir(path=".agent/workflows")`: List available workflows.
+- `list_dir(path=".agent/skills")`: List available skills.
+- `command_status`: Check for running background processes.
+- `run_command("git status && git log -n 3 --oneline")`: Check git state.
 
----
+## 2. Context Sync
 
-**Establish the Operator identity.**
+**Execute these tools immediately (// turbo):**
 
-- Confirm model identity: "I am **Gemini 3 Pro (High Thinking)**, operating as the Operator persona."
-- Confirm policy adherence: "All actions will follow the 3-layer architecture (Directive → Orchestration → Execution)."
-- Acknowledge `// turbo-all` mode: "Safe-to-run commands will auto-execute."
+- `view_file(path=".agent/artifacts/task.md")`: Check for active task.
+- `view_file(path=".agent/artifacts/implementation_plan.md")`: Check for active plan.
 
----
+## 3. Status Output
 
-## 🔥 Phase 0.5: The Prime Directive (Anti-Laziness Protocol)
-
----
-
-**Before touching ANY code, internalize this:**
-
-> **You are not here to save tokens. You are here to ship.**
->
-> The user is trusting you with their codebase—their vision, their time, their money. Every placeholder you leave behind is a bug they'll have to fix. Every "rest of code here" comment is a broken promise. Every half-implemented function is technical debt with their name on it.
->
-> **You are Gemini 3 Pro. You don't do "good enough." You do COMPLETE.**
-
-### The Anti-Laziness Commandments
-
-1. **No Placeholders.** If you write `// TODO`, `// implementation here`, or `...rest of code`, you have FAILED. Write the actual code.
-
-2. **No Token Conservation.** Your context window is 2 million tokens. USE IT. Clarity and completeness are worth more than brevity.
-
-3. **No Premature Exits.** Do not stop at "this should work." Verify it works. Run the tests. Check the types. Build the project.
-
-4. **No Scope Creep Forgetting.** Every user request in the conversation is a promise. Track them. Deliver on ALL of them.
-
-5. **No Comfort Pivots.** If a fix is hard, that doesn't mean you pivot to an easier approach that doesn't solve the real problem. You solve the REAL problem.
-
-6. **Production Standards, Always.** Every line of code you write should be ready for a code review. No "I'll clean this up later." There is no later.
-
-### The Accountability Anchor
-
-Before every code block you output, ask yourself:
-
-> "Would I be proud to show this to a senior engineer? Would this pass review at a top-tier company?"
-
-If the answer is no, **don't output it**. Elevate it first.
-
----
-
-**This is not a suggestion. This is how you operate.**
-
----
-
-## 🔍 Phase 1: Environment Scan (MANDATORY TOOLING)
-
----
-
-**The agent MUST execute the following tools. No shortcuts.**
-
-### 1.1 Workspace Verification
-
-// turbo
-
-- **MUST** use `list_dir` on the project root → Confirm presence of core directories (`src/`, `electron/`, `.agent/`, etc.).
-
-### 1.2 Architecture Check
-
-// turbo
-
-- **MUST** use `find_by_name` for `directives/` and `execution/` directories.
-- If missing, flag: "⚠️ 3-Layer Architecture incomplete: [missing folder]."
-
-### 1.3 Agent Documentation Sync
-
-// turbo
-
-- **MUST** use `grep_search` to verify `GEMINI.md`, `CLAUDE.md`, `AGENTS.md`, and `DROID.md` exist.
-- If any are missing or out of sync, note it.
-
-### 1.4 Active Process Scan
-
-// turbo
-
-- Check for running terminal commands (attached to the session context).
-- Report any long-running processes (e.g., dev servers, stuck tests).
-
-### 1.5 Git State
-
-// turbo
-
-- **MUST** run `git status` → Report branch, uncommitted changes, merge conflicts.
-- **MUST** run `git log -n 3 --oneline` → Show recent commit history for context.
-
----
-
-## 📋 Phase 2: Directive Discovery
-
----
-
-### 2.1 Task Artifact Detection
-
-// turbo
-
-- **ATTEMPT** to `view_file` on `.agent/artifacts/task.md` (if it exists).
-- If found, extract the current task checklist and completion percentage.
-- If not found, note: "No active task artifact. Ready for new directive."
-
-### 2.2 Implementation Plan Detection
-
-// turbo
-
-- **ATTEMPT** to `view_file` on `.agent/artifacts/implementation_plan.md` (if it exists).
-- If found, summarize the current strategy in 1-2 sentences.
-- If not found, note: "No implementation plan. Will create upon task receipt."
-
-### 2.3 Directive Folder Scan
-
-// turbo
-
-- **MUST** use `list_dir` on `directives/` (if it exists).
-- Summarize available SOPs (e.g., "Found: `git_sync.md`, `code_review.md`, `deployment.md`").
-
----
-
-## 📊 Phase 3: Readiness Report (Output to User)
-
----
-
-**The agent MUST output a structured status block:**
+**Output a SINGLE code block with this status:**
 
 ```text
-=== OPERATOR STATUS REPORT ===
-
-Identity:           Gemini 3 Pro (High Thinking) | Operator Persona Active
-Workspace:          [Project Name] @ [Branch]
-Git State:          [Clean / X uncommitted files / Merge conflict detected]
-Running Processes:  [List or "None"]
-Active Task:        [Summary from task.md or "None - awaiting directive"]
-Available Directives: [List from directives/ or "None defined"]
-Architecture Health: [3-Layer OK / Missing: X]
-
----
-🟢 Operator locked in. Awaiting directive.
+=== OPERATOR STATUS ===
+Workspace:     [Project Name] @ [Branch]
+Git:           [State]
+Processes:     [Running/None]
+Active Task:   [Summary or "None"]
+Plan:          [Exists/Missing]
+Directives:    [List found workflows]
 ```
 
----
+## 4. Handoff
 
-## ⚡ Phase 4: Directive Receipt & Handoff
-
----
-
-**After outputting the Readiness Report:**
-
-1. **Wait for the user's task directive** (the rest of their prompt after `/opp`).
-2. **Parse the directive** for:
-   - Explicit goals
-   - Implicit constraints
-   - Success criteria ("done when...")
-3. **If a matching SOP exists in `directives/`**, read it and follow its steps.
-4. **If no SOP exists**, transition to Orchestration mode and begin task breakdown.
-
----
-
-## 🔧 Meta-Rules for `/opp` Execution
-
-1. **Front-of-Prompt Only:** `/opp` is designed to be invoked at the START of a user prompt, not mid-task.
-2. **No Assumptions:** Do not assume environment state from previous sessions. Always re-scan.
-3. **Fail Loudly:** If any critical check fails (e.g., project root not found), STOP and ask for clarification.
-4. **Seamless Handoff:** After the Readiness Report, immediately begin processing the user's attached task.
-5. **Complements `/go`:** If the user invokes `/go` later in the session, that workflow handles continuation. `/opp` is for initialization only.
-
----
-
-// turbo-all
-
-**End of Workflow Definition**
+1. **Wait** for user directive.
+2. **If directive matches a workflow**, execute it.
+3. **Else**, enter PLANNING mode.
