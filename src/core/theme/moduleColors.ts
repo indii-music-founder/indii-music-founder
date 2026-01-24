@@ -337,6 +337,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-creative',
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
+    },
+    history: {
+        text: 'text-dept-default',
+        bg: 'bg-dept-default/10',
+        border: 'border-dept-default',
+        ring: 'focus-within:ring-dept-default/50',
+        hoverText: 'hover:text-white',
+        hoverBg: 'hover:bg-dept-default/5',
+        cssVar: '--color-dept-default',
     }
 };
 
