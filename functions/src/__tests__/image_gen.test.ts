@@ -67,35 +67,39 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
-        it('should call GoogleGenAI.models.generateContent with correct parameters', async () => {
+        it('should call REST API via fetch with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
-                count: 2
+                count: 2,
+                mediaResolution: 'medium'
             };
 
-            mocks.generateContent.mockResolvedValue({
-                candidates: [{
-                    content: {
-                        parts: [
-                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
-                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
-                        ]
-                    }
-                }]
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
+                                { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
+                            ]
+                        }
+                    }]
+                })
             });
+            global.fetch = mockFetch;
 
             const result = await generateImageV3(data, context);
 
-            expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-                contents: [{ role: 'user', parts: [{ text: 'a beautiful cat' }] }],
-                config: expect.objectContaining({
-                    responseModalities: ['IMAGE'],
-                    candidateCount: 2,
-                    imageConfig: { aspectRatio: '1:1' }
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: expect.stringContaining('"mediaResolution":"MEDIA_RESOLUTION_MEDIUM"')
                 })
-            }));
+            );
 
             expect(result).toEqual({
                 images: [
