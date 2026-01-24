@@ -115,7 +115,7 @@ describe('BrandManager', () => {
             expect(screen.getByText('System Audit')).toBeInTheDocument();
         });
 
-        const input = screen.getByPlaceholderText(/Paste caption, email, or lyrics here.../);
+        const input = screen.getByPlaceholderText(/Paste your .* here for high-fidelity brand alignment check.../);
         fireEvent.change(input, { target: { value: 'Test content for analysis' } });
 
         const button = screen.getByRole('button', { name: /Audit Brand Health/i });

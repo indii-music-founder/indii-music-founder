@@ -21,12 +21,12 @@ describe('WhiskService', () => {
 
     it('should synthesize whisk prompt correctly', () => {
         const mockState: WhiskState = {
-            isOpen: true,
-            activeCategory: 'subject',
-            subjects: [{ id: '1', type: 'text', content: 'A cool cat', checked: true }],
+            subjects: [{ id: '1', type: 'text', content: 'A cool cat', checked: true, category: 'subject' }],
             scenes: [],
             styles: [],
-            preciseReference: false
+            motion: [],
+            preciseReference: false,
+            targetMedia: 'image'
         };
 
         const prompt = WhiskService.synthesizeWhiskPrompt('playing guitar', mockState);

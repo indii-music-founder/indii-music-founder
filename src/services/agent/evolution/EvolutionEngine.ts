@@ -44,12 +44,15 @@ export class EvolutionEngine {
     // If the population has reached the maximum generation, we halt evolution to prevent infinite loops.
     const currentMaxGeneration = Math.max(...scoredPopulation.map(g => g.generation || 0));
     if (this.config.maxGenerations && currentMaxGeneration >= this.config.maxGenerations) {
-      return scoredPopulation.slice(0, this.config.populationSize);
+      return this.sanitizeForPersistence(scoredPopulation.slice(0, this.config.populationSize));
     }
 
     // 2. Selection (Elitism)
     const nextGeneration: AgentGene[] = [];
-    const elites = scoredPopulation.slice(0, this.config.eliteCount);
+    // Helix Guardrail: Population Control
+    // Cap eliteCount at populationSize to prevent explosion if config is malformed.
+    const effectiveEliteCount = Math.min(this.config.eliteCount, this.config.populationSize);
+    const elites = scoredPopulation.slice(0, effectiveEliteCount);
     nextGeneration.push(...elites);
 
     // Filter out zero-fitness agents for reproduction
@@ -94,11 +97,8 @@ export class EvolutionEngine {
         try {
           offspring = structuredClone(offspring);
         } catch (e) {
-          // Fallback for environments without structuredClone or non-clonable objects
-          // Helix: Reference Integrity Check
-          if (offspring === parent1 || offspring === parent2) {
-            offspring = JSON.parse(JSON.stringify(offspring));
-          }
+          // Helix: Robust fallback for non-clonable objects (e.g. methods attached to genes)
+          offspring = JSON.parse(JSON.stringify(offspring));
         }
 
         // Mutation
@@ -125,6 +125,20 @@ export class EvolutionEngine {
           throw new Error("Helix Guardrail: Mutation produced invalid offspring (Missing Parameters)");
         }
 
+        // Helix: Schema Integrity
+        // Ensure parameters is a plain object, not an array.
+        if (Array.isArray(offspring.parameters)) {
+          throw new Error("Helix Guardrail: Mutation produced invalid offspring (Parameters cannot be an Array)");
+        }
+
+        // Helix: Serialization Safety
+        // Ensure the offspring is valid JSON (no cycles, no functions).
+        try {
+          JSON.stringify(offspring);
+        } catch (e) {
+          throw new Error("Helix Guardrail: Mutation produced non-serializable offspring (JSON Error)");
+        }
+
         // Ensure ID is new and lineage is tracked
         offspring.id = uuidv4();
         // Helix: Time Integrity Check
@@ -143,7 +157,28 @@ export class EvolutionEngine {
       }
     }
 
-    return nextGeneration;
+    return this.sanitizeForPersistence(nextGeneration);
+  }
+
+  // Helix: The Icarus Check
+  // Ensures that 'God Mode' agents (Fitness = Infinity) are not lobotomized by JSON serialization.
+  // JSON.stringify(Infinity) -> null, which causes the agent to lose its elite status upon reload.
+  // We convert Infinity to Number.MAX_VALUE which is safe for JSON and still practically infinite.
+  private sanitizeForPersistence(population: AgentGene[]): AgentGene[] {
+    // Helix: God Mode Safety
+    // Ensure that non-finite fitness values (Infinity, -Infinity, NaN) are not serialized as null in JSON.
+    // JSON.stringify() converts all three to null, which corrupts the database on reload.
+    return population.map(gene => {
+      let safeFitness = gene.fitness;
+      if (safeFitness === Infinity) {
+        safeFitness = Number.MAX_VALUE;
+      } else if (safeFitness === -Infinity) {
+        safeFitness = -Number.MAX_VALUE;
+      } else if (typeof safeFitness === 'number' && Number.isNaN(safeFitness)) {
+        safeFitness = 0; // NaN is treated as failure
+      }
+      return { ...gene, fitness: safeFitness };
+    });
   }
 
   private selectParent(population: AgentGene[]): AgentGene {

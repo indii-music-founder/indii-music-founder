@@ -2,24 +2,63 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
-import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
-import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
+
+import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
+import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
+
+// Vertex AI SDK
+// import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Define Secrets
-const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
-const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
+/**
+ * Security Helper: Validate Organization Access
+ *
+ * Ensures the authenticated user is a member of the target organization.
+ * Prevents IDOR/Injection attacks where users create jobs for orgs they don't belong to.
+ */
+const validateOrgAccess = async (userId: string, orgId?: string | null) => {
+    // 1. Personal workspace and default org are always allowed (scoped to user in logic)
+    if (!orgId || orgId === 'personal' || orgId === 'org-default') {
+        return;
+    }
+
+    // 2. Fetch Organization
+    const orgRef = admin.firestore().collection('organizations').doc(orgId);
+    const orgDoc = await orgRef.get();
+
+    if (!orgDoc.exists) {
+        throw new functions.https.HttpsError(
+            "not-found",
+            `Organization '${orgId}' not found.`
+        );
+    }
+
+    const orgData = orgDoc.data();
+    const members = orgData?.members || [];
+
+    // 3. Verify Membership
+    if (!members.includes(userId)) {
+        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        throw new functions.https.HttpsError(
+            "permission-denied",
+            "You are not a member of this organization."
+        );
+    }
+};
+
+// Import Shared Secrets
+import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
@@ -68,7 +107,8 @@ const getAllowedOrigins = (): string[] => {
         'https://indiios-v-1-1.web.app',
         'https://studio.indiios.com',
         'https://indiios.com',
-        'app://.'  // Electron app
+        'app://.',  // Electron app
+        'http://localhost:4242' // Electron Studio (Vite)
     ];
 
     // Add localhost origins in emulator/development mode
@@ -77,7 +117,8 @@ const getAllowedOrigins = (): string[] => {
             'http://localhost:5173',
             'http://localhost:4173',
             'http://localhost:3000',
-            'http://127.0.0.1:5173'
+            'http://127.0.0.1:5173',
+            'http://localhost:4242'
         );
     }
 
@@ -88,8 +129,9 @@ const corsHandler = corsLib({
     origin: (origin, callback) => {
         const allowedOrigins = getAllowedOrigins();
 
-        // Allow requests with no origin (mobile apps, Postman) only in emulator
-        if (!origin && process.env.FUNCTIONS_EMULATOR === 'true') {
+        // Allow requests with no origin (mobile apps, Postman, server-to-server)
+        // We rely on ID Token verification (Bearer token) for actual security.
+        if (!origin) {
             return callback(null, true);
         }
 
@@ -145,6 +187,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -174,9 +217,12 @@ export const triggerVideoJob = functions
 
         const { prompt, jobId, orgId, ...options } = inputData;
 
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
+
         try {
-            // 1. Create Initial Job Record in Firestore
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -223,6 +269,7 @@ export const triggerVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -251,6 +298,9 @@ export const triggerLongFormVideoJob = functions
 
         // Destructure validated data
         const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
+
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
 
         // Additional validation
         if (prompts.length === 0) {
@@ -315,8 +365,8 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
 
             // 4. Create Parent Job Record
-            // 1. Create Parent Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Parent Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -368,6 +418,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -416,8 +467,8 @@ export const renderVideo = functions
 
             const segmentUrls = videoClips.map((c: any) => c.src);
 
-            // 2. Create Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 2. Create Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: "personal",
@@ -493,180 +544,72 @@ export const inngestApi = functions
 // Image Generation (Gemini)
 // ----------------------------------------------------------------------------
 
-export const generateImageV3 = functions
-    .runWith({
-        secrets: [geminiApiKey],
-        timeoutSeconds: 120,
-        memory: "512MB"
-    })
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
+export const generateImageV3 = generateImageV3Fn();
+
+export const editImage = editImageFn();
+
+export const generateSpeech = functions
+    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
     .https.onCall(async (data: unknown, context) => {
         if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to generate images."
-            );
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        // Zod Validation
-        const validation = GenerateImageRequestSchema.safeParse(data);
+        const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
+            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
         }
-        const { prompt, aspectRatio, count, images } = validation.data;
+        const { text, voice, model } = validation.data;
 
         try {
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
+            console.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            const apiKey = getGeminiApiKey();
 
-            const parts: any[] = [{ text: prompt }];
-            if (images) {
-                images.forEach(img => {
-                    parts.push({
-                        inlineData: {
-                            mimeType: img.mimeType || "image/png",
-                            data: img.data
+            // Use REST API for precise control over TTS config
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: voice
+                                }
+                            }
                         }
-                    });
-                });
-            }
-
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    contents: [{ role: "user", parts: parts }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE"],
-                        candidateCount: count || 1,
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
                     }
-                }),
+                })
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Google AI Error:", response.status, errorText);
-                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
+                const errText = await response.text();
+                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
             }
 
             const result = await response.json();
-            const processedImages = (result.candidates?.[0]?.content?.parts || [])
-                .filter((p: any) => p.inlineData)
-                .map((p: any) => ({
-                    bytesBase64Encoded: p.inlineData.data,
-                    mimeType: p.inlineData.mimeType || "image/png"
-                }));
 
-            return { images: processedImages };
+            // Extract audio data (inlineData)
+            const part = result.candidates?.[0]?.content?.parts?.[0];
+            const audioContent = part?.inlineData?.data;
+
+            if (!audioContent) {
+                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                throw new Error("No audio content returned from API");
+            }
+
+            return { audioContent };
+
         } catch (error: any) {
-            console.error("[generateImageV3] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            throw new functions.https.HttpsError('internal', error.message || "Unknown error");
-        }
-    });
-
-export const editImage = functions
-    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 120, memory: "512MB" })
-    .https.onCall(async (data: unknown, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to edit images."
-            );
-        }
-
-        // Zod Validation
-        const validation = EditImageRequestSchema.safeParse(data);
-        if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
-        }
-        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
-
-        try {
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
-
-            const parts: any[] = [
-                {
-                    inlineData: {
-                        mimeType: imageMimeType || "image/png",
-                        data: image
-                    }
-                }
-            ];
-
-            // Track image count for correct position reference
-            let imageCount = 1;
-
-            if (mask) {
-                parts.push({
-                    inlineData: {
-                        mimeType: maskMimeType || "image/png",
-                        data: mask
-                    }
-                });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
-                imageCount = 2;
-            }
-
-            if (referenceImage) {
-                const position = imageCount === 1 ? "second" : "third";
-                parts.push({
-                    inlineData: {
-                        mimeType: refMimeType || "image/png",
-                        data: referenceImage
-                    }
-                });
-                parts.push({ text: `Use this ${position} image as a reference.` });
-            }
-
-            parts.push({ text: prompt });
-
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: parts
-                    }],
-                    generationConfig: {
-                        responseModalities: ["IMAGE"],
-                        temperature: 1.0
-                    }
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', `Google AI Error: ${response.status} - ${errorText}`);
-            }
-
-            const result = await response.json();
-            return { candidates: result.candidates };
-
-        } catch (error: unknown) {
-            console.error("Function Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            if (error instanceof Error) {
-                throw new functions.https.HttpsError('internal', error.message);
-            }
-            throw new functions.https.HttpsError('internal', "An unknown error occurred");
+            console.error("[generateSpeech] Error:", error);
+            throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
 
@@ -710,7 +653,7 @@ export const generateContentStream = functions
                 const ALLOWED_MODELS = [
                     "gemini-3-pro-preview",
                     "gemini-3-flash-preview",
-                    "gemini-2.0-flash-exp" // Retained for backward compatibility if needed, otherwise remove
+                    "gemini-2.5-flash"
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
@@ -719,60 +662,29 @@ export const generateContentStream = functions
                     return;
                 }
 
-                if (!Array.isArray(contents)) {
-                    res.status(400).send('Invalid input: contents must be an array.');
-                    return;
-                }
+                // Initialize SDK Client
+                // Initialize SDK Client
+                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents,
-                        generationConfig: config
-                    })
+                // Generate Content Stream
+                const result = await client.models.generateContentStream({
+                    model: modelId,
+                    contents: contents, // SDK accepts standard Content format
+                    config: config
                 });
-
-                if (!response.ok) {
-                    const error = await response.text();
-                    res.status(response.status).send(error);
-                    return;
-                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
-                const reader = response.body?.getReader();
-                if (!reader) {
-                    res.status(500).send('No response body');
-                    return;
-                }
-
-                const decoder = new TextDecoder();
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.substring(6));
-                                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                                if (text) {
-                                    res.write(JSON.stringify({ text }) + '\n');
-                                }
-                            } catch {
-                                // Ignore parse errors for partial chunks
-                            }
-                        }
+                // Iterate over SDK Stream
+                for await (const chunk of result) {
+                    const text = chunk.text;
+                    if (text) {
+                        res.write(JSON.stringify({ text }) + '\n');
                     }
                 }
+
                 res.end();
 
             } catch (error: any) {
@@ -849,7 +761,7 @@ export const ragProxy = functions
                 }
 
                 const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,
@@ -879,6 +791,7 @@ import * as gkeService from './devops/gkeService';
 import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
+import * as marketingService from './lib/marketing';
 
 /**
  * List GKE Clusters
@@ -908,6 +821,9 @@ export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
 export const calculateFuelLogistics = touringService.calculateFuelLogistics;
+
+// Marketing
+export const executeCampaign = marketingService.executeCampaign;
 
 /**
  * Get GKE Cluster Status

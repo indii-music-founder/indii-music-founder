@@ -1,4 +1,4 @@
-import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status } from '../types';
+import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status, SavedWorkflow } from '../types';
 import { useStore } from '@/core/store';
 import { AI } from '@/services/ai/AIService';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
@@ -7,13 +7,13 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // Define the structure of a task in the execution queue
 interface ExecutionTask {
     nodeId: string;
-    inputs: Record<string, any>;
+    inputs: Record<string, unknown>;
 }
 
 // Define the result of a node execution
 interface ExecutionResult {
     nodeId: string;
-    output: any;
+    output: unknown;
     status: 'success' | 'error';
     error?: string;
 }
@@ -22,7 +22,7 @@ export class WorkflowEngine {
     private nodes: CustomNode[];
     private edges: CustomEdge[];
     private executionQueue: ExecutionTask[] = [];
-    private results: Map<string, any> = new Map(); // Store results by Node ID
+    private results: Map<string, unknown> = new Map(); // Store results by Node ID
     private isRunning: boolean = false;
     private setNodes: (nodes: CustomNode[]) => void;
 
@@ -67,7 +67,7 @@ export class WorkflowEngine {
         this.updateNodeStatus(node.id, Status.WORKING);
 
         try {
-            let output: any = null;
+            let output: unknown = null;
 
             // --- EXECUTION LOGIC BASED ON NODE TYPE ---
             switch (node.type) {
@@ -86,7 +86,6 @@ export class WorkflowEngine {
 
                 case 'outputNode':
                     output = task.inputs.data; // Just pass through
-
                     break;
             }
 
@@ -118,9 +117,9 @@ export class WorkflowEngine {
         }
     }
 
-    private async executeDepartmentNode(node: CustomNode, inputs: any): Promise<any> {
+    private async executeDepartmentNode(node: CustomNode, inputs: Record<string, unknown>): Promise<unknown> {
         const data = node.data as DepartmentNodeData;
-        const prompt = data.prompt || inputs.data || ''; // Use node prompt or input data
+        const prompt = (data.prompt || (typeof inputs.data === 'string' ? inputs.data : '')) as string;
 
         // --- REAL AI EXECUTION ---
         if (data.departmentName === 'Art Department') {
@@ -177,7 +176,7 @@ export class WorkflowEngine {
         }
     }
 
-    private async executeLogicNode(node: CustomNode, inputs: any): Promise<any> {
+    private async executeLogicNode(node: CustomNode, inputs: Record<string, unknown>): Promise<unknown> {
         // Simple pass-through for now
         return inputs.data;
     }
@@ -200,9 +199,9 @@ export class WorkflowEngine {
 
     }
 
-    public async loadWorkflow(id: string): Promise<any | null> {
+    public async loadWorkflow(id: string): Promise<SavedWorkflow | null> {
         const { getWorkflowFromStorage } = await import('@/services/storage/repository');
-        const data = await getWorkflowFromStorage(id);
+        const data = await getWorkflowFromStorage(id) as SavedWorkflow | undefined;
 
         if (data) {
             this.nodes = data.nodes;

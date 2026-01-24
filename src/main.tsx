@@ -10,12 +10,6 @@ import './index.css';
 // Initialize Sentry error tracking BEFORE rendering
 initSentry();
 
-// SECURITY: Block TEST_MODE bypass in production builds
-// This is a defense-in-depth measure - authSlice also checks this
-if (import.meta.env.PROD && typeof window !== 'undefined' && localStorage.getItem('TEST_MODE')) {
-    localStorage.removeItem('TEST_MODE');
-    console.error('[Security] TEST_MODE disabled in production');
-}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

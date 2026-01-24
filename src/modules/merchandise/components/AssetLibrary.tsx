@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { MerchCard } from './MerchCard';
 import { Upload, Search, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -11,7 +12,11 @@ export interface AssetLibraryProps {
 }
 
 export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenerateAI }) => {
-    const { generatedHistory, uploadedImages } = useStore();
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders when unrelated store state changes
+    const { generatedHistory, uploadedImages } = useStore(useShallow(state => ({
+        generatedHistory: state.generatedHistory,
+        uploadedImages: state.uploadedImages
+    })));
     const history = useMemo(() => [...generatedHistory, ...uploadedImages], [generatedHistory, uploadedImages]);
     const toast = useToast();
     const [searchQuery, setSearchQuery] = useState('');
@@ -36,29 +41,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
         const timer = setTimeout(() => setIsLoading(false), 300);
         return () => clearTimeout(timer);
     }, []);
-
-    // Debug logging (dev mode only)
-    React.useEffect(() => {
-        if (!import.meta.env.DEV) return;
-
-        console.group('🖼️ Asset Library Debug');
-        console.log('Total history items:', history.length);
-        console.log('Filtered image assets:', imageAssets.length);
-
-        if (imageAssets.length > 0) {
-            const sample = imageAssets[0];
-            console.log('Sample asset:', {
-                id: sample.id,
-                type: sample.type,
-                urlPrefix: sample.url?.substring(0, 30),
-                urlType: sample.url?.startsWith('data:') ? 'data-uri' :
-                         sample.url?.startsWith('http') ? 'http' :
-                         sample.url?.startsWith('blob:') ? 'blob' : 'unknown'
-            });
-        }
-
-        console.groupEnd();
-    }, [imageAssets.length, history.length]);
 
     // Search filter
     const filteredAssets = useMemo(() => {

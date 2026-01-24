@@ -1,5 +1,6 @@
 import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 export interface CachedContextRef {
     id: string; // The resource name in Vertex AI (e.g., projects/.../cachedContents/...)
@@ -42,7 +43,7 @@ export class CachedContextService {
                 }
             }
         } catch (error) {
-            console.error('[CachedContextService] Failed to find cache:', error);
+            logger.error('[CachedContextService] Failed to find cache:', error);
         }
         return null;
     }
@@ -64,7 +65,7 @@ export class CachedContextService {
                 updatedAt: serverTimestamp()
             });
         } catch (error) {
-            console.error('[CachedContextService] Failed to register cache:', error);
+            logger.error('[CachedContextService] Failed to register cache:', error);
         }
     }
 

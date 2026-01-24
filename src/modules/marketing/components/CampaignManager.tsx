@@ -3,6 +3,7 @@ import { CampaignAsset, ScheduledPost, CampaignStatus } from '../types';
 import CampaignList from './CampaignList';
 import CampaignDetail from './CampaignDetail';
 import EditableCopyModal from './EditableCopyModal';
+import AIImageBatchModal from './AIImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -28,6 +29,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     const toast = useToast();
     const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [showImageBatchModal, setShowImageBatchModal] = useState(false);
 
     const handleExecute = async () => {
         if (!selectedCampaign) return;
@@ -35,6 +37,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         // Optimistic check
         if (selectedCampaign.status === CampaignStatus.DONE) {
             toast.info("Campaign is already completed.");
+            return;
+        }
+
+        if (!functions) {
+            toast.error("Cloud Functions not initialized. Cannot execute campaign.");
             return;
         }
 
@@ -46,40 +53,17 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         onUpdateCampaign(executingState);
 
         try {
-            // Determine Execution Mode
-            // 1. Force Mock for Test Environment (Maestro) or offline dev without functions
-            const forceMock = (window as any).__MAESTRO_MOCK_EXECUTION__;
-            // 2. Dry Run for Localhost Dev to verify function connectivity without side effects
-            // Note: import.meta.env.DEV might be true in production builds if not configured correctly,
-            // but usually it's reliable for Vite.
-            const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+            // REAL PRODUCTION BINDING
+            // We map to our Zod-validated schema structure
+            const payload: CampaignExecutionRequest = {
+                campaignId: selectedCampaign.id || 'unknown',
+                posts: selectedCampaign.posts,
+                dryRun: false // Always attempt real execution, backend handles safety
+            };
 
-            let responseData: { posts?: ScheduledPost[], success?: boolean, message?: string } = {};
-
-            if (forceMock || (!functions && isDev)) {
-                 console.warn("[CampaignManager] Using Client-Side Mock Execution");
-                 await new Promise(resolve => setTimeout(resolve, 1500));
-                 responseData = {
-                    posts: selectedCampaign.posts.map(p => ({
-                        ...p,
-                        status: CampaignStatus.DONE,
-                        scheduledTime: new Date()
-                    })),
-                    success: true
-                };
-            } else {
-                // REAL PRODUCTION BINDING
-                // We map to our Zod-validated schema structure
-                const payload: CampaignExecutionRequest = {
-                    campaignId: selectedCampaign.id || 'unknown',
-                    posts: selectedCampaign.posts,
-                    dryRun: isDev // In dev mode, we ask the backend to dry-run
-                };
-
-                const executeCampaign = httpsCallable(functions, 'executeCampaign');
-                const result = await executeCampaign(payload);
-                responseData = result.data as any;
-            }
+            const executeCampaign = httpsCallable<CampaignExecutionRequest, { posts: ScheduledPost[]; success: boolean; message: string }>(functions, 'executeCampaign');
+            const result = await executeCampaign(payload);
+            const responseData = result.data;
 
             if (responseData.success && responseData.posts) {
                 onUpdateCampaign({
@@ -89,16 +73,16 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                 });
                 toast.success(responseData.message || "Campaign executed successfully!");
             } else {
-                 throw new Error(responseData.message || "Execution returned failure status.");
+                throw new Error(responseData.message || "Execution returned failure status.");
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Campaign Execution Failed:", error);
 
             // Revert status or set to FAILED
             onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });
 
-            const errorMsg = error.message || "Unknown error";
+            const errorMsg = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Execution failed: ${errorMsg}`);
         } finally {
             setIsExecuting(false);
@@ -126,13 +110,23 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         onExecute={handleExecute}
                         isExecuting={isExecuting}
                         onEditPost={setEditingPost}
-                        onGenerateImages={() => toast.info("Image generation functionality coming soon!")}
+                        onGenerateImages={() => setShowImageBatchModal(true)}
                     />
                     {editingPost && (
                         <EditableCopyModal
                             post={editingPost}
                             onClose={() => setEditingPost(null)}
                             onSave={handleSaveCopy}
+                        />
+                    )}
+                    {showImageBatchModal && (
+                        <AIImageBatchModal
+                            campaign={selectedCampaign}
+                            onClose={() => setShowImageBatchModal(false)}
+                            onComplete={(updatedCampaign) => {
+                                onUpdateCampaign(updatedCampaign);
+                                setShowImageBatchModal(false);
+                            }}
                         />
                     )}
                 </>

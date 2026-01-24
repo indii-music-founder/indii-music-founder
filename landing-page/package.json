@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "eslint"
+    "dev": "vite",
+    "lint": "eslint",
+    "preview": "vite preview"
   },
   "dependencies": {
     "@pixi/filter-kawase-blur": "^5.1.1",

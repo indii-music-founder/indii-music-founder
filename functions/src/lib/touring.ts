@@ -1,18 +1,14 @@
 import * as functions from "firebase-functions/v1";
 
 import { z } from "zod";
-import { defineSecret } from "firebase-functions/params";
 import { Client } from "@googlemaps/google-maps-services-js";
-
-// Secrets
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
-const googleMapsApiKey = defineSecret("GOOGLE_MAPS_API_KEY"); // Assumption: This secret exists or needs to be set.
+import { geminiApiKey, googleMapsApiKey, getGeminiApiKey } from "../config/secrets";
 
 // Helper for Gemini Calls (similar to generateImageV3 pattern)
 async function generateWithGemini(prompt: string, schema?: any): Promise<any> {
     const modelId = "gemini-3-pro-preview";
     // We access the secret value inside the function execution
-    const key = geminiApiKey.value();
+    const key = getGeminiApiKey();
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${key}`;
 
     const body: any = {
@@ -220,7 +216,7 @@ export const findPlaces = functions
             // Map to simplified structure
             const places = placesRes.data.results.map(p => ({
                 name: p.name,
-                address: p.vicinity,
+                vicinity: p.vicinity,
                 rating: p.rating,
                 isOpen: p.opening_hours?.open_now,
                 place_id: p.place_id,

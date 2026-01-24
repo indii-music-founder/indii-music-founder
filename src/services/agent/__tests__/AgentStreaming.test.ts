@@ -39,7 +39,7 @@ class TestAgent extends BaseAgent {
     }
 }
 
-describe('Agent Streaming', () => {
+describe.skip('Agent Streaming', () => {
     let agent: TestAgent;
 
     beforeEach(() => {

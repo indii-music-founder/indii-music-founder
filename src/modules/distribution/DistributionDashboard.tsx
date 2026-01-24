@@ -4,6 +4,11 @@ import { ReleaseStatusCard } from './components/ReleaseStatusCard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useStore } from '@/core/store';
 import { ReleaseStatus } from '@/services/distribution/types/distributor';
+import { BankPanel } from './components/BankPanel';
+import { AuthorityPanel } from './components/AuthorityPanel';
+import { QCPanel } from './components/QCPanel';
+import { KeysPanel } from './components/KeysPanel';
+import { TransferPanel } from './components/TransferPanel';
 
 export default function DistributionDashboard() {
     const { distribution, subscribeToReleases } = useStore();
@@ -15,7 +20,7 @@ export default function DistributionDashboard() {
     }, []);
 
     return (
-        <div className="min-h-screen bg-[#0A0A0A] text-white">
+        <div className="min-h-screen bg-background text-white">
             <div className="max-w-7xl mx-auto px-6 py-12">
                 <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
                     <div>
@@ -23,9 +28,9 @@ export default function DistributionDashboard() {
                             <h1 className="text-5xl font-black tracking-tighter uppercase italic">
                                 Distribution
                             </h1>
-                            <div className="flex items-center gap-2 px-2.5 py-1 bg-green-500/10 border border-green-500/20 rounded-full">
-                                <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                                <span className="text-[10px] font-bold text-green-500 tracking-widest uppercase">Live Sync</span>
+                            <div className="flex items-center gap-2 px-2.5 py-1 bg-dept-publishing/10 border border-dept-publishing/20 rounded-full">
+                                <div className="w-1.5 h-1.5 rounded-full bg-dept-publishing animate-pulse" />
+                                <span className="text-[10px] font-bold text-dept-publishing tracking-widest uppercase">Live Sync</span>
                             </div>
                         </div>
                         <p className="text-gray-500 max-w-xl font-medium">
@@ -35,7 +40,7 @@ export default function DistributionDashboard() {
                 </div>
 
                 <Tabs defaultValue="releases" className="space-y-8">
-                    <TabsList className="bg-[#121212] border border-gray-800/50 p-1 rounded-xl h-auto">
+                    <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto flex flex-wrap md:flex-nowrap overflow-x-auto scrollbar-hide backdrop-blur-sm">
                         <TabsTrigger
                             value="releases"
                             className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
@@ -48,11 +53,61 @@ export default function DistributionDashboard() {
                         >
                             Distributors
                         </TabsTrigger>
+                        <TabsTrigger
+                            value="bank"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Bank Layer
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="authority"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Authority
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="keys"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Keys
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="brain"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Brain (QC)
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="transmission"
+                            className="px-6 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:text-black text-[13px] font-bold uppercase tracking-widest transition-all"
+                        >
+                            Transmission
+                        </TabsTrigger>
                     </TabsList>
 
                     <div className="flex-1 w-full">
                         <TabsContent value="connections" className="mt-0 h-full p-0 border-none outline-none">
                             <DistributorConnectionsPanel />
+                        </TabsContent>
+
+                        <TabsContent value="bank" className="mt-0 border-none outline-none">
+                            <BankPanel />
+                        </TabsContent>
+
+                        <TabsContent value="authority" className="mt-0 border-none outline-none">
+                            <AuthorityPanel />
+                        </TabsContent>
+
+                        <TabsContent value="keys" className="mt-0 border-none outline-none">
+                            <KeysPanel />
+                        </TabsContent>
+
+                        <TabsContent value="brain" className="mt-0 border-none outline-none">
+                            <QCPanel />
+                        </TabsContent>
+
+                        <TabsContent value="transmission" className="mt-0 border-none outline-none">
+                            <TransferPanel />
                         </TabsContent>
 
                         <TabsContent value="releases" className="mt-0 border-none outline-none">
@@ -78,7 +133,7 @@ export default function DistributionDashboard() {
                                     </button>
                                 </div>
                             ) : releases.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center p-20 border border-gray-800 rounded-2xl bg-gray-900/20 text-center">
+                                <div className="flex flex-col items-center justify-center p-20 border border-white/5 rounded-2xl bg-white/5 backdrop-blur-sm text-center">
                                     <div className="p-4 rounded-full bg-gray-800/50 mb-4">
                                         <svg className="w-8 h-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />

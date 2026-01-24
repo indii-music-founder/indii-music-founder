@@ -1,4 +1,5 @@
 import * as admin from "firebase-admin";
+import { GoogleAuth } from "google-auth-library";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
 export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => inngestClient.createFunction(
@@ -24,34 +25,179 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
             });
 
-            // Start Video Generation Operation
-            const operation = await step.run("trigger-google-ai-video", async () => {
-                const modelId = FUNCTION_AI_MODELS.VIDEO.GENERATION;
-                const apiKey = geminiApiKey.value();
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
+            // Start Video Generation Operation (Vertex AI)
+            const operation = await step.run("trigger-vertex-ai-video", async () => {
+                const { model: requestedModel, generateAudio } = options || {};
+                const modelId = requestedModel === 'fast'
+                    ? FUNCTION_AI_MODELS.VIDEO.FAST
+                    : FUNCTION_AI_MODELS.VIDEO.GENERATION;
 
-                const requestBody = {
+                const auth = new GoogleAuth({
+                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                });
+                const client = await auth.getClient();
+                const projectId = await auth.getProjectId();
+                const accessToken = await client.getAccessToken();
+
+                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
+
+                const requestBody: any = {
                     instances: [{ prompt: prompt }],
                     parameters: {
                         sampleCount: 1,
-                        // Note: veo-3.1-generate-preview does NOT support videoLength/seconds parameters currently
-                        aspectRatio: options?.aspectRatio || "16:9"
-                    },
+                        aspectRatio: options?.aspectRatio || "16:9",
+                        personGeneration: "allow_adult",
+                        includeAudio: generateAudio ?? true
+                    }
                 };
+
+                // VEO 3.1: Resolution support
+                if (options?.resolution) {
+                    requestBody.parameters.resolution = options.resolution;
+                }
+
+                // VEO 3.1: Duration support (4, 6, 8 seconds)
+                const rawDuration = options?.durationSeconds || options?.duration;
+                if (rawDuration) {
+                    // Clamp to supported values or default to 8
+                    let dur = typeof rawDuration === 'string' ? parseInt(rawDuration) : rawDuration;
+                    if (dur <= 4) dur = 4;
+                    else if (dur <= 6) dur = 6;
+                    else dur = 8;
+                    requestBody.parameters.duration = dur;
+
+                    // Force 8s for 1080p/4k
+                    if (['1080p', '4k'].includes(options?.resolution)) {
+                        requestBody.parameters.duration = 8;
+                    }
+                }
+
+                // VEO 3.1: Video Extension (Video-to-Video)
+                const inputVideo = options?.inputVideo; // From payload (URL/Base64)
+                if (inputVideo) {
+                    // Note: Extensions are limited to 720p
+                    if (options?.resolution && options.resolution !== '720p') {
+                        console.warn("[VideoGen] Warning: Video extension forces 720p resolution. Overriding.");
+                        requestBody.parameters.resolution = '720p';
+                    }
+
+                    // Handle string input (URL or Base64)
+                    // If it's a URL to a GS path or GCS http, Vertex might accept it directly or we need bytes.
+                    // The docs say: video: Video object from a previous generation
+                    // We'll try to fetch bytes if it's external, or pass if it's GCS URI
+
+                    // For now, let's assume we fetch bytes to be safe as API is tricky
+                    const fetchVideoBytes = async (url: string) => {
+                        const res = await fetch(url);
+                        const buf = await res.arrayBuffer();
+                        return Buffer.from(buf).toString('base64');
+                    };
+
+                    // Check if it's already base64 (no http/gs)
+                    if (!inputVideo.startsWith('http') && !inputVideo.startsWith('gs://')) {
+                        requestBody.instances[0].video = { bytesBase64Encoded: inputVideo };
+                    } else {
+                        // Fetch it
+                        const vBytes = await fetchVideoBytes(inputVideo);
+                        requestBody.instances[0].video = { bytesBase64Encoded: vBytes };
+                    }
+
+                    // Extension uses 'video' param not 'image'
+                    requestBody.parameters.personGeneration = "allow_all";
+                }
+
+                // VEO 3.1: First Frame (Image-to-Video)
+                let startImageBytes: string | undefined;
+
+                const fetchImageAsBase64 = async (input: string | undefined): Promise<string | undefined> => {
+                    if (!input) return undefined;
+                    if (input.startsWith('data:image')) {
+                        return input.replace(/^data:image\/\w+;base64,/, '');
+                    }
+                    if (input.startsWith('http')) {
+                        try {
+                            const res = await fetch(input);
+                            if (!res.ok) throw new Error(`Failed to fetch image: ${res.statusText}`);
+                            const buffer = await res.arrayBuffer();
+                            return Buffer.from(buffer).toString('base64');
+                        } catch (err) {
+                            console.error(`[Inngest] Failed to fetch frame from URL: ${input}`, err);
+                            return undefined;
+                        }
+                    }
+                    return input; // Assume raw base64
+                };
+
+                if (options?.image?.imageBytes) {
+                    startImageBytes = options.image.imageBytes;
+                } else {
+                    startImageBytes = await fetchImageAsBase64(options?.firstFrame);
+                }
+
+                if (startImageBytes) {
+                    requestBody.instances[0].image = {
+                        bytesBase64Encoded: startImageBytes
+                    };
+                    requestBody.parameters.personGeneration = "allow_adult";
+                }
+
+                // VEO 3.1: Last Frame (Interpolation)
+                if (options?.lastFrame) {
+                    const lastImageBytes = await fetchImageAsBase64(options.lastFrame);
+                    if (lastImageBytes) {
+                        requestBody.parameters.lastFrame = {
+                            bytesBase64Encoded: lastImageBytes
+                        };
+                        requestBody.parameters.personGeneration = "allow_adult";
+                    }
+                }
+
+                // VEO 3.1: Ingredients (Reference Images - Up to 3)
+                const refImages = options?.referenceImages || options?.ingredients;
+                if (refImages && Array.isArray(refImages)) {
+                    requestBody.parameters.referenceImages = await Promise.all(refImages.slice(0, 3).map(async (ref: any) => {
+                        // Handle both old schema (string) and new schema (object)
+                        let rawContent = "";
+                        let refType = "ASSET";
+
+                        if (typeof ref === 'string') {
+                            rawContent = ref;
+                        } else {
+                            // New schema
+                            rawContent = ref.image?.imageBytes || ref.image?.uri || ref.data || "";
+                            refType = ref.referenceType || "ASSET";
+                        }
+
+                        const cleanBytes = await fetchImageAsBase64(rawContent);
+
+                        return {
+                            image: {
+                                bytesBase64Encoded: cleanBytes || ""
+                            },
+                            referenceType: refType
+                        };
+                    }));
+                    requestBody.parameters.personGeneration = "allow_adult";
+                    // Reference images force 8s
+                    requestBody.parameters.duration = 8;
+                }
 
                 const response = await fetch(endpoint, {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${accessToken.token}`
+                    },
                     body: JSON.stringify(requestBody)
                 });
 
                 if (!response.ok) {
                     const errorText = await response.text();
-                    throw new Error(`Google AI Trigger Error: ${response.status} ${errorText}`);
+                    throw new Error(`Vertex AI Trigger Error: ${response.status} ${errorText}`);
                 }
 
                 const result = await response.json();
-                if (!result.name) throw new Error("No operation name returned from Google AI");
+                if (!result.name) throw new Error("No operation name returned from Vertex AI");
                 return result;
             });
 
@@ -71,10 +217,23 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 await step.sleep(`wait-5s-${attempts}`, "5s");
 
                 finalResult = await step.run(`check-status-${attempts}`, async () => {
-                    const apiKey = geminiApiKey.value();
-                    const statusEndpoint = `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`;
+                    const auth = new GoogleAuth({
+                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                    });
+                    const client = await auth.getClient();
+                    // Project ID not needed for polling as operationName contains full path
+                    const accessToken = await client.getAccessToken();
 
-                    const statusResponse = await fetch(statusEndpoint);
+                    // operationName from Vertex is usually: projects/.../locations/.../operations/...
+                    // So we can use the aiplatform endpoint directly with the name
+                    const statusEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`;
+
+                    const statusResponse = await fetch(statusEndpoint, {
+                        headers: {
+                            'Authorization': `Bearer ${accessToken.token}`
+                        }
+                    });
+
                     if (!statusResponse.ok) return null;
 
                     const statusData = await statusResponse.json();
@@ -87,8 +246,16 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 }
             }
 
-            if (!isCompleted || !finalResult || !finalResult.response) {
-                throw new Error(`Video generation timed out after ${attempts} attempts`);
+            if (!isCompleted || !finalResult) {
+                throw new Error(`Video generation timed out after ${attempts} attempts. Operation may still be running in Vertex AI.`);
+            }
+
+            if (finalResult.error) {
+                throw new Error(`Vertex AI Operation Failed: ${finalResult.error.code} - ${finalResult.error.message}`);
+            }
+
+            if (!finalResult.response) {
+                throw new Error("No response data in final result after operation completed.");
             }
 
             // Process Result
@@ -117,8 +284,17 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                             }
                         }
 
+                        let downloadUrl = sample.video.uri;
+
+                        // Convert gs:// to public HTTPS URL if needed
+                        if (downloadUrl.startsWith('gs://')) {
+                            const path = downloadUrl.replace('gs://', '').split('/').slice(1).join('/');
+                            const bucketName = downloadUrl.replace('gs://', '').split('/')[0];
+                            downloadUrl = `https://storage.googleapis.com/${bucketName}/${path}`;
+                        }
+
                         return {
-                            videoUri: sample.video.uri,
+                            videoUri: downloadUrl,
                             metadata: {
                                 mime_type: videoMetadata.mimeType || "video/mp4",
                                 duration_seconds: durationSeconds,
@@ -170,14 +346,14 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 await admin.firestore().collection("videoJobs").doc(jobId).set({
                     status: "completed",
                     videoUrl: videoUri,
-                    output: { metadata },
                     progress: 100,
                     updatedAt: admin.firestore.FieldValue.serverTimestamp(),
                     output: {
                         url: videoUri,
                         metadata: {
-                            duration_seconds: 5, // Veo preview is fixed at ~5s currently
-                            fps: options?.fps || 30, // Default to 30 if not specified
+                            ...metadata,
+                            duration_seconds: metadata?.duration_seconds || 5,
+                            fps: options?.fps || 30,
                             mime_type: "video/mp4",
                             resolution: options?.aspectRatio === "9:16" ? "720x1280" : "1280x720"
                         }

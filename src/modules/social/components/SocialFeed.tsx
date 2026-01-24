@@ -7,6 +7,7 @@ import { useStore } from '@/core/store';
 import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag, Ghost } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
+import { formatDate } from '@/lib/utils';
 
 interface SocialFeedProps {
     userId?: string;
@@ -19,16 +20,7 @@ const SHORTCUTS = [
     { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
 ];
 
-// ⚡ Bolt Optimization: Move helper function outside to maintain stable reference for React.memo children
-// This prevents FeedItem from re-rendering when the parent re-renders (e.g. while typing in the textarea)
-const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
+
 
 // Memoized to prevent re-renders when parent state changes but props don't
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
@@ -169,7 +161,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                             <div className="flex justify-between items-center mt-2 border-t border-gray-800 pt-3">
                                 <div className="flex gap-2">
                                     <button
-                                        onClick={() => {}} // Placeholder for image upload
+                                        onClick={() => { }} // Placeholder for image upload
                                         className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                                         aria-label="Add image to post"
                                     >
@@ -242,7 +234,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                 ) : (
                     <div className="divide-y divide-gray-800">
                         {posts.map((post) => (
-                            <FeedItem key={post.id} post={post} formatDate={formatDate} />
+                            <FeedItem key={post.id} post={post} />
                         ))}
                     </div>
                 )}
@@ -257,7 +249,7 @@ export default SocialFeed;
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
 // We use custom deep comparison here because Firestore onSnapshot often returns new object references
 // even for unchanged items, which defeats shallow comparison.
-const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
+const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -286,7 +278,7 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                                 {post.authorName}
                             </span>
                             <span className="text-gray-500 text-sm ml-2">
-                                {formatDate(post.timestamp)}
+                                {formatDate(post.timestamp, true)}
                             </span>
                         </div>
                         <button

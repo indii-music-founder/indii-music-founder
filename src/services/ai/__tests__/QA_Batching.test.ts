@@ -2,8 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from '../FirebaseAIService';
 import { RequestBatcher } from '../../../utils/RequestBatcher';
 
+const mockEmbedContent = vi.fn();
+const mockBatchEmbedContents = vi.fn();
+
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
+    getFirebaseAI: vi.fn(() => ({})),
     functions: {},
     ai: {},
     remoteConfig: {},
@@ -25,10 +29,20 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
-// Mock firebase/ai wrapped
-const mockBatchEmbedContents = vi.fn();
-const mockEmbedContent = vi.fn();
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function () {
+        return {
+            models: {
+                generateContent: vi.fn(),
+                generateContentStream: vi.fn(),
+                embedContent: mockEmbedContent
+            }
+        };
+    })
+}));
 
+// Mock firebase/ai wrapped
 vi.mock('firebase/ai', () => ({
     __esModule: true,
     getGenerativeModel: vi.fn(() => ({

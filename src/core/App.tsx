@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
@@ -13,9 +14,11 @@ import { ApprovalModal } from './components/ApprovalModal';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
+import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -46,10 +49,9 @@ const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
+const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 
-// Dev-only components
-const TestPlaybookPanel = lazy(() => import('./dev/TestPlaybookPanel'));
-const AudioStressTest = lazy(() => import('../dev/AudioStressTest'));
+
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -82,6 +84,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'audio-analyzer': AudioAnalyzer,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
+    'history': HistoryDashboard,
 };
 
 // ============================================================================
@@ -112,6 +115,40 @@ function LoadingFallback() {
     );
 }
 
+/**
+ * ChatOverlayWrapper - Bridges store state to ChatOverlay props
+ * The refactored ChatOverlay requires explicit onClose/onToggleMinimize props,
+ * while the app uses isAgentOpen from the store. This wrapper connects them.
+ */
+function ChatOverlayWrapper() {
+    const { isAgentOpen, toggleAgentWindow, isRightPanelOpen, toggleRightPanel } = useStore(
+        useShallow(state => ({
+            isAgentOpen: state.isAgentOpen,
+            toggleAgentWindow: state.toggleAgentWindow,
+            isRightPanelOpen: state.isRightPanelOpen,
+            toggleRightPanel: state.toggleRightPanel
+        }))
+    );
+    const [isMinimized, setIsMinimized] = useState(false);
+
+    // Platinum Polish: Auto-close right panel when agent opens to prevent UI overlap
+    useEffect(() => {
+        if (isAgentOpen && isRightPanelOpen) {
+            toggleRightPanel();
+        }
+    }, [isAgentOpen]);
+
+    if (!isAgentOpen) return null;
+
+    return (
+        <ChatOverlay
+            onClose={toggleAgentWindow}
+            isMinimized={isMinimized}
+            onToggleMinimize={() => setIsMinimized(!isMinimized)}
+        />
+    );
+}
+
 function DevPortWarning() {
     const port = window.location.port;
     if (!import.meta.env.DEV || port === '4242') return null;
@@ -130,7 +167,16 @@ function DevPortWarning() {
 // ============================================================================
 
 function useAppInitialization() {
-    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore();
+    // ⚡ Bolt Optimization: useShallow
+    const { initializeAuthListener, loadUserProfile, user, initializeHistory, loadProjects } = useStore(
+        useShallow(state => ({
+            initializeAuthListener: state.initializeAuthListener,
+            loadUserProfile: state.loadUserProfile,
+            user: state.user,
+            initializeHistory: state.initializeHistory,
+            loadProjects: state.loadProjects
+        }))
+    );
 
     // 1. Initialize Auth Listener (Firebase)
     useEffect(() => {
@@ -201,16 +247,23 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 // ============================================================================
 
 export default function App() {
-    const { currentModule, user, authLoading, loginWithGoogle } = useStore();
+    // ⚡ Bolt Optimization: useShallow
+    const { currentModule, user, authLoading } = useStore(
+        useShallow(state => ({
+            currentModule: state.currentModule,
+            user: state.user,
+            authLoading: state.authLoading
+        }))
+    );
 
-    // Initialize app and handle onboarding
+    // Initialize app
     useAppInitialization();
     useOnboardingRedirect();
 
     // Log module changes in dev
 
     // Handle Theme Switching
-    const { userProfile } = useStore();
+    const userProfile = useStore(useShallow(state => state.userProfile));
     useEffect(() => {
         const theme = userProfile?.preferences?.theme || 'dark';
 
@@ -232,6 +285,9 @@ export default function App() {
     // Call URL Sync Hook (must be inside Router context, which App is)
     useURLSync();
 
+    // SSR-safe media query for desktop detection
+    const isDesktop = useMediaQuery('(min-width: 768px)');
+
     if (authLoading) {
         return <LoadingFallback />;
     }
@@ -243,6 +299,13 @@ export default function App() {
     return (
         <VoiceProvider>
             <ToastProvider>
+                {/* Skip to content link for keyboard accessibility */}
+                <a
+                    href="#main-content"
+                    className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+                >
+                    Skip to content
+                </a>
                 <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
                     {/* Left Sidebar - Hidden for standalone modules */}
                     {showChrome && (
@@ -253,7 +316,7 @@ export default function App() {
                         </div>
                     )}
 
-                    <main className="flex-1 flex flex-col min-w-0 bg-background relative">
+                    <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
                         <div className="flex-1 overflow-y-auto relative custom-scrollbar">
                             <ErrorBoundary>
                                 <Suspense fallback={<LoadingFallback />}>
@@ -262,18 +325,11 @@ export default function App() {
                             </ErrorBoundary>
                         </div>
 
-                        {showChrome && (
-                            <div className="flex-shrink-0 z-10 relative">
-                                <ErrorBoundary>
-                                    <ChatOverlay />
-                                    <CommandBar />
-                                </ErrorBoundary>
-                            </div>
-                        )}
+                        {showChrome && <ChatOverlayWrapper />}
                     </main>
 
                     {/* Right Panel - Hidden for standalone modules and mobile */}
-                    {showChrome && typeof window !== 'undefined' && window.innerWidth >= 768 && (
+                    {showChrome && isDesktop && (
                         <ErrorBoundary>
                             <RightPanel />
                         </ErrorBoundary>
@@ -289,10 +345,6 @@ export default function App() {
                     {/* DevTools HUD - Only in Development */}
                     {import.meta.env.DEV && (
                         <Suspense fallback={null}>
-                            <TestPlaybookPanel />
-                            <div className="fixed bottom-4 left-4 z-50">
-                                <AudioStressTest />
-                            </div>
                             <DevPortWarning />
                         </Suspense>
                     )}
@@ -305,6 +357,16 @@ export default function App() {
 
                     {/* PWA Install Prompt - Shows when app can be installed */}
                     <PWAInstallPrompt />
+
+                    {/* Industrial Transmission Monitor */}
+                    <TransmissionMonitor />
+
+                    {/* Global Command Bar (Floating Pill) */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <CommandBar />
+                        </ErrorBoundary>
+                    )}
                 </div>
             </ToastProvider>
         </VoiceProvider>

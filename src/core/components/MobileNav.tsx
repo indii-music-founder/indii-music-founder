@@ -1,142 +1,213 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
-import { Layout, Music, MessageSquare, Scale, Workflow, Home, Book, MoreHorizontal, X, DollarSign } from 'lucide-react';
+import { getColorForModule } from '@/core/theme/moduleColors';
+import {
+    Briefcase, Users, Megaphone, Network, Mic, Palette, Film, Image,
+    Scale, Book, DollarSign, FileText, ShoppingBag, Radio, Globe,
+    Menu, X, Layout
+} from 'lucide-react';
 import { haptic } from '@/lib/mobile';
+import { type ModuleId } from '@/core/constants';
+
+interface NavItem {
+    id: ModuleId;
+    icon: React.ElementType;
+    label: string;
+}
 
 export const MobileNav = () => {
     const { currentModule, setModule } = useStore();
-    const [showOverflowMenu, setShowOverflowMenu] = React.useState(false);
+    const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const hasOpened = useRef(false);
 
-    // Primary tabs (5 max per UX best practices)
-    const primaryTabs = [
-        { id: 'dashboard', icon: Home, label: 'Home' },
-        { id: 'creative', icon: Layout, label: 'Studio' },
-        { id: 'marketing', icon: MessageSquare, label: 'Market' },
-        { id: 'knowledge', icon: Book, label: 'Brain' },
-        { id: 'more', icon: MoreHorizontal, label: 'More' },
-    ] as const;
-
-    // Overflow tabs for the "More" menu
-    const overflowTabs = [
-        { id: 'music', icon: Music, label: 'Analysis' },
-        { id: 'workflow', icon: Workflow, label: 'Flow' },
-        { id: 'legal', icon: Scale, label: 'Legal' },
-        { id: 'publishing', icon: Book, label: 'Publish' },
-        { id: 'finance', icon: DollarSign, label: 'Finance' },
-    ] as const;
-
-    const handleTabPress = (tabId: string) => {
-        // Haptic feedback for tab press
-        haptic('light');
-
-        if (tabId === 'more') {
-            setShowOverflowMenu(true);
-        } else {
-            setModule(tabId as any);
-            setShowOverflowMenu(false);
+    // Focus management
+    useEffect(() => {
+        if (isOpen) {
+            hasOpened.current = true;
+            // Small delay to ensure DOM is ready and animation frame is hit
+            requestAnimationFrame(() => {
+                closeButtonRef.current?.focus();
+            });
+        } else if (hasOpened.current) {
+            triggerRef.current?.focus();
         }
+    }, [isOpen]);
+
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isOpen && e.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
+
+    // Grouped navigation items (mirrored from Sidebar.tsx)
+    const managerItems: NavItem[] = [
+        { id: 'brand', icon: Briefcase, label: 'Brand Manager' },
+        { id: 'road', icon: Users, label: 'Road Manager' },
+        { id: 'campaign', icon: Megaphone, label: 'Campaign Manager' },
+        { id: 'agent', icon: Network, label: 'Agent Tools' },
+        { id: 'publicist', icon: Mic, label: 'Publicist' },
+        { id: 'creative', icon: Palette, label: 'Creative Director' },
+        { id: 'video', icon: Film, label: 'Video Producer' },
+        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
+    ];
+
+    const departmentItems: NavItem[] = [
+        { id: 'marketing', icon: Megaphone, label: 'Marketing Department' },
+        { id: 'social', icon: Network, label: 'Social Media Department' },
+        { id: 'legal', icon: Scale, label: 'Legal Department' },
+        { id: 'publishing', icon: Book, label: 'Publishing Department' },
+        { id: 'finance', icon: DollarSign, label: 'Finance Department' },
+        { id: 'licensing', icon: FileText, label: 'Licensing Department' },
+    ];
+
+    const toolItems: NavItem[] = [
+        { id: 'merch', icon: ShoppingBag, label: 'Merch Tool' },
+        { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
+        { id: 'workflow', icon: Network, label: 'Workflow Builder' },
+        { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+    ];
+
+    const handleItemClick = (id: ModuleId) => {
+        haptic('light');
+        setModule(id);
+        setIsOpen(false);
     };
 
-    const handleOverflowTabPress = (tabId: string) => {
-        // Haptic feedback for overflow tab
-        haptic('medium');
-        setModule(tabId as any);
-        setShowOverflowMenu(false);
+    const MenuItem = ({ item }: { item: NavItem }) => {
+        const isActive = currentModule === item.id;
+        const colors = getColorForModule(item.id);
+
+        return (
+            <button
+                onClick={() => handleItemClick(item.id)}
+                className={`
+                    w-full flex items-center gap-3 p-3 rounded-xl transition-all
+                    ${isActive
+                        ? `${colors.bg} ${colors.text} ring-1 ${colors.border}`
+                        : `text-gray-300 ${colors.hoverBg} ${colors.hoverText}`
+                    }
+                `}
+            >
+                <item.icon size={20} className={isActive ? 'drop-shadow-sm' : ''} />
+                <span className={`text-sm ${isActive ? 'font-semibold' : 'font-medium'}`}>
+                    {item.label}
+                </span>
+            </button>
+        );
     };
 
     return (
         <>
-            <div className="md:hidden fixed bottom-0 left-0 right-0 bg-surface/90 backdrop-blur-lg border-t border-white/10 z-50 pb-safe mobile-safe-bottom">
-                <div className="flex justify-around items-center px-2 py-1.5">
-                    {primaryTabs.map((item) => (
-                        <button
-                            key={item.id}
-                            onClick={() => handleTabPress(item.id)}
-                            className={`
-                                flex flex-col items-center gap-1 p-2.5 rounded-xl
-                                transition-all duration-200 min-w-[64px] min-h-[48px]
-                                active:scale-95 active:bg-white/5
-                                ${currentModule === item.id
-                                    ? 'text-neon-blue bg-neon-blue/10'
-                                    : 'text-white/40 hover:text-white hover:bg-white/5'
-                                }
-                            `}
-                            aria-label={item.label}
-                            aria-current={currentModule === item.id ? 'page' : undefined}
-                        >
-                            <item.icon size={22} strokeWidth={currentModule === item.id ? 2.5 : 2} />
-                            <span className={`text-[10px] font-medium transition-all ${currentModule === item.id ? 'font-semibold' : ''}`}>
-                                {item.label}
-                            </span>
-                        </button>
-                    ))}
-                </div>
-            </div>
+            {/* FAB Trigger - Replaces Bottom Bar */}
+            <button
+                ref={triggerRef}
+                onClick={() => {
+                    haptic('medium');
+                    setIsOpen(true);
+                }}
+                className="md:hidden fixed bottom-32 right-6 z-[102] p-3.5 bg-background border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-white/10 text-white"
+                aria-label="Open Navigation"
+                aria-expanded={isOpen}
+                aria-controls="mobile-nav-drawer"
+            >
+                <Menu size={24} />
+            </button>
 
-            {/* Overflow Menu Modal */}
-            {showOverflowMenu && (
-                <div className="md:hidden fixed inset-0 z-[60] flex items-end justify-center animate-in fade-in duration-200">
+            {/* Full Screen Drawer */}
+            {isOpen && (
+                <div className="md:hidden fixed inset-0 z-[103] flex items-end justify-center animate-in fade-in duration-200">
                     {/* Backdrop */}
                     <div
-                        data-testid="overflow-backdrop"
                         className="absolute inset-0 bg-black/60 backdrop-blur-sm"
                         onClick={() => {
                             haptic('light');
-                            setShowOverflowMenu(false);
+                            setIsOpen(false);
                         }}
+                        aria-hidden="true"
                     />
 
                     {/* Menu Content */}
-                    <div className="relative w-full max-w-lg bg-[#1a1a1a] border-t border-white/10 rounded-t-3xl mobile-safe-bottom p-6 animate-in slide-in-from-bottom duration-300">
+                    <div
+                        id="mobile-nav-drawer"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="mobile-nav-title"
+                        className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl"
+                    >
                         {/* Drag Handle */}
-                        <div className="flex justify-center mb-4">
+                        <div className="flex justify-center pt-3 pb-1">
                             <div className="w-12 h-1 bg-white/20 rounded-full" />
                         </div>
 
                         {/* Header */}
-                        <div className="flex items-center justify-between mb-6">
-                            <h2 className="text-lg font-semibold text-white">More Features</h2>
+                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                            <h2 id="mobile-nav-title" className="text-lg font-semibold text-white">Navigation</h2>
                             <button
+                                ref={closeButtonRef}
                                 onClick={() => {
                                     haptic('light');
-                                    setShowOverflowMenu(false);
+                                    setIsOpen(false);
                                 }}
-                                className="p-2 hover:bg-white/10 rounded-lg transition-colors active:scale-95"
+                                className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-95 text-white/60 hover:text-white"
                                 aria-label="Close menu"
                             >
-                                <X size={20} className="text-white" />
+                                <X size={20} />
                             </button>
                         </div>
 
-                        {/* Overflow Tabs Grid */}
-                        <div className="grid grid-cols-3 gap-3">
-                            {overflowTabs.map((item) => (
-                                <button
-                                    key={item.id}
-                                    onClick={() => handleOverflowTabPress(item.id)}
-                                    className={`
-                                        flex flex-col items-center gap-3 p-4 rounded-2xl
-                                        transition-all duration-200 min-h-[88px]
-                                        active:scale-95
-                                        ${currentModule === item.id
-                                            ? 'bg-neon-blue/10 text-neon-blue ring-1 ring-neon-blue/20'
-                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                        }
-                                    `}
-                                    aria-label={item.label}
-                                >
-                                    <item.icon size={28} strokeWidth={currentModule === item.id ? 2.5 : 2} />
-                                    <span className={`text-xs font-medium ${currentModule === item.id ? 'font-semibold' : ''}`}>
-                                        {item.label}
-                                    </span>
-                                </button>
-                            ))}
-                        </div>
+                        {/* Scrollable List */}
+                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
 
-                        {/* Footer Note */}
-                        <p className="text-center text-gray-500 text-xs mt-6 leading-relaxed">
-                            Use desktop for advanced workflow editing
-                        </p>
+                            {/* Return to HQ */}
+                            <button
+                                onClick={() => handleItemClick('dashboard')}
+                                className={`
+                                    w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-4
+                                    ${currentModule === 'dashboard'
+                                        ? 'bg-white/10 text-white ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                                    }
+                                `}
+                            >
+                                <Layout size={20} />
+                                <span className="text-sm font-semibold">Return to HQ</span>
+                            </button>
+
+                            {/* Manager's Office */}
+                            <div className="space-y-1">
+                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manager's Office</h3>
+                                {managerItems.map(item => (
+                                    <MenuItem key={item.id} item={item} />
+                                ))}
+                            </div>
+
+                            {/* Departments */}
+                            <div className="space-y-1">
+                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Departments</h3>
+                                {departmentItems.map(item => (
+                                    <MenuItem key={item.id} item={item} />
+                                ))}
+                            </div>
+
+                            {/* Tools */}
+                            <div className="space-y-1">
+                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools</h3>
+                                {toolItems.map(item => (
+                                    <MenuItem key={item.id} item={item} />
+                                ))}
+                            </div>
+
+                            {/* Bottom Padding for scroll */}
+                            <div className="h-6" />
+                        </div>
                     </div>
                 </div>
             )}

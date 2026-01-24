@@ -212,6 +212,7 @@ function PromptInputAction({
   ...props
 }: PromptInputActionProps) {
   const { disabled } = usePromptInput()
+  const ariaLabel = typeof tooltip === "string" ? tooltip : undefined
 
   return (
     <Tooltip {...props}>
@@ -219,6 +220,7 @@ function PromptInputAction({
         asChild
         disabled={disabled}
         onClick={(event) => event.stopPropagation()}
+        aria-label={ariaLabel}
       >
         {children}
       </TooltipTrigger>

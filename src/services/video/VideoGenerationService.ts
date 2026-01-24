@@ -4,7 +4,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
-import { functions, db, auth } from '@/services/firebase';
+import { functionsWest1 as functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -152,9 +152,32 @@ export class VideoGenerationService {
      */
     subscribeToJob(jobId: string, callback: (job: any) => void): () => void {
         const jobRef = doc(db, 'videoJobs', jobId);
+        let maxQualityLevel = 0;
+
+        const getQualityLevel = (q?: string): number => {
+            if (q === 'pro') return 2;
+            if (q === 'flash') return 1;
+            return 0;
+        };
+
         return onSnapshot(jobRef, (snapshot) => {
             if (snapshot.exists()) {
-                callback({ id: snapshot.id, ...snapshot.data() });
+                const data = snapshot.data();
+                const quality = data.output?.metadata?.quality;
+                const currentLevel = getQualityLevel(quality);
+
+                // Race Condition Protection:
+                // If we have already seen a higher quality result (e.g. Pro),
+                // ignore any subsequent lower quality updates (e.g. late arriving Flash).
+                if (currentLevel < maxQualityLevel) {
+                    return;
+                }
+
+                if (currentLevel > maxQualityLevel) {
+                    maxQualityLevel = currentLevel;
+                }
+
+                callback({ id: snapshot.id, ...data });
             } else {
                 callback(null);
             }
@@ -173,7 +196,13 @@ export class VideoGenerationService {
                 if (!job) return;
                 if (job.status === 'completed' || job.status === 'failed') {
                     if (job.status === 'completed') {
-                        resolve(job);
+                        // Enforce MIME Type Guard for Veo 3.1 Compliance
+                        const mimeType = job.output?.metadata?.mime_type;
+                        if (mimeType && mimeType !== 'video/mp4') {
+                            reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
+                        } else {
+                            resolve(job);
+                        }
                     } else {
                         reject(new Error(job.error || 'Video generation failed.'));
                     }
@@ -203,6 +232,8 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
+        generateAudio?: boolean;
+        model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
@@ -244,6 +275,8 @@ export class VideoGenerationService {
             aspectRatio: targetAspectRatio,
             resolution: options.resolution,
             seed: options.seed,
+            generateAudio: options.generateAudio,
+            model: options.model,
             negativePrompt: options.negativePrompt,
         });
 
@@ -257,15 +290,13 @@ export class VideoGenerationService {
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
-        const { functions } = await import('../firebase');
-        const { httpsCallable } = await import('firebase/functions');
-
         const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
         const jobId = uuidv4();
 
         await triggerVideoJob({
             ...options,
+            generateAudio: options.generateAudio,
             jobId,
         });
 

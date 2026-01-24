@@ -36,11 +36,33 @@ export class AgentExecutor {
 
         if (!agent) {
             console.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
-            agent = await agentRegistry.getAsync('generalist');
+
+            // Try lowercase version first (handle LLM casing hallucinations)
+            if (agentId !== agentId.toLowerCase()) {
+                const lowerId = agentId.toLowerCase();
+                agent = await agentRegistry.getAsync(lowerId);
+            }
+
+            // If still not found, fallback to Generalist
+            if (!agent) {
+                agent = await agentRegistry.getAsync('generalist');
+            }
         }
 
         if (!agent) {
-            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load.`);
+            // Get diagnostic info about why the load failed
+            const loadError = agentRegistry.getLoadError('generalist');
+            const errorDetail = loadError
+                ? `Last error: ${loadError.error.message} (${loadError.attempts} attempts)`
+                : 'No error details available';
+
+            console.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
+                requestedAgentId: agentId,
+                generalistLoadError: loadError,
+                registeredAgents: agentRegistry.getAll().map(a => a.id)
+            });
+
+            throw new Error(`[AgentExecutor] Fatal: No agent found for ID '${agentId}' and fallback Generalist failed to load. ${errorDetail}`);
         }
 
         const userId = auth.currentUser?.uid || 'anonymous';
@@ -96,7 +118,13 @@ export class AgentExecutor {
 
             const response = await agent.execute(userGoal, context, interceptedOnProgress, signal, attachments);
 
-            await TraceService.completeTrace(traceId, response);
+            // Sanitize response to remove functions before persistence
+            const safeResponse = JSON.parse(JSON.stringify(response, (key, value) => {
+                if (typeof value === 'function') return undefined; // Explicitly drop functions
+                return value;
+            }));
+
+            await TraceService.completeTrace(traceId, safeResponse);
             return response;
         } catch (e: unknown) {
             const errorMsg = e instanceof Error ? e.message : String(e);

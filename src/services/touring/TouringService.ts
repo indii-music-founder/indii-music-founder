@@ -9,7 +9,8 @@ import {
     doc,
     updateDoc,
     serverTimestamp,
-    onSnapshot
+    onSnapshot,
+    Timestamp
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary } from '@/modules/touring/types';
 import { z } from 'zod';
@@ -18,7 +19,7 @@ const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
 
 // Zod Schemas for Runtime Validation
-const ItineraryStopSchema = z.object({
+export const ItineraryStopSchema = z.object({
     date: z.string(),
     city: z.string(),
     venue: z.string(),
@@ -28,25 +29,25 @@ const ItineraryStopSchema = z.object({
     distance: z.number().optional()
 });
 
-const ItinerarySchema = z.object({
+export const ItinerarySchema = z.object({
     userId: z.string(),
     tourName: z.string(),
     stops: z.array(ItineraryStopSchema),
     totalDistance: z.string(),
     estimatedBudget: z.string(),
-    createdAt: z.any().optional(),
-    updatedAt: z.any().optional()
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
 });
 
-const VehicleStatsSchema = z.object({
+export const VehicleStatsSchema = z.object({
     userId: z.string(),
     milesDriven: z.number(),
     fuelLevelPercent: z.number(),
     tankSizeGallons: z.number(),
     mpg: z.number(),
     gasPricePerGallon: z.number(),
-    createdAt: z.any().optional(),
-    updatedAt: z.any().optional()
+    createdAt: z.instanceof(Timestamp).optional(),
+    updatedAt: z.instanceof(Timestamp).optional()
 });
 
 export const TouringService = {

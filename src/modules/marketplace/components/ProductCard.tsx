@@ -9,7 +9,7 @@ interface ProductCardProps {
     variant?: 'default' | 'embedded';
 }
 
-export default function ProductCard({ product, variant = 'default' }: ProductCardProps) {
+const ProductCard = React.memo(({ product, variant = 'default' }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
     const currentUser = useStore((state) => state.userProfile);
@@ -44,10 +44,12 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                             src={product.images[0]}
                             alt={product.title}
                             className="w-full h-full object-cover"
+                            // ⚡ Bolt Optimization: Offload decoding from main thread
+                            decoding="async"
                         />
                     ) : (
                         <div className="w-full h-full bg-gradient-to-br from-indigo-500/20 to-purple-500/20 flex items-center justify-center">
-                            <ShoppingBag className="text-white/20" size={24} />
+                            <ShoppingBag className="text-white/20" size={24} aria-hidden="true" />
                         </div>
                     )}
                 </div>
@@ -66,6 +68,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                     <button
                         onClick={handlePurchase}
                         disabled={purchasing || purchased || product.inventory === 0}
+                        aria-label={purchased ? `Owned: ${product.title}` : `Buy ${product.title} for ${product.currency} ${product.price}`}
                         className={`w-full mt-auto py-1.5 px-3 rounded text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
@@ -73,10 +76,10 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                             }`}
                     >
                         {purchasing ? (
-                            <Loader2 size={12} className="animate-spin" />
+                            <Loader2 size={12} className="animate-spin" aria-hidden="true" />
                         ) : purchased ? (
                             <>
-                                <Check size={12} /> Owned
+                                <Check size={12} aria-hidden="true" /> Owned
                             </>
                         ) : (
                             <>
@@ -99,10 +102,12 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                         src={product.images[0]}
                         alt={product.title}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        // ⚡ Bolt Optimization: Offload decoding from main thread
+                        decoding="async"
                     />
                 ) : (
                     <div className="w-full h-full bg-gradient-to-br from-indigo-500/10 to-purple-500/10 flex items-center justify-center group-hover:from-indigo-500/20 group-hover:to-purple-500/20 transition-colors">
-                        <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} />
+                        <ShoppingBag className="text-white/20 group-hover:text-white/40 transition-colors" size={48} aria-hidden="true" />
                     </div>
                 )}
 
@@ -131,6 +136,7 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                     <button
                         onClick={handlePurchase}
                         disabled={purchasing || purchased || product.inventory === 0}
+                        aria-label={purchased ? `Owned: ${product.title}` : `Purchase ${product.title} for ${product.currency} ${product.price}`}
                         className={`px-4 py-2 rounded-lg font-semibold text-sm flex items-center gap-2 transition-all
                             ${purchased
                                 ? 'bg-green-600/20 text-green-400 cursor-default'
@@ -139,12 +145,12 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
                     >
                         {purchasing ? (
                             <>
-                                <Loader2 size={16} className="animate-spin" />
+                                <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                                 Processing...
                             </>
                         ) : purchased ? (
                             <>
-                                <Check size={16} />
+                                <Check size={16} aria-hidden="true" />
                                 In Collection
                             </>
                         ) : (
@@ -155,4 +161,8 @@ export default function ProductCard({ product, variant = 'default' }: ProductCar
             </div>
         </div>
     );
-}
+});
+
+ProductCard.displayName = 'ProductCard';
+
+export default ProductCard;

@@ -1,24 +1,26 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
-import { AgentSlice, createAgentSlice } from '@/core/store/slices/agentSlice';
 
-// Mock SessionService
 const { mockUpdateSession, mockGetSessionsForUser } = vi.hoisted(() => ({
     mockUpdateSession: vi.fn().mockResolvedValue(true),
     mockGetSessionsForUser: vi.fn().mockResolvedValue([])
 }));
 
+// 2. Mock the service
 vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
-        getSessionsForUser: mockGetSessionsForUser
+        getSessionsForUser: mockGetSessionsForUser,
+        createSession: vi.fn().mockResolvedValue('new-session-id')
     }
 }));
+
+import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
 
 describe('📚 Keeper: Persistence', () => {
     let api: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
 
         // Create a minimal Zustand store harness
@@ -28,12 +30,15 @@ describe('📚 Keeper: Persistence', () => {
 
         // Ensure we have a session to work with
         api.getState().createSession('Test Session', ['indii']);
+        // Wait for the async persistence of the session creation to settle
+        await new Promise(resolve => setTimeout(resolve, 100));
+        vi.clearAllMocks();
     });
 
     it('should persist conversation history to SessionService when adding a message', async () => {
-        const newMessage = {
+        const newMessage: AgentMessage = {
             id: 'msg-1',
-            role: 'user' as const,
+            role: 'user',
             text: 'Hello, Keeper!',
             timestamp: Date.now()
         };
@@ -41,10 +46,8 @@ describe('📚 Keeper: Persistence', () => {
         // Action: Add Message
         api.getState().addAgentMessage(newMessage);
 
-        // Allow async import to resolve
-        // In the real code, it's a dynamic import promise chain.
-        // We need to wait for microtasks.
-        await new Promise(resolve => setTimeout(resolve, 50));
+        // Allow async import to resolve - slice uses dynamic import
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Assert: State is updated
         const state = api.getState();
@@ -52,7 +55,6 @@ describe('📚 Keeper: Persistence', () => {
         expect(state.agentHistory[0].text).toBe('Hello, Keeper!');
 
         // Assert: Persistence is called
-        // Use waitFor to handle async SessionService import and call
         await vi.waitFor(() => {
             expect(mockUpdateSession).toHaveBeenCalled();
         }, { timeout: 1000, interval: 50 });
@@ -66,12 +68,12 @@ describe('📚 Keeper: Persistence', () => {
     it('should persist cleared history to SessionService', async () => {
         // Setup: Add a message first
         api.getState().addAgentMessage({ id: 'msg-1', role: 'user', text: 'To be deleted', timestamp: Date.now() });
-        await new Promise(resolve => setTimeout(resolve, 50)); // clear previous persistence call
+        await new Promise(resolve => setTimeout(resolve, 100));
         mockUpdateSession.mockClear();
 
         // Action: Clear History
         api.getState().clearAgentHistory();
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Assert: State is cleared
         const state = api.getState();
@@ -89,12 +91,12 @@ describe('📚 Keeper: Persistence', () => {
     it('should persist message updates (e.g. streaming chunks) to SessionService', async () => {
         // Setup
         api.getState().addAgentMessage({ id: 'msg-1', role: 'model', text: 'Think...', timestamp: Date.now() });
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
         mockUpdateSession.mockClear();
 
         // Action: Update Message
         api.getState().updateAgentMessage('msg-1', { text: 'Thinking complete.' });
-        await new Promise(resolve => setTimeout(resolve, 50));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Assert: Persistence called
         await vi.waitFor(() => {

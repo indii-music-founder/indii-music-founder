@@ -4,6 +4,7 @@ import { ConversationSession } from '@/core/store/slices/agentSlice'; // Direct 
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
 import { where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { cleanFirestoreData } from '@/services/utils/firebase';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {
@@ -31,7 +32,11 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         };
 
         // We use set since we already generated an ID in the store
-        await this.set(session.id, doc);
+        await this.set(session.id, cleanFirestoreData(doc));
+
+        // KEEPER: Dual Write for Electron Local Persistence
+        this.saveToLocal(session.id, session);
+
         return session.id;
     }
 
@@ -46,7 +51,30 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             delete firestoreUpdates.createdAt;
         }
 
-        await this.update(id, firestoreUpdates);
+        await this.update(id, cleanFirestoreData(firestoreUpdates));
+
+        // KEEPER: Dual Write for Electron Local Persistence
+        this.saveToLocal(id, updates);
+    }
+
+    async deleteSession(id: string): Promise<void> {
+        await this.delete(id);
+
+        // KEEPER: Dual Write for Electron Local Persistence (Forget)
+        if (window.electronAPI?.agent?.deleteHistory) {
+            window.electronAPI.agent.deleteHistory(id).catch(err => {
+                console.error('[SessionService] Failed to delete local history:', err);
+            });
+        }
+    }
+
+    private saveToLocal(id: string, data: any) {
+        if (window.electronAPI?.agent?.saveHistory) {
+            // Fire and forget (or await if strict consistency needed)
+            window.electronAPI.agent.saveHistory(id, data).catch(err => {
+                console.error('[SessionService] Failed to save to local history:', err);
+            });
+        }
     }
 
     async getSessionsForUser(): Promise<ConversationSession[]> {
@@ -72,7 +100,3 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 }
 
 export const sessionService = new SessionServiceImpl();
-
-if (import.meta.env.DEV || (typeof window !== 'undefined' && (window as any).__TEST_MODE__)) {
-    (window as any).sessionService = sessionService;
-}

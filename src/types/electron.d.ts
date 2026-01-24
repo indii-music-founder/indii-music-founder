@@ -1,3 +1,5 @@
+import * as DistributionTypes from './distribution';
+
 export interface AuthTokenData {
     idToken: string;
     accessToken?: string | null;
@@ -18,6 +20,8 @@ export interface ElectronAPI {
     getPlatform: () => Promise<string>;
     getAppVersion: () => Promise<string>;
     setPrivacyMode: (enabled: boolean) => Promise<void>;
+    selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
+    selectDirectory: (options?: { title?: string }) => Promise<string | null>;
 
     // Auth (Secure Main Process Flow)
     auth: {
@@ -50,6 +54,15 @@ export interface ElectronAPI {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
         performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
+        saveHistory: (id: string, data: any) => Promise<{ success: boolean; error?: string }>;
+        getHistory: (id: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+        deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
+    };
+
+    // Video (Local Asset Management)
+    video: {
+        saveAsset: (url: string, filename: string) => Promise<string>;
+        openFolder: (filePath?: string) => Promise<void>;
     };
 
     // Credentials
@@ -61,13 +74,37 @@ export interface ElectronAPI {
 
     // Distribution (DDEX Packaging)
     distribution: {
-        stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<{ success: boolean; packagePath?: string; files?: string[]; error?: string }>;
+        stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
+        runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<any>>;
+        packageITMSP: (releaseId: string) => Promise<DistributionTypes.PackageResponse>;
+        calculateTax: (data: DistributionTypes.TaxCalculationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
+        certifyTax: (userId: string, data: DistributionTypes.TaxCertificationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
+        executeWaterfall: (data: DistributionTypes.WaterfallData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.WaterfallReport>>;
+        validateMetadata: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
+        generateISRC: (options?: DistributionTypes.ISRCGenerationOptions) => Promise<DistributionTypes.ISRCResponse>;
+        generateUPC: (options?: DistributionTypes.UPCGenerationOptions) => Promise<DistributionTypes.UPCResponse>;
+        registerRelease: (metadata: any, releaseId?: string) => Promise<DistributionTypes.IPCResponse<any>>;
+        generateDDEX: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.DDEXResponse>;
+        generateContentIdCSV: (data: DistributionTypes.ContentIdData) => Promise<DistributionTypes.CSVResponse<DistributionTypes.ContentIdReport>>;
+        generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<any>>;
+        checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
+        transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
     };
+    on: (channel: string, callback: (...args: any[]) => void) => () => void;
 }
 
 declare global {
     interface Window {
         electronAPI?: ElectronAPI;
+        MSStream?: any; // Legacy iOS detection
+    }
+
+    interface Navigator {
+        standalone?: boolean; // iOS PWA detection
+        wakeLock?: {
+            request: (type: 'screen') => Promise<any>;
+        };
+        getBattery?: () => Promise<any>;
     }
 }
 

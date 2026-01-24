@@ -48,7 +48,7 @@ export function TraceViewer() {
         <div className="flex flex-col h-full w-full p-4 space-y-4">
             <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-bold tracking-tight">Agent Observability</h2>
-                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-[400px]">
                     <TabsList className="grid w-full grid-cols-2">
                         <TabsTrigger
                             value="list"
@@ -82,14 +82,17 @@ export function TraceViewer() {
                                 <ScrollArea className="h-full">
                                     <div className="space-y-1 p-2">
                                         {traces.map((trace) => (
-                                            <div
+                                            <button
                                                 key={trace.id}
+                                                type="button"
                                                 onClick={() => setSelectedTrace(trace)}
-                                                className={`p-3 rounded-md border border-transparent cursor-pointer hover:bg-white/5 transition-all ${selectedTrace?.id === trace.id ? 'bg-white/10 border-white/10 shadow-lg ring-1 ring-white/10' : ''
+                                                aria-pressed={selectedTrace?.id === trace.id}
+                                                className={`w-full text-left p-3 rounded-md border border-transparent cursor-pointer hover:bg-white/5 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/20 ${selectedTrace?.id === trace.id ? 'bg-white/10 border-white/10 shadow-lg ring-1 ring-white/10' : ''
                                                     }`}
                                             >
                                                 <div className="flex justify-between items-start mb-1">
                                                     <Badge variant={getStatusColor(trace.status) as any} className="text-[10px] py-0 px-1.5 h-4">
+                                                        <span className="sr-only">Status: {trace.status}</span>
                                                         {trace.agentId}
                                                     </Badge>
                                                     <span className="text-[10px] text-muted-foreground">
@@ -99,7 +102,7 @@ export function TraceViewer() {
                                                 <div className="text-xs line-clamp-1 text-muted-foreground font-mono">
                                                     {trace.input}
                                                 </div>
-                                            </div>
+                                            </button>
                                         ))}
                                     </div>
                                 </ScrollArea>

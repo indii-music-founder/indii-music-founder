@@ -1,9 +1,9 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { functions } from '@/services/firebase';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
-import { isInlineDataPart } from '@/shared/types/ai.dto';
+// isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -22,6 +22,11 @@ export interface ImageGenerationOptions {
     // Distributor-aware options
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
+    // Gemini 3 Configuration
+    model?: 'fast' | 'pro';
+    thinking?: boolean;
+    mediaResolution?: 'low' | 'medium' | 'high';
+    useGrounding?: boolean;
 }
 
 export interface RemixOptions {
@@ -79,11 +84,22 @@ export class ImageGenerationService {
         const count = options.count || 1;
 
         // Pre-flight quota check
-        const quotaCheck = await subscriptionService.canPerformAction('generateImage', count);
+        const userId = options.userProfile?.id;
+        const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
         if (!quotaCheck.allowed) {
+            let tier: any = 'free'; // Using any to bypass strict enum mismatch if needed, but MembershipTier includes 'free'
+            try {
+                const sub = userId
+                    ? await subscriptionService.getSubscription(userId)
+                    : await subscriptionService.getCurrentSubscription();
+                tier = sub.tier;
+            } catch (e) {
+                console.warn("Failed to fetch tier for QuotaExceededError, defaulting to free", e);
+            }
+
             throw new QuotaExceededError(
                 'images',
-                (await subscriptionService.getCurrentSubscription().then(s => s.tier)),
+                tier,
                 quotaCheck.reason || 'Quota exceeded',
                 quotaCheck.currentUsage?.used || 0,
                 quotaCheck.currentUsage?.limit || count
@@ -101,6 +117,10 @@ export class ImageGenerationService {
                 aspectRatio: aspectRatio,
                 count: count,
                 images: options.sourceImages?.length ? options.sourceImages : [],
+                model: options.model || 'fast',
+                thinking: options.thinking ?? false,
+                mediaResolution: options.mediaResolution || 'medium',
+                useGrounding: options.useGrounding ?? false
             });
 
             interface GenerateImageResponse {
@@ -116,17 +136,53 @@ export class ImageGenerationService {
                 return [];
             }
 
-            for (const img of data.images) {
-                if (img.bytesBase64Encoded) {
-                    const mimeType = img.mimeType || 'image/png';
-                    const url = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url,
-                        prompt: options.prompt
-                    });
+            // Bolt Optimization: Parallelize image processing and uploading
+            // processing images in parallel significantly reduces total latency for batches (count > 1)
+            const promises = data.images.map(async (img) => {
+                if (!img.bytesBase64Encoded) return null;
+
+                const mimeType = img.mimeType || 'image/png';
+                const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                const id = crypto.randomUUID();
+
+                let finalUrl = dataUri;
+
+                try {
+                    const { useStore } = await import('@/core/store');
+                    const userId = useStore.getState().userProfile?.id;
+
+                    if (userId) {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                        finalUrl = saved.url;
+                    }
+                } catch (e) {
+                    console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                    try {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
+                        const compressed = await CloudStorageService.compressImage(dataUri, {
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            quality: 0.6
+                        });
+                        finalUrl = compressed.dataUri;
+                    } catch (compressionError) {
+                        console.warn("Compression failed, using original size:", compressionError);
+                    }
                 }
-            }
+
+                return {
+                    id,
+                    url: finalUrl,
+                    prompt: options.prompt
+                };
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (err: any) {
             console.error("❌ Image Generation Error:", err);
             console.error("Error details:", {
@@ -135,20 +191,6 @@ export class ImageGenerationService {
                 details: err?.details,
                 stack: err?.stack?.substring(0, 500)
             });
-
-            // MOCK FALLBACK FOR DEV/DEMO (When Cloud Function fails or permissions deny)
-            if (import.meta.env.DEV || process.env.NODE_ENV === 'development') {
-                console.warn("⚠️ Using Mock Fallback for Image Generation");
-                console.warn("This means the Cloud Function call failed. Check the error above.");
-                // Return a generated placeholder
-                const mockId = crypto.randomUUID();
-                results.push({
-                    id: mockId,
-                    url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==', // Red dot placeholder
-                    prompt: options.prompt + " (MOCK)"
-                });
-                return results;
-            }
 
             throw err;
         }
@@ -198,22 +240,26 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.IMAGE.GENERATION,
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: options.contentImage.mimeType, data: options.contentImage.data } }, { text: "Content Ref" },
-                        { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } }, { text: "Style Ref" },
-                        { text: `Generate: ${options.prompt || "Fusion"}` }
-                    ]
-                },
-                config: AI_CONFIG.IMAGE.DEFAULT
+            // Use Cloud Function for image generation (properly uses REST API)
+            const generateImage = httpsCallable(functions, 'generateImageV3');
+
+            const result = await generateImage({
+                prompt: `Blend these two images together. Content reference should define the subject/composition. Style reference should define the artistic style, colors, and mood. ${options.prompt || 'Create a cohesive fusion.'}`,
+                images: [
+                    { mimeType: options.contentImage.mimeType, data: options.contentImage.data },
+                    { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                ],
+                aspectRatio: '1:1'
             });
 
-            const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            if (part && isInlineDataPart(part)) {
-                return { url: `data:${part.inlineData.mimeType};base64,${part.inlineData.data}` };
+            interface GenerateImageResponse {
+                images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+            }
+            const data = result.data as GenerateImageResponse;
+
+            if (data.images?.[0]?.bytesBase64Encoded) {
+                const mimeType = data.images[0].mimeType || 'image/png';
+                return { url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}` };
             }
             return null;
         } catch (e) {
@@ -252,38 +298,76 @@ export class ImageGenerationService {
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         const results: { id: string, url: string, prompt: string }[] = [];
-        try {
-            for (const target of options.targetImages) {
-                const response = await AI.generateContent({
-                    model: AI_MODELS.IMAGE.GENERATION,
-                    contents: {
-                        role: 'user',
-                        parts: [
-                            { inlineData: { mimeType: target.mimeType, data: target.data } },
-                            { text: "[Content Reference]" },
-                            { inlineData: { mimeType: options.styleImage.mimeType, data: options.styleImage.data } },
-                            { text: "[Style Reference]" },
-                            { text: `Render the Content image exactly in the style of the Reference image. ${options.prompt || "Restyle"}` }
-                        ]
-                    },
-                    config: AI_CONFIG.IMAGE.DEFAULT
-                });
+        const generateImage = httpsCallable(functions, 'generateImageV3');
 
-                const part = response.response.candidates?.[0]?.content?.parts?.[0];
-                if (part && isInlineDataPart(part)) {
-                    const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url,
-                        prompt: `Batch Style: ${options.prompt || "Restyle"}`
+        try {
+            // Bolt Optimization: Parallelize requests to improve batch latency
+            const promises = options.targetImages.map(async (target) => {
+                try {
+                    // Determine aspect ratio based on target image dimensions
+                    let aspectRatio = '1:1';
+                    if (target.width && target.height) {
+                        if (target.width > target.height * 1.2) aspectRatio = '16:9';
+                        else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                    }
+
+                    const result = await generateImage({
+                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        images: [
+                            { mimeType: target.mimeType, data: target.data },
+                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                        ],
+                        aspectRatio
                     });
+
+                    interface GenerateImageResponse {
+                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+                    }
+                    const data = result.data as GenerateImageResponse;
+
+                    if (data.images?.[0]?.bytesBase64Encoded) {
+                        const mimeType = data.images[0].mimeType || 'image/png';
+                        return {
+                            id: crypto.randomUUID(),
+                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Individual Batch Remix Error:", error);
+                    return null;
                 }
-            }
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (e) {
             console.error("Batch Remix Error:", e);
             throw e;
         }
         return results;
+    }
+
+    async editImage(options: {
+        image: string;
+        prompt: string;
+        mask?: string;
+        referenceImage?: string;
+        imageMimeType?: string;
+        maskMimeType?: string;
+        refMimeType?: string;
+    }): Promise<any> {
+        try {
+            const editImage = httpsCallable(functions, 'editImage');
+            const result = await editImage(options);
+            return result.data;
+        } catch (e) {
+            console.error("Image Edit Error:", e);
+            throw e;
+        }
     }
 
     /**

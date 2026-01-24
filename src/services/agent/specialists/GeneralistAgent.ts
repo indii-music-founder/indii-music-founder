@@ -1,9 +1,11 @@
 import { BaseAgent } from '../BaseAgent';
-import { useStore } from '@/core/store';
-import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
+// useStore removed to prevent circular dependency - dynamically imported in execute()
+// TOOL_REGISTRY removed to prevent circular dependency
+// import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
+import { WhiskState } from '@/core/store/slices/creativeSlice';
 
 /**
  * GeneralistAgent (Agent Zero) - The primary orchestrator and fallback agent.
@@ -55,16 +57,20 @@ export class GeneralistAgent extends BaseAgent {
 * **File Management:** You can list and search generated files using 'list_files' and 'search_files'. Use this to help the user find past work.
 * **Organization:** You can switch contexts using 'switch_organization' or 'create_organization' if the user asks to change workspaces.
 * **Creative Generation:** Use 'generate_image' to create visuals and 'generate_video' to create videos. DO NOT just describe - GENERATE.
+* **Speech:** Use 'speak' to announce high-level intent or share creative insights. **CRITICAL:** Calling 'speak' does NOT fulfill a "generate", "create", or "make" request. You MUST call the relevant action tool (e.g., 'generate_image') in addition to 'speak'.
 `;
 
     systemPrompt = `You are indii, the Autonomous Studio Manager (Agent Zero).
 ${this.AGENT0_PROTOCOL}
 
 CRITICAL RULES:
-1. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
-2. When asked to create video content, use 'generate_video'.
-3. Be proactive - if a tool can help, use it immediately.
-4. For complex tasks, break them into steps and execute each one.
+1. **Naming & Identity:** You are the guardian of the Project's identity. ALWAYS capture and pass the Project Title and Artist Name from the context to your specialists. STRICTLY follow provided names. NEVER hallucinate or invent new names.
+2. When the user asks to "generate", "create", or "make" an image/visual, you MUST use the 'generate_image' tool. Do not just describe it.
+3. When asked to create video content, use 'generate_video'.
+4. **STOP AFTER COMPLETION:** Once you have fulfilled the user's request, STOP. Do NOT call additional tools. Do NOT generate more content unless explicitly asked. Do NOT send notifications or delegate tasks unless specifically requested.
+5. **NO VIDEO HALLUCINATIONS:** DO NOT generate video content unless the user explicitly asks for "video", "motion", "clip", or "animation". For "album art" or "images", ONLY use 'generate_image'.
+5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
+6. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
 `;
 
     tools: ToolDefinition[] = [];
@@ -80,15 +86,23 @@ CRITICAL RULES:
             tools: []
         });
 
-        // GeneralistAgent has access to the FULL TOOL_REGISTRY
-        this.functions = TOOL_REGISTRY;
-
-        // Build native function declarations from TOOL_REGISTRY
-        this.tools = this.buildToolDeclarations();
+        // Initialization moved to async initialize() to prevent circular execution
     }
 
     /**
-     * Builds native Gemini function declarations from the TOOL_REGISTRY.
+     * Initializes the agent by loading tools dynamically.
+     * This must be called after instantiation by the registry.
+     */
+    async initialize() {
+        const { TOOL_REGISTRY } = await import('../tools');
+        this.functions = TOOL_REGISTRY;
+        this.tools = this.buildToolDeclarations();
+    }
+
+
+
+    /**
+     * Builds native Gemini function declarations from the TOOL_REGISTRY(conceptually).
      * This enables proper function calling instead of JSON parsing.
      */
     private buildToolDeclarations(): ToolDefinition[] {
@@ -104,7 +118,9 @@ CRITICAL RULES:
                         prompt: { type: 'STRING', description: 'Detailed visual description of the image to generate.' },
                         style: { type: 'STRING', description: 'Optional artistic style (e.g., "photorealistic", "anime", "oil painting").' },
                         aspectRatio: { type: 'STRING', description: 'Aspect ratio (e.g., "16:9", "1:1", "9:16").' },
-                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' }
+                        negativePrompt: { type: 'STRING', description: 'What to avoid in the image.' },
+                        quality: { type: 'STRING', description: 'Generation quality: "standard" or "hd".' },
+                        count: { type: 'NUMBER', description: 'Number of images to generate (max 4).' }
                     },
                     required: ['prompt']
                 }
@@ -351,14 +367,19 @@ RECENT UPLOADS (Reference by Index):
 ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${img.subject ? img.subject + ' - ' : ''}${img.category ? img.category.toUpperCase() + ': ' : ''}${img.prompt || 'Uploaded Image'} (${img.type}) ${img.tags ? '(' + img.tags.join(', ') + ')' : ''}`).slice(0, 10).join('\n') || 'None'}
 ` : '';
 
+        // Build Reference Mixer context (Whisk) - Use inherited method
+        const whiskContext = context?.whiskState ? this.buildWhiskContext(context.whiskState) : '';
+
         const fullSystemPrompt = `${this.systemPrompt}
 ${orgContext}
 ${brandContext}
+${whiskContext}
 
 MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
 - User requests for "images", "visuals", "scenes" MUST be handled by 'generate_image'.
 - DO NOT just describe the image. YOU MUST GENERATE IT.
+- DO NOT use 'search_assets' or 'search_files' when the user asks to CREATE something new. Only use them when explicitly asked to FIND existing files.
 `;
 
         // Build conversation history
@@ -379,7 +400,7 @@ CURRENT REQUEST: ${task}
 
         // Execution loop with native function calling
         let iterations = 0;
-        const MAX_ITERATIONS = 5;
+        const MAX_ITERATIONS = 15;
         let accumulatedResponse = '';
         let lastToolCall: { name: string; args: string } | null = null;
 
@@ -391,6 +412,9 @@ CURRENT REQUEST: ${task}
             }
 
             try {
+                // DEBUG: Log tool declarations being sent to model
+                const toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
+
                 const { stream, response: responsePromise } = await AI.generateContentStream({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{
@@ -439,13 +463,14 @@ CURRENT REQUEST: ${task}
                         }
                     }
                 } catch (streamError) {
-                    console.warn('[GeneralistAgent] Stream read interrupted:', streamError);
+                    console.warn('[indii:AgentZero] Stream read interrupted:', streamError);
                 }
 
                 const response = await responsePromise;
 
                 // Check for function calls (native function calling)
-                const functionCall = response.functionCalls?.()?.[0];
+                const allFunctionCalls = response.functionCalls?.() || [];
+                const functionCall = allFunctionCalls[0];
 
                 if (functionCall) {
                     const { name, args } = functionCall;
@@ -472,31 +497,35 @@ CURRENT REQUEST: ${task}
                             const msg = err instanceof Error ? err.message : String(err);
                             result = { success: false, error: msg, message: `Tool error: ${msg}` };
                         }
-                    } else if (TOOL_REGISTRY[name]) {
-                        try {
-                            result = await TOOL_REGISTRY[name](args);
-                        } catch (err: unknown) {
-                            const msg = err instanceof Error ? err.message : String(err);
-                            result = { success: false, error: msg, message: `Tool error: ${msg}` };
-                        }
                     } else {
-                        // Enhanced error: find similar tools
-                        const allToolNames = Object.keys(TOOL_REGISTRY);
-                        const nameLower = name.toLowerCase();
-                        const suggestions = allToolNames
-                            .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
-                            .slice(0, 5);
+                        // Dynamic try
+                        const { TOOL_REGISTRY } = await import('../tools');
+                        if (TOOL_REGISTRY[name]) {
+                            try {
+                                result = await TOOL_REGISTRY[name](args);
+                            } catch (err: unknown) {
+                                const msg = err instanceof Error ? err.message : String(err);
+                                result = { success: false, error: msg, message: `Tool error: ${msg}` };
+                            }
+                        } else {
+                            // Enhanced error: find similar tools
+                            const allToolNames = Object.keys(TOOL_REGISTRY);
+                            const nameLower = name.toLowerCase();
+                            const suggestions = allToolNames
+                                .filter(t => t.toLowerCase().includes(nameLower) || nameLower.includes(t.toLowerCase()))
+                                .slice(0, 5);
 
-                        const suggestionText = suggestions.length > 0
-                            ? ` Did you mean: ${suggestions.join(', ')}?`
-                            : '';
+                            const suggestionText = suggestions.length > 0
+                                ? ` Did you mean: ${suggestions.join(', ')}?`
+                                : '';
 
-                        console.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
-                        result = {
-                            success: false,
-                            error: `Tool '${name}' not found.${suggestionText}`,
-                            message: `Tool '${name}' not found.${suggestionText}`
-                        };
+                            console.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
+                            result = {
+                                success: false,
+                                error: `Tool '${name}' not found.${suggestionText}`,
+                                message: `Tool '${name}' not found.${suggestionText}`
+                            };
+                        }
                     }
 
                     const outputText = typeof result === 'string'
@@ -522,7 +551,7 @@ CURRENT REQUEST: ${task}
 
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.error('[GeneralistAgent] Error:', err);
+                console.error('[indii:AgentZero] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
                 if (iterations >= MAX_ITERATIONS) {

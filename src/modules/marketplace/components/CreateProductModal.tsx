@@ -50,19 +50,29 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-title"
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-lg shadow-2xl flex flex-col">
                 <div className="p-4 border-b border-gray-800 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-white">List New Product</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-800 rounded-lg text-gray-400">
+                    <h2 id="modal-title" className="text-lg font-bold text-white">List New Product</h2>
+                    <button
+                        onClick={onClose}
+                        className="p-2 hover:bg-gray-800 rounded-lg text-gray-400"
+                        aria-label="Close modal"
+                    >
                         <X size={20} />
                     </button>
                 </div>
 
                 <form onSubmit={handleSubmit} className="p-6 space-y-4">
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
+                        <label htmlFor="product-title" className="block text-sm font-medium text-gray-400 mb-1">Title</label>
                         <input
+                            id="product-title"
                             required
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
@@ -72,8 +82,9 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Description</label>
+                        <label htmlFor="product-description" className="block text-sm font-medium text-gray-400 mb-1">Description</label>
                         <textarea
+                            id="product-description"
                             required
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
@@ -84,10 +95,11 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
 
                     <div className="grid grid-cols-2 gap-4">
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Price (USD)</label>
+                            <label htmlFor="product-price" className="block text-sm font-medium text-gray-400 mb-1">Price (USD)</label>
                             <div className="relative">
-                                <DollarSign size={16} className="absolute left-3 top-3 text-gray-500" />
+                                <DollarSign size={16} className="absolute left-3 top-3 text-gray-500" aria-hidden="true" />
                                 <input
+                                    id="product-price"
                                     type="number"
                                     step="0.01"
                                     required
@@ -99,8 +111,9 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Type</label>
+                            <label htmlFor="product-type" className="block text-sm font-medium text-gray-400 mb-1">Type</label>
                             <select
+                                id="product-type"
                                 value={type}
                                 onChange={(e) => setType(e.target.value as ProductType)}
                                 className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 text-white focus:border-blue-500 outline-none appearance-none"

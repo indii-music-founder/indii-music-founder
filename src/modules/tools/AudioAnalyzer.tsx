@@ -29,6 +29,7 @@ const AudioAnalyzer: React.FC = () => {
     const [file, setFile] = useState<File | null>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [isFromCache, setIsFromCache] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
     const [currentTime, setCurrentTime] = useState(0);
@@ -134,9 +135,14 @@ const AudioAnalyzer: React.FC = () => {
 
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
+        setIsFromCache(false);
+
         try {
             // Run Analysis
-            const result = await audioAnalysisService.analyze(audioFile);
+            const { features: result, fromCache } = await audioAnalysisService.analyze(audioFile);
+
+            setIsFromCache(fromCache);
+
             setFeatures({
                 bpm: result.bpm,
                 key: `${result.key} ${result.scale}`,
@@ -254,7 +260,40 @@ const AudioAnalyzer: React.FC = () => {
     };
 
     const handleSaveAnalysis = async () => {
-        toast.info("Local save functionality currently in laboratory testing.");
+        if (!file || isAnalyzing) return;
+
+        setIsSaving(true);
+        try {
+            // Re-generate hash if needed (though it should be available from runAnalysis)
+            // But for simplicity, we use the values we already have. 
+            // The fileHash is used as trackId in this implementation.
+            const fileHash = await (audioAnalysisService as any).generateFileHash(file);
+
+            // Map our state features back to AudioFeatures type if necessary, 
+            // but runAnalysis already did the extraction.
+            // For now, we'll re-extract from state to ensure consistency.
+            const featuresToSave = {
+                bpm: features.bpm,
+                key: features.key.split(' ')[0],
+                scale: features.key.split(' ')[1] || 'major',
+                energy: features.energy,
+                duration: features.duration,
+                danceability: features.danceability,
+                loudness: -1, // Placeholder
+                valence: features.happiness
+            };
+
+            const { musicLibraryService } = await import('@/services/music/MusicLibraryService');
+            await musicLibraryService.saveAnalysis(fileHash, file.name, featuresToSave, fileHash);
+
+            setIsFromCache(true); // Mark as cached after saving
+            toast.success("Sonic DNA successfully synchronized with your Music Library.");
+        } catch (error) {
+            console.error("[AudioAnalyzer] Save failed:", error);
+            toast.error("Failed to sync Sonic DNA. Please try again.");
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const formatTime = (seconds: number) => {
@@ -310,6 +349,7 @@ const AudioAnalyzer: React.FC = () => {
                                 onClick={() => setRegionFeatures(null)}
                                 className="mt-4 text-[10px] h-6 text-muted-foreground hover:text-white"
                                 data-testid="reset-to-global-button"
+                                aria-label="Reset analysis to global view"
                             >
                                 <RotateCcw size={10} className="mr-1" /> Reset to Global
                             </Button>
@@ -333,7 +373,7 @@ const AudioAnalyzer: React.FC = () => {
                     {/* Right: Actions & AI Output (3 cols) */}
                     <div className="lg:col-span-3 flex flex-col gap-4">
                         {/* Upload Card */}
-                        <label className="bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-xl p-4 cursor-pointer transition-all group flex items-center gap-4" data-testid="import-track-button">
+                        <label className="bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-xl p-4 cursor-pointer transition-all group flex items-center gap-4 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:outline-none" data-testid="import-track-button">
                             <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
                                 <Upload size={18} className="text-primary" />
                             </div>
@@ -341,14 +381,17 @@ const AudioAnalyzer: React.FC = () => {
                                 <div className="text-sm font-bold text-primary">Import Track</div>
                                 <div className="text-[10px] text-muted-foreground">WAV, MP3, AIFF</div>
                             </div>
-                            <input type="file" accept="audio/*" className="hidden" onChange={handleFileUpload} data-testid="import-track-input" />
+                            <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} data-testid="import-track-input" />
                         </label>
 
                         {/* AI Summary */}
                         <div className="flex-1 bg-gradient-to-br from-black/40 to-purple-900/10 rounded-xl border border-white/5 p-4 flex flex-col">
-                            <div className="flex items-center gap-2 mb-3">
-                                <Database className="text-purple-400" size={14} />
-                                <span className="text-[10px] font-bold text-purple-400 uppercase">Lab Observations</span>
+                            <div className="flex justify-between items-center mb-3">
+                                <div className="flex items-center gap-2">
+                                    <Database className="text-purple-400" size={14} />
+                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Lab Observations</span>
+                                </div>
+                                {isFromCache && <Badge variant="secondary" className="text-[8px] h-4 bg-purple-500/20 text-purple-300 pointer-events-none">CACHED</Badge>}
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 <p className="text-xs font-mono text-white/70 leading-relaxed">
@@ -415,6 +458,7 @@ const AudioAnalyzer: React.FC = () => {
                                 setIsPlaying(false);
                             }}
                             data-testid="stop-button"
+                            aria-label="Stop playback"
                         >
                             <RotateCcw size={16} />
                         </Button>
@@ -428,6 +472,7 @@ const AudioAnalyzer: React.FC = () => {
                             onClick={togglePlay}
                             disabled={!file}
                             data-testid="play-pause-button"
+                            aria-label={isPlaying ? "Pause" : "Play"}
                         >
                             {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
                         </Button>
@@ -444,6 +489,7 @@ const AudioAnalyzer: React.FC = () => {
                                 }}
                                 className="flex-1"
                                 data-testid="volume-slider"
+                                aria-label="Volume"
                             />
                         </div>
                     </div>

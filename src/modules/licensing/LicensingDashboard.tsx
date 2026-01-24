@@ -12,7 +12,7 @@ import { EmptyActionState } from './components/EmptyActionState';
 
 
 export default function LicensingDashboard() {
-    const { licenses, requests, loading: isLoading, initiateDrafting } = useLicensing();
+    const { licenses, requests, projectedValue, loading: isLoading, initiateDrafting } = useLicensing();
     const { currentModule } = useStore();
     const toast = useToast();
 
@@ -73,6 +73,7 @@ export default function LicensingDashboard() {
             <MetricsGrid
                 activeLicensesCount={licenses.length}
                 pendingRequestsCount={requests.length}
+                projectedValue={projectedValue}
             />
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">

@@ -1,3 +1,5 @@
+import { Timestamp } from 'firebase/firestore';
+
 export interface ItineraryStop {
     date: string;
     city: string;
@@ -6,6 +8,11 @@ export interface ItineraryStop {
     notes: string;
     type?: string;
     distance?: number;
+    // Enhancement: specific coordinates for venues
+    coordinates?: {
+        lat: number;
+        lng: number;
+    };
 }
 
 export interface Itinerary {
@@ -15,7 +22,7 @@ export interface Itinerary {
     stops: ItineraryStop[];
     totalDistance: string;
     estimatedBudget: string;
-    createdAt?: any;
+    createdAt?: Timestamp;
 }
 
 export interface VehicleStats {
@@ -26,7 +33,7 @@ export interface VehicleStats {
     tankSizeGallons: number;
     mpg: number;
     gasPricePerGallon: number;
-    updatedAt?: any;
+    updatedAt?: Timestamp;
 }
 
 export interface RiderItem {
@@ -35,6 +42,14 @@ export interface RiderItem {
     label: string;
     completed: boolean;
     category: 'food' | 'drink' | 'essential';
-    createdAt?: any;
-    updatedAt?: any;
+    createdAt?: Timestamp;
+    updatedAt?: Timestamp;
+}
+
+// Visual Mapping Types
+export interface MapMarker {
+    position: { lat: number; lng: number };
+    title: string;
+    type: 'venue' | 'gas' | 'hotel' | 'current' | 'waypoint';
+    meta?: any;
 }

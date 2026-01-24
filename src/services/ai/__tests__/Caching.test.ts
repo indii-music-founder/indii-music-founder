@@ -3,8 +3,12 @@ import { firebaseAI } from '../FirebaseAIService';
 import { aiCache } from '../AIResponseCache';
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB for JSDOM
 
+// Hoist mock
+const mockGenerateContent = vi.fn();
+
 // Mock Firebase services
 vi.mock('@/services/firebase', () => ({
+    getFirebaseAI: vi.fn(() => ({})),
     ai: {},
     remoteConfig: {},
     functions: {},
@@ -24,8 +28,20 @@ vi.mock('../billing/TokenUsageService', () => ({
     }
 }));
 
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function () {
+        return {
+            models: {
+                generateContent: mockGenerateContent,
+                generateContentStream: vi.fn(),
+                embedContent: vi.fn()
+            }
+        };
+    })
+}));
+
 // Mock firebase/ai
-const mockGenerateContent = vi.fn();
 vi.mock('firebase/ai', () => ({
     getGenerativeModel: vi.fn(() => ({
         model: 'mock-model',

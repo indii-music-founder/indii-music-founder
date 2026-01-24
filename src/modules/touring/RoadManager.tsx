@@ -17,6 +17,25 @@ interface LogisticsReport {
     suggestions: string[];
 }
 
+interface NearbyPlace {
+    name: string;
+    vicinity: string;
+    place_id: string;
+    geometry: {
+        location: {
+            lat: number;
+            lng: number;
+        };
+    };
+}
+
+interface FuelLogistics {
+    currentRangeMiles: number;
+    fullTankRangeMiles: number;
+    costToFill: number;
+    status: 'CRITICAL' | 'LOW' | 'OK';
+}
+
 const RoadManager: React.FC = () => {
     // Hooks must be called unconditionally before early returns
     const toast = useToast();
@@ -46,9 +65,9 @@ const RoadManager: React.FC = () => {
 
     // On the Road State
     const [currentLocation, setCurrentLocation] = useState('');
-    const [nearbyPlaces, setNearbyPlaces] = useState<any[]>([]);
+    const [nearbyPlaces, setNearbyPlaces] = useState<NearbyPlace[]>([]);
     const [isFindingPlaces, setIsFindingPlaces] = useState(false);
-    const [fuelLogistics, setFuelLogistics] = useState<any>(null);
+    const [fuelLogistics, setFuelLogistics] = useState<FuelLogistics | null>(null);
     const [isCalculatingFuel, setIsCalculatingFuel] = useState(false);
 
     // Check if device is mobile AFTER hooks are called
@@ -131,11 +150,11 @@ const RoadManager: React.FC = () => {
         try {
             const findPlaces = httpsCallable(functions, 'findPlaces');
             const response = await findPlaces({ location: currentLocation, type: 'gas_station' });
-            const result = response.data as any;
+            const result = response.data as { places: NearbyPlace[] };
             setNearbyPlaces(result.places);
             toast.success("Found gas stations nearby");
-        } catch (error) {
-            // console.error("Find Places Failed:", error);
+        } catch (error: unknown) {
+            console.error("Find Places Failed:", error);
             toast.error("Failed to find gas stations");
         } finally {
             setIsFindingPlaces(false);
@@ -147,18 +166,18 @@ const RoadManager: React.FC = () => {
         try {
             const calculateFuelLogistics = httpsCallable(functions, 'calculateFuelLogistics');
             const response = await calculateFuelLogistics(vehicleStats);
-            const result = response.data as any;
+            const result = response.data as FuelLogistics;
             setFuelLogistics(result);
             toast.success("Fuel logistics calculated");
-        } catch (error) {
-            // console.error("Fuel Calc Failed:", error);
+        } catch (error: unknown) {
+            console.error("Fuel Calc Failed:", error);
             toast.error("Failed to calculate fuel logistics");
         } finally {
             setIsCalculatingFuel(false);
         }
     };
 
-    const handleUpdateStop = async (updatedStop: any) => {
+    const handleUpdateStop = async (updatedStop: Itinerary['stops'][number]) => {
         if (!itinerary) return;
 
         // Optimistic UI Update

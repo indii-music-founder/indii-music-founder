@@ -106,6 +106,20 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
         projectId?: string;
         location?: string
     }) => {
+        // VALIDATION: Sanity checks before approval
+        if (typeof args.nodeCount !== 'number' || isNaN(args.nodeCount)) {
+            return toolError("Node count must be a valid number.", "INVALID_INPUT");
+        }
+        if (args.nodeCount < 0) {
+            return toolError("Node count cannot be negative.", "INVALID_INPUT");
+        }
+        if (!Number.isInteger(args.nodeCount)) {
+            return toolError("Node count must be an integer.", "INVALID_INPUT");
+        }
+        if (args.nodeCount > 100) {
+            return toolError("Node count exceeds safety limit of 100. Please contact admin for larger scaling.", "INVALID_INPUT");
+        }
+
         // SECURITY: Require approval for scaling operations
         const isApproved = await requireApproval(
             `Scale Node Pool`,

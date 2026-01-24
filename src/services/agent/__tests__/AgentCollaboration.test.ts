@@ -4,10 +4,10 @@ import { AI } from '../../ai/AIService';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 import { agentService } from '../AgentService';
 
-// Mock AI
 vi.mock('../../ai/AIService', () => ({
     AI: {
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
     }
 }));
 
@@ -24,6 +24,24 @@ vi.mock('@/services/firebase', () => ({
         currentUser: { uid: 'test-user' }
     },
     db: {}
+}));
+
+// Mock MembershipService
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100 })
+    }
+}));
+
+// Mock useStore for BaseAgent
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            currentOrganizationId: 'test-org',
+            projects: []
+        })),
+        setState: vi.fn()
+    }
 }));
 
 class ManagerAgent extends BaseAgent {
@@ -50,32 +68,28 @@ describe('Agent Collaboration', () => {
     });
 
     it('should delegate a task using delegate_task', async () => {
-        // 1. Mock the first agent call (which will decide to delegate)
-        const mockStream = new ReadableStream<StreamChunk>({
-            start(controller) {
-                controller.close();
-            }
-        });
-
-        const mockResponse: WrappedResponse = {
+        const mockToolCallResponse: WrappedResponse = {
             response: {} as any,
             text: () => 'Delegating...',
             functionCalls: () => [{ name: 'delegate_task', args: { targetAgentId: 'marketing', task: 'Create a plan' } }],
-            usage: vi.fn().mockReturnValue({
-                promptTokenCount: 10,
-                candidatesTokenCount: 20,
-                totalTokenCount: 30
-            })
+            usage: () => undefined
         };
 
-        (AI.generateContentStream as any).mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve(mockResponse)
-        });
+        const mockFinalResponse: WrappedResponse = {
+            response: {} as any,
+            text: () => 'Here is the marketing plan.',
+            functionCalls: () => [],
+            usage: () => undefined
+        };
 
-        // 2. Mock the specialist response
+        const generateContentSpy = (AI.generateContent as any);
+        generateContentSpy
+            .mockResolvedValueOnce(mockToolCallResponse) // 1. Decide to delegate
+            .mockResolvedValueOnce(mockFinalResponse);   // 2. Report result
+
+        // Mock the specialist response
         (agentService.runAgent as any).mockResolvedValue({
-            text: 'Here is the marketing plan.'
+            text: 'Marketing plan content.'
         });
 
         const result = await agent.execute('Help with marketing', { traceId: 'parent-trace-123' });
@@ -93,14 +107,7 @@ describe('Agent Collaboration', () => {
     });
 
     it('should consult multiple experts in parallel using consult_experts', async () => {
-        // 1. Mock the first agent call (which will decide to consult experts)
-        const mockStream = new ReadableStream<StreamChunk>({
-            start(controller) {
-                controller.close();
-            }
-        });
-
-        const mockResponse: WrappedResponse = {
+        const mockToolCallResponse: WrappedResponse = {
             response: {} as any,
             text: () => 'Consulting experts...',
             functionCalls: () => [{
@@ -112,19 +119,22 @@ describe('Agent Collaboration', () => {
                     ]
                 }
             }],
-            usage: vi.fn().mockReturnValue({
-                promptTokenCount: 10,
-                candidatesTokenCount: 20,
-                totalTokenCount: 30
-            })
+            usage: () => undefined
         };
 
-        (AI.generateContentStream as any).mockResolvedValue({
-            stream: mockStream,
-            response: Promise.resolve(mockResponse)
-        });
+        const mockFinalResponse: WrappedResponse = {
+            response: {} as any,
+            text: () => 'Experts have spoken.',
+            functionCalls: () => [],
+            usage: () => undefined
+        };
 
-        // 2. Mock specialist responses
+        const generateContentSpy = (AI.generateContent as any);
+        generateContentSpy
+            .mockResolvedValueOnce(mockToolCallResponse)
+            .mockResolvedValueOnce(mockFinalResponse);
+
+        // Mock specialist responses
         (agentService.runAgent as any).mockImplementation(async (id: string) => {
             if (id === 'producer') return { text: 'Audio is fine.' };
             if (id === 'marketing') return { text: 'Tweet drafted.' };
@@ -137,9 +147,11 @@ describe('Agent Collaboration', () => {
         expect(agentService.runAgent).toHaveBeenCalledTimes(2);
 
         // Check results aggregation
+        // consult_experts returns { success: true, data: { results }, message: ... }
         expect((result.data as any).success).toBe(true);
-        expect((result.data as any).data.results).toHaveLength(2);
-        expect((result.data as any).data.results[0].response.text).toBe('Audio is fine.');
-        expect((result.data as any).data.results[1].response.text).toBe('Tweet drafted.');
+        const results = (result.data as any).data.results;
+        expect(results).toHaveLength(2);
+        expect(results[0].response.text).toBe('Audio is fine.');
+        expect(results[1].response.text).toBe('Tweet drafted.');
     });
 });

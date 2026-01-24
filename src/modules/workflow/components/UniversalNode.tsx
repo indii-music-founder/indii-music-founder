@@ -65,9 +65,12 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
         }
 
-        if (asset?.assetType === 'image') return <img src={asset.imageUrl} alt="Result" className="w-full h-full object-cover" />;
-        if (asset?.assetType === 'imageConceptSet') return <img src={asset.concepts[0].imageUrl} alt="Result" className="w-full h-full object-cover" />;
-        if (asset?.assetType === 'video') return <video src={asset.videoUrl} className="w-full h-full object-cover" />;
+        if (asset?.assetType === 'image') return <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />;
+        if (asset?.assetType === 'imageConceptSet') {
+            const conceptSet = asset as unknown as { concepts: { imageUrl: string }[] };
+            return <img src={conceptSet.concepts[0]?.imageUrl} alt="Result" className="w-full h-full object-cover" />;
+        }
+        if (asset?.assetType === 'video') return <video src={(asset as unknown as { videoUrl: string }).videoUrl} className="w-full h-full object-cover" />;
 
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{asset.title || 'Text Output'}</div>;
     };

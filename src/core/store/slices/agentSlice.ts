@@ -9,13 +9,14 @@ export interface AgentMessage {
     isStreaming?: boolean;
     thoughts?: AgentThought[];
     agentId?: string;
+    thoughtSignature?: string;
 }
 
 export interface AgentThought {
     id: string;
     text: string;
     timestamp: number;
-    type?: 'tool' | 'logic' | 'error';
+    type?: 'tool' | 'logic' | 'error' | 'tool_result';
     toolName?: string;
 }
 
@@ -47,9 +48,19 @@ export interface AgentSlice {
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
 
+    // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
+    chatChannel: 'indii' | 'agent';
+
     isAgentOpen: boolean;
+    isCommandBarDetached: boolean;
+    commandBarInput: string;
+    commandBarAttachments: File[];
     agentMode: AgentMode;
+    isAgentProcessing: boolean;
     pendingApproval: ApprovalRequest | null;
+
+    // Window Management
+    agentWindowSize: { width: number; height: number };
 
     // Actions
     createSession: (title?: string, initialAgents?: string[]) => string;
@@ -62,11 +73,17 @@ export interface AgentSlice {
     clearAgentHistory: () => void; // Clears ACTIVE session history
 
     toggleAgentWindow: () => void;
+    setCommandBarDetached: (detached: boolean) => void;
+    setCommandBarInput: (input: string) => void;
+    setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
+    setChatChannel: (channel: 'indii' | 'agent') => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
 
     addParticipant: (sessionId: string, agentId: string) => void;
+    setAgentProcessing: (isProcessing: boolean) => void;
+    setAgentWindowSize: (size: { width: number; height: number }) => void;
     loadSessions: () => Promise<void>;
 }
 
@@ -75,10 +92,16 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentHistory: [],
     sessions: {},
     activeSessionId: null,
+    chatChannel: 'indii', // Default to indii (main orchestrator)
 
     isAgentOpen: false,
+    isCommandBarDetached: false,
+    commandBarInput: '',
+    commandBarAttachments: [],
     agentMode: 'assistant',
+    isAgentProcessing: false,
     pendingApproval: null,
+    agentWindowSize: { width: 500, height: 800 },
 
     createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
         const id = crypto.randomUUID();
@@ -97,6 +120,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             agentHistory: []
         }));
 
+        // Persist the new session immediately
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.createSession(newSession).catch(console.error);
+        });
+
         return id;
     },
 
@@ -113,6 +141,11 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     deleteSession: (sessionId) => set(state => {
         const newSessions = { ...state.sessions };
         delete newSessions[sessionId];
+
+        // Persist the deletion
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.deleteSession(sessionId).catch(console.error);
+        });
 
         // If deleting active session, fallback to another or null
         let newActiveId = state.activeSessionId;
@@ -228,8 +261,12 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     }),
 
     toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
-
+    setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+    setCommandBarInput: (input) => set({ commandBarInput: input }),
+    setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     setAgentMode: (mode) => set({ agentMode: mode }),
+
+    setChatChannel: (channel) => set({ chatChannel: channel }),
 
     requestApproval: (content: string, type: string): Promise<boolean> => {
         return new Promise((resolve) => {
@@ -272,6 +309,9 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             }
         };
     }),
+
+    setAgentProcessing: (isProcessing) => set({ isAgentProcessing: isProcessing }),
+    setAgentWindowSize: (size) => set({ agentWindowSize: size }),
 
     loadSessions: async () => {
         const { sessionService } = await import('@/services/agent/SessionService');
