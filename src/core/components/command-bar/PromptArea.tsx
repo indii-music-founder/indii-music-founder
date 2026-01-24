@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { ModuleId } from '@/core/constants';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -47,7 +48,21 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setCommandBarInput,
         commandBarAttachments,
         setCommandBarAttachments
-    } = useStore();
+    } = useStore(useShallow(state => ({
+        // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
+        currentModule: state.currentModule,
+        setModule: state.setModule,
+        toggleAgentWindow: state.toggleAgentWindow,
+        isAgentOpen: state.isAgentOpen,
+        chatChannel: state.chatChannel,
+        setChatChannel: state.setChatChannel,
+        isCommandBarDetached: state.isCommandBarDetached,
+        setCommandBarDetached: state.setCommandBarDetached,
+        commandBarInput: state.commandBarInput,
+        setCommandBarInput: state.setCommandBarInput,
+        commandBarAttachments: state.commandBarAttachments,
+        setCommandBarAttachments: state.setCommandBarAttachments
+    })));
 
     const isIndiiMode = chatChannel === 'indii';
     const colors = getColorForModule(currentModule);
