@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
@@ -18,6 +18,34 @@ interface NavItem {
 export const MobileNav = () => {
     const { currentModule, setModule } = useStore();
     const [isOpen, setIsOpen] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const closeButtonRef = useRef<HTMLButtonElement>(null);
+    const hasOpened = useRef(false);
+
+    // Focus management
+    useEffect(() => {
+        if (isOpen) {
+            hasOpened.current = true;
+            // Small delay to ensure DOM is ready and animation frame is hit
+            requestAnimationFrame(() => {
+                closeButtonRef.current?.focus();
+            });
+        } else if (hasOpened.current) {
+            triggerRef.current?.focus();
+        }
+    }, [isOpen]);
+
+    // Handle Escape key
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (isOpen && e.key === 'Escape') {
+                setIsOpen(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [isOpen]);
 
     // Grouped navigation items (mirrored from Sidebar.tsx)
     const managerItems: NavItem[] = [
@@ -80,12 +108,15 @@ export const MobileNav = () => {
         <>
             {/* FAB Trigger - Replaces Bottom Bar */}
             <button
+                ref={triggerRef}
                 onClick={() => {
                     haptic('medium');
                     setIsOpen(true);
                 }}
                 className="md:hidden fixed bottom-32 right-6 z-[102] p-3.5 bg-background border border-white/10 rounded-full shadow-lg shadow-black/50 active:scale-95 transition-transform hover:bg-white/10 text-white"
                 aria-label="Open Navigation"
+                aria-expanded={isOpen}
+                aria-controls="mobile-nav-drawer"
             >
                 <Menu size={24} />
             </button>
@@ -100,10 +131,17 @@ export const MobileNav = () => {
                             haptic('light');
                             setIsOpen(false);
                         }}
+                        aria-hidden="true"
                     />
 
                     {/* Menu Content */}
-                    <div className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl">
+                    <div
+                        id="mobile-nav-drawer"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-labelledby="mobile-nav-title"
+                        className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl"
+                    >
                         {/* Drag Handle */}
                         <div className="flex justify-center pt-3 pb-1">
                             <div className="w-12 h-1 bg-white/20 rounded-full" />
@@ -111,8 +149,9 @@ export const MobileNav = () => {
 
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                            <h2 className="text-lg font-semibold text-white">Navigation</h2>
+                            <h2 id="mobile-nav-title" className="text-lg font-semibold text-white">Navigation</h2>
                             <button
+                                ref={closeButtonRef}
                                 onClick={() => {
                                     haptic('light');
                                     setIsOpen(false);
