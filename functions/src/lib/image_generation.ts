@@ -64,6 +64,14 @@ export const generateImageV3Fn = () => functions
             // 4. Call Model via REST
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
+            // Map mediaResolution to API enum values
+            const resolutionMap: Record<string, string> = {
+                low: "MEDIA_RESOLUTION_LOW",
+                medium: "MEDIA_RESOLUTION_MEDIUM",
+                high: "MEDIA_RESOLUTION_HIGH"
+            };
+            const apiMediaResolution = mediaResolution ? resolutionMap[mediaResolution] : undefined;
+
             const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -73,7 +81,7 @@ export const generateImageV3Fn = () => functions
                         candidateCount: count || 1,
                         responseModalities: ["IMAGE"],
                         ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                        ...(mediaResolution ? { mediaResolution: mediaResolution as any } : {}),
+                        ...(apiMediaResolution ? { mediaResolution: apiMediaResolution } : {}),
                         ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
                         ...(validation.data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
                     }
