@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatOverlay from './ChatOverlay';
 import { useStore } from '@/core/store';
@@ -13,6 +13,15 @@ vi.mock('@/core/context/VoiceContext', () => ({
 // Mock Voice Service
 vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: { speak: vi.fn(), stopSpeaking: vi.fn() }
+}));
+
+// Mock Toast Context
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        toast: vi.fn(),
+        error: vi.fn(),
+        success: vi.fn()
+    })
 }));
 
 // Mock Virtuoso
@@ -60,6 +69,17 @@ vi.mock('lucide-react', () => ({
     Minimize2: () => <span data-testid="icon-minimize-2" />,
     RefreshCw: () => <span data-testid="icon-refresh-cw" />,
     Copy: () => <span data-testid="icon-copy" />,
+    Check: () => <span data-testid="icon-check" />,
+    ExternalLink: () => <span data-testid="icon-external-link" />,
+    Maximize2: () => <span data-testid="icon-maximize-2" />,
+    Paperclip: () => <span data-testid="icon-paperclip" />,
+    ArrowRight: () => <span data-testid="icon-arrow-right" />,
+    Loader2: () => <span data-testid="icon-loader-2" />,
+    Camera: () => <span data-testid="icon-camera" />,
+    Mic: () => <span data-testid="icon-mic" />,
+    PanelTopClose: () => <span data-testid="icon-panel-top-close" />,
+    PanelTopOpen: () => <span data-testid="icon-panel-top-open" />,
+    ChevronUp: () => <span data-testid="icon-chevron-up" />,
 }));
 
 // Mock Child Renderers
@@ -100,7 +120,18 @@ const INITIAL_STATE = {
     loadSessions: vi.fn(),
     createSession: vi.fn(),
     toggleAgentWindow: vi.fn(),
-    currentProjectId: 'p1'
+    currentProjectId: 'p1',
+    isAgentProcessing: false,
+    chatChannel: 'agent',
+    agentWindowSize: { width: 400, height: 600 },
+    setAgentWindowSize: vi.fn(),
+    isCommandBarDetached: false,
+    setCommandBarDetached: vi.fn(),
+    setChatChannel: vi.fn(),
+    commandBarInput: '',
+    setCommandBarInput: vi.fn(),
+    commandBarAttachments: [],
+    setCommandBarAttachments: vi.fn()
 };
 
 describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
@@ -122,6 +153,11 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        Object.assign(navigator, {
+            clipboard: {
+                writeText: vi.fn().mockImplementation(() => Promise.resolve()),
+            },
+        });
         updateStore({});
     });
 
@@ -230,6 +266,77 @@ describe('👁️ Pixel: Chat Overlay Markdown & Visuals', () => {
 
         expect(screen.getByText(/Incomp/)).toBeInTheDocument();
         expect(screen.queryByTestId('visual-script-renderer')).not.toBeInTheDocument();
+    });
+
+    it('Scenario 7: Renders Unordered and Ordered Lists correctly', async () => {
+        const listMarkdown = `
+- Item 1
+- Item 2
+
+1. First
+2. Second
+`;
+        updateStore({
+            agentHistory: [
+                { id: 'ai1', role: 'model', text: listMarkdown, isStreaming: false }
+            ]
+        });
+
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Verify List Items exist
+        const listItems = await screen.findAllByRole('listitem');
+        // 2 items for UL + 2 items for OL = 4 items
+        expect(listItems).toHaveLength(4);
+        expect(screen.getByText('Item 1')).toBeInTheDocument();
+        expect(screen.getByText('First')).toBeInTheDocument();
+    });
+
+    it('Scenario 8: Verifies Code Block Copy Functionality', async () => {
+        const code = "console.log('hello world');";
+        const markdown = "```javascript\n" + code + "\n```";
+
+        updateStore({
+            agentHistory: [
+                { id: 'ai1', role: 'model', text: markdown, isStreaming: false }
+            ]
+        });
+
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Verify Code Block Rendering
+        const copyBtn = await screen.findByTestId('copy-code-btn');
+        expect(copyBtn).toBeInTheDocument();
+        expect(screen.getByTestId('icon-copy')).toBeInTheDocument();
+
+        // Click Copy
+        fireEvent.click(copyBtn);
+
+        // Verify Clipboard Call
+        expect(navigator.clipboard.writeText).toHaveBeenCalledWith(expect.stringContaining("console.log('hello world');"));
+
+        // Verify Feedback (Copied! state)
+        await waitFor(() => {
+            expect(screen.getByTestId('icon-check')).toBeInTheDocument();
+            expect(screen.getByText('Copied!')).toBeInTheDocument();
+        });
+    });
+
+    it('Scenario 9: Verifies Long Word Breaking (Layout Shift Prevention)', async () => {
+        const longWord = "A".repeat(100);
+        updateStore({
+            agentHistory: [
+                { id: 'ai1', role: 'model', text: longWord, isStreaming: false }
+            ]
+        });
+
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        const messageContainer = screen.getByTestId('agent-message');
+        // Check specifically for break-words class which handles this
+        // Note: The class is on an inner div relative to the data-testid
+        expect(messageContainer.querySelector('.break-words')).toBeInTheDocument();
+        expect(screen.getByText(longWord)).toBeInTheDocument();
     });
 
 });
