@@ -96,7 +96,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
     if (!isOpen) return null;
 
     return (
-        <div className="fixed right-0 top-[64px] bottom-0 w-[420px] bg-[#0d1117]/95 backdrop-blur-2xl border-l border-gray-800 shadow-2xl z-40 flex flex-col transition-all duration-300 animate-in slide-in-from-right">
+        <div className="fixed inset-0 md:inset-auto md:right-0 md:top-[64px] md:bottom-0 w-full md:w-[420px] bg-bg-dark/95 backdrop-blur-2xl border-l border-gray-800 shadow-2xl z-40 flex flex-col transition-all duration-300 animate-in slide-in-from-right">
             {/* Header */}
             <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-black/40">
                 <div className="flex items-center gap-3">
@@ -191,6 +191,7 @@ export const KnowledgeChat: React.FC<KnowledgeChatProps> = ({ isOpen, onClose, a
                     <button
                         onClick={() => handleSend()}
                         disabled={!input.trim() || isTyping}
+                        aria-label="Send Message"
                         className="absolute right-2.5 top-1/2 -translate-y-1/2 p-2.5 bg-[#FFE135] text-black hover:scale-105 active:scale-95 disabled:scale-100 rounded-xl disabled:bg-gray-800 disabled:text-gray-600 transition-all shadow-lg"
                     >
                         <Send size={18} />

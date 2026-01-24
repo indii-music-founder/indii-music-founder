@@ -37,8 +37,9 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         try {
             const nodes = await fileSystemService.getProjectNodes(projectId);
             set({ fileNodes: nodes });
-        } catch (error: any) {
-            set({ fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to fetch file nodes';
+            set({ fileSystemError: message });
             console.error('Error fetching file nodes:', error);
         } finally {
             set({ isFileSystemLoading: false });
@@ -58,8 +59,9 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
                 fileNodes: [...state.fileNodes, newNode],
                 expandedFolderIds: [...state.expandedFolderIds, newNode.id]
             }));
-        } catch (error: any) {
-            set({ fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to create folder';
+            set({ fileSystemError: message });
             console.error('Error creating folder:', error);
         }
     },
@@ -79,8 +81,9 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
                 fileNodes: [...state.fileNodes, newNode],
                 selectedFileNodeId: newNode.id
             }));
-        } catch (error: any) {
-            set({ fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to create file';
+            set({ fileSystemError: message });
             console.error('Error creating file:', error);
         }
     },
@@ -100,9 +103,9 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
             await fileSystemService.updateNode(nodeId, { parentId: transform.parentId });
             const nodes = await fileSystemService.getProjectNodes(projectId);
             set({ fileNodes: nodes });
-        } catch (error: any) {
-            // Revert on error
-            set({ fileNodes: previousNodes, fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to move node';
+            set({ fileNodes: previousNodes, fileSystemError: message });
             console.error('Error moving node:', error);
         }
     },
@@ -116,8 +119,9 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
 
         try {
             await fileSystemService.updateNode(nodeId, { name: newName });
-        } catch (error: any) {
-            set({ fileNodes: previousNodes, fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to rename node';
+            set({ fileNodes: previousNodes, fileSystemError: message });
             console.error('Error renaming node:', error);
         }
     },
@@ -144,10 +148,10 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         }));
 
         try {
-            await fileSystemService.deleteNode(nodeId);
             await fileSystemService.deleteFolderRecursive(nodeId, previousNodes);
-        } catch (error: any) {
-            set({ fileNodes: previousNodes, fileSystemError: error.message });
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Failed to delete node';
+            set({ fileNodes: previousNodes, fileSystemError: message });
             console.error('Error deleting node:', error);
         }
     },

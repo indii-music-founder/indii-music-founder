@@ -162,7 +162,7 @@ describe('SocialService', () => {
                     imageUrl: 'http://test.com/img.png',
                     caption: 'Caption'
                 },
-                day: 0,
+                day: 1,
                 scheduledTime: Date.now()
             };
 

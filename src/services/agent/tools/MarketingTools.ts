@@ -1,8 +1,11 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { MarketingService } from '@/services/marketing/MarketingService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
+import { useStore } from '@/core/store';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+// duplicate removed
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 // --- Validation Schemas ---
@@ -132,6 +135,43 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
         const validated = TrackPerformanceSchema.parse(data);
         return toolSuccess(validated, `Performance tracking report generated for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
+    }),
+
+    generate_campaign_from_audio: wrapTool('generate_campaign_from_audio', async ({ uploadedAudioIndex }: { uploadedAudioIndex: number }) => {
+        const { uploadedAudio } = useStore.getState();
+        const audioItem = uploadedAudio[uploadedAudioIndex];
+
+        if (!audioItem) {
+            return toolError("No audio found at the provided index.", "NOT_FOUND");
+        }
+
+        try {
+            // 1. Analyze Audio
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], "audio_track", { type: blob.type });
+            const profile = await audioIntelligence.analyze(file);
+
+            // 2. Synthesize Campaign using Semantic Data
+            const { mood, genre, marketingHooks } = profile.semantic;
+
+            // 3. Delegate to create_campaign_brief
+            // We re-use logic by calling the exported function or just returning data for the agent to act on
+            // Better to return the insight so the agent handles the creation step via reasoning
+
+            return toolSuccess({
+                insight: `Analyzed track. Genre: ${genre.join(', ')}. Mood: ${mood.join(', ')}.`,
+                suggested_one_liner: marketingHooks.oneLiner,
+                keywords: marketingHooks.keywords,
+                technical: {
+                    bpm: profile.technical.bpm,
+                    key: profile.technical.key
+                }
+            }, "Audio analyzed. Use this data to run `create_campaign_brief`.");
+
+        } catch (error: any) {
+            return toolError(`Failed to analyze audio for campaign: ${error.message}`, "ANALYSIS_FAILED");
+        }
     })
 };
 
@@ -140,5 +180,6 @@ export const {
     create_campaign_brief,
     analyze_audience,
     schedule_content,
-    track_performance
+    track_performance,
+    generate_campaign_from_audio
 } = MarketingTools;

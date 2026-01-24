@@ -70,4 +70,10 @@ describe('SocialDashboard', () => {
         expect(screen.getAllByText('Posts')[0]).toBeInTheDocument();
         expect(screen.getByText('Posts')).toBeInTheDocument();
     });
+
+    it('renders accessible create post buttons in calendar grid', () => {
+        render(<SocialDashboard />);
+        const calendarButtons = screen.getAllByLabelText(/Create post for/i);
+        expect(calendarButtons.length).toBeGreaterThan(0);
+    });
 });

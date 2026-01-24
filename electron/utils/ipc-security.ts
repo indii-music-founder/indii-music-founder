@@ -1,4 +1,6 @@
-import { IpcMainInvokeEvent } from 'electron';
+import { IpcMainInvokeEvent, app } from 'electron';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 export function validateSender(event: IpcMainInvokeEvent): void {
     const frame = event.senderFrame;
@@ -11,8 +13,32 @@ export function validateSender(event: IpcMainInvokeEvent): void {
         throw new Error("Security: Missing sender URL");
     }
 
-    // 1. Allow Electron Production (File Protocol)
-    if (url.startsWith('file://')) return;
+    // 1. Allow Electron Production (File Protocol) - STRICT CHECK
+    if (url.startsWith('file://')) {
+        try {
+            const filePath = fileURLToPath(url);
+            const appPath = app.getAppPath();
+
+            // Security: Ensure filePath is within appPath
+            const rel = path.relative(appPath, filePath);
+
+            // Check if contained:
+            // 1. Not absolute (indicates different drive or outside on some systems)
+            // 2. Does not start with '..' (indicates parent directory)
+            // 3. Is not empty (unless we want to allow appPath itself, handled below)
+            if (rel && !path.isAbsolute(rel) && !rel.startsWith('..')) {
+                return;
+            }
+
+            // Allow exact match
+            if (filePath === appPath) return;
+
+            console.warn(`Security: Blocked unauthorized file URL: ${url}`);
+        } catch (e) {
+            console.error(`Security: Failed to validate file URL: ${url}`, e);
+        }
+        // Fall through to throw error if not returned
+    }
 
     // 2. Allow Deep Links
     if (url.startsWith('indii-os:')) return;
@@ -20,15 +46,11 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     // 3. Allow Dev Server (Strict Origin Check)
     const devServerUrl = process.env.VITE_DEV_SERVER_URL;
     if (devServerUrl) {
-        // Handle potential lack of trailing slash for safer matching
         const normalizedDevUrl = devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`;
-
-        // Exact match or subpath match
         if (url === devServerUrl || url.startsWith(normalizedDevUrl)) {
             return;
         }
     }
 
-    // 4. Reject everything else
     throw new Error(`Security: Unauthorized sender URL: ${url}`);
 }

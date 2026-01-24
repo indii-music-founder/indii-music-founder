@@ -10,7 +10,8 @@ interface DailiesStripProps {
     onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
 }
 
-export const DailiesStrip: React.FC<DailiesStripProps> = ({
+// ⚡ Bolt Optimization: Memoize to prevent re-renders when parent (VideoWorkflow) updates frequently (e.g. progress)
+export const DailiesStrip = React.memo<DailiesStripProps>(({
     items,
     selectedId,
     onSelect,
@@ -62,4 +63,6 @@ export const DailiesStrip: React.FC<DailiesStripProps> = ({
             </div>
         </div>
     );
-};
+});
+
+DailiesStrip.displayName = 'DailiesStrip';

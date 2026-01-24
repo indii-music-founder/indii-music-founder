@@ -3,9 +3,11 @@ import { CampaignAsset, ScheduledPost, CampaignStatus } from '../types';
 import CampaignList from './CampaignList';
 import CampaignDetail from './CampaignDetail';
 import EditableCopyModal from './EditableCopyModal';
+import AIImageBatchModal from './AIImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { CampaignExecutionRequest } from '../schemas';
 
 interface CampaignManagerProps {
     campaigns: CampaignAsset[];
@@ -27,6 +29,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     const toast = useToast();
     const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [showImageBatchModal, setShowImageBatchModal] = useState(false);
 
     const handleExecute = async () => {
         if (!selectedCampaign) return;
@@ -34,6 +37,11 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         // Optimistic check
         if (selectedCampaign.status === CampaignStatus.DONE) {
             toast.info("Campaign is already completed.");
+            return;
+        }
+
+        if (!functions) {
+            toast.error("Cloud Functions not initialized. Cannot execute campaign.");
             return;
         }
 
@@ -45,51 +53,36 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
         onUpdateCampaign(executingState);
 
         try {
-            // Check if we are in a dev environment or if functions is not initialized
-            const isDev = import.meta.env.DEV || window.location.hostname === 'localhost';
+            // REAL PRODUCTION BINDING
+            // We map to our Zod-validated schema structure
+            const payload: CampaignExecutionRequest = {
+                campaignId: selectedCampaign.id || 'unknown',
+                posts: selectedCampaign.posts,
+                dryRun: false // Always attempt real execution, backend handles safety
+            };
 
-            let responseData: { posts?: ScheduledPost[] } = {};
+            const executeCampaign = httpsCallable<CampaignExecutionRequest, { posts: ScheduledPost[]; success: boolean; message: string }>(functions, 'executeCampaign');
+            const result = await executeCampaign(payload);
+            const responseData = result.data;
 
-            if (isDev && !functions) {
-                console.warn("[CampaignManager] Firebase functions not available in Dev. specific mock mode.");
-                // Mock delay
-                await new Promise(resolve => setTimeout(resolve, 2000));
-                // Mock success
-                responseData = {
-                    posts: selectedCampaign.posts.map(p => ({
-                        ...p,
-                        status: CampaignStatus.DONE,
-                        scheduledTime: new Date()
-                    }))
-                };
-            } else {
-                const executeCampaign = httpsCallable(functions, 'executeCampaign');
-                const response = await executeCampaign({ posts: selectedCampaign.posts });
-                responseData = response.data as { posts?: ScheduledPost[] };
-            }
-
-            if (responseData.posts) {
+            if (responseData.success && responseData.posts) {
                 onUpdateCampaign({
                     ...selectedCampaign,
                     posts: responseData.posts,
-                    status: CampaignStatus.DONE // Assuming all done for now
-                });
-                toast.success("All posts successfully executed!");
-            } else {
-                // Fallback if no posts returned but no error thrown
-                onUpdateCampaign({
-                    ...selectedCampaign,
                     status: CampaignStatus.DONE
                 });
-                toast.success("Campaign execution sequence finished.");
+                toast.success(responseData.message || "Campaign executed successfully!");
+            } else {
+                throw new Error(responseData.message || "Execution returned failure status.");
             }
-        } catch (error: any) {
+
+        } catch (error: unknown) {
             console.error("Campaign Execution Failed:", error);
 
             // Revert status or set to FAILED
             onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });
 
-            const errorMsg = error.message || "Unknown error";
+            const errorMsg = error instanceof Error ? error.message : "Unknown error";
             toast.error(`Execution failed: ${errorMsg}`);
         } finally {
             setIsExecuting(false);
@@ -117,13 +110,23 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         onExecute={handleExecute}
                         isExecuting={isExecuting}
                         onEditPost={setEditingPost}
-                        onGenerateImages={() => toast.info("Image generation functionality coming soon!")}
+                        onGenerateImages={() => setShowImageBatchModal(true)}
                     />
                     {editingPost && (
                         <EditableCopyModal
                             post={editingPost}
                             onClose={() => setEditingPost(null)}
                             onSave={handleSaveCopy}
+                        />
+                    )}
+                    {showImageBatchModal && (
+                        <AIImageBatchModal
+                            campaign={selectedCampaign}
+                            onClose={() => setShowImageBatchModal(false)}
+                            onComplete={(updatedCampaign) => {
+                                onUpdateCampaign(updatedCampaign);
+                                setShowImageBatchModal(false);
+                            }}
                         />
                     )}
                 </>

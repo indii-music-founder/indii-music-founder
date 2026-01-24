@@ -2,6 +2,7 @@
 type EssentiaModule = typeof import('essentia.js');
 import * as tf from '@tensorflow/tfjs';
 import JSZip from 'jszip';
+import { musicLibraryService } from '@/services/music/MusicLibraryService';
 
 export interface AudioFeatures {
     bpm: number;
@@ -68,7 +69,14 @@ export class AudioAnalysisService {
                     }
                 };
 
-                const { Essentia, EssentiaWASM } = await import('essentia.js') as EssentiaModule;
+                const imported = await import('essentia.js') as any;
+                const { Essentia } = imported;
+                let { EssentiaWASM } = imported;
+
+                // Handle Vite/Rollup interop for EssentiaWASM import
+                if (!EssentiaWASM && imported.default?.EssentiaWASM) {
+                    EssentiaWASM = imported.default.EssentiaWASM;
+                }
 
                 let moduleInstance;
                 if (typeof EssentiaWASM === 'function') {
@@ -79,7 +87,16 @@ export class AudioAnalysisService {
                         }
                     });
                 } else {
-                    moduleInstance = EssentiaWASM;
+                    // Check if EssentiaWASM is nested (common in some builds)
+                    if ((EssentiaWASM as any).EssentiaWASM) {
+                        moduleInstance = (EssentiaWASM as any).EssentiaWASM;
+                    } else {
+                        moduleInstance = EssentiaWASM;
+                    }
+                }
+
+                if (!moduleInstance) {
+                    throw new Error("Failed to resolve EssentiaWASM instance");
                 }
 
                 this.essentia = new Essentia(moduleInstance);
@@ -156,15 +173,32 @@ export class AudioAnalysisService {
 
     /**
      * Analyzes an audio file/blob to extract high-level features.
+     * Checks MusicLibraryService cache first to avoid expensive re-computation.
      */
-    async analyze(file: File | Blob): Promise<AudioFeatures> {
-        return this.analyzeDeep(file); // Upgrade standard analyze to deep by default
+    async analyze(file: File): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
+        // 1. Generate a robust hash for the file
+        const fileHash = await this.generateFileHash(file);
+
+        // 2. Check Cache
+        try {
+            const cached = await musicLibraryService.getAnalysis(fileHash);
+            if (cached) {
+                console.info(`[AudioAnalysis] Cache hit for ${file.name}`);
+                // Safely cast cached features to DeepAudioFeatures if compatible, or just return as is
+                return { features: cached.features as DeepAudioFeatures, fromCache: true };
+            }
+        } catch (e) {
+            console.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
+        }
+
+        // 3. Perform Fresh Analysis (Deep)
+        return this.analyzeDeep(file, fileHash);
     }
 
     /**
      * Deep Analysis using TensorFlow models
      */
-    async analyzeDeep(file: File | Blob): Promise<DeepAudioFeatures> {
+    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
         await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
 
@@ -173,156 +207,123 @@ export class AudioAnalysisService {
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        // Close context immediately after decoding to prevent resource leaks (limit is usually 6 contexts)
+        // Close context immediately after decoding to prevent resource leaks
         await audioContext.close();
 
         // 1. Basic Features (BPM, Key, Energy)
         const basicFeatures = await this.analyzeBuffer(audioBuffer);
+        let features: DeepAudioFeatures = basicFeatures;
 
         // 2. Deep Learning Features
-        // Extract Melspectrogram (MusicNN input: 128 frames context? No, usually longer)
-        // Essentia models typically use: 16kHz, 512 hop, 96 bands.
-        // We need to resample to 16kHz first.
-
+        // We'll process a few segments to get an average.
         let signal = await this.getResampledSignal(audioBuffer, 16000);
 
-        // Extract features for MusicNN (Melspectrogram)
-        // Frame size 512? No, usually 512 hop, window 1024?
-        // Standard Essentia MusicNN extraction:
-        // FrameCutter(frameSize=512, hopSize=256)?
-        // Wait, MusicNN needs 3 seconds patches usually.
-        // Let's use the standard configuration for Essentia models:
-        // sampleRate=16000, frameSize=512, hopSize=256, numberBands=96
-
-        // We'll process a few segments to get an average.
-
         try {
-             // Load models in parallel
-             const [genreModel, happyModel, aggressiveModel, danceModel, relaxedModel, voiceModel] = await Promise.all([
-                 this.loadModel('genre'),
-                 this.loadModel('mood_happy'),
-                 this.loadModel('mood_aggressive'),
-                 this.loadModel('danceability'),
-                 this.loadModel('mood_relaxed'),
-                 this.loadModel('voice_instrumental')
-             ]);
+            // Load models in parallel
+            const [genreModel, happyModel, aggressiveModel, danceModel, relaxedModel, voiceModel] = await Promise.all([
+                this.loadModel('genre'),
+                this.loadModel('mood_happy'),
+                this.loadModel('mood_aggressive'),
+                this.loadModel('danceability'),
+                this.loadModel('mood_relaxed'),
+                this.loadModel('voice_instrumental')
+            ]);
 
-             // Prepare Input (Melspectrogram)
-             // We use a simplified approach: extract one representative 30s segment or average of patches.
-             // Essentia models run on patches (e.g. 187x96).
+            // Prepare Input (Melspectrogram)
+            const melSpectrogram = this.extractMelSpectrogram(signal);
+            const PATCH_frames = 187; // ~3 seconds
+            const N_BANDS = 96;
 
-             // Extract Log-Mel Spectrogram
-             const melSpectrogram = this.extractMelSpectrogram(signal);
+            // Generate patches
+            const patches: number[][][] = [];
+            const step = Math.floor(melSpectrogram.length / 5); // Take 5 patches across the song
 
-             // Shape: [Frames, Bands]. We need to batch it.
-             // MusicNN usually takes [Batch, 1, 187, 96] or similar.
-             // Let's inspect the model inputs if possible, but standard is [Batch, 187, 96] (channel last? or first?)
-             // Essentia MusicNN TFJS models usually expect [Batch, 187, 96].
-             // 187 frames * 256 hop = ~47,872 samples = ~3 seconds at 16kHz.
+            for (let i = 0; i < 5; i++) {
+                const start = i * step;
+                if (start + PATCH_frames < melSpectrogram.length) {
+                    const patch = [];
+                    for (let j = 0; j < PATCH_frames; j++) {
+                        patch.push(melSpectrogram[start + j]); // Array of 96 values
+                    }
+                    patches.push(patch);
+                }
+            }
 
-             const PATCH_frames = 187;
-             const N_BANDS = 96;
+            if (patches.length > 0) {
+                // Convert to Tensor [Batch, 187, 96]
+                const inputTensor = tf.tensor(patches, [patches.length, PATCH_frames, N_BANDS], 'float32');
+                const inputTensor4D = inputTensor.expandDims(-1); // [Batch, 187, 96, 1]
 
-             // Generate patches
-             const patches: number[][][] = [];
-             const step = Math.floor(melSpectrogram.length / 5); // Take 5 patches across the song
+                // Predict Helper
+                const getMeanPrediction = async (model: tf.GraphModel, input: tf.Tensor): Promise<number | number[]> => {
+                    const output = model.predict(input) as tf.Tensor;
+                    const mean = output.mean(0);
+                    const data = await mean.data();
+                    return Array.from(data);
+                };
 
-             for (let i = 0; i < 5; i++) {
-                 const start = i * step;
-                 if (start + PATCH_frames < melSpectrogram.length) {
-                     // Slice [start : start+187]
-                     const patch = [];
-                     for (let j = 0; j < PATCH_frames; j++) {
-                         patch.push(melSpectrogram[start + j]); // Array of 96 values
-                     }
-                     patches.push(patch);
-                 }
-             }
+                // Genre
+                const genreProbs = await getMeanPrediction(genreModel, inputTensor4D) as number[];
+                const genreMap: { [key: string]: number } = {};
+                GENRE_LABELS.forEach((label, i) => genreMap[label] = genreProbs[i]);
 
-             if (patches.length === 0) throw new Error("Audio too short for analysis");
+                // Moods
+                const predictBinary = async (model: tf.GraphModel): Promise<number> => {
+                    const res = await getMeanPrediction(model, inputTensor4D) as number[];
+                    if (res.length === 2) return res[1]; // Softmax
+                    if (res.length === 1) return res[0]; // Sigmoid
+                    return res[0];
+                };
 
-             // Convert to Tensor [Batch, 187, 96]
-             // Note: Some models might want [Batch, 187, 96, 1] (Channel dimension)
-             // Let's try [Batch, 187, 96] first.
-             const inputTensor = tf.tensor(patches, [patches.length, PATCH_frames, N_BANDS], 'float32');
-             // Some models need 4D? [Batch, 187, 96, 1]
-             const inputTensor4D = inputTensor.expandDims(-1); // [Batch, 187, 96, 1]
+                const happyVal = await predictBinary(happyModel);
+                const aggressiveVal = await predictBinary(aggressiveModel);
+                const danceVal = await predictBinary(danceModel);
+                const relaxedVal = await predictBinary(relaxedModel);
+                const voiceVal = await predictBinary(voiceModel);
 
-             // Predict
-             const getMeanPrediction = async (model: tf.GraphModel, input: tf.Tensor): Promise<number | number[]> => {
-                 // Try 4D first, fallback to 3D?
-                 // MusicNN usually 4D (Height, Width, Channel)
-                 const output = model.predict(input) as tf.Tensor;
-                 // Output [Batch, Classes]
-                 const mean = output.mean(0); // Average across patches
-                 const data = await mean.data();
-                 return Array.from(data);
-             };
+                // Cleanup
+                inputTensor.dispose();
+                inputTensor4D.dispose();
 
-             // Genre
-             const genreProbs = await getMeanPrediction(genreModel, inputTensor4D) as number[];
-             const genreMap: { [key: string]: number } = {};
-             GENRE_LABELS.forEach((label, i) => genreMap[label] = genreProbs[i]);
-
-             // Moods (Binary outputs usually [logits] or [prob]? TFJS models usually [Batch, 1])
-             // Actually Essentia binary models often return [Batch, 2] (Class 0, Class 1) or just scalar.
-             // Checking docs: usually [Activations]. We need sigmoid if it's logits, or it's already softmax.
-             // MusicNN models usually have a final activation.
-             // For binary 'happy', index 0 = non-happy, index 1 = happy? Or just scalar?
-             // Let's assume it returns [Batch, 2] (softmax).
-
-             const predictBinary = async (model: tf.GraphModel): Promise<number> => {
-                 const res = await getMeanPrediction(model, inputTensor4D) as number[];
-                 // If 2 values, take the second (positive class)
-                 if (res.length === 2) return res[1]; // Softmax
-                 if (res.length === 1) return res[0]; // Sigmoid
-                 return res[0];
-             };
-
-             const happyVal = await predictBinary(happyModel);
-             const aggressiveVal = await predictBinary(aggressiveModel);
-             const danceVal = await predictBinary(danceModel);
-             const relaxedVal = await predictBinary(relaxedModel);
-             const voiceVal = await predictBinary(voiceModel);
-
-             // Cleanup tensors
-             inputTensor.dispose();
-             inputTensor4D.dispose();
-
-             return {
-                 ...basicFeatures,
-                 genre: genreMap,
-                 moods: {
-                     happy: happyVal,
-                     aggressive: aggressiveVal,
-                     relaxed: relaxedVal,
-                     sad: 1.0 - happyVal // Approximation
-                 },
-                 danceability_ml: danceVal,
-                 // Combine danceability
-                 danceability: (basicFeatures.danceability + danceVal) / 2,
-                 // voice_instrumental: 0=voice, 1=instrumental usually.
-                 // Model name "voice_instrumental". Check output?
-                 // Usually class 0 = instrumental, class 1 = voice? Or vice versa?
-                 // Essentia docs: "voice" and "instrumental" classes.
-                 // Let's assume binary output corresponds to the label.
-                 // For now, we'll store the raw prediction (which we assumed was class 1 prob).
-                 // If class 1 is 'voice', then instrumental is 1 - voice.
-                 // We will return the raw value, UI handles interpretation.
-                 voice_instrumental: voiceVal
-             };
+                features = {
+                    ...basicFeatures,
+                    genre: genreMap,
+                    moods: {
+                        happy: happyVal,
+                        aggressive: aggressiveVal,
+                        relaxed: relaxedVal,
+                        sad: 1.0 - happyVal
+                    },
+                    danceability_ml: danceVal,
+                    danceability: (basicFeatures.danceability + danceVal) / 2,
+                    voice_instrumental: voiceVal
+                };
+            }
 
         } catch (err) {
             console.error("[AudioAnalysis] Deep analysis failed, returning basic features", err);
-            return { ...basicFeatures };
+            // features remains basicFeatures
         }
+
+        // 4. Save to Cache and Firestore
+        const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
+        try {
+            await musicLibraryService.saveAnalysis(fileHash, (file as File).name || 'audio', features, fileHash);
+            // Also save to Firestore
+            if ((file as File).name) {
+                await this.saveAnalysisToFirestore(features, (file as File).name);
+            }
+        } catch (e) {
+            console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
+        }
+
+        return { features, fromCache: false };
     }
 
     /**
      * Helper: Extract Log-Mel Spectrogram using Essentia
      */
     private extractMelSpectrogram(signal: any): number[][] {
-        // Essentia setup
         const frameSize = 512;
         const hopSize = 256;
         const sampleRate = 16000;
@@ -331,24 +332,13 @@ export class AudioAnalysisService {
         const frames = this.essentia!.FrameGenerator(signal, frameSize, hopSize);
         const melBands: number[][] = [];
 
-        // Windowing? Hann is standard
-        // EssentiaJS: Windowing(frame) -> returns windowed frame.
-
         for (let i = 0; i < frames.size(); i++) {
             const frame = frames.get(i);
-
-            // 1. Windowing
             const windowed = this.essentia!.Windowing(frame, "hann", frameSize).frame;
-
-            // 2. Spectrum
             const spectrum = this.essentia!.Spectrum(windowed).spectrum;
-
-            // 3. MelBands
-            const mel = this.essentia!.MelBands(spectrum, sampleRate, nBands, frameSize, 0, sampleRate/2, "htk").bands;
-
-            // 4. Log Scale (log10(1 + x)) or similar.
+            const mel = this.essentia!.MelBands(spectrum, sampleRate, nBands, frameSize, 0, sampleRate / 2, "htk").bands;
             const logMel = [];
-            for (let j=0; j<mel.size(); j++) {
+            for (let j = 0; j < mel.size(); j++) {
                 logMel.push(Math.log10(1 + 10 * mel.get(j)));
             }
             melBands.push(logMel);
@@ -358,8 +348,6 @@ export class AudioAnalysisService {
     }
 
     private async getResampledSignal(audioBuffer: AudioBuffer, targetRate: number) {
-        // Simple offline resampling context
-        // Ensure length is integer to prevent TypeError
         const length = Math.ceil(audioBuffer.duration * targetRate);
         const offlineCtx = new OfflineAudioContext(1, length, targetRate);
         const source = offlineCtx.createBufferSource();
@@ -368,14 +356,30 @@ export class AudioAnalysisService {
         source.start(0);
         const resampled = await offlineCtx.startRendering();
 
-        // Get float array
         const channelData = resampled.getChannelData(0);
         return this.essentia!.arrayToVector(channelData);
     }
 
+    private async generateFileHash(file: Blob): Promise<string> {
+        const CHUNK_SIZE = 1024 * 1024; // 1MB
+        const blob = file.slice(0, CHUNK_SIZE);
+        const arrayBuffer = await blob.arrayBuffer();
+
+        const metadata = `${(file as File).name || 'blob'}-${file.size}`;
+        const encoder = new TextEncoder();
+        const metadataBuffer = encoder.encode(metadata);
+
+        const combinedBuffer = new Uint8Array(metadataBuffer.length + arrayBuffer.byteLength);
+        combinedBuffer.set(metadataBuffer, 0);
+        combinedBuffer.set(new Uint8Array(arrayBuffer), metadataBuffer.length);
+
+        const hashBuffer = await crypto.subtle.digest('SHA-256', combinedBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     /**
      * Analyzes an already decoded AudioBuffer.
-     * Useful for analyzing segments/regions without re-decoding.
      */
     async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
         await this.init();
@@ -383,10 +387,8 @@ export class AudioAnalysisService {
 
         console.info(`[AudioAnalysis] Analyzing buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate}Hz`);
 
-        // Convert to Essentia-compatible vector (first channel)
         const channelData = audioBuffer.getChannelData(0);
 
-        // Basic sanity check: is the buffer actually containing data?
         let hasSignal = false;
         for (let i = 0; i < Math.min(channelData.length, 1000); i++) {
             if (Math.abs(channelData[i]) > 0.0001) {
@@ -402,20 +404,16 @@ export class AudioAnalysisService {
         const signal = this.essentia.arrayToVector(channelData);
 
         try {
-            // 1. Rhythm (BPM)
             const rhythm = this.essentia.RhythmExtractor2013(signal);
             const bpm = rhythm.bpm;
 
-            // 2. Tonal (Key/Scale)
             const keyData = this.essentia.KeyExtractor(signal);
             const key = keyData.key;
             const scale = keyData.scale;
 
-            // 3. Energy / Loudness
             const rms = this.essentia.RMS(signal);
             const energyValue = rms.rms;
 
-            // 4. Danceability
             const danceabilityValue = this.essentia.Danceability(signal).danceability;
 
             console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
@@ -424,7 +422,6 @@ export class AudioAnalysisService {
                 bpm: Math.round(bpm),
                 key: key,
                 scale: scale,
-                // Normalize RMS to 0-1 range
                 energy: Math.min(1, Math.max(0, energyValue * 3.5)),
                 duration: audioBuffer.duration,
                 danceability: danceabilityValue,
@@ -434,8 +431,6 @@ export class AudioAnalysisService {
                 loudness: -1
             };
         } finally {
-            // If using the official WASM build, memory management is important.
-            // Some versions of essentia.js require explicit deletion of vectors.
             if ((this.essentia as any).deleteVector && signal) {
                 (this.essentia as any).deleteVector(signal);
             }
@@ -447,15 +442,13 @@ export class AudioAnalysisService {
      */
     async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
         try {
-            const { getFirestore, collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-            // Dynamically import db to avoid cycle if necessary, or just use service pattern
-            const { db } = await import('@/services/firebase'); // Assuming this exists or similar
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('@/services/firebase');
 
             const docData = {
                 filename,
                 ...analysis,
                 createdAt: serverTimestamp(),
-                // Flatten complex objects if needed, but Firestore handles maps
             };
 
             await addDoc(collection(db, 'audio_analyses'), docData);

@@ -4,7 +4,14 @@ import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
 import { events } from '../events';
 
-interface ToastContextType {
+/** Alert data from system events */
+interface AlertData {
+    level: 'error' | 'warning' | 'success' | 'info';
+    message: string;
+}
+
+/** Toast context API available via useToast hook */
+export interface ToastContextType {
     showToast: (message: string, type: ToastType, duration?: number) => void;
     success: (message: string, duration?: number) => void;
     error: (message: string, duration?: number) => void;
@@ -48,7 +55,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, []);
 
     useEffect(() => {
-        const handleAlert = (data: any) => {
+        const handleAlert = (data: AlertData) => {
             const type = data.level === 'error' ? 'error' :
                 data.level === 'warning' ? 'warning' :
                     data.level === 'success' ? 'success' : 'info';
@@ -105,7 +112,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return (
         <ToastContext.Provider value={contextValue}>
             {children}
-            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none">
+            <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 pointer-events-none" role="region" aria-label="Notifications" aria-live="polite">
                 <div className="flex flex-col gap-2 items-end pointer-events-auto">
                     <AnimatePresence>
                         {toasts.map(toast => (

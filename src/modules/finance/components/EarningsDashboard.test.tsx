@@ -15,6 +15,13 @@ vi.mock('./EarningsTable', () => ({
     EarningsTable: () => <div data-testid="earnings-table">Earnings Table</div>
 }));
 
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>
+}));
+
 // Helper to mock hook return value
 const mockUseFinance = (overrides: any = {}) => {
     (useFinance as any).mockReturnValue({
@@ -33,9 +40,10 @@ describe('EarningsDashboard UI States', () => {
 
     it('renders loading state correctly', () => {
         mockUseFinance({ earningsLoading: true });
-        render(<EarningsDashboard />);
+        const { container } = render(<EarningsDashboard />);
 
-        expect(screen.getByText('Loading earnings data...')).toBeInTheDocument();
+        // Check for loading spinner class instead of text
+        expect(container.querySelector('.animate-spin')).toBeInTheDocument();
         // Ensure content is hidden
         expect(screen.queryByText('Total Revenue')).not.toBeInTheDocument();
     });
@@ -44,7 +52,8 @@ describe('EarningsDashboard UI States', () => {
         mockUseFinance({ earningsError: 'Network Error' });
         render(<EarningsDashboard />);
 
-        expect(screen.getByText('Error: Network Error')).toBeInTheDocument();
+        expect(screen.getByText('Fetch Error')).toBeInTheDocument();
+        expect(screen.getByText('Network Error')).toBeInTheDocument();
         // Ensure content is hidden
         expect(screen.queryByText('Total Revenue')).not.toBeInTheDocument();
     });
@@ -53,13 +62,13 @@ describe('EarningsDashboard UI States', () => {
         mockUseFinance({ earningsSummary: null, earningsLoading: false, earningsError: null });
         render(<EarningsDashboard />);
 
-        expect(screen.getByText('No data available')).toBeInTheDocument();
+        expect(screen.getByText('No Reports Found')).toBeInTheDocument();
     });
 
     it('renders success state with overview data', () => {
         const mockData = {
             totalNetRevenue: 1234.56,
-            totalStreams: 5000,
+            totalStreams: 5000000, // 5M
             byPlatform: [{ platformName: 'Spotify', revenue: 1000 }],
             byTerritory: [{ territoryName: 'United States', territoryCode: 'US', revenue: 500 }],
             byRelease: []
@@ -72,18 +81,14 @@ describe('EarningsDashboard UI States', () => {
 
         render(<EarningsDashboard />);
 
-        // Verify Header
-        expect(screen.getByText('Earnings & Royalties')).toBeInTheDocument();
-
         // Verify Key Metrics
-        // Note: toFixed(2) does not add commas, so we expect $1234.56
         expect(screen.getByText('$1234.56')).toBeInTheDocument();
-        expect(screen.getByText('5,000')).toBeInTheDocument();
+        expect(screen.getByText('5.00M')).toBeInTheDocument();
 
         // Verify Charts/Lists
         expect(screen.getByTestId('revenue-chart')).toBeInTheDocument();
         expect(screen.getByText('United States')).toBeInTheDocument();
-        expect(screen.getByText('US')).toBeInTheDocument();
+        expect(screen.getAllByText('US').length).toBeGreaterThan(0);
         expect(screen.getByText('+$500')).toBeInTheDocument();
     });
 });

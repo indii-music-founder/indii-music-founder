@@ -17,6 +17,17 @@ vi.mock('@/services/image/EditingService', () => ({
     Editing: { editImage: vi.fn() }
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        toast: {
+            error: vi.fn(),
+            success: vi.fn(),
+            info: vi.fn(),
+            warning: vi.fn(),
+        }
+    })
+}));
+
 describe('InfiniteCanvas Culling', () => {
     let mockContext: any;
 
@@ -148,7 +159,7 @@ describe('InfiniteCanvas Culling', () => {
         };
 
         mockUseStore.mockImplementation((selector: any) => {
-             const state = {
+            const state = {
                 canvasImages: [visibleImage, offScreenImage],
                 addCanvasImage: vi.fn(),
                 updateCanvasImage: vi.fn(),

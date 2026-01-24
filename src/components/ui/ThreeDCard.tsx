@@ -1,16 +1,37 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface ThreeDCardProps {
+interface ThreeDCardProps extends React.HTMLAttributes<HTMLDivElement> {
     children: React.ReactNode;
     className?: string;
     containerClassName?: string;
     onClick?: () => void;
+    /**
+     * Optional ARIA label for the card.
+     * Recommended when the card is interactive (has onClick).
+     */
+    'aria-label'?: string;
 }
 
-export const ThreeDCard = ({ children, className, containerClassName, onClick }: ThreeDCardProps) => {
+export const ThreeDCard = ({
+    children,
+    className,
+    containerClassName,
+    onClick,
+    'aria-label': ariaLabel,
+    style,
+    // Exclude conflicting props that framer-motion handles differently
+    onDrag,
+    onDragStart,
+    onDragEnd,
+    onAnimationStart,
+    onAnimationEnd,
+    ...rest
+}: ThreeDCardProps) => {
     const ref = useRef<HTMLDivElement>(null);
+    const frameRef = useRef<number>(0);
+    const rectRef = useRef<DOMRect | null>(null);
 
     const x = useMotionValue(0);
     const y = useMotionValue(0);
@@ -23,30 +44,81 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
     const rotateX = useTransform(mouseY, [-0.5, 0.5], ["17.5deg", "-17.5deg"]);
     const rotateY = useTransform(mouseX, [-0.5, 0.5], ["-17.5deg", "17.5deg"]);
 
+    const updateRect = useCallback(() => {
+        if (ref.current) {
+            rectRef.current = ref.current.getBoundingClientRect();
+        }
+    }, []);
+
+    // Cleanup listeners on unmount
+    useEffect(() => {
+        return () => {
+            window.removeEventListener('scroll', updateRect, { capture: true } as any);
+            if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+            }
+        };
+    }, [updateRect]);
+
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!ref.current) return;
 
-        const rect = ref.current.getBoundingClientRect();
+        const clientX = e.clientX;
+        const clientY = e.clientY;
 
-        const width = rect.width;
-        const height = rect.height;
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
 
-        const mouseXFromCenter = e.clientX - rect.left - width / 2;
-        const mouseYFromCenter = e.clientY - rect.top - height / 2;
+        frameRef.current = requestAnimationFrame(() => {
+            if (!ref.current) return;
+            // Bolt Optimization: Use cached rect to avoid reflow on every frame
+            const rect = rectRef.current || ref.current.getBoundingClientRect();
 
-        x.set(mouseXFromCenter / width);
-        y.set(mouseYFromCenter / height);
+            const width = rect.width;
+            const height = rect.height;
+
+            const mouseXFromCenter = clientX - rect.left - width / 2;
+            const mouseYFromCenter = clientY - rect.top - height / 2;
+
+            x.set(mouseXFromCenter / width);
+            y.set(mouseYFromCenter / height);
+        });
     };
 
     const handleMouseEnter = () => {
         setHovered(true);
+        updateRect();
+        // Bolt Optimization: Update rect on scroll to handle scrolling while hovering
+        window.addEventListener('scroll', updateRect, { capture: true, passive: true });
     };
 
     const handleMouseLeave = () => {
         setHovered(false);
+        window.removeEventListener('scroll', updateRect, { capture: true } as any);
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
         x.set(0);
         y.set(0);
     };
+
+    const isInteractive = !!onClick; // Derived for reuse
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (isInteractive && (e.key === "Enter" || e.key === " ")) {
+            e.preventDefault();
+            onClick?.();
+        }
+        rest.onKeyDown?.(e);
+    };
+
+    const interactiveProps = isInteractive ? {
+        role: 'button',
+        tabIndex: 0,
+        onKeyDown: handleKeyDown,
+        'aria-label': ariaLabel,
+    } : {};
 
     return (
         <div
@@ -64,13 +136,18 @@ export const ThreeDCard = ({ children, className, containerClassName, onClick }:
                 onMouseEnter={handleMouseEnter}
                 onMouseLeave={handleMouseLeave}
                 onClick={onClick}
+                {...interactiveProps}
+                {...rest}
                 style={{
                     rotateX,
                     rotateY,
                     transformStyle: "preserve-3d",
+                    cursor: isInteractive ? 'pointer' : undefined,
+                    ...style
                 }}
                 className={cn(
                     "relative transition-all duration-200 ease-linear",
+                    isInteractive && "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl",
                     className
                 )}
             >
@@ -165,25 +242,71 @@ export const ThreeDCardContainer = ({
     onClick?: () => void;
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
+    const frameRef = useRef<number>(0);
+    const rectRef = useRef<DOMRect | null>(null);
     const [isMouseEntered, setIsMouseEntered] = useState(false);
+
+    const updateRect = useCallback(() => {
+        if (containerRef.current) {
+            rectRef.current = containerRef.current.getBoundingClientRect();
+        }
+    }, []);
+
+    // Cleanup listeners on unmount
+    useEffect(() => {
+        return () => {
+            window.removeEventListener('scroll', updateRect, { capture: true } as any);
+            if (frameRef.current) {
+                cancelAnimationFrame(frameRef.current);
+            }
+        };
+    }, [updateRect]);
 
     const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
-        const { left, top, width, height } = containerRef.current.getBoundingClientRect();
-        const x = (e.clientX - left - width / 2) / 25;
-        const y = (e.clientY - top - height / 2) / 25;
-        containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+
+        const clientX = e.clientX;
+        const clientY = e.clientY;
+
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
+
+        frameRef.current = requestAnimationFrame(() => {
+            if (!containerRef.current) return;
+            // Bolt Optimization: Use cached rect to avoid reflow on every frame
+            const rect = rectRef.current || containerRef.current.getBoundingClientRect();
+
+            const { left, top, width, height } = rect;
+            const x = (clientX - left - width / 2) / 25;
+            const y = (clientY - top - height / 2) / 25;
+            containerRef.current.style.transform = `rotateY(${x}deg) rotateX(${-y}deg)`;
+        });
     };
 
     const handleMouseEnter = (e: React.MouseEvent<HTMLDivElement>) => {
         setIsMouseEntered(true);
         if (!containerRef.current) return;
+        updateRect();
+        // Bolt Optimization: Update rect on scroll to handle scrolling while hovering
+        window.addEventListener('scroll', updateRect, { capture: true, passive: true });
     };
 
     const handleMouseLeave = (e: React.MouseEvent<HTMLDivElement>) => {
         if (!containerRef.current) return;
         setIsMouseEntered(false);
+        window.removeEventListener('scroll', updateRect, { capture: true } as any);
+        if (frameRef.current) {
+            cancelAnimationFrame(frameRef.current);
+        }
         containerRef.current.style.transform = `rotateY(0deg) rotateX(0deg)`;
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+        }
     };
 
     return (
@@ -203,8 +326,12 @@ export const ThreeDCardContainer = ({
                     onMouseMove={handleMouseMove}
                     onMouseLeave={handleMouseLeave}
                     onClick={onClick}
+                    role={onClick ? "button" : undefined}
+                    tabIndex={onClick ? 0 : undefined}
+                    onKeyDown={handleKeyDown}
                     className={cn(
                         "flex items-center justify-center relative transition-all duration-200 ease-linear",
+                        onClick && "cursor-pointer focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 rounded-xl",
                         className
                     )}
                     style={{

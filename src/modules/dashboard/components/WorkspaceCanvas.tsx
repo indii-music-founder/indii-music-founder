@@ -72,7 +72,7 @@ export const WorkspaceCanvas = () => {
     }, []);
 
     return (
-        <div className="relative w-full h-[60vh] min-h-[400px] rounded-xl overflow-hidden border border-white/5 bg-[#0d1117] shadow-inner group">
+        <div className="relative w-full h-[60vh] min-h-[400px] rounded-xl overflow-hidden border border-white/5 bg-bg-dark shadow-inner group">
             <canvas
                 ref={canvasRef}
                 className="absolute inset-0 w-full h-full opacity-60"

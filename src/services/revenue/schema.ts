@@ -44,3 +44,48 @@ export const RevenueStatsSchema = z.object({
 });
 
 export type RevenueStats = z.infer<typeof RevenueStatsSchema>;
+export const PlatformEarningsSchema = z.object({
+  platformName: z.string(),
+  streams: z.number().default(0),
+  downloads: z.number().default(0),
+  revenue: z.number().default(0),
+});
+
+export const TerritoryEarningsSchema = z.object({
+  territoryCode: z.string(),
+  territoryName: z.string(),
+  streams: z.number().default(0),
+  downloads: z.number().default(0),
+  revenue: z.number().default(0),
+});
+
+export const ReleaseEarningsSchema = z.object({
+  releaseId: z.string(),
+  releaseName: z.string(),
+  isrc: z.string().optional(),
+  streams: z.number().default(0),
+  downloads: z.number().default(0),
+  revenue: z.number().default(0),
+});
+
+export const EarningsSummarySchema = z.object({
+  userId: z.string().optional(),
+  period: z.object({
+    startDate: z.string(),
+    endDate: z.string(),
+  }),
+  totalGrossRevenue: z.number().default(0),
+  totalNetRevenue: z.number().default(0),
+  totalStreams: z.number().default(0),
+  totalDownloads: z.number().default(0),
+  currencyCode: z.string().default('USD'),
+  byPlatform: z.array(PlatformEarningsSchema).default([]),
+  byTerritory: z.array(TerritoryEarningsSchema).default([]),
+  byRelease: z.array(ReleaseEarningsSchema).default([]),
+  createdAt: z.any().optional(),
+});
+
+export type PlatformEarnings = z.infer<typeof PlatformEarningsSchema>;
+export type TerritoryEarnings = z.infer<typeof TerritoryEarningsSchema>;
+export type ReleaseEarnings = z.infer<typeof ReleaseEarningsSchema>;
+export type EarningsSummary = z.infer<typeof EarningsSummarySchema>;

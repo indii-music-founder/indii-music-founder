@@ -4,7 +4,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { useStore, ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
-import { functions, db, auth } from '@/services/firebase';
+import { functionsWest1 as functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -13,26 +13,10 @@ import { QuotaExceededError } from '@/shared/types/errors';
 import { delay } from '@/utils/async';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
+import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
+import { z } from 'zod';
 
-export interface VideoGenerationOptions {
-    prompt: string;
-    aspectRatio?: string;
-    resolution?: string;
-    seed?: number;
-    negativePrompt?: string;
-    model?: string;
-    firstFrame?: string;
-    lastFrame?: string;
-    timeOffset?: number;
-    ingredients?: string[];
-    duration?: number;
-    fps?: number;
-    cameraMovement?: string;
-    motionStrength?: number;
-    shotList?: ShotItem[];
-    orgId?: string;
-    userProfile?: UserProfile;
-}
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 export class VideoGenerationService {
 
@@ -90,15 +74,15 @@ export class VideoGenerationService {
         return prompt;
     }
 
-    private determineTargetAspectRatio(options: { aspectRatio?: string, userProfile?: UserProfile }): string | undefined {
+    private determineTargetAspectRatio(options: { aspectRatio?: string, userProfile?: UserProfile }): VideoAspectRatio | undefined {
         // 1. Explicit override takes precedence
-        if (options.aspectRatio) return options.aspectRatio;
+        if (options.aspectRatio) return options.aspectRatio as VideoAspectRatio;
 
         // 2. Fallback to Distributor Constraints
         if (options.userProfile) {
             const constraints = getVideoConstraints(options.userProfile);
             if (constraints.canvas) {
-                return constraints.canvas.aspectRatio;
+                return constraints.canvas.aspectRatio as VideoAspectRatio;
             }
         }
 
@@ -106,6 +90,13 @@ export class VideoGenerationService {
     }
 
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Zod Validation
+        const validation = VideoGenerationOptionsSchema.safeParse(options);
+        if (!validation.success) {
+            const errorMsg = validation.error.issues.map(i => i.message).join(', ');
+            throw new Error(`Invalid video parameters: ${errorMsg}`);
+        }
+
         // Enforce Authentication
         if (!auth.currentUser) {
             throw new Error("You must be signed in to generate video. Please log in.");
@@ -161,9 +152,32 @@ export class VideoGenerationService {
      */
     subscribeToJob(jobId: string, callback: (job: any) => void): () => void {
         const jobRef = doc(db, 'videoJobs', jobId);
+        let maxQualityLevel = 0;
+
+        const getQualityLevel = (q?: string): number => {
+            if (q === 'pro') return 2;
+            if (q === 'flash') return 1;
+            return 0;
+        };
+
         return onSnapshot(jobRef, (snapshot) => {
             if (snapshot.exists()) {
-                callback({ id: snapshot.id, ...snapshot.data() });
+                const data = snapshot.data();
+                const quality = data.output?.metadata?.quality;
+                const currentLevel = getQualityLevel(quality);
+
+                // Race Condition Protection:
+                // If we have already seen a higher quality result (e.g. Pro),
+                // ignore any subsequent lower quality updates (e.g. late arriving Flash).
+                if (currentLevel < maxQualityLevel) {
+                    return;
+                }
+
+                if (currentLevel > maxQualityLevel) {
+                    maxQualityLevel = currentLevel;
+                }
+
+                callback({ id: snapshot.id, ...data });
             } else {
                 callback(null);
             }
@@ -173,7 +187,7 @@ export class VideoGenerationService {
     /**
      * Await a job to reach a terminal state (completed or failed).
      */
-    async waitForJob(jobId: string, timeoutMs: number = 300000): Promise<any> {
+    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<any> {
         let unsub: (() => void) | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
@@ -182,7 +196,13 @@ export class VideoGenerationService {
                 if (!job) return;
                 if (job.status === 'completed' || job.status === 'failed') {
                     if (job.status === 'completed') {
-                        resolve(job);
+                        // Enforce MIME Type Guard for Veo 3.1 Compliance
+                        const mimeType = job.output?.metadata?.mime_type;
+                        if (mimeType && mimeType !== 'video/mp4') {
+                            reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
+                        } else {
+                            resolve(job);
+                        }
                     } else {
                         reject(new Error(job.error || 'Video generation failed.'));
                     }
@@ -212,6 +232,8 @@ export class VideoGenerationService {
         seed?: number;
         negativePrompt?: string;
         firstFrame?: string;
+        generateAudio?: boolean;
+        model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
@@ -228,66 +250,57 @@ export class VideoGenerationService {
             );
         }
 
-        try {
-            const jobId = `long_${uuidv4()}`;
-            const orgId = useStore.getState().currentOrganizationId;
-            const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const jobId = `long_${uuidv4()}`;
+        const orgId = useStore.getState().currentOrganizationId;
+        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
-            // Enrich prompt with distributor context
-            const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
+        // Enrich prompt with distributor context
+        const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
 
-            const targetAspectRatio = this.determineTargetAspectRatio(options);
+        const targetAspectRatio = this.determineTargetAspectRatio(options);
 
-            // Construct segment-wise prompts for the background worker
-            const BLOCK_DURATION = 8;
-            const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
-            const prompts = Array.from({ length: numBlocks }, (_, i) =>
-                `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
-            );
+        // Construct segment-wise prompts for the background worker
+        const BLOCK_DURATION = 8;
+        const numBlocks = Math.ceil(options.totalDuration / BLOCK_DURATION);
+        const prompts = Array.from({ length: numBlocks }, (_, i) =>
+            `${enrichedPrompt} (Part ${i + 1}/${numBlocks})`
+        );
 
-            await triggerLongFormVideoJob({
-                jobId,
-                prompts,
-                orgId,
-                startImage: options.firstFrame,
-                totalDuration: options.totalDuration,
-                aspectRatio: targetAspectRatio,
-                resolution: options.resolution,
-                seed: options.seed,
-                negativePrompt: options.negativePrompt,
-            });
+        await triggerLongFormVideoJob({
+            jobId,
+            prompts,
+            orgId,
+            startImage: options.firstFrame,
+            totalDuration: options.totalDuration,
+            aspectRatio: targetAspectRatio,
+            resolution: options.resolution,
+            seed: options.seed,
+            generateAudio: options.generateAudio,
+            model: options.model,
+            negativePrompt: options.negativePrompt,
+        });
 
-            // Return a placeholder list with the main jobId
-            // The UI will subscribe to this jobId and see updates as progress changes
-            return [{
-                id: jobId,
-                url: '',
-                prompt: options.prompt
-            }];
-
-        } catch (e: unknown) {
-            throw e;
-        }
+        // Return a placeholder list with the main jobId
+        // The UI will subscribe to this jobId and see updates as progress changes
+        return [{
+            id: jobId,
+            url: '',
+            prompt: options.prompt
+        }];
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
-        try {
-            const { functions } = await import('../firebase');
-            const { httpsCallable } = await import('firebase/functions');
+        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
 
-            const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+        const jobId = uuidv4();
 
-            const jobId = uuidv4();
+        await triggerVideoJob({
+            ...options,
+            generateAudio: options.generateAudio,
+            jobId,
+        });
 
-            await triggerVideoJob({
-                ...options,
-                jobId,
-            });
-
-            return { jobId };
-        } catch (error) {
-            throw error;
-        }
+        return { jobId };
     }
 }
 

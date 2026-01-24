@@ -23,17 +23,17 @@ type PromptInputContextType = {
   maxHeight: number | string
   onSubmit?: () => void
   disabled?: boolean
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>
+  textareaRef: React.MutableRefObject<HTMLTextAreaElement | null>
 }
 
 const PromptInputContext = createContext<PromptInputContextType>({
   isLoading: false,
   value: "",
-  setValue: () => {},
+  setValue: () => { },
   maxHeight: 240,
   onSubmit: undefined,
   disabled: false,
-  textareaRef: React.createRef<HTMLTextAreaElement>(),
+  textareaRef: { current: null },
 })
 
 function usePromptInput() {
@@ -212,6 +212,7 @@ function PromptInputAction({
   ...props
 }: PromptInputActionProps) {
   const { disabled } = usePromptInput()
+  const ariaLabel = typeof tooltip === "string" ? tooltip : undefined
 
   return (
     <Tooltip {...props}>
@@ -219,6 +220,7 @@ function PromptInputAction({
         asChild
         disabled={disabled}
         onClick={(event) => event.stopPropagation()}
+        aria-label={ariaLabel}
       >
         {children}
       </TooltipTrigger>

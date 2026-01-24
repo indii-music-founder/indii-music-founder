@@ -1,4 +1,4 @@
-import { Schema } from 'firebase/ai';
+import { Schema, Tool } from 'firebase/ai';
 import {
     Content,
     ContentPart,
@@ -28,6 +28,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // import { trace } from '../agent/observability/TraceService';
 import { RateLimiter } from './RateLimiter';
 import { delay as asyncDelay } from '@/utils/async';
+import { logger } from '@/utils/logger';
 import { firebaseAI } from './FirebaseAIService';
 import { AIResponseCache } from './context/AIResponseCache';
 
@@ -192,12 +193,28 @@ export class AIService {
 
                 const generateOp = async () => {
                     try {
+                        // Inject thoughtSignature if present (Critical for Gemini 3 function calling)
+                        if (options.thoughtSignature && contents && (contents as Content[]).length > 0) {
+                            const validContents = contents as Content[];
+                            const lastContent = validContents[validContents.length - 1];
+                            if (lastContent.parts.length > 0) {
+                                const lastPart = lastContent.parts[lastContent.parts.length - 1];
+                                // Attach signature to the last part (Text, InlineData, or FunctionCall)
+                                (lastPart as any).thoughtSignature = options.thoughtSignature;
+                            }
+                        }
+
                         const result = await firebaseAI.generateContent(
                             contents as Content[], // asserted from above logic
                             model,
                             options.config,
                             options.systemInstruction,
-                            options.tools
+                            options.tools as unknown as Tool[],
+                            {
+                                signal,
+                                safetySettings: options.safetySettings,
+                                toolConfig: options.toolConfig
+                            }
                         );
 
                         // Map firebase/ai candidate to legacy Candidate
@@ -205,8 +222,18 @@ export class AIService {
                             content: {
                                 role: 'model',
                                 parts: (c.content?.parts || []).map(p => {
-                                    if ('text' in p) return { text: p.text || '' } as TextPart;
-                                    if ('functionCall' in p) return { functionCall: p.functionCall } as FunctionCallPart;
+                                    if ('text' in p) {
+                                        return {
+                                            text: p.text || '',
+                                            thoughtSignature: (p as any).thoughtSignature
+                                        } as TextPart;
+                                    }
+                                    if ('functionCall' in p) {
+                                        return {
+                                            functionCall: p.functionCall,
+                                            thoughtSignature: (p as any).thoughtSignature
+                                        } as FunctionCallPart;
+                                    }
                                     return { text: '' } as TextPart;
                                 })
                             },
@@ -235,38 +262,61 @@ export class AIService {
                         }
 
                         const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-                        console.error('[AIService] Generate Content Failed:', err.message);
+                        logger.error('[AIService] Generate Content Failed:', err.message);
                         throw err;
                     }
                 };
 
                 // Implement Race between Generation, Timeout, and AbortSignal
-                return new Promise<WrappedResponse>((resolve, reject) => {
-                    const timer = setTimeout(() => {
+                // Use proper cleanup to prevent memory leaks and race conditions
+                let timeoutId: ReturnType<typeof setTimeout> | undefined;
+                let abortHandler: (() => void) | undefined;
+
+                const cleanup = () => {
+                    if (timeoutId) clearTimeout(timeoutId);
+                    if (abortHandler && signal) {
+                        signal.removeEventListener('abort', abortHandler);
+                    }
+                };
+
+                // Check if already aborted before starting
+                if (signal?.aborted) {
+                    return Promise.reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was already cancelled'));
+                }
+
+                // Create timeout promise
+                const timeoutPromise = new Promise<never>((_, reject) => {
+                    timeoutId = setTimeout(() => {
+                        cleanup();
                         reject(new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${timeoutMs}ms`));
                     }, timeoutMs);
-
-                    if (signal) {
-                        if (signal.aborted) {
-                            clearTimeout(timer);
-                            return reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
-                        }
-                        signal.addEventListener('abort', () => {
-                            clearTimeout(timer);
-                            reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled'));
-                        });
-                    }
-
-                    generateOp()
-                        .then(res => {
-                            clearTimeout(timer);
-                            resolve(res);
-                        })
-                        .catch(err => {
-                            clearTimeout(timer);
-                            reject(err);
-                        });
                 });
+
+                // Create abort promise if signal provided
+                const abortPromise = signal ? new Promise<never>((_, reject) => {
+                    abortHandler = () => {
+                        cleanup();
+                        reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled by user'));
+                    };
+                    signal.addEventListener('abort', abortHandler);
+                }) : null;
+
+                // Race the generation against timeout and abort
+                const racers: Promise<WrappedResponse | never>[] = [generateOp(), timeoutPromise];
+                if (abortPromise) racers.push(abortPromise);
+
+                try {
+                    const result = await Promise.race(racers);
+                    cleanup();
+                    return result;
+                } catch (err: any) {
+                    cleanup();
+                    // Handle abort-related errors from Firebase SDK
+                    if (err?.message?.includes('aborted') || err?.name === 'AbortError') {
+                        throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled');
+                    }
+                    throw err;
+                }
             });
         };
 
@@ -306,7 +356,10 @@ export class AIService {
                 err.code === 'unavailable' ||
                 errorMessage.includes('QUOTA_EXCEEDED') ||
                 errorMessage.includes('503') ||
-                errorMessage.includes('429');
+                errorMessage.includes('429') ||
+                // Abort errors from Firebase SDK are often transient and retryable
+                errorMessage.includes('aborted') ||
+                errorMessage.includes('signal is aborted');
 
             if (retries > 0 && isRetryable) {
                 console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
@@ -332,10 +385,19 @@ export class AIService {
                 options.model,
                 options.config,
                 options.systemInstruction,
-                tools
+                tools as unknown as Tool[],
+                {
+                    signal: options.signal,
+                    safetySettings: options.safetySettings,
+                    toolConfig: options.toolConfig
+                }
             );
-        } catch (error) {
-            console.error('[AIService] Stream Response Error:', error);
+        } catch (error: any) {
+            // Handle abort errors gracefully
+            if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
+                throw new AppException(AppErrorCode.CANCELLED, 'Streaming request was cancelled');
+            }
+            logger.error('[AIService] Stream Response Error:', error);
             throw AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
         }
     }
@@ -348,7 +410,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateVideo(options));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Video Gen Error:', err.message);
+            logger.error('[AIService] Video Gen Error:', err.message);
             throw err;
         }
     }
@@ -361,11 +423,11 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateImage(
                 options.prompt,
                 options.model,
-                options.config
+                options.config as any
             ));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Image Gen Error:', err.message);
+            logger.error('[AIService] Image Gen Error:', err.message);
             throw err;
         }
     }
@@ -378,7 +440,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateSpeech(text, voice, modelOverride));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            console.error('[AIService] Speech Gen Error:', err.message);
+            logger.error('[AIService] Speech Gen Error:', err.message);
             throw err;
         }
     }
@@ -424,7 +486,7 @@ export class AIService {
         try {
             return JSON.parse(cleanJSON(text)) as T;
         } catch {
-            console.error('[AIService] Failed to parse JSON:', text);
+            logger.error('[AIService] Failed to parse JSON:', text);
             return {};
         }
     }

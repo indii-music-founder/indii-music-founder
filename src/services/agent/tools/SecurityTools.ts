@@ -7,6 +7,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { generateSecureId } from '@/utils/security';
 
 /**
  * Security Tools
@@ -109,7 +110,7 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
 
     rotate_credentials: wrapTool('rotate_credentials', async ({ service_name }: { service_name: string }) => {
         await delay(500);
-        const newKeyId = `key-${Math.random().toString(36).substring(7)}`;
+        const newKeyId = generateSecureId('key', 9);
         return toolSuccess({
             service: service_name,
             action: 'rotate_credentials',

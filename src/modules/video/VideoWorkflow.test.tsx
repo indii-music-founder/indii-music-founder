@@ -96,6 +96,14 @@ describe('VideoWorkflow', () => {
             videoInputs: {},
             setVideoInput: vi.fn(),
             currentOrganizationId: 'org-123',
+            whiskState: {
+                subjects: [],
+                scenes: [],
+                styles: [],
+                motion: [],
+                preciseReference: false,
+                targetMedia: 'video'
+            }
         });
 
         // Mock functional update capability for setJobStatus

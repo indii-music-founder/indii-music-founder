@@ -7,6 +7,7 @@ import React from 'react';
 // Mock Lucide icons
 vi.mock('lucide-react', () => ({
   CheckCircle: () => <div data-testid="check-circle-icon" />,
+  Receipt: () => <div data-testid="receipt-icon" />,
 }));
 
 describe('ExpenseItem', () => {

@@ -8,7 +8,7 @@ import { SecurityAgent } from '../definitions/SecurityAgent';
 import { PublicistAgent } from '../definitions/PublicistAgent';
 import { vi } from 'vitest';
 
-// Mock FirebaseAIService for verify_output
+// Mock FirebaseAIService for verify_output (which is currently in BrandTools)
 vi.mock('@/services/ai/FirebaseAIService', () => ({
     firebaseAI: {
         generateStructuredData: vi.fn().mockResolvedValue({
@@ -16,6 +16,20 @@ vi.mock('@/services/ai/FirebaseAIService', () => ({
             score: 8,
             critique: "Great content!"
         })
+    }
+}));
+
+// Also mock AIService because BaseAgent uses it
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => JSON.stringify({
+                score: 8,
+                pass: true,
+                reason: "Meets goals"
+            })
+        }),
+        generateContentStream: vi.fn()
     }
 }));
 
@@ -79,8 +93,8 @@ describe('Agent System Verification', () => {
 
     // 7. Test a Tool Execution (Mock)
     it('should execute a tool successfully', async () => {
-        const result = await TOOL_REGISTRY['verify_output']({ goal: "Test goal", content: "Test content" });
-        const parsed = JSON.parse(result);
-        expect(parsed.score).toBeGreaterThan(0);
+        const result = (await TOOL_REGISTRY['verify_output']({ goal: "Test goal", content: "Test content" })) as any;
+        expect(result.success).toBe(true);
+        expect(result.data.score).toBeGreaterThan(0);
     });
 });

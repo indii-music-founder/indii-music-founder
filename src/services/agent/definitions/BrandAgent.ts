@@ -2,6 +2,8 @@
 import { AgentConfig } from "../types";
 import systemPrompt from '@agents/brand/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
+import { useStore } from '@/core/store';
 
 export const BrandAgent: AgentConfig = {
     id: 'brand',
@@ -71,6 +73,25 @@ export const BrandAgent: AgentConfig = {
                     results
                 }
             };
+        },
+        analyze_audio: async (args: { uploadedAudioIndex: number }) => {
+            const { uploadedAudio } = useStore.getState();
+            const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
+
+            if (!audioItem) {
+                return { success: false, error: "No audio found. Please upload audio first." };
+            }
+
+            try {
+                const fetchRes = await fetch(audioItem.url);
+                const blob = await fetchRes.blob();
+                const file = new File([blob], "audio_track.mp3", { type: blob.type });
+
+                const profile = await audioIntelligence.analyze(file);
+                return { success: true, data: { analysis: profile } };
+            } catch (e: any) {
+                return { success: false, error: e.message };
+            }
         }
     },
     tools: [{
@@ -120,6 +141,17 @@ export const BrandAgent: AgentConfig = {
                         assets: { type: 'ARRAY', description: 'List of asset URLs or names to audit.', items: { type: 'STRING' } }
                     },
                     required: ['assets']
+                }
+            },
+            {
+                name: 'analyze_audio',
+                description: 'Analyze an uploaded audio track for BPM, Key, Genre, and Vibe.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {
+                        uploadedAudioIndex: { type: 'NUMBER', description: 'Index of the audio file in the upload list (default 0).' }
+                    },
+                    required: []
                 }
             }
         ]

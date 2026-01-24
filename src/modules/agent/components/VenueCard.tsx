@@ -1,13 +1,30 @@
 import * as React from 'react';
 import { Venue } from '../types';
-import { MapPin, Users, Globe, Mail, Plus, AlertCircle, CheckCircle } from 'lucide-react';
+import { MapPin, Users, Globe, Mail, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
 
 interface VenueCardProps {
     venue: Venue;
-    onAdd?: (venue: Venue) => void;
+    onAdd?: (venue: Venue) => Promise<void> | void;
 }
 
 export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
+    const [isAdding, setIsAdding] = React.useState(false);
+    const [isAdded, setIsAdded] = React.useState(false);
+
+    const handleAdd = async () => {
+        if (!onAdd || isAdding || isAdded) return;
+        setIsAdding(true);
+        try {
+            await onAdd(venue);
+            setIsAdded(true);
+        } catch (error) {
+            console.error("Failed to add venue:", error);
+            // Parent handles error toast
+        } finally {
+            setIsAdding(false);
+        }
+    };
+
     // Determine status color
     const getStatusColor = (status: Venue['status']) => {
         switch (status) {
@@ -100,10 +117,30 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
                 {/* Actions */}
                 <div className="flex gap-2 pt-2 border-t border-slate-800">
                     <button
-                        onClick={() => onAdd?.(venue)}
-                        className="flex-1 flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white py-2 rounded-lg text-xs font-bold transition-all active:scale-95 shadow-lg shadow-emerald-900/20"
+                        onClick={handleAdd}
+                        disabled={isAdding || isAdded}
+                        className={`
+                            flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-bold transition-all shadow-lg
+                            ${isAdded
+                                ? 'bg-slate-700 text-slate-300 cursor-default'
+                                : 'bg-emerald-600 hover:bg-emerald-500 text-white active:scale-95 shadow-emerald-900/20'
+                            }
+                            ${isAdding ? 'opacity-80 cursor-wait' : ''}
+                        `}
                     >
-                        <Plus size={14} /> Add to Roster
+                        {isAdding ? (
+                            <>
+                                <Loader2 size={14} className="animate-spin" /> Adding...
+                            </>
+                        ) : isAdded ? (
+                            <>
+                                <CheckCircle size={14} /> Added
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={14} /> Add to Roster
+                            </>
+                        )}
                     </button>
                     {/* <button className="p-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors">
                         <Mail size={16} />

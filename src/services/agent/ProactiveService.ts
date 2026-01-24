@@ -113,7 +113,7 @@ export class ProactiveService {
             const { agentService } = await import('./AgentService');
             const context: AgentContext = {
                 traceId: `proactive-${task.id}`,
-                // @ts-ignore - extensions for proactive details
+                // @ts-expect-error - testing private method access if needed - extensions for proactive details
                 proactiveTask: task,
                 triggerType: task.triggerType
             };
@@ -138,7 +138,7 @@ export class ProactiveService {
      * Schedule a task for future execution
      */
     async scheduleTask(agentId: string, instruction: string, executeAtMs: number): Promise<string> {
-        const userId = auth.currentUser?.uid;
+        const userId = auth.currentUser?.uid || (import.meta.env.DEV ? 'dev_user' : null);
         if (!userId) throw new Error('User must be authenticated');
 
         const task: Omit<ProactiveTask, 'id'> = {
@@ -159,7 +159,7 @@ export class ProactiveService {
      * Subscribe an agent to a system event
      */
     async subscribeToEvent(agentId: string, eventType: EventType, instruction: string): Promise<string> {
-        const userId = auth.currentUser?.uid;
+        const userId = auth.currentUser?.uid || (import.meta.env.DEV ? 'dev_user' : null);
         if (!userId) throw new Error('User must be authenticated');
 
         const task: Omit<ProactiveTask, 'id'> = {

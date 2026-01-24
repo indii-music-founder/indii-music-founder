@@ -163,7 +163,7 @@ export default function ReferenceManager() {
                 </div>
 
                 {referenceImages.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-24 text-gray-500 border border-dashed border-gray-800 rounded-3xl bg-[#0d1117]/50 mt-8">
+                    <div className="flex flex-col items-center justify-center py-24 text-gray-500 border border-dashed border-gray-800 rounded-3xl bg-bg-dark/50 mt-8">
                         <div className="p-6 bg-gray-800/30 rounded-full mb-6 relative">
                             <div className="absolute inset-0 bg-purple-500/20 blur-xl rounded-full animate-pulse" />
                             <ImageIcon size={48} className="opacity-40 relative z-10" />

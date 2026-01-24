@@ -58,14 +58,18 @@ export function DeptLoader({
 
     const content = (
         <div
+            // Accessibility: alert screen readers when loading state changes
+            role="status"
+            aria-live="polite"
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
             className={`
                 flex flex-col items-center justify-center gap-3 p-6 rounded-lg
                 ${showPulse ? 'indii-auto-update' : ''}
-                ${fullPage ? 'bg-[#0d1117]/90 backdrop-blur-sm' : ''}
+                ${fullPage ? 'bg-bg-dark/90 backdrop-blur-sm' : ''}
             `}
         >
             <Loader2
+                aria-hidden="true"
                 className={`${sizeClasses[size]} ${colors.text} animate-spin drop-shadow-[0_0_8px_var(--dept-color)]`}
             />
             {message && (
@@ -115,6 +119,7 @@ export function DeptSkeleton({
 
     return (
         <div
+            aria-hidden="true"
             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
             className={`
                 ${width} ${height} ${className}
@@ -139,7 +144,7 @@ export function DeptSkeleton({
  */
 export function DeptCardSkeleton({ moduleId }: { moduleId?: ModuleId }) {
     return (
-        <div className="bg-[#161b22]/50 rounded-xl p-5 dept-border-top space-y-3">
+        <div className="bg-bg-dark/50 rounded-xl p-5 dept-border-top space-y-3">
             <DeptSkeleton width="w-10" height="h-10" moduleId={moduleId} className="rounded-lg" />
             <DeptSkeleton width="w-3/4" height="h-4" moduleId={moduleId} />
             <DeptSkeleton width="w-1/2" height="h-3" moduleId={moduleId} />

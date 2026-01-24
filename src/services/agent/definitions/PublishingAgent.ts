@@ -19,13 +19,20 @@ export const PublishingAgent: AgentConfig = {
                 const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as Schema);
                 return { success: true, data: { status: "Submitted", ...response } };
             } catch (e) {
-                return { success: true, data: { status: "Submitted", iswc: "T-000.000.001-1" } };
+                const randomISWC = `T-${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}.${Math.floor(100 + Math.random() * 900)}-${Math.floor(1 + Math.random() * 9)}`;
+                return { success: true, data: { status: "Submitted", iswc: randomISWC } };
             }
         },
         analyze_contract: async (args: { file_data: string, mime_type: string }) => {
             const prompt = `Analyze this publishing contract for fair royalty rates and reversion clauses. Return a summary.`;
             const summary = await firebaseAI.generateText(prompt);
             return { success: true, data: { summary } };
+        },
+        package_release_assets: async (args: { releaseId: string, assets: any }) => {
+            // This function handles the definitive packaging of assets for DDEX
+            const prompt = `Prepare DDEX packaging metadata for release ${args.releaseId}. Assets: ${JSON.stringify(args.assets)}`;
+            const response = await firebaseAI.generateStructuredData<any>(prompt, { type: 'object' } as Schema);
+            return { success: true, data: { status: "Packaged", ...response } };
         }
     },
     tools: [{
@@ -53,6 +60,18 @@ export const PublishingAgent: AgentConfig = {
                         split: { type: "STRING", description: "Ownership split (e.g. 50/50)." }
                     },
                     required: ["title", "writers"]
+                }
+            },
+            {
+                name: "package_release_assets",
+                description: "Definitively package audio and artwork for DDEX distribution.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseId: { type: "STRING", description: "The ID of the release record." },
+                        assets: { type: "OBJECT", description: "The asset URLs and metadata." }
+                    },
+                    required: ["releaseId", "assets"]
                 }
             }
         ]

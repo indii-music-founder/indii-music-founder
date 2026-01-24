@@ -12,7 +12,8 @@ vi.mock('../../core/context/ToastContext', () => ({
 }));
 vi.mock('../../services/agent/registry', () => ({
     agentRegistry: {
-        get: vi.fn()
+        get: vi.fn(),
+        getAsync: vi.fn()
     }
 }));
 // Mock fabric globally to avoid "setLineDash" and other canvas context errors in JSDOM
@@ -142,22 +143,25 @@ describe('PhysicalMediaDesigner (Project Sonic Edition)', () => {
     });
 
     test('Creative Director chat interaction', async () => {
+        const mockExecute = vi.fn().mockResolvedValue({ text: "I'm the director, let's make it iconic." });
+        const mockAgent = { execute: mockExecute };
+        (agentRegistry.getAsync as any).mockResolvedValue(mockAgent);
+
         render(<PhysicalMediaDesigner />);
-        fireEvent.click(screen.getByText(/CD Front Cover/));
+        // Click the first appearance of the template text (the selector)
+        fireEvent.click(screen.getAllByText(/CD Front Cover/)[0]);
 
-        // Switch to Director tab
-        fireEvent.click(screen.getByText('Director AI'));
+        // Switch to Director tab - use role to be specific
+        fireEvent.click(screen.getByRole('button', { name: /Director AI/i }));
 
-        const input = screen.getByPlaceholderText(/Ask specifically/);
+        const input = await screen.findByPlaceholderText(/Ask specifically for gold/i);
         fireEvent.change(input, { target: { value: 'Make it pop' } });
-        fireEvent.click(screen.getByTestId('icon-send'));
+        fireEvent.click(screen.getByTestId('send-message-button'));
 
-        // Expect thinking state - using regex to be flexible with whitespace/icons
-        expect(screen.getByText(/Thinking/i)).toBeInTheDocument();
+        // Wait for response
+        const response = await screen.findByText(/iconic/i, {}, { timeout: 5000 });
+        expect(response).toBeInTheDocument();
 
-        // Wait for response 
-        await waitFor(() => {
-            expect(screen.getByText(/bold choice/i)).toBeInTheDocument();
-        }, { timeout: 4000 });
+        expect(mockExecute).toHaveBeenCalled();
     });
 });

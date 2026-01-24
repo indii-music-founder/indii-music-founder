@@ -172,7 +172,11 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
         : 0;
 
     return (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div
+            className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+            role="dialog"
+            aria-modal="true"
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
                 <div className="flex items-center justify-between p-6 border-b border-gray-800">
@@ -198,7 +202,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
 
                 {/* Progress Bar */}
                 {isGenerating && progress && (
-                    <div className="px-6 py-3 border-b border-gray-800 bg-[#0d1117]">
+                    <div className="px-6 py-3 border-b border-gray-800 bg-bg-dark">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-sm text-gray-400">
                                 Generating {progress.current} of {progress.total}...
@@ -242,7 +246,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                         {postStates.map((state, index) => (
                             <div
                                 key={state.post.id}
-                                className={`relative aspect-square bg-[#0d1117] border rounded-lg overflow-hidden group ${state.status === 'complete' || state.status === 'skipped'
+                                className={`relative aspect-square bg-bg-dark border rounded-lg overflow-hidden group ${state.status === 'complete' || state.status === 'skipped'
                                     ? 'border-gray-700'
                                     : state.status === 'error'
                                         ? 'border-red-500/50'
@@ -318,7 +322,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
                 </div>
 
                 {/* Footer */}
-                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-[#0d1117]">
+                <div className="flex items-center justify-between p-6 border-t border-gray-800 bg-bg-dark">
                     <div className="flex items-center gap-2">
                         {errorCount > 0 && !isGenerating && (
                             <button

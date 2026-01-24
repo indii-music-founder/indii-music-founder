@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
-const apiKey = process.env.VITE_API_KEY;
+const apiKey = process.env.VITE_API_KEY || process.env.GEMINI_API_KEY;
 const projectId = process.env.VITE_VERTEX_PROJECT_ID;
 const location = process.env.VITE_VERTEX_LOCATION || 'us-central1';
 
@@ -20,12 +20,14 @@ async function checkGeminiAPI() {
         return false;
     }
     try {
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' }); // Use a standard model for connectivity check
-        const result = await model.generateContent('Hello, are you there?');
-        const response = await result.response;
+        // Using new @google/genai SDK (GA)
+        const genAI = new GoogleGenAI({ apiKey });
+        const result = await genAI.models.generateContent({
+            model: 'gemini-3-flash-preview', // Use current approved model
+            contents: [{ role: 'user', parts: [{ text: 'Hello, are you there?' }] }]
+        });
         console.log('✅ Gemini API Success! (The key works for Google AI Studio)');
-        // console.log('Response:', response.text().slice(0, 50) + '...'); // Removed as per instruction, but keeping for reference if needed
+        console.log(`   Response preview: "${(result.text || '').slice(0, 50)}..."`);
         return true;
     } catch (error: any) {
         console.log('❌ Gemini API Failed');
@@ -49,7 +51,7 @@ async function checkVertexAI() {
 
     // Attempting to use the API Key with Vertex AI REST endpoint.
     // This often requires the key to be restricted/enabled for "Vertex AI API" in GCP Console.
-    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
     const payload = {
         contents: [{ role: 'user', parts: [{ text: 'Hello from Vertex REST?' }] }]
@@ -80,7 +82,6 @@ async function checkVertexAI() {
         }
 
         console.log('✅ Vertex AI Success! (The key works for Vertex AI)');
-        // console.log('Response:', data.candidates[0].content.parts[0].text.slice(0, 50) + '...'); // Removed as per instruction, but keeping for reference if needed
         return true;
     } catch (error: any) {
         console.log('❌ Vertex AI Network Error');

@@ -1,9 +1,16 @@
 {
   "mcpServers": {
     "docker": {
-      "command": "docker",
       "args": [
         "mcp"
+      ],
+      "command": "docker"
+    },
+    "notebooklm": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "notebooklm-mcp@latest"
       ]
     }
   }

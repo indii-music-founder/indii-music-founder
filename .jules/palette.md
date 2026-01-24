@@ -1,42 +1,28 @@
-## 2024-05-23 - [Improved Form Validation Pattern]
-**Learning:** Users (and developers) often default to generic "toast" errors which frustrate completion. Inline validation with focus management is a critical "micro-UX" win that is surprisingly easy to implement with standard React Refs.
-**Action:** When auditing forms, always check if `noValidate` is used without custom inline feedback. If so, implement the `errors` state pattern + `focus()` on first error.
+## 2024-05-22 - Accessible Icon Buttons in Collapsed Navigation
+**Learning:** Collapsed sidebars often rely on visual cues (icons) but strip away text labels, leaving screen reader users without context unless `aria-label` is explicitly managed based on the collapsed state.
+**Action:** When implementing collapsible navigation or UI elements, always pair the visual state toggle with a corresponding `aria-label` update or ensure the tooltip/accessible name is robust enough to handle the text-less state.
 
-## 2024-05-24 - [Hidden Action Trap]
-**Learning:** Hover-revealed actions (like "Use generated image" overlays) are completely invisible to keyboard users if they rely solely on `opacity-0 group-hover:opacity-100`. The action exists in the DOM but cannot be seen when focused.
-**Action:** Always pair `group-hover` with `group-focus-within` (e.g., `group-focus-within:opacity-100`) and ensure interactive children have visible focus rings (`focus-visible:ring`).
+## 2024-05-23 - Exposing Hidden Accessibility Features
+**Learning:** Powerful accessibility features (like voice input) often exist in the codebase logic (e.g., `handleMicClick`) but are inaccessible because they lack a UI trigger, assuming they are "nice to haves" or "future features".
+**Action:** Actively audit service layers for capabilities (like `VoiceService`) that are not exposed in the UI and create explicit, accessible triggers (buttons with `aria-label`) for them, especially for alternate input methods.
+## 2024-05-23 - Resurfacing Hidden Accessibility Features
+**Learning:** Found critical voice accessibility logic (`handleMicClick`) buried in unused code. Features that aid accessibility (like dictation) should not be hidden behind arbitrary flags or missing UI, as they benefit all users, not just those with disabilities.
+**Action:** When auditing components, check for "dead" event handlers that might be orphan accessibility features. Re-enable them with proper visual states (`isListening`) and feedback loops.
+## 2024-05-24 - Semantics of Custom Loaders
+**Learning:** Custom loading components often lack semantic meaning, relying purely on visual cues like spinners. Adding `role="status"` and `aria-live="polite"` makes them immediately accessible to screen readers without changing the visual design.
+**Action:** Always wrap custom loaders in a container with `role="status"` and ensuring inner decorative elements (spinners) are hidden with `aria-hidden="true"`.
 
-## 2025-02-18 - [CandidatesCarousel Accessibility]
-**Learning:** Action overlays on image cards often lack keyboard focus visibility, making them "phantom" traps.
-**Action:** Implemented `group-focus-within:opacity-100` pattern on `CandidatesCarousel`, confirming it as a standard solution for this recurring UI pattern.
+## 2025-02-20 - Nested Interactive Elements Conflict
+**Learning:** In the `LayersPanel`, the parent `div` had `role="button"` and an `onKeyDown` handler for selection, which inadvertently intercepted `Enter` key events from nested action buttons (visibility, lock, etc.), breaking their keyboard accessibility.
+**Action:** Added a check in the parent's `onKeyDown` handler to ignore events originating from nested `BUTTON` elements, ensuring that child actions remain accessible while preserving row selection.
 
-## 2024-05-24 - [Keyboard Accessibility for Hover Actions]
-**Learning:** Hover-only actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
-**Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
+## 2025-05-24 - File Input Accessibility
+**Learning:** File inputs hidden with `display: none` (or `.hidden`) inside labels cannot be focused via keyboard, breaking accessibility for uploaders.
+**Action:** Use `.sr-only` on the input to keep it in the DOM/accessibility tree, and apply `focus-within:ring` to the parent label to provide visual focus indication.
 
-## 2024-05-24 - [Hidden Actions Accessibility]
-**Learning:** Hover-revealed actions (like "Use generated image" overlays) are invisible to keyboard users unless explicitly handled. Standardizing on `group-focus-within:opacity-100` ensures these actions become visible when tabbing into the container.
-**Action:** Whenever using `group-hover:opacity-100` for action overlays, always pair it with `group-focus-within:opacity-100` and ensure interactive children have visible focus states.
-
-## 2024-05-24 - [Hidden Action Trap]
-**Learning:** Hover-revealed actions (opacity-0) are invisible to keyboard users, creating a "phantom focus" trap where users tab to invisible elements.
-**Action:** Always pair `group-hover:opacity-100` with `group-focus-within:opacity-100` for overlays containing interactive elements.
-
-## 2024-05-24 - [Hidden Focus Trap Fixed]
-**Learning:** Hover-revealed actions (like selection overlays) must use  and  to be accessible to keyboard users.
-**Action:** When creating overlays, always ensure they are revealed on focus as well as hover.
-
-## 2024-05-24 - [Hidden Focus Trap Fixed]
-**Learning:** Hover-revealed actions (like selection overlays) must use `focus-visible:opacity-100` and `group-focus-within:opacity-100` to be accessible to keyboard users.
-**Action:** When creating overlays, always ensure they are revealed on focus as well as hover.
-
-## 2025-05-28 - [Accessible Candidates Carousel]
-**Learning:** Horizontal scrolling lists (carousels) with hover-revealed actions create a "double trap" for keyboard users: they can't see the actions, and they might get stuck navigating a long list without a clear exit.
-**Action:** Ensure all hover-revealed actions in carousels use `group-focus-within:opacity-100` and `focus-visible:opacity-100`. Always provide an accessible `aria-label` for "Close" buttons that use icons.
-
-## 2026-01-13 - [Interactive List Item Trap]
-**Learning:** List items that use `onClick` on a `div` are inaccessible to keyboard users, who can't tab to them or activate them with keys.
-**Action:** Always add `role="button"`, `tabIndex={0}`, and `onKeyDown` (handling Enter/Space) to interactive list items, and ensure nested actions (like delete) are focusable and visible on focus.
-## 2025-10-26 - [ProjectHub Menu Accessibility]
-**Learning:** The "More Vertical" menu in `ProjectHub` was a classic "Hidden Action Trap". It was only visible on hover, making it accessible to mouse users but a mystery to keyboard users who would tab onto an invisible button.
-**Action:** Applied `group-focus-within:opacity-100` to the container and added `focus-visible:ring-2` to the button. This ensures the menu appears when any element inside it receives focus, and the button itself has a clear focus indicator. Also added `aria-label` for screen reader context.
+## 2025-05-24 - Semantic Loading States
+**Learning:** Custom visual loaders like `DeptLoader` often rely purely on visual cues (spinners), leaving screen reader users unaware of processing states.
+**Action:** Always wrap custom loaders in `role="status"` with `aria-live="polite"` and include visually hidden text (or `aria-label`) if no visible text is present.
+## 2024-05-24 - Segmented Controls as Tabs
+**Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
+**Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.

@@ -1,0 +1,70 @@
+{
+  "treaties": {
+    "CA": {
+      "country_name": "Canada",
+      "rates": {
+        "dividends": 15,
+        "interest": 10,
+        "royalties_copyright": 0,
+        "royalties_industrial": 10
+      },
+      "tin_required": true,
+      "treaty_article": "XII"
+    },
+    "DE": {
+      "country_name": "Germany",
+      "rates": {
+        "dividends": 15,
+        "interest": 0,
+        "royalties_copyright": 0,
+        "royalties_industrial": 0
+      },
+      "tin_required": true,
+      "treaty_article": "12"
+    },
+    "DEFAULT": {
+      "country_name": "Non-Treaty Country",
+      "rates": {
+        "dividends": 30,
+        "interest": 30,
+        "royalties_copyright": 30,
+        "royalties_industrial": 30
+      },
+      "tin_required": false,
+      "treaty_article": "N/A"
+    },
+    "FR": {
+      "country_name": "France",
+      "rates": {
+        "dividends": 15,
+        "interest": 0,
+        "royalties_copyright": 5,
+        "royalties_industrial": 5
+      },
+      "tin_required": true,
+      "treaty_article": "12"
+    },
+    "JP": {
+      "country_name": "Japan",
+      "rates": {
+        "dividends": 10,
+        "interest": 0,
+        "royalties_copyright": 0,
+        "royalties_industrial": 0
+      },
+      "tin_required": true,
+      "treaty_article": "12"
+    },
+    "UK": {
+      "country_name": "United Kingdom",
+      "rates": {
+        "dividends": 15,
+        "interest": 0,
+        "royalties_copyright": 0,
+        "royalties_industrial": 0
+      },
+      "tin_required": true,
+      "treaty_article": "12"
+    }
+  }
+}

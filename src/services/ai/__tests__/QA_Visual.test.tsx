@@ -169,7 +169,7 @@ describe('Visual Regression & Performance Verification', () => {
             const mockUseStore = vi.mocked(useStore);
             mockUseStore.mockImplementation((selector: any) => selector ? selector(mockStoreState) : mockStoreState);
 
-            const { rerender } = render(<ChatOverlay />);
+            const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
             // Verify initial content
             expect(await screen.findByText('Thinking...')).toBeDefined();
@@ -189,7 +189,7 @@ describe('Visual Regression & Performance Verification', () => {
             mockUseStore.mockImplementation((selector: any) => selector ? selector(updatedStoreState) : updatedStoreState);
 
             // Re-render to simulate hook update
-            rerender(<ChatOverlay />);
+            rerender(<ChatOverlay onClose={vi.fn()} />);
 
             // 3. Verify updated content
             expect(await screen.findByText('Thinking... Done.')).toBeDefined();

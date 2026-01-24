@@ -1,11 +1,24 @@
 import React from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image } from 'lucide-react';
+import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Image, Activity, Clock } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export default function Sidebar() {
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore();
+    // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore(
+        useShallow((state) => ({
+            currentModule: state.currentModule,
+            setModule: state.setModule,
+            isSidebarOpen: state.isSidebarOpen,
+            toggleSidebar: state.toggleSidebar,
+            userProfile: state.userProfile,
+            logout: state.logout,
+            setTheme: state.setTheme,
+        }))
+    );
 
     interface SidebarItem {
         id: ModuleId;
@@ -39,37 +52,48 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
-        { id: 'observability', icon: Globe, label: 'System Observability' },
+        { id: 'history', icon: Clock, label: 'History' },
     ];
 
     const NavItem = ({ item, isActive }: { item: SidebarItem, isActive: boolean }) => {
         const colors = getColorForModule(item.id);
 
         return (
-            <button
-                onClick={() => setModule(item.id)}
-                style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
-                className={`
-                    w-full flex items-center gap-3 px-4 py-2 text-sm
-                    bolt-interactive relative
-                    ${isActive
-                        ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
-                        : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
-                    }
-                    ${!isSidebarOpen ? 'justify-center px-2' : ''}
-                `}
-                title={!isSidebarOpen ? item.label : ''}
-                data-testid={`nav-item-${item.id}`}
-                aria-current={isActive ? 'page' : undefined}
-            >
-                <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
-                {isSidebarOpen && <span className="truncate">{item.label}</span>}
-            </button>
+            <TooltipProvider delayDuration={0}>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            onClick={() => setModule(item.id)}
+                            style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
+                            className={`
+                                w-full flex items-center gap-3 px-4 py-2 text-sm
+                                bolt-interactive relative
+                                ${isActive
+                                    ? `${colors.text} ${colors.bg} border-l-2 border-l-[--dept-color]`
+                                    : `text-gray-400 ${colors.hoverText} ${colors.hoverBg} border-l-2 border-l-transparent`
+                                }
+                                ${!isSidebarOpen ? 'justify-center px-2' : ''}
+                            `}
+                            data-testid={`nav-item-${item.id}`}
+                            aria-current={isActive ? 'page' : undefined}
+                            aria-label={!isSidebarOpen ? item.label : undefined}
+                        >
+                            <item.icon size={16} className={isActive ? 'drop-shadow-[0_0_4px_var(--dept-color)]' : ''} />
+                            {isSidebarOpen && <span className="truncate">{item.label}</span>}
+                        </button>
+                    </TooltipTrigger>
+                    {!isSidebarOpen && (
+                        <TooltipContent side="right" className="bg-[#1a1a1a] text-white border-white/10 font-medium">
+                            {item.label}
+                        </TooltipContent>
+                    )}
+                </Tooltip>
+            </TooltipProvider>
         );
     };
 
     return (
-        <div className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-[#0d1117] border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
+        <nav aria-label="Main navigation" className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (
@@ -79,6 +103,7 @@ export default function Sidebar() {
                             onClick={() => setModule('dashboard')}
                             className="flex items-center gap-2 text-xs text-gray-500 mt-1 hover:text-white transition-colors"
                             data-testid="return-hq-btn"
+                            aria-label="Return to HQ"
                         >
                             <Layout size={12} /> Return to HQ
                         </button>
@@ -128,7 +153,7 @@ export default function Sidebar() {
             {/* User Profile Section */}
             <div className="p-4 border-t border-white/5 mt-auto">
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0">
                         <span className="text-xs font-bold text-white">
                             S
                         </span>
@@ -147,6 +172,7 @@ export default function Sidebar() {
                         onClick={() => logout()}
                         className={`p-1.5 hover:bg-white/10 rounded text-gray-400 hover:text-red-400 transition-colors ${!isSidebarOpen ? 'mt-1' : ''}`}
                         title="Reload System"
+                        aria-label="Reload System"
                         data-testid="logout-btn"
                     >
                         <LogOut size={14} />
@@ -158,11 +184,22 @@ export default function Sidebar() {
                     <div className="mt-4 flex items-center justify-around bg-black/20 p-2 rounded-lg border border-white/5">
                         <button
                             onClick={() => setTheme('dark')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-indigo-400 bg-white/5' : 'text-gray-500 hover:text-gray-300'}`}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-dept-creative bg-white/5 shadow-[0_0_10px_rgba(156,39,176,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                             title="Dark Mode"
+                            aria-label="Toggle Dark Mode"
                             data-testid="theme-btn-dark"
                         >
                             <Palette size={14} />
+                        </button>
+
+                        <button
+                            onClick={() => setModule('observability')}
+                            className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                            title="System Observability"
+                            aria-label="System Observability"
+                            data-testid="observability-footer-btn"
+                        >
+                            <Activity size={14} />
                         </button>
                     </div>
                 )}
@@ -173,6 +210,6 @@ export default function Sidebar() {
                     </p>
                 )}
             </div>
-        </div>
+        </nav>
     );
 };

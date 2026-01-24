@@ -1,4 +1,4 @@
-import { collection, query, where, getDocs, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DashboardRelease, ReleaseStatus } from '@/services/distribution/types/distributor';
@@ -71,6 +71,24 @@ export class DistributionSyncService {
             );
         } catch (error) {
             console.error('Error fetching releases from Firestore:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Fetches a single full release record by ID
+     */
+    static async getRelease(releaseId: string): Promise<DDEXReleaseRecord | null> {
+        try {
+            const docRef = doc(db, 'ddexReleases', releaseId);
+            const snapshot = await getDoc(docRef);
+            if (snapshot.exists()) {
+                const data = snapshot.data() as DDEXReleaseRecord;
+                return { ...data, id: snapshot.id };
+            }
+            return null;
+        } catch (error) {
+            console.error('Error fetching release:', error);
             throw error;
         }
     }

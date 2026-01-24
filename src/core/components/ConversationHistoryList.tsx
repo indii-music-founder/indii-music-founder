@@ -1,21 +1,12 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, Archive, Edit2, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-// Helper to format date relative or absolute
-const formatDate = (ts: number) => {
-    const date = new Date(ts);
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
 
-    if (diff < 24 * 60 * 60 * 1000) {
-        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    }
-    return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-};
 
-export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) => {
+export const ConversationHistoryList = ({ onClose, className }: { onClose: () => void, className?: string }) => {
     const sessions = useStore(state => state.sessions);
     const activeSessionId = useStore(state => state.activeSessionId);
     const setActiveSession = useStore(state => state.setActiveSession);
@@ -25,7 +16,7 @@ export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) =>
     const sortedSessions = Object.values(sessions).sort((a, b) => b.updatedAt - a.updatedAt);
 
     return (
-        <div className="flex flex-col h-full bg-black/40 text-white w-64 border-r border-white/5 backdrop-blur-3xl">
+        <div className={cn("flex flex-col h-full bg-black/40 text-white w-64 border-r border-white/5 backdrop-blur-3xl", className)}>
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <h3 className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
                 <button
@@ -77,7 +68,7 @@ export const ConversationHistoryList = ({ onClose }: { onClose: () => void }) =>
                             <span className="w-1 h-1 rounded-full bg-white/10"></span>
                             <span className="flex items-center gap-1.5">
                                 <Calendar size={10} className="text-gray-600" />
-                                {formatDate(session.updatedAt)}
+                                {formatSmartDate(session.updatedAt)}
                             </span>
                         </div>
 

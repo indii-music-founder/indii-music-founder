@@ -38,6 +38,11 @@ The Merchandise module is a comprehensive, AI-powered system for designing merch
 **Features:**
 
 - User greeting with dynamic name
+- Revenue metrics ("Total Revenue")
+- Sales volume ("Units Sold")
+- Conversion rate tracking
+- Health Score (94/100) - overall health metric
+- Sales Performance - week-over-week growth
 - Revenue metrics
 - Sales volume ("Units Sold")
 - Conversion rate tracking
@@ -61,6 +66,10 @@ The Designer has **two modes** accessible via toggle:
 ┌────────┬──────────────┬────────────┐
 │ Assets │    Canvas    │ Properties │
 │Library │              │            │
+│        │  [DESIGN]    │  Layers    │
+│ + + +  │   [HERE]     │  Blending  │
+│ + + +  │              │  Opacity   │
+│ + + +  │              │            │
 │        │  [PRODUCT]   │  Layers    │
 │        │              │  Blending  │
 │        │              │  Opacity   │
@@ -69,6 +78,7 @@ The Designer has **two modes** accessible via toggle:
 ```
 
 **Features:**
+- **Left Panel:** Asset library with 9 placeholder slots
 
 - **Left Panel:** Asset library with professional design placeholders
 - **Tool Selection:** Stickers, Text, AI Gen
@@ -161,11 +171,16 @@ The Designer has **two modes** accessible via toggle:
 - **Order Sample** button
 - **Send to Production** button
 
+### 3. Catalog (Standard & Pro Collections)
 ### 3. Catalog (Standard & Pro Templates)
 
 **Purpose:** Browse and clone product templates
 
 **Standard Collection:**
+- Bright, vibrant aesthetic
+- Creamy yellow background (#FFF9E5)
+- Light yellow surface colors (#FFEBA0)
+- "MERCH COLLECTION" hero banner
 
 - Bright, vibrant aesthetic
 - Professional color palette
@@ -181,6 +196,7 @@ The Designer has **two modes** accessible via toggle:
 - Black background with white accents
 - Yellow-400 accent colors
 - Glassmorphism effects with backdrop blur
+- "MERCH PRO" with gradient text
 - "PREMIUM PRO" with gradient text
 - "THE CATALOGUE" with sourcing/shipping details
 - Staggered grid layout (offset rows)
@@ -371,6 +387,7 @@ Video generation jobs
 
 ```typescript
 {
+  primary: '#FFE135',        // Yellow
   primary: '#FFE135',        // Merchandise yellow
   secondary: '#FFEBA0',      // Light yellow
   background: '#FFF9E5',     // Creamy yellow
@@ -383,6 +400,7 @@ Video generation jobs
 
 ```typescript
 {
+  primary: '#FFE135',        // Yellow
   primary: '#FFE135',        // Merchandise yellow
   secondary: '#1a1a1a',      // Near black
   background: '#000000',     // Pure black
@@ -403,6 +421,7 @@ MerchStudio.tsx (Router)
 ├── MerchDesigner.tsx
 │   ├── Layout
 │   ├── MerchCard
+│   ├── MerchButton
 │   ├── PrimaryButton
 │   └── EnhancedShowroom
 │       ├── ManufacturingPanel
@@ -574,6 +593,8 @@ function Component() {
 ## Known Issues
 
 ### E2E Test Failures (Pre-Migration)
+- Standard collection price test fails (text split across elements)
+- Pro collection price test fails (same issue)
 
 - `Merch` price test fails (text split across elements)
 - `ProMerch` price test fails (same issue)
@@ -612,6 +633,7 @@ function Component() {
 **Before:**
 
 - Showroom scattered in Creative Studio (confusing UX)
+- Basic merchandise feature with limited showroom mode
 - Legacy Merch module with limited showroom mode
 - Two incomplete implementations
 

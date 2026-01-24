@@ -21,7 +21,8 @@ vi.mock('@/core/store', () => ({
             agentHistory: [],
             addAgentMessage: vi.fn(),
             updateAgentMessage: vi.fn()
-        })
+        }),
+        setState: vi.fn()
     }
 }));
 
@@ -29,15 +30,23 @@ vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContent: vi.fn().mockResolvedValue({
             text: () => 'Mock Agent Response',
-            functionCalls: () => []
+            functionCalls: () => [],
+            usage: () => ({ totalTokens: 10, promptTokens: 5, candidatesTokens: 5 })
         }),
         // Ensure generateContentStream is also mocked if agents use it
-        generateContentStream: vi.fn().mockImplementation(() => {
-            return Promise.resolve({
-                getReader: () => ({
-                    read: async () => ({ done: true, value: undefined })
+        generateContentStream: vi.fn().mockImplementation(async () => {
+            return {
+                stream: (async function* () {
+                    yield { text: () => 'Mock' };
+                    yield { text: () => ' Agent' };
+                    yield { text: () => ' Response' };
+                })(),
+                response: Promise.resolve({
+                    text: () => 'Mock Agent Response',
+                    functionCalls: () => [],
+                    usage: () => ({ totalTokens: 10, promptTokens: 5, candidatesTokens: 5 })
                 })
-            });
+            };
         })
     }
 }));

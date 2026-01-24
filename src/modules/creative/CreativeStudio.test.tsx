@@ -40,7 +40,7 @@ describe('CreativeStudio', () => {
             error: mockToastError
         });
 
-        (useStore as any).mockReturnValue({
+        const storeState = {
             viewMode: 'gallery',
             setViewMode: vi.fn(),
             selectedItem: null,
@@ -50,6 +50,8 @@ describe('CreativeStudio', () => {
             pendingPrompt: null,
             setPendingPrompt: mockSetPendingPrompt,
             setPrompt: mockSetPrompt,
+            setIsGenerating: vi.fn(), // Added missing property
+            isGenerating: false,
             studioControls: {
                 resolution: '1024x1024',
                 aspectRatio: '1:1',
@@ -71,7 +73,16 @@ describe('CreativeStudio', () => {
             toggleWhiskItem: vi.fn(),
             updateWhiskItem: vi.fn(),
             setPreciseReference: vi.fn()
+        };
+
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(storeState);
+            }
+            return storeState;
         });
+        (useStore as any).getState = vi.fn().mockReturnValue(storeState);
+        (useStore as any).setState = vi.fn();
     });
 
     it('renders correctly', () => {
@@ -81,11 +92,20 @@ describe('CreativeStudio', () => {
     });
 
     it('triggers image generation when pendingPrompt is set', async () => {
-        (useStore as any).mockReturnValue({
-            ...useStore(),
+        const currentStore = (useStore as any).getState();
+        const updatedStore = {
+            ...currentStore,
             pendingPrompt: 'test prompt',
             generationMode: 'image'
+        };
+
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(updatedStore);
+            }
+            return updatedStore;
         });
+        (useStore as any).getState.mockReturnValue(updatedStore);
 
         mockGenerateImages.mockResolvedValue([{
             id: 'img-1',
@@ -118,11 +138,20 @@ describe('CreativeStudio', () => {
     });
 
     it('handles generation errors gracefully', async () => {
-        (useStore as any).mockReturnValue({
-            ...useStore(),
+        const currentStore = (useStore as any).getState();
+        const updatedStore = {
+            ...currentStore,
             pendingPrompt: 'fail prompt',
             generationMode: 'image'
+        };
+
+        (useStore as any).mockImplementation((selector: any) => {
+            if (selector && typeof selector === 'function') {
+                return selector(updatedStore);
+            }
+            return updatedStore;
         });
+        (useStore as any).getState.mockReturnValue(updatedStore);
 
         mockGenerateImages.mockRejectedValue(new Error('Generation failed'));
 

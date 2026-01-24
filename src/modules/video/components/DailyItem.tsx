@@ -1,14 +1,5 @@
 import React, { useRef } from 'react';
-import { HistoryItem } from '@/core/store/slices/creativeSlice';
-
-interface DailyItemProps {
-    video: HistoryItem;
-    isSelected: boolean;
-    onSelect: (item: HistoryItem) => void;
-    onDragStart: (e: React.DragEvent, item: HistoryItem) => void;
-    /** Duration in seconds. Defaults to 4s if not provided. */
-    duration?: number;
-}
+import { DailyItemProps, arePropsEqual } from './DailyItem.utils';
 
 export const DailyItem = React.memo<DailyItemProps>(({
     video,
@@ -89,6 +80,6 @@ export const DailyItem = React.memo<DailyItemProps>(({
             </div>
         </div>
     );
-});
+}, arePropsEqual);
 
 DailyItem.displayName = 'DailyItem';

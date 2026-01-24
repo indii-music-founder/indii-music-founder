@@ -9,9 +9,12 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    updateDoc,
+    increment
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
+import { paymentService } from '@/services/payment/PaymentService';
 
 export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
@@ -102,56 +105,77 @@ export class MarketplaceService {
             createdAt: (doc.data().createdAt as Timestamp)?.toDate().toISOString()
         } as Product));
 
-        // Auto-seed if empty
-        if (results.length === 0) {
-            // @ts-expect-error seedDatabase might be missing in some versions
-            if (typeof this.seedDatabase === 'function') {
-                // @ts-expect-error seedDatabase might be missing in some versions
-                await this.seedDatabase(artistId);
-                return this.getProductsByArtist(artistId); // Recursive call after seeding
-            }
-        }
-
         return results;
     }
 
     /**
      * Process a purchase for a product.
-     * NOTE: This currently uses MOCK payment logic for the Alpha phase.
      */
     static async purchaseProduct(productId: string, buyerId: string, sellerId: string, amount: number): Promise<string> {
-        // 1. Validate Product Availability (Inventory) - Skipped for MVP/Unlimited digital items
+        // 1. Validate Product Availability (Inventory)
+        const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
+        const productSnap = await getDoc(productRef);
 
-        // 2. Process Payment (MOCK)
-        const mockTransactionId = `txn_${Math.random().toString(36).substr(2, 9)}`;
-        const success = true; // Simulate 100% success rate
-
-        if (!success) {
-            throw new Error('Payment failed');
+        if (!productSnap.exists()) {
+            throw new Error('Product not found');
         }
 
-        // 3. Record Purchase
-        const purchaseData: Omit<Purchase, 'id'> = {
-            buyerId,
-            sellerId,
-            productId,
-            amount,
-            currency: 'USD',
-            status: 'completed',
-            transactionId: mockTransactionId,
-            createdAt: new Date().toISOString() // Storing as string for simplicity in Purchase type
-        };
+        const productData = productSnap.data() as Product;
+        const hasInventoryTracking = typeof productData.inventory === 'number';
 
-        const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
+        if (hasInventoryTracking && (productData.inventory as number) <= 0) {
+            throw new Error('Out of Stock');
+        }
 
-        // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
-        // 4. Update Inventory (if applicable) and Sales Stats (Social Drops)
-        // const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
-        // await updateDoc(productRef, { inventory: increment(-1) }); // If we tracked inventory
+        // 1.5 Reserve Inventory (Optimistic Decrement)
+        if (hasInventoryTracking) {
+            await updateDoc(productRef, {
+                inventory: increment(-1)
+            });
+        }
 
-        // 5. Trigger fulfillment (e.g. grant access to digital asset)
-        // This would be handled by a cloud function trigger on the 'purchases' collection
+        // 2. Process Payment via PaymentService
+        try {
+            const transaction = await paymentService.processPayment({
+                buyerId,
+                sellerId,
+                amount,
+                currency: 'USD',
+                productId
+            });
 
-        return purchaseRef.id;
+            // 3. Record Purchase
+            const purchaseData: Omit<Purchase, 'id'> = {
+                buyerId,
+                sellerId,
+                productId,
+                amount,
+                currency: 'USD',
+                status: 'completed',
+                transactionId: transaction.id,
+                createdAt: new Date().toISOString()
+            };
+
+            const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
+            return purchaseRef.id;
+
+        } catch (error) {
+            console.error('[MarketplaceService] Purchase failed:', error);
+
+            // ROLLBACK: Restore inventory if payment failed
+            if (hasInventoryTracking) {
+                try {
+                    await updateDoc(productRef, {
+                        inventory: increment(1)
+                    });
+                    console.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
+                } catch (rollbackError) {
+                    console.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
+                    // In a real system, we'd log this to an admin alert queue
+                }
+            }
+
+            throw error; // Propagate error to UI
+        }
     }
 }

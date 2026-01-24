@@ -54,7 +54,11 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     // Sync player state with store
     useEffect(() => {
         if (playerRef.current) {
-            isPlaying ? playerRef.current.play() : playerRef.current.pause();
+            if (isPlaying) {
+                playerRef.current.play();
+            } else {
+                playerRef.current.pause();
+            }
         }
     }, [isPlaying]);
 

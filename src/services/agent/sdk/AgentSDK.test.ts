@@ -18,6 +18,22 @@ vi.mock('@/services/ai/AIService', () => ({
     }
 }));
 
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 })
+    }
+}));
+
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn().mockReturnValue({
+            currentOrganizationId: 'org-test',
+            currentProjectId: 'proj-test'
+        })
+    }
+}));
+
+
 describe('Agent SDK Integration', () => {
     beforeEach(() => {
         PromptService.clear();
@@ -65,22 +81,28 @@ describe('Agent SDK Integration', () => {
 
         const harness = new AgentTestHarness(agentConfig);
 
-        // Mock sequence for generateContentStream
-        const aiSpy = vi.mocked(AI.generateContentStream);
+        // Mock sequence for generateContent (Tool Call -> Final Result)
+        const aiSpy = vi.mocked(AI.generateContent);
 
+        // 1. First call: AI requests tool execution
         aiSpy.mockResolvedValueOnce({
-            stream: (async function* () {
-                yield { text: () => 'Thinking...' };
-            })(),
-            response: Promise.resolve({
-                text: () => 'Thinking...',
-                functionCalls: () => [{ name: 'testTool', args: {} }]
-            })
+            response: {} as any,
+            text: () => 'Thinking...',
+            functionCalls: () => [{ name: 'testTool', args: {} }],
+            usage: () => ({})
+        } as any);
+
+        // 2. Second call: AI sees tool result and finishes
+        aiSpy.mockResolvedValueOnce({
+            response: {} as any,
+            text: () => 'Task completed successfully',
+            functionCalls: () => [],
+            usage: () => ({})
         } as any);
 
         const result = await harness.run('Do work');
 
         expect(mockTool).toHaveBeenCalled();
-        expect(result.text).toContain('[Tool: testTool] Output: Success: "tool result"');
+        expect(result.text).toBe('Task completed successfully');
     });
 });

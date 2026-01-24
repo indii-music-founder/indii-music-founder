@@ -3,12 +3,12 @@ import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
-import type { EarningsSummary as DSREarningsSummary } from '@/services/ddex/types/dsr';
+import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 
 export function useFinance() {
     const { userProfile } = useStore();
 
-    const [earningsSummary, setEarningsSummary] = useState<DSREarningsSummary | null>(null);
+    const [earningsSummary, setEarningsSummary] = useState<ValidatedEarningsSummary | null>(null);
     const [earningsLoading, setEarningsLoading] = useState(true);
     const [earningsError, setEarningsError] = useState<string | null>(null);
 
@@ -21,14 +21,18 @@ export function useFinance() {
     // Subscribe to Earnings
     useEffect(() => {
         if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setEarningsLoading(false);
             return;
         }
 
         setEarningsLoading(true);
-        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: DSREarningsSummary | null) => {
+        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: ValidatedEarningsSummary | null) => {
             setEarningsSummary(data);
             setEarningsLoading(false);
+            if (!data) {
+                console.info('[useFinance] No validated earnings data available for user.');
+            }
         });
 
         return () => unsubscribe();
@@ -37,6 +41,7 @@ export function useFinance() {
     // Subscribe to Expenses
     useEffect(() => {
         if (!userProfile?.id) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
             setExpensesLoading(false);
             return;
         }
@@ -52,7 +57,9 @@ export function useFinance() {
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
         try {
-            await financeService.addExpense(expenseData);
+            const newExpense = await financeService.addExpense(expenseData);
+            // ⚡ Bolt Optimization: Update local state instead of re-fetching
+            setExpenses(prev => [newExpense, ...prev]);
             return true;
         } catch (e) {
             console.error(e);
@@ -61,6 +68,13 @@ export function useFinance() {
             return false;
         }
     }, [toast]);
+
+    // Initial load (Current Month) - Removed undefined loadEarnings call
+    /*
+    useEffect(() => {
+        // ... Logic relying on undefined loadEarnings removed
+    }, [userProfile?.id, earningsSummary, earningsLoading]);
+    */
 
     return {
         // Earnings

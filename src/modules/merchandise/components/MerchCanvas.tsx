@@ -22,6 +22,19 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
     const history = useRef<string[]>([]);
     const historyIndex = useRef<number>(-1);
 
+    const saveHistory = () => {
+        if (!fabricCanvas.current) return;
+        const json = JSON.stringify(fabricCanvas.current.toJSON());
+
+        // If we are in the middle of history, prune the forward path
+        if (historyIndex.current < history.current.length - 1) {
+            history.current = history.current.slice(0, historyIndex.current + 1);
+        }
+
+        history.current.push(json);
+        historyIndex.current = history.current.length - 1;
+    };
+
     useEffect(() => {
         if (!canvasRef.current) return;
 
@@ -62,18 +75,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
         };
     }, [width, height]);
 
-    const saveHistory = () => {
-        if (!fabricCanvas.current) return;
-        const json = JSON.stringify(fabricCanvas.current.toJSON());
 
-        // If we are in the middle of history, prune the forward path
-        if (historyIndex.current < history.current.length - 1) {
-            history.current = history.current.slice(0, historyIndex.current + 1);
-        }
-
-        history.current.push(json);
-        historyIndex.current = history.current.length - 1;
-    };
 
     useImperativeHandle(ref, () => ({
         exportToDataURL: () => {

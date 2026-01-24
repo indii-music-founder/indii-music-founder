@@ -3,11 +3,11 @@
  */
 
 import Stripe from 'stripe';
-import { SubscriptionTier } from '../../../src/services/subscription/types';
+import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
 
 // Initialize Stripe with secret key
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_for_build', {
+  apiVersion: '2025-12-15.clover',
   typescript: true
 });
 
@@ -38,7 +38,7 @@ export function getPriceId(tier: SubscriptionTier, isYearly: boolean): string | 
   const prices = STRIPE_PRICES[tier];
   if (!prices) return null;
 
-  return isYearly ? prices.yearly : prices.monthly;
+  return (isYearly ? prices.yearly : prices.monthly) || null;
 }
 
 /**

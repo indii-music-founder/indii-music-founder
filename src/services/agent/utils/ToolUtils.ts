@@ -1,4 +1,5 @@
 import { ToolFunctionResult, ToolFunction, ToolFunctionArgs, AgentContext } from '../types';
+import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 /**
  * Standardized helper to create a success ToolFunctionResult
@@ -37,12 +38,12 @@ export function toolError(error: string, code?: string, metadata?: Record<string
  */
 export function wrapTool<TArgs extends ToolFunctionArgs>(
     toolName: string,
-    fn: (args: TArgs, context?: AgentContext) => Promise<any>
+    fn: (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => Promise<any>
 ): ToolFunction<TArgs> {
-    return async (args: TArgs, context?: AgentContext): Promise<ToolFunctionResult> => {
+    return async (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext): Promise<ToolFunctionResult> => {
         const startTime = Date.now();
         try {
-            const result = await fn(args, context);
+            const result = await fn(args, context, toolContext);
 
             // If the tool already returns a ToolFunctionResult, just ensure metadata is there
             if (result && typeof result === 'object' && 'success' in result) {
@@ -62,11 +63,16 @@ export function wrapTool<TArgs extends ToolFunctionArgs>(
                 toolName
             });
 
-        } catch (error: unknown) {
+        } catch (error: any) {
             const errorMessage = error instanceof Error ? error.message : String(error);
             console.error(`[Tool:${toolName}] execution failed:`, error);
 
-            return toolError(errorMessage, 'TOOL_EXECUTION_ERROR', {
+            // Preserve specific error codes if available (e.g. QUOTA_EXCEEDED)
+            const errorCode = (error?.code && typeof error.code === 'string')
+                ? error.code
+                : (error?.name === 'QuotaExceededError' ? 'QUOTA_EXCEEDED' : 'TOOL_EXECUTION_ERROR');
+
+            return toolError(errorMessage, errorCode, {
                 latencyMs: Date.now() - startTime,
                 toolName,
                 stack: error instanceof Error ? error.stack : undefined
