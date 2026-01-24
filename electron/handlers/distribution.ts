@@ -6,6 +6,7 @@ import { DistributionStageReleaseSchema } from '../utils/validation';
 import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 
 import { PythonBridge } from '../utils/python-bridge';
@@ -79,6 +80,11 @@ export const setupDistributionHandlers = () => {
                     // Handle file:// protocol if present
                     const rawPath = file.data.startsWith('file://') ? new URL(file.data).pathname : file.data;
                     const sourcePath = decodeURIComponent(rawPath);
+
+                    // Security: Verify Access Authorization
+                    if (!accessControlService.verifyAccess(sourcePath)) {
+                        throw new Error(`Security Violation: Access to ${sourcePath} is denied. File was not authorized by user.`);
+                    }
 
                     // Security Check: LFI Prevention
                     validateSafeDistributionSource(sourcePath);
@@ -359,11 +365,19 @@ export const setupDistributionHandlers = () => {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
             }
 
+            // Security: Verify Access Authorization for source path
+            if (!accessControlService.verifyAccess(localPath)) {
+                throw new Error(`Security Violation: Access to ${localPath} is denied. File was not authorized by user.`);
+            }
+
             // Security: Validate source path
             validateSafeDistributionSource(localPath);
 
             // Security: If key is a path, validate it
             if (key && (key.includes('/') || key.includes('\\'))) {
+                if (!accessControlService.verifyAccess(key)) {
+                    throw new Error(`Security Violation: Access to key file ${key} is denied.`);
+                }
                 validateSafeDistributionSource(key, { allowKeys: true });
             }
 
