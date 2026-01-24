@@ -219,6 +219,8 @@ function useOnboardingRedirect() {
     }, [user, authLoading, currentModule]);
 }
 
+// Module Renderer and App Component follow
+
 // ============================================================================
 // Module Renderer Component
 // ============================================================================
