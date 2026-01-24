@@ -136,46 +136,53 @@ export class ImageGenerationService {
                 return [];
             }
 
-            for (const img of data.images) {
-                if (img.bytesBase64Encoded) {
-                    const mimeType = img.mimeType || 'image/png';
-                    const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
-                    const id = crypto.randomUUID();
+            // Bolt Optimization: Parallelize image processing and uploading
+            // processing images in parallel significantly reduces total latency for batches (count > 1)
+            const promises = data.images.map(async (img) => {
+                if (!img.bytesBase64Encoded) return null;
 
-                    let finalUrl = dataUri;
+                const mimeType = img.mimeType || 'image/png';
+                const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                const id = crypto.randomUUID();
 
-                    try {
-                        const { useStore } = await import('@/core/store');
-                        const userId = useStore.getState().userProfile?.id;
+                let finalUrl = dataUri;
 
-                        if (userId) {
-                            const { CloudStorageService } = await import('@/services/CloudStorageService');
-                            const saved = await CloudStorageService.smartSave(dataUri, id, userId);
-                            finalUrl = saved.url;
-                        }
-                    } catch (e) {
-                        console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
-                        try {
-                            const { CloudStorageService } = await import('@/services/CloudStorageService');
-                            // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
-                            const compressed = await CloudStorageService.compressImage(dataUri, {
-                                maxWidth: 512,
-                                maxHeight: 512,
-                                quality: 0.6
-                            });
-                            finalUrl = compressed.dataUri;
-                        } catch (compressionError) {
-                            console.warn("Compression failed, using original size:", compressionError);
-                        }
+                try {
+                    const { useStore } = await import('@/core/store');
+                    const userId = useStore.getState().userProfile?.id;
+
+                    if (userId) {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                        finalUrl = saved.url;
                     }
-
-                    results.push({
-                        id,
-                        url: finalUrl,
-                        prompt: options.prompt
-                    });
+                } catch (e) {
+                    console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                    try {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
+                        const compressed = await CloudStorageService.compressImage(dataUri, {
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            quality: 0.6
+                        });
+                        finalUrl = compressed.dataUri;
+                    } catch (compressionError) {
+                        console.warn("Compression failed, using original size:", compressionError);
+                    }
                 }
-            }
+
+                return {
+                    id,
+                    url: finalUrl,
+                    prompt: options.prompt
+                };
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (err: any) {
             console.error("❌ Image Generation Error:", err);
             console.error("Error details:", {
