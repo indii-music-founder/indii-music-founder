@@ -206,6 +206,19 @@ function useAppInitialization() {
     }, [user, initializeHistory, loadProjects]);
 }
 
+function useOnboardingRedirect() {
+    const { user, authLoading, currentModule } = useStore();
+
+    useEffect(() => {
+        if (authLoading) return;
+
+        // If not authenticated, we might want to redirect to a login screen?
+        // But currently App.tsx doesn't have a specific login route visible in the code I saw.
+        // It renders modules. We probably need a Login Module or Overlay.
+
+    }, [user, authLoading, currentModule]);
+}
+
 // ============================================================================
 // Module Renderer Component
 // ============================================================================
@@ -245,6 +258,7 @@ export default function App() {
 
     // Initialize app
     useAppInitialization();
+    useOnboardingRedirect();
 
     // Log module changes in dev
 
