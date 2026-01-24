@@ -49,7 +49,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         if (initialMode) {
             setGenerationMode(initialMode);
         }
-    }, [initialMode]);
+    }, [initialMode, setGenerationMode]);
 
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
@@ -60,7 +60,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             // But if we just mounted with initialMode='image', generationMode might be 'image' already.
             setViewMode('gallery');
         }
-    }, [generationMode]);
+    }, [generationMode, viewMode, setViewMode]);
 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {
@@ -131,7 +131,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             };
             generateImage();
         }
-    }, [pendingPrompt, generationMode, whiskState]);
+    }, [pendingPrompt, generationMode, whiskState, setPrompt, setPendingPrompt, studioControls, addToHistory, currentProjectId, userProfile, toast]);
 
     return (
         <ModuleErrorBoundary moduleName="Creative Director">

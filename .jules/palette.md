@@ -12,6 +12,17 @@
 **Learning:** Custom loading components often lack semantic meaning, relying purely on visual cues like spinners. Adding `role="status"` and `aria-live="polite"` makes them immediately accessible to screen readers without changing the visual design.
 **Action:** Always wrap custom loaders in a container with `role="status"` and ensuring inner decorative elements (spinners) are hidden with `aria-hidden="true"`.
 
+## 2025-02-20 - Nested Interactive Elements Conflict
+**Learning:** In the `LayersPanel`, the parent `div` had `role="button"` and an `onKeyDown` handler for selection, which inadvertently intercepted `Enter` key events from nested action buttons (visibility, lock, etc.), breaking their keyboard accessibility.
+**Action:** Added a check in the parent's `onKeyDown` handler to ignore events originating from nested `BUTTON` elements, ensuring that child actions remain accessible while preserving row selection.
+
+## 2025-05-24 - File Input Accessibility
+**Learning:** File inputs hidden with `display: none` (or `.hidden`) inside labels cannot be focused via keyboard, breaking accessibility for uploaders.
+**Action:** Use `.sr-only` on the input to keep it in the DOM/accessibility tree, and apply `focus-within:ring` to the parent label to provide visual focus indication.
+
+## 2025-05-24 - Semantic Loading States
+**Learning:** Custom visual loaders like `DeptLoader` often rely purely on visual cues (spinners), leaving screen reader users unaware of processing states.
+**Action:** Always wrap custom loaders in `role="status"` with `aria-live="polite"` and include visually hidden text (or `aria-label`) if no visible text is present.
 ## 2024-05-24 - Segmented Controls as Tabs
 **Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
 **Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.

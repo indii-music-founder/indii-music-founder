@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Search, Filter, Loader2, Book, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
@@ -19,7 +19,7 @@ export default function KnowledgeBase() {
 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const loadDocuments = async () => {
+    const loadDocuments = useCallback(async () => {
         setIsLoading(true);
         try {
             const docs = await knowledgeBaseService.getDocuments();
@@ -29,11 +29,11 @@ export default function KnowledgeBase() {
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [toast]);
 
     useEffect(() => {
         loadDocuments();
-    }, []);
+    }, [loadDocuments]);
 
     const handleFileUpload = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
