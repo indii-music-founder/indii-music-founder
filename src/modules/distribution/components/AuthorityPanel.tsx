@@ -81,7 +81,16 @@ export const AuthorityPanel: React.FC = () => {
                         title: t.trackTitle,
                         isrc: trackIsrc
                     };
-                }) || [],
+                }) || (() => {
+                    // Fallback for single-track releases stored without a tracks array
+                    const singleTrackIsrc = releaseData.metadata.isrc || activeIsrc;
+                    if (!singleTrackIsrc) throw new Error('Missing ISRC for single track release');
+                    return [{
+                        id: '1',
+                        title: releaseData.metadata.trackTitle,
+                        isrc: singleTrackIsrc
+                    }];
+                })(),
                 upc: releaseData.metadata.upc || activeUpc,
                 label: releaseData.metadata.labelName
             };
