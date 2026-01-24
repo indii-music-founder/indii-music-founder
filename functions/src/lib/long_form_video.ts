@@ -140,17 +140,18 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                 const segmentId = `${jobId}_seg_${i}`;
                 const prompt = prompts[i];
 
-                // 1. Trigger Video Generation
-                // FIX #2: Validate API key exists before use
-                // Use secret instead of process.env
-                const apiKey = geminiApiKey.value();
-                if (!apiKey) {
-                    throw new Error("GEMINI_API_KEY secret is not set");
-                }
-
+                // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
                     const modelId = 'veo-3.1-generate-preview';
-                    const triggerEndpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:predictLongRunning?key=${apiKey}`;
+
+                    const auth = new GoogleAuth({
+                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                    });
+                    const client = await auth.getClient();
+                    const projectId = await auth.getProjectId();
+                    const accessToken = await client.getAccessToken();
+
+                    const triggerEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
                     // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
@@ -176,7 +177,10 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                     const triggerResponse = await fetch(triggerEndpoint, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken.token}`
+                        },
                         body: JSON.stringify(requestBody)
                     });
 
@@ -198,8 +202,19 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     await step.sleep(`wait-segment-${i}-${attempt}`, `${SEGMENT_POLL_INTERVAL_SECONDS}s`);
 
                     segmentResult = await step.run(`poll-segment-${i}-${attempt}`, async () => {
+                        const auth = new GoogleAuth({
+                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                        });
+                        const client = await auth.getClient();
+                        const accessToken = await client.getAccessToken();
+
                         const statusResponse = await fetch(
-                            `https://generativelanguage.googleapis.com/v1beta/${operationName}?key=${apiKey}`
+                            `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken.token}`
+                                }
+                            }
                         );
                         if (!statusResponse.ok) {
                             return { done: false };

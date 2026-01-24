@@ -77,8 +77,9 @@ export class CanvasOperationsService {
         try {
             await this.canvas.loadFromJSON(JSON.parse(json));
             this.canvas.renderAll();
-        } catch (e) {
-            console.error("Failed to load canvas from JSON", e);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            console.error(`Failed to load canvas from JSON: ${message}`);
         }
     }
 
@@ -169,8 +170,9 @@ export class CanvasOperationsService {
         try {
             const res = await fetch(dataUrl);
             return await res.blob();
-        } catch (e) {
-            console.error("Failed to create blob from canvas", e);
+        } catch (e: unknown) {
+            const message = e instanceof Error ? e.message : 'Unknown error';
+            console.error(`Failed to create blob from canvas: ${message}`);
             return null;
         }
     }
@@ -236,7 +238,8 @@ export class CanvasOperationsService {
             const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4); // Remove ', 0.5)' for partial match
 
             const colorPaths = maskObjects.filter(obj => {
-                return obj.stroke && obj.stroke.toString().startsWith(targetRgbaStart);
+                const stroke = obj.stroke;
+                return stroke && typeof stroke === 'string' && stroke.startsWith(targetRgbaStart);
             });
 
             if (colorPaths.length > 0) {

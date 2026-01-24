@@ -4,7 +4,7 @@ import { getFirestore, type Firestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: "indiios-v-1-1.web.app",
+  authDomain: "indiios-v-1-1.firebaseapp.com",
   databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
   projectId: "indiios-v-1-1",
   storageBucket: "indiios-v-1-1.firebasestorage.app",

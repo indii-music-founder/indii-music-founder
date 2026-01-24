@@ -1,15 +1,27 @@
-## 2024-05-22 - ChatOverlay Streaming & Focus
-**Learning:** Streaming text updates in `aria-live` regions can cause screen readers to re-read the entire content on every character addition if the region is not configured correctly or if the updates are too frequent.
-**Action:** Use `aria-live="polite"` on the message container but ensure we don't trigger updates for every character. Alternatively, rely on the user manually checking the message after the "Thinking..." state resolves, or use a dedicated "status" region for the "Thinking" state.
+## 2024-05-23 - Bidirectional Linkage for Collapsible Regions
+**Learning:** `aria-expanded` and `aria-controls` on a button are not enough; the controlled region must be identifiable, ideally via `aria-labelledby` pointing back to the button, especially for screen reader context when navigating content.
+**Action:** When implementing collapsible regions, ensure bidirectional linkage: `button[aria-controls=region-id]` and `region[aria-labelledby=button-id]`.
 
-## 2024-05-22 - Collapsible Sections
-**Learning:** Custom collapsible sections (like `ThoughtChain`) often miss `aria-expanded` and `aria-controls`, leaving screen reader users unaware of the state change.
-**Action:** Always bind `aria-expanded={isOpen}` to the toggle button and `id` to the content region.
+## 2024-05-23 - ARIA Feed Children Constraints
+**Learning:** `role="feed"` strictly requires `role="article"` children. Interactive controls (like "Load More" buttons) must reside *outside* the feed container to avoid `aria-required-children` violations.
+**Action:** Verify mock structures for virtualized lists to ensure `axe-core` doesn't report false positives due to invalid child nesting in tests.
 
-## 2025-02-18 - Modal Focus & Semantics
-**Learning:** Relying on `div` overlays for modals without `role="dialog"` and `aria-modal="true"` leaves screen reader users stranded in the main document flow. Simple visual "X" buttons are invisible to AT without explicit `aria-label`.
-**Action:** Enforce `role="dialog"`, `aria-modal="true"`, and accessible names for all custom modals. Ensure custom toggle buttons (like platform selectors) use `aria-pressed` to communicate state, not just color.
+## 2025-02-18 - Hidden Inputs & Axe
+**Learning:** `axe-core` flags `<input type="file" class="hidden">` as missing labels if `display: none` is not computed in the test environment (JSDOM).
+**Action:** Explicitly use `style={{ display: 'none' }}` or add `aria-label` to hidden functional inputs to satisfy accessibility checks in all environments.
 
-## 2025-05-19 - Vitest Axe Integration
-**Learning:** `vitest-axe` matchers are not exported from the package root in this environment, causing test crashes. Additionally, `jsdom` lacks full `getComputedStyle` support for pseudo-elements, causing noisy (but non-fatal) errors during `axe-core` execution.
-**Action:** Import matchers from `vitest-axe/matchers` explicitly. For clean test output, consider mocking `getComputedStyle` or filtering console errors if color contrast checks are not the primary target.
+## 2025-02-18 - Keyboard Trap & Focus Restoration
+**Learning:** Custom menus/modals must manually handle `Escape` key to close and restore focus to the trigger element upon closing to maintain keyboard navigation flow.
+**Action:** Use `useEffect` for `keydown` listeners and `useRef` to track and restore focus to the trigger button.
+
+## 2025-05-24 - Duplicate ARIA Labels in Composition
+**Learning:** Passing `aria-label` to a component that uses `asChild` (like Radix `TooltipTrigger`) while also defining it on the child element can result in duplicate attributes in the rendered DOM, causing React warnings and potential screen reader verbosity.
+**Action:** When using `asChild` composition pattern, ensure `aria-label` is applied only once, preferably on the component that renders the final DOM element or let the parent pass it down cleanly.
+
+## 2025-05-24 - Icon-Only Buttons and Test Queries
+**Learning:** `getByText` fails for icon-only buttons even if they have `title` or `aria-label`. `getByRole('button', { name: '...' })` is the robust way to query these and simultaneously verify the accessible name.
+**Action:** Always use `getByRole` with the `name` option for interactive elements to verify both existence and accessibility compliance.
+
+## 2025-05-24 - JSDOM Range Input Interaction
+**Learning:** `userEvent.keyboard` does not trigger value changes on `<input type="range">` in JSDOM environments, unlike real browsers.
+**Action:** Use `userEvent.tab()` to verify focusability, but fallback to `fireEvent.change` to test the `onChange` logic in unit tests, acknowledging the environment limitation.

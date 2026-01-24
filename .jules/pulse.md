@@ -1,3 +1,3 @@
-## 2024-05-23 - Video Workflow Error Handling
-**Learning:** VideoWorkflow uses 'failed' status to stop the spinner but doesn't have a specific 'error' view component. It falls back to 'Director's Chair' (empty state) or resets the active video if one existed. This is good for recovery but might be confusing if the toast is missed.
-**Action:** Ensure toast duration is sufficient or consider adding an inline error message in the empty state for better persistence.
+## 2024-05-23 - Chat Overlay Status Patterns
+**Learning:** The Chat Overlay uses a non-blocking "Status Bar" in the footer to indicate processing (`isAgentProcessing`), which remains active during streaming. This differs from "Blocking Loader" patterns.
+**Action:** When testing transitions, assert that the status indicator remains visible alongside streaming content until the final completion state (`isAgentProcessing: false`).

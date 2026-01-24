@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
+import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
+import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 
@@ -13,6 +14,7 @@ import { coordinator } from './WorkflowCoordinator';
  */
 export class AgentService {
     private isProcessing = false;
+    private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
@@ -22,6 +24,23 @@ export class AgentService {
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.executor = new AgentExecutor();
+
+        // Pre-warm agents in the background (non-blocking)
+        this.warmup();
+    }
+
+    /**
+     * Pre-warm critical agents. Call this on app startup for better first-message latency.
+     */
+    async warmup(): Promise<void> {
+        if (this.isWarmedUp) return;
+
+        try {
+            await agentRegistry.warmup();
+            this.isWarmedUp = true;
+        } catch (e) {
+            console.warn('[indii:Service] Warmup failed, will retry on first message:', e);
+        }
     }
 
     /**
@@ -33,6 +52,11 @@ export class AgentService {
     async sendMessage(text: string, attachments?: { mimeType: string; base64: string }[], forcedAgentId?: string): Promise<void> {
         if (this.isProcessing) return;
         this.isProcessing = true;
+
+        // Ensure agents are warmed up before processing (non-blocking if already done)
+        if (!this.isWarmedUp) {
+            await this.warmup();
+        }
 
         // PII Redaction for Agent/LLM Input AND Storage
         // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
@@ -120,19 +144,31 @@ export class AgentService {
                     updateAgentMessage(responseId, { text: currentStreamedText });
                 }
 
-                if (event.type === 'thought' || event.type === 'tool') {
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                     const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-                    const newThought = {
+
+                    // Firestore explicitly rejects 'undefined' values. We must sanitize.
+                    const newThought: AgentThought = {
                         id: uuidv4(),
-                        text: event.content,
+                        text: event.content || '', // Ensure no undefined text
                         timestamp: Date.now(),
-                        type: event.type as 'tool' | 'logic' | 'error',
-                        toolName: event.toolName
+                        type: event.type as any, // Typed in interface
                     };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) {
+                            newThought.toolName = event.toolName;
+                        }
+                    }
+
+                    // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
+                    // stringify/parse removes all undefined keys.
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    console.log('[AgentService] Adding thought:', safeThought);
 
                     if (currentMsg) {
                         updateAgentMessage(responseId, {
-                            thoughts: [...(currentMsg.thoughts || []), newThought]
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
                         });
                     }
                 }
@@ -140,10 +176,17 @@ export class AgentService {
 
             if (result && result.text) {
                 if (!result.text.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, { text: result.text, isStreaming: false });
+                    updateAgentMessage(responseId, {
+                        text: result.text,
+                        isStreaming: false,
+                        thoughtSignature: result.thoughtSignature
+                    });
                 }
             } else {
-                updateAgentMessage(responseId, { isStreaming: false });
+                updateAgentMessage(responseId, {
+                    isStreaming: false,
+                    thoughtSignature: result?.thoughtSignature
+                });
             }
 
         } catch (e: unknown) {
@@ -163,8 +206,26 @@ export class AgentService {
      * @param attachments Optional file attachments.
      */
     async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<any> {
-        // Build a pipeline context from the parent context or fresh
-        const context = parentContext || await this.contextPipeline.buildContext();
+        // CRITICAL: Deep clone context to prevent mutation affecting parent agent
+        // Context objects are passed by reference and can be mutated during execution,
+        // causing parent agents to lose their execution state ("dismantling")
+        let context: AgentContext;
+
+        if (parentContext) {
+            // Deep clone to isolate execution contexts
+            context = JSON.parse(JSON.stringify(parentContext));
+
+            // Restore non-serializable properties after cloning
+            // (chatHistory and attachments contain references we want to preserve)
+            if (parentContext.chatHistory) {
+                context.chatHistory = [...parentContext.chatHistory];
+            }
+            if (parentContext.attachments) {
+                context.attachments = [...parentContext.attachments];
+            }
+        } else {
+            context = await this.contextPipeline.buildContext();
+        }
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];

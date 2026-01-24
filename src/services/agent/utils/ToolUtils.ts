@@ -1,4 +1,5 @@
 import { ToolFunctionResult, ToolFunction, ToolFunctionArgs, AgentContext } from '../types';
+import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 /**
  * Standardized helper to create a success ToolFunctionResult
@@ -37,12 +38,12 @@ export function toolError(error: string, code?: string, metadata?: Record<string
  */
 export function wrapTool<TArgs extends ToolFunctionArgs>(
     toolName: string,
-    fn: (args: TArgs, context?: AgentContext) => Promise<any>
+    fn: (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => Promise<any>
 ): ToolFunction<TArgs> {
-    return async (args: TArgs, context?: AgentContext): Promise<ToolFunctionResult> => {
+    return async (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext): Promise<ToolFunctionResult> => {
         const startTime = Date.now();
         try {
-            const result = await fn(args, context);
+            const result = await fn(args, context, toolContext);
 
             // If the tool already returns a ToolFunctionResult, just ensure metadata is there
             if (result && typeof result === 'object' && 'success' in result) {

@@ -19,7 +19,8 @@ vi.mock('@/core/store', () => ({
             currentProjectId: 'test-project',
             currentOrganizationId: 'org-1',
             requestApproval: vi.fn().mockResolvedValue(true)
-        })
+        }),
+        setState: vi.fn()
     }
 }));
 
@@ -29,6 +30,15 @@ vi.mock('@/services/firebase', () => ({
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => 'Mock Response',
+            functionCalls: () => [],
+            usage: () => ({
+                promptTokenCount: 10,
+                candidatesTokenCount: 20,
+                totalTokenCount: 30
+            })
+        }),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: (async function* () {
                 yield { text: () => 'Mock Response' };
@@ -36,7 +46,7 @@ vi.mock('@/services/ai/AIService', () => ({
             response: Promise.resolve({
                 text: () => 'Mock Response',
                 functionCalls: () => [],
-                usage: vi.fn().mockReturnValue({
+                usage: () => ({
                     promptTokenCount: 10,
                     candidatesTokenCount: 20,
                     totalTokenCount: 30
@@ -45,6 +55,14 @@ vi.mock('@/services/ai/AIService', () => ({
         })
     }
 }));
+
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remaining: 100 })
+    }
+}));
+
+
 
 describe('Specialist Agents Connection', () => {
     it('should have Brand, Road, and Marketing agents registered', async () => {
@@ -72,7 +90,7 @@ describe('Specialist Agents Connection', () => {
         const { AI } = await import('@/services/ai/AIService');
         await brandAgent.execute('Test Task', {});
 
-        const callArgs = (AI.generateContentStream as any).mock.calls[0][0];
+        const callArgs = (AI.generateContent as any).mock.calls[0][0];
         const tools = callArgs.tools;
 
         // Create a flat list of all function declarations from all tool objects

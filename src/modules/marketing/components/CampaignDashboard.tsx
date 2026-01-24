@@ -66,21 +66,33 @@ const CampaignDashboard: React.FC = () => {
         setIsAIModalOpen(true);
     }, []);
 
-    // Test Helper: Allow injecting campaign updates from E2E tests (Maestro Workflow)
+    // E2E Test Injection Hook
     useEffect(() => {
-        // Only enable in non-production environments or if specifically enabled
-        if (import.meta.env.DEV || window.location.hostname === 'localhost' || (window as any).__MAESTRO_TEST_MODE__) {
-            const handleTestUpdate = (event: CustomEvent) => {
-                console.log("[Maestro] Injecting Agent Plan...", event.detail);
-                setSelectedCampaign(prev => prev ? { ...prev, ...event.detail } : event.detail);
-            };
-            window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
-            return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE' as any, handleTestUpdate as any);
-        }
+        const handleTestInjection = (event: Event) => {
+            const customEvent = event as CustomEvent;
+            if (customEvent.detail && customEvent.detail.posts) {
+                console.log('CampaignDashboard: Received Test Injection', customEvent.detail);
+
+                setSelectedCampaign(prev => {
+                    if (!prev) {
+                        console.warn('CampaignDashboard: No selected campaign to inject into.');
+                        return prev;
+                    }
+                    return {
+                        ...prev,
+                        posts: customEvent.detail.posts
+                    };
+                });
+            }
+        };
+
+        window.addEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
+        return () => window.removeEventListener('TEST_INJECT_CAMPAIGN_UPDATE', handleTestInjection);
     }, []);
 
+
     return (
-        <div className="flex h-full bg-slate-950 overflow-hidden text-slate-200 font-sans selection:bg-purple-500/30">
+        <div className="flex h-full bg-background overflow-hidden text-foreground font-sans selection:bg-dept-marketing/30">
             {/* Sidebar */}
             <MarketingSidebar
                 activeTab={activeTab}
@@ -88,7 +100,7 @@ const CampaignDashboard: React.FC = () => {
             />
 
             {/* Main Content Area */}
-            <div className="flex-1 flex flex-col min-w-0 bg-gradient-to-br from-slate-950 to-slate-900/50">
+            <div className="flex-1 flex flex-col min-w-0 bg-background">
                 <MarketingToolbar
                     onAction={handleCreateNew}
                     actionLabel="New Campaign"
@@ -96,7 +108,7 @@ const CampaignDashboard: React.FC = () => {
 
                 <div className="flex-1 overflow-hidden relative">
                     {/* Background Ambient Glow */}
-                    <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-purple-900/10 to-transparent pointer-events-none" />
+                    <div className="absolute top-0 inset-x-0 h-64 bg-gradient-to-b from-dept-marketing/10 to-transparent pointer-events-none" />
 
                     {activeTab === 'campaigns' || activeTab === 'overview' ? (
                         isLoading ? (

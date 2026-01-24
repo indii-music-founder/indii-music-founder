@@ -1,24 +1,20 @@
-import { v4 as uuidv4 } from 'uuid';
-import { db } from '@/services/firebase';
-import { collection, doc, setDoc, getDoc, getDocs, query, where, Timestamp, orderBy } from 'firebase/firestore';
-import type { ReleaseDeployment, DeploymentFilter } from './types/persistence';
-import type { DistributorId, ReleaseStatus, ValidationError } from './types/distributor';
+import { auth } from '@/services/firebase';
+import { FirestoreService } from '@/services/FirestoreService';
+import { ReleaseDeploymentDocument } from '@/types/firestore';
+import { Timestamp } from 'firebase/firestore';
 
-export class DistributionPersistenceService {
-    private readonly COLLECTION = 'deployments';
+export type { ReleaseDeploymentDocument as ReleaseDeployment };
 
-    constructor() { }
+export class DistributionPersistenceService extends FirestoreService<ReleaseDeploymentDocument> {
+    constructor() {
+        super('deployments');
+    }
 
     /**
      * Records a new deployment or updates an existing one
      */
-    async saveDeployment(deployment: ReleaseDeployment): Promise<void> {
-        try {
-            await setDoc(doc(db, this.COLLECTION, deployment.id), deployment);
-        } catch (error) {
-            console.error('[DistributionPersistence] Failed to save deployment:', error);
-            throw error;
-        }
+    async saveDeployment(deployment: ReleaseDeploymentDocument): Promise<void> {
+        await this.set(deployment.id, deployment);
     }
 
     /**
@@ -28,28 +24,36 @@ export class DistributionPersistenceService {
         internalReleaseId: string,
         userId: string,
         orgId: string,
-        distributorId: DistributorId,
-        initialStatus: ReleaseStatus = 'processing',
+        distributorId: string, // Simplified for Firestore type parity
+        initialStatus: ReleaseDeploymentDocument['status'] = 'processing',
         metadata?: { title?: string; artist?: string; coverArtUrl?: string }
-    ): Promise<ReleaseDeployment> {
-        const now = new Date().toISOString();
-        const deployment: ReleaseDeployment = {
-            id: uuidv4(),
+    ): Promise<ReleaseDeploymentDocument> {
+        const id = crypto.randomUUID();
+        const deployment: Omit<ReleaseDeploymentDocument, 'createdAt' | 'updatedAt'> = {
+            id,
             internalReleaseId,
             userId,
             orgId,
             distributorId,
             status: initialStatus,
-            submittedAt: now,
-            lastCheckedAt: now,
-            lastUpdatedAt: now,
+            submittedAt: Timestamp.now(),
+            lastCheckedAt: Timestamp.now(),
             title: metadata?.title,
             artist: metadata?.artist,
             coverArtUrl: metadata?.coverArtUrl
         };
 
-        await this.saveDeployment(deployment);
-        return deployment;
+        // use add logic via set with custom ID if we want to preserve UUID, 
+        // but let's use the service's set to handle updatedAt
+        await this.set(id, deployment as ReleaseDeploymentDocument);
+
+        // Return with dummy timestamps for immediate UI use if needed, 
+        // though usually we fetch from firestore
+        return {
+            ...deployment,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        };
     }
 
     /**
@@ -57,79 +61,51 @@ export class DistributionPersistenceService {
      */
     async updateDeploymentStatus(
         deploymentId: string,
-        status: ReleaseStatus,
+        status: ReleaseDeploymentDocument['status'],
         details?: {
             externalId?: string;
-            errors?: ValidationError[];
+            errors?: any[];
             trackingLink?: string;
         }
-    ): Promise<ReleaseDeployment | null> {
-        try {
-            const deployment = await this.getDeployment(deploymentId);
-            if (!deployment) return null;
+    ): Promise<void> {
+        const updates: Partial<ReleaseDeploymentDocument> = {
+            status,
+            lastCheckedAt: Timestamp.now(),
+        };
 
-            deployment.status = status;
-            deployment.lastUpdatedAt = new Date().toISOString();
-            deployment.lastCheckedAt = new Date().toISOString();
+        if (details?.externalId) updates.externalId = details.externalId;
+        if (details?.errors) updates.errors = details.errors;
+        if (details?.trackingLink) updates.trackingLink = details.trackingLink;
 
-            if (details?.externalId) deployment.externalId = details.externalId;
-            if (details?.errors) deployment.errors = details.errors;
-            if (details?.trackingLink) deployment.trackingLink = details.trackingLink;
-
-            await this.saveDeployment(deployment);
-            return deployment;
-        } catch (error) {
-            console.error('[DistributionPersistence] Failed to update status:', error);
-            return null;
-        }
+        await this.update(deploymentId, updates);
     }
 
-    async getDeployment(id: string): Promise<ReleaseDeployment | undefined> {
-        try {
-            const docSnap = await getDoc(doc(db, this.COLLECTION, id));
-            if (docSnap.exists()) {
-                return docSnap.data() as ReleaseDeployment;
-            }
-            return undefined;
-        } catch (error) {
-            console.error('[DistributionPersistence] Failed to get deployment:', error);
-            return undefined;
-        }
+    async getDeployment(id: string): Promise<ReleaseDeploymentDocument | null> {
+        return this.get(id);
     }
 
-    async getDeploymentsForRelease(internalReleaseId: string): Promise<ReleaseDeployment[]> {
-        try {
-            const q = query(
-                collection(db, this.COLLECTION),
-                where('internalReleaseId', '==', internalReleaseId)
-            );
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(d => d.data() as ReleaseDeployment);
-        } catch (error) {
-            console.error('[DistributionPersistence] Failed to get deployments for release:', error);
-            return [];
-        }
+    async getDeploymentsForRelease(internalReleaseId: string): Promise<ReleaseDeploymentDocument[]> {
+        return this.list([this.where('internalReleaseId', '==', internalReleaseId)]);
     }
 
-    async getAllDeployments(filter?: DeploymentFilter): Promise<ReleaseDeployment[]> {
-        try {
-            const constraints: import('firebase/firestore').QueryConstraint[] = [];
+    async getAllDeployments(filter?: {
+        userId?: string;
+        orgId?: string;
+        distributorId?: string;
+        internalReleaseId?: string;
+        status?: ReleaseDeploymentDocument['status'];
+    }): Promise<ReleaseDeploymentDocument[]> {
+        const constraints = [];
 
-            if (filter) {
-                if (filter.userId) constraints.push(where('userId', '==', filter.userId));
-                if (filter.orgId) constraints.push(where('orgId', '==', filter.orgId));
-                if (filter.distributorId) constraints.push(where('distributorId', '==', filter.distributorId));
-                if (filter.internalReleaseId) constraints.push(where('internalReleaseId', '==', filter.internalReleaseId));
-                if (filter.status) constraints.push(where('status', '==', filter.status));
-            }
-
-            const q = query(collection(db, this.COLLECTION), ...constraints);
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(d => d.data() as ReleaseDeployment);
-        } catch (error) {
-            console.error('[DistributionPersistence] Failed to get all deployments:', error);
-            return [];
+        if (filter) {
+            if (filter.userId) constraints.push(this.where('userId', '==', filter.userId));
+            if (filter.orgId) constraints.push(this.where('orgId', '==', filter.orgId));
+            if (filter.distributorId) constraints.push(this.where('distributorId', '==', filter.distributorId));
+            if (filter.internalReleaseId) constraints.push(this.where('internalReleaseId', '==', filter.internalReleaseId));
+            if (filter.status) constraints.push(this.where('status', '==', filter.status));
         }
+
+        return this.list(constraints);
     }
 }
 

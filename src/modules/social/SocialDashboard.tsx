@@ -181,17 +181,21 @@ export default function SocialDashboard() {
                 </div>
 
                 {/* Calendar Grid Header */}
-                <div className="grid grid-cols-7 bg-bg-dark border-b border-gray-800">
-                    {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                        <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
-                            {day}
+                <div className="overflow-x-auto">
+                    <div className="min-w-[800px]">
+                        <div className="grid grid-cols-7 bg-bg-dark border-b border-gray-800">
+                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                <div key={day} className="py-2 text-center text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    {day}
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
 
-                {/* Calendar Grid Body */}
-                <div className="grid grid-cols-7 bg-bg-dark">
-                    {renderCalendarGrid()}
+                        {/* Calendar Grid Body */}
+                        <div className="grid grid-cols-7 bg-bg-dark">
+                            {renderCalendarGrid()}
+                        </div>
+                    </div>
                 </div>
             </div>
 

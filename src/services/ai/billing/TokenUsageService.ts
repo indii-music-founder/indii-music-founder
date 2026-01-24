@@ -10,8 +10,14 @@ export interface UsageStats {
     lastUpdated: any;
 }
 
+export interface RateLimitStats {
+    count: number;
+    lastUpdated: any;
+}
+
 export class TokenUsageService {
-    private static readonly COLLECTION = 'user_usage_stats';
+    private static readonly USAGE_COLLECTION = 'user_usage_stats';
+    private static readonly RATE_LIMIT_COLLECTION = 'user_rate_limits';
 
     /**
      * Track usage for a user.
@@ -22,7 +28,7 @@ export class TokenUsageService {
 
         const today = new Date().toISOString().split('T')[0];
         const docId = `${userId}_${today}`;
-        const ref = doc(db, this.COLLECTION, docId);
+        const ref = doc(db, this.USAGE_COLLECTION, docId);
 
         const totalTokens = inputTokens + outputTokens;
 
@@ -57,7 +63,7 @@ export class TokenUsageService {
 
         const today = new Date().toISOString().split('T')[0];
         const docId = `${userId}_${today}`;
-        const ref = doc(db, this.COLLECTION, docId);
+        const ref = doc(db, this.USAGE_COLLECTION, docId);
 
         try {
             const snap = await getDoc(ref);
@@ -70,7 +76,7 @@ export class TokenUsageService {
 
             if (data.tokensUsed >= limit) {
                 throw new AppException(
-                    AppErrorCode.NETWORK_ERROR, // Mapping to existing error code for "quota"
+                    AppErrorCode.QUOTA_EXCEEDED,
                     `Daily AI token limit exceeded (${limit} tokens). Please upgrade to Pro.`
                 );
             }
@@ -80,6 +86,54 @@ export class TokenUsageService {
             if (error instanceof AppException) throw error;
             // Fail open on DB error to avoid blocking service
             return true;
+        }
+    }
+
+    /**
+     * Check if a user has exceeded their per-minute rate limit.
+     * Uses a minute-bucket strategy in Firestore.
+     */
+    static async checkRateLimit(userId: string): Promise<void> {
+        if (!userId) return;
+
+        // Current minute bucket ID: e.g. "user123_28475920"
+        const currentMinute = Math.floor(Date.now() / 60000);
+        const docId = `${userId}_${currentMinute}`;
+        const ref = doc(db, this.RATE_LIMIT_COLLECTION, docId);
+
+        try {
+            // Optimistic check: Read before Write to save write costs if blocked
+            // Note: This introduces a tiny race condition but is acceptable for rate limiting
+            const snap = await getDoc(ref);
+
+            const limit = RATE_LIMITS[TIER_CONFIG.DEFAULT_TIER].MAX_REQUESTS_PER_MINUTE;
+
+            if (snap.exists()) {
+                const data = snap.data() as RateLimitStats;
+                if (data.count >= limit) {
+                    throw new AppException(
+                        AppErrorCode.RATE_LIMITED,
+                        `Rate limit exceeded (${limit} requests/minute). Please slow down.`
+                    );
+                }
+
+                // Increment
+                await updateDoc(ref, {
+                    count: increment(1),
+                    lastUpdated: serverTimestamp()
+                });
+            } else {
+                // First request of the minute
+                await setDoc(ref, {
+                    count: 1,
+                    lastUpdated: serverTimestamp(),
+                    expiresAt: serverTimestamp() // In a real setup, we'd want TTL, but Firestore TTL is background
+                });
+            }
+        } catch (error) {
+            if (error instanceof AppException) throw error;
+            // Fail open on DB error to avoid blocking legitimate user service during outages
+            console.error('Rate limit check failed (failing open):', error);
         }
     }
 }

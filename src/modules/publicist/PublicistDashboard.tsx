@@ -23,6 +23,7 @@ import { CampaignDetailsModal } from './components/CampaignDetailsModal';
 import { ContactDetailsModal } from './components/ContactDetailsModal';
 import { ProTipsModal } from './components/ProTipsModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
+import { ReleaseKitModal } from './components/ReleaseKitModal';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { Campaign, Contact } from './types';
 
@@ -47,6 +48,7 @@ export default function PublicistDashboard() {
     const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
     const [isTipsOpen, setIsTipsOpen] = useState(false);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+    const [isReleaseKitOpen, setIsReleaseKitOpen] = useState(false);
 
     if (loading) {
         return (
@@ -61,12 +63,12 @@ export default function PublicistDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Publicist Dashboard">
-            <div className="flex h-screen w-full bg-[#0a0a0a] text-slate-200 font-sans overflow-hidden selection:bg-purple-500/30 relative">
+            <div className="flex h-screen w-full bg-background text-slate-200 font-sans overflow-hidden selection:bg-dept-marketing/30 relative">
                 {/* Global Background Ambience */}
                 <div className="fixed inset-0 pointer-events-none z-0">
-                    <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-purple-900/10 blur-[150px]" />
-                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-blue-900/10 blur-[150px]" />
-                    <div className="absolute top-[40%] left-[40%] w-[40%] h-[40%] bg-indigo-500/5 blur-[120px] animate-pulse-slow" />
+                    <div className="absolute top-[-20%] left-[-10%] w-[70%] h-[70%] bg-dept-marketing/10 blur-[150px]" />
+                    <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-dept-marketing-glow/5 blur-[150px]" />
+                    <div className="absolute top-[40%] left-[40%] w-[40%] h-[40%] bg-dept-marketing-muted/5 blur-[120px] animate-pulse-slow" />
                 </div>
 
                 {/* Sidebar Navigation */}
@@ -74,12 +76,12 @@ export default function PublicistDashboard() {
                     {/* Brand */}
                     <div className="p-6 pb-2">
                         <div className="flex items-center gap-3 mb-6">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500/20 to-indigo-500/20 flex items-center justify-center border border-white/10 shadow-[0_0_15px_rgba(168,85,247,0.15)]">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-dept-marketing/20 to-dept-marketing-glow flex items-center justify-center border border-white/10 shadow-lg shadow-dept-marketing/10">
                                 <Mic size={20} className="text-white" />
                             </div>
                             <div>
-                                <h1 className="text-lg font-bold text-white leading-tight">Publicist<span className="text-purple-500">.</span></h1>
-                                <p className="text-[10px] text-slate-400 font-medium tracking-wider uppercase">PR & Media</p>
+                                <h1 className="text-lg font-bold text-white leading-tight">Publicist<span className="text-dept-marketing">.</span></h1>
+                                <p className="text-[10px] text-muted-foreground font-medium tracking-wider uppercase">PR & Media</p>
                             </div>
                         </div>
 
@@ -125,14 +127,14 @@ export default function PublicistDashboard() {
                             onClick={() => setIsOnboardingOpen(true)}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all group text-sm font-medium"
                         >
-                            <Sparkles size={16} className="text-purple-400 opacity-70 group-hover:opacity-100" />
+                            <Sparkles size={16} className="text-dept-marketing-glow opacity-70 group-hover:opacity-100" />
                             <span>Brand Identity</span>
                         </button>
                         <button
                             onClick={() => setIsTipsOpen(true)}
                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5 transition-all group text-sm font-medium"
                         >
-                            <Sparkles size={16} className="text-indigo-400 opacity-70 group-hover:opacity-100" />
+                            <Sparkles size={16} className="text-dept-marketing opacity-70 group-hover:opacity-100" />
                             <span>Pro Tips</span>
                         </button>
                     </nav>
@@ -163,13 +165,13 @@ export default function PublicistDashboard() {
 
                             {/* Search Bar */}
                             <div className="relative group">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-purple-400 transition-colors" size={14} />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-dept-marketing transition-colors" size={14} />
                                 <input
                                     type="text"
                                     value={searchQuery}
                                     onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder={activeTab === 'campaigns' ? "Search campaigns..." : "Search contacts..."}
-                                    className="w-64 bg-black/20 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs font-medium text-white placeholder-slate-600 focus:outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all hover:border-white/20"
+                                    className="w-64 bg-black/20 border border-white/10 rounded-full py-1.5 pl-9 pr-4 text-xs font-medium text-white placeholder-slate-600 focus:outline-none focus:border-dept-marketing/50 focus:ring-1 focus:ring-dept-marketing/20 transition-all hover:border-white/20"
                                 />
                             </div>
                         </div>
@@ -347,6 +349,10 @@ export default function PublicistDashboard() {
             <OnboardingModal
                 isOpen={isOnboardingOpen}
                 onClose={() => setIsOnboardingOpen(false)}
+            />
+            <ReleaseKitModal
+                isOpen={isReleaseKitOpen}
+                onClose={() => setIsReleaseKitOpen(false)}
             />
         </ModuleErrorBoundary >
     );

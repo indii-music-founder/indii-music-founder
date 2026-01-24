@@ -1,10 +1,54 @@
 import { ipcMain, app } from 'electron';
 import { z } from 'zod';
-import { AgentActionSchema, AgentNavigateSchema } from '../utils/validation';
+import { AgentActionSchema, AgentNavigateSchema, AgentHistorySaveSchema, AgentHistoryIdSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
+import { historyStore } from '../services/HistoryStore';
 
 export function registerAgentHandlers() {
+    // Agent History Persistence (Production Ready)
+    ipcMain.handle('agent:save-history', async (event, id: string, data: any) => {
+        try {
+            validateSender(event);
+            AgentHistorySaveSchema.parse({ id, data });
+
+            historyStore.save(id, data);
+            return { success: true };
+        } catch (error) {
+            console.error('Agent History Save Failed:', error);
+            if (error instanceof z.ZodError) {
+                return { success: false, error: `Validation Error: ${error.errors[0].message}` };
+            }
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:get-history', async (event, id: string) => {
+        try {
+            validateSender(event);
+            const validatedId = AgentHistoryIdSchema.parse(id);
+
+            const session = historyStore.get(validatedId);
+            return { success: true, data: session };
+        } catch (error) {
+            console.error('Agent History Get Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
+    ipcMain.handle('agent:delete-history', async (event, id: string) => {
+        try {
+            validateSender(event);
+            const validatedId = AgentHistoryIdSchema.parse(id);
+
+            historyStore.delete(validatedId);
+            return { success: true };
+        } catch (error) {
+            console.error('Agent History Delete Failed:', error);
+            return { success: false, error: String(error) };
+        }
+    });
+
     // Test Browser Agent (Development ONLY)
     if (!app.isPackaged) {
         ipcMain.handle('test:browser-agent', async (event: any, query?: string) => {

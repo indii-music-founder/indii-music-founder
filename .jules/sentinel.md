@@ -1,37 +1,32 @@
-## 2025-05-18 - [IPC Defense-in-Depth]
-**Vulnerability:** A logic inconsistency existed between two `validateSender` implementations. One implementation (`ipc-security.ts`) permissively allowed any `http`/`https` origin, while the other (`validation.ts`) correctly restricted access to `file://` and the development server. This could allow a compromised renderer frame or iframe to bypass sender validation checks if it could execute IPC calls.
-**Learning:** Duplicate code is a security risk. When security primitives are copied, they drift apart, and the weaker version often becomes the one used by default.
-**Prevention:** Consolidated `validateSender` into `electron/utils/ipc-security.ts` with strict origin checking (allowlist: `file://`, `indii-os://`, and `VITE_DEV_SERVER_URL`). Applied this validation to all critical IPC handlers in the main process, closing the defense-in-depth gap.
+## 2025-02-18 - [CRITICAL] Symlink Traversal in Distribution Handlers
+**Vulnerability:** The `validateSafeDistributionSource` function in `electron/utils/security-checks.ts` validated file paths using `path.normalize()` but failed to resolve symbolic links. This allowed a malicious user (or compromised project) to bypass the system directory blocklist by creating a symlink (e.g., `song.wav -> /etc/passwd`) with a valid extension, leading to Local File Inclusion (LFI) via `distribution:stage-release` or `distribution:transmit`.
+**Learning:** Checking paths purely as strings (`path.normalize`) is insufficient for security when the underlying file system supports symlinks. An attacker can mask the true target of a path.
+**Prevention:** Always use `fs.realpathSync` (or async equivalent) to resolve the canonical path *before* applying blocklists or allowlists (extensions, directories). This ensures validation is performed on the actual file being accessed.
 
-## 2025-05-19 - [Local File Exfiltration via Distribution Staging]
-**Vulnerability:** The `distribution:stage-release` IPC handler allowed the renderer to copy arbitrary files from the user's filesystem into a temporary staging directory via the `fs.copyFile` operation. The handler only validated the *destination* filename (path traversal check) but failed to validate the *source* path (`file.data`).
-**Risk:** High. A compromised renderer or malicious agent instruction could exploit this to copy sensitive files (e.g., `/etc/passwd`, `~/.ssh/id_rsa`, `.env`) into the staging area. Once staged, the attacker could theoretically exfiltrate them using the `sftp:upload-directory` handler, which treats the staging directory as a "safe" source.
-**Learning:** Validating the output (destination) is not enough; the input (source) must also be trusted. When an agent acts on behalf of a user, it must be restricted to "user-intent" boundaries (like common media folders) rather than having root-equivalent read access.
-**Prevention:** Implemented `validateSafeDistributionSource` in `electron/utils/security-checks.ts`. This enforces a strict allowlist of media extensions (wav, mp3, jpg, etc.) and explicitly blocks system directories (`/etc`, `/var`, `C:\Windows`) and hidden files/directories (`.ssh`, `.config`).
+## 2025-02-18 - [HIGH] Unsecured Electron IPC Handlers (SSRF & Arbitrary File Write)
+**Vulnerability:** The `video:save-asset` IPC handler accepted arbitrary URLs and filenames without validation or sender verification. This allowed a compromised renderer (via XSS) to trigger SSRF (accessing internal/local network resources via `downloadFile`) and write files to the user's disk. The `video:open-folder` handler also lacked sender verification and path containment, potentially exposing file system structure.
+**Learning:** Electron IPC handlers operate with high privileges (Node.js). Relying solely on the frontend to send "correct" data is a security flaw. Every IPC handler must be treated as an untrusted public API endpoint.
+**Prevention:**
+1. Always call `validateSender(event)` as the first line in every IPC handler.
+2. Validate ALL inputs using strict schemas (e.g., Zod), especially URLs (SSRF protection) and file paths/names.
+3. For file writes, explicitly strip directory components (`path.basename`) and sanitize filenames before usage, even if `path.join` is used.
+## 2025-02-18 - [HIGH] Sensitive Data Exposure in PythonBridge Logs
+**Vulnerability:** The `PythonBridge` utility logged all command-line arguments to the console for debugging. While it attempted to redact sensitive flags (like `--password`), it failed to redact sensitive positional arguments, specifically JSON strings containing PII (e.g., tax data, SSNs) passed to scripts like `tax_withholding_engine.py`.
+**Learning:** heuristic-based redaction (checking for `--flag`) is insufficient when sensitive data is passed as positional arguments or complex JSON blobs. Logging command arguments in production is inherently risky.
+**Prevention:** Implement explicit redaction capabilities where the caller defines which arguments are sensitive by index (`sensitiveArgsIndices`). Favor passing sensitive data via environment variables or stdin over command-line arguments where possible.
 
-## 2025-05-20 - [Unvalidated IPC Payloads in Audio & Credential Handlers]
-**Vulnerability:** Several IPC handlers (`audio:lookup-metadata`, `credentials:get`, `credentials:delete`) relied on manual type checking (e.g., `typeof id !== 'string'`) or lacked specific format validation.
-**Risk:** Medium. While `validateSender` prevented unauthorized access, a compromised renderer could potentially send malformed data (like SQL injection strings or extremely long payloads) to the main process services (`CredentialService`, `APIService`), potentially causing denial of service or logic errors in the backend.
-**Learning:** "Manual validation is fragile." Consistent schema validation (Zod) across *all* IPC boundaries ensures that the Main process only ever processes well-formed, typed data, acting as a robust firewall against renderer instability or compromise.
-**Prevention:** Enforced Zod schema validation for all inputs in `electron/handlers/audio.ts` and `electron/handlers/credential.ts`. Added `AudioLookupSchema` (hex strings only) and `CredentialIdSchema` (alphanumeric/safe chars only) to strict validation.
+## 2026-01-22 - [HIGH] Path Traversal in Distribution ITMSP Packaging
+**Vulnerability:** The `distribution:package-itmsp` IPC handler accepted an arbitrary `releaseId` string and used it directly in `path.join` to construct a staging directory path. This allowed an attacker to supply a malicious ID (e.g., `../../etc`) to escape the staging directory and direct the underlying Python script to operate on sensitive system directories (Arbitrary File Write/Read).
+**Learning:** Inconsistent validation across handlers. While `distribution:stage-release` used a Zod schema to validate `releaseId`, `distribution:package-itmsp` did not. Every IPC handler must independently validate all its inputs.
+**Prevention:** Enforced `z.string().uuid()` validation for `releaseId` in the `distribution:package-itmsp` handler, ensuring it is a valid UUID and contains no path traversal characters.
 
-## 2025-05-21 - [SFTP Local File Exfiltration via Symlink Bypass]
-**Vulnerability:** The `sftp:upload-directory` handler verified that the source path was contained within `os.tmpdir()` or `userData` to prevent arbitrary file access. However, it used `path.resolve` without resolving symbolic links (`fs.realpath`). This allowed a compromised renderer (or an agent tricked into creating a symlink) to point a symlink inside the allowed temporary directory to a sensitive location (e.g., `/etc` or `/home/user/.ssh`), bypassing the containment check and exfiltrating sensitive files.
-**Risk:** High. Allows a compromised process to read and upload any file the user has access to, bypassing the intended sandbox restrictions of the SFTP tool.
-**Learning:** `path.resolve` normalizes strings but does not verify physical file structure. Security boundaries based on file paths must always resolve symbolic links (`fs.realpathSync`) before verifying containment to prevent Time-of-Check Time-of-Use (TOCTOU) or logical bypasses.
-**Prevention:** Updated `electron/handlers/sftp.ts` to explicitly resolve the `localPath` using `fs.realpathSync` before performing the containment check against allowed roots.
-## 2025-05-21 - [Insecure Randomness in Business Identifiers]
-**Vulnerability:** The `MerchandiseService` used `Math.random()` to generate `orderId` values. `Math.random()` is not cryptographically secure, leading to potentially predictable identifiers.
-**Learning:** Even for non-secret values like Order IDs, using insecure randomness can create bad habits and theoretical predictability vectors (e.g. guessing the next order ID to probe for existence).
-**Prevention:** Replaced `Math.random()` with `crypto.getRandomValues()` to generate a secure 9-character alphanumeric string, maintaining the existing `BANA-` format while ensuring cryptographic strength.
-
-## 2025-05-22 - [Unchecked Agent Agency in DevOps Tools]
-**Vulnerability:** The `DevOpsTools.ts` allowed an Agent to execute destructive infrastructure changes (scaling clusters, restarting instances) without explicit human confirmation. While the *user* was authenticated as admin, a compromised Agent (via prompt injection or error) could abuse this authority to damage infrastructure.
-**Learning:** "Agency without Authorization is a vulnerability." Just because a *user* has permission doesn't mean the *agent* should automatically inherit the right to execute sensitive actions without a "human-in-the-loop" check.
-**Prevention:** Implemented a mandatory `requireApproval` check within `scale_deployment` and `restart_service` tools, enforcing a critical-level human approval dialog before execution.
-
-## 2026-01-16 - [Arbitrary File Read via Audio Analysis Symlinks]
-**Vulnerability:** The `audio:analyze` IPC handler accepted any file path provided by the renderer without validation. A compromised renderer could request analysis of sensitive system files (e.g., `/etc/passwd`) by creating a symlink with an allowed audio extension (e.g., `exploit.wav -> /etc/passwd`). The handler would then read the file to calculate its hash, enabling an oracle attack or information disclosure.
-**Risk:** High. Allows arbitrary file read of sensitive data by bypassing extension checks via symlinks.
-**Learning:** Checking file extensions is insufficient for security. "String validation does not equal path validation." Security boundaries must verify the *physical* file location (using `fs.realpath`) and restrict access to authorized user directories (e.g., Music, Downloads).
-**Prevention:** Implemented `validateSafeAudioPath` in `electron/utils/file-security.ts`. This utility forces `fs.realpathSync` to resolve symlinks and enforces an allowlist of safe user directories (Music, Downloads, Desktop) and strict extension checking, blocking access to system and hidden files.
+## 2026-01-23 - [HIGH] Permissive File Protocol in IPC Sender Validation
+**Vulnerability:** The `validateSender` function checked if `url.startsWith('file://')` but did not verify that the file path belonged to the application bundle. This meant any local HTML file opened in the Electron window (e.g., via drag-and-drop or misconfiguration) could bypass the check and invoke privileged IPC handlers.
+**Learning:** `file://` protocol is not inherently safe. Trusting the protocol without validating the path origin breaks the trust boundary between the application and the host file system.
+**Prevention:** Hardened `validateSender` to resolve `file://` URLs using `fileURLToPath` and explicitly verify they reside within `app.getAppPath()` using `path.relative` checks.
+## 2025-05-18 - [HIGH] SSRF in Video Asset Download (DNS Rebinding)
+**Vulnerability:** The `video:save-asset` IPC handler relied solely on `FetchUrlSchema` (regex) to validate URLs. This schema blocks private IPs but cannot detect domains that resolve to private IPs (DNS Rebinding or local domains like `localhost.me`). This allowed potential SSRF attacks where the renderer could force the main process to access internal network resources.
+**Learning:** Regex-based URL validation is insufficient for SSRF protection because it ignores DNS resolution.
+**Prevention:**
+1. Always use `validateSafeUrlAsync(url)` (or equivalent DNS-resolving validator) *before* making network requests in privileged contexts (Electron Main process).
+2. Explicitly disable HTTP redirects (`fetch(url, { redirect: 'error' })`) when downloading untrusted content to prevent Open Redirect bypasses.

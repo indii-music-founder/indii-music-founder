@@ -11,8 +11,6 @@ import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { usePerformanceMonitor } from './hooks/usePerformanceMonitor';
-import { PerformanceOverlay } from './components/PerformanceOverlay';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
@@ -51,19 +49,6 @@ const ColorSwatch = ({ color, active, onClick, className }: { color: string, act
         aria-label={`Select color ${color}`}
         title={`Select color ${color}`}
     />
-);
-
-const LayerItem = ({ label, active, visible, locked }: { label: string, active?: boolean, visible?: boolean, locked?: boolean }) => (
-    <div className={`p-2 rounded flex items-center justify-between text-[11px] font-medium tracking-tight ${active ? 'bg-yellow-400/10 text-yellow-400 border border-yellow-400/20' : 'text-neutral-500 hover:bg-white/5'}`}>
-        <div className="flex items-center gap-2">
-            <div className={`w-1.5 h-1.5 rounded-full ${active ? 'bg-yellow-400' : 'bg-neutral-700'}`} />
-            <span>{label}</span>
-        </div>
-        <div className="flex gap-2">
-            {locked && <span className="text-[10px] opacity-20">🔒</span>}
-            {visible && <span className="text-[10px] opacity-20">👁️</span>}
-        </div>
-    </div>
 );
 
 export default function MerchDesigner() {
@@ -112,8 +97,11 @@ export default function MerchDesigner() {
         { interval: 30000, enabled: true }
     );
 
-    // Performance monitoring (dev mode only)
-    const performanceMetrics = usePerformanceMonitor(fabricCanvas);
+    // Handle canvas initialization
+    const handleCanvasReady = useCallback((canvas: fabric.Canvas) => {
+        fabricCanvasRef.current = canvas;
+        setFabricCanvas(canvas);
+    }, []);
 
     // Handle asset addition from library
     const handleAddAsset = useCallback(async (url: string, name: string) => {
@@ -235,7 +223,7 @@ export default function MerchDesigner() {
         fabricCanvasRef.current.renderAll();
     }, []);
 
-    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: any) => {
+    const handleUpdateProperty = useCallback((layer: CanvasObject, property: string, value: string | number | boolean | object | null) => {
         layer.fabricObject.set(property as any, value);
         fabricCanvasRef.current?.renderAll();
     }, []);
@@ -377,8 +365,6 @@ export default function MerchDesigner() {
                                     disabled={!canRedo}
                                     title="Redo (Cmd+Shift+Z)"
                                 />
-                                <IconButton icon={<Undo size={16} />} onClick={() => { }} disabled label="Undo" />
-                                <IconButton icon={<Redo size={16} />} onClick={() => { }} disabled label="Redo" />
                             </div>
 
                             <div className="h-6 w-px bg-white/10 mx-2" />
@@ -498,10 +484,7 @@ export default function MerchDesigner() {
                             <DesignCanvas
                                 onLayersChange={setLayers}
                                 onSelectionChange={setSelectedLayer}
-                                onCanvasReady={(canvas) => {
-                                    fabricCanvasRef.current = canvas;
-                                    setFabricCanvas(canvas);
-                                }}
+                                onCanvasReady={handleCanvasReady}
                                 onRequestDelete={handleDeleteLayers}
                             />
 
@@ -607,10 +590,6 @@ export default function MerchDesigner() {
                 />
             )}
 
-            {/* Performance Overlay (dev mode only) */}
-            {import.meta.env.DEV && viewMode === 'design' && (
-                <PerformanceOverlay metrics={performanceMetrics} />
-            )}
         </MerchLayout>
     );
 }

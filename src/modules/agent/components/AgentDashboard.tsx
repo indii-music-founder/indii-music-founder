@@ -10,11 +10,15 @@ import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { AgentSidebar } from './AgentSidebar';
 import { AgentToolbar } from './AgentToolbar';
 import { ScoutControls } from './ScoutControls';
+import { useToast } from '@/core/context/ToastContext';
+import { RosterService } from '../services/RosterService';
+import { Venue } from '../types';
 
 const AgentDashboard: React.FC = () => {
     // Hooks must be called unconditionally before early returns
     const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser'>('scout');
     const { venues, isScanning, setScanning, addVenue } = useAgentStore();
+    const { showToast } = useToast();
     const [city, setCity] = useState('Nashville');
     const [genre, setGenre] = useState('Rock');
     const [isAutonomous, setIsAutonomous] = useState(false);
@@ -32,6 +36,17 @@ const AgentDashboard: React.FC = () => {
             />
         );
     }
+
+    const handleAddToRoster = async (venue: Venue) => {
+        try {
+            await RosterService.addToRoster(venue);
+            showToast(`Added ${venue.name} to roster`, 'success');
+        } catch (error) {
+            console.error('Failed to add to roster:', error);
+            showToast('Failed to add venue to roster', 'error');
+            throw error; // Let the card handle the loading state reset
+        }
+    };
 
     const handleScan = async () => {
         setScanning(true);
@@ -147,7 +162,11 @@ const AgentDashboard: React.FC = () => {
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
                                             {venues.map(venue => (
-                                                <VenueCard key={venue.id} venue={venue} onAdd={(v) => console.log("Added", v.name)} />
+                                                <VenueCard
+                                                    key={venue.id}
+                                                    venue={venue}
+                                                    onAdd={handleAddToRoster}
+                                                />
                                             ))}
                                             {venues.length === 0 && (
                                                 <div className="col-span-full py-24 flex flex-col items-center justify-center text-slate-600 border border-dashed border-slate-800 rounded-2xl bg-slate-900/20">

@@ -3,6 +3,7 @@ import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { trackLibrary } from '@/services/metadata/TrackLibraryService';
 import { ExtendedGoldenMetadata, INITIAL_METADATA } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { Logger } from '@/core/logger/Logger';
 
 export class TrackIngestionService {
 
@@ -15,7 +16,7 @@ export class TrackIngestionService {
      * 5. Saves
      */
     async ingestTrack(file: File): Promise<ExtendedGoldenMetadata> {
-        console.log(`[TrackIngestion] Starting ingestion for: ${file.name}`);
+        Logger.info('TrackIngestion', `Starting ingestion for: ${file.name}`);
 
         // 1. Generate Fingerprint
         const fingerprint = await fingerprintService.generateFingerprint(file);
@@ -26,7 +27,7 @@ export class TrackIngestionService {
         // 2. Check Library (Idempotency)
         const existing = await trackLibrary.getByFingerprint(fingerprint);
         if (existing) {
-            console.log(`[TrackIngestion] Track already exists: ${fingerprint}`);
+            Logger.info('TrackIngestion', `Track already exists: ${fingerprint}`);
             return existing;
         }
 
@@ -34,14 +35,14 @@ export class TrackIngestionService {
         // Note: AudioIntelligence actually runs this internally, but we can run it here
         // if we want to separate concerns. However, AudioIntelligence returns a profile
         // that contains 'technical'. Let's trust AudioIntelligence to orchestrate.
-        console.log('[TrackIngestion] Requesting full Audio Intelligence analysis...');
+        Logger.info('TrackIngestion', 'Requesting full Audio Intelligence analysis...');
         const profile = await audioIntelligence.analyze(file);
 
         // 4. Map to Golden Metadata
         const metadata = this.mapProfileToMetadata(file, profile, fingerprint);
 
         // 5. Save to Library
-        console.log('[TrackIngestion] Saving new track metadata...');
+        Logger.info('TrackIngestion', 'Saving new track metadata...');
         await trackLibrary.saveTrack(metadata);
 
         return metadata;
@@ -79,18 +80,20 @@ export class TrackIngestionService {
 
             // Defaults for a "New Ingestion"
             releaseDate: new Date().toISOString().split('T')[0],
+            releaseType: 'Single',
+            territories: ['Worldwide'],
+            distributionChannels: ['streaming', 'download'],
             labelName: DDEX_CONFIG.PARTY_NAME,
             dpid: DDEX_CONFIG.PARTY_ID,
 
+            // AI Content Disclosure
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false
+            },
+
             // Status
             isGolden: false // Needs human review
-        };
-
-        // AI Disclosure (Since we used AI to generate metadata, does that count?
-        // Usually this field means "Is the Audio AI?". We assume human audio for now unless detected otherwise.)
-        metadata.aiGeneratedContent = {
-            isFullyAIGenerated: false,
-            isPartiallyAIGenerated: false
         };
 
         return metadata;

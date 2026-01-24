@@ -37,7 +37,7 @@ export const isMobile = (): boolean => {
 };
 
 export const isIOS = (): boolean => {
-    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
 };
 
 export const isAndroid = (): boolean => {
@@ -48,7 +48,7 @@ export const isStandalone = (): boolean => {
     // Check if running as installed PWA
     return (
         window.matchMedia('(display-mode: standalone)').matches ||
-        (window.navigator as any).standalone === true
+        window.navigator.standalone === true
     );
 };
 
@@ -56,17 +56,23 @@ export const isStandalone = (): boolean => {
 // PWA Install Prompt
 // ============================================================================
 
-let deferredPrompt: any = null;
+interface BeforeInstallPromptEvent extends Event {
+    prompt: () => Promise<void>;
+    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
 /**
  * Listen for the beforeinstallprompt event
  */
 export const initPWAInstall = (): void => {
     window.addEventListener('beforeinstallprompt', (e) => {
+        const event = e as BeforeInstallPromptEvent;
         // Prevent the mini-infobar from appearing on mobile
-        e.preventDefault();
+        event.preventDefault();
         // Stash the event so it can be triggered later
-        deferredPrompt = e;
+        deferredPrompt = event;
 
         // Dispatch custom event to notify UI
         window.dispatchEvent(new CustomEvent('pwa-installable'));
@@ -153,7 +159,11 @@ export const canShare = (data?: ShareData): boolean => {
 // Screen Wake Lock (prevent sleep during long operations)
 // ============================================================================
 
-let wakeLock: any = null;
+interface WakeLockSentinel extends EventTarget {
+    release: () => Promise<void>;
+}
+
+let wakeLock: WakeLockSentinel | null = null;
 
 /**
  * Request screen wake lock to prevent device from sleeping
@@ -165,7 +175,7 @@ export const requestWakeLock = async (): Promise<boolean> => {
     }
 
     try {
-        wakeLock = await (navigator as any).wakeLock.request('screen');
+        wakeLock = await navigator.wakeLock!.request('screen');
 
         wakeLock.addEventListener('release', () => {
             console.log('[WakeLock] Released');
@@ -342,7 +352,7 @@ export const getBatteryStatus = async () => {
     }
 
     try {
-        const battery = await (navigator as any).getBattery();
+        const battery = await navigator.getBattery!();
         return {
             level: battery.level,
             charging: battery.charging,

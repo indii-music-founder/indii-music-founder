@@ -52,9 +52,29 @@ test.describe('Maestro: Multi-Step Approval Workflow', () => {
       window.useStore.setState({
         initializeAuthListener: () => () => { },
         user: mockUser,
+        userProfile: { id: 'maestro-user-id', name: 'Maestro Conductor' },
         authLoading: false,
         currentModule: 'campaign' // Directly load the Campaign module
       });
+
+      // Mock Marketing Service to avoid Firestore calls
+      const mockCampaigns = new Map();
+
+      (window as any).__MOCK_MARKETING_SERVICE__ = {
+           getCampaigns: async () => Array.from(mockCampaigns.values()),
+           getCampaignById: async (id: string) => mockCampaigns.get(id) || null,
+           createCampaign: async (campaign: any) => {
+               const id = 'mock-campaign-' + Math.random().toString(36).substr(2, 9);
+               mockCampaigns.set(id, { ...campaign, id });
+               return id;
+           },
+           updateCampaign: async (id: string, updates: any) => {
+               const existing = mockCampaigns.get(id);
+               if (existing) {
+                   mockCampaigns.set(id, { ...existing, ...updates });
+               }
+           }
+      };
     });
 
     // -----------------------------------------------------------------------
@@ -65,11 +85,17 @@ test.describe('Maestro: Multi-Step Approval Workflow', () => {
     await createBtn.click();
 
     // Fill Campaign Details
-    await page.getByTestId('campaign-title-input').fill('Dogs Having Fun');
-    await page.getByTestId('campaign-description-input').fill('A viral campaign for the new hit song.');
+    // Using data-testid as preferred selector strategy
+    const titleInput = page.getByTestId('campaign-title-input');
+    await expect(titleInput).toBeVisible();
+    await titleInput.fill('Dogs Having Fun');
+
+    const descInput = page.getByTestId('campaign-description-input');
+    await descInput.fill('A viral campaign for the new hit song.');
 
     // Launch (Trigger Agent)
-    await page.getByTestId('create-campaign-submit-btn').click();
+    const submitBtn = page.getByTestId('create-campaign-submit-btn');
+    await submitBtn.click();
 
     // Verify we are on the Detail Page (Project Status: PLANNING/NEW)
     // The default implementation creates an empty campaign.
@@ -168,7 +194,6 @@ test.describe('Maestro: Multi-Step Approval Workflow', () => {
 
     // Optional: Check if status badge updated (if UI updates immediately)
     // The UI sets 'isExecuting' state which shows "Processing...".
-    // The actual "EXECUTING" badge update depends on backend return, which is mocked via UI state in this test scope.
 
     console.log('Maestro: Workflow Handshake Complete. 🎼');
   });

@@ -1,10 +1,10 @@
 {
   "mcpServers": {
     "docker": {
-      "command": "docker",
       "args": [
         "mcp"
-      ]
+      ],
+      "command": "docker"
     }
   }
 }

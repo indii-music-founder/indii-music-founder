@@ -18,7 +18,7 @@ import type {
   DashboardRelease,
   ReleaseStatus,
 } from './types/distributor';
-import type { ReleaseDeployment } from './types/persistence';
+import type { ReleaseDeploymentDocument } from '@/types/firestore';
 
 
 import { distributionStore } from './DistributionPersistenceService';
@@ -255,7 +255,7 @@ class DistributorServiceImpl {
       const result = await adapter.createRelease(metadata, assets);
 
       // 4. Update Persistence Record with Result
-      this.store.updateDeploymentStatus(deployment.id, result.status, {
+      this.store.updateDeploymentStatus(deployment.id, result.status as ReleaseDeploymentDocument['status'], {
         externalId: result.distributorReleaseId
       });
 
@@ -469,8 +469,8 @@ class DistributorServiceImpl {
     const deployments = await this.store.getDeploymentsForRelease(releaseId);
 
     await Promise.all(
-      deployments.map(async (deployment: ReleaseDeployment) => {
-        const adapter = this.adapters.get(deployment.distributorId);
+      deployments.map(async (deployment: ReleaseDeploymentDocument) => {
+        const adapter = this.adapters.get(deployment.distributorId as DistributorId);
         if (!adapter) return;
 
         try {
@@ -481,7 +481,7 @@ class DistributorServiceImpl {
             const status = await adapter.getReleaseStatus(externalId);
 
             // Update store
-            this.store.updateDeploymentStatus(deployment.id, status);
+            this.store.updateDeploymentStatus(deployment.id, status as ReleaseDeploymentDocument['status']);
 
             results[deployment.distributorId] = { status };
           } else {
@@ -516,18 +516,18 @@ class DistributorServiceImpl {
     });
     const grouped: Record<string, DashboardRelease> = {};
 
-    deployments.forEach((d: ReleaseDeployment) => {
+    deployments.forEach((d: ReleaseDeploymentDocument) => {
       if (!grouped[d.internalReleaseId]) {
         grouped[d.internalReleaseId] = {
           id: d.internalReleaseId,
           title: d.title || 'Untitled Release',
           artist: d.artist || 'Unknown Artist',
           coverArtUrl: d.coverArtUrl,
-          releaseDate: d.submittedAt,
+          releaseDate: d.submittedAt?.toDate().toISOString(),
           deployments: {},
         };
       }
-      grouped[d.internalReleaseId].deployments[d.distributorId] = { status: d.status };
+      grouped[d.internalReleaseId].deployments[d.distributorId] = { status: d.status as unknown as ReleaseStatus };
 
       // Update metadata if a more complete record is found
       if (d.title && grouped[d.internalReleaseId].title === 'Untitled Release') {

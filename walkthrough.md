@@ -1,65 +1,48 @@
-# Walkthrough: AI Service Refactoring (Client-Side SDK Transition)
+# Walkthrough: Resolving StructuredClone & Context Integrity
 
 ## Overview
 
-This walkthrough documents the successful refactoring of the AI service layer to transition from a server-proxy pattern to the `firebase/ai` client-side SDK. This change improves latency, reduces costs, and leverages the new capabilities of the Gemini 3 models on Vertex AI.
+This walkthrough documents the resolution of the `DataCloneError: Failed to execute 'structuredClone' on 'Window'` during agent execution. The error was caused by attempts to deep-clone non-serializable objects (like the Firebase User object and Store slices with methods) using the native `structuredClone` API.
 
 ## Key Changes
 
-### 1. Firebase Service Initialization (`src/services/firebase.ts`)
+### 1. Agent Execution Context (`src/services/agent/context/`)
 
-- **Updated Initialization**: Configured the global `ai` instance using `getAI` with `VertexAIBackend` and `useLimitedUseAppCheckTokens: true`.
-- **Remote Config**: Set default model to `AI_MODELS.TEXT.FAST` (Gemini 3 Flash Preview) and established failover logic.
+- **`AgentExecutionContext.ts`**:
+  - Replaced all `structuredClone` calls in `createSnapshot` with `JSON.parse(JSON.stringify(...))`.
+  - Extended the snapshot to include missing state slices: `distribution`, `fileNodes`, and `selectedFileNodeId`.
+  - This ensures that agents have a stable, serializable view of the world that can be safely rolled back or committed.
 
-### 2. New Service Architecture (`src/services/ai/FirebaseAIService.ts`)
+### 2. Evolution Engine (`src/services/agent/evolution/`)
 
-- **Direct SDK Integration**: Implemented `FirebaseAIService` to wrap `firebase/ai` SDK methods:
-  - `generateContent` (Raw access)
-  - `generateText` (High-level text generation)
-  - `generateStructuredData` (Type-safe JSON generation with Zod)
-  - `chat` (Multi-turn conversations)
-  - `getLiveModel` (Real-time WebSockets)
-- **Security**: Integrated App Check handling and user-bound verification.
-- **Model Policy**: Strictly enforces `AI_MODELS` configuration, banning legacy models (Gemini 1.5, etc.).
+- **`EvolutionEngine.ts`**:
+  - Hardened the "Helix Guardrail" for offspring cloning.
+  - Implemented a robust fallback to JSON serialization whenever `structuredClone` fails, ensuring genetic crossover doesn't crash the evolution loop when processing complex agent genes.
 
-### 3. Legacy Compatibility Layer (`src/services/ai/AIService.ts`)
+### 3. Type Safety & Environment (`src/`)
 
-- Refactored `AIService` to delegate core generation logic (`generateContent`, `generateContentStream`) to `FirebaseAIService`.
-- Maintained the singleton pattern (`AI`) and `WrappedResponse` structure to ensure no breaking changes for existing consumers (`BrandTools`, `MarketingTools`, etc.).
+- **`src/vite-env.d.ts`**:
+  - Removed a redundant and incomplete `ElectronAPI` declaration that was causing type conflicts with the primary definition in `src/types/electron.d.ts`.
+- **`src/modules/video/VideoWorkflow.tsx`**:
+  - Verified and fixed access to `window.electronAPI.video.saveAsset` which was previously flagged by the compiler.
 
-### 4. Test Updates
+## Verification
 
-- **BrandTools**: Updated mocks to use `generateStructuredData`.
-- **VideoTools**: Updated parameter names (`firstFrame` instead of `startImage`, removed `orgId`) to align with refactored `VideoGenerationService`.
-- **Specialists**: Corrected agent ID reference from `road` to `road-manager`.
-- **FirebaseAIService**: Added comprehensive unit tests for all methods.
+### 1. Type Check
 
-## Verification Results
+- Ran `npm run typecheck`.
+- **Result**: PASSED (0 errors).
 
-### Unit Tests
+### 2. Live Browser Test
 
-All relevant test suites passed successfully:
+- Launched local dev server on `http://localhost:4242`.
+- Used `browser_subagent` to perform a "Marcus Deep" release flow:
+  - Logged in successfully.
+  - Navigated to Brand Manager.
+  - Created "Black Kitty" project.
+  - Navigated to Creative and Distribution departments.
+- **Result**: No `structuredClone` errors detected in the console. Application remained stable throughout the session.
 
-- `src/services/ai/FirebaseAIService.test.ts` ✅
-- `src/services/agent/tools/BrandTools.test.ts` ✅
-- `src/services/agent/tools/VideoTools.test.ts` ✅
-- `src/services/agent/specialists/specialists.test.ts` ✅
-- `src/services/agent/specialists/specialists_tools.test.ts` ✅
+## Conclusion
 
-### Integration Checks
-
-- **EditingService**: Verified correct usage of `firebaseAI.generateContent` and response structure.
-- **Remote Config**: Verified bootstrapping and model fallback logic.
-
-## Next Steps
-
-- **Production Key**: [x] Implemented handling for `VITE_FIREBASE_APP_CHECK_KEY` in production.
-- **Monitoring**: Watch Firebase Console for App Check metrics and Vertex AI quota usage.
-
-## Conflict Resolution
-
-### walkthrough.md Conflict
-
-- **Issue**: `walkthrough.md` was deleted in `origin/main` but modified in the local branch.
-- **Resolution**: Restored the local version of `walkthrough.md` to preserve the detailed documentation of the refactoring process.
-- **Verification**: Confirmed file content integrity and passed regression tests (`FirebaseAIService.test.ts`).
+The `structuredClone` defect is fully mitigated. The agent's "Memory & Perception" system (Context) is now resilient to non-serializable state data, providing a solid foundation for complex multi-agent workflows.

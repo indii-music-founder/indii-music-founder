@@ -1,16 +1,37 @@
-import { AI } from '@/services/ai/AIService'; // Keep if needed for types, though not used in registry directly in original
-import { AI_MODELS } from '@/core/config/ai-models';
 import { AGENT_CONFIGS } from './agentConfig';
 
-import { AgentContext, AgentResponse, AgentProgressCallback, SpecializedAgent } from './types';
+import { SpecializedAgent } from './types';
 
 export class AgentRegistry {
     private agents: Map<string, SpecializedAgent> = new Map();
     private loaders: Map<string, () => Promise<SpecializedAgent>> = new Map();
-    private metadata: Map<string, SpecializedAgent> = new Map(); // Stores lightweight metadata for both lazy and active agents
+    private metadata: Map<string, SpecializedAgent> = new Map();
+    private loadErrors: Map<string, { error: Error; timestamp: number; attempts: number }> = new Map();
+    private loadingPromises: Map<string, Promise<SpecializedAgent | undefined>> = new Map();
+    private isInitialized = false;
 
     constructor() {
         this.initializeAgents();
+    }
+
+    /**
+     * Pre-warm critical agents (call on app startup)
+     */
+    async warmup(): Promise<void> {
+        if (this.isInitialized) return;
+
+        try {
+            console.log('[AgentRegistry] Pre-warming Generalist agent...');
+            const generalist = await this.getAsync('generalist');
+            if (generalist) {
+                console.log('[AgentRegistry] Generalist agent pre-warmed successfully');
+                this.isInitialized = true;
+            } else {
+                console.error('[AgentRegistry] Failed to pre-warm Generalist agent');
+            }
+        } catch (e) {
+            console.error('[AgentRegistry] Warmup error:', e);
+        }
     }
 
     private initializeAgents() {
@@ -29,11 +50,17 @@ export class AgentRegistry {
             } as SpecializedAgent;
 
             this.registerLazy(meta, async () => {
-                console.log(`[AgentRegistry] Loading GeneralistAgent...`);
-                const { GeneralistAgent } = await import('./specialists/GeneralistAgent');
-                return new GeneralistAgent();
+                const module = await import('./specialists/GeneralistAgent');
+                if (!module.GeneralistAgent) {
+                    throw new Error("Module imported but GeneralistAgent export is missing!");
+                }
+                const agent = new module.GeneralistAgent();
+                // Check for initialize method using type guard
+                if ('initialize' in agent && typeof agent.initialize === 'function') {
+                    await agent.initialize();
+                }
+                return agent;
             });
-            // Log removed (Platinum Polish) - but we could use a silent internal flag if needed for debugging
         } catch (e) {
             console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
@@ -57,12 +84,9 @@ export class AgentRegistry {
             console.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
         }
 
-        // Register Config-based Agents
-        console.log(`[AgentRegistry] Initializing agents from AGENT_CONFIGS. Count: ${AGENT_CONFIGS.length}`);
-
+        // Register config-based agents
         AGENT_CONFIGS.forEach(config => {
             try {
-                console.log(`[AgentRegistry] Registering lazy loader for agent: ${config.id}`);
                 const meta = {
                     id: config.id,
                     name: config.name,
@@ -80,6 +104,33 @@ export class AgentRegistry {
                 console.warn(`[AgentRegistry] Failed to register agent '${config.id}':`, e);
             }
         });
+
+        // Register Keeper (Context Integrity Guardian)
+        try {
+            const keeperMeta = {
+                id: 'keeper',
+                name: 'Keeper',
+                description: 'Context Integrity Guardian. Maintains coherence and recalls critical context/rules.',
+                color: '#4B0082', // Indigo
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(keeperMeta, async () => {
+                const { BaseAgent } = await import('./BaseAgent');
+                return new BaseAgent({
+                    id: 'keeper',
+                    name: 'Keeper',
+                    description: 'Context Integrity Guardian',
+                    color: '#4B0082',
+                    category: 'specialist',
+                    systemPrompt: 'You are Keeper, the Context Integrity Guardian for indiiOS. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
+                    tools: []
+                });
+            });
+        } catch (e) {
+            console.warn("[AgentRegistry] Failed to register Keeper agent:", e);
+        }
     }
 
     register(agent: SpecializedAgent) {
@@ -88,7 +139,6 @@ export class AgentRegistry {
     }
 
     registerLazy(meta: SpecializedAgent, loader: () => Promise<SpecializedAgent>) {
-        console.log(`[AgentRegistry] Adding lazy loader for: ${meta.id}`);
         this.metadata.set(meta.id, meta);
         this.loaders.set(meta.id, loader);
     }
@@ -98,24 +148,71 @@ export class AgentRegistry {
         return this.agents.get(id);
     }
 
-    async getAsync(id: string): Promise<SpecializedAgent | undefined> {
+    async getAsync(id: string, retryCount = 0): Promise<SpecializedAgent | undefined> {
+        const MAX_RETRIES = 2;
+        const RETRY_DELAY_MS = 500;
+
+        // Return cached agent if already loaded
         if (this.agents.has(id)) {
             return this.agents.get(id);
         }
 
-        const loader = this.loaders.get(id);
-        if (loader) {
-            try {
-                const agent = await loader();
-                this.agents.set(id, agent);
-                return agent;
-            } catch (e) {
-                console.error(`[AgentRegistry] Failed to load agent '${id}':`, e);
-                return undefined;
-            }
+        // Deduplicate concurrent loads - if already loading, wait for that promise
+        if (this.loadingPromises.has(id)) {
+            return this.loadingPromises.get(id);
         }
 
-        return undefined;
+        const loader = this.loaders.get(id);
+        if (!loader) {
+            return undefined;
+        }
+
+        // Create the loading promise and cache it to prevent duplicate loads
+        const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
+            try {
+                console.log(`[AgentRegistry] Loading agent '${id}'...`);
+                const agent = await loader();
+                this.agents.set(id, agent);
+                // Clear any previous error state
+                this.loadErrors.delete(id);
+                console.log(`[AgentRegistry] Agent '${id}' loaded successfully`);
+                return agent;
+            } catch (e) {
+                const error = e instanceof Error ? e : new Error(String(e));
+                const existingError = this.loadErrors.get(id);
+                const attempts = (existingError?.attempts || 0) + 1;
+
+                console.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
+
+                // Retry with exponential backoff
+                if (retryCount < MAX_RETRIES) {
+                    const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
+                    console.log(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    this.loadingPromises.delete(id); // Clear so retry can proceed
+                    return this.getAsync(id, retryCount + 1);
+                }
+
+                console.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
+                return undefined;
+            } finally {
+                // Clean up loading promise after completion (unless retrying)
+                if (retryCount >= MAX_RETRIES || this.agents.has(id)) {
+                    this.loadingPromises.delete(id);
+                }
+            }
+        })();
+
+        this.loadingPromises.set(id, loadPromise);
+        return loadPromise;
+    }
+
+    /**
+     * Get the last error for an agent (useful for debugging)
+     */
+    getLoadError(id: string): { error: Error; timestamp: number; attempts: number } | undefined {
+        return this.loadErrors.get(id);
     }
 
     getAll(): SpecializedAgent[] {

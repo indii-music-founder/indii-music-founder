@@ -64,4 +64,25 @@ describe('Sidebar', () => {
 
         expect(setModule).toHaveBeenCalledWith('reference-manager');
     });
+
+    it('provides accessible labels when sidebar is collapsed', () => {
+        (useStore as any).mockReturnValue({
+            currentModule: 'dashboard',
+            setModule: vi.fn(),
+            isSidebarOpen: false, // Collapsed state
+            toggleSidebar: vi.fn(),
+            userProfile: { bio: 'Test User' },
+            logout: vi.fn(),
+            setTheme: vi.fn(),
+        });
+
+        render(<Sidebar />);
+
+        // Check for navigation item aria-label
+        const refAssetsBtn = screen.getByTestId('nav-item-reference-manager');
+        expect(refAssetsBtn).toHaveAttribute('aria-label', 'Reference Assets');
+
+        // Check for logout button
+        expect(screen.getByTestId('logout-btn')).toHaveAttribute('aria-label', 'Reload System');
+    });
 });

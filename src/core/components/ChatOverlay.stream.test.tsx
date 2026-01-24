@@ -1,10 +1,14 @@
-import { render, screen, act, waitFor } from '@testing-library/react';
+import { render, screen, act, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatOverlay from './ChatOverlay';
 import { useStore } from '@/core/store';
-import { useVoice } from '@/core/context/VoiceContext';
 
 // --- MOCKS ---
+
+// 1. Hoist the spy so it can be used inside the mock factory
+const { scrollToIndexMock } = vi.hoisted(() => ({
+    scrollToIndexMock: vi.fn(),
+}));
 
 // Mock Store
 const mockStore = vi.fn();
@@ -14,7 +18,7 @@ vi.mock('@/core/store', () => ({
 
 // Mock Voice Context
 vi.mock('@/core/context/VoiceContext', () => ({
-    useVoice: () => ({ isVoiceEnabled: false, setVoiceEnabled: vi.fn() })
+    useVoice: () => ({ isVoiceEnabled: false, setVoiceEnabled: vi.fn(), isListening: false, transcript: '' })
 }));
 
 // Mock Voice Service
@@ -22,29 +26,64 @@ vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: { speak: vi.fn(), stopSpeaking: vi.fn() }
 }));
 
-// Mock Virtuoso (Crucial for testing scroll)
-vi.mock('react-virtuoso', () => ({
-    Virtuoso: ({ data, itemContent, followOutput, initialTopMostItemIndex }: any) => (
-        <div data-testid="stream-list" data-follow-output={followOutput} data-initial-index={initialTopMostItemIndex}>
-            {data.map((item: any, i: number) => (
-                <div key={item.id} data-testid={`message-${item.id}`}>
-                    {itemContent(i, item)}
-                </div>
-            ))}
-        </div>
-    ),
-    VirtuosoHandle: {},
+// Mock Toast Context
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({ toast: vi.fn() })
 }));
+
+// Mock Virtuoso with scrolling controls
+vi.mock('react-virtuoso', async () => {
+    const React = await import('react');
+    return {
+        Virtuoso: React.forwardRef(({ data, itemContent, atBottomStateChange }: any, ref: any) => {
+            // Expose scrollToIndex via ref
+            React.useImperativeHandle(ref, () => ({
+                scrollToIndex: scrollToIndexMock
+            }));
+
+            return (
+                <div data-testid="stream-list">
+                    {/* Hidden controls to simulate user scrolling behavior */}
+                    <button
+                        data-testid="simulate-user-scroll-up"
+                        onClick={() => atBottomStateChange && atBottomStateChange(false)}
+                    />
+                    <button
+                        data-testid="simulate-user-scroll-bottom"
+                        onClick={() => atBottomStateChange && atBottomStateChange(true)}
+                    />
+
+                    {data.map((item: any, i: number) => (
+                        <div key={item.id} data-testid={`message-${item.id}`}>
+                            {itemContent(i, item)}
+                        </div>
+                    ))}
+                </div>
+            );
+        }),
+        VirtuosoHandle: {},
+    };
+});
 
 // Mock Framer Motion
-vi.mock('framer-motion', () => ({
-    motion: {
-        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
-}));
+vi.mock('framer-motion', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('framer-motion')>();
+    return {
+        ...actual,
+        motion: {
+            div: ({ children, className, drag, dragControls, dragListener, dragMomentum, ...props }: any) => (
+                <div className={className} {...props}>{children}</div>
+            ),
+            button: ({ children, className, onClick, ...props }: any) => (
+                <button className={className} onClick={onClick} {...props}>{children}</button>
+            ),
+        },
+        AnimatePresence: ({ children }: any) => <>{children}</>,
+        useDragControls: () => ({ start: vi.fn() }),
+    };
+});
 
-// Mock Markdown components to avoid complex rendering in tests
+// Mock Markdown components
 vi.mock('react-markdown', () => ({
     default: ({ children }: any) => <div data-testid="markdown-content">{children}</div>
 }));
@@ -52,6 +91,13 @@ vi.mock('react-markdown', () => ({
 // Mock TextEffect
 vi.mock('@/components/motion-primitives/text-effect', () => ({
     TextEffect: ({ children }: any) => <span>{children}</span>
+}));
+
+// Mock Agent Registry
+vi.mock('@/services/agent/registry', () => ({
+    agentRegistry: {
+        getAll: () => [{ id: 'generalist', name: 'Indii', description: 'Assistant', color: 'purple' }]
+    }
 }));
 
 // --- TEST DATA ---
@@ -64,11 +110,17 @@ const INITIAL_STATE = {
     loadSessions: vi.fn(),
     createSession: vi.fn(),
     toggleAgentWindow: vi.fn(),
+    isAgentProcessing: false,
+    chatChannel: 'indii',
+    agentWindowSize: { width: 400, height: 600 },
+    setAgentWindowSize: vi.fn(),
+    isCommandBarDetached: false,
+    setCommandBarDetached: vi.fn(),
+    setChatChannel: vi.fn()
 };
 
 describe('👁️ Pixel: Chat Stream Verification', () => {
 
-    // Helper to simulate store updates
     const updateStore = (overrides: any) => {
         const state = { ...INITIAL_STATE, ...overrides };
         mockStore.mockImplementation((selector: any) => {
@@ -80,93 +132,159 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        updateStore({}); // Reset to initial
+        scrollToIndexMock.mockClear();
+        updateStore({});
     });
 
-    it('Scenario 1: Handles "Thinking" state before stream starts', () => {
-        // Pixel says: "If it flickers, it fails". Verify smooth entry.
-
-        // 1. User sends message
+    it('Scenario 1: Verifies "Thinking" state appears and disappears', () => {
+        // Start processing
         updateStore({
             agentHistory: [
                 { id: 'u1', role: 'user', text: 'Write a poem', timestamp: 100 }
-            ]
+            ],
+            isAgentProcessing: true
         });
-        const { rerender } = render(<ChatOverlay />);
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
-        expect(screen.getByText('Write a poem')).toBeInTheDocument();
+        expect(screen.getByText(/PROCESSING RESPONSE.../i)).toBeInTheDocument();
 
-        // 2. AI enters "Thinking" state (empty text, isStreaming: true)
+        // Stop processing
         updateStore({
             agentHistory: [
                 { id: 'u1', role: 'user', text: 'Write a poem', timestamp: 100 },
-                { id: 'ai1', role: 'model', text: '', isStreaming: true, timestamp: 101 }
-            ]
+                { id: 'ai1', role: 'model', text: 'Here is a poem.', timestamp: 101 }
+            ],
+            isAgentProcessing: false
         });
-        rerender(<ChatOverlay />);
+        rerender(<ChatOverlay onClose={vi.fn()} />);
 
-        // Verify "Thinking" indicators using Role, not TestId
-        expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
+        expect(screen.queryByText(/PROCESSING RESPONSE.../i)).not.toBeInTheDocument();
     });
 
-    it('Scenario 2: Verifies progressive text streaming without layout thrashing', async () => {
-        // Pixel says: "Verify the UI behavior, not the model"
+    it('Scenario 2: Verifies progressive text streaming updates content', () => {
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
 
-        const { rerender } = render(<ChatOverlay />);
-
-        // Simulating chunks arriving
-        const chunks = ['The', ' neon', ' lights', ' flicker', '.'];
+        const chunks = ['The', ' neon', ' lights'];
         let currentText = '';
 
         for (const chunk of chunks) {
             currentText += chunk;
-
             updateStore({
                 agentHistory: [
                     { id: 'ai1', role: 'model', text: currentText, isStreaming: true, timestamp: 101 }
                 ]
             });
+            rerender(<ChatOverlay onClose={vi.fn()} />);
 
-            rerender(<ChatOverlay />);
-
-            // Assert text update
-            const content = screen.getByTestId('markdown-content');
-            expect(content).toHaveTextContent(currentText);
-
-            // Assert Auto-Scroll is still active (followOutput="smooth")
-            const list = screen.getByTestId('stream-list');
-            expect(list).toHaveAttribute('data-follow-output', 'smooth');
+            expect(screen.getByTestId('markdown-content')).toHaveTextContent(currentText);
         }
     });
 
-    it('Scenario 3: Verifies Stream Completion (Loading indicators vanish)', () => {
-        // 1. Streaming State
+    it('Scenario 3: Verifies Auto-Scroll Behavior (Happy Path)', async () => {
+        // Initial render with one message
+        updateStore({
+            agentHistory: [{ id: '1', role: 'user', text: 'hi', timestamp: 1 }]
+        });
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Simulate initial scroll to bottom (Virtuoso usually does this on mount if configured)
+        // In our mock component, we can simulate the state change if needed, but the effect uses 'messages' dependency
+
+        // Add a new message (streaming)
         updateStore({
             agentHistory: [
-                { id: 'ai1', role: 'model', text: 'Done.', isStreaming: true, timestamp: 101 }
-            ]
+                { id: '1', role: 'user', text: 'hi', timestamp: 1 },
+                { id: '2', role: 'model', text: 'Hel', isStreaming: true, timestamp: 2 }
+            ],
+            isAgentProcessing: true
         });
-        const { rerender } = render(<ChatOverlay />);
+        rerender(<ChatOverlay onClose={vi.fn()} />);
 
-        expect(screen.getByRole('status', { name: /thinking/i })).toBeInTheDocument();
-
-        // 2. Completed State
-        updateStore({
-            agentHistory: [
-                { id: 'ai1', role: 'model', text: 'Done.', isStreaming: false, timestamp: 101 }
-            ]
+        // Expect scrollToIndex to be called because auto-scroll is ON by default
+        // requestAnimationFrame is used, so we wait
+        await waitFor(() => {
+            expect(scrollToIndexMock).toHaveBeenCalledWith(expect.objectContaining({
+                index: 1, // index of last message
+                behavior: 'smooth'
+            }));
         });
-        rerender(<ChatOverlay />);
-
-        // Dots should be gone
-        expect(screen.queryByRole('status', { name: /thinking/i })).not.toBeInTheDocument();
     });
 
-    it('Scenario 4: Handles Thought Chain updates correctly', () => {
-        // Pixel Check: Thoughts should update inside the collapsed region
+    it('Scenario 4: Verifies Auto-Scroll Pauses on User Scroll (Interruption)', () => {
+        updateStore({
+            agentHistory: [{ id: '1', role: 'user', text: 'hi', timestamp: 1 }]
+        });
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Clear initial calls
+        scrollToIndexMock.mockClear();
+
+        // Simulate User Scrolling UP (away from bottom)
+        fireEvent.click(screen.getByTestId('simulate-user-scroll-up'));
+
+        // Add new message
+        updateStore({
+            agentHistory: [
+                { id: '1', role: 'user', text: 'hi', timestamp: 1 },
+                { id: '2', role: 'model', text: 'New message', timestamp: 2 }
+            ]
+        });
+        rerender(<ChatOverlay onClose={vi.fn()} />);
+
+        // Expect scrollToIndex NOT to be called (Auto-scroll paused)
+        expect(scrollToIndexMock).not.toHaveBeenCalled();
+
+        // Expect "Resume Feed" button to appear
+        expect(screen.getByTitle('Resume Feed')).toBeInTheDocument();
+    });
+
+    it('Scenario 5: Verifies "Resume Feed" re-enables Auto-Scroll', async () => {
+        updateStore({
+            agentHistory: [{ id: '1', role: 'user', text: 'hi', timestamp: 1 }]
+        });
+        const { rerender } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Simulate User Scrolling UP to pause auto-scroll
+        fireEvent.click(screen.getByTestId('simulate-user-scroll-up'));
+
+        // Add message so button appears
+        updateStore({
+            agentHistory: [
+                { id: '1', role: 'user', text: 'hi', timestamp: 1 },
+                { id: '2', role: 'model', text: 'New', timestamp: 2 }
+            ]
+        });
+        rerender(<ChatOverlay onClose={vi.fn()} />);
+
+        const resumeBtn = screen.getByTitle('Resume Feed');
+        expect(resumeBtn).toBeInTheDocument();
+
+        // Click Resume
+        fireEvent.click(resumeBtn);
+
+        // 1. Should call scrollToIndex immediately
+        await waitFor(() => {
+            expect(scrollToIndexMock).toHaveBeenCalledWith(expect.objectContaining({
+                index: 1,
+                behavior: 'smooth'
+            }));
+        });
+
+        // 2. Button should disappear (optimistic update or subsequent render)
+        // Note: In the component, setIsAutoScrolling(true) triggers the effect which calls scroll.
+        // It also hides the button.
+        // We might need to simulate 'atBottom' becoming true if the component relies on that to hide the button permanently?
+        // Looking at code: {!isAutoScrolling && ...}
+        // clicking sets isAutoScrolling(true).
+
+        rerender(<ChatOverlay onClose={vi.fn()} />);
+        expect(screen.queryByTitle('Resume Feed')).not.toBeInTheDocument();
+    });
+
+    it('Scenario 6: Handles Thought Chain updates correctly', () => {
         const thoughts = [
-            { id: 't1', text: 'Planning...', type: 'thought' },
-            { id: 't2', text: 'Searching tools...', type: 'tool' }
+            { id: 't1', text: 'Analyzing request...', type: 'thought' },
+            { id: 't2', text: 'Searching knowledge base...', type: 'tool' }
         ];
 
         updateStore({
@@ -179,33 +297,15 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
                     thoughts: thoughts,
                     timestamp: 101
                 }
-            ]
+            ],
+            isAgentProcessing: true
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
-        // Verify Thought Chain Indicator
-        expect(screen.getByText(/Cognitive Logic/i)).toBeInTheDocument();
-        expect(screen.getByText(/2 ITERATIONS/i)).toBeInTheDocument();
-
-        // Verify content is in the document (it's collapsible, usually open by default in code?)
-        // The code says `useState(true)` for isOpen.
-        expect(screen.getByText('Planning...')).toBeInTheDocument();
-        expect(screen.getByText('Searching tools...')).toBeInTheDocument();
-    });
-
-    it('Scenario 5: Auto-scroll anchor logic', () => {
-        // When history loads initially, it should start at the bottom
-        updateStore({
-            agentHistory: Array.from({ length: 10 }, (_, i) => ({ id: `msg-${i}`, role: 'user', text: `msg-${i}` }))
-        });
-
-        render(<ChatOverlay />);
-
-        const list = screen.getByTestId('stream-list');
-        // Virtuoso prop: initialTopMostItemIndex
-        // Should be length - 1 (9)
-        expect(list).toHaveAttribute('data-initial-index', '9');
+        // Verify thoughts are rendered (MessageItem handles this, but we verify integration)
+        expect(screen.getByText(/Analyzing request/i)).toBeInTheDocument();
+        expect(screen.getByText(/Searching knowledge base/i)).toBeInTheDocument();
     });
 
 });

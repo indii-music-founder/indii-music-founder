@@ -21,7 +21,7 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
     const [prompt, setPrompt] = useState('');
     const [isGenerating, setIsGenerating] = useState(false);
     const toast = useToast();
-    const { currentProjectId, addToHistory } = useStore();
+    const { currentProjectId, addToHistory, userProfile } = useStore();
 
     const handleGenerate = async () => {
         if (!prompt.trim()) {
@@ -36,7 +36,8 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
             const result = await ImageGeneration.generateImages({
                 prompt: prompt.trim(),
                 aspectRatio: '1:1',
-                count: 1
+                count: 1,
+                userProfile: userProfile || undefined
             });
 
             if (result && result.length > 0) {
@@ -105,6 +106,7 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
                     <button
                         onClick={onClose}
                         disabled={isGenerating}
+                        aria-label="Close dialog"
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors disabled:opacity-50"
                     >
                         <X size={20} className="text-neutral-400" />

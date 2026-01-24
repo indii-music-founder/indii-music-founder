@@ -80,7 +80,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         // Zod Validation for AI Output
                         const validation = ReceiptScanResultSchema.safeParse(rawData);
                         if (!validation.success) {
-                             throw new Error("Invalid receipt format returned by AI.");
+                            throw new Error("Invalid receipt format returned by AI.");
                         }
 
                         const data = validation.data;
@@ -140,7 +140,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col h-[600px] relative overflow-hidden"
+            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col min-h-[400px] h-full max-h-[600px] md:h-[600px] relative overflow-hidden"
         >
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <div>

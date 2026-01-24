@@ -62,3 +62,12 @@ tsconfig.verify.json
 functions/lib/
 dist-electron-studio/
 .gemini
+
+# Distribution Engine Runtime Data
+upc_store.json
+identity_store.json
+.mypy_cache/
+
+# Python
+__pycache__/
+*.pyc

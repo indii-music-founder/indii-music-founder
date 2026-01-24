@@ -11,41 +11,48 @@ describe('CanvasToolbar', () => {
         isMagicFillMode: false,
     };
 
-    it('renders all tool buttons', () => {
+    it('renders all tool buttons with accessible names', () => {
         render(<CanvasToolbar {...mockProps} />);
-        expect(screen.getByTitle('Add Rectangle')).toBeInTheDocument();
-        expect(screen.getByTitle('Add Circle')).toBeInTheDocument();
-        expect(screen.getByTitle('Add Text')).toBeInTheDocument();
-        expect(screen.getByTitle('Magic Fill')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Rectangle/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Circle/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Add Text/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Magic Fill/i })).toBeInTheDocument();
     });
 
     it('calls addRectangle when rectangle button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
-        fireEvent.click(screen.getByTitle('Add Rectangle'));
+        fireEvent.click(screen.getByRole('button', { name: /Add Rectangle/i }));
         expect(mockProps.addRectangle).toHaveBeenCalled();
     });
 
     it('calls addCircle when circle button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
-        fireEvent.click(screen.getByTitle('Add Circle'));
+        fireEvent.click(screen.getByRole('button', { name: /Add Circle/i }));
         expect(mockProps.addCircle).toHaveBeenCalled();
     });
 
     it('calls addText when text button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
-        fireEvent.click(screen.getByTitle('Add Text'));
+        fireEvent.click(screen.getByRole('button', { name: /Add Text/i }));
         expect(mockProps.addText).toHaveBeenCalled();
     });
 
     it('calls toggleMagicFill when magic fill button is clicked', () => {
         render(<CanvasToolbar {...mockProps} />);
-        fireEvent.click(screen.getByTitle('Magic Fill'));
+        fireEvent.click(screen.getByRole('button', { name: /Magic Fill/i }));
         expect(mockProps.toggleMagicFill).toHaveBeenCalled();
     });
 
     it('shows active state for Magic Fill button', () => {
         render(<CanvasToolbar {...mockProps} isMagicFillMode={true} />);
-        const magicFillBtn = screen.getByTitle('Magic Fill');
+        const magicFillBtn = screen.getByRole('button', { name: /Magic Fill/i });
         expect(magicFillBtn).toHaveClass('bg-purple-600');
+        expect(magicFillBtn).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('shows inactive state for Magic Fill button', () => {
+        render(<CanvasToolbar {...mockProps} isMagicFillMode={false} />);
+        const magicFillBtn = screen.getByRole('button', { name: /Magic Fill/i });
+        expect(magicFillBtn).toHaveAttribute('aria-pressed', 'false');
     });
 });

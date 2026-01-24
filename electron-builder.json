@@ -1,39 +1,50 @@
 {
-    "appId": "com.indii.os",
-    "productName": "indiiOS",
-    "directories": {
-        "output": "dist-electron"
-    },
-    "files": [
-        "dist/**/*",
-        "dist-electron/**/*",
-        "package.json"
-    ],
-    "protocols": [
-        {
-            "name": "indiiOS Auth Protocol",
-            "schemes": ["indii-os"]
-        }
-    ],
-    "mac": {
-        "category": "public.app-category.productivity",
-        "target": [
-            "dmg",
-            "zip"
-        ],
-        "hardenedRuntime": true,
-        "gatekeeperAssess": false,
-        "entitlements": "build/entitlements.mac.plist",
-        "entitlementsInherit": "build/entitlements.mac.plist"
-    },
-    "win": {
-        "target": [
-            "nsis"
-        ]
-    },
-    "linux": {
-        "target": [
-            "AppImage"
-        ]
+  "appId": "com.indii.os",
+  "directories": {
+    "output": "dist-electron"
+  },
+  "files": [
+    "dist/**/*",
+    "dist-electron/**/*",
+    "package.json"
+  ],
+  "extraResources": [
+    {
+      "from": "execution",
+      "to": "execution",
+      "filter": [
+        "**/*"
+      ]
     }
+  ],
+  "linux": {
+    "target": [
+      "AppImage"
+    ]
+  },
+  "mac": {
+    "category": "public.app-category.productivity",
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.plist",
+    "gatekeeperAssess": false,
+    "hardenedRuntime": true,
+    "target": [
+      "dmg",
+      "zip"
+    ]
+  },
+  "productName": "indiiOS",
+  "protocols": [
+    {
+      "name": "indiiOS Auth Protocol",
+      "schemes": [
+        "indii-os"
+      ]
+    }
+  ],
+  "win": {
+    "target": [
+      "nsis"
+    ]
+  }
 }

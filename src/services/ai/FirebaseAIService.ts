@@ -8,17 +8,17 @@ import {
     Content,
     Part,
     Schema,
-    GenerationConfig as FirebaseGenerationConfig,
     Tool
 } from 'firebase/ai';
-import { ai, remoteConfig, functions } from '@/services/firebase';
+import { GoogleGenAI } from '@google/genai';
+import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
+import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
+import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
-    Candidate,
-    TextPart,
     InlineDataPart,
     FunctionCallPart,
     GenerateContentResponse,
@@ -29,17 +29,47 @@ import {
     GenerateImageRequest,
     GenerateImageResponse,
     GenerateSpeechResponse,
-    GenerationConfig
+    GenerationConfig,
+    ContentPart
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
 import { BREAKER_CONFIGS } from './config/breaker-configs';
+import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
+import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
+
+// ============================================================================
+// App Check Detection & Fallback Mode
+// ============================================================================
+
+/**
+ * Checks if an error indicates App Check is not properly configured.
+ * When this happens, we should fall back to direct Gemini SDK.
+ */
+function isAppCheckError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    return (
+        msg.includes('installations/request-failed') ||
+        msg.includes('PERMISSION_DENIED') ||
+        msg.includes('permission-denied') ||
+        msg.includes('app-check-token') ||
+        msg.includes('The caller does not have permission')
+    );
+}
+
+/**
+ * Check if App Check is configured in the environment.
+ * If not, we should use direct Gemini SDK from the start.
+ */
+function isAppCheckConfigured(): boolean {
+    return !!(env.appCheckKey || env.appCheckDebugToken);
+}
 
 // Default model if remote config fails
 const FALLBACK_MODEL = AI_MODELS.TEXT.FAST;
@@ -49,62 +79,97 @@ interface BatchEmbedContentsResponse {
     embeddings: { values: number[] }[];
 }
 
-// Interface for Google Search Tool support (not yet in official firebase/ai types)
-interface GoogleSearchTool {
-    googleSearch: Record<string, never>;
-}
-
-type AITool = Tool | GoogleSearchTool;
-
 // Interface for GenerativeModel with batching support
 interface ExtendedGenerativeModel extends GenerativeModel {
     batchEmbedContents?(request: { requests: { content: Content }[] }): Promise<BatchEmbedContentsResponse>;
     embedContent?(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
 }
 
-// Interface for Aggregated Stream Response (SDK internal type)
-interface AggregatedStreamResponse extends GenerateContentResponse {
-    text?: () => string;
-}
-
 // Duplicates removed
 
 export interface ChatMessage {
     role: 'user' | 'model';
-    parts: Part[];
+    parts: (Part | ContentPart)[];
 }
 
 export class FirebaseAIService {
     private model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
 
+    // Fallback mode: use direct Gemini SDK when App Check is not available
+    private useFallbackMode = false;
+    private fallbackClient: GoogleGenAI | null = null;
+
     // Circuit Breakers
     private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
     private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
     private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES);
 
+    // Dynamic Configuration
+    private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
+
     constructor() { }
 
     /**
      * Bootstrap the AI service:
-     * 1. Fetch Remote Config to get the latest model name.
-     * 2. Initialize the GenerativeModel using the pre-configured AI instance.
+     * 1. Check if App Check is configured - if not, use direct Gemini SDK
+     * 2. Fetch Remote Config to get the latest model name.
+     * 3. Initialize the GenerativeModel using the pre-configured AI instance.
      */
     async bootstrap(): Promise<void> {
         if (this.isInitialized) return;
 
-        try {
-            // 1. Fetch Remote Config
-            await fetchAndActivate(remoteConfig);
+        // Check if App Check is configured - if not, use direct Gemini SDK
+        if (!isAppCheckConfigured()) {
+            console.warn('[FirebaseAIService] App Check not configured, using direct Gemini SDK fallback');
+            await this.initializeFallbackMode();
+            return;
+        }
 
-            // 2. Get Model Name and Location
-            const modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+        try {
+            // 1. Get Firebase AI instance (lazy initialized)
+            const firebaseAI = getFirebaseAI();
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available, using fallback');
+                await this.initializeFallbackMode();
+                return;
+            }
+
+            // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
+            let modelName: string = FALLBACK_MODEL;
+            try {
+                await fetchAndActivate(remoteConfig);
+
+                // Get the old simple string (legacy)
+                modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+
+                // Get the new JSON config (modern)
+                const jsonString = getValue(remoteConfig, 'ai_system_config').asString();
+                if (jsonString) {
+                    try {
+                        const parsed = JSON.parse(jsonString);
+                        const validated = RemoteAIConfigSchema.safeParse(parsed);
+                        if (validated.success) {
+                            this.remoteConfig = validated.data;
+                            logger.info('[FirebaseAIService] Loaded dynamic AI config from Remote Config');
+                        } else {
+                            logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
+                        }
+                    } catch (e) {
+                        logger.warn('[FirebaseAIService] Failed to parse ai_system_config JSON:', e);
+                    }
+                }
+            } catch (configError: unknown) {
+                if (isAppCheckError(configError)) {
+                    throw configError;
+                }
+                console.warn('[FirebaseAIService] Failed to fetch remote config, using default model:', configError);
+            }
 
             // 3. Initialize SDK
-            // Note: 'ai' is already initialized in @/services/firebase with 
-            // VertexAIBackend and useLimitedUseAppCheckTokens: true.
-            this.model = getGenerativeModel(ai, {
-                model: modelName
+            this.model = getGenerativeModel(firebaseAI, {
+                model: modelName,
+                safetySettings: STANDARD_SAFETY_SETTINGS as any
             });
 
             if (!this.model) {
@@ -112,11 +177,62 @@ export class FirebaseAIService {
             }
 
             this.isInitialized = true;
-            // Initialized with model: ${modelName}
+            logger.info('[FirebaseAIService] Initialized with Firebase AI SDK');
 
         } catch (error) {
-            throw this.handleError(error);
+            logger.error('[FirebaseAIService] Bootstrap failed, attempting fallback:', error);
+            // If we hit an App Check error OR ANY initialization error, fall back to direct Gemini SDK
+            try {
+                await this.initializeFallbackMode();
+            } catch (fallbackError) {
+                throw this.handleError(fallbackError);
+            }
         }
+    }
+
+    /**
+     * Initialize fallback mode using direct Gemini SDK (no App Check required).
+     * This is used in development or when App Check is not configured.
+     */
+    private async initializeFallbackMode(): Promise<void> {
+        const apiKey = env.VITE_API_KEY || env.apiKey;
+        if (!apiKey) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'No API key found. Please set VITE_API_KEY in your .env file.'
+            );
+        }
+
+        this.fallbackClient = new GoogleGenAI({ apiKey });
+        this.useFallbackMode = true;
+        this.isInitialized = true;
+        logger.info('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
+    }
+
+    /**
+     * Get the model name, either from remote config or fallback
+     * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
+     */
+    private getModelName(modelOverride?: string): string {
+        // If the user provided a specific override, checking if WE want to override THAT.
+        // But usually, an explicit override in code means "I need this specific model".
+        // HOWEVER, for "system" defined constants, we might want to swap them too.
+
+        const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
+
+        // Try to reverse-lookup the key (e.g. "gemini-3-pro-preview" -> "TEXT_AGENT")
+        const configKey = getModelKey(candidateModel);
+
+        if (configKey) {
+            // Check if we have a remote override for this key
+            const remoteOverride = this.remoteConfig.overrides[configKey];
+            if (remoteOverride) {
+                // logger.debug(`[FirebaseAIService] Swapping ${configKey}: ${candidateModel} -> ${remoteOverride}`);
+                return remoteOverride;
+            }
+        }
+
+        return candidateModel;
     }
 
     async rawGenerateContent(
@@ -127,68 +243,132 @@ export class FirebaseAIService {
         tools?: Tool[],
         options?: { signal?: AbortSignal, cachedContent?: string }
     ): Promise<GenerateContentResult> {
+        // Wrap in retry logic (internal retries for 503/429/Transient Aborts)
         return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
+            return this.withRetry(async () => {
+                await this.ensureInitialized();
 
-            // Rate Limit Check
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                await TokenUsageService.checkQuota(userId);
-            }
-
-            const modelName = modelOverride || this.model!.model;
-            // Validate & Sanitize
-            const sanitizedPrompt = this.sanitizePrompt(prompt);
-
-            // 1. Check for Cached Content if systemInstruction is large
-            let cachedContent = options?.cachedContent;
-            if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                const hash = CachedContextService.generateHash(systemInstruction, tools);
-                const existingCache = await CachedContextService.findCache(hash);
-                if (existingCache) {
-                    cachedContent = existingCache;
-                    // console.info('[FirebaseAIService] Using cached context:', cachedContent);
+                // Rate Limit Check
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
                 }
-            }
 
-            const modelOptions: any = {
-                model: modelName,
-                generationConfig: config,
-                systemInstruction,
-                tools
-            };
+                const modelName = this.getModelName(modelOverride);
+                // Validate & Sanitize
+                const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            // Inject cachedContent if supported/available
-            if (cachedContent) {
-                modelOptions.cachedContent = cachedContent;
-            }
+                // ============================================================
+                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
+                // ============================================================
+                if (this.useFallbackMode && this.fallbackClient) {
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                }
 
-            const modelCallback = getGenerativeModel(ai, modelOptions);
+                // ============================================================
+                // NORMAL MODE: Use Firebase AI SDK with App Check
+                // ============================================================
 
-            try {
-                const result = await modelCallback.generateContent(
-                    typeof sanitizedPrompt === 'string'
-                        ? sanitizedPrompt
-                        : { contents: sanitizedPrompt } as any,
-                    // @ts-expect-error - options param validation
-                    options
-                );
+                // 1. Check for Cached Content if systemInstruction is large
+                let cachedContent = options?.cachedContent;
+                if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                    const hash = CachedContextService.generateHash(systemInstruction, tools);
+                    const existingCache = await CachedContextService.findCache(hash);
+                    if (existingCache) {
+                        cachedContent = existingCache;
+                    }
+                }
 
-                // Track Usage
-                if (userId && result.response.usageMetadata) {
-                    await TokenUsageService.trackUsage(
-                        userId,
-                        modelName,
-                        result.response.usageMetadata.promptTokenCount || 0,
-                        result.response.usageMetadata.candidatesTokenCount || 0
+                const modelOptions: any = {
+                    model: modelName,
+                    generationConfig: config,
+                    systemInstruction,
+                    tools,
+                    safetySettings: STANDARD_SAFETY_SETTINGS
+                };
+
+                // Inject cachedContent if supported/available
+                if (cachedContent) {
+                    modelOptions.cachedContent = cachedContent;
+                }
+
+                const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+
+                try {
+                    const result = await modelCallback.generateContent(
+                        typeof sanitizedPrompt === 'string'
+                            ? sanitizedPrompt
+                            : { contents: sanitizedPrompt }
                     );
-                }
 
-                return result;
-            } catch (error) {
-                throw this.handleError(error);
-            }
+                    // Track Usage
+                    if (userId && result.response.usageMetadata) {
+                        await TokenUsageService.trackUsage(
+                            userId,
+                            modelName,
+                            result.response.usageMetadata.promptTokenCount || 0,
+                            result.response.usageMetadata.candidatesTokenCount || 0
+                        );
+                    }
+
+                    return result;
+                } catch (error) {
+                    // If we hit an App Check error during normal mode, switch to fallback
+                    if (isAppCheckError(error) && !this.useFallbackMode) {
+                        console.warn('[FirebaseAIService] App Check error during generation, switching to fallback mode');
+                        await this.initializeFallbackMode();
+                        return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    }
+                    throw this.handleError(error);
+                }
+            }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
+    }
+
+    /**
+     * Generate content using direct Gemini SDK (fallback mode).
+     * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
+     */
+    private async generateWithFallback(
+        prompt: string | Content[],
+        modelName: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[]
+    ): Promise<GenerateContentResult> {
+        if (!this.fallbackClient) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
+        }
+
+        try {
+            // Build contents array for the new SDK format
+            const contents = typeof prompt === 'string'
+                ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+                : prompt;
+
+            const result = await this.fallbackClient.models.generateContent({
+                model: modelName,
+                contents: contents as any,
+                config: {
+                    ...config,
+                    systemInstruction,
+                    safetySettings: STANDARD_SAFETY_SETTINGS as any,
+                } as any,
+            });
+
+            // Convert to Firebase AI SDK format for compatibility
+            return {
+                response: {
+                    candidates: result.candidates,
+                    usageMetadata: result.usageMetadata,
+                    text: () => result.text || ''
+                } as unknown as GenerateContentResponse
+            } as GenerateContentResult;
+        } catch (error) {
+            throw this.handleError(error);
+        }
     }
 
     /**
@@ -203,102 +383,204 @@ export class FirebaseAIService {
         options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
-            await this.ensureInitialized();
+            return this.withRetry(async () => {
+                await this.ensureInitialized();
 
-            // Rate Limit Check
-            const userId = auth.currentUser?.uid;
-            if (userId) {
-                await TokenUsageService.checkQuota(userId);
-            }
+                // Rate Limit Check
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
+                }
 
-            const modelName = modelOverride || this.model!.model;
-            const sanitizedPrompt = this.sanitizePrompt(prompt);
+                const modelName = this.getModelName(modelOverride);
+                const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-            // 1. Check for Cached Content if systemInstruction is large
-            let cachedContent: string | undefined;
-            if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                const hash = CachedContextService.generateHash(systemInstruction, tools);
-                const existingCache = await CachedContextService.findCache(hash);
-                if (existingCache) {
-                    cachedContent = existingCache;
+                // ============================================================
+                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
+                // ============================================================
+                if (this.useFallbackMode && this.fallbackClient) {
+                    return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options);
+                }
+
+                // ============================================================
+                // NORMAL MODE: Use Firebase AI SDK with App Check
+                // ============================================================
+
+                // 1. Check for Cached Content if systemInstruction is large
+                let cachedContent: string | undefined;
+                if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                    const hash = CachedContextService.generateHash(systemInstruction, tools);
+                    const existingCache = await CachedContextService.findCache(hash);
+                    if (existingCache) {
+                        cachedContent = existingCache;
+                    }
+                }
+
+                const modelOptions: any = {
+                    model: modelName,
+                    generationConfig: config,
+                    systemInstruction,
+                    tools,
+                    safetySettings: STANDARD_SAFETY_SETTINGS
+                };
+
+                if (cachedContent) {
+                    modelOptions.cachedContent = cachedContent;
+                }
+
+                const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+
+                try {
+
+                    const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
+                        typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
+
+                        // @ts-expect-error - options param not in typed definition but supported
+                        options
+                    );
+
+                    // Wrap the final response promise
+                    const wrappedResponsePromise = result.response.then(async (aggResult) => {
+                        // Track usage
+                        if (userId && aggResult.usageMetadata) {
+                            try {
+                                await TokenUsageService.trackUsage(
+                                    userId,
+                                    modelName,
+                                    aggResult.usageMetadata.promptTokenCount || 0,
+                                    aggResult.usageMetadata.candidatesTokenCount || 0
+                                );
+                            } catch {
+                                // Failed to track stream usage (non-critical)
+                            }
+                        }
+
+                        return {
+                            response: aggResult as unknown as GenerateContentResponse,
+                            text: () => aggResult.text?.() ?? '',
+                            functionCalls: () => {
+                                const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                                return part ? [part.functionCall] : [];
+                            },
+                            usage: () => aggResult.usageMetadata
+                        };
+                    });
+
+                    const stream = new ReadableStream<StreamChunk>({
+                        async start(controller) {
+                            try {
+                                for await (const chunk of result.stream) {
+                                    controller.enqueue({
+                                        text: () => {
+                                            try { return chunk.text(); } catch { return ''; }
+                                        },
+                                        functionCalls: () => {
+                                            const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
+                                            return part ? [part.functionCall] : [];
+                                        }
+                                    });
+                                }
+                                controller.close();
+                            } catch (streamError) {
+                                controller.error(streamError);
+                            }
+                        }
+                    });
+
+                    return { stream, response: wrappedResponsePromise };
+                } catch (error) {
+                    // If we hit an App Check error during normal mode, switch to fallback
+                    if (isAppCheckError(error) && !this.useFallbackMode) {
+                        console.warn('[FirebaseAIService] App Check error during streaming, switching to fallback mode');
+                        await this.initializeFallbackMode();
+                        return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    }
+                    throw this.handleError(error);
+                }
+            }, 3, 1000, options?.signal); // Pass signal to withRetry
+        });
+    }
+
+    /**
+     * Stream content using direct Gemini SDK (fallback mode).
+     * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
+     */
+    private async streamWithFallback(
+        prompt: string | Content[],
+        modelName: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[],
+        _options?: { signal?: AbortSignal }
+    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
+        if (!this.fallbackClient) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
+        }
+
+        // Build contents array for the new SDK format
+        const contents = typeof prompt === 'string'
+            ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+            : prompt;
+
+        const result = await this.fallbackClient.models.generateContentStream({
+            model: modelName,
+            contents: contents as any,
+            config: {
+                ...config,
+                systemInstruction,
+                safetySettings: STANDARD_SAFETY_SETTINGS as any,
+            } as any,
+        });
+
+        // Collect chunks for final response
+        const chunks: any[] = [];
+        let finalText = '';
+
+        const stream = new ReadableStream<StreamChunk>({
+            async start(controller) {
+                try {
+                    for await (const chunk of result) {
+                        chunks.push(chunk);
+                        const chunkText = chunk.text || '';
+                        finalText += chunkText;
+                        controller.enqueue({
+                            text: () => chunkText,
+                            functionCalls: () => {
+                                const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                                    typeof p === 'object' && p !== null && 'functionCall' in p
+                                );
+                                return part ? [part.functionCall] : [];
+                            }
+                        });
+                    }
+                    controller.close();
+                } catch (streamError) {
+                    controller.error(streamError);
                 }
             }
-
-            const modelOptions: any = {
-                model: modelName,
-                generationConfig: config,
-                systemInstruction,
-                tools
-            };
-
-            if (cachedContent) {
-                modelOptions.cachedContent = cachedContent;
-            }
-
-            const modelCallback = getGenerativeModel(ai, modelOptions);
-
-            try {
-
-                const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
-                    typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-
-                    // @ts-expect-error - options param not in typed definition but supported
-                    options
-                );
-
-                // Wrap the final response promise
-                const wrappedResponsePromise = result.response.then(async (aggResult) => {
-                    // Track usage
-                    if (userId && aggResult.usageMetadata) {
-                        try {
-                            await TokenUsageService.trackUsage(
-                                userId,
-                                modelName,
-                                aggResult.usageMetadata.promptTokenCount || 0,
-                                aggResult.usageMetadata.candidatesTokenCount || 0
-                            );
-                        } catch {
-                            // Failed to track stream usage (non-critical)
-                        }
-                    }
-
-                    return {
-                        response: aggResult as AggregatedStreamResponse,
-                        text: () => aggResult.text?.() ?? '',
-                        functionCalls: () => {
-                            const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                            return part ? [part.functionCall] : [];
-                        },
-                        usage: () => aggResult.usageMetadata
-                    };
-                });
-
-                const stream = new ReadableStream<StreamChunk>({
-                    async start(controller) {
-                        try {
-                            for await (const chunk of result.stream) {
-                                controller.enqueue({
-                                    text: () => {
-                                        try { return chunk.text(); } catch { return ''; }
-                                    },
-                                    functionCalls: () => {
-                                        const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                                        return part ? [part.functionCall] : [];
-                                    }
-                                });
-                            }
-                            controller.close();
-                        } catch (streamError) {
-                            controller.error(streamError);
-                        }
-                    }
-                });
-
-                return { stream, response: wrappedResponsePromise };
-            } catch (error) {
-                throw this.handleError(error);
-            }
         });
+
+        // Build wrapped response from accumulated chunks
+        const wrappedResponsePromise = Promise.resolve({
+            response: {
+                candidates: chunks[chunks.length - 1]?.candidates || [],
+                usageMetadata: chunks[chunks.length - 1]?.usageMetadata,
+                text: () => finalText
+            } as unknown as GenerateContentResponse,
+            text: () => finalText,
+            functionCalls: () => {
+                const lastChunk = chunks[chunks.length - 1];
+                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                    typeof p === 'object' && p !== null && 'functionCall' in p
+                );
+                return part ? [part.functionCall] : [];
+            },
+            usage: () => chunks[chunks.length - 1]?.usageMetadata
+        });
+
+        return { stream, response: wrappedResponsePromise };
     }
 
     /**
@@ -307,22 +589,24 @@ export class FirebaseAIService {
     async generateContent(
         prompt: string | Content[],
         modelOverride?: string,
-        config?: any,
+        config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: any[]
+        tools?: Tool[],
+        options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
-        return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools);
+        return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
+
     /**
-     * CORE: Generate content stream (Used by AIService)
+     * CORE: Generate content stream(Used by AIService)
      */
     async generateContentStream(
         prompt: string | Content[],
         modelOverride?: string,
-        config?: any,
+        config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: any[],
+        tools?: Tool[],
         options?: { signal?: AbortSignal }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
@@ -334,14 +618,19 @@ export class FirebaseAIService {
     async generateText(
         prompt: string | Part[],
         thinkingBudgetOrModel?: number | string,
-        systemInstructionOrConfig?: string | any
+        systemInstructionOrConfig?: string | Record<string, unknown>
     ): Promise<string> {
-        let model = this.model!.model;
-        let config: any = {};
+        await this.ensureInitialized();
+        let model: string | undefined;
+        let config: Record<string, unknown> = {};
         let systemInstruction: string | undefined;
 
         if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+            config.thinkingConfig = {
+                thinkingBudget: thinkingBudgetOrModel,
+                budgetTokenCount: thinkingBudgetOrModel,
+                includeThoughts: true
+            };
             systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
         } else if (typeof thinkingBudgetOrModel === 'string') {
             model = thinkingBudgetOrModel;
@@ -349,11 +638,11 @@ export class FirebaseAIService {
                 systemInstruction = systemInstructionOrConfig;
             } else {
                 config = systemInstructionOrConfig || {};
-                systemInstruction = config.systemInstruction;
+                systemInstruction = (config as any).systemInstruction;
             }
         }
 
-        const modelName = model || this.model!.model;
+        const modelName = model || this.getModelName();
         const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
         // Semantic Cache Check
@@ -382,22 +671,27 @@ export class FirebaseAIService {
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
+        await this.ensureInitialized();
         const config: GenerationConfig = {
             responseMimeType: 'application/json',
             responseSchema: schema
         };
         if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
+            config.thinkingConfig = {
+                thinkingBudget,
+                budgetTokenCount: thinkingBudget,
+                includeThoughts: true
+            };
         }
 
-        const modelName = modelOverride || this.model!.model;
+        const modelName = modelOverride || this.getModelName();
         const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
 
         const cached = await aiCache.get(cacheKeyString, modelName, config);
         if (cached) {
             try {
                 return JSON.parse(cached) as T;
-            } catch (e) {
+            } catch (_e) {
                 // Ignore parse failure
             }
         }
@@ -422,9 +716,10 @@ export class FirebaseAIService {
         newMessage: string,
         systemInstruction?: string
     ): Promise<string> {
+        await this.ensureInitialized();
         const contents: Content[] = history.map(h => ({
             role: h.role,
-            parts: h.parts
+            parts: h.parts as Part[] // Cast to satisfy firebase/ai types while preserving extra fields like thoughtSignature
         }));
         contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
@@ -469,16 +764,44 @@ export class FirebaseAIService {
     /**
      * ADVANCED: Grounding with Google Search.
      */
-    async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
+    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
+        await this.ensureInitialized();
+        const tools: Tool[] = [{
+            googleSearch: {},
+            googleSearchRetrieval: options?.dynamicThreshold ? {
+                dynamicRetrievalConfig: {
+                    mode: 'MODE_DYNAMIC',
+                    dynamicThreshold: options.dynamicThreshold
+                }
+            } : undefined
+        }];
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools);
     }
 
     /**
      * ADVANCED: Live API for real-time bi-directional communication.
+     * NOTE: Live API is not available in fallback mode (requires Firebase AI SDK with App Check)
      */
     async getLiveModel(systemInstruction?: string): Promise<LiveGenerativeModel> {
         await this.ensureInitialized();
-        return getLiveGenerativeModel(ai, {
+
+        // Live API is Firebase-specific and not available in fallback mode
+        if (this.useFallbackMode) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Live API is not available without App Check configuration. Please configure VITE_FIREBASE_APP_CHECK_KEY.'
+            );
+        }
+
+        const firebaseAI = getFirebaseAI();
+        if (!firebaseAI) {
+            throw new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Firebase AI not initialized. Live API requires App Check.'
+            );
+        }
+
+        return getLiveGenerativeModel(firebaseAI, {
             model: AI_MODELS.TEXT.AGENT,
             systemInstruction
         });
@@ -545,9 +868,17 @@ export class FirebaseAIService {
      * BATCHING: Embed multiple documents in parallel
      */
     async batchEmbedContents(
-        contents: Content[],
+        contentsOrStrings: Content[] | string[],
         modelOverride?: string
     ): Promise<number[][]> {
+        // Normalize input to Content[]
+        const contents: Content[] = contentsOrStrings.map(item => {
+            if (typeof item === 'string') {
+                return { role: 'user', parts: [{ text: item }] };
+            }
+            return item;
+        });
+
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
 
@@ -557,7 +888,30 @@ export class FirebaseAIService {
             }
 
             const modelName = modelOverride || 'text-embedding-004';
-            const modelCallback = getGenerativeModel(ai, { model: modelName });
+
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+            if (this.useFallbackMode && this.fallbackClient) {
+                const promises = contents.map(async (c) => {
+                    // Extract text from content parts
+                    const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await this.fallbackClient!.models.embedContent({
+                        model: modelName,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                    });
+                    return (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [];
+                });
+                return Promise.all(promises);
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
+                await this.initializeFallbackMode();
+                return this.batchEmbedContents(contents, modelOverride);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, { model: modelName });
 
             try {
                 // If batchEmbedContents is available, use it
@@ -570,7 +924,7 @@ export class FirebaseAIService {
                     return result.embeddings.map((e) => e.values);
                 } else {
                     // Polyfill: Run in parallel
-                    const modelWithEmbed = modelCallback as unknown as { embedContent: (req: any) => Promise<any> };
+                    const modelWithEmbed = modelCallback as unknown as { embedContent: (req: unknown) => Promise<{ embedding: { values: number[] } }> };
                     if (typeof modelWithEmbed.embedContent === 'function') {
                         const promises = contents.map(c => modelWithEmbed.embedContent({ content: c }));
                         const results = await Promise.all(promises);
@@ -579,6 +933,12 @@ export class FirebaseAIService {
                     throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Model does not support embedding');
                 }
             } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during batch embedding, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.batchEmbedContents(contents, modelOverride);
+                }
                 throw this.handleError(error);
             }
         });
@@ -587,18 +947,58 @@ export class FirebaseAIService {
     /**
      * HIGH LEVEL: Generate image using backend proxy
      */
-    async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: any): Promise<string> {
+    async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: Record<string, unknown>): Promise<string> {
         return this.mediaBreaker.execute(async () => {
-            const generateImageFn = httpsCallable<GenerateImageRequest, GenerateImageResponse>(functions, 'generateImageV3');
-            const response = await generateImageFn({ model, prompt, config });
-            const image = response.data.images?.[0];
-            if (!image) throw new Error('No image returned');
-            return image.bytesBase64Encoded;
+            await this.ensureInitialized();
+
+            // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
+            const tools: Tool[] = [{ googleSearch: {} }];
+
+            // 2. Setup Config
+            const generationConfig: GenerationConfig = {
+                responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
+                imageConfig: {
+                    aspectRatio: config?.aspectRatio || '1:1',
+                    imageSize: '4K' // "Perfect" quality
+                } as any
+            };
+
+            if (config?.numberOfImages) {
+                generationConfig.candidateCount = config.numberOfImages as number;
+            }
+
+            // 3. Generate
+            const result = await this.rawGenerateContent(
+                prompt,
+                model,
+                generationConfig,
+                undefined,
+                tools
+            );
+
+            // 4. Extract Image
+            // Gemini 3 returns images as inlineData in the parts
+            const candidates = result.response.candidates;
+            if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
+
+            const imagePart = candidates[0].content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+
+            if (!imagePart || !imagePart.inlineData) {
+                // Check if it was blocked or just text returned (e.g. "I cannot generate that")
+                const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
+                if (textPart && 'text' in textPart) {
+                    throw new Error(`Generation blocked or failed: ${textPart.text}`);
+                }
+                throw new Error('No image data found in response');
+            }
+
+            return imagePart.inlineData.data;
         });
     }
 
     /**
-     * TTS: Generate speech from text using gemini-2.5-pro-tts
+     * TTS: Generate speech from text using gemini-2.5-pro-preview-tts
      */
     async generateSpeech(
         text: string,
@@ -625,7 +1025,51 @@ export class FirebaseAIService {
                 }
             };
 
-            const modelCallback = getGenerativeModel(ai, {
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+            if (this.useFallbackMode && this.fallbackClient) {
+                try {
+                    const result = await this.fallbackClient.models.generateContent({
+                        model: modelName,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        config: config as any
+                    });
+
+                    const candidates = result.candidates;
+
+                    if (!candidates || candidates.length === 0) {
+                        throw new Error('No candidates returned from TTS fallback model');
+                    }
+
+                    const audioPart = (candidates[0] as any).content?.parts?.find((p: any) => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
+
+                    if (!audioPart || !audioPart.inlineData) {
+                        throw new Error('No audio data found in fallback response parts');
+                    }
+
+                    return {
+                        audio: {
+                            inlineData: {
+                                mimeType: audioPart.inlineData.mimeType,
+                                data: audioPart.inlineData.data
+                            }
+                        }
+                    };
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+
+            // Auto-switch to fallback if Firebase AI is missing
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for speech, switching to fallback');
+                await this.initializeFallbackMode();
+                return this.generateSpeech(text, voice, modelOverride);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, {
                 model: modelName,
                 generationConfig: config as unknown as Record<string, unknown>
             });
@@ -653,6 +1097,12 @@ export class FirebaseAIService {
                     }
                 };
             } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during speech, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.generateSpeech(text, voice, modelOverride);
+                }
                 throw this.handleError(error);
             }
         });
@@ -661,31 +1111,68 @@ export class FirebaseAIService {
     /**
      * CORE: Embed content
      */
+
     async embedContent(options: { model: string, content: Content }): Promise<{ values: number[] }> {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
-            const modelCallback = getGenerativeModel(ai, {
+
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
+            if (this.useFallbackMode && this.fallbackClient) {
+                try {
+                    // Extract text from content parts
+                    const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await this.fallbackClient.models.embedContent({
+                        model: options.model,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                    });
+                    return { values: (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [] };
+                } catch (error) {
+                    throw this.handleError(error);
+                }
+            }
+
+            // NORMAL MODE: Use Firebase AI SDK
+            const firebaseAI = getFirebaseAI();
+
+            // Auto-switch to fallback if Firebase AI is missing
+            if (!firebaseAI) {
+                console.warn('[FirebaseAIService] Firebase AI not available for embeddings, switching to fallback');
+                await this.initializeFallbackMode();
+                return this.embedContent(options);
+            }
+
+            const modelCallback = getGenerativeModel(firebaseAI, {
                 model: options.model
             });
 
-            interface GenerativeModelWithEmbed {
-                embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+            try {
+                interface GenerativeModelWithEmbed {
+                    embedContent(request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+                }
+                const result = await (modelCallback as unknown as GenerativeModelWithEmbed).embedContent({ content: options.content });
+                return { values: result.embedding.values };
+            } catch (error) {
+                // If we hit an App Check error during normal mode, switch to fallback
+                if (isAppCheckError(error) && !this.useFallbackMode) {
+                    console.warn('[FirebaseAIService] App Check error during embedding, switching to fallback mode');
+                    await this.initializeFallbackMode();
+                    return this.embedContent(options);
+                }
+                throw this.handleError(error);
             }
-            const result = await (modelCallback as unknown as GenerativeModelWithEmbed).embedContent({ content: options.content });
-            return { values: result.embedding.values };
         });
     }
 
     /**
      * HIGH LEVEL: Parse JSON from AI response
      */
-    public parseJSON<T = any>(text: string | undefined): T | Record<string, never> {
+    public parseJSON<T = unknown>(text: string | undefined): T | Record<string, never> {
         if (!text) return {};
         const clean = text.replace(/```json\n?|```/g, '').trim();
         try {
             return JSON.parse(clean);
         } catch {
-            return {} as any;
+            return {} as T; // Best effort
         }
     }
 
@@ -693,7 +1180,7 @@ export class FirebaseAIService {
         if (!this.isInitialized) {
             await this.bootstrap();
         }
-        if (!this.model) {
+        if (!this.model && !this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service not properly initialized');
         }
     }
@@ -701,8 +1188,32 @@ export class FirebaseAIService {
     private handleError(error: unknown): AppException {
         const msg = error instanceof Error ? error.message : String(error);
 
-        if (msg.includes('permission-denied') || msg.includes('app-check-token')) {
-            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
+        // Handle abort signals explicitly (these are retryable)
+        if (msg.includes('aborted') || msg.includes('signal is aborted') || msg.includes('AbortError')) {
+            return new AppException(
+                AppErrorCode.CANCELLED,
+                'AI Request was cancelled or timed out. Please try again.',
+                { retryable: true }
+            );
+        }
+
+        // Handle Firebase Installations API specific errors (missing API config)
+        if (msg.includes('Installations') || msg.includes('installations')) {
+            return new AppException(
+                AppErrorCode.INTERNAL_ERROR,
+                'Firebase Installations API is disabled or restricted. Please enable it in Google Cloud Console.',
+                { originalError: msg }
+            );
+        }
+
+        const lowerMsg = msg.toLowerCase();
+        if (
+            lowerMsg.includes('permission-denied') ||
+            lowerMsg.includes('permission_denied') ||
+            lowerMsg.includes('app-check-token') ||
+            lowerMsg.includes('unauthorized')
+        ) {
+            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
@@ -712,38 +1223,68 @@ export class FirebaseAIService {
         if (msg.includes('quota') || msg.includes('resource-exhausted')) {
             return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
         }
-        if (msg.includes('429')) {
-            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded');
+        if (msg.includes('429') || lowerMsg.includes('rate limit')) {
+            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded', { retryable: true });
         }
 
         // Service Availability
-        if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded')) {
-            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable');
+        if (msg.includes('503') || msg.includes('500') || msg.includes('service unavailable') || msg.includes('overloaded') || lowerMsg.includes('internal error')) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
     }
 
-    private async withRetry<T>(operation: () => Promise<T>, retries = 3, delay = 1000): Promise<T> {
-        try {
-            return await operation();
-        } catch (error: any) {
-            const msg = error?.message || '';
-            const isRetryable =
-                msg.includes('429') ||
-                msg.includes('503') ||
-                msg.includes('service unavailable') ||
-                msg.includes('overloaded') ||
-                error?.code === 'resource-exhausted';
+    private async withRetry<T>(
+        operation: () => Promise<T>,
+        retries = 3,
+        initialDelay = 1000,
+        signal?: AbortSignal
+    ): Promise<T> {
+        let lastError: unknown;
+        let currentDelay = initialDelay;
 
-            if (retries > 0 && isRetryable) {
-                // Exponential backoff with jitter and 10s cap
-                const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
-                await new Promise(r => setTimeout(r, backoff));
-                return this.withRetry(operation, retries - 1, backoff);
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                if (signal?.aborted) {
+                    throw new Error('Operation cancelled by user');
+                }
+                return await operation();
+            } catch (error: unknown) {
+                lastError = error;
+
+                if (signal?.aborted) {
+                    throw error;
+                }
+
+                const appException = this.handleError(error);
+                const isRetryable = appException.details?.retryable;
+
+                if (attempt < retries && isRetryable) {
+                    // Exponential backoff with jitter
+                    // currentDelay = initialDelay * 2^attempt + jitter
+                    const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
+                    const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
+
+                    console.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
+
+                    await new Promise((resolve, reject) => {
+                        const timer = setTimeout(resolve, waitTime);
+                        if (signal) {
+                            signal.addEventListener('abort', () => {
+                                clearTimeout(timer);
+                                reject(new Error('Operation cancelled by user during retry backoff'));
+                            }, { once: true });
+                        }
+                    });
+
+                    currentDelay = waitTime;
+                    continue;
+                }
+                throw appException;
             }
-            throw error;
         }
+        throw this.handleError(lastError);
     }
 
     private sanitizePrompt(prompt: string | Content[]): string | Content[] {
@@ -754,8 +1295,8 @@ export class FirebaseAIService {
         if (Array.isArray(prompt)) {
             return prompt.map(content => ({
                 role: content.role || 'user',
-                parts: content.parts.map((part: any) => {
-                    if (part.text && typeof part.text === 'string') {
+                parts: content.parts.map((part) => {
+                    if ('text' in part && typeof part.text === 'string') {
                         return { ...part, text: InputSanitizer.sanitize(part.text) };
                     }
                     return part;

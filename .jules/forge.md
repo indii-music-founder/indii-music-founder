@@ -1,3 +1,3 @@
-## 2026-01-14 - Video Generation Tool ignored duration
-**Learning:** The `VideoTools.generate_video` tool accepted a `duration` argument in its schema but failed to pass it to the underlying `VideoGeneration.generateVideo` service. This meant users (or the AI) specifying a duration would silently get the default duration.
-**Action:** When auditing tools that wrap service calls, explicitely verify that *every* argument in the tool signature is actually passed to the service function. Added a unit test to enforce this parameter passing.
+## 2024-05-23 - [VideoGenerationService Schema Validation]
+**Learning:** The `VideoGenerationService` validates inputs using Zod (`VideoGenerationOptionsSchema.safeParse(options)`), but it subsequently passes the *raw* `options` object to the backend Cloud Function (`triggerVideoJob`), rather than the sanitized `validation.data`.
+**Action:** In future refactors, update `VideoGenerationService.ts` to use `validation.data` to ensure only schema-compliant fields are transmitted to the backend, preventing potential pollution or side-channel attacks via extra fields.

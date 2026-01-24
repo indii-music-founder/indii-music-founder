@@ -56,8 +56,8 @@ export default function AIPredictionPanel({ campaign }: AIPredictionPanelProps) 
             <div className="bg-black/20 backdrop-blur-xl border border-white/5 rounded-xl p-6 shadow-xl">
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-purple-500/20 to-indigo-600/20 rounded-lg border border-white/5">
-                            <TrendingUp className="text-purple-400" size={18} />
+                        <div className="p-2 bg-dept-marketing/20 rounded-lg border border-dept-marketing/10">
+                            <TrendingUp className="text-dept-marketing" size={18} />
                         </div>
                         <div>
                             <h3 className="text-sm font-semibold text-white">AI Prediction</h3>
@@ -73,7 +73,7 @@ export default function AIPredictionPanel({ campaign }: AIPredictionPanelProps) 
                 <button
                     onClick={handlePredict}
                     disabled={isLoading}
-                    className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-purple-900/20"
+                    className="w-full py-3 bg-dept-marketing hover:opacity-90 text-white font-semibold rounded-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-dept-marketing/20"
                 >
                     {isLoading ? (
                         <>
@@ -99,8 +99,8 @@ export default function AIPredictionPanel({ campaign }: AIPredictionPanelProps) 
                 className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors border-b border-white/5"
             >
                 <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-purple-500/20 to-indigo-600/20 rounded-lg border border-white/5">
-                        <TrendingUp className="text-purple-400" size={18} />
+                    <div className="p-2 bg-dept-marketing/20 rounded-lg border border-dept-marketing/10">
+                        <TrendingUp className="text-dept-marketing" size={18} />
                     </div>
                     <div className="text-left">
                         <h3 className="text-sm font-semibold text-white">Prediction</h3>

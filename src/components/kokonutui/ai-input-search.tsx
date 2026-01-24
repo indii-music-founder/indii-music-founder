@@ -56,7 +56,6 @@ export default function AI_Input_Search({
         if (onSubmit) {
             onSubmit(finalValue);
         } else {
-            console.log("Submit:", finalValue);
             setInternalValue("");
         }
         adjustHeight(true);

@@ -48,8 +48,8 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
         });
 
         // Wait for agent to appear
-        // Mobile view: Fullscreen modal with "AI Assistant" header
-        await expect(page.getByText('AI Assistant')).toBeVisible();
+        // Mobile view: Fullscreen modal with "How can I help you?" (Empty State) or Agent Name
+        await expect(page.getByText('How can I help you?')).toBeVisible();
     });
 
     test('should handle wide markdown tables without breaking layout ("The Unbreakable Table")', async ({ page }) => {
@@ -91,6 +91,109 @@ test.describe('📱 Viewport: Content Responsiveness', () => {
 
         console.log(`📱 Table Container: scrollWidth=${scrollWidth}, clientWidth=${clientWidth}`);
         expect(scrollWidth).toBeGreaterThan(clientWidth);
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should handle wide images without breaking layout', async ({ page }) => {
+        // Inject a wide image (2000px wide SVG)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            // 2000px wide red rectangle
+            const wideImageSrc = "data:image/svg+xml,%3Csvg%20width%3D%222000%22%20height%3D%22100%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Crect%20width%3D%222000%22%20height%3D%22100%22%20fill%3D%22red%22%2F%3E%3C%2Fsvg%3E";
+
+            store.addAgentMessage({
+                id: 'test-image-msg',
+                role: 'model',
+                text: `Here is a wide image:\n\n![Wide Image](${wideImageSrc})`,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Image Exists
+        const img = page.locator('img[alt="Wide Image"]');
+        await expect(img).toBeVisible();
+
+        // Check if image is constrained
+        const imgBox = await img.boundingBox();
+        const viewportSize = page.viewportSize();
+
+        console.log(`📱 Wide Image: width=${imgBox?.width}, viewport=${viewportSize?.width}`);
+
+        // Image width should be <= viewport width (minus padding)
+        expect(imgBox?.width).toBeLessThan(viewportSize!.width);
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should handle deep JSON tool output without breaking layout', async ({ page }) => {
+        // Inject a deep JSON tool output
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            const deepJson = {
+                level1: {
+                    level2: {
+                        level3: {
+                            level4: {
+                                level5: {
+                                    text: "This is a deeply nested JSON object that simulates complex tool output.",
+                                    data: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+                                    meta: "Some metadata here to make it wider"
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            const jsonString = JSON.stringify(deepJson);
+            // Double escape quotes to survive Markdown rendering
+            const escapedJsonString = jsonString.replace(/"/g, '\\"');
+
+            // To trigger the special Tool Renderer in ChatMessage.tsx, we must match the pattern:
+            // [Tool: delegate_task] Output: { ... "text": "[Tool: inner_tool] Output: { ... }" ... }
+            const innerToolOutput = `[Tool: test_tool] Output: ${escapedJsonString}`;
+            const outerJson = {
+                text: innerToolOutput
+            };
+            const toolOutputText = `[Tool: delegate_task] Output: ${JSON.stringify(outerJson)}`;
+
+            store.addAgentMessage({
+                id: 'test-json-msg',
+                role: 'model',
+                text: toolOutputText,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Tool Result is visible
+        const toolResult = page.getByText('Tool Result: test_tool');
+        await expect(toolResult).toBeVisible();
+
+        // Verify the formatted JSON container
+        const container = toolResult.locator('xpath=..');
+
+        // Check bounding box
+        const box = await container.boundingBox();
+        const viewportSize = page.viewportSize();
+
+        console.log(`📱 JSON Container: width=${box?.width}, viewport=${viewportSize?.width}`);
+
+        expect(box?.width).toBeLessThan(viewportSize!.width);
 
         // Verify BODY does NOT scroll horizontally
         const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
@@ -147,5 +250,71 @@ function thisIsAVeryLongFunctionNameThatShouldDefinitelyOverflowTheViewportIfItD
         const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
 
         expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should handle long LaTeX formulas without breaking layout', async ({ page }) => {
+        // Inject a long LaTeX formula (simulated as text since no native rendering yet)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            const store = window.useStore.getState();
+
+            // A very long LaTeX string with no spaces to stress-test text wrapping/overflow
+            const longLatex = `$$ E = mc^2 + \\int_{-\\infty}^{\\infty} e^{-x^2} dx = \\sqrt{\\pi} + \\sum_{n=1}^{\\infty} \\frac{1}{n^2} = \\frac{\\pi^2}{6} + \\oint_C \\mathbf{F} \\cdot d\\mathbf{r} = \\iint_S (\\nabla \\times \\mathbf{F}) \\cdot d\\mathbf{S} + \\text{This is a very long text string inside a LaTeX block to ensure it wraps correctly even if it is treated as plain text by the markdown renderer} $$`;
+
+            store.addAgentMessage({
+                id: 'test-latex-msg',
+                role: 'model',
+                text: "Here is a complex formula:\n\n" + longLatex,
+                timestamp: Date.now(),
+                isStreaming: false
+            });
+        });
+
+        // Verify Message Exists
+        const msg = page.getByText('Here is a complex formula:');
+        await expect(msg).toBeVisible();
+
+        // Verify the formula text is visible (it might be wrapped)
+        // We search for a substring
+        const formulaPart = page.getByText('E = mc^2');
+        await expect(formulaPart).toBeVisible();
+
+        // Verify BODY does NOT scroll horizontally
+        const bodyScrollWidth = await page.evaluate(() => document.body.scrollWidth);
+        const bodyClientWidth = await page.evaluate(() => document.body.clientWidth);
+
+        console.log(`📱 Body: scrollWidth=${bodyScrollWidth}, clientWidth=${bodyClientWidth}`);
+        expect(bodyScrollWidth).toBeLessThanOrEqual(bodyClientWidth + 1);
+    });
+
+    test('should toggle mobile navigation menu', async ({ page }) => {
+        // Close Agent Window programmatically if open (it overlaps the FAB)
+        await page.evaluate(() => {
+            // @ts-expect-error - Testing Environment Window Property
+            if (window.useStore) {
+                // @ts-expect-error - Testing Environment Window Property
+                const state = window.useStore.getState();
+                if (state.isAgentOpen) {
+                    state.toggleAgentWindow();
+                }
+            }
+        });
+
+        const closeAgentBtn = page.locator('button[aria-label="Close chat"], button[aria-label="Close Agent"]').first();
+        await expect(closeAgentBtn).toBeHidden();
+
+        // Open Navigation
+        await page.getByLabel('Open Navigation').click();
+
+        // Check if menu is visible
+        // Use last() because 'Return to HQ' might appear in the hidden desktop sidebar too
+        const menu = page.getByRole('button', { name: 'Return to HQ' }).last();
+        await expect(menu).toBeVisible();
+
+        // Close Navigation
+        await page.getByLabel('Close menu').click();
+
+        // Check if menu is hidden (or detached)
+        await expect(menu).not.toBeVisible();
     });
 });

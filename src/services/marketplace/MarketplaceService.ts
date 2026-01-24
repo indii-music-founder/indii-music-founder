@@ -9,7 +9,9 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    Timestamp
+    Timestamp,
+    updateDoc,
+    increment
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
 import { paymentService } from '@/services/payment/PaymentService';
@@ -111,7 +113,26 @@ export class MarketplaceService {
      */
     static async purchaseProduct(productId: string, buyerId: string, sellerId: string, amount: number): Promise<string> {
         // 1. Validate Product Availability (Inventory)
-        // TODO: Check inventory here
+        const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
+        const productSnap = await getDoc(productRef);
+
+        if (!productSnap.exists()) {
+            throw new Error('Product not found');
+        }
+
+        const productData = productSnap.data() as Product;
+        const hasInventoryTracking = typeof productData.inventory === 'number';
+
+        if (hasInventoryTracking && (productData.inventory as number) <= 0) {
+            throw new Error('Out of Stock');
+        }
+
+        // 1.5 Reserve Inventory (Optimistic Decrement)
+        if (hasInventoryTracking) {
+            await updateDoc(productRef, {
+                inventory: increment(-1)
+            });
+        }
 
         // 2. Process Payment via PaymentService
         try {
@@ -137,8 +158,23 @@ export class MarketplaceService {
 
             const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
             return purchaseRef.id;
+
         } catch (error) {
             console.error('[MarketplaceService] Purchase failed:', error);
+
+            // ROLLBACK: Restore inventory if payment failed
+            if (hasInventoryTracking) {
+                try {
+                    await updateDoc(productRef, {
+                        inventory: increment(1)
+                    });
+                    console.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
+                } catch (rollbackError) {
+                    console.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
+                    // In a real system, we'd log this to an admin alert queue
+                }
+            }
+
             throw error; // Propagate error to UI
         }
     }

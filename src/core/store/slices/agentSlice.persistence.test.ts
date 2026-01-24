@@ -1,24 +1,30 @@
-
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { createStore } from 'zustand';
-import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
 
-// Mock SessionService dynamic import
-const mockUpdateSession = vi.fn().mockResolvedValue(undefined); // Must return a Promise!
-const mockSessionService = {
+// Mock must be defined before imports that use it
+const { mockUpdateSession, mockCreateSession, mockDeleteSession, mockGetSessionsForUser } = vi.hoisted(() => ({
+    mockUpdateSession: vi.fn().mockResolvedValue(undefined),
+    mockGetSessionsForUser: vi.fn().mockResolvedValue([]),
+    mockCreateSession: vi.fn().mockResolvedValue('new-session-id'),
+    mockDeleteSession: vi.fn().mockResolvedValue(undefined)
+}));
+
+vi.mock('@/services/agent/SessionService', () => ({
     sessionService: {
         updateSession: mockUpdateSession,
-        getSessionsForUser: vi.fn().mockResolvedValue([]),
-        createSession: vi.fn().mockResolvedValue('new-session-id')
+        getSessionsForUser: mockGetSessionsForUser,
+        createSession: mockCreateSession,
+        deleteSession: mockDeleteSession
     }
-};
+}));
 
-vi.mock('@/services/agent/SessionService', () => mockSessionService);
+import { createAgentSlice, AgentSlice, AgentMessage } from './agentSlice';
+import { sessionService } from '@/services/agent/SessionService';
 
 describe('AgentSlice Persistence (The Amnesia Check)', () => {
     let useStore: any;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
         // Create a fresh store for each test
         useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
@@ -26,6 +32,10 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         // Setup initial active session state for the store
         const store = useStore.getState();
         store.createSession('Test Session', ['agent-1']);
+
+        // Wait for potential async persistence in setup
+        await new Promise(resolve => setTimeout(resolve, 100));
+        vi.clearAllMocks();
     });
 
     it('should persist new messages to SessionService', async () => {
@@ -44,10 +54,10 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(newMessage);
 
         // Wait for async import and promise resolution
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 200));
 
         // Expectation: The message should be persisted to storage
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({
                 messages: expect.arrayContaining([
@@ -66,18 +76,18 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
         store.addAgentMessage(msg);
 
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        mockUpdateSession.mockClear(); // Clear the call from addAgentMessage
+        (sessionService.updateSession as any).mockClear(); // Clear the call from addAgentMessage
 
         // Action: Update the message
         store.updateAgentMessage('msg-1', { text: 'New text' });
 
         // Wait for async
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The update should be persisted
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({
                 messages: expect.arrayContaining([
@@ -93,18 +103,18 @@ describe('AgentSlice Persistence (The Amnesia Check)', () => {
 
         store.addAgentMessage({ id: 'msg-1', role: 'user', text: 'Hi', timestamp: Date.now() });
         // Wait for the side effect of seeding to finish!
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        mockUpdateSession.mockClear();
+        (sessionService.updateSession as any).mockClear();
 
         // Action: Clear history
         store.clearAgentHistory();
 
         // Wait for async
-        await new Promise(resolve => setTimeout(resolve, 20));
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Expectation: The empty message list should be persisted
-        expect(mockUpdateSession).toHaveBeenCalledWith(
+        expect(sessionService.updateSession).toHaveBeenCalledWith(
             sessionId,
             expect.objectContaining({ messages: [] })
         );

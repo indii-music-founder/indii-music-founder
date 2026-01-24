@@ -35,6 +35,7 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useDragControls: () => ({ start: vi.fn() }),
 }));
 
 // Mock TextEffect
@@ -55,6 +56,9 @@ vi.mock('lucide-react', () => ({
     History: () => <span data-testid="icon-history" />,
     Plus: () => <span data-testid="icon-plus" />,
     UserPlus: () => <span data-testid="icon-user-plus" />,
+    GripHorizontal: () => <span data-testid="icon-grip-horizontal" />,
+    Minimize2: () => <span data-testid="icon-minimize-2" />,
+    RefreshCw: () => <span data-testid="icon-refresh-cw" />,
 }));
 
 // Mock Child Renderers (Keep these simple)
@@ -137,7 +141,7 @@ describe('👁️ Pixel: Chat Tool Output Verification', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // 1. Verify Header exists
         expect(await screen.findByText('Brand Analysis Report')).toBeInTheDocument();
@@ -171,7 +175,7 @@ describe('👁️ Pixel: Chat Tool Output Verification', () => {
             generatedHistory: [mockGridItem]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // 1. Verify Label
         expect(await screen.findByText(/CINEMATIC GRID 1/)).toBeInTheDocument();
@@ -202,7 +206,7 @@ describe('👁️ Pixel: Chat Tool Output Verification', () => {
             generatedHistory: [mockFrameItem]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         expect(await screen.findByText(/EXTRACTED FRAME 1/)).toBeInTheDocument();
     });
@@ -217,7 +221,7 @@ describe('👁️ Pixel: Chat Tool Output Verification', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Should NOT crash and should render the raw text
         expect(screen.getByText(badText)).toBeInTheDocument();
@@ -243,7 +247,7 @@ describe('👁️ Pixel: Chat Tool Output Verification', () => {
             ]
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Should use the generic fallback rendering
         expect(await screen.findByText(/Tool Result: some_random_tool/)).toBeInTheDocument();

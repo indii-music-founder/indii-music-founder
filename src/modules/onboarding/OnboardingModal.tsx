@@ -1,7 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
-import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus, generateNaturalFallback, generateEmptyResponseFallback } from '../../services/onboarding/onboardingService';
+import {
+    OnboardingTools,
+    runOnboardingConversation,
+    processFunctionCalls,
+    generateEmptyResponseFallback,
+    generateNaturalFallback,
+    calculateProfileStatus,
+    TopicKey
+} from '@/services/onboarding/onboardingService';
 import { X, Send, Upload, CheckCircle, Circle, Sparkles, Paperclip, FileText, Image as ImageIcon, Trash2, Music } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
@@ -126,13 +134,13 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 // Natural fallback: If model did work but didn't speak, generate human-sounding response
                 if (!text && updates.length > 0) {
                     const { coreMissing, releaseMissing } = calculateProfileStatus(updatedProfile);
-                    const nextMissing = coreMissing.length > 0
-                        ? coreMissing[0] as any
+                    const nextMissing = (coreMissing.length > 0
+                        ? coreMissing[0]
                         : releaseMissing.length > 0
-                            ? releaseMissing[0] as any
-                            : null;
+                            ? releaseMissing[0]
+                            : null) as string | null;
                     const isReleaseContext = coreMissing.length === 0 && releaseMissing.length > 0;
-                    const fallbackText = generateNaturalFallback(updates, nextMissing, isReleaseContext);
+                    const fallbackText = generateNaturalFallback(updates, nextMissing as TopicKey | null, isReleaseContext);
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text: fallbackText }] }]);
                 } else if (text) {
                     setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
@@ -143,9 +151,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                 setHistory(prev => [...prev, { role: 'model', parts: [{ text }] }]);
             }
 
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error("Full Onboarding Error:", error);
-            // toast.error("Connection glitch. Please try again."); // Assuming toast is available or add it
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            // Optionally logs to a tracking service if needed, but avoiding console log spam here.
+
             const errorResponses = [
                 `Hmm, something went sideways on my end. Mind trying that again?`,
                 `Tech hiccup — my bad. Hit me with that one more time?`,
@@ -177,7 +187,11 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <Sparkles className="text-white" size={20} />
                             <h2 className="font-bold text-white">Brand Kit Builder</h2>
                         </div>
-                        <button onClick={onClose} className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
+                        <button
+                            onClick={onClose}
+                            className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                            aria-label="Close onboarding"
+                        >
                             <X size={20} />
                         </button>
                     </div>
@@ -227,7 +241,8 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                     )}
                                     <button
                                         onClick={() => removeFile(file.id)}
-                                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                        className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 focus:opacity-100 flex items-center justify-center text-white transition-opacity"
+                                        aria-label={`Remove ${file.file.name}`}
                                     >
                                         <Trash2 size={16} />
                                     </button>
@@ -249,6 +264,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                             <button
                                 onClick={() => fileInputRef.current?.click()}
                                 className="min-w-11 min-h-11 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-800 rounded-lg transition-colors"
+                                aria-label="Attach files"
                             >
                                 <Paperclip size={20} />
                             </button>
@@ -265,6 +281,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
                                 onClick={handleSend}
                                 disabled={isProcessing || (!input.trim() && files.length === 0)}
                                 className="min-w-11 min-h-11 flex items-center justify-center bg-white hover:bg-gray-200 text-black rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                aria-label="Send message"
                             >
                                 <Send size={20} />
                             </button>

@@ -7,7 +7,8 @@ import {
     updateDoc,
     deleteDoc,
     doc,
-    orderBy
+    orderBy,
+    writeBatch
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
@@ -108,16 +109,62 @@ export class FileSystemService extends FirestoreService<FileNode> {
         }
     }
 
+    /**
+     * Efficiently deletes multiple nodes in batches (limit 500 per batch)
+     */
+    async batchDelete(ids: string[]): Promise<void> {
+        if (ids.length === 0) return;
+
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+            const chunk = ids.slice(i, i + CHUNK_SIZE);
+            const batch = writeBatch(db);
+
+            chunk.forEach(id => {
+                const docRef = doc(db, this.collectionPath, id);
+                batch.delete(docRef);
+            });
+
+            await batch.commit();
+        }
+    }
+
     // Helper to delete recursively
     async deleteFolderRecursive(folderId: string, allNodes: FileNode[]): Promise<void> {
-        const children = allNodes.filter(n => n.parentId === folderId);
-        for (const child of children) {
-            if (child.type === 'folder') {
-                await this.deleteFolderRecursive(child.id, allNodes);
+        // Optimization: Build adjacency list for O(N) traversal instead of O(N^2)
+        const childrenMap = new Map<string, FileNode[]>();
+        allNodes.forEach(node => {
+            if (node.parentId) {
+                const existing = childrenMap.get(node.parentId) || [];
+                existing.push(node);
+                childrenMap.set(node.parentId, existing);
             }
-            await this.deleteNode(child.id);
+        });
+
+        const idsToDelete = new Set<string>();
+        idsToDelete.add(folderId);
+
+        const stack = [folderId];
+        while (stack.length > 0) {
+            const currentId = stack.pop()!;
+            const children = childrenMap.get(currentId) || [];
+
+            for (const child of children) {
+                if (!idsToDelete.has(child.id)) {
+                    idsToDelete.add(child.id);
+                    if (child.type === 'folder') {
+                        stack.push(child.id);
+                    }
+                }
+            }
         }
-        await this.deleteNode(folderId);
+
+        try {
+            await this.batchDelete(Array.from(idsToDelete));
+        } catch (error) {
+            console.error('Error batch deleting nodes:', error);
+            throw error;
+        }
     }
 }
 

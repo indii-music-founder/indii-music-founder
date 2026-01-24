@@ -253,7 +253,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-            <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[600px]">
+            <div className="bg-[#161b22] border border-gray-800 rounded-xl w-full max-w-2xl shadow-2xl overflow-hidden flex flex-col h-[90dvh] md:h-[600px] max-h-[600px]">
                 {/* Header */}
                 <div className="p-4 border-b border-gray-800 flex items-center justify-between bg-bg-dark">
                     <div className="flex items-center gap-2">

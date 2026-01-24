@@ -1,8 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FirebaseAIService } from '../FirebaseAIService';
 
-// Mock Firebase
+const mockGenerateContentStream = vi.fn();
+const mockGenerateContent = vi.fn();
+
+// Mock Firebase Service
 vi.mock('@/services/firebase', () => ({
+    getFirebaseAI: vi.fn(() => ({})),
     functions: {},
     ai: {},
     remoteConfig: {},
@@ -24,10 +28,35 @@ vi.mock('firebase/remote-config', () => ({
     getValue: vi.fn(() => ({ asString: () => '' }))
 }));
 
-// Mock firebase/ai wrapped
-const mockGenerateContentStream = vi.fn();
-const mockGenerateContent = vi.fn();
+vi.mock('@/config/env', () => ({
+    env: {
+        VITE_API_KEY: 'mock-key',
+        apiKey: 'mock-key'
+    }
+}));
 
+vi.mock('../billing/TokenUsageService', () => ({
+    TokenUsageService: {
+        checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(undefined),
+        trackUsage: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function () {
+        return {
+            models: {
+                generateContent: mockGenerateContent,
+                generateContentStream: mockGenerateContentStream,
+                embedContent: vi.fn()
+            }
+        };
+    })
+}));
+
+// Mock firebase/ai
 vi.mock('firebase/ai', () => ({
     __esModule: true,
     getGenerativeModel: vi.fn(() => ({
