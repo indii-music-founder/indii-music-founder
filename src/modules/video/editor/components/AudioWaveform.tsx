@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getAudioData } from '@remotion/media-utils';
+import type { AudioData } from '@remotion/media-utils';
 
 interface AudioWaveformProps {
     src: string;
@@ -9,33 +10,27 @@ interface AudioWaveformProps {
 }
 
 export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height, color = 'rgba(255, 255, 255, 0.5)' }) => {
+    // ⚡ Bolt Optimization: Cache raw audio data to avoid re-fetching/decoding on resize
+    const [audioData, setAudioData] = useState<AudioData | null>(null);
     const [waveform, setWaveform] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
+    // 1. Fetch Audio (Only when src changes)
     useEffect(() => {
         let isMounted = true;
 
+        // Reset state on new src
+        setAudioData(null);
+        setError(null);
+
         const fetchAudio = async () => {
             try {
+                // This is the expensive operation we want to cache
                 const data = await getAudioData(src);
-                if (!isMounted) return;
-
-                // Resample data to fit width
-                const samples = data.channelWaveforms[0]; // Use first channel
-                const step = Math.ceil(samples.length / width);
-                const resampled = [];
-
-                for (let i = 0; i < width; i++) {
-                    let max = 0;
-                    for (let j = 0; j < step; j++) {
-                        const val = Math.abs(samples[i * step + j] || 0);
-                        if (val > max) max = val;
-                    }
-                    resampled.push(max);
+                if (isMounted) {
+                    setAudioData(data);
                 }
-
-                setWaveform(resampled);
             } catch (err) {
                 console.error("Failed to load audio waveform:", err);
                 if (isMounted) setError("Failed to load audio");
@@ -47,8 +42,36 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
         return () => {
             isMounted = false;
         };
-    }, [src, width]);
+    }, [src]);
 
+    // 2. Resample (When width or audioData changes)
+    useEffect(() => {
+        if (!audioData) return;
+
+        // Resample data to fit width
+        const samples = audioData.channelWaveforms[0]; // Use first channel
+        const step = Math.ceil(samples.length / width);
+        const resampled = [];
+
+        for (let i = 0; i < width; i++) {
+            let max = 0;
+            // Optimization: Use a simpler loop or typed array methods if possible,
+            // but this simple loop is likely fine for typical widths (~100-500px).
+            // Main bottleneck was the getAudioData call.
+            for (let j = 0; j < step; j++) {
+                const idx = i * step + j;
+                if (idx < samples.length) {
+                    const val = Math.abs(samples[idx]);
+                    if (val > max) max = val;
+                }
+            }
+            resampled.push(max);
+        }
+
+        setWaveform(resampled);
+    }, [audioData, width]);
+
+    // 3. Draw (When waveform or dimensions change)
     useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas || waveform.length === 0) return;

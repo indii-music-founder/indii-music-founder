@@ -102,15 +102,6 @@ service cloud.firestore {
     }
 
     // ========================================
-    // GLOBAL SYSTEM ACCESS (LOOP BREAKERS)
-    // ========================================
-    match /agent_traces/{traceId} { allow read, write: if true; }
-    match /user_usage_stats/{docId} { allow read, write: if true; }
-    match /user_rate_limits/{docId} { allow read, write: if true; }
-    match /projects/{projectId}/memories/{memoryId} { allow read, write: if true; }
-    match /projects/{projectId}/context/{contextId} { allow read, write: if true; }
-
-    // ========================================
     // LICENSING (authenticated access)
     // ========================================
 
