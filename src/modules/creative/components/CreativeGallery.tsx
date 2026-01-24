@@ -25,6 +25,7 @@ interface GalleryItemProps {
     generationMode: string;
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
 }
+
 const GalleryItem = memo(({ item, onSelect, setVideoInput, setEntityAnchor, setSelectedItem, toast, generationMode, onDelete }: GalleryItemProps) => {
     return (
         <div
