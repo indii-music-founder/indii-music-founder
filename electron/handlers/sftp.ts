@@ -2,6 +2,7 @@ import { ipcMain, app } from 'electron';
 import { sftpService } from '../services/SFTPService';
 import { SFTPConfigSchema, SftpUploadSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 import path from 'path';
 import os from 'os';
@@ -30,24 +31,7 @@ export const registerSFTPHandlers = () => {
             // Input Schema Validation
             const validated = SftpUploadSchema.parse({ localPath, remotePath });
 
-            // SECURITY: Path Containment Check
-            // Prevent exfiltration of arbitrary system files.
-            // Allowed paths: Temporary Directory (for staged releases) or User Data (logs/app data).
-            // NOTE: We must resolve symlinks for allowed roots too, because on macOS /var is a symlink to /private/var.
-            // If we don't resolve roots, a resolved localPath (e.g. /private/var/...) won't match the unresolved root (e.g. /var/...)
-            const allowedRoots = [
-                os.tmpdir(),
-                app.getPath('userData')
-            ].map(p => {
-                try {
-                    return fs.realpathSync(p);
-                } catch (e) {
-                    // Fallback to resolve if realpath fails (e.g. dir doesn't exist yet)
-                    return path.resolve(p);
-                }
-            });
-
-            // Resolve symbolic links to their real path
+            // Resolve symbolic links to their real path to prevent TOCTOU attacks
             let realLocalPath: string;
             try {
                 // If it doesn't exist, realpathSync throws, which acts as a check.
@@ -57,16 +41,9 @@ export const registerSFTPHandlers = () => {
                 throw new Error(`Security: Invalid path or permission denied: ${validated.localPath}`);
             }
 
-            const resolvedLocalPath = path.resolve(realLocalPath);
-
-            const isAllowed = allowedRoots.some(root => {
-                // Ensure exact match or proper subdirectory match (prevent /tmp vs /tmp_hacker prefix attacks)
-                const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
-                return resolvedLocalPath === root || resolvedLocalPath.startsWith(rootWithSep);
-            });
-
-            if (!isAllowed) {
-                console.error(`[Security] Blocked SFTP upload from unauthorized path (Symlink Resolved): ${resolvedLocalPath}`);
+            // SECURITY: Path Authorization Check using AccessControlService
+            if (!accessControlService.verifyAccess(realLocalPath)) {
+                console.error(`[Security] Blocked SFTP upload from unauthorized path: ${realLocalPath}`);
                 throw new Error("Security: Access Denied. Cannot upload from this directory.");
             }
 

@@ -4,10 +4,13 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { Loader2 } from 'lucide-react';
 import { InfiniteCanvasHUD } from './InfiniteCanvasHUD';
+import { useToast } from '@/core/context/ToastContext';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 export default function InfiniteCanvas() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { canvasImages, addCanvasImage, updateCanvasImage, removeCanvasImage, selectedCanvasImageId, selectCanvasImage, currentProjectId } = useStore();
+    const toast = useToast();
 
     // Camera State (Refs for performance)
     // ⚡ Bolt Optimization: Using refs instead of state for high-frequency updates (pan/zoom)
@@ -352,12 +355,14 @@ export default function InfiniteCanvas() {
                     });
                 }
             }
-        } catch (e: unknown) {
+        } catch (e: any) {
             console.error(e);
-            if (e instanceof Error) {
-                alert(`Generation failed: ${e.message}`);
+            if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
+                toast.error(e.message || 'Quota exceeded during generation.');
+            } else if (e instanceof Error) {
+                toast.error(`Generation failed: ${e.message}`);
             } else {
-                alert("Generation failed: An unknown error occurred.");
+                toast.error("Generation failed: An unknown error occurred.");
             }
         } finally {
             setIsGenerating(false);

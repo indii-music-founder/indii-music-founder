@@ -13,6 +13,7 @@ import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
+import { QuotaExceededError } from '@/shared/types/errors';
 
 interface CreativeCanvasProps {
     item: HistoryItem | null;
@@ -120,8 +121,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             } else {
                 toast.error('Generation failed to produce candidates.');
             }
-        } catch (error) {
-            toast.error('Failed to process edits');
+        } catch (error: unknown) {
+            const err = error as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Limit reached. Please upgrade.');
+            } else {
+                toast.error('Failed to process edits');
+            }
         } finally {
             setIsProcessing(false);
         }
@@ -139,8 +145,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 throw new Error(result.error || 'Unknown error');
             }
         } catch (error: unknown) {
-            const message = error instanceof Error ? error.message : 'Unknown error';
-            toast.error(`Animation failed: ${message}`);
+            const err = error as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Video limit reached. Please upgrade.');
+            } else {
+                const message = error instanceof Error ? error.message : 'Unknown error';
+                toast.error(`Animation failed: ${message}`);
+            }
         }
     };
 
@@ -234,8 +245,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             const { updateWhiskItem } = useStore.getState();
             updateWhiskItem('subject', whiskId, { aiCaption: caption });
             toast.success("Image essence extracted and locked!");
-        } catch (e) {
-            toast.warning("Could not auto-caption. Using original prompt.");
+        } catch (e: unknown) {
+            const err = e as { name?: string; code?: string; message?: string };
+            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
+                toast.error(err.message || 'Quota exceeded during analysis.');
+            } else {
+                toast.warning("Could not auto-caption. Using original prompt.");
+            }
         }
     };
 

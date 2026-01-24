@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { functions, functionsWest1 } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -74,9 +75,8 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
         if (!prompt.trim()) return;
         setIsGenerating(true);
         try {
-            const { functions } = await import('@/services/firebase');
             const { httpsCallable } = await import('firebase/functions');
-            const generateImage = httpsCallable(functions, 'generateImageV3');
+            const generateImage = httpsCallable(functionsWest1, 'generateImageV3');
 
             const response = await generateImage({
                 prompt: prompt + " -- style: high quality, professional brand asset",
@@ -112,7 +112,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 };
 
                 updateBrandKit({
-                    brandAssets: [...(userProfile.brandKit.brandAssets || []), newAsset]
+                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), newAsset]
                 });
 
                 addUploadedImage({

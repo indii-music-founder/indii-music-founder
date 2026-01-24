@@ -45,6 +45,63 @@ service cloud.firestore {
       return isAuthenticated() && exists(projectPath) && isOrgMember(project.data.orgId);
     }
 
+    // --- Schema Validation ---
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['id', 'email', 'role', 'onboarded']) &&
+             data.id is string &&
+             data.email is string &&
+             data.role in ['user', 'artist', 'admin', 'manager'] &&
+             data.onboarded is bool;
+    }
+
+    function isValidAnalyzedTrack(data) {
+      return data.keys().hasAll(['id', 'userId', 'filename', 'features', 'analyzedAt']) &&
+             data.userId == request.auth.uid &&
+             data.features.bpm is number &&
+             data.features.key is string &&
+             data.features.energy is number;
+    }
+
+    function isValidProject(data) {
+      return data.keys().hasAll(['id', 'name', 'orgId', 'createdAt']) &&
+             data.name is string &&
+             data.name.size() > 0 &&
+             data.orgId is string;
+    }
+
+    function isValidDistributionTask(data) {
+      return data.keys().hasAll(['userId', 'type', 'status', 'progress', 'title', 'createdAt', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             data.type in ['QC', 'STAGING', 'PACKAGING', 'DELIVERY'] &&
+             data.status in ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED'] &&
+             data.progress >= 0 && data.progress <= 100 &&
+             data.title is string;
+    }
+
+    function isValidDeployment(data) {
+      return data.keys().hasAll(['internalReleaseId', 'userId', 'orgId', 'distributorId', 'status', 'submittedAt', 'lastCheckedAt', 'createdAt', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             data.status in ['validating', 'pending_review', 'in_review', 'processing', 'submitted', 'failed', 'delivered', 'live', 'takedown_pending', 'takedown_complete'] &&
+             data.submittedAt is timestamp &&
+             data.lastCheckedAt is timestamp;
+    }
+
+    function isValidISRC(data) {
+      return data.keys().hasAll(['isrc', 'releaseId', 'userId', 'trackTitle', 'artistName', 'assignedAt', 'createdAt', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             data.isrc.matches('^[A-Z]{2}-[A-Z0-9]{3}-[0-9]{2}-[0-9]{5}$') &&
+             data.assignedAt is timestamp;
+    }
+
+    function isValidTaxProfile(data) {
+      return data.keys().hasAll(['userId', 'formType', 'country', 'tinMasked', 'tinValid', 'certified', 'payoutStatus', 'certTimestamp', 'createdAt', 'updatedAt']) &&
+             data.userId == request.auth.uid &&
+             data.formType in ['W-9', 'W-8BEN', 'W-8BEN-E'] &&
+             data.payoutStatus in ['ACTIVE', 'HELD'];
+    }
+
+
     // ========================================
     // LICENSING (authenticated access)
     // ========================================
@@ -72,7 +129,19 @@ service cloud.firestore {
 
     // Users can only read/write their own profile
     match /users/{userId} {
-      allow read, write: if isOwner(userId);
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && (
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
+        request.auth.token.admin == true
+      );
+
+      // Music Library (Analyzed Tracks)
+      match /analyzed_tracks/{trackId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && isValidAnalyzedTrack(request.resource.data);
+        allow update, delete: if isOwner(userId);
+      }
 
       // Usage tracking subcollection
       match /usage/{date} {
@@ -99,6 +168,20 @@ service cloud.firestore {
       match /stats/{statId} {
         allow read, write: if isOwner(userId);
       }
+
+      // User Memory subcollection (long-term persistent memory)
+      match /memories/{memoryId} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.userId == userId;
+        allow update, delete: if isOwner(userId) && resource.data.userId == userId;
+      }
+
+      // User Context subcollection (aggregated memory context)
+      match /context/{contextId} {
+        allow read: if isOwner(userId);
+        allow create, update: if isOwner(userId) && request.resource.data.userId == userId;
+        allow delete: if isOwner(userId);
+      }
     }
 
     // ========================================
@@ -114,8 +197,6 @@ service cloud.firestore {
 
       // Only members can update (DELETION RESTRICTED to admins via backend)
       allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
-      // Only members can update
-      allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
 
       // Prevent deletion (only admins via backend should delete orgs)
       allow delete: if false;
@@ -127,8 +208,12 @@ service cloud.firestore {
 
     match /projects/{projectId} {
       allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
+      allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
+      allow update: if isResourceOrgMember() && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
+          request.auth.token.admin == true
+      );
+      allow delete: if isResourceOrgMember();
     }
 
     // ========================================
@@ -146,9 +231,56 @@ service cloud.firestore {
     // ========================================
 
     match /videoJobs/{jobId} {
-      allow read: if isResourceOrgMember();
-      allow create: if isRequestOrgMember();
-      allow update, delete: if isResourceOrgMember();
+      allow read: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+      allow create: if isRequestOrgMember() || (request.resource.data.orgId == 'personal' && request.resource.data.userId == request.auth.uid);
+      allow update, delete: if isResourceOrgMember() || (resource.data.orgId == 'personal' && resource.data.userId == request.auth.uid);
+    }
+
+    // ========================================
+    // OBSERVABILITY & TRACES (user-scoped)
+    // ========================================
+
+    match /agent_traces/{traceId} {
+      // Users can only read their own traces
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create traces for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own traces
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // AI USAGE & RATE LIMITING (user-scoped)
+    // ========================================
+
+    match /user_usage_stats/{docId} {
+      // Users can only read their own usage stats
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can only create usage stats for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can only update/delete their own usage stats
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    match /user_rate_limits/{docId} {
+      // Document ID format: userId_timestamp
+      // Users can only access their own rate limit documents (docId starts with userId_)
+      allow read, write: if isAuthenticated() &&
+        docId.matches('^' + request.auth.uid + '_[0-9]+$');
+    }
+
+    // ========================================
+    // PROJECT MEMORIES (project-scoped)
+    // ========================================
+
+    match /projects/{projectId}/memories/{memoryId} {
+      // Only members of the project's organization can access memories
+      allow read, write: if canViewProject(projectId);
+    }
+
+    match /projects/{projectId}/context/{contextId} {
+      // Only members of the project's organization can access context
+      allow read, write: if canViewProject(projectId);
     }
 
     // ========================================
@@ -185,10 +317,10 @@ service cloud.firestore {
     // CAMPAIGNS (user-scoped)
     // ========================================
 
-    match /campaigns/{campaignId} {
-      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-    }
+    // ========================================
+    // CAMPAIGNS (user-scoped) - Handled below in MARKETING CAMPAIGNS
+    // ========================================
+
 
     // ========================================
     // SOCIAL POSTS (user-scoped)
@@ -248,7 +380,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -260,7 +391,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -272,7 +402,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -284,7 +413,6 @@ service cloud.firestore {
       allow read: if isAuthenticated();
       // Only admins can write
       allow write: if isAuthenticated() && request.auth.token.admin == true;
-      allow write: if request.auth.token.admin == true;
     }
 
     // ========================================
@@ -293,8 +421,21 @@ service cloud.firestore {
 
     match /deployments/{deploymentId} {
       allow read: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
-      allow create: if (isAuthenticated() && request.resource.data.userId == request.auth.uid) || isRequestOrgMember();
-      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
+      allow create: if ((isAuthenticated() && request.resource.data.userId == request.auth.uid) || isRequestOrgMember()) &&
+                      isValidDeployment(request.resource.data);
+      allow update: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
+      allow delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isResourceOrgMember();
+    }
+
+    // ========================================
+    // DISTRIBUTION TASKS (User Scoped)
+    // ========================================
+
+    match /distribution_tasks/{taskId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId) && isValidDistributionTask(request.resource.data);
+      allow update: if isOwner(resource.data.userId);
+      allow delete: if isOwner(resource.data.userId);
     }
 
     // ========================================
@@ -302,6 +443,74 @@ service cloud.firestore {
     // ========================================
 
     match /merchandise/{productId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // DESIGNS (merchandise design canvas - org-scoped)
+    // ========================================
+
+    match /designs/{designId} {
+      // Read if user is org member
+      allow read: if isResourceOrgMember();
+      // Create if user is authenticated and is org member
+      allow create: if isRequestOrgMember();
+      // Update/delete if user is org member
+      allow update, delete: if isResourceOrgMember();
+    }
+
+    // ========================================
+    // TAX PROFILES (Distribution Engine - user-scoped)
+    // ========================================
+
+    match /tax_profiles/{profileId} {
+      // Users can read their own tax profile
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create/update their own profile
+      allow create: if isOwner(request.resource.data.userId) && isValidTaxProfile(request.resource.data);
+      allow update: if isOwner(resource.data.userId) && isValidTaxProfile(request.resource.data);
+      // Delete restricted (compliance record retention)
+      allow delete: if false;
+    }
+
+    // ========================================
+    // ISRC REGISTRY (Distribution Engine - system-managed)
+    // ========================================
+
+    match /isrc_registry/{isrcId} {
+      // Users can read their own ISRCs
+      allow read: if isOwner(resource.data.userId);
+      // Users can create new ISRCs
+      allow create: if isOwner(request.resource.data.userId) && isValidISRC(request.resource.data);
+      // No updates or deletes (ISRCs are permanent identifiers)
+      allow update, delete: if false;
+    }
+
+    // ========================================
+    // MARKETING CAMPAIGNS (User Scoped)
+    // ========================================
+
+    match /campaigns/{campaignId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // TOURING & LOGISTICS (User Scoped)
+    // ========================================
+
+    match /tour_vehicles/{vehicleId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /tour_itineraries/{itineraryId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /tour_rider_items/{itemId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }

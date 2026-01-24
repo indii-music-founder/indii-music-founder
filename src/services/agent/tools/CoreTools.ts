@@ -1,5 +1,4 @@
-import type { AnyToolFunction, AgentContext, ValidAgentId } from '../types';
-import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from '../types';
+import type { AnyToolFunction } from '../types';
 import { useStore } from '@/core/store';
 import type { AgentMode } from '@/core/store/slices/agentSlice';
 import { wrapTool, toolError } from '../utils/ToolUtils';
@@ -16,44 +15,50 @@ const VALID_AGENT_MODES: AgentMode[] = ['assistant', 'autonomous', 'creative', '
 
 export const CoreTools: Record<string, AnyToolFunction> = {
     delegate_task: wrapTool('delegate_task', async (args: {
-        agent_id?: ValidAgentId;
-        targetAgentId?: ValidAgentId;
+        targetAgentId: string;
         task: string;
-        context?: AgentContext;
-    }) => {
-        // Support both parameter names for backwards compatibility
-        const rawAgentId = args.targetAgentId || args.agent_id;
+    }, context, toolContext) => {
+        const { agentService } = await import('../AgentService');
+        const { toolError } = await import('../utils/ToolUtils');
+        const { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } = await import('../types');
+        const { DelegationLoopDetector } = await import('../LoopDetector');
 
-        if (!rawAgentId) {
-            return toolError("Missing agent_id or targetAgentId parameter.", "MISSING_ARG");
+        if (typeof args.targetAgentId !== 'string' || typeof args.task !== 'string') {
+            return toolError('Invalid delegation parameters', 'INVALID_ARGS');
         }
 
-        const agentId = rawAgentId as ValidAgentId;
-
-        // Runtime validation: reject invalid agent IDs to prevent hallucination issues
-        if (!VALID_AGENT_IDS.includes(agentId)) {
-            return toolError(`Invalid agent ID "${agentId}". Valid agent IDs are: ${VALID_AGENT_IDS_LIST}`, "INVALID_AGENT_ID");
+        if (!VALID_AGENT_IDS.includes(args.targetAgentId as any)) {
+            return toolError(
+                `Invalid agent ID: "${args.targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
+                'INVALID_AGENT_ID'
+            );
         }
 
-        const { agentRegistry } = await import('../registry');
-        const agent = agentRegistry.get(agentId);
-
-        if (!agent) {
-            return toolError(`Agent '${agentId}' not found. Available: ${agentRegistry.listCapabilities()}`, "AGENT_NOT_FOUND");
+        // Detect loops using traceId from context (or toolContext if we want more isolation)
+        const traceId = context?.traceId || 'unknown';
+        const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, args.targetAgentId);
+        if (delegationCheck.isLoop) {
+            return toolError(
+                `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
+                'DELEGATION_LOOP'
+            );
         }
 
-        const response = await agent.execute(args.task, args.context);
+        const result = await agentService.runAgent(args.targetAgentId, args.task, context, context?.traceId, context?.attachments);
         return {
-            text: response.text,
-            agentName: agent.name,
-            message: `[${agent.name}]: ${response.text}`
+            success: true,
+            data: result,
+            message: `Delegated to ${args.targetAgentId}. Result: ${result.text.substring(0, 500)}${result.text.length > 500 ? '...' : ''}`
         };
     }),
 
     request_approval: wrapTool('request_approval', async (args: {
         content: string;
         type?: string;
-    }) => {
+    }, context, toolContext) => {
+        // Use toolContext to get the state action if possible, 
+        // fall back to global store for actions that mutate outside transaction scope
+        const state = toolContext?.getState() || useStore.getState();
         const { requestApproval } = useStore.getState();
         const actionType = args.type || 'default';
 
@@ -74,19 +79,21 @@ export const CoreTools: Record<string, AnyToolFunction> = {
         }
     }),
 
-    set_mode: wrapTool('set_mode', async (args: { mode: string }) => {
-        const { setAgentMode, agentMode } = useStore.getState();
+    set_mode: wrapTool('set_mode', async (args: { mode: string }, context, toolContext) => {
+        const state = toolContext?.getState() || useStore.getState();
+        const { setAgentMode } = useStore.getState(); // Actions still via global store for now
+        const currentMode = (state as any).agentMode;
         const requestedMode = args.mode.toLowerCase() as AgentMode;
 
         if (!VALID_AGENT_MODES.includes(requestedMode)) {
-            return toolError(`Invalid mode "${args.mode}". Valid modes: ${VALID_AGENT_MODES.join(', ')}. Current mode: ${agentMode}`, "INVALID_MODE");
+            return toolError(`Invalid mode "${args.mode}". Valid modes: ${VALID_AGENT_MODES.join(', ')}. Current mode: ${currentMode}`, "INVALID_MODE");
         }
 
         setAgentMode(requestedMode);
         return {
-            previousMode: agentMode,
+            previousMode: currentMode,
             newMode: requestedMode,
-            message: `Successfully switched to ${requestedMode} mode. Previous mode was ${agentMode}.`
+            message: `Successfully switched to ${requestedMode} mode. Previous mode was ${currentMode}.`
         };
     }),
 

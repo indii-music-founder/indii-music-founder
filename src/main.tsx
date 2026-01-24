@@ -4,7 +4,12 @@ import { BrowserRouter } from 'react-router-dom';
 import App from './core/App';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
+import { initSentry } from '@/lib/sentry';
 import './index.css';
+
+// Initialize Sentry error tracking BEFORE rendering
+initSentry();
+
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

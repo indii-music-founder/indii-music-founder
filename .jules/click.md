@@ -1,32 +1,7 @@
-## 2024-05-20 - [Tailwind CSS Classes in Tests]
+## 2025-05-23 - Slot Component Child Constraint
+**Learning:** The `asChild` prop (using Radix UI `Slot`) fails with `React.Children.only` error if the component attempts to render multiple children (e.g. `{isLoading && <Loader />} {children}`), even if the conditional is false (rendering `false` + `Element`).
+**Action:** When using `asChild`, explicitly pass ONLY `children` to the `Slot` component. Conditional content (like loaders) must be either omitted or handled differently (e.g. wrapper component) to preserve the single-child requirement.
 
-...
-
-## 2026-01-11 - [Zombie State Crashes Interaction]
-
-...
-
-## 2026-01-11 - [Spam-Click Vulnerability in Save Action]
-
-**Learning:** Purely functional handlers without explicit "loading" state tracking in the UI (even if using toast.loading) allow buttons to remain interactive during async operations, leading to potential race conditions or double-submissions.
-**Action:** Always wrap async click handlers with a local `isProcessing` state (e.g., `isSaving`) and bind it to the button's `disabled` prop, ensuring the UI is locked until the promise resolves/rejects.
-
-## 2026-01-11 - [Dead-Click UI Hallucinations]
-
-**Learning:** UI elements that look interactive (hover effects, cursor change) but lack `onClick` handlers create "Dead-Click" hallucinations, leading users to believe the app is frozen.
-**Action:** Audit all iconography-only buttons (Likes, Saves, Anchors) for functional handlers. If logic is missing, implement a placeholder feedback loop (Toast/Log) to maintain interaction continuity.
-
-## 2026-01-11 - [Silent Dead Clicks in Action Bars]
-
-**Learning:** Buttons without explicit `onClick` handlers inside containers with their own click handlers often present as "functional" to the developer but fail to trigger specific intended actions (e.g., a 'Maximize' icon that should open a lightbox but just triggers the parent's generic selection). This dilutes the UX and confuses users who expect a specific reaction to a specific icon.
-**Action:** Always verify that every action icon in a toolbar has an explicit handler or bubbles to the correct logic with proper feedback. Test these explicitly using `data-testid` on the icon-button, not just the parent.
-
-## 2026-01-11 - [Daisychain Interaction Verification]
-
-**Learning:** Testing single-click interactions is necessary but insufficient for verifying complex UX workflows. A success in Click 1 might pass, but if the state transition for Click 3 is broken (e.g., passing the wrong UUID to a refined item), the entire "Daisychain" fails. Multi-step interaction tests uncover "Prop Drilling" and "Global State Sync" issues that unit tests miss.
-**Action:** Implement integrated "Daisychain Tests" for primary workflows (e.g., Gallery Selection → Canvas Edit → Whisk Addition). Ensure stateful mock wrappers are used to simulate store transitions accurately.
-
-## 2026-02-11 - [Framer Motion Props in Test Mocks]
-
-**Learning:** React warnings about unrecognized props like `whileHover` on DOM elements in tests are often caused by overly simple mocks for `framer-motion` (e.g., just spreading `...props` onto a `div`).
-**Action:** When mocking `motion.div` or similar, explicitly destructure and filter out animation-specific props (like `whileHover`, `animate`, `initial`, `exit`) before passing the rest to the underlying DOM element, or use a more robust mock factory.
+## 2025-05-24 - Fake Timers vs Axe
+**Learning:** `vi.useFakeTimers()` inside `beforeEach` can cause `vitest-axe` tests to time out, likely due to interference with internal async operations or timeouts within `axe`.
+**Action:** Scope `vi.useFakeTimers()` to the specific tests that require time manipulation, and use `try/finally` with `vi.useRealTimers()` to ensure cleanup, keeping accessibility tests on real timers.

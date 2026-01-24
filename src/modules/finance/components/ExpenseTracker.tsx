@@ -1,5 +1,6 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
+import { motion } from 'framer-motion';
 import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
@@ -8,6 +9,7 @@ import { Expense } from '@/services/finance/FinanceService';
 import { useStore } from '@/core/store';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
+import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
@@ -73,7 +75,16 @@ export const ExpenseTracker: React.FC = React.memo(() => {
 
                     const jsonMatch = resultJson.data?.raw_data?.match(/\{[\s\S]*\}/);
                     if (jsonMatch && userProfile?.id) {
-                        const data = JSON.parse(jsonMatch[0]);
+                        const rawData = JSON.parse(jsonMatch[0]);
+
+                        // Zod Validation for AI Output
+                        const validation = ReceiptScanResultSchema.safeParse(rawData);
+                        if (!validation.success) {
+                            throw new Error("Invalid receipt format returned by AI.");
+                        }
+
+                        const data = validation.data;
+
                         const expenseData = {
                             userId: userProfile.id,
                             vendor: data.vendor || 'Unknown Vendor',
@@ -129,7 +140,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col h-[600px] relative overflow-hidden"
+            className="bg-black/40 backdrop-blur-xl rounded-2xl border border-white/10 flex flex-col min-h-[400px] h-full max-h-[600px] md:h-[600px] relative overflow-hidden"
         >
             <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                 <div>
@@ -176,8 +187,8 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                     <div
                         {...getRootProps()}
                         className={`h-full border-2 border-dashed rounded-xl flex flex-col items-center justify-center text-center p-6 cursor-pointer transition-all duration-300 ${isDragActive
-                                ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
-                                : 'border-white/10 hover:border-white/20 hover:bg-white/5'
+                            ? 'border-teal-500 bg-teal-500/10 scale-[0.98]'
+                            : 'border-white/10 hover:border-white/20 hover:bg-white/5'
                             }`}
                     >
                         <input {...getInputProps()} />

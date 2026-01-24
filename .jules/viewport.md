@@ -1,3 +1,11 @@
-## 2024-06-27 - [Unbreakable Code Blocks]
-**Learning:** `ReactMarkdown` does not automatically apply `overflow-x-auto` to code blocks styled with Tailwind Typography (`prose`) unless specifically configured or overridden.
-**Action:** Always override the `pre` component in `ReactMarkdown` to wrap it in a container with `overflow-x-auto` for mobile resilience.
+## 2026-05-22 - Mobile Stacking Contexts & Navigation
+**Learning:** Fixed positioning (`fixed inset-0`) for the ChatOverlay on mobile creates a new stacking context that can obscure other "always-on" UI elements like the CommandBar if z-indices are not explicitly managed. The CommandBar (static/relative) was hidden behind the ChatOverlay (fixed z-100).
+**Action:** Ensure global UI elements (CommandBar, FABs) have explicit z-indices higher than full-screen overlays on mobile. Added `z-[101]` to CommandBar and `z-[102]` to MobileNav FAB.
+
+## 2026-05-22 - E2E Auth & UI Evolution
+**Learning:** Legacy mobile E2E tests were failing because they assumed a deprecated "Bottom Tab Bar" UI (replaced by FAB) and lacked authentication steps.
+**Action:** Updated tests to use the new FAB selectors (`button[aria-label="Open Navigation"]`) and implemented `Guest Login (Dev)` bypass in `beforeEach` hooks to ensure tests run against the actual app state.
+
+## 2026-05-22 - Virtual Keyboard Layout Squeeze
+**Learning:** Resizing the viewport height to simulate a virtual keyboard (e.g., from 812px to 512px) triggers a layout reflow. The `CommandBar` correctly stays anchored to the bottom of the visual viewport, and the chat container resizes. This confirms that `dvh` or standard flexbox column layouts are handling the height change gracefully without manual resize listeners.
+**Action:** Continue using `page.setViewportSize` to simulate keyboard interactions in E2E tests. No custom "keyboard detection" logic is needed in the app code if CSS is robust.

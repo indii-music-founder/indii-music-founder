@@ -1,6 +1,5 @@
 
 import { AgentContext } from './types';
-import { agentService } from './AgentService';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { fileSystemService } from '@/services/FileSystemService';
@@ -78,9 +77,30 @@ export class WorkflowCoordinator {
         // If it looks like it needs tools (e.g. database access, memory, media generation), force Agent
         const lower = message.toLowerCase();
 
-        // Media generation keywords
-        const mediaKeywords = ['image', 'photo', 'picture', 'art', 'draw', 'video', 'movie', 'film', 'music', 'song', 'track'];
+        // Media generation keywords - EXPANDED for better coverage
+        const mediaKeywords = [
+            'image', 'photo', 'picture', 'art', 'draw', 'video', 'movie', 'film', 'music', 'song', 'track',
+            // Album/Cover related
+            'cover', 'album', 'poster', 'artwork', 'thumbnail', 'banner',
+            // Visual design terms
+            'visual', 'graphic', 'design', 'illustration', 'render', 'scene',
+            // Action verbs that imply image generation
+            'visualize', 'depict', 'illustrate'
+        ];
         if (mediaKeywords.some(w => lower.includes(w))) return true;
+
+        // CRITICAL FIX: Detect implicit generation requests
+        // "Generate a pink neon cybernetic tiger" implies image generation even without "image" keyword
+        // Pattern: "generate" + descriptive subject (not "generate a list", "generate a caption")
+        const textOnlyPatterns = ['list', 'caption', 'email', 'text', 'script', 'story', 'poem', 'joke', 'draft', 'outline', 'summary'];
+        if (lower.includes('generate') || lower.includes('create') || lower.includes('make me')) {
+            // If it contains a text-only pattern, it's NOT image generation
+            const isTextOnly = textOnlyPatterns.some(p => lower.includes(p));
+            if (!isTextOnly) {
+                // Assume it's image generation if "generate/create" + NOT text-only
+                return true;
+            }
+        }
 
         return lower.includes('my') || lower.includes('save') || lower.includes('find');
     }
@@ -108,6 +128,7 @@ export class WorkflowCoordinator {
                 });
             }
         } catch (e) {
+            // Ignore error if folder creation fails (might already exist)
         }
     }
 

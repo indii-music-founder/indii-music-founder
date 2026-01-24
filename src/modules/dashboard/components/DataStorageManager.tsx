@@ -69,7 +69,7 @@ export default function DataStorageManager() {
                     { label: 'Videos', bytes: stats.breakdown.videos, color: 'bg-green-500' },
                     { label: 'Cloud Drive', bytes: stats.breakdown.knowledgeBase, color: 'bg-purple-500' }
                 ].map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between text-xs p-2.5 bg-[#0d1117]/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition-colors">
+                    <div key={idx} className="flex items-center justify-between text-xs p-2.5 bg-bg-dark/50 rounded-lg border border-gray-800/50 hover:border-gray-700 transition-colors">
                         <div className="flex items-center gap-2">
                             <div className={`w-1.5 h-1.5 rounded-full ${item.color}`} />
                             <span className="text-gray-400">{item.label}</span>
@@ -82,13 +82,13 @@ export default function DataStorageManager() {
             <div className="grid grid-cols-2 gap-3 relative z-10">
                 <button
                     onClick={() => DashboardService.exportBackup()}
-                    className="flex items-center justify-center gap-2 bg-[#0d1117] hover:bg-gray-800 text-gray-400 hover:text-white px-3 py-2.5 rounded-lg text-xs font-bold transition-all border border-gray-800 min-h-11 active:scale-95"
+                    className="flex items-center justify-center gap-2 bg-bg-dark hover:bg-gray-800 text-gray-400 hover:text-white px-3 py-2.5 rounded-lg text-xs font-bold transition-all border border-gray-800 min-h-11 active:scale-95"
                 >
                     <Download size={14} /> Backup
                 </button>
                 <button
                     onClick={() => useStore.getState().setModule('knowledge')}
-                    className="flex items-center justify-center gap-2 bg-[#0d1117] hover:bg-gray-800 text-gray-400 hover:text-white px-3 py-2.5 rounded-lg text-xs font-bold transition-all border border-gray-800 min-h-11 active:scale-95"
+                    className="flex items-center justify-center gap-2 bg-bg-dark hover:bg-gray-800 text-gray-400 hover:text-white px-3 py-2.5 rounded-lg text-xs font-bold transition-all border border-gray-800 min-h-11 active:scale-95"
                 >
                     <ExternalLink size={14} /> Knowledge
                 </button>

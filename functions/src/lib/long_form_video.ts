@@ -46,6 +46,7 @@ export const LongFormVideoJobSchema = z.object({
         resolution: z.string().optional(),
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
+        generateAudio: z.boolean().optional(),
     }).optional().default({})
 });
 
@@ -91,6 +92,22 @@ export function validateStartImage(input: string): string {
 }
 
 // ----------------------------------------------------------------------------
+// Constants
+// ----------------------------------------------------------------------------
+
+// Polling configuration
+const SEGMENT_POLL_INTERVAL_SECONDS = 10;
+const SEGMENT_MAX_POLL_ATTEMPTS = 30;
+const FRAME_EXTRACTION_POLL_INTERVAL_MS = 2000;
+const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
+const STITCH_POLL_INTERVAL_SECONDS = 10;
+const STITCH_MAX_POLL_ATTEMPTS = 60;
+
+// Video segment defaults
+const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
+const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
+
+// ----------------------------------------------------------------------------
 // Inngest Functions
 // ----------------------------------------------------------------------------
 
@@ -100,7 +117,7 @@ export function validateStartImage(input: string): string {
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
     async ({ event, step }: any) => {
@@ -123,18 +140,18 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                 const segmentId = `${jobId}_seg_${i}`;
                 const prompt = prompts[i];
 
-                const segmentUrl = await step.run(`generate-segment-${i}`, async () => {
+                // 1. Trigger Video Generation (Vertex AI)
+                const operationName = await step.run(`trigger-segment-${i}`, async () => {
+                    const modelId = 'veo-3.1-generate-preview';
+
                     const auth = new GoogleAuth({
                         scopes: ['https://www.googleapis.com/auth/cloud-platform']
                     });
-
                     const client = await auth.getClient();
                     const projectId = await auth.getProjectId();
                     const accessToken = await client.getAccessToken();
-                    const location = 'us-central1';
-                    const modelId = 'veo-3.1-generate-preview';
 
-                    const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
+                    const triggerEndpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
                     // Validate startImage format (Base64 vs Data URL)
                     let imagePayload = undefined;
@@ -152,46 +169,84 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                         ],
                         parameters: {
                             sampleCount: 1,
-                            videoLength: "5s",
-                            aspectRatio: options?.aspectRatio || "16:9"
+                            videoLength: `${DEFAULT_SEGMENT_DURATION_SECONDS}s`,
+                            aspectRatio: options?.aspectRatio || "16:9",
+                            ...(options?.generateAudio ? { generateAudio: true } : {})
                         }
                     };
 
-                    const response = await fetch(endpoint, {
+                    const triggerResponse = await fetch(triggerEndpoint, {
                         method: 'POST',
                         headers: {
-                            'Authorization': `Bearer ${accessToken.token}`,
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${accessToken.token}`
                         },
                         body: JSON.stringify(requestBody)
                     });
 
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        throw new Error(`Veo Segment ${i} failed: ${response.status} ${errorText}`);
+                    if (!triggerResponse.ok) {
+                        const errorText = await triggerResponse.text();
+                        throw new Error(`Veo Trigger Segment ${i} failed: ${triggerResponse.status} ${errorText}`);
                     }
 
-                    const result = await response.json();
+                    const triggerResult = await triggerResponse.json();
+                    return triggerResult.name;
+                });
 
-                    if (!result.predictions || result.predictions.length === 0) {
-                        throw new Error(`Veo Segment ${i}: No predictions returned. Response: ${JSON.stringify(result)}`);
+                // FIX #1: Move polling outside step.run using step.sleep
+                let segmentResult: any = null;
+                let isDone = false;
+
+                for (let attempt = 0; attempt < SEGMENT_MAX_POLL_ATTEMPTS; attempt++) {
+                    // Use step.sleep instead of setTimeout inside step.run
+                    await step.sleep(`wait-segment-${i}-${attempt}`, `${SEGMENT_POLL_INTERVAL_SECONDS}s`);
+
+                    segmentResult = await step.run(`poll-segment-${i}-${attempt}`, async () => {
+                        const auth = new GoogleAuth({
+                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                        });
+                        const client = await auth.getClient();
+                        const accessToken = await client.getAccessToken();
+
+                        const statusResponse = await fetch(
+                            `https://us-central1-aiplatform.googleapis.com/v1beta/${operationName}`,
+                            {
+                                headers: {
+                                    'Authorization': `Bearer ${accessToken.token}`
+                                }
+                            }
+                        );
+                        if (!statusResponse.ok) {
+                            return { done: false };
+                        }
+                        return await statusResponse.json();
+                    });
+
+                    if (segmentResult.done) {
+                        isDone = true;
+                        break;
                     }
+                }
 
-                    const prediction = result.predictions[0];
+                if (!isDone || !segmentResult || !segmentResult.response) {
+                    throw new Error(`Veo Segment ${i} timed out during polling`);
+                }
+
+                // Store segment in Cloud Storage
+                const segmentUrl = await step.run(`store-segment-${i}`, async () => {
+                    const prediction = segmentResult.response.outputs[0];
                     const bucket = admin.storage().bucket();
                     const file = bucket.file(`videos/${userId}/${segmentId}.mp4`);
 
-                    if (prediction.bytesBase64Encoded) {
-                        await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
+                    if (prediction.video && prediction.video.bytesBase64Encoded) {
+                        await file.save(Buffer.from(prediction.video.bytesBase64Encoded, 'base64'), {
                             metadata: { contentType: 'video/mp4' },
                             public: true
                         });
-
-                    } else if (!prediction.videoUri && !prediction.gcsUri) {
+                    } else {
                         throw new Error(`Unknown Veo response format for segment ${i}: ` + JSON.stringify(prediction));
                     }
 
-                    // Return public URL or GCS URI
                     return `https://storage.googleapis.com/${bucket.name}/videos/${userId}/${segmentId}.mp4`;
                 });
 
@@ -206,10 +261,11 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                 });
 
 
-                // Extract last frame for daisychaining
+                // 4. Extract last frame for daisychaining
                 if (i < prompts.length - 1) {
                     try {
-                        const nextStartImage = await step.run(`extract-frame-${i}`, async () => {
+                        // 4a. Trigger Transcoder Job
+                        const transcoderJobName = await step.run(`trigger-frame-extract-${i}`, async () => {
                             const auth = new GoogleAuth({
                                 scopes: ['https://www.googleapis.com/auth/cloud-platform']
                             });
@@ -220,10 +276,10 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                                 const bucket = admin.storage().bucket();
                                 const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
-                                // 1. Normalize Input URI
+                                // Normalize Input URI
                                 const inputUri = toGcsUri(segmentUrl);
 
-                                // 2. Create Sprite Job (acting as frame extractor)
+                                // Create Sprite Job (acting as frame extractor)
                                 const [job] = await transcoder.createJob({
                                     parent: transcoder.locationPath(projectId, location),
                                     job: {
@@ -245,49 +301,188 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                                         }
                                     }
                                 });
-
-                                // 3. Poll for Completion (Max 40s)
-                                let finalState = 'PROCESSING';
-                                for (let j = 0; j < 20; j++) {
-                                    await new Promise(r => setTimeout(r, 2000));
-                                    try {
-                                        const [status] = await transcoder.getJob({ name: job.name });
-                                        if (status.state === 'SUCCEEDED' || status.state === 'FAILED') {
-                                            finalState = status.state as string;
-                                            break;
-                                        }
-                                    } catch (err: any) {
-                                        console.warn(`[FrameExtraction] Polling error: ${err.message}`);
-                                        // Continue polling unless critical failure
-                                    }
-                                }
-
-                                if (finalState !== 'SUCCEEDED') throw new Error(`Frame extraction failed or timed out: ${finalState}`);
-
-                                // 4. Download and Convert to Base64
-                                // Wait a bit for file consistency
-                                await new Promise(r => setTimeout(r, 1000));
-                                const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
-
-                                if (!files || files.length === 0) {
-                                    console.warn(`[LongForm] No frame generated for segment ${i}`);
-                                    return undefined; // Fallback
-                                }
-
-                                const frameFile = files[0];
-                                const [buffer] = await frameFile.download();
-                                return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                                return job.name;
                             } finally {
                                 await transcoder.close();
                             }
                         });
 
-                        currentStartImage = nextStartImage;
+                        // 4b. Poll Transcoder Job
+                        let frameDone = false;
+                        let fAttempts = 0;
+                        let finalState = 'PROCESSING';
+
+                        while (!frameDone && fAttempts < 20) {
+                             fAttempts++;
+                             await step.sleep(`wait-frame-${i}-${fAttempts}`, "2s");
+
+                             const jobState = await step.run(`check-frame-${i}-${fAttempts}`, async () => {
+                                 const transcoder = new TranscoderServiceClient();
+                                 try {
+                                     const [status] = await transcoder.getJob({ name: transcoderJobName });
+                                     return status.state as string;
+                                 } catch (err: any) {
+                                     console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                     return 'ERROR';
+                                 } finally {
+                                     await transcoder.close();
+                                 }
+                             });
+
+                             if (jobState === 'SUCCEEDED' || jobState === 'FAILED') {
+                                 finalState = jobState;
+                                 frameDone = true;
+                             }
+                        }
+
+                        if (finalState !== 'SUCCEEDED') throw new Error(`Frame extraction failed or timed out: ${finalState}`);
+
+                        // 4c. Download Frame
+                        const nextStartImage = await step.run(`download-frame-${i}`, async () => {
+                             const bucket = admin.storage().bucket();
+                             // Wait a bit for file consistency (handled by sleep loop mostly, but extra safety)
+                             await new Promise(r => setTimeout(r, 1000));
+                             const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+
+                             if (!files || files.length === 0) {
+                                 console.warn(`[LongForm] No frame generated for segment ${i}`);
+                                 return undefined;
+                             }
+
+                             const frameFile = files[0];
+                             const [buffer] = await frameFile.download();
+                             return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                        });
+
+                        if (nextStartImage) currentStartImage = nextStartImage;
+
                     } catch (e: any) {
                         console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, e.message);
                         // Continue without chaining if extraction fails
+                    // FIX #3: Better error handling for frame extraction - retry with fallback
+                    let extractionAttempts = 0;
+                    const maxExtractionAttempts = 2;
+
+                    while (extractionAttempts < maxExtractionAttempts) {
+                        try {
+                            // 1. Trigger Frame Extraction Job
+                            const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                const auth = new GoogleAuth({
+                                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                                });
+                                const transcoder = new TranscoderServiceClient();
+                                try {
+                                    const projectId = await auth.getProjectId();
+                                    const location = 'us-central1';
+                                    const bucket = admin.storage().bucket();
+                                    const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+
+                                    // Normalize Input URI
+                                    const inputUri = toGcsUri(segmentUrl);
+
+                                    // Calculate frame extraction time dynamically
+                                    const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
+                                    const extractionTime = Math.min(
+                                        DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
+                                        videoDurationSeconds - 0.5
+                                    );
+                                    const extractionSeconds = Math.floor(extractionTime);
+                                    const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
+
+                                    // Create Sprite Job
+                                    const [job] = await transcoder.createJob({
+                                        parent: transcoder.locationPath(projectId, location),
+                                        job: {
+                                            outputUri,
+                                            config: {
+                                                inputs: [{ key: "input0", uri: inputUri }],
+                                                editList: [{ key: "atom0", inputs: ["input0"] }],
+                                                spriteSheets: [
+                                                    {
+                                                        filePrefix: "frame_",
+                                                        startTimeOffset: { seconds: extractionSeconds, nanos: extractionNanos },
+                                                        endTimeOffset: { seconds: 0, nanos: 0 },
+                                                        columnCount: 1,
+                                                        rowCount: 1,
+                                                        totalCount: 1,
+                                                        quality: 100
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    });
+                                    return job.name;
+                                } finally {
+                                    await transcoder.close();
+                                }
+                            });
+
+                            // 2. Poll for Completion using step.sleep
+                            let finalState = 'PROCESSING';
+                            for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
+                                await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
+
+                                finalState = await step.run(`poll-extract-${i}-${extractionAttempts}-${j}`, async () => {
+                                    const transcoder = new TranscoderServiceClient();
+                                    try {
+                                        const [status] = await transcoder.getJob({ name: jobName });
+                                        return status.state as string;
+                                    } catch (err: any) {
+                                        console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                        return 'PROCESSING';
+                                    } finally {
+                                        await transcoder.close();
+                                    }
+                                });
+
+                                if (finalState === 'SUCCEEDED' || finalState === 'FAILED') {
+                                    break;
+                                }
+                            }
+
+                            if (finalState !== 'SUCCEEDED') {
+                                throw new Error(`Frame extraction failed or timed out: ${finalState}`);
+                            }
+
+                            // 3. Download and Convert to Base64
+                            const nextStartImage = await step.run(`download-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                const bucket = admin.storage().bucket();
+                                const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+
+                                if (!files || files.length === 0) {
+                                    throw new Error(`No frame file generated for segment ${i}`);
+                                }
+
+                                const frameFile = files[0];
+                                const [buffer] = await frameFile.download();
+                                return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                            });
+
+                            currentStartImage = nextStartImage;
+                            break; // Success - exit retry loop
+                        } catch (e: any) {
+                            extractionAttempts++;
+                            console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, e.message);
+
+                            if (extractionAttempts >= maxExtractionAttempts) {
+                                // FIX #3: Log detailed error and continue without chaining
+                                // This prevents complete job failure while maintaining visibility
+                                console.error(`[LongForm] All frame extraction attempts failed for segment ${i}. Continuing without visual continuity.`);
+                                await step.run(`log-extraction-failure-${i}`, async () => {
+                                    await admin.firestore().collection("videoJobs").doc(jobId).set({
+                                        warnings: admin.firestore.FieldValue.arrayUnion(
+                                            `Frame extraction failed for segment ${i}: ${e.message}. Visual continuity may be affected.`
+                                        ),
+                                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                                    }, { merge: true });
+                                });
+                                // Clear currentStartImage to prevent using stale data
+                                currentStartImage = undefined;
+                            }
+                        }
                     }
                 }
+            }
             }
 
             // All segments done, trigger stitching
@@ -305,7 +500,8 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
                     userId,
                     segmentUrls,
                     orgId,
-                    metadata: derivedMetadata
+                    metadata: derivedMetadata,
+                    includeAudio: !!options?.generateAudio
                 }
             });
 
@@ -324,12 +520,14 @@ export const generateLongFormVideoFn = (inngestClient: any) => inngestClient.cre
 
 /**
  * Stitches multiple video segments into one using Google Cloud Transcoder API
+ *
+ * FIX #5: Now supports audio when source videos have audio tracks
  */
 export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunction(
     { id: "stitch-video-segments" },
     { event: "video/stitch.requested" },
     async ({ event, step }: any) => {
-        const { jobId, userId, segmentUrls } = event.data;
+        const { jobId, userId, segmentUrls, includeAudio } = event.data;
         const transcoder = new TranscoderServiceClient();
         try {
             const projectId = await admin.app().options.projectId;
@@ -338,6 +536,38 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
             const outputDir = `gs://${bucket.name}/videos/${userId}/${jobId}_output/`;
 
             const jobName = await step.run("create-transcoder-job", async () => {
+                // FIX #5: Build elementary streams dynamically based on audio availability
+                const elementaryStreams: any[] = [
+                    {
+                        key: "video_stream0",
+                        videoStream: {
+                            h264: {
+                                heightPixels: 720,
+                                widthPixels: 1280,
+                                bitrateBps: 5000000,
+                                frameRate: 30,
+                            },
+                        },
+                    }
+                ];
+
+                // Add audio stream if source videos have audio
+                if (includeAudio) {
+                    elementaryStreams.push({
+                        key: "audio_stream0",
+                        audioStream: {
+                            codec: "aac",
+                            bitrateBps: 128000,
+                            channelCount: 2,
+                            sampleRateHertz: 48000,
+                        },
+                    });
+                }
+
+                const muxStreamElementary = includeAudio
+                    ? ["video_stream0", "audio_stream0"]
+                    : ["video_stream0"];
+
                 const [job] = await transcoder.createJob({
                     parent: transcoder.locationPath(projectId!, location),
                     job: {
@@ -352,25 +582,12 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                                     inputs: segmentUrls.map((_: any, index: number) => `input${index}`)
                                 }
                             ],
-                            elementaryStreams: [
-                                {
-                                    key: "video_stream0",
-                                    videoStream: {
-                                        h264: {
-                                            heightPixels: 720,
-                                            widthPixels: 1280,
-                                            bitrateBps: 5000000,
-                                            frameRate: 30,
-                                        },
-                                    },
-                                }
-                                // Audio stream removed to prevent failure with silent Veo videos
-                            ],
+                            elementaryStreams,
                             muxStreams: [
                                 {
                                     key: "final_output",
                                     container: "mp4",
-                                    elementaryStreams: ["video_stream0"], // Only video
+                                    elementaryStreams: muxStreamElementary,
                                 }
                             ]
                         }
@@ -388,13 +605,13 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                 }, { merge: true });
             });
 
-            // Fix: Poll with step.sleep to avoid timeout
+            // Poll with step.sleep
+            // Poll with step.sleep to avoid timeout (using constants)
             let jobStatus = "PENDING";
             let retries = 0;
 
-            while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < 60) {
-                // Wait for 10 seconds between checks
-                await step.sleep(`wait-for-transcoder-${retries}`, "10s");
+            while (jobStatus !== "SUCCEEDED" && jobStatus !== "FAILED" && retries < STITCH_MAX_POLL_ATTEMPTS) {
+                await step.sleep(`wait-for-transcoder-${retries}`, `${STITCH_POLL_INTERVAL_SECONDS}s`);
 
                 jobStatus = await step.run(`check-status-${retries}`, async () => {
                     const [job] = await transcoder.getJob({ name: jobName });
@@ -408,7 +625,7 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
             }
 
             if (jobStatus !== "SUCCEEDED") {
-                throw new Error("Transcoder job timed out or failed to complete in time.");
+                throw new Error(`Transcoder job timed out after ${STITCH_MAX_POLL_ATTEMPTS * STITCH_POLL_INTERVAL_SECONDS}s.`);
             }
 
             // Construct public URL

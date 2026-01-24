@@ -18,6 +18,7 @@ export const usePublicist = () => {
     useEffect(() => {
         if (!userProfile?.id) return;
 
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setLoading(true);
 
         // Subscribe to live data

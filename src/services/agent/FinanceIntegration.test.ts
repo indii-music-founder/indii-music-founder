@@ -20,13 +20,8 @@ describe('Finance Agent Integration', () => {
             distributor: 'fake_distro'
         });
 
-        // When toolError is returned, data might be undefined or contain error info depending on wrapTool
-        // But likely it enters the error flow? 
-        // Logic check: toolError usually returns { success: false, error: ... }
-        // Let's see expectation: status 'UNKNOWN_DISTRIBUTOR'.
-        // If toolError returns that structure in data or error.
-        const data = result.data || result;
-        expect(data.status).toBe('UNKNOWN_DISTRIBUTOR');
-        expect(data.risk).toBe('HIGH');
+        // toolError returns { success: false, metadata: { errorCode: ... } }
+        expect(result.success).toBe(false);
+        expect(result.metadata?.errorCode).toBe('UNKNOWN_DISTRIBUTOR');
     });
 });

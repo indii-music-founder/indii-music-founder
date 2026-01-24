@@ -15,8 +15,10 @@ vi.mock('../ai/AIService', () => ({
 // Mock env
 vi.mock('@/config/env', () => ({
     env: {
-        apiKey: 'test-api-key'
-    }
+        apiKey: 'test-api-key',
+        firebaseConfig: {}
+    },
+    firebaseConfig: {}
 }));
 
 // Mock AI models config

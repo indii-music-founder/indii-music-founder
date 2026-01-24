@@ -45,10 +45,11 @@ test.describe('Load Simulation: The Flash Mob', () => {
 
                 console.log(`[Load] ${userId}: Success (${Date.now() - startTime}ms)`);
                 return { id: userId, status: 'success' };
-            } catch (e: any) {
-                console.log(`[Load] ${userId}: FAILED - ${e.message}`);
+            } catch (e: unknown) {
+                const errorMessage = e instanceof Error ? e.message : String(e);
+                console.log(`[Load] ${userId}: FAILED - ${errorMessage}`);
                 // Capture if it was a quota error
-                return { id: userId, status: 'failed', error: e.message };
+                return { id: userId, status: 'failed', error: errorMessage };
             } finally {
                 await context.close();
             }

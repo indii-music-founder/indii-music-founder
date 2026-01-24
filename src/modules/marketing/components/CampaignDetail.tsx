@@ -31,7 +31,7 @@ interface CampaignDetailProps {
 
 const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExecute, isExecuting, onEditPost, onGenerateImages }) => {
     const [viewMode, setViewMode] = useState<'timeline' | 'grid'>('timeline');
-    const postsWithoutImages = campaign.posts.filter(p => !p.imageAsset.imageUrl).length;
+    const postsWithoutImages = (campaign.posts || []).filter(p => !p.imageAsset.imageUrl).length;
 
     return (
         <div className="space-y-6 h-full flex flex-col">
@@ -47,10 +47,12 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                     <div className="flex-1">
                         <div className="flex items-center gap-3">
                             <h1 className="text-3xl font-bold text-white">{campaign.title}</h1>
-                            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
-                                campaign.status === CampaignStatus.DONE ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
-                                    'bg-gray-800 border-gray-700 text-gray-400'
-                                }`}>
+                            <span
+                                data-testid="campaign-status-badge"
+                                className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${campaign.status === CampaignStatus.EXECUTING ? 'bg-green-500/10 border-green-500/20 text-green-400' :
+                                    campaign.status === CampaignStatus.DONE ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' :
+                                        'bg-gray-800 border-gray-700 text-gray-400'
+                                    }`}>
                                 {campaign.status}
                             </span>
                         </div>
@@ -102,8 +104,8 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                 </div>
 
                 {/* Stats Row */}
-                <div className="grid grid-cols-4 gap-4">
-                    <StatCard label="Total Posts" value={campaign.posts.length} icon={<ImageIconComponent size={16} className="text-blue-400" />} />
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard label="Total Posts" value={campaign.posts?.length || 0} icon={<ImageIconComponent size={16} className="text-blue-400" />} />
                     <StatCard label="Duration" value={`${campaign.durationDays} Days`} icon={<ClockIcon size={16} className="text-purple-400" />} />
                     <StatCard label="Platform Reach" value="24.5K" subtext="+12% vs avg" icon={<CalendarIcon size={16} className="text-pink-400" />} />
                     <StatCard label="Engagement" value="4.2%" subtext="High Impact" icon={<CheckCircleIcon size={16} className="text-green-400" />} />
@@ -115,9 +117,9 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                 <div className="flex-1 overflow-hidden">
                     <AnimatePresence mode='wait'>
                         {viewMode === 'timeline' ? (
-                            <TimelineView posts={campaign.posts} onEdit={onEditPost} key="timeline" />
+                            <TimelineView posts={campaign.posts || []} onEdit={onEditPost} key="timeline" />
                         ) : (
-                            <GridView posts={campaign.posts} onEdit={onEditPost} key="grid" />
+                            <GridView posts={campaign.posts || []} onEdit={onEditPost} key="grid" />
                         )}
                     </AnimatePresence>
                 </div>
@@ -180,7 +182,7 @@ const TimelineView = ({ posts, onEdit }: { posts: ScheduledPost[], onEdit: (p: S
                             </span>
                             <StatusBadge status={post.status} />
                         </div>
-                        <button onClick={() => onEdit(post)} className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
+                        <button onClick={() => onEdit(post)} aria-label="Edit post" className="p-2 text-gray-500 hover:text-white hover:bg-white/10 rounded-lg transition-colors">
                             <Edit3Icon size={16} />
                         </button>
                     </div>

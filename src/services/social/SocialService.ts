@@ -22,6 +22,7 @@ import {
   ScheduledPost,
   CampaignStatus,
 } from "./types";
+import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
 import { useStore } from "@/core/store";
 
 export class SocialService {
@@ -118,18 +119,24 @@ export class SocialService {
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
-    const newPost: Omit<ScheduledPost, "id"> = {
+    // Prepare data for validation
+    const rawPost = {
       ...post,
       authorId: userProfile.id,
-      status: CampaignStatus.PENDING,
-      // Ensure scheduledTime is a number (timestamp)
-      scheduledTime:
-        typeof post.scheduledTime === "string"
-          ? new Date(post.scheduledTime).getTime()
-          : post.scheduledTime,
+      status: CampaignStatus.PENDING
     };
 
-    const docRef = await addDoc(collection(db, "scheduled_posts"), newPost);
+    // Zod Validation
+    const validation = ScheduledPostSchema.safeParse(rawPost);
+    if (!validation.success) {
+      const errorMsg = validation.error.issues.map(i => i.message).join(', ');
+      throw new Error(`Invalid post data: ${errorMsg}`);
+    }
+
+    const validPost = validation.data;
+
+    // Use clean data from Zod
+    const docRef = await addDoc(collection(db, "scheduled_posts"), validPost);
     return docRef.id;
   }
 
@@ -211,16 +218,17 @@ export class SocialService {
   ): Promise<string> {
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
-    const currentUser = {
-      uid: userProfile.id,
-      displayName: userProfile.displayName,
-      photoURL: userProfile.photoURL,
-    }; // Mock user object
+
+    // Validate Input
+    const validation = CreatePostRequestSchema.safeParse({ content, mediaUrls, productId });
+    if (!validation.success) {
+      throw new Error(`Invalid post content: ${validation.error.issues[0].message}`);
+    }
 
     const postData = {
-      authorId: currentUser.uid,
-      authorName: currentUser.displayName || "Anonymous",
-      authorAvatar: currentUser.photoURL || null,
+      authorId: userProfile.id,
+      authorName: userProfile.displayName || "Anonymous",
+      authorAvatar: userProfile.photoURL || null,
       content,
       mediaUrls,
       productId: productId || null,
@@ -234,7 +242,7 @@ export class SocialService {
     const postRef = await addDoc(collection(db, "posts"), postData);
 
     // Update user's post count
-    const userRef = doc(db, "users", currentUser.uid);
+    const userRef = doc(db, "users", userProfile.id);
     await updateDoc(userRef, {
       "socialStats.posts": increment(1),
       ...(productId && { "socialStats.drops": increment(1) }),
@@ -293,6 +301,7 @@ export class SocialService {
     const snapshot = await getDoc(docRef);
     return snapshot.exists();
   }
+
   /**
    * Manually recalculate stats for a user.
    */
@@ -320,52 +329,9 @@ export class SocialService {
   }
 
   /**
-   * Seed social database for a user if empty
+   * Seed social database logic (REMOVED: Use real data only)
    */
   static async seedDatabase(userId: string): Promise<void> {
-    const userRef = doc(db, "users", userId);
-    const snapshot = await getDoc(userRef);
-
-    if (snapshot.exists() && snapshot.data()?.socialStats) {
-
-      return;
-    }
-
-    // 1. Initial Social Stats
-    const initialStats: SocialStats = {
-      followers: 1250,
-      following: 450,
-      posts: 3,
-      drops: 1
-    };
-
-    await setDoc(userRef, { socialStats: initialStats }, { merge: true });
-
-    // 2. Initial Posts
-    const posts = [
-      {
-        authorId: userId,
-        authorName: snapshot.data()?.displayName || "Alpha Artist",
-        authorAvatar: snapshot.data()?.photoURL || null,
-        content: "Just dropped the new merch! 🎨 Studio Pro line is officially live. Check it out in the studio.",
-        mediaUrls: ["https://images.unsplash.com/photo-1541099649105-f69ad21f3246?w=800&fit=crop"],
-        productId: "demo_prod_1",
-        likes: 124,
-        commentsCount: 12,
-        timestamp: serverTimestamp()
-      },
-      {
-        authorId: userId,
-        authorName: snapshot.data()?.displayName || "Alpha Artist",
-        authorAvatar: snapshot.data()?.photoURL || null,
-        content: "Late night session at the studio. Working on something legendary for the upcoming world tour. 🤘",
-        mediaUrls: ["https://images.unsplash.com/photo-1598488035139-bdbb2231ce04?w=800&fit=crop"],
-        likes: 89,
-        commentsCount: 5,
-        timestamp: serverTimestamp()
-      }
-    ];
-
-    await Promise.all(posts.map(post => addDoc(collection(db, "posts"), post)));
+    // No-op to prevent hardcoded stub data
   }
 }

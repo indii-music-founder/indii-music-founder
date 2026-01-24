@@ -95,14 +95,6 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
             required: ['title', 'description', 'posts']
         };
 
-        // E2E Test Mock Bypass
-        // @ts-expect-error - injected by Playwright
-        if (import.meta.env.DEV && window.__MOCK_AI_PLAN__) {
-            console.log('[CampaignAIService] Using MOCK AI Plan');
-            // @ts-expect-error - injected by Playwright
-            return window.__MOCK_AI_PLAN__;
-        }
-
         try {
             const result = await AI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
 
@@ -245,6 +237,11 @@ Ensure all versions respect the platform's character limit.
         posts: ScheduledPost[],
         onProgress?: (progress: BatchImageProgress) => void
     ): Promise<ScheduledPost[]> {
+        // Mock Support
+        if (typeof window !== 'undefined' && (window as any).__MOCK_CAMPAIGN_AI_SERVICE__) {
+            return (window as any).__MOCK_CAMPAIGN_AI_SERVICE__.generatePostImages(posts, onProgress);
+        }
+
         const postsNeedingImages = posts.filter(p => !p.imageAsset.imageUrl);
         const total = postsNeedingImages.length;
 
@@ -308,6 +305,11 @@ Ensure all versions respect the platform's character limit.
      * Generate a single image for a post
      */
     async generateSingleImage(post: ScheduledPost): Promise<string | null> {
+        // Mock Support
+        if (typeof window !== 'undefined' && (window as any).__MOCK_CAMPAIGN_AI_SERVICE__) {
+            return (window as any).__MOCK_CAMPAIGN_AI_SERVICE__.generateSingleImage(post);
+        }
+
         try {
             const imagePrompt = post.imageAsset.caption
                 ? this.enhanceImagePrompt(post.imageAsset.caption)

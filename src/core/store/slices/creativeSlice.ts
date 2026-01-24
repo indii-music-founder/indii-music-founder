@@ -1,20 +1,12 @@
 import { StateCreator } from 'zustand';
+import { HistoryItem } from '@/core/types/history';
 
-export interface HistoryItem {
-    id: string;
-    type: 'image' | 'video' | 'music' | 'text';
-    url: string;
-    prompt: string;
-    timestamp: number;
-    projectId: string;
-    orgId?: string;
-    meta?: string;
-    mask?: string;
-    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
-    tags?: string[];
-    subject?: string;
-    origin?: 'generated' | 'uploaded';
-}
+export type { HistoryItem };
+import { z } from 'zod';
+import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
+
+type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
+type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 
 export interface CanvasImage {
     id: string;
@@ -42,20 +34,25 @@ export interface ShotItem {
     cameraMovement?: string;
 }
 
+export type WhiskCategory = 'subject' | 'scene' | 'style' | 'motion';
+export type TargetMedia = 'image' | 'video' | 'both';
+
 export interface WhiskItem {
     id: string;
     type: 'text' | 'image';
     content: string; // user text or original image data/url
     aiCaption?: string; // Generated caption for images
     checked: boolean;
-    category: 'subject' | 'scene' | 'style';
+    category: WhiskCategory;
 }
 
 export interface WhiskState {
     subjects: WhiskItem[];
     scenes: WhiskItem[];
     styles: WhiskItem[];
+    motion: WhiskItem[]; // NEW: Camera movements, speed, energy
     preciseReference: boolean;
+    targetMedia: TargetMedia; // NEW: What to generate (image, video, or both)
 }
 
 export interface CreativeSlice {
@@ -80,10 +77,14 @@ export interface CreativeSlice {
     updateUploadedImage: (id: string, updates: Partial<HistoryItem>) => void;
     removeUploadedImage: (id: string) => void;
 
+    uploadedAudio: HistoryItem[];
+    addUploadedAudio: (audio: HistoryItem) => void;
+    removeUploadedAudio: (id: string) => void;
+
     // Studio Controls
     studioControls: {
-        aspectRatio: string;
-        resolution: string;
+        aspectRatio: VideoAspectRatio;
+        resolution: VideoResolution;
         negativePrompt: string;
         seed: string;
         cameraMovement: string;
@@ -92,6 +93,15 @@ export interface CreativeSlice {
         duration: number; // Duration in seconds
         shotList: ShotItem[];
         isCoverArtMode: boolean; // When true, enforces distributor cover art specs
+        // Gemini 3 / Veo 3.1 Upgrades
+        model: 'fast' | 'pro';
+        thinking: boolean;
+        mediaResolution: 'low' | 'medium' | 'high';
+        // Feature Parity
+        generateAudio: boolean;
+        useGrounding: boolean;
+        personGeneration: 'allow_adult' | 'dont_allow';
+        isTransitionMode: boolean;
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
     enableCoverArtMode: () => void; // Sets 1:1 aspect for cover art
@@ -118,8 +128,8 @@ export interface CreativeSlice {
     entityAnchor: HistoryItem | null;
     setEntityAnchor: (img: HistoryItem | null) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct') => void;
 
     prompt: string;
     setPrompt: (prompt: string) => void;
@@ -133,11 +143,12 @@ export interface CreativeSlice {
 
     // Whisk
     whiskState: WhiskState;
-    addWhiskItem: (category: 'subject' | 'scene' | 'style', type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
-    updateWhiskItem: (category: 'subject' | 'scene' | 'style', id: string, updates: Partial<WhiskItem>) => void;
-    removeWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
-    toggleWhiskItem: (category: 'subject' | 'scene' | 'style', id: string) => void;
+    addWhiskItem: (category: WhiskCategory, type: 'text' | 'image', content: string, aiCaption?: string, explicitId?: string) => void;
+    updateWhiskItem: (category: WhiskCategory, id: string, updates: Partial<WhiskItem>) => void;
+    removeWhiskItem: (category: WhiskCategory, id: string) => void;
+    toggleWhiskItem: (category: WhiskCategory, id: string) => void;
     setPreciseReference: (precise: boolean) => void;
+    setTargetMedia: (target: TargetMedia) => void; // NEW
 
     isGenerating: boolean;
     setIsGenerating: (isGenerating: boolean) => void;
@@ -172,28 +183,38 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                     set((state) => {
                         // Merge logic: If an item exists locally with a full data URI, 
                         // and Firestore has a placeholder, keep the local one.
-                        const mergedHistory = [...state.generatedHistory];
+                        // Bolt Optimization: Use Map for O(1) lookups instead of O(N) array search
+                        // This reduces complexity from O(N*M) to O(N+M)
+                        // Bolt Optimization: Use Map for O(N) merging instead of O(N*M)
+                        // Map key: ID, value: HistoryItem
+                        const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
 
                         history.forEach(remItem => {
-                            const localIndex = mergedHistory.findIndex(loc => loc.id === remItem.id);
-                            if (localIndex !== -1) {
+                            const localItem = historyMap.get(remItem.id);
+
+                            if (localItem) {
                                 // If local has data:uri and remote has placeholder, don't overwrite the URL
-                                if (mergedHistory[localIndex].url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
-                                    mergedHistory[localIndex] = { ...remItem, url: mergedHistory[localIndex].url };
+                                if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                    historyMap.set(remItem.id, { ...remItem, url: localItem.url });
                                 } else {
-                                    mergedHistory[localIndex] = remItem;
+                                    historyMap.set(remItem.id, remItem);
                                 }
                             } else {
-                                mergedHistory.push(remItem);
+                                historyMap.set(remItem.id, remItem);
                             }
                         });
 
+                        // Convert back to array and sort by timestamp (newest first)
+                        const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+
                         const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
-                        const uploaded = mergedHistory.filter(item => item.origin === 'uploaded');
+                        const uploadedImages = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'image');
+                        const uploadedAudio = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'music');
 
                         return {
                             generatedHistory: generated,
-                            uploadedImages: uploaded
+                            uploadedImages: uploadedImages,
+                            uploadedAudio: uploadedAudio
                         };
                     });
                     resolve();
@@ -203,9 +224,20 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                 });
         });
     },
-    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => set((state) => ({
-        generatedHistory: state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item)
-    })),
+    updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => {
+        set((state) => {
+            const updatedHistory = state.generatedHistory.map(item => item.id === id ? { ...item, ...updates } : item);
+            const updatedItem = updatedHistory.find(item => item.id === id);
+
+            if (updatedItem) {
+                import('@/services/StorageService').then(({ StorageService }) => {
+                    StorageService.saveItem(updatedItem).catch(console.error);
+                });
+            }
+
+            return { generatedHistory: updatedHistory };
+        });
+    },
     removeFromHistory: (id: string) => {
         set((state) => ({ generatedHistory: state.generatedHistory.filter(i => i.id !== id) }));
         import('@/services/StorageService').then(({ StorageService }) => {
@@ -239,9 +271,23 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         });
     },
 
+    uploadedAudio: [],
+    addUploadedAudio: (audio: HistoryItem) => {
+        set((state) => ({ uploadedAudio: [audio, ...state.uploadedAudio] }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.saveItem(audio).catch(() => { /* Error handled silently */ });
+        });
+    },
+    removeUploadedAudio: (id: string) => {
+        set((state) => ({ uploadedAudio: state.uploadedAudio.filter(i => i.id !== id) }));
+        import('@/services/StorageService').then(({ StorageService }) => {
+            StorageService.removeItem(id).catch(() => { /* Error handled silently */ });
+        });
+    },
+
     studioControls: {
         aspectRatio: '16:9',
-        resolution: '4K',
+        resolution: '1280x720',
         negativePrompt: '',
         seed: '',
         cameraMovement: 'Static',
@@ -249,7 +295,15 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         fps: 24,
         duration: 5, // Default to 5 seconds
         shotList: [],
-        isCoverArtMode: false
+        isCoverArtMode: false,
+        model: 'pro',
+        thinking: false,
+        mediaResolution: 'medium',
+        // Feature Parity Defaults
+        generateAudio: true,
+        useGrounding: false,
+        personGeneration: 'allow_adult',
+        isTransitionMode: false
     },
     setStudioControls: (controls) => set((state) => ({ studioControls: { ...state.studioControls, ...controls } })),
     enableCoverArtMode: () => set((state) => ({
@@ -307,7 +361,9 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         subjects: [],
         scenes: [],
         styles: [],
-        preciseReference: false
+        motion: [], // NEW: Camera movements, speed, energy
+        preciseReference: false,
+        targetMedia: 'image' as TargetMedia // NEW: Default to image generation
     },
     addWhiskItem: (category, type, content, aiCaption, explicitId) => set((state) => {
         const newItem: WhiskItem = {
@@ -318,43 +374,70 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
             checked: true,
             category
         };
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: [...state.whiskState[key], newItem]
+                [key]: [...(state.whiskState[key] as WhiskItem[]), newItem]
             }
         };
     }),
     updateWhiskItem: (category, id, updates) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, ...updates } : item)
+                [key]: (state.whiskState[key] as WhiskItem[]).map(item => item.id === id ? { ...item, ...updates } : item)
             }
         };
     }),
     removeWhiskItem: (category, id) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].filter(item => item.id !== id)
+                [key]: (state.whiskState[key] as WhiskItem[]).filter(item => item.id !== id)
             }
         };
     }),
     toggleWhiskItem: (category, id) => set((state) => {
-        const key = category === 'subject' ? 'subjects' : category === 'scene' ? 'scenes' : 'styles';
+        const keyMap: Record<WhiskCategory, keyof WhiskState> = {
+            subject: 'subjects',
+            scene: 'scenes',
+            style: 'styles',
+            motion: 'motion'
+        };
+        const key = keyMap[category];
         return {
             whiskState: {
                 ...state.whiskState,
-                [key]: state.whiskState[key].map(item => item.id === id ? { ...item, checked: !item.checked } : item)
+                [key]: (state.whiskState[key] as WhiskItem[]).map(item => item.id === id ? { ...item, checked: !item.checked } : item)
             }
         };
     }),
     setPreciseReference: (precise) => set((state) => ({
         whiskState: { ...state.whiskState, preciseReference: precise }
+    })),
+    setTargetMedia: (target) => set((state) => ({
+        whiskState: { ...state.whiskState, targetMedia: target }
     })),
 
     isGenerating: false,

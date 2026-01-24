@@ -14,7 +14,10 @@ import {
     DocumentData,
     onSnapshot,
     Unsubscribe,
-    setDoc
+    setDoc,
+    orderBy,
+    OrderByDirection,
+    WhereFilterOp
 } from 'firebase/firestore';
 import { db } from './firebase';
 
@@ -25,76 +28,75 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
         return collection(db, this.collectionPath);
     }
 
-    async add(data: Omit<T, 'id'>): Promise<string> {
-        try {
-            const docRef = await addDoc(this.collection, {
-                ...data,
-                createdAt: Timestamp.now(),
-                updatedAt: Timestamp.now()
-            });
-            return docRef.id;
-        } catch (error) {
-            throw error;
-        }
+    // Helper for where clause
+    protected where(field: string, op: WhereFilterOp, value: any): QueryConstraint {
+        return where(field, op, value);
+    }
+
+    // Helper for order by
+    protected orderBy(field: string, direction: OrderByDirection = 'asc'): QueryConstraint {
+        return orderBy(field, direction);
+    }
+
+    async add(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
+        const docRef = await addDoc(this.collection, this.pruneUndefined({
+            ...data,
+            createdAt: Timestamp.now(),
+            updatedAt: Timestamp.now()
+        }));
+        return docRef.id;
     }
 
     async set(id: string, data: T): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await setDoc(docRef, {
-                ...data,
-                updatedAt: Timestamp.now()
-            }, { merge: true });
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await setDoc(docRef, this.pruneUndefined({
+            ...data,
+            updatedAt: Timestamp.now()
+        }), { merge: true });
     }
 
     async update(id: string, data: Partial<T>): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await updateDoc(docRef, {
-                ...data,
-                updatedAt: Timestamp.now()
-            });
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await updateDoc(docRef, this.pruneUndefined({
+            ...data,
+            updatedAt: Timestamp.now()
+        }));
+    }
+
+    private pruneUndefined(obj: any): any {
+        if (obj === null || typeof obj !== 'object' || obj instanceof Timestamp) return obj;
+        if (Array.isArray(obj)) return obj.map(item => this.pruneUndefined(item));
+
+        const pruned: any = {};
+        Object.keys(obj).forEach(key => {
+            if (obj[key] !== undefined) {
+                pruned[key] = this.pruneUndefined(obj[key]);
+            }
+        });
+        return pruned;
     }
 
     async delete(id: string): Promise<void> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            await deleteDoc(docRef);
-        } catch (error) {
-            throw error;
-        }
+        const docRef = doc(db, this.collectionPath, id);
+        await deleteDoc(docRef);
     }
 
     async get(id: string): Promise<T | null> {
-        try {
-            const docRef = doc(db, this.collectionPath, id);
-            const snapshot = await getDoc(docRef);
-            if (snapshot.exists()) {
-                return { id: snapshot.id, ...snapshot.data() } as unknown as T;
-            }
-            return null;
-        } catch (error) {
-            throw error;
+        const docRef = doc(db, this.collectionPath, id);
+        const snapshot = await getDoc(docRef);
+        if (snapshot.exists()) {
+            return { id: snapshot.id, ...snapshot.data() } as unknown as T;
         }
+        return null;
     }
 
     async list(constraints: QueryConstraint[] = []): Promise<T[]> {
-        try {
-            const q = query(this.collection, ...constraints);
-            const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => ({
-                id: doc.id,
-                ...doc.data()
-            } as unknown as T));
-        } catch (error) {
-            throw error;
-        }
+        const q = query(this.collection, ...constraints);
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+        } as unknown as T));
     }
 
     // Specialized query method that allows flexible sorting client-side if needed (for small datasets)

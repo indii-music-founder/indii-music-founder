@@ -9,7 +9,18 @@ import { httpsCallable } from 'firebase/functions';
 
 vi.mock('../../ai/FirebaseAIService', () => ({
     firebaseAI: {
-        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
+        analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
+        generateContentStream: vi.fn().mockResolvedValue({
+            stream: (async function* () { yield { text: () => 'Mock Response' }; })(),
+            response: Promise.resolve({
+                text: () => 'Mock Response'
+            })
+        }),
+        generateContent: vi.fn().mockResolvedValue({
+            response: {
+                text: () => 'Mock Response'
+            }
+        })
     }
 }));
 
@@ -25,10 +36,14 @@ vi.mock('firebase/functions', () => ({
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-veo-job-id' } }))
 }));
 
-vi.mock('firebase/firestore', () => ({
-    doc: vi.fn(),
-    onSnapshot: vi.fn()
-}));
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(),
+        onSnapshot: vi.fn()
+    };
+});
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
     subscriptionService: {
@@ -175,24 +190,24 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
     });
 
     it('should enforce strict timeout for "Flash" generation scenarios', async () => {
-         const mockJobId = 'gemini-flash-job-stuck';
+        const mockJobId = 'gemini-flash-job-stuck';
 
-         // Simulate a stuck job
-         vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
-             callback({
-                 exists: () => true,
-                 id: mockJobId,
-                 data: () => ({ status: 'processing' })
-             });
-             // Never completes
-             return vi.fn();
-         });
+        // Simulate a stuck job
+        vi.mocked(onSnapshot).mockImplementation((ref, callback: any) => {
+            callback({
+                exists: () => true,
+                id: mockJobId,
+                data: () => ({ status: 'processing' })
+            });
+            // Never completes
+            return vi.fn();
+        });
 
-         // Wait with a 2s timeout (Flash setting)
-         const jobPromise = VideoGeneration.waitForJob(mockJobId, 2000);
+        // Wait with a 2s timeout (Flash setting)
+        const jobPromise = VideoGeneration.waitForJob(mockJobId, 2000);
 
-         vi.advanceTimersByTime(2500);
+        vi.advanceTimersByTime(2500);
 
-         await expect(jobPromise).rejects.toThrow(/timeout/i);
+        await expect(jobPromise).rejects.toThrow(/timeout/i);
     });
 });

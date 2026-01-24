@@ -4,8 +4,10 @@ import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import ProductCard from '@/modules/marketplace/components/ProductCard';
 import { useStore } from '@/core/store';
-import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag } from 'lucide-react';
+import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send, ShoppingBag, Ghost } from 'lucide-react';
 import { useSocial } from '../hooks/useSocial';
+import { areFeedItemPropsEqual } from './SocialFeed.utils';
+import { formatDate } from '@/lib/utils';
 
 interface SocialFeedProps {
     userId?: string;
@@ -18,16 +20,7 @@ const SHORTCUTS = [
     { label: "Thank You", icon: "🙏", text: "Big love to everyone showing support on the latest track! Y'all are the best. ❤️" }
 ];
 
-// ⚡ Bolt Optimization: Move helper function outside to maintain stable reference for React.memo children
-// This prevents FeedItem from re-rendering when the parent re-renders (e.g. while typing in the textarea)
-const formatDate = (timestamp: number) => {
-    return new Date(timestamp).toLocaleDateString(undefined, {
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-    });
-};
+
 
 // Memoized to prevent re-renders when parent state changes but props don't
 const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
@@ -89,7 +82,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
     };
 
     return (
-        <div className="flex flex-col h-full bg-[#0d1117] text-white">
+        <div className="flex flex-col h-full bg-bg-dark text-white">
             {/* Post Input */}
             {(!userId || userId === userProfile?.id) && (
                 <div className="p-4 border-b border-gray-800">
@@ -120,6 +113,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                                 value={newPostContent}
                                 onChange={(e) => setNewPostContent(e.target.value)}
                                 placeholder="What's happening in your studio?"
+                                aria-label="What's happening in your studio?"
                                 className="w-full bg-transparent border-none text-white placeholder-gray-500 focus:ring-0 resize-none min-h-[80px] focus:outline-none"
                             />
 
@@ -166,15 +160,20 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
                             <div className="flex justify-between items-center mt-2 border-t border-gray-800 pt-3">
                                 <div className="flex gap-2">
-                                    <button className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800">
+                                    <button
+                                        onClick={() => { }} // Placeholder for image upload
+                                        className="text-gray-400 hover:text-blue-400 transition-colors p-2 rounded-full hover:bg-gray-800 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                                        aria-label="Add image to post"
+                                    >
                                         <ImageIcon size={20} />
                                     </button>
                                     {((userProfile as any)?.accountType === 'artist' || (userProfile as any)?.accountType === 'label') && (
                                         <button
                                             onClick={() => setShowProductPicker(!showProductPicker)}
-                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative
+                                            className={`transition-colors p-2 rounded-full hover:bg-gray-800 relative focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none
                                                 ${selectedProductId ? 'text-blue-400' : 'text-gray-400 hover:text-blue-400'}`}
                                             title="Attach Product (Drop)"
+                                            aria-label={selectedProductId ? "Remove attached product" : "Attach product from store"}
                                         >
                                             <ShoppingBag size={20} />
                                             {artistProducts.length > 0 && (
@@ -197,12 +196,15 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             )}
 
             {/* Feed Tabs */}
-            <div className="flex border-b border-gray-800">
+            <div className="flex border-b border-gray-800" role="tablist" aria-label="Feed filter">
                 {(['all', 'following', 'mine'] as const).map((f) => (
                     <button
                         key={f}
+                        role="tab"
+                        aria-selected={filter === f}
+                        tabIndex={filter === f ? 0 : -1}
                         onClick={() => setFilter(f)}
-                        className={`flex-1 py-3 text-sm font-medium transition-colors relative
+                        className={`flex-1 py-3 text-sm font-medium transition-colors relative focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500
                             ${filter === f ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
                     >
                         {f.charAt(0).toUpperCase() + f.slice(1)}
@@ -220,13 +222,19 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="text-center p-8 text-gray-500">
-                        No posts yet. Be the first to share something!
+                    <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 animate-in fade-in duration-500">
+                        <div className="bg-gray-800/50 p-4 rounded-full mb-4">
+                            <Ghost size={32} className="text-gray-400" aria-hidden="true" />
+                        </div>
+                        <h3 className="text-lg font-medium text-white mb-1">It's quiet in here</h3>
+                        <p className="text-sm max-w-[250px]">
+                            No posts yet. Be the first to share what's happening in your studio!
+                        </p>
                     </div>
                 ) : (
                     <div className="divide-y divide-gray-800">
                         {posts.map((post) => (
-                            <FeedItem key={post.id} post={post} formatDate={formatDate} />
+                            <FeedItem key={post.id} post={post} />
                         ))}
                     </div>
                 )}
@@ -239,8 +247,9 @@ export default SocialFeed;
 
 // Sub-component for individual items to handle async product fetching if needed
 // ⚡ Bolt Optimization: Memoize to prevent re-renders when parent's local state changes (typing)
-// We use default shallow comparison here. It relies on the parent passing stable objects.
-const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDate: (ts: number) => string }) => {
+// We use custom deep comparison here because Firestore onSnapshot often returns new object references
+// even for unchanged items, which defeats shallow comparison.
+const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
     const [embeddedProduct, setEmbeddedProduct] = useState<Product | null>(null);
 
     useEffect(() => {
@@ -269,10 +278,13 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                                 {post.authorName}
                             </span>
                             <span className="text-gray-500 text-sm ml-2">
-                                {formatDate(post.timestamp)}
+                                {formatDate(post.timestamp, true)}
                             </span>
                         </div>
-                        <button className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                            className="text-gray-500 hover:text-white opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 transition-opacity focus-visible:ring-2 focus-visible:ring-blue-500 rounded p-1 focus-visible:outline-none"
+                            aria-label={`More options for post by ${post.authorName}`}
+                        >
                             <MoreHorizontal size={16} />
                         </button>
                     </div>
@@ -299,15 +311,24 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
                     )}
 
                     <div className="flex items-center gap-6 mt-3 text-gray-500">
-                        <button className="flex items-center gap-2 hover:text-red-500 transition-colors group/like">
+                        <button
+                            className="flex items-center gap-2 hover:text-red-500 transition-colors group/like focus-visible:ring-2 focus-visible:ring-red-500 rounded px-1 focus-visible:outline-none"
+                            aria-label={`Like post, ${post.likes} likes`}
+                        >
                             <Heart size={18} className="group-hover/like:scale-110 transition-transform" />
                             <span className="text-sm">{post.likes}</span>
                         </button>
-                        <button className="flex items-center gap-2 hover:text-blue-500 transition-colors">
+                        <button
+                            className="flex items-center gap-2 hover:text-blue-500 transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 rounded px-1 focus-visible:outline-none"
+                            aria-label={`Comment on post, ${post.commentsCount} comments`}
+                        >
                             <MessageCircle size={18} />
                             <span className="text-sm">{post.commentsCount}</span>
                         </button>
-                        <button className="flex items-center gap-2 hover:text-green-500 transition-colors">
+                        <button
+                            className="flex items-center gap-2 hover:text-green-500 transition-colors focus-visible:ring-2 focus-visible:ring-green-500 rounded px-1 focus-visible:outline-none"
+                            aria-label="Share post"
+                        >
                             <Share2 size={18} />
                         </button>
                     </div>
@@ -315,4 +336,4 @@ const FeedItem = React.memo(({ post, formatDate }: { post: SocialPost, formatDat
             </div>
         </article>
     );
-});
+}, areFeedItemPropsEqual);

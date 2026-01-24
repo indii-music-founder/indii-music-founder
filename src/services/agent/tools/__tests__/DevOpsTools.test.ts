@@ -12,6 +12,15 @@ vi.mock('@/services/firebase', () => ({
     functions: {}
 }));
 
+// Mock useStore for requestApproval
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: () => ({
+            requestApproval: vi.fn().mockResolvedValue(true)
+        })
+    }
+}));
+
 // Mock console methods
 const consoleMock = {
     info: vi.fn(),
@@ -50,7 +59,7 @@ describe('DevOpsTools', () => {
 
             expect(result.success).toBe(false);
             expect(result.error).toBe('Cloud API Error');
-            expect(result.metadata.errorCode).toBe('TOOL_EXECUTION_ERROR');
+            expect(result.metadata?.errorCode).toBe('TOOL_EXECUTION_ERROR');
         });
     });
 

@@ -21,15 +21,8 @@ export function useMarketing() {
 
     // Initial Data Fetch & Realtime Listeners
     useEffect(() => {
-        // Validation: If no profile, or if "guest" mode but no real auth, skip listeners
-        // This prevents the "Internal Assertion Failed" crash when querying prohibited collections without auth
-        const isGuestStub = userProfile?.id === 'guest';
-        const isReallyAuthenticated = !!auth.currentUser;
-
-        if (!userProfile?.id || (isGuestStub && !isReallyAuthenticated)) {
-            if (isGuestStub && !isReallyAuthenticated) {
-                console.warn("[Marketing] Running in offline/guest stub mode. Firestore sync disabled.");
-            }
+        // Validation: If no profile, skip listeners
+        if (!userProfile?.id) {
             const timer = setTimeout(() => setIsLoading(false), 0);
             return () => clearTimeout(timer);
         }
@@ -65,10 +58,21 @@ export function useMarketing() {
             );
 
             unsubscribeCampaigns = onSnapshot(campaignsQuery, (snapshot) => {
-                const campaignsData = snapshot.docs.map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as CampaignAsset[];
+                const campaignsData = snapshot.docs.map(doc => {
+                    const data = doc.data();
+                    let startDate = data.startDate;
+
+                    // Normalize Firestore Timestamp to ISO string to prevent UI crashes
+                    if (startDate && typeof startDate === 'object' && 'toDate' in startDate) {
+                        startDate = (startDate as any).toDate().toISOString();
+                    }
+
+                    return {
+                        id: doc.id,
+                        ...data,
+                        startDate
+                    };
+                }) as CampaignAsset[];
 
                 // Client-side Sort
                 campaignsData.sort((a, b) => {

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
-import { Loader2, Mail, Lock, LogIn, Chrome } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export default function LoginForm() {
-    const { loginWithGoogle, loginWithEmail, authLoading, authError } = useStore();
+    const { loginWithGoogle, loginWithEmail, loginAsGuest, authLoading, authError } = useStore();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
@@ -120,6 +120,23 @@ export default function LoginForm() {
                         <Chrome className="w-5 h-5" />
                         <span>Continue with Google</span>
                     </button>
+
+                    {import.meta.env.DEV && (
+                        <div className="pt-4 animate-fade-in-up delay-200">
+                            <button
+                                type="button"
+                                onClick={loginAsGuest}
+                                disabled={authLoading}
+                                className="group relative w-full flex items-center justify-center gap-3 px-6 py-4 bg-gradient-to-r from-purple-900/30 to-blue-900/30 border border-purple-500/30 text-purple-200 rounded-2xl font-semibold hover:bg-purple-500/10 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+                            >
+                                <User className="w-5 h-5" />
+                                <span>Guest Login (Dev)</span>
+                            </button>
+                            <p className="text-center text-[10px] text-gray-500 mt-2 font-mono">
+                                BYPASS AUTHENTICATION FOR LOCAL DEV
+                            </p>
+                        </div>
+                    )}
                 </motion.form>
             </motion.div>
 

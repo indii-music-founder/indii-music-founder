@@ -42,19 +42,19 @@ describe('Agent Zero Restoration', () => {
     });
 
     it('save_memory tool should call MemoryService', async () => {
-        const result = await TOOL_REGISTRY['save_memory']({ content: 'Test memory' });
+        const result = (await TOOL_REGISTRY['save_memory']({ content: 'Test memory' })) as any;
         expect(memoryService.saveMemory).toHaveBeenCalledWith('test-project', 'Test memory', 'fact');
-        expect(result).toContain('Memory saved');
+        expect(result.data.message).toContain('Memory saved');
     });
 
     it('recall_memories tool should call MemoryService', async () => {
-        const result = await TOOL_REGISTRY['recall_memories']({ query: 'test' });
+        const result = (await TOOL_REGISTRY['recall_memories']({ query: 'test' })) as any;
         expect(memoryService.retrieveRelevantMemories).toHaveBeenCalledWith('test-project', 'test');
-        expect(result).toContain('Relevant Memories');
+        expect(result.data.message).toContain('Retrieved');
     });
 
     it('request_approval tool should return approved message', async () => {
-        const result = await TOOL_REGISTRY['request_approval']({ content: 'Post this?' });
-        expect(result).toContain('[APPROVED]');
+        const result = (await TOOL_REGISTRY['request_approval']({ content: 'Post this?' })) as any;
+        expect(result.data.message).toContain('[APPROVED]');
     });
 });

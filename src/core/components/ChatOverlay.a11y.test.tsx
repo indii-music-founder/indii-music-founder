@@ -23,18 +23,40 @@ vi.mock('@/services/ai/VoiceService', () => ({
     }
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        showToast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        loading: vi.fn(),
+        updateProgress: vi.fn(),
+        dismiss: vi.fn(),
+        promise: vi.fn(),
+    })
+}));
+
 // Mock react-virtuoso
 // role="feed" requires children with role="article".
 // Since itemContent returns a MessageItem which is a motion.div (mocked to div),
 // we should ensure the structure is correct for the mock.
 vi.mock('react-virtuoso', () => ({
-    Virtuoso: ({ data, itemContent }: any) => (
-        <div role="feed" aria-label="Chat history">
-            {data?.map((item: any, index: number) => (
-                <article role="article" aria-label={`Message ${index + 1}`} key={item.id || index}>
-                    {itemContent(index, item)}
-                </article>
-            ))}
+    Virtuoso: ({ data, itemContent, atBottomStateChange }: any) => (
+        <div>
+            <button
+                data-testid="simulate-scroll-up"
+                onClick={() => atBottomStateChange && atBottomStateChange(false)}
+            >
+                Simulate Scroll Up
+            </button>
+            <div role="feed" aria-label="Chat history">
+                {data?.map((item: any, index: number) => (
+                    <article role="article" aria-label={`Message ${index + 1}`} key={item.id || index}>
+                        {itemContent(index, item)}
+                    </article>
+                ))}
+            </div>
         </div>
     ),
 }));
@@ -44,8 +66,12 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
         span: ({ children, className, ...props }: any) => <span className={className} {...props}>{children}</span>,
+        button: ({ children, className, ...props }: any) => <button className={className} {...props}>{children}</button>,
     },
     AnimatePresence: ({ children }: any) => <>{children}</>,
+    useDragControls: () => ({
+        start: vi.fn(),
+    }),
 }));
 
 // Mock TextEffect to avoid motion issues in test
@@ -77,6 +103,15 @@ describe('ChatOverlay Accessibility', () => {
         sessions: { 'sess1': { title: 'Test Session', participants: ['indii'] } },
         loadSessions: vi.fn(),
         toggleAgentWindow: vi.fn(),
+        agentWindowSize: { width: 400, height: 600 },
+        setAgentWindowSize: vi.fn(),
+        isCommandBarDetached: false,
+        setCommandBarDetached: vi.fn(),
+        chatChannel: 'agent',
+        setChatChannel: vi.fn(),
+        isAgentProcessing: false,
+        currentModule: 'dashboard',
+        setModule: vi.fn(),
     };
 
     beforeEach(() => {
@@ -90,7 +125,7 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should have no initial accessibility violations', async () => {
-        const { container } = render(<ChatOverlay />);
+        const { container } = render(<ChatOverlay onClose={vi.fn()} />);
         const results = await axe(container);
         // Using object syntax for extend might have issues with how toHaveNoViolations is called in some envs,
         // but here the error "Cannot read properties of undefined (reading 'call')" typically means the matcher isn't found on expect object.
@@ -99,7 +134,7 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should manage focus and state for ThoughtChain toggle', () => {
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         // Find the toggle button. It renders "Cognitive Logic".
         // The TextEffect mock renders it as a span.
@@ -118,19 +153,15 @@ describe('ChatOverlay Accessibility', () => {
     });
 
     it('should have aria-label on icon-only buttons', () => {
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
-        // Invite button
-        expect(screen.getByTitle('Invite')).toHaveAttribute('aria-label', 'Invite');
-
-        // History button
-        expect(screen.getByTitle('History')).toHaveAttribute('aria-label', 'History');
+        // Minimize button (by icon, but usually best to find by role and label)
+        const minimizeBtn = screen.getByLabelText('Minimize chat');
+        expect(minimizeBtn).toBeInTheDocument();
 
         // Close button
-        expect(screen.getByTitle('Close')).toHaveAttribute('aria-label', 'Close Agent');
-
-        // New Session button
-        expect(screen.getByTitle('New')).toHaveAttribute('aria-label', 'New Session');
+        const closeBtn = screen.getByLabelText('Close Agent');
+        expect(closeBtn).toBeInTheDocument();
     });
 
     it('should announce streaming messages politely', () => {
@@ -150,7 +181,7 @@ describe('ChatOverlay Accessibility', () => {
             return streamingState;
         });
 
-        render(<ChatOverlay />);
+        render(<ChatOverlay onClose={vi.fn()} />);
 
         const messageContainer = screen.getByTestId('agent-message');
         expect(messageContainer).toHaveAttribute('aria-live', 'polite');
@@ -158,5 +189,51 @@ describe('ChatOverlay Accessibility', () => {
         // Also check for the thinking status
         const statusIndicator = screen.getByRole('status');
         expect(statusIndicator).toHaveAttribute('aria-label', 'AI is thinking');
+    });
+
+    it('should show accessible "Resume Feed" button when scrolled up', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // Initially not visible
+        expect(screen.queryByText('Resume Feed')).not.toBeInTheDocument();
+
+        // Simulate scroll up via the mock
+        fireEvent.click(screen.getByTestId('simulate-scroll-up'));
+
+        // Should be visible
+        const resumeBtn = screen.getByRole('button', { name: 'Resume Feed' });
+        expect(resumeBtn).toBeInTheDocument();
+    });
+
+    it('should have accessible name for ThoughtChain region', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        const toggleButton = screen.getByText('Cognitive Logic').closest('button');
+        const region = screen.getByRole('region');
+
+        expect(toggleButton).toHaveAttribute('id');
+        const buttonId = toggleButton?.getAttribute('id');
+
+        expect(region).toHaveAttribute('aria-labelledby', buttonId);
+    });
+
+    it('should have accessible placeholder when chat is empty', async () => {
+        const emptyState = {
+            ...mockStoreState,
+            agentHistory: []
+        };
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') return selector(emptyState);
+            return emptyState;
+        });
+
+        const { container } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
+
+        // Verify the heading is present
+        expect(screen.getByRole('heading', { name: "How can I help you?" })).toBeInTheDocument();
     });
 });

@@ -48,11 +48,11 @@ describe('StorageService', () => {
             docs: [
                 {
                     id: '1',
-                    data: () => ({ timestamp: 1000, url: 'url1' })
+                    data: () => ({ timestamp: { toMillis: () => 1000 }, url: 'url1' })
                 },
                 {
                     id: '2',
-                    data: () => ({ timestamp: 2000, url: 'url2' })
+                    data: () => ({ timestamp: { toMillis: () => 2000 }, url: 'url2' })
                 }
             ]
         });

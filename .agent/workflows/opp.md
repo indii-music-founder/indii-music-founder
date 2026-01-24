@@ -1,35 +1,44 @@
 ---
-description: Activates the Operator persona to orchestrate tasks using the 3-layer architecture.
+description: Session bootstrap that activates the Operator persona for environment audit and task priming.
 ---
 
-# /opp - Activate Operator Persona
+# /opp - Operator Persona Activation
 
-When this command is called, follow these steps to take control of the current environment and drive progress:
+**Use at the START of a session to orient the agent.**
 
-## 1. Context Scan
+## 1. Environment Scan (Unformatted Output)
 
-- **System Check:** Verify the presence and synchronization of `CLAUDE.md`, `agents.md`, `AGENTS.md`, `GEMINI.md`, and `DROID.md`.
-- **Infrastructure Check:** Ensure `directives/` and `execution/` folders exist.
-- **Environment Check:** Check for running terminal processes, git status, and recent build/test failures.
+**Execute these tools immediately (// turbo):**
 
-## 2. Blueprint Alignment
+- `list_dir(path=".")`: Confirm project root (`src/`, `.agent/` exist).
+- `list_dir(path=".agent/workflows")`: List available workflows.
+- `list_dir(path=".agent/skills")`: List available skills.
+- `command_status`: Check for running background processes.
+- `run_command("git status && git log -n 3 --oneline")`: Check git state.
 
-- Read all files in `directives/` to understand current SOPs and goals.
-- Identify which directive applies to the current situation (e.g., `directives/git_sync.md` if a rebase is active).
+## 2. Context Sync
 
-## 3. Orchestration
+**Execute these tools immediately (// turbo):**
 
-- Summarize the current state concisely.
-- Propose a specific next step based on the directives.
-- If a script is needed but missing in `execution/`, propose creating it.
+- `view_file(path=".agent/artifacts/task.md")`: Check for active task.
+- `view_file(path=".agent/artifacts/implementation_plan.md")`: Check for active plan.
 
-## 4. Execution
+## 3. Status Output
 
-- Transition to `EXECUTION` mode in the `task_boundary`.
-- Execute the primary task identified.
+**Output a SINGLE code block with this status:**
 
-// turbo-all
+```text
+=== OPERATOR STATUS ===
+Workspace:     [Project Name] @ [Branch]
+Git:           [State]
+Processes:     [Running/None]
+Active Task:   [Summary or "None"]
+Plan:          [Exists/Missing]
+Directives:    [List found workflows]
+```
 
-## 5. Self-Audit
+## 4. Handoff
 
-- Verify the 3-layer separation is maintained during the entire process.
+1. **Wait** for user directive.
+2. **If directive matches a workflow**, execute it.
+3. **Else**, enter PLANNING mode.

@@ -487,8 +487,9 @@ export default function PublishingDashboard() {
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6">Estimated Income</p>
 
                                 {finance.loading ? (
-                                    <div className="flex items-center justify-center py-6">
-                                        <Loader2 size={24} className="text-purple-500 animate-spin" />
+                                    <div className="flex flex-col items-center justify-center py-12">
+                                        <Loader2 size={32} className="text-purple-500 animate-spin mb-4" />
+                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Calculating Royalties...</p>
                                     </div>
                                 ) : finance.earningsSummary ? (
                                     <>
@@ -502,19 +503,33 @@ export default function PublishingDashboard() {
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
                                                 <div className="flex items-center gap-2">
-                                                    <Globe size={14} className="text-green-500" />
-                                                    <span className="text-sm text-gray-400 font-medium">Streams</span>
+                                                    <Globe size={14} className="text-green-400" />
+                                                    <span className="text-sm text-gray-400 font-medium">Global Streams</span>
                                                 </div>
                                                 <span className="text-sm font-bold text-white">{finance.earningsSummary.totalStreams.toLocaleString()}</span>
                                             </div>
+                                            <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
+                                                <div className="flex items-center gap-2">
+                                                    <DollarSign size={14} className="text-purple-400" />
+                                                    <span className="text-sm text-gray-400 font-medium">Pending Payouts</span>
+                                                </div>
+                                                <span className="text-sm font-bold text-white">${(finance.earningsSummary.totalGrossRevenue - finance.earningsSummary.totalNetRevenue).toFixed(2)}</span>
+                                            </div>
                                         </div>
-                                        <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98]">
-                                            Withdraw Funds
+                                        <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-lg shadow-white/5">
+                                            Request Withdrawal
                                         </button>
                                     </>
                                 ) : (
-                                    <div className="text-center py-6">
-                                        <p className="text-gray-500 text-sm">No revenue data available</p>
+                                    <div className="group relative text-center py-10 px-4 bg-gray-900/20 rounded-2xl border border-dashed border-gray-800 hover:border-gray-700 transition-all">
+                                        <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
+                                            <DollarSign size={24} className="text-gray-700 group-hover:text-purple-500 transition-colors" />
+                                        </div>
+                                        <h4 className="text-sm font-bold text-white mb-1 uppercase tracking-tight">Escrow Empty</h4>
+                                        <p className="text-gray-500 text-[11px] font-medium max-w-[180px] mx-auto leading-relaxed">
+                                            Connect a distributor or upload your first release to start generating royalties.
+                                        </p>
+                                        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/0 to-purple-500/[0.02] pointer-events-none" />
                                     </div>
                                 )}
                             </div>

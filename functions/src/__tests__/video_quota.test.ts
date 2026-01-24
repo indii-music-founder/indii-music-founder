@@ -134,7 +134,7 @@ describe('Video Quota & Circuit Breaker Tests', () => {
     });
 
     it('should BLOCK video generation when daily limit is reached (The "Circuit Breaker")', async () => {
-        const context: any = { auth: { uid: 'broke_user_123' } };
+        const context: any = { auth: { uid: 'broke_user_123', token: {} } };
         const data = {
             jobId: 'job-quota-fail',
             prompts: ['A cinematic shot of a robot accountant'],
@@ -161,7 +161,7 @@ describe('Video Quota & Circuit Breaker Tests', () => {
     });
 
     it('should BLOCK video generation when duration exceeds tier limit', async () => {
-        const context: any = { auth: { uid: 'long_movie_user' } };
+        const context: any = { auth: { uid: 'long_movie_user', token: {} } };
         const data = {
             jobId: 'job-duration-fail',
             prompts: ['A 20 hour movie'],
@@ -175,7 +175,7 @@ describe('Video Quota & Circuit Breaker Tests', () => {
     });
 
     it('should ALLOW generation when under limit', async () => {
-        const context: any = { auth: { uid: 'rich_user' } };
+        const context: any = { auth: { uid: 'rich_user', token: {} } };
         const data = {
             jobId: 'job-success',
             prompts: ['A short clip'],

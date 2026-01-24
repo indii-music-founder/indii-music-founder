@@ -15,7 +15,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
     ] as const;
 
     return (
-        <div className="w-64 bg-[#0d1117] border-r border-gray-800 flex flex-col h-full flex-shrink-0">
+        <div className="w-64 bg-bg-dark border-r border-gray-800 flex flex-col h-full flex-shrink-0">
             <div className="p-6 border-b border-gray-800/50">
                 <h1 className="text-xl font-black flex items-center gap-2 tracking-tighter uppercase italic text-white/90">
                     <Truck className="text-yellow-500" size={24} />

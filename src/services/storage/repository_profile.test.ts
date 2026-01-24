@@ -48,8 +48,18 @@ vi.mock('firebase/storage', () => ({
 describe('Profile Persistence', () => {
     const mockProfile: UserProfile = {
         id: 'guest',
+        uid: 'guest-uid',
+        email: 'guest@example.com',
+        displayName: 'Guest User',
+        photoURL: null,
+        createdAt: { seconds: 0, nanoseconds: 0 } as any,
+        updatedAt: { seconds: 0, nanoseconds: 0 } as any,
+        lastLoginAt: { seconds: 0, nanoseconds: 0 } as any,
+        emailVerified: true,
+        membership: { tier: 'free', expiresAt: null },
+        accountType: 'artist',
         bio: 'Test Bio',
-        preferences: {},
+        preferences: { theme: 'dark', notifications: true },
         brandKit: {
             colors: [],
             fonts: '',

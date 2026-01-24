@@ -2,23 +2,63 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
-import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
-import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
 
-import { GoogleAuth } from "google-auth-library";
+import { GenerateSpeechRequestSchema } from "./lib/audio";
+
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
+import { generateVideoFn } from "./lib/video_generation";
+import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
+import { FUNCTION_AI_MODELS } from "./config/models";
+
+// Vertex AI SDK
+// import { VertexAI } from "@google-cloud/vertexai";
+import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream if needed, but primary is Vertex
 
 // Initialize Firebase Admin
 admin.initializeApp();
 
-// Define Secrets
-const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
-const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
+/**
+ * Security Helper: Validate Organization Access
+ *
+ * Ensures the authenticated user is a member of the target organization.
+ * Prevents IDOR/Injection attacks where users create jobs for orgs they don't belong to.
+ */
+const validateOrgAccess = async (userId: string, orgId?: string | null) => {
+    // 1. Personal workspace and default org are always allowed (scoped to user in logic)
+    if (!orgId || orgId === 'personal' || orgId === 'org-default') {
+        return;
+    }
+
+    // 2. Fetch Organization
+    const orgRef = admin.firestore().collection('organizations').doc(orgId);
+    const orgDoc = await orgRef.get();
+
+    if (!orgDoc.exists) {
+        throw new functions.https.HttpsError(
+            "not-found",
+            `Organization '${orgId}' not found.`
+        );
+    }
+
+    const orgData = orgDoc.data();
+    const members = orgData?.members || [];
+
+    // 3. Verify Membership
+    if (!members.includes(userId)) {
+        console.warn(`[Security] User ${userId} attempted to access restricted org ${orgId}`);
+        throw new functions.https.HttpsError(
+            "permission-denied",
+            "You are not a member of this organization."
+        );
+    }
+};
+
+// Import Shared Secrets
+import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
@@ -55,7 +95,57 @@ const requireAdmin = (context: functions.https.CallableContext) => {
     }
 };
 
-const corsHandler = corsLib({ origin: true });
+/**
+ * CORS Configuration
+ *
+ * SECURITY: Whitelist specific origins instead of allowing all.
+ * This prevents unauthorized websites from calling our Cloud Functions.
+ */
+const getAllowedOrigins = (): string[] => {
+    const origins = [
+        'https://indiios-studio.web.app',
+        'https://indiios-v-1-1.web.app',
+        'https://studio.indiios.com',
+        'https://indiios.com',
+        'app://.',  // Electron app
+        'http://localhost:4242' // Electron Studio (Vite)
+    ];
+
+    // Add localhost origins in emulator/development mode
+    if (process.env.FUNCTIONS_EMULATOR === 'true') {
+        origins.push(
+            'http://localhost:5173',
+            'http://localhost:4173',
+            'http://localhost:3000',
+            'http://127.0.0.1:5173',
+            'http://localhost:4242'
+        );
+    }
+
+    return origins;
+};
+
+const corsHandler = corsLib({
+    origin: (origin, callback) => {
+        const allowedOrigins = getAllowedOrigins();
+
+        // Allow requests with no origin (mobile apps, Postman, server-to-server)
+        // We rely on ID Token verification (Bearer token) for actual security.
+        if (!origin) {
+            return callback(null, true);
+        }
+
+        // Check if origin is in whitelist
+        if (origin && allowedOrigins.includes(origin)) {
+            return callback(null, true);
+        }
+
+        // Reject unauthorized origins
+        console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+        callback(new Error('CORS not allowed'));
+    },
+    credentials: true
+});
 
 // ----------------------------------------------------------------------------
 // Tier Limits (Duplicated from MembershipService for Server-Side Enforcement)
@@ -82,6 +172,10 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
     },
 };
 
+// Polling Constants
+// const VIDEO_POLL_INTERVAL_SEC = 5;
+// const VIDEO_MAX_POLL_ATTEMPTS = 60;
+
 // ----------------------------------------------------------------------------
 // Video Generation (Veo)
 // ----------------------------------------------------------------------------
@@ -93,6 +187,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -122,9 +217,12 @@ export const triggerVideoJob = functions
 
         const { prompt, jobId, orgId, ...options } = inputData;
 
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
+
         try {
-            // 1. Create Initial Job Record in Firestore
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -171,6 +269,7 @@ export const triggerVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -200,6 +299,9 @@ export const triggerLongFormVideoJob = functions
         // Destructure validated data
         const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
 
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
+
         // Additional validation
         if (prompts.length === 0) {
             throw new functions.https.HttpsError(
@@ -224,8 +326,13 @@ export const triggerLongFormVideoJob = functions
             const limits = TIER_LIMITS[userTier];
             const durationNum = parseFloat((totalDuration || 0).toString());
 
+            // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
+            const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+            const isGodMode = context.auth?.token?.admin === true ||
+                godModeEmails.includes(context.auth?.token?.email || '');
+
             // 2. Validate Duration Limit
-            if (durationNum > limits.maxVideoDuration) {
+            if (!isGodMode && durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
                     `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
@@ -240,7 +347,7 @@ export const triggerLongFormVideoJob = functions
                 const usageDoc = await transaction.get(usageRef);
                 const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
 
-                if (currentUsage >= limits.maxVideoGenerationsPerDay) {
+                if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
                     throw new functions.https.HttpsError(
                         "resource-exhausted",
                         `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
@@ -258,8 +365,8 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
 
             // 4. Create Parent Job Record
-            // 1. Create Parent Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 1. Create Parent Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
@@ -311,6 +418,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -359,8 +467,8 @@ export const renderVideo = functions
 
             const segmentUrls = videoClips.map((c: any) => c.src);
 
-            // 2. Create Job Record
-            await admin.firestore().collection("videoJobs").doc(jobId).set({
+            // 2. Create Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
                 userId: userId,
                 orgId: "personal",
@@ -407,126 +515,25 @@ export const renderVideo = functions
  */
 export const inngestApi = functions
     .runWith({
-        secrets: [inngestSigningKey, inngestEventKey],
+        secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
         timeoutSeconds: 540 // 9 minutes
     })
-    .https.onRequest((req, res) => {
+
+    .https.onRequest(async (req, res) => {
         const inngestClient = getInngestClient();
 
         // 1. Single Video Generation Logic using Veo
-        const generateVideoFn = inngestClient.createFunction(
-            { id: "generate-video-logic" },
-            { event: "video/generate.requested" },
-            async ({ event, step }) => {
-                const { jobId, prompt, userId, options } = event.data;
-
-                try {
-                    // Update status to processing
-                    await step.run("update-status-processing", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "processing",
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-
-                    // Generate Video via Vertex AI (Veo)
-                    const videoUri = await step.run("generate-veo-video", async () => {
-                        const auth = new GoogleAuth({
-                            scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                        });
-
-                        const client = await auth.getClient();
-                        const projectId = await auth.getProjectId();
-                        const accessToken = await client.getAccessToken();
-                        const location = 'us-central1';
-                        const modelId = 'veo-3.1-generate-preview';
-
-                        const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
-                        const requestBody = {
-                            instances: [{ prompt: prompt }],
-                            parameters: {
-                                sampleCount: 1,
-                                videoLength: options?.duration || options?.durationSeconds || "5s",
-                                aspectRatio: options?.aspectRatio || "16:9"
-                            }
-                        };
-
-                        const response = await fetch(endpoint, {
-                            method: 'POST',
-                            headers: {
-                                'Authorization': `Bearer ${accessToken.token}`,
-                                'Content-Type': 'application/json'
-                            },
-                            body: JSON.stringify(requestBody)
-                        });
-
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            throw new Error(`Vertex AI Error: ${response.status} ${errorText}`);
-                        }
-
-                        const result = await response.json();
-                        const predictions = result.predictions;
-
-                        if (!predictions || predictions.length === 0) {
-                            throw new Error("No predictions returned from Veo API");
-                        }
-
-                        const prediction = predictions[0];
-
-                        // Handle response (Base64 or URI)
-                        if (prediction.bytesBase64Encoded) {
-                            const bucket = admin.storage().bucket();
-                            const file = bucket.file(`videos/${userId}/${jobId}.mp4`);
-                            await file.save(Buffer.from(prediction.bytesBase64Encoded, 'base64'), {
-                                metadata: { contentType: 'video/mp4' },
-                                public: true
-                            });
-                            return file.publicUrl();
-                        }
-
-                        if (prediction.videoUri) return prediction.videoUri;
-                        if (prediction.gcsUri) return prediction.gcsUri;
-                        throw new Error(`Unknown Veo response format: ` + JSON.stringify(prediction));
-                    });
-
-                    // Update status to complete
-                    await step.run("update-status-complete", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "completed",
-                            videoUrl: videoUri,
-                            progress: 100,
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-
-                    return { success: true, videoUrl: videoUri };
-
-                } catch (error: any) {
-                    await step.run("update-status-failed", async () => {
-                        await admin.firestore().collection("videoJobs").doc(jobId).set({
-                            status: "failed",
-                            error: error.message || "Unknown error during video generation",
-                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                        }, { merge: true });
-                    });
-                    throw error;
-                }
-            }
-        );
+        const generateVideo = generateVideoFn(inngestClient, geminiApiKey);
 
         // 2. Long Form Video Generation Logic (Daisychaining)
-        const generateLongFormVideo = generateLongFormVideoFn(inngestClient);
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
 
         // 3. Stitching Function (Server-Side using Google Transcoder)
-        // Register Long Form Functions
-
         const stitchVideo = stitchVideoFn(inngestClient);
 
         const handler = serve({
             client: inngestClient,
-            functions: [generateVideoFn, generateLongFormVideo, stitchVideo],
+            functions: [generateVideo, generateLongFormVideo, stitchVideo],
             signingKey: inngestSigningKey.value(),
         });
 
@@ -537,202 +544,71 @@ export const inngestApi = functions
 // Image Generation (Gemini)
 // ----------------------------------------------------------------------------
 
-interface GenerateImageRequestData {
-    prompt: string;
-    aspectRatio?: string;
-    count?: number;
-    images?: { mimeType: string; data: string }[];
-}
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
+export const generateImageV3 = generateImageV3Fn();
+export const editImage = editImageFn();
 
-export const generateImageV3 = functions
-    .runWith({
-        secrets: [geminiApiKey],
-        timeoutSeconds: 120,
-        memory: "512MB"
-    })
+export const generateSpeech = functions
+    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
     .https.onCall(async (data: unknown, context) => {
         if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to generate images."
-            );
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
 
-        // Zod Validation
-        const validation = GenerateImageRequestSchema.safeParse(data);
+        const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
+            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
         }
-        const { prompt, aspectRatio, count, images } = validation.data;
+        const { text, voice, model } = validation.data;
 
         try {
-            const modelId = "gemini-3-pro-image-preview";
+            console.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            const apiKey = getGeminiApiKey();
 
-            // Use Vertex AI IAM authentication instead of API key
-            // This resolves 403 Permission Denied errors with Gemini 3 Pro Image
-            const auth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-            });
-
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const accessToken = await client.getAccessToken();
-            const location = 'us-central1';
-
-            const endpoint = `https://${location}-aiplatform.googleapis.com/v1/projects/${projectId}/locations/${location}/publishers/google/models/${modelId}:predict`;
-
-            const parts: any[] = [{ text: prompt }];
-            if (images) {
-                images.forEach(img => {
-                    parts.push({
-                        inlineData: {
-                            mimeType: img.mimeType || "image/png",
-                            data: img.data
-                        }
-                    });
-                });
-            }
-
-            const response = await fetch(endpoint, {
+            // Use REST API for precise control over TTS config
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
                 method: "POST",
-                headers: {
-                    'Authorization': `Bearer ${accessToken.token}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    contents: [{ role: "user", parts: parts }],
+                    contents: [{ parts: [{ text }] }],
                     generationConfig: {
-                        responseModalities: ["TEXT", "IMAGE"],
-                        candidateCount: count || 1,
-                        ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                        temperature: 1.0,
-                        topK: 64,
-                        topP: 0.95
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: voice
+                                }
+                            }
+                        }
                     }
-                }),
+                })
             });
 
             if (!response.ok) {
-                const errorText = await response.text();
-                console.error("Vertex AI Error:", response.status, errorText);
-                throw new functions.https.HttpsError('internal', `Vertex AI Error: ${response.status} - ${errorText}`);
+                const errText = await response.text();
+                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
             }
 
             const result = await response.json();
 
-            // Vertex AI response format differs slightly, handle both formats
-            const candidates = result.predictions || result.candidates || [];
-            const processedImages = candidates.flatMap((c: any) =>
-                (c.content?.parts || c.candidates?.[0]?.content?.parts || [])
-                    .filter((p: any) => p.inlineData)
-                    .map((p: any) => ({
-                        bytesBase64Encoded: p.inlineData.data,
-                        mimeType: p.inlineData.mimeType
-                    }))
-            );
+            // Extract audio data (inlineData)
+            const part = result.candidates?.[0]?.content?.parts?.[0];
+            const audioContent = part?.inlineData?.data;
 
-            return { images: processedImages };
+            if (!audioContent) {
+                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                throw new Error("No audio content returned from API");
+            }
+
+            return { audioContent };
+
         } catch (error: any) {
-            console.error("[generateImageV3] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            throw new functions.https.HttpsError('internal', error.message || "Unknown error");
-        }
-    });
-
-export const editImage = functions
-    .runWith({ secrets: [geminiApiKey] })
-    .https.onCall(async (data: unknown, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to edit images."
-            );
-        }
-
-        // Zod Validation
-        const validation = EditImageRequestSchema.safeParse(data);
-        if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
-        }
-        const { image, mask, prompt, referenceImage } = validation.data;
-
-        try {
-            const modelId = "gemini-3-pro-image-preview";
-
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${geminiApiKey.value()}`;
-
-            const parts: any[] = [
-                {
-                    inlineData: {
-                        mimeType: "image/png",
-                        data: image
-                    }
-                }
-            ];
-
-            if (mask) {
-                parts.push({
-                    inlineData: {
-                        mimeType: "image/png",
-                        data: mask
-                    }
-                });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
-            }
-
-            if (referenceImage) {
-                parts.push({
-                    inlineData: {
-                        mimeType: "image/png",
-                        data: referenceImage
-                    }
-                });
-                parts.push({ text: "Use this third image as a reference." });
-            }
-
-            parts.push({ text: prompt });
-
-            const response = await fetch(endpoint, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    contents: [{
-                        role: "user",
-                        parts: parts
-                    }],
-                    generation_config: {
-                        response_modalities: ["IMAGE"],
-                    }
-                }),
-            });
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new functions.https.HttpsError('internal', errorText);
-            }
-
-            const result = await response.json();
-            return result;
-
-        } catch (error: unknown) {
-            console.error("Function Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            if (error instanceof Error) {
-                throw new functions.https.HttpsError('internal', error.message);
-            }
-            throw new functions.https.HttpsError('internal', "An unknown error occurred");
+            console.error("[generateSpeech] Error:", error);
+            throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
         }
     });
 
@@ -776,7 +652,7 @@ export const generateContentStream = functions
                 const ALLOWED_MODELS = [
                     "gemini-3-pro-preview",
                     "gemini-3-flash-preview",
-                    "gemini-2.0-flash-exp" // Retained for backward compatibility if needed, otherwise remove
+                    "gemini-2.5-flash"
                 ];
 
                 if (!ALLOWED_MODELS.includes(modelId)) {
@@ -785,60 +661,29 @@ export const generateContentStream = functions
                     return;
                 }
 
-                if (!Array.isArray(contents)) {
-                    res.status(400).send('Invalid input: contents must be an array.');
-                    return;
-                }
+                // Initialize SDK Client
+                // Initialize SDK Client
+                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:streamGenerateContent?alt=sse&key=${geminiApiKey.value()}`;
-
-                const response = await fetch(endpoint, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents,
-                        generationConfig: config
-                    })
+                // Generate Content Stream
+                const result = await client.models.generateContentStream({
+                    model: modelId,
+                    contents: contents, // SDK accepts standard Content format
+                    config: config
                 });
-
-                if (!response.ok) {
-                    const error = await response.text();
-                    res.status(response.status).send(error);
-                    return;
-                }
 
                 res.setHeader('Content-Type', 'text/plain');
                 res.setHeader('Cache-Control', 'no-cache');
                 res.setHeader('Connection', 'keep-alive');
 
-                const reader = response.body?.getReader();
-                if (!reader) {
-                    res.status(500).send('No response body');
-                    return;
-                }
-
-                const decoder = new TextDecoder();
-                while (true) {
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    const chunk = decoder.decode(value);
-                    const lines = chunk.split('\n');
-
-                    for (const line of lines) {
-                        if (line.startsWith('data: ')) {
-                            try {
-                                const data = JSON.parse(line.substring(6));
-                                const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                                if (text) {
-                                    res.write(JSON.stringify({ text }) + '\n');
-                                }
-                            } catch {
-                                // Ignore parse errors for partial chunks
-                            }
-                        }
+                // Iterate over SDK Stream
+                for await (const chunk of result) {
+                    const text = chunk.text;
+                    if (text) {
+                        res.write(JSON.stringify({ text }) + '\n');
                     }
                 }
+
                 res.end();
 
             } catch (error: any) {
@@ -878,6 +723,16 @@ export const ragProxy = functions
             }
 
             try {
+                // SECURITY: Block Method Override Headers to prevent bypassing method checks
+                // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
+
+                // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
+                // Prevents users from deleting files that might belong to others in the shared project.
+                if (req.method === 'DELETE') {
+                    res.status(403).send('Forbidden: Method not allowed');
+                    return;
+                }
+
                 const baseUrl = 'https://generativelanguage.googleapis.com';
                 const targetPath = req.path;
                 const allowedPrefixes = [
@@ -885,6 +740,15 @@ export const ragProxy = functions
                     '/v1beta/models',
                     '/upload/v1beta/files'
                 ];
+
+                // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
+                // Prevents users from listing all files uploaded to the shared project.
+                // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
+                // Path must NOT be exactly '/v1beta/files' if method is GET.
+                if (req.method === 'GET' && req.path === '/v1beta/files') {
+                    res.status(403).send('Forbidden: Listing files is disabled for security');
+                    return;
+                }
 
                 const isAllowed = allowedPrefixes.some(prefix =>
                     req.path === prefix || req.path.startsWith(prefix + '/')
@@ -896,7 +760,7 @@ export const ragProxy = functions
                 }
 
                 const queryString = req.url.split('?')[1] || '';
-                const targetUrl = `${baseUrl}${targetPath}?key=${geminiApiKey.value()}${queryString ? `&${queryString}` : ''}`;
+                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
 
                 const fetchOptions: RequestInit = {
                     method: req.method,
@@ -926,6 +790,7 @@ import * as gkeService from './devops/gkeService';
 import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
+import * as marketingService from './lib/marketing';
 
 /**
  * List GKE Clusters
@@ -955,6 +820,9 @@ export const generateItinerary = touringService.generateItinerary;
 export const checkLogistics = touringService.checkLogistics;
 export const findPlaces = touringService.findPlaces;
 export const calculateFuelLogistics = touringService.calculateFuelLogistics;
+
+// Marketing
+export const executeCampaign = marketingService.executeCampaign;
 
 /**
  * Get GKE Cluster Status
@@ -1048,16 +916,12 @@ export const executeBigQueryQuery = functions
     .https.onCall(async (data: { query: string; maxResults?: number }, context) => {
         requireAdmin(context);
 
-        const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT;
-        if (!projectId) {
-            throw new functions.https.HttpsError('failed-precondition', 'GCP Project ID not configured.');
-        }
-
-        try {
-            return await bigqueryService.executeQuery(data.query, projectId, { maxResults: data.maxResults });
-        } catch (error: any) {
-            throw new functions.https.HttpsError('internal', error.message);
-        }
+        // SECURITY: Raw SQL execution is disabled for production safety.
+        // Developers should implement specific, parameterized query endpoints.
+        throw new functions.https.HttpsError(
+            'failed-precondition',
+            'Raw SQL execution is disabled in this environment for security reasons.'
+        );
     });
 
 /**

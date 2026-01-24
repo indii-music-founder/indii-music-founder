@@ -27,7 +27,7 @@ test.describe('Maestro Campaign Workflow: User-Agent Handoff & Rejection Loop', 
     // Mock User & State
     await page.evaluate(() => {
       const mockUser = {
-        uid: 'maestro-handoff-user',
+        uid: 'maestro-user-id',
         email: 'maestro@example.com',
         displayName: 'Maestro Test User',
         emailVerified: true,
@@ -148,7 +148,17 @@ test.describe('Maestro Campaign Workflow: User-Agent Handoff & Rejection Loop', 
       assetType: 'campaign',
       title: 'Plan B: Viral Masterpiece',
       description: 'A creative strategy involving puppies and lasers.',
-      posts: planB.posts,
+      posts: planB.posts.map((p, i) => ({
+        ...p,
+        id: `mock-post-${i}`,
+        status: 'PENDING',
+        imageAsset: {
+          assetType: 'image',
+          title: 'Mock Asset',
+          imageUrl: '',
+          caption: p.imagePrompt
+        }
+      })),
       status: 'PENDING',
       startDate: new Date().toISOString()
     };
@@ -167,7 +177,8 @@ test.describe('Maestro Campaign Workflow: User-Agent Handoff & Rejection Loop', 
     // -----------------------------------------------------------------------
     // 7. Final Gate -> EXECUTE
     // -----------------------------------------------------------------------
-    await expect(page.getByText('Pending', { exact: false })).toBeVisible();
+    // Use Test ID for robustness (avoid "Pending" case sensitivity ambiguity)
+    await expect(page.getByTestId('campaign-status-badge')).toHaveText('PENDING');
 
     const executeBtn = page.getByRole('button', { name: 'Execute Campaign' });
     await expect(executeBtn).toBeEnabled();

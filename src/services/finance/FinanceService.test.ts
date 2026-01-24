@@ -77,7 +77,7 @@ describe('FinanceService', () => {
     });
 
     describe('addExpense', () => {
-        it('should successfully add an expense and return the ID', async () => {
+        it('should successfully add an expense and return the full object', async () => {
             const expense: Omit<Expense, 'id' | 'createdAt'> = {
                 userId: 'user-123',
                 vendor: 'Test Vendor',
@@ -99,7 +99,11 @@ describe('FinanceService', () => {
                     createdAt: expect.any(MockTimestamp)
                 })
             );
-            expect(result).toBe('new-expense-id');
+
+            // Verify full object return
+            expect(result.id).toBe('new-expense-id');
+            expect(result.vendor).toBe('Test Vendor');
+            expect(result.createdAt).toBeDefined(); // Should be ISO string
         });
     });
 
@@ -135,6 +139,7 @@ describe('FinanceService', () => {
             const mockDocs = [{
                 data: () => ({
                     userId: 'user-123',
+                    period: { startDate: '2024-01-01', endDate: '2024-01-31' },
                     totalGrossRevenue: 1000.50,
                     byRelease: []
                 })
@@ -145,7 +150,17 @@ describe('FinanceService', () => {
             const result = await financeService.fetchEarnings('user-123');
 
             expect(mockGetDocs).toHaveBeenCalled(); // Should check Firestore
-            expect(result.totalGrossRevenue).toBe(1000.50);
+            expect(result?.totalGrossRevenue).toBe(1000.50);
+        });
+
+        it('should return null if no earnings data is found (no seeding)', async () => {
+            mockGetDocs.mockResolvedValueOnce({ docs: [], empty: true });
+
+            const result = await financeService.fetchEarnings('user-123');
+
+            expect(mockGetDocs).toHaveBeenCalled();
+            expect(result).toBeNull();
+            expect(mockAddDoc).not.toHaveBeenCalled();
         });
 
         it('should handle errors by logging to Sentry', async () => {

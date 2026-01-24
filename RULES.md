@@ -60,6 +60,27 @@
 
 ---
 
+## 🛑 RULE: THE LAW OF NAMING (Strict Standard)
+
+**Goal:** Eliminate case-sensitivity conflicts across environments (macOS/Unix).
+
+* **Directories:** MUST be `kebab-case` and strictly **lowercase**.
+  * ✅ Correct: `.jules`, `src/services/video`, `.github`
+  * ❌ FORBIDDEN: `.Jules`, `src/Services/Video`, `.Github`
+* **Enforcement:** If you see a capitalized directory (e.g., `.Jules`), YOU ARE OBLIGATED TO FIX IT immediately.
+* **Reasoning:** macOS is case-preserving but case-insensitive; Linux (CI) is case-sensitive. "Split-brain" git states break deployment.
+
+---
+
+## 🔌 RULE: FULL STACK COMPLETION (Backend Sync)
+
+**Goal:** Prevent frontend/backend drift.
+
+* **Requirement:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement/build the backend logic immediately.
+* **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
+
+---
+
 ## 🏗️ RULE: THE AGENT CONSTITUTION (Technical Governance)
 
 **Reference:** See `agents.md` for strict technical rules enforced on the AI Agent.

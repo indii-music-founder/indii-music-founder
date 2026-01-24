@@ -1,0 +1,33 @@
+{
+  "dsp": "Apple Music",
+  "rules": {
+    "audio": {
+      "atmos_mastering": "-18 LKFS (average loudness)",
+      "min_bit_depth": 16,
+      "min_sample_rate": 44100
+    },
+    "forbidden_keywords": [
+      "feat.",
+      "ft.",
+      "Produced by",
+      "Prod. by",
+      "presents",
+      "presents",
+      "DJ",
+      "mix",
+      "remix"
+    ],
+    "generic_content_ban": [
+      "Chill",
+      "Sleep",
+      "Lofi",
+      "Rain",
+      "Meditation",
+      "Yoga",
+      "Zen",
+      "Background"
+    ],
+    "title_casing": "Capitalize the first letter of every word, except for small words like 'a', 'an', 'and', 'at', 'but', 'by', 'for', 'in', 'nor', 'of', 'on', 'or', 'so', 'the', 'to', 'up', 'yet'."
+  },
+  "version": "2026.1"
+}

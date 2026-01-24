@@ -1,9 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
+import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
+import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 
@@ -13,6 +14,7 @@ import { coordinator } from './WorkflowCoordinator';
  */
 export class AgentService {
     private isProcessing = false;
+    private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
     private executor: AgentExecutor;
@@ -22,6 +24,23 @@ export class AgentService {
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
         this.executor = new AgentExecutor();
+
+        // Pre-warm agents in the background (non-blocking)
+        this.warmup();
+    }
+
+    /**
+     * Pre-warm critical agents. Call this on app startup for better first-message latency.
+     */
+    async warmup(): Promise<void> {
+        if (this.isWarmedUp) return;
+
+        try {
+            await agentRegistry.warmup();
+            this.isWarmedUp = true;
+        } catch (e) {
+            console.warn('[indii:Service] Warmup failed, will retry on first message:', e);
+        }
     }
 
     /**
@@ -34,11 +53,23 @@ export class AgentService {
         if (this.isProcessing) return;
         this.isProcessing = true;
 
-        // Add User Message
+        // Ensure agents are warmed up before processing (non-blocking if already done)
+        if (!this.isWarmedUp) {
+            await this.warmup();
+        }
+
+        // PII Redaction for Agent/LLM Input AND Storage
+        // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
+        const redactedText = this.redactPII(text);
+        if (redactedText !== text) {
+            console.log("🔒 PII Detected and Redacted from Agent Input");
+        }
+
+        // Add User Message (Redacted)
         const userMsg: AgentMessage = {
             id: uuidv4(),
             role: 'user',
-            text,
+            text: redactedText,
             timestamp: Date.now(),
             attachments
         };
@@ -70,7 +101,8 @@ export class AgentService {
             if (forcedAgentId) {
                 coordinatorResult = 'DELEGATED_TO_AGENT';
             } else {
-                coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
+                // Pass REDACTED text to the coordinator
+                coordinatorResult = await coordinator.handleUserRequest(redactedText, context, (chunk) => {
                     // Update the UI optimistically if chunks arrive from fast path
                     updateAgentMessage(responseId, { text: chunk });
                 });
@@ -96,7 +128,8 @@ export class AgentService {
             let agentId = forcedAgentId;
             if (!agentId) {
                 // If coordinator delegated, we determine the best agent
-                agentId = await this.orchestrator.determineAgent(context, text);
+                // Pass REDACTED text for classification
+                agentId = await this.orchestrator.determineAgent(context, redactedText);
             }
 
             // Update agent ID in the placeholder
@@ -104,25 +137,38 @@ export class AgentService {
 
             let currentStreamedText = '';
 
-            const result = await this.executor.execute(agentId, text, context, (event) => {
+            // Pass REDACTED text to the executor
+            const result = await this.executor.execute(agentId, redactedText, context, (event) => {
                 if (event.type === 'token') {
                     currentStreamedText += event.content;
                     updateAgentMessage(responseId, { text: currentStreamedText });
                 }
 
-                if (event.type === 'thought' || event.type === 'tool') {
+                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
                     const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-                    const newThought = {
+
+                    // Firestore explicitly rejects 'undefined' values. We must sanitize.
+                    const newThought: AgentThought = {
                         id: uuidv4(),
-                        text: event.content,
+                        text: event.content || '', // Ensure no undefined text
                         timestamp: Date.now(),
-                        type: event.type as 'tool' | 'logic' | 'error',
-                        toolName: event.toolName
+                        type: event.type as any, // Typed in interface
                     };
+
+                    if (event.type === 'tool' || event.type === 'tool_result') {
+                        if (event.toolName) {
+                            newThought.toolName = event.toolName;
+                        }
+                    }
+
+                    // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
+                    // stringify/parse removes all undefined keys.
+                    const safeThought = JSON.parse(JSON.stringify(newThought));
+                    console.log('[AgentService] Adding thought:', safeThought);
 
                     if (currentMsg) {
                         updateAgentMessage(responseId, {
-                            thoughts: [...(currentMsg.thoughts || []), newThought]
+                            thoughts: [...(currentMsg.thoughts || []), safeThought]
                         });
                     }
                 }
@@ -130,10 +176,17 @@ export class AgentService {
 
             if (result && result.text) {
                 if (!result.text.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, { text: result.text, isStreaming: false });
+                    updateAgentMessage(responseId, {
+                        text: result.text,
+                        isStreaming: false,
+                        thoughtSignature: result.thoughtSignature
+                    });
                 }
             } else {
-                updateAgentMessage(responseId, { isStreaming: false });
+                updateAgentMessage(responseId, {
+                    isStreaming: false,
+                    thoughtSignature: result?.thoughtSignature
+                });
             }
 
         } catch (e: unknown) {
@@ -153,8 +206,26 @@ export class AgentService {
      * @param attachments Optional file attachments.
      */
     async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<any> {
-        // Build a pipeline context from the parent context or fresh
-        const context = parentContext || await this.contextPipeline.buildContext();
+        // CRITICAL: Deep clone context to prevent mutation affecting parent agent
+        // Context objects are passed by reference and can be mutated during execution,
+        // causing parent agents to lose their execution state ("dismantling")
+        let context: AgentContext;
+
+        if (parentContext) {
+            // Deep clone to isolate execution contexts
+            context = JSON.parse(JSON.stringify(parentContext));
+
+            // Restore non-serializable properties after cloning
+            // (chatHistory and attachments contain references we want to preserve)
+            if (parentContext.chatHistory) {
+                context.chatHistory = [...parentContext.chatHistory];
+            }
+            if (parentContext.attachments) {
+                context.attachments = [...parentContext.attachments];
+            }
+        } else {
+            context = await this.contextPipeline.buildContext();
+        }
 
         // Ensure minimal context exists
         if (!context.chatHistory) context.chatHistory = [];
@@ -173,6 +244,39 @@ export class AgentService {
 
     private addSystemMessage(text: string): void {
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
+    }
+
+    /**
+     * Redacts sensitive information from the input text before sending it to the LLM.
+     */
+    private redactPII(text: string): string {
+        // Redact Credit Cards: 13-19 digits, possibly separated by spaces or dashes.
+        // Supports 4 groups of 4 (Visa/MC) and 15-digit (AMEX) formats.
+        // Regex looks for sequences of digits/spaces/dashes that look like cards.
+        const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
+
+        // Redact "Password: value" pattern
+        // Matches "password" followed by optional "is", then optional separators (colon, space, equals),
+        // then captures the value until whitespace or punctuation.
+        // We use a replacement function to ensure we replace the VALUE, not the label.
+        // Regex: (password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)
+        const passwordRegex = /(password(?:\s+is)?[:\s=]+)([^\s.,;!]+)/gi;
+
+        // Heuristic Check: Only replace if it passes Luhn check?
+        // For now, simple pattern matching to avoid complexity in this security filter.
+        // Note: The previous regex was too strict (4x4). This one is broader.
+        let redacted = text.replace(creditCardRegex, (match) => {
+            // Basic filter to avoid matching timestamps or simple IDs (e.g. 2024-10-10)
+            // A credit card usually has mixed spacing or is long.
+            if (match.replace(/\D/g, '').length < 13) return match;
+            return '[REDACTED_CREDIT_CARD]';
+        });
+
+        redacted = redacted.replace(passwordRegex, (match, prefix, value) => {
+            return `${prefix}[REDACTED_PASSWORD]`;
+        });
+
+        return redacted;
     }
 }
 

@@ -1,16 +1,24 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { MerchLayout } from './components/Layout';
 import { MerchCard } from './components/MerchCard';
 import { MerchButton } from './components/MerchButton';
 import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight, Loader2 } from 'lucide-react';
+
 import { useNavigate } from 'react-router-dom';
 import { useMerchandise } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
+import { TopSellingProductItem } from './components/TopSellingProductItem';
+import { RecentDesignItem } from './components/RecentDesignItem';
+import { formatCurrency } from '@/lib/utils';
 
 export default function MerchDashboard() {
     const navigate = useNavigate();
     const { userProfile } = useStore();
     const { stats, topSellingProducts, products, loading, error } = useMerchandise();
+
+    const handleDesignClick = useCallback(() => {
+        navigate('/merch/design');
+    }, [navigate]);
 
     if (loading) {
         return (
@@ -33,27 +41,18 @@ export default function MerchDashboard() {
         );
     }
 
-    // Format currency
-    const formatCurrency = (val: number) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: 'USD',
-            maximumFractionDigits: 0
-        }).format(val);
-    };
-
     return (
         <MerchLayout>
             <div className="max-w-7xl mx-auto space-y-8" data-testid="merch-dashboard-content">
 
                 {/* Header */}
                 <div className="flex items-center justify-between">
-                    <div className="mb-6">
+                    <div>
                         <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
-                        <p className="text-neutral-400">Your empire is growing.</p>
+                        <p className="text-neutral-400">Your merchandise empire is thriving.</p>
                     </div>
                     <MerchButton
-                        onClick={() => navigate('/merch/design')}
+                        onClick={handleDesignClick}
                         glow size="lg"
                         className="rounded-full"
                         data-testid="new-design-btn"
@@ -136,30 +135,12 @@ export default function MerchDashboard() {
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             {topSellingProducts.length > 0 ? (
                                 topSellingProducts.map((product) => (
-                                    <MerchCard key={product.id} className="group p-4 flex items-center gap-4 cursor-pointer">
-                                        <div className="w-20 h-24 bg-neutral-800 rounded-lg flex items-center justify-center relative overflow-hidden">
-                                            {product.image ? (
-                                                <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
-                                            ) : (
-                                                <>
-                                                    <div className="absolute inset-0 bg-yellow-400/10 group-hover:bg-yellow-400/20 transition-all" />
-                                                    <span className="text-2xl">👕</span>
-                                                </>
-                                            )}
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-bold text-white group-hover:text-[#FFE135] transition-colors">{product.title}</h4>
-                                            <p className="text-sm text-neutral-500">{product.price} • {product.units} Sold</p>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-[#FFE135] font-mono font-bold">{formatCurrency(product.revenue)}</span>
-                                        </div>
-                                    </MerchCard>
+                                    <TopSellingProductItem key={product.id} product={product} />
                                 ))
                             ) : (
                                 <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
                                     <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
-                                    <MerchButton size="sm" variant="outline" onClick={() => navigate('/merch/design')}>
+                                    <MerchButton size="sm" variant="outline" onClick={handleDesignClick}>
                                         Start Selling
                                     </MerchButton>
                                 </div>
@@ -175,25 +156,11 @@ export default function MerchDashboard() {
                         </div>
                         <div className="space-y-4">
                             {products.slice(0, 3).map((product) => (
-                                <div key={product.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors cursor-pointer group">
-                                    <div className="w-12 h-12 bg-neutral-800 rounded-md border border-white/10 flex items-center justify-center overflow-hidden">
-                                        {product.image ? (
-                                            <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
-                                        ) : (
-                                            <span className="text-lg">🎨</span>
-                                        )}
-                                    </div>
-                                    <div className="flex-1">
-                                        <h5 className="text-sm font-medium text-white group-hover:text-[#FFE135]">{product.title}</h5>
-                                        <p className="text-xs text-neutral-500">
-                                            {product.createdAt && 'toDate' in product.createdAt ?
-                                                `Added ${product.createdAt.toDate().toLocaleDateString()}` :
-                                                'Just now'
-                                            }
-                                        </p>
-                                    </div>
-                                    <ArrowRight size={14} className="text-neutral-600 group-hover:text-white" />
-                                </div>
+                                <RecentDesignItem
+                                    key={product.id}
+                                    product={product}
+                                    onClick={handleDesignClick}
+                                />
                             ))}
                             {products.length === 0 && (
                                 <p className="text-neutral-500 text-sm">No products created yet.</p>

@@ -34,10 +34,14 @@ vi.mock('firebase/functions', () => ({
     })
 }));
 
-vi.mock('firebase/firestore', () => ({
-    doc: vi.fn(),
-    onSnapshot: vi.fn()
-}));
+vi.mock('firebase/firestore', async (importOriginal) => {
+    const actual = await importOriginal() as any;
+    return {
+        ...actual,
+        doc: vi.fn(),
+        onSnapshot: vi.fn()
+    };
+});
 
 describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
     beforeEach(() => {

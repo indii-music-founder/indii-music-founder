@@ -88,7 +88,7 @@ export async function runAgenticWorkflow(
             name: s.sourceId || 'AI',
             content: s.content?.parts?.[0]?.text || ''
         })),
-        retrievalDetails: sources,
+        retrievalDetails: sources as Record<string, unknown>[],
         reasoningTrace: reasoning
     };
 

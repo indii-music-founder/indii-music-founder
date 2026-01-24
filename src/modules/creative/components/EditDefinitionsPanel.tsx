@@ -82,7 +82,8 @@ export default function EditDefinitionsPanel({
                                 value={definitions[color.id] || ''}
                                 onChange={(e) => onUpdateDefinition(color.id, e.target.value)}
                                 placeholder={`e.g. Turn into ${color.name.toLowerCase()} neon lights...`}
-                                className="w-full bg-transparent text-sm text-white placeholder-gray-600 border-none outline-none resize-none h-20 focus:ring-0"
+                                aria-label={`Edit definition for ${color.name}`}
+                                className="w-full bg-transparent text-sm text-white placeholder-gray-600 border-none outline-none resize-none h-20 focus:ring-0 focus-visible:ring-1 focus-visible:ring-purple-500/50 rounded-sm"
                             />
 
                             {/* Reference Image Input */}
@@ -104,12 +105,12 @@ export default function EditDefinitionsPanel({
                                     </div>
                                 ) : (
                                     onUpdateReferenceImage && (
-                                        <label className="flex items-center gap-2 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer transition-colors text-xs text-gray-400 border border-transparent hover:border-gray-600">
+                                        <label className="flex items-center gap-2 px-2 py-1.5 bg-gray-800 hover:bg-gray-700 rounded cursor-pointer transition-colors text-xs text-gray-400 border border-transparent hover:border-gray-600 focus-within:ring-2 focus-within:ring-purple-500 focus-within:ring-offset-1 focus-within:ring-offset-[#1a1a1a]">
                                             <span className="text-[10px]">+ Ref Scan</span>
                                             <input
                                                 type="file"
                                                 accept="image/*"
-                                                className="hidden"
+                                                className="sr-only"
                                                 onChange={(e) => handleFileChange(color.id, e)}
                                             />
                                         </label>

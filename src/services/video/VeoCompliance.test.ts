@@ -142,11 +142,10 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
             vi.advanceTimersByTime(20);
-            const job = await jobPromise;
 
             // In a real player, this would be a critical failure.
-            // Here we verify that we CAN detect it.
-            expect(job.output.metadata.mime_type).not.toBe('video/mp4');
+            // Here we verify that we CAN detect it by asserting that the promise rejects
+            await expect(jobPromise).rejects.toThrow(/Security Violation: Invalid MIME type/);
         });
     });
 
@@ -233,6 +232,84 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             expect(job.output.metadata.model).toBe('veo-3.1-pro');
             expect(duration).toBeGreaterThanOrEqual(25000);
             expect(duration).toBeLessThan(30000); // "Pro < 30s" boundary
+        });
+    });
+
+    describe('Flash vs Pro Race (Upgrade)', () => {
+        it('should handle "Flash" to "Pro" upgrade (subscribeToJob)', async () => {
+            // Verify that Gemini 3 Flash images (or videos) swap to Gemini 3 Pro (upscaled) if applicable.
+            // This requires using subscribeToJob because waitForJob resolves on the first completion.
+
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                // 1. Initial "Flash" Result
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://mock.url/flash.mp4',
+                                metadata: {
+                                    mime_type: 'video/mp4',
+                                    model: 'veo-3.1-flash',
+                                    duration_seconds: 4.0,
+                                    fps: 24
+                                }
+                            }
+                        })
+                    });
+                }, 100);
+
+                // 2. Later "Pro" Update
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'completed',
+                            output: {
+                                url: 'https://mock.url/pro.mp4',
+                                metadata: {
+                                    mime_type: 'video/mp4',
+                                    model: 'veo-3.1-pro',
+                                    duration_seconds: 4.0,
+                                    fps: 30 // Pro might have higher FPS
+                                }
+                            }
+                        })
+                    });
+                }, 1000);
+
+                return () => {};
+            });
+
+            const updates: any[] = [];
+            const unsubscribe = service.subscribeToJob('lens-veo-job-id', (job) => {
+                if (job) updates.push(job);
+            });
+
+            // Fast forward to capture both updates
+            vi.advanceTimersByTime(2000);
+            unsubscribe();
+
+            // Assertions
+            expect(updates.length).toBe(2);
+
+            // First update: Flash
+            expect(updates[0].output.metadata.model).toBe('veo-3.1-flash');
+            expect(updates[0].output.url).toBe('https://mock.url/flash.mp4');
+            expect(updates[0].output.metadata.mime_type).toBe('video/mp4');
+            expect(updates[0].output.metadata.duration_seconds).toBe(4.0);
+            expect(updates[0].output.metadata.fps).toBe(24);
+
+            // Second update: Pro (Upgrade)
+            expect(updates[1].output.metadata.model).toBe('veo-3.1-pro');
+            expect(updates[1].output.url).toBe('https://mock.url/pro.mp4');
+            expect(updates[1].output.metadata.mime_type).toBe('video/mp4');
+            expect(updates[1].output.metadata.duration_seconds).toBe(4.0);
+            expect(updates[1].output.metadata.fps).toBe(30);
         });
     });
 

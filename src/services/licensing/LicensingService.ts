@@ -54,6 +54,18 @@ export class LicensingService {
     }
 
     /**
+     * Calculate projected portfolio value based on active licenses.
+     * In production, this would use a more complex actuarial model.
+     */
+    async getProjectedValue(userId?: string): Promise<number> {
+        const active = await this.getActiveLicenses(userId);
+        // Base valuation: Each active license contributes a standard projected market value
+        // plus potential performance multipliers. For now, we use a conservative $12,500 base.
+        const baseValue = 12500;
+        return active.length * baseValue;
+    }
+
+    /**
      * Create a new license.
      */
     async createLicense(license: Omit<License, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {

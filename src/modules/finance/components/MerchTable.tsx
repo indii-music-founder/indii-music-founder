@@ -47,6 +47,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
     }, [userProfile]);
 
     useEffect(() => {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         loadProducts();
         loadAssets();
     }, [loadProducts, loadAssets]);
@@ -92,7 +93,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-xl font-bold text-white flex items-center gap-3">
-                        <Box className="text-purple-400" size={24} />
+                        <Box className="text-dept-royalties" size={24} />
                         {isDashboardView ? 'Product Ledger' : 'Inventory Management'}
                     </h3>
                     <p className="text-gray-500 text-xs font-medium uppercase tracking-[0.2em] mt-1 ml-9">Marketplace Liquidity Status</p>
@@ -101,7 +102,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => setIsMinting(!isMinting)}
-                    className="flex items-center gap-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-xl shadow-purple-500/20 border border-white/10"
+                    className="flex items-center gap-2 bg-gradient-to-r from-dept-creative to-dept-royalties hover:from-dept-creative/80 hover:to-dept-royalties/80 text-white px-5 py-2.5 rounded-2xl text-sm font-bold transition-all shadow-xl shadow-dept-creative/20 border border-white/10"
                 >
                     {isMinting ? <Trash2 size={16} /> : <Plus size={16} />}
                     {isMinting ? 'Cancel' : 'Mint New Item'}
@@ -117,7 +118,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                         className="overflow-hidden"
                     >
                         <div className="mb-8 p-8 bg-white/5 border border-white/10 rounded-[2rem] space-y-8 backdrop-blur-xl relative overflow-hidden">
-                            <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 blur-[50px] pointer-events-none" />
+                            <div className="absolute top-0 right-0 w-32 h-32 bg-dept-creative/10 blur-[50px] pointer-events-none" />
 
                             <div className="flex items-center gap-2">
                                 <Sparkles size={16} className="text-yellow-400" />
@@ -136,12 +137,12 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                                 setSelectedAsset(asset);
                                                 setTitle(asset.description || '');
                                             }}
-                                            className={`relative shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all shadow-lg ${selectedAsset?.id === asset.id ? 'border-purple-500 ring-4 ring-purple-500/20' : 'border-white/5 grayscale hover:grayscale-0 hover:border-white/20'
+                                            className={`relative shrink-0 w-24 h-24 rounded-2xl overflow-hidden border-2 transition-all shadow-lg ${selectedAsset?.id === asset.id ? 'border-dept-creative ring-4 ring-dept-creative/20' : 'border-white/5 grayscale hover:grayscale-0 hover:border-white/20'
                                                 }`}
                                         >
                                             <img src={asset.url} alt="asset" className="w-full h-full object-cover" />
                                             {selectedAsset?.id === asset.id && (
-                                                <div className="absolute inset-0 bg-purple-500/20 flex items-center justify-center">
+                                                <div className="absolute inset-0 bg-dept-creative/20 flex items-center justify-center">
                                                     <Sparkles size={24} className="text-white drop-shadow-lg" />
                                                 </div>
                                             )}
@@ -164,7 +165,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                     <div className="space-y-1.5">
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Product Title</label>
                                         <input
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-purple-500 transition-all font-medium"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-dept-creative transition-all font-medium"
                                             placeholder="Descriptive Title"
                                             value={title}
                                             onChange={e => setTitle(e.target.value)}
@@ -176,7 +177,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                             <DollarSign className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-500" size={16} />
                                             <input
                                                 type="number"
-                                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-10 text-sm text-white outline-none focus:border-emerald-500 transition-all font-mono font-bold"
+                                                className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 pl-10 text-sm text-white outline-none focus:border-dept-royalties transition-all font-mono font-bold"
                                                 value={price}
                                                 onChange={e => setPrice(e.target.value)}
                                             />
@@ -186,7 +187,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Scarcity (Units)</label>
                                         <input
                                             type="number"
-                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-blue-500 transition-all font-bold"
+                                            className="w-full bg-black/40 border border-white/10 rounded-2xl p-4 text-sm text-white outline-none focus:border-dept-distribution transition-all font-bold"
                                             value={inventory}
                                             onChange={e => {
                                                 const val = e.target.value;
@@ -210,7 +211,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                     whileHover={selectedAsset ? { scale: 1.02 } : {}}
                                     whileTap={selectedAsset ? { scale: 0.98 } : {}}
                                     onClick={handleMint}
-                                    className={`px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 shadow-emerald-500/20'
+                                    className={`px-8 py-4 rounded-2xl text-sm font-black uppercase tracking-widest text-white transition-all shadow-2xl flex items-center gap-3 ${!selectedAsset ? 'bg-gray-800 opacity-30 cursor-not-allowed' : 'bg-gradient-to-r from-dept-licensing to-dept-royalties hover:from-dept-licensing/80 hover:to-dept-royalties/80 shadow-dept-royalties/20'
                                         }`}
                                 >
                                     Confirm & Dispatch to Store
@@ -238,11 +239,11 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.05 }}
-                                className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-purple-500/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
+                                className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
                             >
-                                <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-purple-500/5 to-transparent pointer-events-none group-hover:from-purple-500/10 transition-all" />
+                                <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
 
-                                <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-purple-500/30 transition-all shadow-inner">
+                                <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
                                     {product.images[0] ? (
                                         <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                                     ) : (
@@ -251,26 +252,26 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                                 </div>
 
                                 <div className="flex-1 min-w-0 pr-4">
-                                    <h4 className="text-lg font-bold text-white truncate group-hover:text-purple-400 transition-colors uppercase tracking-tight">{product.title}</h4>
+                                    <h4 className="text-lg font-bold text-white truncate group-hover:text-dept-royalties transition-colors uppercase tracking-tight">{product.title}</h4>
                                     <div className="flex items-center gap-4 mt-2">
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                            <Tag size={10} className="text-purple-500" />
+                                            <Tag size={10} className="text-dept-royalties" />
                                             <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">{product.type}</span>
                                         </div>
                                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                            <Package size={10} className="text-teal-500" />
+                                            <Package size={10} className="text-dept-licensing" />
                                             <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">Stock: {product.inventory ?? '∞'}</span>
                                         </div>
                                     </div>
                                 </div>
 
                                 <div className="text-right flex flex-col items-end pr-2">
-                                    <div className="text-2xl font-black text-white group-hover:text-emerald-400 transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                                    <div className="text-2xl font-black text-white group-hover:text-dept-licensing transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
                                         ${(product.price / 100).toFixed(2)}
                                     </div>
-                                    <div className="flex items-center gap-1.5 mt-1 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                                        <span className="text-[8px] font-bold text-emerald-400 uppercase tracking-widest">Active</span>
+                                    <div className="flex items-center gap-1.5 mt-1 bg-dept-licensing/10 px-2 py-0.5 rounded-full border border-dept-licensing/20">
+                                        <div className="w-1.5 h-1.5 rounded-full bg-dept-licensing animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                                        <span className="text-[8px] font-bold text-dept-licensing uppercase tracking-widest">Active</span>
                                     </div>
                                 </div>
                             </motion.div>

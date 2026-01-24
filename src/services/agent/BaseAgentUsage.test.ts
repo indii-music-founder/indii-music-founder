@@ -47,21 +47,13 @@ describe('BaseAgent Usage Defenses', () => {
 
     it('should handle response WITHOUT usage method gracefully', async () => {
         const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
-            stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Response content' } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
-            },
-            response: Promise.resolve({
+        vi.mocked(aiMock.AI.generateContent)
+            .mockResolvedValueOnce({
                 text: () => 'Response content',
-                functionCalls: () => []
-                // Intentionally OMITTING usage()
-            })
-        } as any);
+                functionCalls: () => [], // No function calls, so it returns immediately
+                usage: () => undefined
+                // Intentionally OMITTING usage object return
+            } as any);
 
         const response = await agent.execute('Task');
         expect(response.text).toContain('Response content');
@@ -70,16 +62,8 @@ describe('BaseAgent Usage Defenses', () => {
 
     it('should handle response WITH usage method', async () => {
         const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContentStream).mockResolvedValue({
-            stream: {
-                getReader: () => ({
-                    read: vi.fn()
-                        .mockResolvedValueOnce({ done: false, value: { text: () => 'Response content' } })
-                        .mockResolvedValueOnce({ done: true }),
-                    releaseLock: vi.fn()
-                })
-            },
-            response: Promise.resolve({
+        vi.mocked(aiMock.AI.generateContent)
+            .mockResolvedValueOnce({
                 text: () => 'Response content',
                 functionCalls: () => [],
                 usage: () => ({
@@ -87,8 +71,7 @@ describe('BaseAgent Usage Defenses', () => {
                     candidatesTokenCount: 20,
                     totalTokenCount: 30
                 })
-            })
-        } as any);
+            } as any);
 
         const response = await agent.execute('Task');
         expect(response.text).toContain('Response content');

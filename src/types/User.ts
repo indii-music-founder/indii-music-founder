@@ -13,6 +13,9 @@ export interface SocialLinks {
     beatport?: string;
     pro?: string; // Performing Rights Org
     distributor?: string;
+    youtube?: string;
+    facebook?: string;
+    tiktok?: string;
 }
 
 export interface ReleaseDetails {
@@ -23,6 +26,9 @@ export interface ReleaseDetails {
     mood: string;
     themes: string;
     lyrics: string;
+    coverArtUrl?: string;
+    releaseDate?: string;
+    tracks?: Array<{ title: string; duration: string; collaborators?: string }>;
 }
 
 export interface BrandAsset {
@@ -47,6 +53,16 @@ export interface BrandKit {
     visualsAcknowledged?: boolean; // True if user confirmed they have no visual assets yet
     targetAudience?: string; // Target demographic for marketing
     visualIdentity?: string; // Brand visual style/vibe
+    digitalAura?: string[]; // Array of visual vibe tags (e.g. ['Cyberpunk', 'Luxury'])
+    healthHistory?: Array<{
+        id: string;
+        date: string;
+        type: string;
+        score: number;
+        content: string;
+        issues: string[];
+        suggestions: string[];
+    }>;
 }
 
 // Node workflow types needed for SavedWorkflow
@@ -88,6 +104,14 @@ export interface UserPreferences {
     [key: string]: any; // Allow extensibility
 }
 
+export interface ShippingAddress {
+    street: string;
+    city: string;
+    state: string;
+    zip: string;
+    country: string;
+}
+
 export interface UserMembership {
     tier: 'free' | 'pro' | 'enterprise';
     expiresAt: Timestamp | null;
@@ -120,6 +144,7 @@ export interface UserProfile {
     // Social & Commerce
     accountType: 'fan' | 'artist' | 'label' | 'admin';
     socialStats?: SocialStats;
+    shippingAddress?: ShippingAddress;
 
     // Legacy support aliases
     avatarUrl?: string;

@@ -27,7 +27,7 @@ export const EndFrameSelector: React.FC<EndFrameSelectorProps> = ({
                     <X size={24} />
                 </button>
             </div>
-            <div className="grid grid-cols-4 gap-4 overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 overflow-y-auto custom-scrollbar">
                 {generatedHistory.filter(i => i.type === 'image' && i.id !== currentItemId).map(histItem => (
                     <button
                         key={histItem.id}

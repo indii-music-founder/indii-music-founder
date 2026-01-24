@@ -4,7 +4,7 @@ import { MyComposition } from '../../remotion/MyComposition';
 import { VideoProject } from '../../store/videoEditorStore';
 
 interface VideoPreviewProps {
-    playerRef: React.RefObject<PlayerRef | null>;
+    playerRef: React.RefObject<PlayerRef>;
     project: VideoProject;
     onFrameUpdate?: (frame: number) => void;
 }
@@ -33,7 +33,7 @@ export const VideoPreview: React.FC<VideoPreviewProps> = ({ playerRef, project, 
                     }}
                     controls
                     loop
-                    onFrameUpdate={(e) => onFrameUpdate?.(e.frame)}
+
                 />
 
                 {/* Glassmorphic Overlay Border */}

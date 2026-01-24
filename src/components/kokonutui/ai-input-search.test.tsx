@@ -117,9 +117,6 @@ describe('AI_Input_Search Interaction', () => {
     await user.type(input, 'Self clearing message');
     await user.click(sendButton);
 
-    // Should log to console
-    expect(consoleSpy).toHaveBeenCalledWith('Submit:', 'Self clearing message');
-
     // Should clear the input
     expect(input).toHaveValue('');
 

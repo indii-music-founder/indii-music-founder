@@ -102,7 +102,7 @@ describe('QA Stress Tests: Reliability & Stability', () => {
 
             // Trip the breaker
             for (let i = 0; i < failureThreshold; i++) {
-                try { await breaker.execute(action); } catch { }
+                try { await breaker.execute(action); } catch { /* expected */ }
             }
             expect(breaker.getState()).toBe(CircuitState.OPEN);
 
@@ -120,7 +120,7 @@ describe('QA Stress Tests: Reliability & Stability', () => {
 
             // Trip the breaker
             for (let i = 0; i < failureThreshold; i++) {
-                try { await breaker.execute(action); } catch { }
+                try { await breaker.execute(action); } catch { /* expected */ }
             }
 
             // Advance time

@@ -50,7 +50,7 @@
   /* ─────────────────────────────────────────────────────────────────────────────
    * SURFACE COLORS - Professional dark palette
    * ───────────────────────────────────────────────────────────────────────────── */
-  --color-bg-dark: #0F172A;
+  --color-bg-dark: #0d1117;
   --color-surface: #1E293B;
   --color-surface-elevated: #334155;
 
@@ -197,20 +197,25 @@
    * Usage: text-dept-royalties, bg-dept-marketing, border-dept-legal, etc.
    * These mirror the :root variables for Tailwind utility generation
    * ═══════════════════════════════════════════════════════════════════════════ */
-  --color-dept-royalties: #FFC107;
-  --color-dept-distribution: #2196F3;
-  --color-dept-marketing: #E91E63;
-  --color-dept-legal: #455A64;
-  --color-dept-creative: #9C27B0;
-  --color-dept-touring: #FF5722;
-  --color-dept-publishing: #8BC34A;
-  --color-dept-social: #00BCD4;
-  --color-dept-licensing: #009688;
-  --color-dept-brand: #FFB300;
-  --color-dept-campaign: #FF7043;
-  --color-dept-default: #78909C;
+  --color-dept-royalties: var(--color-dept-royalties);
+  --color-dept-distribution: var(--color-dept-distribution);
+  --color-dept-marketing: var(--color-dept-marketing);
+  --color-dept-legal: var(--color-dept-legal);
+  --color-dept-creative: var(--color-dept-creative);
+  --color-dept-touring: var(--color-dept-touring);
+  --color-dept-publishing: var(--color-dept-publishing);
+  --color-dept-social: var(--color-dept-social);
+  --color-dept-licensing: var(--color-dept-licensing);
+  --color-dept-brand: var(--color-dept-brand);
+  --color-dept-campaign: var(--color-dept-campaign);
+  --color-dept-default: var(--color-dept-default);
 
-  /* Sonic OS Palette */
+  /* ═══════════════════════════════════════════════════════════════════════════
+   * SYSTEM COLORS
+   * ═══════════════════════════════════════════════════════════════════════════ */
+  --color-bg-dark: #0d1117;
+  /* GitHub Dark - Standard App Background */
+
   --color-sonic-purple: var(--sonic-purple);
   --color-sonic-blue: var(--sonic-blue);
   --color-sonic-yellow: var(--sonic-yellow);
@@ -238,17 +243,19 @@
 
   /* Neon Glow Utilities */
   .glow-text {
-    text-shadow: 0 0 10px rgba(168, 85, 247, 0.5);
+    text-shadow: 0 0 10px hsl(var(--sonic-purple) / 0.5);
   }
 
   .glow-border {
-    box-shadow: 0 0 15px rgba(168, 85, 247, 0.3);
+    box-shadow: 0 0 15px hsl(var(--sonic-purple) / 0.3);
   }
 
   html {
     /* Prevent IOS bounce and ensure full height */
     height: 100%;
     overflow-x: hidden;
+    /* Prevent text zooming on orientation change */
+    -webkit-text-size-adjust: 100%;
     transition: background-color 0.5s ease-in-out, color 0.5s ease-in-out;
   }
 
@@ -278,6 +285,7 @@
   select,
   textarea {
     font-size: 16px !important;
+    touch-action: manipulation;
   }
 
   /* Ensure adequate touch targets */
@@ -286,6 +294,7 @@
   [role="button"] {
     min-height: 44px;
     min-width: 44px;
+    touch-action: manipulation;
   }
 }
 
@@ -377,7 +386,7 @@
 }
 
 .shine-text {
-  background: linear-gradient(90deg, transparent, rgba(168, 85, 247, 0.5), transparent);
+  background: linear-gradient(90deg, transparent, hsl(var(--sonic-purple) / 0.5), transparent);
   background-size: 200% 100%;
   background-clip: text;
   -webkit-background-clip: text;

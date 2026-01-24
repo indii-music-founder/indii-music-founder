@@ -34,7 +34,7 @@ export class PublicistService {
                 // Safe parsing with fallback to ensure UI doesn't crash on schema mismatches
                 const parsed = CampaignSchema.safeParse({ id: doc.id, ...data });
                 if (parsed.success) {
-                    return parsed.data;
+                    return { ...parsed.data, id: doc.id } as Campaign;
                 }
                 console.warn(`[PublicistService] Invalid campaign ${doc.id}:`, parsed.error);
                 // Return data casted to Campaign as fallback, ensuring budget exists
@@ -63,7 +63,7 @@ export class PublicistService {
                 const data = doc.data();
                 const parsed = ContactSchema.safeParse({ id: doc.id, ...data });
                 if (parsed.success) {
-                    return parsed.data;
+                    return { ...parsed.data, id: doc.id } as Contact;
                 }
                 console.warn(`[PublicistService] Invalid contact ${doc.id}:`, parsed.error);
                 return { ...data, id: doc.id } as Contact;

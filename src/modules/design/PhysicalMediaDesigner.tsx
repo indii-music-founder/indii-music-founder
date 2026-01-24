@@ -25,7 +25,7 @@ export const PhysicalMediaDesigner: React.FC = () => {
     const [activeTool, setActiveTool] = useState('select');
     const [rightPanelTab, setRightPanelTab] = useState<'layers' | 'director'>('layers');
 
-    // Mock State for Layers
+    // Production State: Layers should be managed by a robust Canvas/Design engine
     const [layers, setLayers] = useState<Layer[]>([
         { id: '1', name: 'Background', type: 'shape', visible: true, locked: true },
         { id: '3', name: 'Title Text', type: 'text', visible: true, locked: false },
@@ -50,11 +50,12 @@ export const PhysicalMediaDesigner: React.FC = () => {
         setIsThinking(true);
 
         try {
-            const director = agentRegistry.get('director');
-            // If director not found, simulate response for demo purposes
+            // REAL PRODUCTION BINDING: Use getAsync to handle lazy-loaded agents
+            const director = await agentRegistry.getAsync('director');
+
             if (!director) {
-                await new Promise(resolve => setTimeout(resolve, 1500));
-                setMessages(prev => [...prev, { role: 'agent', content: "That's a bold choice. The yellow really pops against the dark background. Maybe add some gold foil texture?" }]);
+                toast.error("Creative Director agent failed to load.");
+                setMessages(prev => [...prev, { role: 'agent', content: "I'm having trouble connecting to my vision. One moment..." }]);
                 return;
             }
 
@@ -70,8 +71,8 @@ export const PhysicalMediaDesigner: React.FC = () => {
             setMessages(prev => [...prev, { role: 'agent', content: response.text }]);
         } catch (error) {
             console.error("Agent error:", error);
-            // Fallback response instead of error
-            setMessages(prev => [...prev, { role: 'agent', content: "I'm seeing a vision of gold and obsidian. Let's try that." }]);
+            // Fallback response with production-grade messaging
+            setMessages(prev => [...prev, { role: 'agent', content: "Something disrupted the creative flow. Let's try rephrasing that." }]);
         } finally {
             setIsThinking(false);
         }
@@ -261,6 +262,7 @@ export const PhysicalMediaDesigner: React.FC = () => {
                                             <button
                                                 onClick={handleSendMessage}
                                                 disabled={!chatInput.trim() || isThinking}
+                                                data-testid="send-message-button"
                                                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-[#FACC15] text-black rounded-lg hover:bg-[#EAB308] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                             >
                                                 <Send className="w-3 h-3" />

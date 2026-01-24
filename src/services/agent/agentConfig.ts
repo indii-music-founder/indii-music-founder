@@ -1,4 +1,4 @@
-import { AgentConfig } from './BaseAgent';
+import { AgentConfig } from './types';
 import { MarketingAgent } from './definitions/MarketingAgent';
 import { LegalAgent } from '@/agents/legal/config';
 import { FinanceAgent } from './definitions/FinanceAgent';
@@ -14,6 +14,7 @@ import { ScreenwriterAgent } from '@/agents/screenwriter/config';
 import { ProducerAgent } from '@/agents/producer/config';
 import { SecurityAgent } from './definitions/SecurityAgent';
 import { DevOpsAgent } from './definitions/DevOpsAgent';
+import { DistributionAgent } from './definitions/DistributionAgent';
 
 export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
@@ -30,9 +31,12 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     LicensingAgent,
     BrandAgent,
     DevOpsAgent,
-    SecurityAgent
+    SecurityAgent,
+    DistributionAgent
 ];
 
 // Re-export from types.ts for convenience
 // The canonical VALID_AGENT_IDS is defined in types.ts to avoid circular dependencies
-export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST, type ValidAgentId } from './types';
+export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
+export type { ValidAgentId } from './types';
+

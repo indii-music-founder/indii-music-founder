@@ -39,9 +39,9 @@ export default function FilePreview({ variant = 'default' }: FilePreviewProps) {
     }
 
     return (
-        <div className={cn("flex flex-col h-full bg-[#0d1117]", variant === 'compact' && "bg-transparent")}>
+        <div className={cn("flex flex-col h-full bg-bg-dark", variant === 'compact' && "bg-transparent")}>
             {variant === 'default' && (
-                <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-[#0d1117]">
+                <div className="p-4 border-b border-white/5 flex items-center gap-3 bg-bg-dark">
                     <span className="text-blue-400">
                         {getFileIcon(selectedNode.fileType)}
                     </span>

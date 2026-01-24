@@ -1,17 +1,17 @@
 {
-    "compilerOptions": {
-        "target": "ES2022",
-        "module": "CommonJS",
-        "moduleResolution": "Node",
-        "outDir": "dist-electron",
-        "rootDir": "electron",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
-        "declaration": false
-    },
-    "include": [
-        "electron/**/*"
-    ]
+  "compilerOptions": {
+    "declaration": false,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "outDir": "dist-electron",
+    "rootDir": "electron",
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "ES2022"
+  },
+  "include": [
+    "electron/**/*"
+  ]
 }

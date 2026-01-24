@@ -95,7 +95,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
     const isOwnProfile = currentUser?.id === targetId;
 
     return (
-        <div className="relative bg-[#0d1117] border-b border-gray-800">
+        <div className="relative bg-bg-dark border-b border-gray-800">
             {/* Banner */}
             <div className="h-48 w-full overflow-hidden bg-gradient-to-r from-purple-900 to-blue-900">
                 {bannerUrl && (

@@ -1,6 +1,7 @@
 import { useStore, type HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
+import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { ToolFunctionArgs, AnyToolFunction } from '../types';
 
@@ -70,6 +71,8 @@ interface GenerateImageArgs extends ToolFunctionArgs {
     resolution?: string;
     aspectRatio?: string;
     negativePrompt?: string;
+    style?: string;
+    quality?: string;
     seed?: string;
     referenceImageIndex?: number;
     referenceAssetIndex?: number;
@@ -93,8 +96,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
-        console.log("DirectorTools: generate_image called with args", args);
-        const { studioControls, addToHistory, currentProjectId, userProfile } = useStore.getState();
+        const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
 
@@ -130,14 +132,48 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             }
         }
 
+        // Synthesize Whisk references into the prompt if any are checked
+        let finalPrompt = args.prompt;
+        const hasWhiskRefs = whiskState && (
+            whiskState.subjects.some(s => s.checked) ||
+            whiskState.scenes.some(s => s.checked) ||
+            whiskState.styles.some(s => s.checked)
+        );
+
+        if (hasWhiskRefs) {
+            const { WhiskService } = await import('@/services/WhiskService');
+            finalPrompt = WhiskService.synthesizeWhiskPrompt(args.prompt, whiskState);
+
+            // If no source images yet and precise mode is on, get them from Whisk
+            if (!sourceImages && whiskState.preciseReference) {
+                const whiskSourceImages = WhiskService.getSourceImages(whiskState);
+                if (whiskSourceImages && whiskSourceImages.length > 0) {
+                    sourceImages = whiskSourceImages;
+                }
+            }
+        }
+
+        // Get aspect ratio from locked style preset (if any)
+        let effectiveAspectRatio = args.aspectRatio || studioControls.aspectRatio || '1:1';
+        if (hasWhiskRefs) {
+            const { WhiskService } = await import('@/services/WhiskService');
+            const lockedAspectRatio = await WhiskService.getLockedAspectRatio(whiskState);
+            if (lockedAspectRatio) {
+                effectiveAspectRatio = lockedAspectRatio;
+            }
+        }
+
         // Use the Unified ImageGenerationService
         try {
             const results = await ImageGeneration.generateImages({
-                prompt: args.prompt,
+                prompt: finalPrompt,
                 count: args.count || 1,
                 resolution: args.resolution || studioControls.resolution,
-                aspectRatio: args.aspectRatio || studioControls.aspectRatio || '1:1',
+                aspectRatio: effectiveAspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
+                mediaResolution: args.quality === 'hd' ? 'high' : 'medium',
+                model: 'pro', // Default to pro for agent-driven creative tasks
+                thinking: true,
                 seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
                 sourceImages,
                 userProfile
@@ -156,7 +192,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
                 return toolSuccess({
                     count: results.length,
-                    image_ids: results.map(r => r.id)
+                    image_ids: results.map(r => r.id),
+                    urls: results.map(r => r.url)
                 }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
             }
             return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");
@@ -202,7 +239,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
             return toolError("Could not process image data from uploads.", "PROCESS_FAILED");
         }
 
-        const results = await Editing.batchEdit({
+        const { results, failures } = await Editing.batchEdit({
             images: imageDataList,
             prompt: args.prompt,
             onProgress: (current, total) => {
@@ -226,10 +263,16 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                     projectId: currentProjectId
                 });
             });
+
+            const failureInfo = failures.length > 0
+                ? ` (${failures.length} failed: ${failures.map(f => `image ${f.index + 1}: ${f.error}`).join(', ')})`
+                : '';
+
             return toolSuccess({
                 count: results.length,
-                image_ids: results.map(r => r.id)
-            }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}".`);
+                image_ids: results.map(r => r.id),
+                failures: failures.length > 0 ? failures : undefined
+            }, `Successfully edited ${results.length} images based on instruction: "${args.prompt}"${failureInfo}.`);
         }
         return toolError("Batch edit completed but no images were returned.", "EMPTY_RESULT");
     }),
@@ -389,5 +432,31 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         return toolSuccess({
             anchorId: anchorItem.id
         }, "Entity Anchor set successfully. Character consistency is now locked.");
+    }),
+
+    analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        const { uploadedAudio } = useStore.getState();
+
+        const audioItem = uploadedAudio[args.uploadedAudioIndex];
+        if (!audioItem) {
+            return toolError(`No audio found at index ${args.uploadedAudioIndex}. Please upload audio first.`, "NOT_FOUND");
+        }
+
+        try {
+            // Convert Data URI to File/Blob
+            const fetchRes = await fetch(audioItem.url);
+            const blob = await fetchRes.blob();
+            const file = new File([blob], "audio_track.mp3", { type: blob.type });
+
+            const profile = await audioIntelligence.analyze(file);
+
+            return toolSuccess(
+                profile,
+                `Audio analysis complete for "${audioItem.prompt || 'Track'}". Semantic Vibe: ${profile.semantic.mood.join(', ')}`
+            );
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze audio: ${message}`, "ANALYSIS_FAILED");
+        }
     })
 };

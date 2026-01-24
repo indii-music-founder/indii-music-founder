@@ -8,10 +8,12 @@ export enum Status {
     ERROR = 'ERROR',
 }
 
+export type AssetData = Record<string, unknown>;
+
 export interface AnyAsset {
     assetType: string;
     title?: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 // --- Node-Based Workflow Types ---
@@ -27,8 +29,8 @@ export type DepartmentNodeData = {
 export type InputNodeData = {
     nodeType: 'input';
     prompt: string;
-    status?: Status; // Added status
-    result?: any; // Added result
+    status?: Status;
+    result?: unknown;
 };
 
 export type AudioSegmentNodeData = {
@@ -36,8 +38,8 @@ export type AudioSegmentNodeData = {
     segmentLabel: string;
     startTime: number;
     endTime: number;
-    status?: Status; // Added status
-    result?: any; // Added result
+    status?: Status;
+    result?: unknown;
 };
 
 export type OutputNodeData = {
@@ -52,12 +54,12 @@ export type LogicNodeData = {
     label: string;
     status: Status;
     config: {
-        condition?: string; // For Router: e.g., "bpm > 120"
-        message?: string; // For Gatekeeper: "Approve this art?"
-        variableKey?: string; // For Variable nodes
-        [key: string]: any;
+        condition?: string;
+        message?: string;
+        variableKey?: string;
+        [key: string]: unknown;
     };
-    result?: any;
+    result?: unknown;
 };
 
 export type NodeData = DepartmentNodeData | InputNodeData | OutputNodeData | AudioSegmentNodeData | LogicNodeData;
@@ -83,7 +85,7 @@ export interface KnowledgeAsset extends AnyAsset {
     assetType: 'knowledge';
     content: string;
     sources: { name: string; content: string }[];
-    retrievalDetails?: any[];
+    retrievalDetails?: Record<string, unknown>[];
     reasoningTrace?: string[];
 }
 
@@ -92,7 +94,7 @@ export interface KnowledgeAsset extends AnyAsset {
 
 export interface AudioAnalysisJob {
     id: string;
-    [key: string]: any;
+    [key: string]: unknown;
 }
 
 export interface ConversationFile {
