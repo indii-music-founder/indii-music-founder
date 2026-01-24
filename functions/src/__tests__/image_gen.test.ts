@@ -14,8 +14,19 @@ const mocks = vi.hoisted(() => {
     };
 });
 
-// Mock global.fetch
-global.fetch = vi.fn();
+// Mock @google/genai
+vi.mock('@google/genai', () => {
+    return {
+        GoogleGenAI: class {
+            models = {
+                generateContent: mocks.generateContent,
+                generateContentStream: mocks.generateContentStream,
+                generateImages: mocks.generateImages,
+                editImage: mocks.editImage
+            };
+        }
+    };
+});
 
 // Mock firebase-admin
 vi.mock('firebase-admin', () => ({
@@ -56,7 +67,7 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
-        it('should call Gemini REST API with correct parameters', async () => {
+        it('should call GoogleGenAI.models.generateContent with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
@@ -64,42 +75,39 @@ describe('Image and Content Generation Functions', () => {
                 count: 2
             };
 
-            vi.mocked(fetch).mockResolvedValue({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            role: 'model',
-                            parts: [
-                                { inlineData: { data: 'base64-image-1', mimeType: 'image/png' }, thoughtSignature: 'sig1' },
-                                { inlineData: { data: 'base64-image-2', mimeType: 'image/png' }, thoughtSignature: 'sig2' }
-                            ]
-                        }
-                    }]
-                })
-            } as any);
+            mocks.generateContent.mockResolvedValue({
+                candidates: [{
+                    content: {
+                        parts: [
+                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
+                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
+                        ]
+                    }
+                }]
+            });
 
             const result = await generateImageV3(data, context);
 
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('generativelanguage.googleapis.com'),
-                expect.objectContaining({
-                    method: 'POST',
-                    body: expect.stringContaining('"text":"a beautiful cat"')
+            expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
+                contents: [{ role: 'user', parts: [{ text: 'a beautiful cat' }] }],
+                config: expect.objectContaining({
+                    responseModalities: ['IMAGE'],
+                    candidateCount: 2,
+                    imageConfig: { aspectRatio: '1:1' }
                 })
-            );
+            }));
 
             expect(result).toEqual({
                 images: [
-                    { bytesBase64Encoded: 'base64-image-1', mimeType: 'image/png', thoughtSignature: 'sig1' },
-                    { bytesBase64Encoded: 'base64-image-2', mimeType: 'image/png', thoughtSignature: 'sig2' }
+                    { bytesBase64Encoded: 'base64-image-1', mimeType: 'image/png' },
+                    { bytesBase64Encoded: 'base64-image-2', mimeType: 'image/png' }
                 ]
             });
         });
     });
 
     describe('editImage', () => {
-        it('should construct multimodal parts correctly with dummy signature if history is missing', async () => {
+        it('should construct multimodal parts correctly', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'add a hat',
@@ -109,34 +117,28 @@ describe('Image and Content Generation Functions', () => {
                 maskMimeType: 'image/png'
             };
 
-            vi.mocked(fetch).mockResolvedValue({
-                ok: true,
-                json: async () => ({
-                    candidates: [{
-                        content: {
-                            parts: [{ inlineData: { data: 'base64-edited', mimeType: 'image/png' }, thoughtSignature: 'sig-edit' }]
-                        }
-                    }]
-                })
-            } as any);
-
-            const result = await editImage(data, context);
-
-            expect(fetch).toHaveBeenCalledWith(
-                expect.stringContaining('generativelanguage.googleapis.com'),
-                expect.objectContaining({
-                    body: expect.stringContaining('context_engineering_is_the_way_to_go')
-                })
-            );
-
-            expect(result).toEqual({
-                images: [
-                    { bytesBase64Encoded: 'base64-edited', mimeType: 'image/png', thoughtSignature: 'sig-edit' }
-                ]
+            mocks.generateContent.mockResolvedValue({
+                candidates: [{
+                    content: {
+                        parts: [{ inlineData: { data: 'base64-edited', mimeType: 'image/png' } }]
+                    }
+                }]
             });
+
+            await editImage(data, context);
+
+            expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
+                contents: [{
+                    role: 'user',
+                    parts: expect.arrayContaining([
+                        { text: 'add a hat' },
+                        { inlineData: { data: 'base64-orig', mimeType: 'image/png' } },
+                        { inlineData: { data: 'base64-mask', mimeType: 'image/png' } }
+                    ])
+                }]
+            }));
         });
     });
-
 
     describe('generateContentStream', () => {
         it('should yield chunks from SDK stream', async () => {
