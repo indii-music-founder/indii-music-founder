@@ -67,6 +67,11 @@ export interface GoogleSearchRetrieval {
 
 export interface CodeExecution {}
 
+export interface FunctionCallingConfig {
+    mode?: 'MODE_UNSPECIFIED' | 'AUTO' | 'ANY' | 'NONE';
+    allowedFunctionNames?: string[];
+}
+
 export interface Tool {
     functionDeclarations?: FunctionDeclaration[];
     googleSearch?: Record<string, never>;
@@ -75,6 +80,7 @@ export interface Tool {
 }
 
 export interface ToolConfig {
+    functionCallingConfig?: FunctionCallingConfig;
     functionDeclarations?: FunctionDeclaration[];
     googleSearch?: Record<string, never>;
     googleSearchRetrieval?: GoogleSearchRetrieval;
@@ -92,8 +98,15 @@ export interface ThinkingConfig {
     budgetTokenCount?: number;
 }
 
+export interface PersonGenerationConfig {
+    dontAllowPeople?: boolean;
+    allowAdult?: boolean;
+    allowAll?: boolean;
+}
+
 export interface ImageConfig {
     imageSize?: '1K' | '2K' | '4K' | string;
+    personGenerationConfig?: PersonGenerationConfig;
 }
 
 export interface PrebuiltVoiceConfig {
@@ -117,6 +130,9 @@ export interface GenerationConfig {
     candidateCount?: number;
     responseMimeType?: string;
     responseSchema?: Record<string, unknown>;
+    responseLogprobs?: boolean;
+    logprobs?: number;
+    audioTimestamp?: boolean;
     // Extended SDK properties
     thinkingConfig?: ThinkingConfig;
     imageConfig?: ImageConfig;
@@ -125,6 +141,7 @@ export interface GenerationConfig {
     responseModalities?: ('TEXT' | 'IMAGE' | 'AUDIO')[];
     systemInstruction?: string;
     tools?: Tool[];
+    toolConfig?: ToolConfig;
     // Image generation specific
     sampleCount?: number;
     numberOfImages?: number;
@@ -151,6 +168,7 @@ export interface GenerateContentRequest {
     config?: GenerationConfig;
     systemInstruction?: string;
     tools?: Tool[];
+    toolConfig?: ToolConfig;
     safetySettings?: SafetySetting[];
     apiKey?: string;
 }
@@ -205,6 +223,20 @@ export interface CitationMetadata {
     citationSources: CitationSource[];
 }
 
+export interface LogprobsResult {
+    // Basic structure for logprobs (can be expanded)
+    topCandidates: {
+        candidates: {
+            token: string;
+            logProbability: number;
+        }[];
+    }[];
+    chosenCandidates: {
+        token: string;
+        logProbability: number;
+    }[];
+}
+
 export interface Candidate {
     content: {
         role: string;
@@ -213,6 +245,7 @@ export interface Candidate {
     finishReason?: 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER';
     safetyRatings?: SafetyRating[];
     citationMetadata?: CitationMetadata;
+    logprobsResult?: LogprobsResult;
     index?: number;
 }
 
@@ -317,6 +350,9 @@ export interface GenerateContentOptions {
     config?: GenerationConfig;
     systemInstruction?: string;
     tools?: Tool[];
+    toolConfig?: ToolConfig;
+    thoughtSignature?: string;
+    safetySettings?: SafetySetting[];
     thoughtSignature?: string;
     signal?: AbortSignal;
     timeout?: number;
@@ -332,6 +368,8 @@ export interface GenerateStreamOptions {
     config?: GenerationConfig;
     systemInstruction?: string;
     tools?: Tool[];
+    toolConfig?: ToolConfig;
+    safetySettings?: SafetySetting[];
 }
 
 export interface GenerateVideoOptions {
