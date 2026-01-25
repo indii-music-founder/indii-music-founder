@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Minimize2 as MinimizeIcon, Maximize2 } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2 } from 'lucide-react';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
@@ -24,6 +24,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const setCommandBarDetached = useStore(state => state.setCommandBarDetached);
     const windowSize = useStore(state => state.agentWindowSize);
     const setAgentWindowSize = useStore(state => state.setAgentWindowSize);
+    const userProfile = useStore(state => state.userProfile);
 
     const dragControls = useDragControls();
 
@@ -92,6 +93,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
         return undefined;
     }, []);
 
+    // Placeholder state for features that seemed to be missing definitions
+    const [showHistory, setShowHistory] = useState(false);
+    const [ConversationHistoryList, setConversationHistoryList] = useState<React.ComponentType<any> | null>(null);
+
+    const [showInvite, setShowInvite] = useState(false);
+    const [AgentSelector, setAgentSelector] = useState<React.ComponentType<any> | null>(null);
+
     useEffect(() => {
         if (showHistory && !ConversationHistoryList) {
             import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
@@ -106,6 +114,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
     // Get the first available reference image to use as avatar
     const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
+
     const itemContent = useCallback((index: number, msg: AgentMessage) => {
         const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
             ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
@@ -295,6 +304,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 }}
                                 className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95"
                                 title="Resume Feed"
+                                aria-label="Scroll to newest messages"
                             >
                                 <RefreshCw size={18} />
                             </motion.button>
@@ -310,7 +320,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                     {/* Footer Status Bar (Voice/Processing) */}
                     {(isListening || isProcessing || transcript) && (
-                        <div className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30">
+                        <div
+                            className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30"
+                            role="status"
+                            aria-live="polite"
+                        >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 {isProcessing ? (
                                     <>

@@ -112,6 +112,10 @@ describe('ChatOverlay Accessibility', () => {
         isAgentProcessing: false,
         currentModule: 'dashboard',
         setModule: vi.fn(),
+        commandBarInput: '',
+        setCommandBarInput: vi.fn(),
+        commandBarAttachments: [],
+        setCommandBarAttachments: vi.fn(),
     };
 
     beforeEach(() => {
@@ -201,7 +205,7 @@ describe('ChatOverlay Accessibility', () => {
         fireEvent.click(screen.getByTestId('simulate-scroll-up'));
 
         // Should be visible
-        const resumeBtn = screen.getByRole('button', { name: 'Resume Feed' });
+        const resumeBtn = screen.getByRole('button', { name: 'Scroll to newest messages' });
         expect(resumeBtn).toBeInTheDocument();
     });
 
