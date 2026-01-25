@@ -38,7 +38,7 @@ export class VideoUploadService {
         // 1. Prepare Metadata (Best Practice: Cache-Control & Content-Type)
         const uploadMetadata = {
             contentType: file.type || 'video/mp4',
-            cacheControl: 'public, max-age=3600',
+            cacheControl: 'public, max-age=31536000',
             customMetadata: metadata
         };
 

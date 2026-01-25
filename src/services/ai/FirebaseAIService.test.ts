@@ -36,6 +36,14 @@ vi.mock('firebase/firestore', () => ({
     getDoc: vi.fn()
 }));
 
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(),
+    ref: vi.fn(),
+    uploadString: vi.fn(),
+    uploadBytes: vi.fn(),
+    getDownloadURL: vi.fn().mockResolvedValue('https://mock-storage-url.com/image.png')
+}));
+
 // Mock firebase/ai
 vi.mock('firebase/ai', () => {
     const mockModel = {
@@ -304,11 +312,14 @@ describe('FirebaseAIService', () => {
         await expect(service.generateText('test')).rejects.toThrow('AI Service not properly initialized');
     });
 
-    it('should handle generateVideo with polling', async () => {
+    it('should handle generateVideo with polling and enforce Veo 3.1', async () => {
         const { httpsCallable } = await import('firebase/functions');
         const { getDoc } = await import('firebase/firestore');
 
-        (httpsCallable as any).mockReturnValue(vi.fn().mockResolvedValue({ data: {} }));
+        const mockVideoJob = vi.fn().mockResolvedValue({ data: {} });
+        (httpsCallable as any).mockReturnValue(mockVideoJob);
+
+        // Mock polling responses
         (getDoc as any).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({ status: 'pending' })
@@ -319,11 +330,35 @@ describe('FirebaseAIService', () => {
 
         const result = await service.generateVideo({
             prompt: 'Cinematic video',
-            model: 'veo-v1',
             config: { durationSeconds: 5 }
         });
 
         expect(result).toBe('http://video.mp4');
+
+        // Verify defaults and sanitation
+        expect(mockVideoJob).toHaveBeenCalledWith(expect.objectContaining({
+            model: AI_MODELS.VIDEO.GENERATION, // Veo 3.1 Default
+            prompt: 'Cinematic video'
+        }));
+    });
+
+    it('should respect Remote Config overrides in generateVideo', async () => {
+        const { httpsCallable } = await import('firebase/functions');
+        const mockVideoJob = vi.fn().mockResolvedValue({ data: {} });
+        (httpsCallable as any).mockReturnValue(mockVideoJob);
+
+        // Inject override via private remoteConfig state (simulating fetchAndActivate result)
+        // 'VIDEO_GEN' matches the key for 'veo-3.1-generate-preview'
+        service['remoteConfig'].overrides['VIDEO_GEN'] = 'veo-4-preview';
+
+        await service.generateVideo({
+            prompt: 'Override test',
+            // No model provided, should look up default mapping VIDEO_GEN -> veo-4-preview
+        }).catch(() => { }); // Catch polling timeout (we only care about initial call)
+
+        expect(mockVideoJob).toHaveBeenCalledWith(expect.objectContaining({
+            model: 'veo-4-preview'
+        }));
     });
 
     it('should retry on transient errors', async () => {
@@ -379,5 +414,56 @@ describe('FirebaseAIService', () => {
         // Should NOT throw
         await service.bootstrap();
         expect(service['useFallbackMode']).toBe(true);
+    });
+
+    it('should generate image and upload to storage', async () => {
+        // Mock generation response with image data
+        mockGenerateContent.mockResolvedValueOnce({
+            response: {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            inlineData: {
+                                mimeType: 'image/png',
+                                data: 'base64-image-data'
+                            }
+                        }]
+                    }
+                }]
+            }
+        });
+
+        const { uploadString, getDownloadURL } = await import('firebase/storage');
+
+        const result = await service.generateImage('test prompt');
+
+        expect(uploadString).toHaveBeenCalled();
+        expect(getDownloadURL).toHaveBeenCalled();
+        expect(result).toBe('https://mock-storage-url.com/image.png');
+    });
+
+    it('should edit image and upload to storage', async () => {
+        // Mock generation response with image data
+        mockGenerateContent.mockResolvedValueOnce({
+            response: {
+                candidates: [{
+                    content: {
+                        parts: [{
+                            inlineData: {
+                                mimeType: 'image/png',
+                                data: 'edited-base64-data'
+                            }
+                        }]
+                    }
+                }]
+            }
+        });
+
+        const { uploadString } = await import('firebase/storage');
+
+        const result = await service.editImage('data:image/jpeg;base64,original', 'make it better');
+
+        expect(uploadString).toHaveBeenCalled();
+        expect(result).toBe('https://mock-storage-url.com/image.png');
     });
 });

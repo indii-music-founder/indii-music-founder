@@ -36,7 +36,11 @@ describe('AudioFidelityFeature', () => {
         mockChild.stderr = new EventEmitter();
         mockSpawn.mockReturnValue(mockChild);
 
-        const executePromise = feature.execute({ filePath: 'test.wav' });
+        const executePromise = feature.execute({
+            filePath: 'test.wav',
+            targetStandard: 'CD',
+            pythonPath: '/usr/bin/python3'
+        });
 
         // Simulate script output
         const mockOutput = JSON.stringify({
@@ -71,7 +75,11 @@ describe('AudioFidelityFeature', () => {
         mockChild.stderr = new EventEmitter();
         mockSpawn.mockReturnValue(mockChild);
 
-        const executePromise = feature.execute({ filePath: 'bad.wav' });
+        const executePromise = feature.execute({
+            filePath: 'bad.wav',
+            targetStandard: 'CD',
+            pythonPath: '/usr/bin/python3'
+        });
 
         mockChild.stderr.emit('data', Buffer.from('File not found'));
         mockChild.emit('close', 1);
@@ -89,7 +97,11 @@ describe('AudioFidelityFeature', () => {
         mockChild.stderr = new EventEmitter();
         mockSpawn.mockReturnValue(mockChild);
 
-        const executePromise = feature.execute({ filePath: 'corrupt.wav' });
+        const executePromise = feature.execute({
+            filePath: 'corrupt.wav',
+            targetStandard: 'CD',
+            pythonPath: '/usr/bin/python3'
+        });
 
         mockChild.stdout.emit('data', Buffer.from('Invalid JSON Output'));
         mockChild.emit('close', 0);
@@ -101,12 +113,16 @@ describe('AudioFidelityFeature', () => {
     });
 
     it('should handle process spawning error', async () => {
-         const mockChild = new EventEmitter() as any;
+        const mockChild = new EventEmitter() as any;
         mockChild.stdout = new EventEmitter();
         mockChild.stderr = new EventEmitter();
         mockSpawn.mockReturnValue(mockChild);
 
-        const executePromise = feature.execute({ filePath: 'error.wav' });
+        const executePromise = feature.execute({
+            filePath: 'error.wav',
+            targetStandard: 'CD',
+            pythonPath: '/usr/bin/python3'
+        });
 
         // Wait for listeners to be attached
         await new Promise(resolve => setTimeout(resolve, 0));

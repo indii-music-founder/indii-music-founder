@@ -3,7 +3,6 @@ import fs from 'fs';
 import path from 'path';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
-import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
@@ -19,7 +18,6 @@ async function downloadFile(url: string, destinationPath: string) {
         throw new Error(`Invalid URL protocol: ${url}`);
     }
 
-    const response = await fetch(url);
     // Security: Disable redirects to prevent Open Redirect SSRF bypass
     const response = await fetch(url, { redirect: 'error' });
     if (!response.ok) throw new Error(`Failed to fetch ${url}: ${response.statusText}`);
@@ -47,6 +45,8 @@ export function registerVideoHandlers() {
             // 2. Reject absolute paths (just in case)
             if (path.isAbsolute(filename)) {
                 throw new Error(`Invalid filename: Absolute paths not allowed`);
+            }
+
             // Validate URL (SSRF Protection)
             FetchUrlSchema.parse(url);
             await validateSafeUrlAsync(url);
@@ -68,9 +68,6 @@ export function registerVideoHandlers() {
             const baseName = path.basename(filename);
             const safeName = baseName.replace(/[^a-z0-9.]/gi, '_');
             const destinationPath = path.join(assetDir, safeName);
-
-            // Check if file already exists to avoid overwriting (optional: append index)
-            // For now, we overwrite or rely on unique filenames (UUIDs usually)
 
             console.log(`[VideoHandler] Downloading video to: ${destinationPath}`);
             await downloadFile(url, destinationPath);
@@ -95,49 +92,37 @@ export function registerVideoHandlers() {
             const documentsPath = app.getPath('documents');
             const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
 
-            // If filePath is provided, ensure it is within assetDir
-            const target = filePath ? filePath : assetDir;
-
-            if (filePath) {
-                 const resolved = path.resolve(filePath);
-                 const safeRoot = path.resolve(assetDir) + path.sep;
-                 // Allow opening exactly the assetDir or files inside it
-                 if (resolved !== path.resolve(assetDir) && !resolved.startsWith(safeRoot)) {
-                     // If it's not the dir itself and not inside it, check if it's the dir itself without sep
-                     // Actually path.resolve(assetDir) is the dir.
-                     throw new Error("Security Warning: Unauthorized path access");
-                 }
-            }
-
-            const { shell } = require('electron');
-            await shell.showItemInFolder(target);
-        } catch (error) {
-            console.error('[VideoHandler] Open folder failed:', error);
-
-            const documentsPath = app.getPath('documents');
-            const assetDir = path.join(documentsPath, 'IndiiOS', 'Assets', 'Video');
             let target = assetDir;
 
             if (filePath) {
-                // Security Check: Ensure filePath is within assetDir
-                // We resolve both paths to absolute paths to prevent relative path attacks
-                const resolvedPath = path.resolve(filePath);
-                const resolvedAssetDir = path.resolve(assetDir);
-
-                // Check for traversal or access outside asset dir
-                // Note: This string comparison is case-sensitive. On Windows/macOS this might be too strict
-                // if the case differs, but it is secure.
-                const safePrefix = resolvedAssetDir.endsWith(path.sep) ? resolvedAssetDir : resolvedAssetDir + path.sep;
-                if (resolvedPath !== resolvedAssetDir && !resolvedPath.startsWith(safePrefix)) {
-                    console.error(`[Security] Blocked access to unauthorized path: ${resolvedPath}`);
-                    throw new Error("Security: Access Denied. Cannot open folders outside of Assets/Video.");
+                const resolved = path.resolve(filePath);
+                const safeRoot = path.resolve(assetDir) + path.sep;
+                // Allow opening exactly the assetDir or files inside it
+                if (resolved !== path.resolve(assetDir) && !resolved.startsWith(safeRoot)) {
+                    throw new Error("Security Warning: Unauthorized path access");
                 }
-                target = resolvedPath;
+                target = resolved;
             }
 
             await shell.showItemInFolder(target);
         } catch (error) {
-            console.error('[VideoHandler] Failed to open folder:', error);
+            console.error('[VideoHandler] Open folder failed:', error);
+            throw error;
+        }
+    });
+
+    ipcMain.handle('video:render', async (event, config: any) => {
+        try {
+            validateSender(event);
+            const { electronRenderService } = await import('../services/ElectronRenderService');
+
+            // Basic validation
+            if (!config || typeof config !== 'object') throw new Error('Invalid config');
+            if (!config.compositionId) throw new Error('Missing compositionId');
+
+            return await electronRenderService.render(config);
+        } catch (error) {
+            console.error('[VideoHandler] Render failed:', error);
             throw error;
         }
     });
