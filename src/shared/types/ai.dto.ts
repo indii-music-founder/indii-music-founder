@@ -65,6 +65,7 @@ export interface GoogleSearchRetrieval {
     dynamicRetrievalConfig?: DynamicRetrievalConfig;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface CodeExecution { }
 
 export interface FunctionCallingConfig {
@@ -174,7 +175,7 @@ export interface GenerateContentRequest {
 }
 
 export interface GenerateVideoRequest {
-    model: string;
+    model?: string;
     prompt: string;
     image?: { imageBytes: string; mimeType: string };
     config?: GenerationConfig & {
