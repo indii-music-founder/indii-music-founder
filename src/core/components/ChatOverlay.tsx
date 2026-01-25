@@ -87,8 +87,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
-    const userProfile = useStore(state => state.userProfile);
-
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
 
     const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
