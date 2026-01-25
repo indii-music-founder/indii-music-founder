@@ -1,62 +1,14 @@
 import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp, doc, deleteDoc, updateDoc } from 'firebase/firestore';
 import { db, functions } from '@/services/firebase';
-import { MerchProduct } from '@/modules/merchandise/types';
+import { MerchProduct, CatalogProductSchema, CatalogProduct, ManufactureRequestSchema, ManufactureRequest, SampleRequestSchema, SampleRequest } from '@/modules/merchandise/types';
 import { AppException, AppErrorCode } from '@/shared/types/errors';
-import { delay } from '@/utils/async';
 import { useStore } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { httpsCallable } from 'firebase/functions';
-import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { v4 as uuidv4 } from 'uuid';
 
 const COLLECTION_NAME = 'merchandise';
 const CATALOG_COLLECTION = 'merchandise_catalog';
-
-export interface CatalogProduct {
-    id: string;
-    title: string;
-    basePrice: number;
-    image: string;
-    tags?: string[];
-    features?: string[];
-    category: 'standard' | 'pro';
-    description?: string;
-}
-
-export interface ManufactureRequest {
-    productId: string;
-    variantId: string;
-    quantity: number;
-    userId?: string;
-    status?: 'pending' | 'processing' | 'completed';
-    orderId?: string;
-    createdAt?: any;
-}
-
-export interface SampleRequest {
-    productId: string;
-    variantId: string;
-    shippingAddress: {
-        street: string;
-        city: string;
-        state: string;
-        zip: string;
-        country: string;
-    };
-    userId?: string;
-    status?: 'pending' | 'processing' | 'shipped' | 'delivered';
-    requestId?: string;
-    createdAt?: any;
-}
-
-export interface MockupGeneration {
-    asset: string;
-    type: string;
-    scene: string;
-    resultUrl?: string;
-    userId?: string;
-    createdAt?: any;
-}
 
 export const MerchandiseService = {
     /**
@@ -87,10 +39,20 @@ export const MerchandiseService = {
     getCatalog: async (): Promise<CatalogProduct[]> => {
         try {
             const snapshot = await getDocs(collection(db, CATALOG_COLLECTION));
-            return snapshot.docs.map(docSnap => ({
-                id: docSnap.id,
-                ...docSnap.data()
-            } as CatalogProduct));
+            const products: CatalogProduct[] = [];
+
+            snapshot.docs.forEach(docSnap => {
+                const data = { id: docSnap.id, ...docSnap.data() };
+                const result = CatalogProductSchema.safeParse(data);
+
+                if (result.success) {
+                    products.push(result.data);
+                } else {
+                    console.warn(`[MerchandiseService] Invalid catalog item ${docSnap.id}:`, result.error);
+                }
+            });
+
+            return products;
         } catch (error) {
             console.warn('[MerchandiseService] Failed to load catalog:', error);
             return [];
@@ -148,7 +110,10 @@ export const MerchandiseService = {
      * Submits a design to the production line (Firestore).
      */
     submitToProduction: async (request: ManufactureRequest): Promise<{ success: boolean; orderId: string }> => {
-        let userId = request.userId;
+        // Validate request schema
+        const validatedRequest = ManufactureRequestSchema.parse(request);
+
+        let userId = validatedRequest.userId;
         if (!userId) {
             userId = useStore.getState().userProfile?.id;
         }
@@ -158,27 +123,19 @@ export const MerchandiseService = {
         }
 
         // 🛡️ Sentinel: Generate secure Order ID using crypto.getRandomValues instead of Math.random
-        // 🛡️ Sentinel: Use secure random generation for orderId
         const array = new Uint8Array(9);
         crypto.getRandomValues(array);
         const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
         const orderId = `ORDER-${randomPart}`;
 
-        const docRef = await addDoc(collection(db, 'manufacture_requests'), {
-            ...request,
+        // Create the request document.
+        // We rely on Firestore triggers or backend listeners to update the status from 'pending' to 'processing'/'completed'.
+        await addDoc(collection(db, 'manufacture_requests'), {
+            ...validatedRequest,
             userId,
             status: 'pending',
             orderId,
             createdAt: serverTimestamp()
-        });
-
-        // Simulate processing delay then update status
-        delay(2000).then(async () => {
-            try {
-                await updateDoc(docRef, { status: 'completed' });
-            } catch (e) {
-                // Status update failed - not critical
-            }
         });
 
         return {
@@ -191,7 +148,10 @@ export const MerchandiseService = {
      * Request a physical sample.
      */
     requestSample: async (request: SampleRequest): Promise<{ success: boolean; requestId: string }> => {
-        let userId = request.userId;
+        // Validate request schema
+        const validatedRequest = SampleRequestSchema.parse(request);
+
+        let userId = validatedRequest.userId;
         if (!userId) {
             userId = useStore.getState().userProfile?.id;
         }
@@ -205,15 +165,13 @@ export const MerchandiseService = {
         const randomPart = Array.from(array, byte => '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]).join('');
         const requestId = `SAMPLE-${randomPart}`;
 
-        const docRef = await addDoc(collection(db, 'sample_requests'), {
-            ...request,
+        await addDoc(collection(db, 'sample_requests'), {
+            ...validatedRequest,
             userId,
             status: 'pending',
             requestId,
             createdAt: serverTimestamp()
         });
-
-        // Simulate processing (no status update simulation needed for sample, usually manual)
 
         return {
             success: true,
