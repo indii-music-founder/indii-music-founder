@@ -9,19 +9,17 @@ import {
     where,
     orderBy,
     serverTimestamp,
-    increment,
     updateDoc,
-    Timestamp,
-    setDoc
 } from 'firebase/firestore';
 import { useStore } from '@/core/store';
-import { CampaignAsset, CampaignStatus } from '@/modules/marketing/types';
+import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
+import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 
 export class MarketingService {
     /**
      * Get Marketing Stats
      */
-    static async getMarketingStats() {
+    static async getMarketingStats(): Promise<MarketingStats> {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return { totalReach: 0, engagementRate: 0, activeCampaigns: 0 };
 
@@ -30,7 +28,13 @@ export class MarketingService {
             const snapshot = await getDoc(statsRef);
 
             if (snapshot.exists()) {
-                return snapshot.data() as { totalReach: number; engagementRate: number; activeCampaigns: number };
+                const data = snapshot.data();
+                const validation = MarketingStatsSchema.safeParse(data);
+                if (validation.success) {
+                    return validation.data;
+                } else {
+                    console.warn("[MarketingService] Invalid marketing stats data:", validation.error);
+                }
             }
         } catch (e) {
             console.warn("MarketingService: Stats fetch failed", e);
@@ -43,18 +47,10 @@ export class MarketingService {
         };
     }
 
-    private static async seedDatabase(userId: string) {
-        // Disabled auto-seed in prod logic to prevent unwanted writes
-    }
-
     /**
      * Fetch campaigns from Firestore
      */
     static async getCampaigns(): Promise<CampaignAsset[]> {
-        if ((window as any).__MOCK_MARKETING_SERVICE__) {
-            return (window as any).__MOCK_MARKETING_SERVICE__.getCampaigns();
-        }
-
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return [];
 
@@ -67,14 +63,19 @@ export class MarketingService {
 
             const snapshot = await getDocs(q);
 
-            return snapshot.docs.map(doc => {
-                const data = doc.data();
-                const { id: _, ...cleanData } = data;
-                return {
-                    id: doc.id,
-                    ...cleanData,
-                } as CampaignAsset;
-            });
+            const results: CampaignAsset[] = [];
+            for (const doc of snapshot.docs) {
+                const data = { id: doc.id, ...doc.data() };
+
+                // 🛡️ Sentinel: Strict schema validation
+                const parseResult = CampaignAssetSchema.safeParse(data);
+                if (parseResult.success) {
+                    results.push(parseResult.data as CampaignAsset);
+                } else {
+                    console.warn(`[MarketingService] Skipping invalid campaign ${doc.id}:`, parseResult.error);
+                }
+            }
+            return results;
         } catch (e) {
             console.error("MarketingService: Campaign fetch failed", e);
             return [];
@@ -85,20 +86,18 @@ export class MarketingService {
      * Get a single campaign by ID
      */
     static async getCampaignById(id: string): Promise<CampaignAsset | null> {
-        if ((window as any).__MOCK_MARKETING_SERVICE__) {
-            return (window as any).__MOCK_MARKETING_SERVICE__.getCampaignById(id);
-        }
-
         try {
             const docRef = doc(db, 'campaigns', id);
             const snapshot = await getDoc(docRef);
 
             if (snapshot.exists()) {
-                const data = snapshot.data();
-                return {
-                    id: snapshot.id,
-                    ...data,
-                } as CampaignAsset;
+                const data = { id: snapshot.id, ...snapshot.data() };
+                const parseResult = CampaignAssetSchema.safeParse(data);
+                if (parseResult.success) {
+                    return parseResult.data as CampaignAsset;
+                }
+                console.error(`[MarketingService] Invalid campaign data for ${id}:`, parseResult.error);
+                return null;
             }
             return null;
         } catch (error) {
@@ -111,16 +110,19 @@ export class MarketingService {
      * Create a new campaign
      */
     static async createCampaign(campaign: Omit<CampaignAsset, 'id'>): Promise<string> {
-        if ((window as any).__MOCK_MARKETING_SERVICE__) {
-            return (window as any).__MOCK_MARKETING_SERVICE__.createCampaign(campaign);
-        }
-
         const userProfile = useStore.getState().userProfile;
 
         if (!userProfile?.id) throw new Error("User not authenticated");
 
+        // Validate input structure before write (ignoring id)
+        const validation = CampaignAssetSchema.safeParse(campaign);
+        if (!validation.success) {
+             console.error("[MarketingService] Invalid campaign input:", validation.error);
+             throw new Error("Invalid campaign data");
+        }
+
         const campaignData = {
-            ...campaign,
+            ...validation.data, // Use validated data to strip unknown fields
             userId: userProfile.id,
             createdAt: serverTimestamp(),
             status: CampaignStatus.PENDING
@@ -141,12 +143,11 @@ export class MarketingService {
      * Update an existing campaign
      */
     static async updateCampaign(id: string, updates: Partial<CampaignAsset>) {
-        if ((window as any).__MOCK_MARKETING_SERVICE__) {
-            return (window as any).__MOCK_MARKETING_SERVICE__.updateCampaign(id, updates);
-        }
-
         try {
             const docRef = doc(db, 'campaigns', id);
+            // Partial validation could be complex, but let's assume partial updates are trusted for now
+            // or we validate known fields.
+            // Removing 'id' to prevent overwriting document key
             const { id: _id, ...cleanUpdates } = updates;
             await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
         } catch (error) {
@@ -154,9 +155,4 @@ export class MarketingService {
             throw error;
         }
     }
-}
-
-// Expose for E2E testing
-if (typeof window !== 'undefined') {
-    (window as any).MarketingService = MarketingService;
 }
