@@ -30,7 +30,9 @@ import {
     GenerateImageResponse,
     GenerateSpeechResponse,
     GenerationConfig,
-    ContentPart
+    ContentPart,
+    SafetySetting,
+    ToolConfig
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -38,6 +40,10 @@ import { BREAKER_CONFIGS } from './config/breaker-configs';
 import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
+import { Project } from '@/core/store/slices/appSlice';
+import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { MOCK_SALES_ANALYTICS } from './mockData';
+import { ProjectMetadata } from './DashboardService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
@@ -783,7 +789,7 @@ export class FirebaseAIService {
                 }
             } : undefined
         }];
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools);
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
     }
 
     /**
