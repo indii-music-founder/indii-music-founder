@@ -183,4 +183,33 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
     expect(offspring.parameters.temperature).toBe(0.7);
     expect(mockMutationFn).toHaveBeenCalledTimes(3); // 2 fails + 1 success
   });
+
+  it('Token Budget: Rejects bloated prompts exceeding context limits', async () => {
+    // Scenario: Mutation produces a prompt that is too long (Context Window Overflow).
+    engine = new EvolutionEngine(baseConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const bloatedPrompt = 'A'.repeat(100001); // 100,001 chars > 100,000 limit
+
+    // Mock sequence: Fail (Bloat) -> Success
+    mockMutationFn
+      .mockResolvedValueOnce({ ...baseGene, systemPrompt: bloatedPrompt }) // Defect
+      .mockResolvedValue({
+        ...baseGene,
+        systemPrompt: 'Valid Compact Prompt',
+        parameters: { temperature: 0.7 }
+      });
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'P1', fitness: 100 },
+      { ...baseGene, id: 'P2', fitness: 90 },
+      { ...baseGene, id: 'P3', fitness: 80 }
+    ];
+
+    const nextGen = await engine.evolve(population);
+
+    // We expect the 3rd slot (offspring) to be the valid one
+    const offspring = nextGen[2];
+    expect(offspring.systemPrompt).toBe('Valid Compact Prompt');
+    expect(mockMutationFn).toHaveBeenCalledTimes(2); // 1 fail + 1 success
+  });
 });
