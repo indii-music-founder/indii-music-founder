@@ -1,7 +1,31 @@
 import { describe, it, expect, vi } from 'vitest';
-import { FetchUrlSchema, SftpUploadSchema } from './validation';
+import { FetchUrlSchema, SftpUploadSchema } from './utils/validation';
 import { validateSender } from './utils/ipc-security';
 import { validateSafeDistributionSource } from './utils/security-checks';
+
+// Mock Electron app
+vi.mock('electron', () => ({
+    app: {
+        getAppPath: () => '/app'
+    }
+}));
+
+// Mock fs to bypass realpathSync issues in tests
+vi.mock('fs', () => {
+    const mockFs = {
+        realpathSync: (path: string) => {
+            // Mock implementation: just return the path as is, unless it contains "nonexistent"
+            if (path.includes('nonexistent')) throw new Error('ENOENT');
+            return path;
+        },
+        existsSync: () => true,
+        statSync: () => ({ isFile: () => true, isDirectory: () => false })
+    };
+    return {
+        ...mockFs,
+        default: mockFs
+    };
+});
 
 describe('Sentinel: IPC Validation Security', () => {
     describe('FetchUrlSchema (SSRF Protection)', () => {
