@@ -5,3 +5,7 @@
 ## 2024-05-23 - State Merging Complexity
 **Learning:** Initializing large lists by merging local and remote state using `findIndex` inside `forEach` creates O(N*M) complexity, which becomes noticeable with large history.
 **Action:** Use `Map` for O(1) lookups during merge operations to achieve O(N+M) complexity.
+
+## 2026-01-25 - Regex-based Length Filtering
+**Learning:** JS-level length checks inside string processing loops (e.g., `word.length > 3`) still incur allocation costs for the short strings.
+**Action:** Move length filtering to the Regex engine (e.g., `/\S{4,}/g`) to prevent allocation of filtered-out strings entirely.
