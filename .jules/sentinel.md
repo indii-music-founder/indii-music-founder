@@ -30,3 +30,12 @@
 **Prevention:**
 1. Always use `validateSafeUrlAsync(url)` (or equivalent DNS-resolving validator) *before* making network requests in privileged contexts (Electron Main process).
 2. Explicitly disable HTTP redirects (`fetch(url, { redirect: 'error' })`) when downloading untrusted content to prevent Open Redirect bypasses.
+
+## 2026-02-18 - [HIGH] Permissive Content Security Policy (Data Exfiltration)
+**Vulnerability:** The `Content-Security-Policy` header in `electron/security/index.ts` allowed `connect-src *` (via `ws: http: https:` wildcards) even in production. This permitted a compromised renderer (via XSS) to bypass the Main process network validation (`validateSafeUrlAsync`) and exfiltrate data to arbitrary external servers or establish WebSocket connections to attacker-controlled infrastructure.
+**Learning:** CSP `connect-src` must be strictly whitelisted in production to serve as an effective Defense-in-Depth layer. Relying on Main process validation is insufficient if the renderer can communicate directly with the outside world.
+**Prevention:**
+1. Enforced strict domain whitelisting for `connect-src` in production (Google, Firebase, Essentia).
+2. Removed generic `http:`, `https:`, and `ws:` protocols from the allowlist.
+3. Added `media-src` directive (previously missing) to strictly control media playback sources.
+4. Removed dead/insecure code (`SecureStore.ts`) to reduce attack surface.

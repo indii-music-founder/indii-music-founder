@@ -115,6 +115,8 @@ describe('ChatOverlay Accessibility', () => {
         commandBarInput: '',
         commandBarAttachments: [],
         setCommandBarInput: vi.fn(),
+        setCommandBarInput: vi.fn(),
+        commandBarAttachments: [],
         setCommandBarAttachments: vi.fn(),
     };
 
@@ -205,7 +207,7 @@ describe('ChatOverlay Accessibility', () => {
         fireEvent.click(screen.getByTestId('simulate-scroll-up'));
 
         // Should be visible
-        const resumeBtn = screen.getByRole('button', { name: 'Resume Feed' });
+        const resumeBtn = screen.getByRole('button', { name: 'Scroll to newest messages' });
         expect(resumeBtn).toBeInTheDocument();
     });
 
