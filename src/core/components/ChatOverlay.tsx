@@ -86,23 +86,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
+    const userProfile = useStore(state => state.userProfile);
+
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
 
     const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
         return undefined;
     }, []);
-
-    useEffect(() => {
-        if (showHistory && !ConversationHistoryList) {
-            import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
-        }
-    }, [showHistory, ConversationHistoryList]);
-
-    useEffect(() => {
-        if (showInvite && !AgentSelector) {
-            import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
-        }
-    }, [showInvite, AgentSelector]);
 
     // Get the first available reference image to use as avatar
     const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
@@ -223,7 +213,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                             <button
                                 onClick={() => setCommandBarDetached(!isCommandBarDetached)}
-                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                                 title={isCommandBarDetached ? "Dock Input" : "Detach Input"}
                                 aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"}
                                 data-testid="detach-input-btn"
@@ -233,7 +223,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                             <button
                                 onClick={onToggleMinimize}
-                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                                 aria-label="Minimize chat"
                                 data-testid="minimize-chat-btn"
                             >
@@ -241,7 +231,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             </button>
                             <button
                                 onClick={onClose}
-                                className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400"
+                                className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                                 aria-label="Close Agent"
                             >
                                 <X size={18} />
@@ -293,8 +283,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                     setIsAutoScrolling(true);
                                     virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: 'smooth' });
                                 }}
-                                className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95"
+                                className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                                 title="Resume Feed"
+                                aria-label="Resume Feed"
                             >
                                 <RefreshCw size={18} />
                             </motion.button>
@@ -310,7 +301,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                     {/* Footer Status Bar (Voice/Processing) */}
                     {(isListening || isProcessing || transcript) && (
-                        <div className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30">
+                        <div
+                            className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30"
+                            role="status"
+                            aria-live="polite"
+                        >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 {isProcessing ? (
                                     <>

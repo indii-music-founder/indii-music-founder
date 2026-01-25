@@ -26,3 +26,7 @@
 ## 2024-05-24 - Segmented Controls as Tabs
 **Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
 **Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.
+
+## 2025-05-25 - Overlay Focus Traps and Rings
+**Learning:** Modal overlays (like ChatOverlay) often lack visible focus indicators on close/minimize buttons because they are designed to be "unobtrusive", making them hard to locate for keyboard users.
+**Action:** Enforce `focus-visible:ring` on all overlay action buttons, using a contrasting color (e.g., purple/white) to ensure visibility against dark/glass backgrounds.
