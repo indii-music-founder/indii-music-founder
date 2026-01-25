@@ -91,8 +91,7 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
         expect(results).toHaveLength(1);
         expect(generateImageMock).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(prompt),
-            model: 'fast',
-            mediaResolution: 'medium' // Default resolution for Flash
+            model: 'fast'
         }));
     });
 
@@ -104,7 +103,7 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
         const results = await ImageGeneration.generateImages({
             prompt,
             model: 'pro',
-            mediaResolution: 'high'
+            thinking: true
         });
 
         // Assert
@@ -112,7 +111,7 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
         expect(generateImageMock).toHaveBeenCalledWith(expect.objectContaining({
             prompt: expect.stringContaining(prompt),
             model: 'pro',
-            mediaResolution: 'high'
+            thinking: true
         }));
     });
 
@@ -136,14 +135,14 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
         const proPromise = ImageGeneration.generateImages({
             prompt,
             model: 'pro',
-            mediaResolution: 'high'
+            thinking: true
         });
         await expect(proPromise).resolves.toHaveLength(1);
 
         // Verify Pro Params
         expect(generateImageMock).toHaveBeenLastCalledWith(expect.objectContaining({
             model: 'pro',
-            mediaResolution: 'high'
+            thinking: true
         }));
 
         // Ensure two distinct calls were made

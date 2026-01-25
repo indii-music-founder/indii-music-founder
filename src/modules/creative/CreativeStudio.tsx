@@ -96,7 +96,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         // Gemini 3 Params
                         model: studioControls.model,
                         thinking: studioControls.thinking,
-                        mediaResolution: studioControls.mediaResolution,
                         useGrounding: studioControls.useGrounding
                     });
 

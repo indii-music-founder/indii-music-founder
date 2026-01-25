@@ -105,9 +105,6 @@ export class DashboardService {
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
-            // Store now strictly contains ProjectMetadata[], no conversion needed
-            if (state.projects && state.projects.length > 0) {
-                return state.projects;
             }
 
             return [];

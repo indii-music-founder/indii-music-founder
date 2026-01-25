@@ -25,7 +25,6 @@ export interface ImageGenerationOptions {
     // Gemini 3 Configuration
     model?: 'fast' | 'pro';
     thinking?: boolean;
-    mediaResolution?: 'low' | 'medium' | 'high';
     useGrounding?: boolean;
 }
 
@@ -119,7 +118,6 @@ export class ImageGenerationService {
                 images: options.sourceImages?.length ? options.sourceImages : [],
                 model: options.model || 'fast',
                 thinking: options.thinking ?? false,
-                mediaResolution: options.mediaResolution || 'medium',
                 useGrounding: options.useGrounding ?? false
             });
 
