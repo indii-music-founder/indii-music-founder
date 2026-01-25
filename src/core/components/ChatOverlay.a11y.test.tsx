@@ -113,6 +113,8 @@ describe('ChatOverlay Accessibility', () => {
         currentModule: 'dashboard',
         setModule: vi.fn(),
         commandBarInput: '',
+        commandBarAttachments: [],
+        setCommandBarInput: vi.fn(),
         setCommandBarInput: vi.fn(),
         commandBarAttachments: [],
         setCommandBarAttachments: vi.fn(),
@@ -239,5 +241,27 @@ describe('ChatOverlay Accessibility', () => {
 
         // Verify the heading is present
         expect(screen.getByRole('heading', { name: "How can I help you?" })).toBeInTheDocument();
+    });
+
+    it('should show accessible status footer when processing', () => {
+        const processingState = {
+            ...mockStoreState,
+            isAgentProcessing: true
+        };
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') return selector(processingState);
+            return processingState;
+        });
+
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // We expect the footer to be present with role="status"
+        // Since MessageItem is NOT streaming in this state (agentHistory is default),
+        // there should be only one role="status" - the footer.
+
+        const footerStatus = screen.getByRole('status');
+        expect(footerStatus).toHaveAttribute('aria-live', 'polite');
+        expect(footerStatus).toHaveTextContent('PROCESSING RESPONSE...');
     });
 });

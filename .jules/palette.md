@@ -27,6 +27,9 @@
 **Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
 **Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.
 
+## 2025-05-25 - Overlay Focus Traps and Rings
+**Learning:** Modal overlays (like ChatOverlay) often lack visible focus indicators on close/minimize buttons because they are designed to be "unobtrusive", making them hard to locate for keyboard users.
+**Action:** Enforce `focus-visible:ring` on all overlay action buttons, using a contrasting color (e.g., purple/white) to ensure visibility against dark/glass backgrounds.
 ## 2026-01-25 - Modal Accessibility and Label Association
 **Learning:** Custom modals often lack the necessary ARIA roles (`dialog`, `aria-modal`) and labeling (`aria-labelledby`) to be perceived correctly by screen readers. Additionally, inputs within them must have explicit label associations (`htmlFor`/`id`) rather than just visual proximity.
 **Action:** When creating or refactoring modals, always implement the standard Dialog pattern (role="dialog", aria-modal="true") and verify that all form inputs have programmatic label associations.
