@@ -26,3 +26,7 @@
 ## 2024-05-24 - Segmented Controls as Tabs
 **Learning:** Segmented controls that switch between distinct views are often implemented as buttons, missing the semantic relationship between the control and the view. Using `role="tablist"`/`tab`/`tabpanel` clarifies this relationship for screen readers.
 **Action:** When a set of buttons toggles exclusive views, upgrade them to the ARIA Tab pattern to provide context on the current selection and the controlled content.
+
+## 2026-01-25 - Modal Accessibility and Label Association
+**Learning:** Custom modals often lack the necessary ARIA roles (`dialog`, `aria-modal`) and labeling (`aria-labelledby`) to be perceived correctly by screen readers. Additionally, inputs within them must have explicit label associations (`htmlFor`/`id`) rather than just visual proximity.
+**Action:** When creating or refactoring modals, always implement the standard Dialog pattern (role="dialog", aria-modal="true") and verify that all form inputs have programmatic label associations.
