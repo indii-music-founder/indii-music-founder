@@ -10,13 +10,14 @@ import {
     Schema,
     Tool
 } from 'firebase/ai';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
 import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
+import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
     InlineDataPart,
     FunctionCallPart,
@@ -28,7 +29,10 @@ import {
     GenerateImageRequest,
     GenerateImageResponse,
     GenerateSpeechResponse,
-    GenerationConfig
+    GenerationConfig,
+    ContentPart,
+    SafetySetting,
+    ToolConfig
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -87,7 +91,7 @@ interface ExtendedGenerativeModel extends GenerativeModel {
 
 export interface ChatMessage {
     role: 'user' | 'model';
-    parts: Part[];
+    parts: (Part | ContentPart)[];
 }
 
 export class FirebaseAIService {
@@ -96,12 +100,15 @@ export class FirebaseAIService {
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
     private useFallbackMode = false;
-    private fallbackClient: GoogleGenerativeAI | null = null;
+    private fallbackClient: GoogleGenAI | null = null;
 
     // Circuit Breakers
     private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
     private mediaBreaker = new CircuitBreaker(BREAKER_CONFIGS.MEDIA_GENERATION);
     private auxBreaker = new CircuitBreaker(BREAKER_CONFIGS.AUX_SERVICES);
+
+    // Dynamic Configuration
+    private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
 
     constructor() { }
 
@@ -130,11 +137,30 @@ export class FirebaseAIService {
                 return;
             }
 
-            // 2. Fetch Remote Config (Safe Mode)
+            // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
             let modelName: string = FALLBACK_MODEL;
             try {
                 await fetchAndActivate(remoteConfig);
+
+                // Get the old simple string (legacy)
                 modelName = getValue(remoteConfig, 'model_name').asString() || FALLBACK_MODEL;
+
+                // Get the new JSON config (modern)
+                const jsonString = getValue(remoteConfig, 'ai_system_config').asString();
+                if (jsonString) {
+                    try {
+                        const parsed = JSON.parse(jsonString);
+                        const validated = RemoteAIConfigSchema.safeParse(parsed);
+                        if (validated.success) {
+                            this.remoteConfig = validated.data;
+                            logger.info('[FirebaseAIService] Loaded dynamic AI config from Remote Config');
+                        } else {
+                            logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
+                        }
+                    } catch (e) {
+                        logger.warn('[FirebaseAIService] Failed to parse ai_system_config JSON:', e);
+                    }
+                }
             } catch (configError: unknown) {
                 if (isAppCheckError(configError)) {
                     throw configError;
@@ -179,7 +205,7 @@ export class FirebaseAIService {
             );
         }
 
-        this.fallbackClient = new GoogleGenerativeAI(apiKey);
+        this.fallbackClient = new GoogleGenAI({ apiKey });
         this.useFallbackMode = true;
         this.isInitialized = true;
         logger.info('[FirebaseAIService] Initialized with direct Gemini SDK (fallback mode)');
@@ -187,10 +213,28 @@ export class FirebaseAIService {
 
     /**
      * Get the model name, either from remote config or fallback
+     * Handles DYNAMIC INTERCEPTION/REPLACEMENT of models.
      */
     private getModelName(modelOverride?: string): string {
-        if (modelOverride) return modelOverride;
-        return this.model?.model || FALLBACK_MODEL;
+        // If the user provided a specific override, checking if WE want to override THAT.
+        // But usually, an explicit override in code means "I need this specific model".
+        // HOWEVER, for "system" defined constants, we might want to swap them too.
+
+        const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
+
+        // Try to reverse-lookup the key (e.g. "gemini-3-pro-preview" -> "TEXT_AGENT")
+        const configKey = getModelKey(candidateModel);
+
+        if (configKey) {
+            // Check if we have a remote override for this key
+            const remoteOverride = this.remoteConfig.overrides[configKey];
+            if (remoteOverride) {
+                // logger.debug(`[FirebaseAIService] Swapping ${configKey}: ${candidateModel} -> ${remoteOverride}`);
+                return remoteOverride;
+            }
+        }
+
+        return candidateModel;
     }
 
     async rawGenerateContent(
@@ -199,7 +243,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, cachedContent?: string }
+        options?: { signal?: AbortSignal, cachedContent?: string, safetySettings?: any[], toolConfig?: any }
     ): Promise<GenerateContentResult> {
         // Wrap in retry logic (internal retries for 503/429/Transient Aborts)
         return this.contentBreaker.execute(async () => {
@@ -210,6 +254,7 @@ export class FirebaseAIService {
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
                 }
 
                 const modelName = this.getModelName(modelOverride);
@@ -220,7 +265,7 @@ export class FirebaseAIService {
                 // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                 // ============================================================
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig);
                 }
 
                 // ============================================================
@@ -242,7 +287,8 @@ export class FirebaseAIService {
                     generationConfig: config,
                     systemInstruction,
                     tools,
-                    safetySettings: STANDARD_SAFETY_SETTINGS
+                    toolConfig: options?.toolConfig,
+                    safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                 };
 
                 // Inject cachedContent if supported/available
@@ -286,36 +332,45 @@ export class FirebaseAIService {
     /**
      * Generate content using direct Gemini SDK (fallback mode).
      * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
      */
     private async generateWithFallback(
         prompt: string | Content[],
         modelName: string,
         config?: GenerationConfig,
         systemInstruction?: string,
-        tools?: Tool[]
+        tools?: Tool[],
+        safetySettings?: any[],
+        toolConfig?: any
     ): Promise<GenerateContentResult> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
 
         try {
-            const model = this.fallbackClient.getGenerativeModel({
+            // Build contents array for the new SDK format
+            const contents = typeof prompt === 'string'
+                ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+                : prompt;
+
+            const result = await this.fallbackClient.models.generateContent({
                 model: modelName,
-                generationConfig: config as unknown as undefined, // Type mismatch workaround
-                systemInstruction: systemInstruction,
-                tools: tools as unknown as undefined,
-                safetySettings: STANDARD_SAFETY_SETTINGS as any
-            });
-
-            const result = await model.generateContent(
-                typeof prompt === 'string'
-                    ? prompt
-                    : { contents: prompt as unknown as Content[] } as unknown as string
-            );
-
+                contents: contents as any,
+                config: {
+                    ...config,
+                    systemInstruction,
+                    tools: tools as any,
+                    toolConfig,
+                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                } as any,
+```typescript
             // Convert to Firebase AI SDK format for compatibility
             return {
-                response: result.response as unknown as GenerateContentResponse
+                response: {
+                    candidates: result.candidates,
+                    usageMetadata: result.usageMetadata,
+                    text: () => result.text || ''
+                } as unknown as GenerateContentResponse
             } as GenerateContentResult;
         } catch (error) {
             throw this.handleError(error);
@@ -331,7 +386,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.contentBreaker.execute(async () => {
             return this.withRetry(async () => {
@@ -341,6 +396,7 @@ export class FirebaseAIService {
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await TokenUsageService.checkQuota(userId);
+                    await TokenUsageService.checkRateLimit(userId);
                 }
 
                 const modelName = this.getModelName(modelOverride);
@@ -372,7 +428,8 @@ export class FirebaseAIService {
                     generationConfig: config,
                     systemInstruction,
                     tools,
-                    safetySettings: STANDARD_SAFETY_SETTINGS
+                    toolConfig: options?.toolConfig,
+                    safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                 };
 
                 if (cachedContent) {
@@ -455,6 +512,7 @@ export class FirebaseAIService {
     /**
      * Stream content using direct Gemini SDK (fallback mode).
      * This bypasses Firebase AI SDK and App Check requirements.
+     * Uses the new @google/genai SDK (GA).
      */
     private async streamWithFallback(
         prompt: string | Content[],
@@ -462,50 +520,42 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
 
-        const model = this.fallbackClient.getGenerativeModel({
+        // Build contents array for the new SDK format
+        const contents = typeof prompt === 'string'
+            ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
+            : prompt;
+
+        const result = await this.fallbackClient.models.generateContentStream({
             model: modelName,
-            generationConfig: config as unknown as undefined,
-            systemInstruction: systemInstruction,
-            tools: tools as unknown as undefined,
-            safetySettings: STANDARD_SAFETY_SETTINGS as any
+            contents: contents as any,
+            config: {
+                ...config,
+                systemInstruction,
+                tools: tools as any,
+                toolConfig: options?.toolConfig,
+                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+            } as any,
         });
 
-        const result = await model.generateContentStream(
-            typeof prompt === 'string'
-                ? prompt
-                : { contents: prompt as unknown as Content[] } as unknown as string,
-            options
-        );
-
-        // Wrap the final response promise
-        const wrappedResponsePromise = result.response.then(async (aggResult) => {
-            return {
-                response: aggResult as unknown as GenerateContentResponse,
-                text: () => aggResult.text?.() ?? '',
-                functionCalls: () => {
-                    const part = aggResult.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                        typeof p === 'object' && p !== null && 'functionCall' in p
-                    );
-                    return part ? [part.functionCall] : [];
-                },
-                usage: () => aggResult.usageMetadata
-            };
-        });
+        // Collect chunks for final response
+        const chunks: any[] = [];
+        let finalText = '';
 
         const stream = new ReadableStream<StreamChunk>({
             async start(controller) {
                 try {
-                    for await (const chunk of result.stream) {
+                    for await (const chunk of result) {
+                        chunks.push(chunk);
+                        const chunkText = chunk.text || '';
+                        finalText += chunkText;
                         controller.enqueue({
-                            text: () => {
-                                try { return chunk.text(); } catch { return ''; }
-                            },
+                            text: () => chunkText,
                             functionCalls: () => {
                                 const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
                                     typeof p === 'object' && p !== null && 'functionCall' in p
@@ -521,6 +571,24 @@ export class FirebaseAIService {
             }
         });
 
+        // Build wrapped response from accumulated chunks
+        const wrappedResponsePromise = Promise.resolve({
+            response: {
+                candidates: chunks[chunks.length - 1]?.candidates || [],
+                usageMetadata: chunks[chunks.length - 1]?.usageMetadata,
+                text: () => finalText
+            } as unknown as GenerateContentResponse,
+            text: () => finalText,
+            functionCalls: () => {
+                const lastChunk = chunks[chunks.length - 1];
+                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                    typeof p === 'object' && p !== null && 'functionCall' in p
+                );
+                return part ? [part.functionCall] : [];
+            },
+            usage: () => chunks[chunks.length - 1]?.usageMetadata
+        });
+
         return { stream, response: wrappedResponsePromise };
     }
 
@@ -533,7 +601,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
     ): Promise<GenerateContentResult> {
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -548,7 +616,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         return this.rawGenerateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -567,7 +635,11 @@ export class FirebaseAIService {
         let systemInstruction: string | undefined;
 
         if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = { thinkingBudget: thinkingBudgetOrModel };
+            config.thinkingConfig = {
+                thinkingBudget: thinkingBudgetOrModel,
+                budgetTokenCount: thinkingBudgetOrModel,
+                includeThoughts: true
+            };
             systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
         } else if (typeof thinkingBudgetOrModel === 'string') {
             model = thinkingBudgetOrModel;
@@ -614,7 +686,11 @@ export class FirebaseAIService {
             responseSchema: schema
         };
         if (thinkingBudget) {
-            config.thinkingConfig = { thinkingBudget };
+            config.thinkingConfig = {
+                thinkingBudget,
+                budgetTokenCount: thinkingBudget,
+                includeThoughts: true
+            };
         }
 
         const modelName = modelOverride || this.getModelName();
@@ -652,7 +728,7 @@ export class FirebaseAIService {
         await this.ensureInitialized();
         const contents: Content[] = history.map(h => ({
             role: h.role,
-            parts: h.parts
+            parts: h.parts as Part[] // Cast to satisfy firebase/ai types while preserving extra fields like thoughtSignature
         }));
         contents.push({ role: 'user', parts: [{ text: newMessage }] });
 
@@ -697,9 +773,18 @@ export class FirebaseAIService {
     /**
      * ADVANCED: Grounding with Google Search.
      */
-    async generateGroundedContent(prompt: string): Promise<GenerateContentResult> {
+    async generateGroundedContent(prompt: string, options?: { dynamicThreshold?: number }): Promise<GenerateContentResult> {
         await this.ensureInitialized();
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, [{ googleSearch: {} }] as unknown as Tool[]);
+        const tools: Tool[] = [{
+            googleSearch: {},
+            googleSearchRetrieval: options?.dynamicThreshold ? {
+                dynamicRetrievalConfig: {
+                    mode: 'MODE_DYNAMIC',
+                    dynamicThreshold: options.dynamicThreshold
+                }
+            } : undefined
+        }];
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
     }
 
     /**
@@ -772,7 +857,7 @@ export class FirebaseAIService {
                     if (data?.status === 'failed') {
                         throw new AppException(
                             AppErrorCode.INTERNAL_ERROR,
-                            `Video generation failed: ${data.error || 'Unknown error'}`
+                            `Video generation failed: ${ data.error || 'Unknown error' }`
                         );
                     }
                 }
@@ -792,9 +877,17 @@ export class FirebaseAIService {
      * BATCHING: Embed multiple documents in parallel
      */
     async batchEmbedContents(
-        contents: Content[],
+        contentsOrStrings: Content[] | string[],
         modelOverride?: string
     ): Promise<number[][]> {
+        // Normalize input to Content[]
+        const contents: Content[] = contentsOrStrings.map(item => {
+            if (typeof item === 'string') {
+                return { role: 'user', parts: [{ text: item }] };
+            }
+            return item;
+        });
+
         return this.contentBreaker.execute(async () => {
             await this.ensureInitialized();
 
@@ -805,12 +898,16 @@ export class FirebaseAIService {
 
             const modelName = modelOverride || 'text-embedding-004';
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
-                const model = this.fallbackClient.getGenerativeModel({ model: modelName });
                 const promises = contents.map(async (c) => {
-                    const result = await model.embedContent(c as unknown as string);
-                    return result.embedding.values;
+                    // Extract text from content parts
+                    const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await this.fallbackClient!.models.embedContent({
+                        model: modelName,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                    });
+                    return (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [];
                 });
                 return Promise.all(promises);
             }
@@ -861,39 +958,57 @@ export class FirebaseAIService {
      */
     async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: Record<string, unknown>): Promise<string> {
         return this.mediaBreaker.execute(async () => {
-            // Lazily import to avoid circular dependencies or initialization issues
-            const { getFunctions, httpsCallable } = await import('firebase/functions');
-            const { app } = await import('@/services/firebase');
+            await this.ensureInitialized();
 
-            // Explicitly use us-west1 where the function is deployed
-            const functionsWest1 = getFunctions(app, 'us-west1');
+            // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
+            const tools: Tool[] = [{ googleSearch: {} }];
 
-            // Backend expects flat parameters, not nested config objects
-            interface GenerateImageBackendPayload {
-                prompt: string;
-                aspectRatio?: "1:1" | "16:9" | "9:16" | "3:4" | "4:3";
-                count?: number;
-                images?: { mimeType: string; data: string }[];
-            }
-
-            const generateImageFn = httpsCallable<GenerateImageBackendPayload, GenerateImageResponse>(functionsWest1, 'generateImageV3');
-
-            // Map frontend config to backend payload
-            const payload: GenerateImageBackendPayload = {
-                prompt,
-                aspectRatio: (config?.aspectRatio as any) || undefined,
-                count: (config?.numberOfImages as number) || (config?.candidateCount as number) || 1,
+            // 2. Setup Config
+            const generationConfig: GenerationConfig = {
+                responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
+                imageConfig: {
+                    aspectRatio: config?.aspectRatio || '1:1',
+                    imageSize: '4K', // "Perfect" quality
+                    personGenerationConfig: config?.personGenerationConfig as any
+                } as any
             };
 
-            const response = await generateImageFn(payload);
-            const image = response.data.images?.[0];
-            if (!image) throw new Error('No image returned');
-            return image.bytesBase64Encoded;
+            if (config?.numberOfImages) {
+                generationConfig.candidateCount = config.numberOfImages as number;
+            }
+
+            // 3. Generate
+            const result = await this.rawGenerateContent(
+                prompt,
+                model,
+                generationConfig,
+                undefined,
+                tools
+            );
+
+            // 4. Extract Image
+            // Gemini 3 returns images as inlineData in the parts
+            const candidates = result.response.candidates;
+            if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
+
+            const imagePart = candidates[0].content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+
+            if (!imagePart || !imagePart.inlineData) {
+                // Check if it was blocked or just text returned (e.g. "I cannot generate that")
+                const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
+                if (textPart && 'text' in textPart) {
+                    throw new Error(`Generation blocked or failed: ${ textPart.text }`);
+                }
+                throw new Error('No image data found in response');
+            }
+
+            return imagePart.inlineData.data;
         });
     }
 
     /**
-     * TTS: Generate speech from text using gemini-2.5-pro-tts
+     * TTS: Generate speech from text using gemini-2.5-pro-preview-tts
      */
     async generateSpeech(
         text: string,
@@ -920,22 +1035,22 @@ export class FirebaseAIService {
                 }
             };
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
                 try {
-                    const model = this.fallbackClient.getGenerativeModel({
+                    const result = await this.fallbackClient.models.generateContent({
                         model: modelName,
-                        generationConfig: config as unknown as undefined
+                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        config: config as any
                     });
 
-                    const result = await model.generateContent(text);
-                    const candidates = result.response.candidates;
+                    const candidates = result.candidates;
 
                     if (!candidates || candidates.length === 0) {
                         throw new Error('No candidates returned from TTS fallback model');
                     }
 
-                    const audioPart = candidates[0].content?.parts?.find(p => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
+                    const audioPart = (candidates[0] as any).content?.parts?.find((p: any) => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
 
                     if (!audioPart || !audioPart.inlineData) {
                         throw new Error('No audio data found in fallback response parts');
@@ -1011,14 +1126,16 @@ export class FirebaseAIService {
         return this.auxBreaker.execute(async () => {
             await this.ensureInitialized();
 
-            // FALLBACK MODE: Use direct Gemini SDK
+            // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {
                 try {
-                    const model = this.fallbackClient.getGenerativeModel({
-                        model: options.model
+                    // Extract text from content parts
+                    const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
+                    const result = await this.fallbackClient.models.embedContent({
+                        model: options.model,
+                        contents: [{ role: 'user', parts: [{ text }] }] as any
                     });
-                    const result = await model.embedContent(options.content as unknown as string);
-                    return { values: result.embedding.values };
+                    return { values: (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [] };
                 } catch (error) {
                     throw this.handleError(error);
                 }
@@ -1061,7 +1178,7 @@ export class FirebaseAIService {
      */
     public parseJSON<T = unknown>(text: string | undefined): T | Record<string, never> {
         if (!text) return {};
-        const clean = text.replace(/```json\n?|```/g, '').trim();
+        const clean = text.replace(/```json\n ?| ```/g, '').trim();
         try {
             return JSON.parse(clean);
         } catch {
@@ -1100,8 +1217,13 @@ export class FirebaseAIService {
         }
 
         const lowerMsg = msg.toLowerCase();
-        if (lowerMsg.includes('permission-denied') || lowerMsg.includes('app-check-token')) {
-            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check)');
+        if (
+            lowerMsg.includes('permission-denied') ||
+            lowerMsg.includes('permission_denied') ||
+            lowerMsg.includes('app-check-token') ||
+            lowerMsg.includes('unauthorized')
+        ) {
+            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
@@ -1111,71 +1233,68 @@ export class FirebaseAIService {
         if (msg.includes('quota') || msg.includes('resource-exhausted')) {
             return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
         }
-        if (msg.includes('429')) {
-            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded');
+        if (msg.includes('429') || lowerMsg.includes('rate limit')) {
+            return new AppException(AppErrorCode.RATE_LIMITED, 'AI Rate Limit Exceeded', { retryable: true });
         }
 
         // Service Availability
-        if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('overloaded')) {
-            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable');
+        if (msg.includes('503') || msg.includes('500') || msg.includes('service unavailable') || msg.includes('overloaded') || lowerMsg.includes('internal error')) {
+            return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`);
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${ msg }`, { retryable: false });
     }
 
     private async withRetry<T>(
         operation: () => Promise<T>,
         retries = 3,
-        delay = 1000,
+        initialDelay = 1000,
         signal?: AbortSignal
     ): Promise<T> {
-        try {
-            // Check signal before starting
-            if (signal?.aborted) {
-                throw new Error('Operation cancelled by user');
-            }
-            return await operation();
-        } catch (error: unknown) {
-            // If user explicitly cancelled, DO NOT retry
-            if (signal?.aborted) {
-                throw error;
-            }
+        let lastError: unknown;
+        let currentDelay = initialDelay;
 
-            const msg = error instanceof Error ? error.message : String(error);
-            const lowerMsg = msg.toLowerCase();
-            const isRetryable =
-                lowerMsg.includes('429') ||
-                lowerMsg.includes('503') ||
-                lowerMsg.includes('service unavailable') ||
-                lowerMsg.includes('temporarily unavailable') ||
-                lowerMsg.includes('overloaded') ||
-                // Retry abort/network errors (usually transient)
-                lowerMsg.includes('aborted') ||
-                lowerMsg.includes('fetch failed') ||
-                lowerMsg.includes('network error') ||
-                (error as { code?: string })?.code === 'resource-exhausted' ||
-                (error as { details?: { retryable?: boolean } })?.details?.retryable;
+        for (let attempt = 0; attempt <= retries; attempt++) {
+            try {
+                if (signal?.aborted) {
+                    throw new Error('Operation cancelled by user');
+                }
+                return await operation();
+            } catch (error: unknown) {
+                lastError = error;
 
-            if (retries > 0 && isRetryable) {
-                // Exponential backoff with jitter and 10s cap
-                const backoff = Math.min(delay * 2, 10000) + (Math.random() * 200);
-                // Wait for backoff, but listen for abort signal
-                await new Promise((resolve, reject) => {
-                    if (signal?.aborted) {
-                        return reject(new Error('Operation cancelled by user during retry backoff'));
-                    }
-                    const timer = setTimeout(resolve, backoff);
-                    if (signal) {
-                        signal.addEventListener('abort', () => {
-                            clearTimeout(timer);
-                            reject(new Error('Operation cancelled by user during retry backoff'));
-                        }, { once: true });
-                    }
-                });
-                return this.withRetry(operation, retries - 1, backoff, signal);
+                if (signal?.aborted) {
+                    throw error;
+                }
+
+                const appException = this.handleError(error);
+                const isRetryable = appException.details?.retryable;
+
+                if (attempt < retries && isRetryable) {
+                    // Exponential backoff with jitter
+                    // currentDelay = initialDelay * 2^attempt + jitter
+                    const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
+                    const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
+
+                    console.warn(`[FirebaseAIService] Transient error, retrying in ${ Math.round(waitTime) }ms... (Attempt ${ attempt + 1}/${retries})`);
+
+                    await new Promise((resolve, reject) => {
+                        const timer = setTimeout(resolve, waitTime);
+                        if (signal) {
+                            signal.addEventListener('abort', () => {
+                                clearTimeout(timer);
+                                reject(new Error('Operation cancelled by user during retry backoff'));
+                            }, { once: true });
+                        }
+                    });
+
+                    currentDelay = waitTime;
+                    continue;
+                }
+                throw appException;
             }
-            throw error;
         }
+        throw this.handleError(lastError);
     }
 
     private sanitizePrompt(prompt: string | Content[]): string | Content[] {

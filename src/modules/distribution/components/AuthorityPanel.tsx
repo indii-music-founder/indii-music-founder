@@ -2,9 +2,14 @@ import React, { useState } from 'react';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { Loader2, Key, Barcode, FileCode, Send } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { useStore } from '@/core/store';
+import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
 
 export const AuthorityPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
+    const { distribution } = useStore();
+    const { releases } = distribution;
+    const [selectedReleaseId, setSelectedReleaseId] = useState<string>('');
     const [isrc, setIsrc] = useState<string | null>(null);
     const [upc, setUpc] = useState<string | null>(null);
     const [ddexXml, setDdexXml] = useState<string | null>(null);
@@ -37,33 +42,64 @@ export const AuthorityPanel: React.FC = () => {
     };
 
     const handleGenerateDDEX = async () => {
+        if (!selectedReleaseId) {
+            toastError('Please select a release first');
+            return;
+        }
+
         setLoading('ddex');
         try {
+            // Fetch full release data
+            const releaseData = await DistributionSyncService.getRelease(selectedReleaseId);
+            if (!releaseData) {
+                throw new Error('Release not found');
+            }
+
             // Auto-generate identifiers if not already present
             let activeIsrc = isrc;
             let activeUpc = upc;
 
-            if (!activeIsrc) {
+            if (!activeIsrc && (!releaseData.metadata.tracks || releaseData.metadata.tracks.some(t => !t.isrc))) {
                 activeIsrc = await distributionService.assignISRCs();
                 setIsrc(activeIsrc);
             }
 
-            if (!activeUpc) {
+            if (!activeUpc && !releaseData.metadata.upc) {
                 activeUpc = await distributionService.generateUPC();
                 setUpc(activeUpc);
             }
 
-            const mockRelease = {
-                releaseId: 'REL-MOCK-001',
-                title: 'indii Authority Test',
-                artists: ['Narrow Channel'],
-                tracks: [
-                    { id: '1', title: 'Industrial Test Track', isrc: activeIsrc || 'US-S1Z-25-00001' }
-                ],
-                upc: activeUpc || '123456789012',
-                label: 'indii Records'
+            const releasePayload = {
+                releaseId: releaseData.id,
+                title: releaseData.metadata.releaseTitle || releaseData.metadata.trackTitle,
+                artists: [releaseData.metadata.artistName],
+                tracks: (releaseData.metadata.tracks && releaseData.metadata.tracks.length > 0) ? releaseData.metadata.tracks.map((t, idx) => {
+                    const trackIsrc = t.isrc || activeIsrc;
+                    if (!trackIsrc) throw new Error(`Missing ISRC for track ${idx + 1}: ${t.trackTitle}`);
+                    return {
+                        id: String(idx + 1),
+                        title: t.trackTitle,
+                        isrc: trackIsrc
+                    };
+                }) : (() => {
+                    // Fallback for single-track releases stored without a tracks array
+                    const singleTrackIsrc = releaseData.metadata.isrc || activeIsrc;
+                    if (!singleTrackIsrc) throw new Error('Missing ISRC for single track release');
+                    return [{
+                        id: '1',
+                        title: releaseData.metadata.trackTitle,
+                        isrc: singleTrackIsrc
+                    }];
+                })(),
+                upc: releaseData.metadata.upc || activeUpc,
+                label: releaseData.metadata.labelName
             };
-            const result = await distributionService.generateDDEX(mockRelease);
+
+            if (!releasePayload.upc) {
+                throw new Error('Missing UPC for release');
+            }
+
+            const result = await distributionService.generateDDEX(releasePayload);
             setDdexXml(result);
             success('DDEX ERN 4.3 Message Generated');
         } catch (error) {
@@ -80,6 +116,25 @@ export const AuthorityPanel: React.FC = () => {
                 <p className="text-gray-400">
                     Industrial identity management. Generate ISRCs, UPCs, and DDEX ERN 4.3 messages for direct DSP delivery.
                 </p>
+            </div>
+
+            {/* Release Selector */}
+            <div className="bg-white/5 border border-white/10 rounded-xl p-4 backdrop-blur-sm">
+                <label className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 block">
+                    Select Active Release
+                </label>
+                <select
+                    value={selectedReleaseId}
+                    onChange={(e) => setSelectedReleaseId(e.target.value)}
+                    className="w-full bg-black/40 border border-white/10 text-white rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-dept-royalties/50"
+                >
+                    <option value="">-- Select Release for DDEX Generation --</option>
+                    {releases.map((release) => (
+                        <option key={release.id} value={release.id}>
+                            {release.title} ({release.artist})
+                        </option>
+                    ))}
+                </select>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

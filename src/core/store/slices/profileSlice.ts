@@ -106,6 +106,49 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         try {
             // Try to get from Firestore first (via Service/Repo) 
             const profile = await getProfileFromStorage(uid);
+
+            // --- Fetch Organizations (Fix for Permission Errors) ---
+            try {
+                const { db } = await import('@/services/firebase');
+                const { collection, query, where, getDocs } = await import('firebase/firestore');
+
+                const orgsRef = collection(db, 'organizations');
+                const q = query(orgsRef, where('members', 'array-contains', uid));
+                const orgSnap = await getDocs(q);
+
+                const userOrgs: Organization[] = [];
+                orgSnap.forEach((doc) => {
+                    const data = doc.data();
+                    userOrgs.push({
+                        id: doc.id,
+                        name: data.name || 'Untitled Org',
+                        plan: data.plan || 'free',
+                        members: data.members || []
+                    });
+                });
+
+                if (userOrgs.length > 0) {
+                    console.info('[Profile] Loaded organizations:', userOrgs.map(o => o.id));
+                    set({ organizations: userOrgs });
+
+                    // Resolve Current Org ID
+                    const storedOrgId = localStorage.getItem('currentOrgId');
+                    const isValidStored = userOrgs.find(o => o.id === storedOrgId);
+
+                    if (isValidStored) {
+                        set({ currentOrganizationId: isValidStored.id });
+                    } else {
+                        // Default to the first found org
+                        console.info('[Profile] Defaulting to first org:', userOrgs[0].id);
+                        set({ currentOrganizationId: userOrgs[0].id });
+                        localStorage.setItem('currentOrgId', userOrgs[0].id);
+                    }
+                }
+            } catch (orgErr) {
+                console.error('[Profile] Failed to load organizations:', orgErr);
+            }
+            // -----------------------------------------------------
+
             if (profile) {
                 console.info('[Profile] Loaded profile for:', uid);
                 // Ensure legacy profiles align with new schema if needed (runtime migration could go here)

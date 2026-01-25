@@ -10,11 +10,18 @@ export class InputSanitizer {
     private static readonly CONTROL_CHARS_REGEX = /[\x00-\x09\x0B-\x0C\x0E-\x1F\x7F]/g;
     private static readonly DANGEROUS_TAGS_REGEX = /<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1>|<(script|style|iframe|object|embed|form)[^>]*\/?>/gi;
 
+    // PII & Secret Regexes
+    // eslint-disable-next-line no-useless-escape
+    private static readonly CREDIT_CARD_REGEX = /\b(?:\d[ -]*?){13,19}\b/g;
+    private static readonly KEY_VALUE_SECRET_REGEX = /\b(password|passwd|api_key|access_token|secret_key|private_key)(\s*[:=]\s*)([^\s]+)/gi;
+    private static readonly STRIPE_KEY_REGEX = /\b(sk_live_[0-9a-zA-Z]+)\b/g;
+
     /**
      * Sanitizes a string prompt.
      * - Trims whitespace
      * - Removes control characters
      * - Strips dangerous HTML tags
+     * - Redacts PII (Credit Cards, Secrets)
      * - Enforces max length (truncates)
      */
     static sanitize(input: string): string {
@@ -23,7 +30,10 @@ export class InputSanitizer {
         // 1. Remove dangerous tags first
         let clean = input.replace(this.DANGEROUS_TAGS_REGEX, '');
 
-        // 2. Remove control characters (keep newlines/tabs)
+        // 2. Redact PII
+        clean = this.redactPII(clean);
+
+        // 3. Remove control characters (keep newlines/tabs)
         clean = clean.replace(this.CONTROL_CHARS_REGEX, '');
 
         // 3. Trim
@@ -52,6 +62,24 @@ export class InputSanitizer {
         }
 
         return { valid: true };
+    }
+
+    /**
+     * Redacts PII and sensitive keys from the input.
+     */
+    private static redactPII(input: string): string {
+        let redacted = input;
+
+        // Redact Credit Cards
+        redacted = redacted.replace(this.CREDIT_CARD_REGEX, '[REDACTED_CREDIT_CARD]');
+
+        // Redact Key-Value Secrets (e.g. password: ***)
+        redacted = redacted.replace(this.KEY_VALUE_SECRET_REGEX, '$1$2[REDACTED_SECRET]');
+
+        // Redact Standalone Tokens (e.g. sk_live_***)
+        redacted = redacted.replace(this.STRIPE_KEY_REGEX, '[REDACTED_SECRET]');
+
+        return redacted;
     }
 
     /**

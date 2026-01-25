@@ -2,17 +2,18 @@
 import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
-import { defineSecret } from "firebase-functions/params";
 import { serve } from "inngest/express";
 import corsLib from "cors";
 import { VideoJobSchema } from "./lib/video";
-import { GenerateImageRequestSchema, EditImageRequestSchema } from "./lib/image";
+
 import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
+import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
+import { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
@@ -57,42 +58,8 @@ const validateOrgAccess = async (userId: string, orgId?: string | null) => {
     }
 };
 
-// Define Secrets
-const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
-const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
-const geminiApiKey = defineSecret("GEMINI_API_KEY");
-
-/**
- * Helper function to get the Gemini API key with fallback for local development.
- * In production, this uses Firebase secrets. In local development, it falls back
- * to environment variables (from functions/.env).
- *
- * @returns The Gemini API key string
- * @throws Error if no API key is found
- */
-function getGeminiApiKey(): string {
-    // Try secret first (production)
-    /*
-    try {
-        const secretValue = geminiApiKey.value();
-        if (secretValue && typeof secretValue === 'string' && secretValue.trim().length > 0) {
-            console.log('[getGeminiApiKey] Using secret from Firebase');
-            return secretValue;
-        }
-    } catch (secretError) {
-        console.log('[getGeminiApiKey] Secret not available, checking environment...');
-    }
-    */
-
-    // Fallback to environment variable (local development)
-    const envKey = process.env.GEMINI_API_KEY;
-    if (envKey && envKey.trim().length > 0) {
-        console.log('[getGeminiApiKey] Using environment variable (local development)');
-        return envKey;
-    }
-
-    throw new Error('Gemini API key not found. Please set GEMINI_API_KEY in Firebase Cloud Secret or functions/.env');
-}
+// Import Shared Secrets
+import { geminiApiKey, inngestEventKey, inngestSigningKey, getGeminiApiKey } from "./config/secrets";
 
 // Lazy Initialize Inngest Client
 export const getInngestClient = () => {
@@ -141,7 +108,8 @@ const getAllowedOrigins = (): string[] => {
         'https://indiios-v-1-1.web.app',
         'https://studio.indiios.com',
         'https://indiios.com',
-        'app://.'  // Electron app
+        'app://.',  // Electron app
+        'http://localhost:4242' // Electron Studio (Vite)
     ];
 
     // Add localhost origins in emulator/development mode
@@ -150,7 +118,8 @@ const getAllowedOrigins = (): string[] => {
             'http://localhost:5173',
             'http://localhost:4173',
             'http://localhost:3000',
-            'http://127.0.0.1:5173'
+            'http://127.0.0.1:5173',
+            'http://localhost:4242'
         );
     }
 
@@ -219,6 +188,7 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * and the Asynchronous Worker Queue (Inngest).
  */
 export const triggerVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -300,6 +270,7 @@ export const triggerVideoJob = functions
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
 export const triggerLongFormVideoJob = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -448,6 +419,7 @@ export const triggerLongFormVideoJob = functions
  * and queues a stitching job via Inngest.
  */
 export const renderVideo = functions
+    .region("us-west1")
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
@@ -575,186 +547,10 @@ export const inngestApi = functions
 
 // Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
 // Deployed to us-west1 for Model Availability
-export const generateImageV3 = functions
-    .region("us-west1")
-    .runWith({
-        secrets: [geminiApiKey],
-        timeoutSeconds: 120,
-        memory: "512MB"
-    })
-    .https.onCall(async (data: unknown, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to generate images."
-            );
-        }
-
-        // Zod Validation
-        const validation = GenerateImageRequestSchema.safeParse(data);
-        if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
-        }
-        const { prompt, aspectRatio, count, images } = validation.data;
-
-        try {
-            console.log("[generateImageV3] Initializing GoogleGenAI with API Key");
-            // Use GoogleGenAI (AI Studio) instead of VertexAI to access gemini-3-pro-image-preview
-            // which appears to be available via the global AI Studio endpoint but not Vertex us-central1.
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-
-            const parts: any[] = [{ text: prompt }];
-
-            if (images) {
-                images.forEach(img => {
-                    parts.push({
-                        inlineData: {
-                            mimeType: img.mimeType || "image/png",
-                            data: img.data
-                        }
-                    });
-                });
-            }
-
-            console.log(`[generateImageV3] Calling model: ${modelId}`);
-
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents: [{ role: "user", parts }],
-                config: {
-                    candidateCount: count || 1,
-                    responseModalities: ["IMAGE"],
-                    ...(aspectRatio ? { imageConfig: { aspectRatio } } : {}),
-                }
-            });
-
-            if (!result.candidates || result.candidates.length === 0) {
-                // Fallback check for raw response structure if SDK differs
-                throw new functions.https.HttpsError('internal', 'No candidates returned from Gemini API');
-            }
-
-            // Map candidates to internal format
-            // Note: GoogleGenAI candidates structure:
-            // candidates: [{ content: { parts: [{ inlineData: { mimeType:..., data:... } }] } }]
-            const processedImages = (result.candidates[0].content?.parts || [])
-                .filter((p: any) => p.inlineData)
-                .map((p: any) => ({
-                    bytesBase64Encoded: p.inlineData.data,
-                    mimeType: p.inlineData.mimeType || "image/png"
-                }));
-
-            if (processedImages.length === 0) {
-                throw new functions.https.HttpsError('internal', 'No image data found in candidates');
-            }
-
-            return { images: processedImages };
-
-        } catch (error: any) {
-            console.error("[generateImageV3] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            throw new functions.https.HttpsError('internal', error.message || "Unknown error");
-        }
-    });
-
-export const editImage = functions
-    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 120, memory: "512MB" })
-    .https.onCall(async (data: unknown, context) => {
-        if (!context.auth) {
-            throw new functions.https.HttpsError(
-                "unauthenticated",
-                "User must be authenticated to edit images."
-            );
-        }
-
-        // Zod Validation
-        const validation = EditImageRequestSchema.safeParse(data);
-        if (!validation.success) {
-            throw new functions.https.HttpsError(
-                "invalid-argument",
-                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-            );
-        }
-        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
-
-        try {
-            console.log("[editImage] Initializing GoogleGenAI with API Key");
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
-
-            const parts: any[] = [
-                {
-                    inlineData: {
-                        mimeType: imageMimeType || "image/png",
-                        data: image
-                    }
-                }
-            ];
-
-            // Track image count for correct position reference
-            let imageCount = 1;
-
-            if (mask) {
-                parts.push({
-                    inlineData: {
-                        mimeType: maskMimeType || "image/png",
-                        data: mask
-                    }
-                });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
-                imageCount = 2;
-            }
-
-            if (referenceImage) {
-                const position = imageCount === 1 ? "second" : "third";
-                parts.push({
-                    inlineData: {
-                        mimeType: refMimeType || "image/png",
-                        data: referenceImage
-                    }
-                });
-                parts.push({ text: `Use this ${position} image as a reference.` });
-            }
-
-            parts.push({ text: prompt });
-
-            console.log(`[editImage] Calling model: ${modelId}`);
-
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents: [{
-                    role: "user",
-                    parts: parts
-                }],
-                config: {
-                    responseModalities: ["IMAGE"],
-                }
-            });
-
-            if (!result.candidates || result.candidates.length === 0) {
-                throw new functions.https.HttpsError('internal', "No candidates returned from Gemini API.");
-            }
-
-            return { candidates: result.candidates };
-
-        } catch (error: unknown) {
-            console.error("[editImage] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
-            if (error instanceof Error) {
-                throw new functions.https.HttpsError('internal', error.message);
-            }
-            throw new functions.https.HttpsError('internal', "An unknown error occurred");
-        }
-    });
+// Image Generation v3 (Nano Banana Pro / Gemini 3 Pro Image)
+// Deployed to us-west1 for Model Availability
+export const generateImageV3 = generateImageV3Fn();
+export const editImage = editImageFn();
 
 export const generateSpeech = functions
     .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
@@ -996,6 +792,10 @@ import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
+
+export const imageResizing = {
+    generateThumbnail
+};
 
 /**
  * List GKE Clusters

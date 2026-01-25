@@ -544,38 +544,79 @@ wrapTool<TArgs>(
 - CreativeTools (generate_image, batch_edit_images)
 - And 40+ other tools
 
-### Phase 3.6 Roadmap (Future Work)
+### Phase 3.6: TOOL_REGISTRY Tool Migration (COMPLETE ✅)
 
-**Goal:** Enable all TOOL_REGISTRY tools to use execution context
+**Date:** 2026-01-21
 
-**Steps:**
+**Goal:** Enable critical TOOL_REGISTRY tools to use execution context
 
-1. Update `wrapTool` signature in `ToolUtils.ts`:
+**What Was Implemented:**
+
+1. ✅ **Step 1: wrapTool Enhancement** (Done by other agents on main branch)
+   - `ToolUtils.wrapTool` updated to support toolContext parameter
+   - All TOOL_REGISTRY tools can now receive execution context
+
+2. ✅ **Step 2: Critical Tool Migration** (This phase)
+   - **MemoryTools.ts** - 3 tools migrated:
+     * `save_memory` - reads currentProjectId from toolContext
+     * `recall_memories` - reads currentProjectId from toolContext
+     * `read_history` - reads agentHistory from toolContext
+
+   - **ProjectTools.ts** - 3 tools migrated:
+     * `create_project` - reads currentOrganizationId from toolContext
+     * `list_projects` - reads projects from toolContext
+     * `open_project` - reads projects from toolContext
+
+   - **OrganizationTools.ts** - 4 tools migrated:
+     * `list_organizations` - reads organizations from toolContext
+     * `switch_organization` - reads organizations, userProfile from toolContext
+     * `create_organization` - reads userProfile from toolContext
+     * `get_organization_details` - reads organizations, currentOrganizationId from toolContext
+
+3. ✅ **Step 3: Type Definition Updates** (Already done in Phase 3)
+   - `ToolFunction<TArgs>` type includes toolContext parameter
+   - `AnyToolFunction` type includes toolContext parameter
+   - `ToolExecutionContext` imported in types.ts
+
+**Migration Pattern:**
+
 ```typescript
-export function wrapTool<TArgs extends ToolFunctionArgs>(
-    toolName: string,
-    fn: (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => Promise<any>
-): ToolFunction<TArgs> {
-    return async (args: TArgs, context?: AgentContext, toolContext?: ToolExecutionContext) => {
-        // Pass toolContext to wrapped function
-        const result = await fn(args, context, toolContext);
-        // ...
-    };
-}
+// Phase 3.6: Execution context-aware tool
+wrapTool('tool_name', async (args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+    // Read state through execution context when available, fallback to direct store
+    const stateValue = toolContext
+        ? toolContext.get('stateKey')
+        : useStore.getState().stateKey;
+
+    // Use isolated state...
+
+    // Mutations still go through store actions (not in execution context scope)
+    if (needToMutate) {
+        store.someAction(value);
+    }
+
+    return result;
+})
 ```
 
-2. Update critical tools to use toolContext:
-   - MemoryTools (highest priority - modifies agentHistory)
-   - ProjectTools (modifies projects)
-   - OrganizationTools (modifies activeOrg)
-   - CreativeTools (modifies images, history)
+**Why These Tools:**
+- **MemoryTools**: Modifies agentHistory (highest corruption risk from concurrent agents)
+- **ProjectTools**: Core project management, frequently used across agents
+- **OrganizationTools**: Core organization management, affects all project operations
 
-3. Update ToolFunction type definition in `types.ts`
+**Other Tools Status:**
+- **CoreTools**: Already has partial toolContext support from Phase 3.5
+- **VideoTools/DirectorTools**: Complex, mostly use store actions, low priority
+- **NavigationTools**: Only calls actions, no state reads, no migration needed
+- **CREATIVE_TOOLS**: Uses StorageService, no direct store access, no migration needed
 
-**Estimated Effort:** ~2 hours (update wrapTool + migrate 10-15 critical tools)
+**Testing:**
+- ✅ TypeScript type checking passes with no errors
+- ✅ Backwards compatibility maintained (toolContext is optional)
+- ✅ Pattern established for future tool migrations
 
 ---
 
-**Status:** Phase 3.5 - Complete ✅
-**Next:** Phase 3.6 (TOOL_REGISTRY migration) or Phase 4 (Hub-and-Spoke Enforcement)
-**Date:** 2026-01-20
+**Status:** Phase 3.6 - Complete ✅
+**Next:** Phase 4 (Hub-and-Spoke Enforcement)
+**Date:** 2026-01-21

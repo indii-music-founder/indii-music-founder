@@ -198,6 +198,92 @@
         }
       ],
       "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "memories",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "memories",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "importance",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "memories",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "isActive",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastAccessedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "memories",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "category",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "importance",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "context",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "lastUpdated",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
     }
   ]
 }

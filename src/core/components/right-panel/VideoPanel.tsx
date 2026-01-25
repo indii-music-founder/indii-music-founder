@@ -41,6 +41,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     resolution: studioControls.resolution,
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
+                    generateAudio: studioControls.generateAudio,
+                    model: studioControls.model,
                     firstFrame: undefined // Logic handled in service if needed
                 });
             } else {
@@ -57,6 +59,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     fps: studioControls.fps,
                     cameraMovement: studioControls.cameraMovement,
                     motionStrength: studioControls.motionStrength,
+                    generateAudio: studioControls.generateAudio,
+                    model: studioControls.model,
                     orgId: currentOrganizationId
                 });
             }

@@ -49,6 +49,7 @@ const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
+const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 
 
 
@@ -83,6 +84,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'audio-analyzer': AudioAnalyzer,
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
+    'history': HistoryDashboard,
 };
 
 // ============================================================================
@@ -204,6 +206,21 @@ function useAppInitialization() {
     }, [user, initializeHistory, loadProjects]);
 }
 
+function useOnboardingRedirect() {
+    const { user, authLoading, currentModule } = useStore();
+
+    useEffect(() => {
+        if (authLoading) return;
+
+        // If not authenticated, we might want to redirect to a login screen?
+        // But currently App.tsx doesn't have a specific login route visible in the code I saw.
+        // It renders modules. We probably need a Login Module or Overlay.
+
+    }, [user, authLoading, currentModule]);
+}
+
+// Module Renderer and App Component follow
+
 // ============================================================================
 // Module Renderer Component
 // ============================================================================
@@ -243,6 +260,7 @@ export default function App() {
 
     // Initialize app
     useAppInitialization();
+    useOnboardingRedirect();
 
     // Log module changes in dev
 
@@ -309,16 +327,7 @@ export default function App() {
                             </ErrorBoundary>
                         </div>
 
-                        {showChrome && (
-                            <div className="flex-shrink-0 z-50 relative">
-                                <ErrorBoundary>
-                                    <ChatOverlayWrapper />
-                                    <div className="relative z-[101]">
-                                        <CommandBar />
-                                    </div>
-                                </ErrorBoundary>
-                            </div>
-                        )}
+                        {showChrome && <ChatOverlayWrapper />}
                     </main>
 
                     {/* Right Panel - Hidden for standalone modules and mobile */}
@@ -353,6 +362,13 @@ export default function App() {
 
                     {/* Industrial Transmission Monitor */}
                     <TransmissionMonitor />
+
+                    {/* Global Command Bar (Floating Pill) */}
+                    {showChrome && (
+                        <ErrorBoundary>
+                            <CommandBar />
+                        </ErrorBoundary>
+                    )}
                 </div>
             </ToastProvider>
         </VoiceProvider>

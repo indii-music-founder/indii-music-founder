@@ -23,6 +23,20 @@ vi.mock('@/services/ai/VoiceService', () => ({
     }
 }));
 
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        showToast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+        loading: vi.fn(),
+        updateProgress: vi.fn(),
+        dismiss: vi.fn(),
+        promise: vi.fn(),
+    })
+}));
+
 // Mock react-virtuoso
 // role="feed" requires children with role="article".
 // Since itemContent returns a MessageItem which is a motion.div (mocked to div),
@@ -89,6 +103,21 @@ describe('ChatOverlay Accessibility', () => {
         sessions: { 'sess1': { title: 'Test Session', participants: ['indii'] } },
         loadSessions: vi.fn(),
         toggleAgentWindow: vi.fn(),
+        agentWindowSize: { width: 400, height: 600 },
+        setAgentWindowSize: vi.fn(),
+        isCommandBarDetached: false,
+        setCommandBarDetached: vi.fn(),
+        chatChannel: 'agent',
+        setChatChannel: vi.fn(),
+        isAgentProcessing: false,
+        currentModule: 'dashboard',
+        setModule: vi.fn(),
+        commandBarInput: '',
+        commandBarAttachments: [],
+        setCommandBarInput: vi.fn(),
+        setCommandBarInput: vi.fn(),
+        commandBarAttachments: [],
+        setCommandBarAttachments: vi.fn(),
     };
 
     beforeEach(() => {
@@ -178,11 +207,8 @@ describe('ChatOverlay Accessibility', () => {
         fireEvent.click(screen.getByTestId('simulate-scroll-up'));
 
         // Should be visible
-        const resumeBtn = screen.getByText('Resume Feed');
+        const resumeBtn = screen.getByRole('button', { name: 'Scroll to newest messages' });
         expect(resumeBtn).toBeInTheDocument();
-
-        // Should use a button element for keyboard access
-        expect(resumeBtn.closest('button')).toBeInTheDocument();
     });
 
     it('should have accessible name for ThoughtChain region', () => {
@@ -195,5 +221,47 @@ describe('ChatOverlay Accessibility', () => {
         const buttonId = toggleButton?.getAttribute('id');
 
         expect(region).toHaveAttribute('aria-labelledby', buttonId);
+    });
+
+    it('should have accessible placeholder when chat is empty', async () => {
+        const emptyState = {
+            ...mockStoreState,
+            agentHistory: []
+        };
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') return selector(emptyState);
+            return emptyState;
+        });
+
+        const { container } = render(<ChatOverlay onClose={vi.fn()} />);
+
+        const results = await axe(container);
+        expect(results).toHaveNoViolations();
+
+        // Verify the heading is present
+        expect(screen.getByRole('heading', { name: "How can I help you?" })).toBeInTheDocument();
+    });
+
+    it('should show accessible status footer when processing', () => {
+        const processingState = {
+            ...mockStoreState,
+            isAgentProcessing: true
+        };
+
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector: any) => {
+            if (typeof selector === 'function') return selector(processingState);
+            return processingState;
+        });
+
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // We expect the footer to be present with role="status"
+        // Since MessageItem is NOT streaming in this state (agentHistory is default),
+        // there should be only one role="status" - the footer.
+
+        const footerStatus = screen.getByRole('status');
+        expect(footerStatus).toHaveAttribute('aria-live', 'polite');
+        expect(footerStatus).toHaveTextContent('PROCESSING RESPONSE...');
     });
 });

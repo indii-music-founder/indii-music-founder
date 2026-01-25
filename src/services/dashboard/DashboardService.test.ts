@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DashboardService } from './DashboardService';
+import { MOCK_SALES_ANALYTICS } from './mockData';
 
 // Mock the store
 vi.mock('@/core/store', () => ({
@@ -110,5 +111,111 @@ describe('DashboardService', () => {
         // Others: 0
         const expectedActivity = [0, 0, 0, 0, 1, 1, 1];
         expect(analytics.weeklyActivity).toEqual(expectedActivity);
+    });
+
+    it('getSalesAnalytics fetches from API and caches result', async () => {
+        const mockData = { ...MOCK_SALES_ANALYTICS, totalVisitors: { value: 9999, trend: 'up' as const } };
+
+        // Mock global.fetch
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            json: async () => mockData
+        });
+        global.fetch = fetchMock;
+
+        // Mock env variable
+        vi.stubEnv('VITE_API_URL', 'https://api.example.com');
+
+        const { useStore } = await import('@/core/store');
+        (useStore.getState as any).mockReturnValue({ userProfile: { id: 'test-user' } });
+
+        // First call
+        const result1 = await DashboardService.getSalesAnalytics('30d');
+        expect(fetchMock).toHaveBeenCalledWith('https://api.example.com/api/analytics/sales?period=30d');
+        expect(result1.totalVisitors.value).toBe(9999);
+
+        // Second call (should be cached)
+        fetchMock.mockClear();
+        const result2 = await DashboardService.getSalesAnalytics('30d');
+        expect(fetchMock).not.toHaveBeenCalled();
+        expect(result2.totalVisitors.value).toBe(9999);
+    });
+
+    it('getSalesAnalytics falls back to mock data on fetch failure', async () => {
+        // Mock global.fetch to fail
+        const fetchMock = vi.fn().mockRejectedValue(new Error('Network Error'));
+        global.fetch = fetchMock;
+
+        vi.stubEnv('VITE_API_URL', 'https://api.example.com');
+
+        // Use a different period to avoid cache from previous test
+        const result = await DashboardService.getSalesAnalytics('90d');
+
+        // Should return mock data (default values from schema or mockData)
+        expect(result.conversionRate.value).toBe(MOCK_SALES_ANALYTICS.conversionRate.value);
+        expect(fetchMock).toHaveBeenCalled();
+    });
+
+    describe('getProjects', () => {
+        it('should return empty array if store is empty and loadProjects fails or returns nothing', async () => {
+            const mockLoadProjects = vi.fn();
+            const { useStore } = await import('@/core/store');
+            (useStore.getState as any).mockReturnValue({
+                projects: [],
+                loadProjects: mockLoadProjects,
+            });
+
+            const projects = await DashboardService.getProjects();
+            expect(projects).toEqual([]);
+            expect(mockLoadProjects).toHaveBeenCalled();
+        });
+
+        it('should call loadProjects if projects are empty, then return populated projects', async () => {
+            const mockLoadProjects = vi.fn();
+            const { useStore } = await import('@/core/store');
+
+            // First call returns empty, triggers load
+            (useStore.getState as any).mockReturnValueOnce({
+                projects: [],
+                loadProjects: mockLoadProjects,
+            });
+
+            // Second call (after await loadProjects) returns populated
+            (useStore.getState as any).mockReturnValueOnce({
+                projects: [
+                    { id: '1', name: 'Test Project', date: 1000, assetCount: 5, thumbnail: 'thumb.jpg' }
+                ],
+                loadProjects: mockLoadProjects,
+            });
+
+            const projects = await DashboardService.getProjects();
+
+            expect(mockLoadProjects).toHaveBeenCalled();
+            expect(projects).toHaveLength(1);
+            expect(projects[0]).toEqual({
+                id: '1',
+                name: 'Test Project',
+                lastModified: 1000,
+                assetCount: 5,
+                thumbnail: 'thumb.jpg'
+            });
+        });
+
+        it('should return cached projects without calling loadProjects if they exist', async () => {
+            const mockLoadProjects = vi.fn();
+            const { useStore } = await import('@/core/store');
+            (useStore.getState as any).mockReturnValue({
+                projects: [
+                    { id: '1', name: 'Cached Project', date: 2000 }
+                ],
+                loadProjects: mockLoadProjects,
+            });
+
+            const projects = await DashboardService.getProjects();
+
+            expect(mockLoadProjects).not.toHaveBeenCalled();
+            expect(projects).toHaveLength(1);
+            expect(projects[0].name).toBe('Cached Project');
+        });
     });
 });

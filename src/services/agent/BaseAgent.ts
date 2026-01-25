@@ -1,5 +1,5 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
@@ -223,6 +223,7 @@ export class BaseAgent implements SpecializedAgent {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
+                const { validateHubAndSpoke } = await import('./types');
 
                 if (typeof targetAgentId !== 'string' || typeof task !== 'string') {
                     return toolError('Invalid delegation parameters', 'INVALID_ARGS');
@@ -233,6 +234,13 @@ export class BaseAgent implements SpecializedAgent {
                         `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
                         'INVALID_AGENT_ID'
                     );
+                }
+
+                // Phase 4: Enforce hub-and-spoke architecture
+                const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
+                if (hubSpokeError) {
+                    console.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
+                    return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
                 }
 
                 // Phase 2: Check for delegation loops
@@ -257,6 +265,7 @@ export class BaseAgent implements SpecializedAgent {
             consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
+                const { validateHubAndSpoke } = await import('./types');
 
                 if (!Array.isArray(consultations)) {
                     return toolError('Consultations must be an array', 'INVALID_ARGS');
@@ -268,6 +277,14 @@ export class BaseAgent implements SpecializedAgent {
                             if (!VALID_AGENT_IDS.includes(c.targetAgentId as ValidAgentId)) {
                                 return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
                             }
+
+                            // Phase 4: Enforce hub-and-spoke architecture
+                            const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
+                            if (hubSpokeError) {
+                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
+                                return { agentId: c.targetAgentId, error: hubSpokeError };
+                            }
+
                             const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
                             return { agentId: c.targetAgentId, response: res };
                         })
@@ -341,7 +358,7 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
-                    console.error('[BaseAgent] Speak failure:', err);
+                    console.error('[indii:BaseAgent] Speak failure:', err);
                     return {
                         success: false,
                         message: `Failed to speak: ${message}`
@@ -570,9 +587,10 @@ ${task}
 
         const accumulatedResponse = '';
         let iterations = 0;
-        const MAX_ITERATIONS = 5;
+        const MAX_ITERATIONS = 15;
         const toolCalls: any[] = [];
         let lastToolResult: any = undefined;
+        let currentThoughtSignature: string | undefined = undefined;
 
         // Phase 2: Clear loop detector for new task execution
         this.loopDetector.clear();
@@ -620,8 +638,30 @@ ${task}
                         ]
                     }],
                     config: { ...AI_CONFIG.THINKING.LOW },
-                    tools: allTools as any
+                    tools: allTools as any,
+                    thoughtSignature: currentThoughtSignature
                 });
+
+                if (response.thoughtSignature) {
+                    currentThoughtSignature = response.thoughtSignature;
+                }
+
+                // LEDGER: Record Spend based on Token Usage
+                const usage = response.usage?.();
+                if (usage && context?.userId) {
+                    const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
+                    // Ensure we are using a text model pricing schema (input/output)
+                    if (pricing && 'input' in pricing && 'output' in pricing) {
+                        const inputCost = ((usage.promptTokenCount || 0) / 1000000) * pricing.input;
+                        const outputCost = ((usage.candidatesTokenCount || 0) / 1000000) * pricing.output;
+                        const totalCost = inputCost + outputCost;
+
+                        if (totalCost > 0) {
+                            await MembershipService.recordSpend(context.userId, totalCost);
+                        }
+                    }
+                }
+
                 const functionCall = response.functionCalls()?.[0];
 
                 if (functionCall) {
@@ -680,6 +720,13 @@ ${task}
                     // Update prompt with tool result for next iteration
                     fullPrompt += `\n[Tool Call: ${name}(${argsStr})] Result: ${outputText}\n`;
 
+                    // Emit tool result for UI/Persistence
+                    onProgress?.({
+                        type: 'tool_result',
+                        toolName: name,
+                        content: outputText
+                    });
+
                     if (name === 'speak') {
                         // Keep going - don't let speak terminate the agent turn
                         continue;
@@ -701,6 +748,7 @@ ${task}
                         text: finalResponse,
                         data: lastToolResult,
                         toolCalls: toolCalls.length > 0 ? toolCalls : undefined,
+                        thoughtSignature: currentThoughtSignature,
                         usage: usage ? {
                             promptTokens: usage.promptTokenCount || 0,
                             completionTokens: usage.candidatesTokenCount || 0,

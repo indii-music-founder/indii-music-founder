@@ -3,6 +3,7 @@ import { CampaignAsset, ScheduledPost, CampaignStatus } from '../types';
 import CampaignList from './CampaignList';
 import CampaignDetail from './CampaignDetail';
 import EditableCopyModal from './EditableCopyModal';
+import AIImageBatchModal from './AIImageBatchModal';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -28,6 +29,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
     const toast = useToast();
     const [editingPost, setEditingPost] = useState<ScheduledPost | null>(null);
     const [isExecuting, setIsExecuting] = useState(false);
+    const [showImageBatchModal, setShowImageBatchModal] = useState(false);
 
     const handleExecute = async () => {
         if (!selectedCampaign) return;
@@ -108,13 +110,23 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
                         onExecute={handleExecute}
                         isExecuting={isExecuting}
                         onEditPost={setEditingPost}
-                        onGenerateImages={() => toast.info("Image generation functionality coming soon!")}
+                        onGenerateImages={() => setShowImageBatchModal(true)}
                     />
                     {editingPost && (
                         <EditableCopyModal
                             post={editingPost}
                             onClose={() => setEditingPost(null)}
                             onSave={handleSaveCopy}
+                        />
+                    )}
+                    {showImageBatchModal && (
+                        <AIImageBatchModal
+                            campaign={selectedCampaign}
+                            onClose={() => setShowImageBatchModal(false)}
+                            onComplete={(updatedCampaign) => {
+                                onUpdateCampaign(updatedCampaign);
+                                setShowImageBatchModal(false);
+                            }}
                         />
                     )}
                 </>

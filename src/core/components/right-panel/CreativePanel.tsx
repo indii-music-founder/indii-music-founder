@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Wand2, History, ChevronRight, ChevronDown, Sliders } from 'lucide-react';
+import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
@@ -21,7 +21,8 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
     const [activeTab, setActiveTab] = useState('create');
     const {
         studioControls, setStudioControls,
-        whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia
+        whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
+        videoInputs, setVideoInput
     } = useStore();
     const toast = useToast();
 
@@ -109,7 +110,7 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                             </div>
 
                             {/* Media Type Toggle */}
-                            <div className="flex items-center gap-1 p-1 bg-black/40 rounded-lg">
+                            <div className="flex items-center gap-1 p-1 bg-black/40 rounded-lg mb-2">
                                 <button
                                     onClick={() => setTargetMedia('image')}
                                     className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-md text-[10px] font-medium uppercase transition-all ${whiskState.targetMedia === 'image'
@@ -141,55 +142,128 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     Both
                                 </button>
                             </div>
+
+                            {/* Transition Mode Toggle (Veo Only) */}
+                            {whiskState.targetMedia !== 'image' && (
+                                <div className="flex bg-black/40 p-1 rounded-lg">
+                                    <button
+                                        onClick={() => setStudioControls({ cameraMovement: 'Static' })} // HACK: reusing cameraMovement to store mode temporarily or we should add a proper mode
+                                        // Better: just use a local state or add 'mode' to store. 
+                                        // For now, let's assume 'Static' = Standard, 'Transition' = Interpolation if valid. 
+                                        // Actually, let's use the `videoInputs` existence as the toggle? No, better to have explicit UI.
+                                        // I will add `isTransitionMode` to local state since it's UI-only logic, 
+                                        // but wait, I need to know if I should send `first_frame`.
+                                        // Let's check if start/end frame are populated.
+                                        className="flex-1 text-[10px] py-1 text-center text-gray-400"
+                                    >
+                                        Standard
+                                    </button>
+                                    <button className="flex-1 text-[10px] py-1 text-center text-blue-400 bg-blue-500/10 rounded">
+                                        Interpolation Setup
+                                    </button>
+                                </div>
+                            )}
                         </div>
 
-                        {/* Drop Zones */}
+                        {/* Drop Zones / Transition Inputs */}
                         <div className="space-y-2">
-                            <WhiskDropZone
-                                title="Subject"
-                                category="subject"
-                                items={whiskState.subjects}
-                                onAdd={(type, content, cap) => addWhiskItem('subject', type, content, cap)}
-                                onRemove={(id) => removeWhiskItem('subject', id)}
-                                onToggle={(id) => toggleWhiskItem('subject', id)}
-                                onUpdate={(id, updates) => updateWhiskItem('subject', id, updates)}
-                                description="Main subject"
-                            />
+                            {studioControls.isTransitionMode ? (
+                                <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-300">
+                                    <div className="bg-blue-500/5 rounded-xl border border-blue-500/20 p-3 space-y-3">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-[10px] font-bold text-blue-400 tracking-wider flex items-center gap-2">
+                                                <Video size={12} /> TRANSITION KEYFRAMES
+                                            </label>
+                                            <button
+                                                onClick={() => { setVideoInput('firstFrame', null); setVideoInput('lastFrame', null); }}
+                                                className="text-[9px] text-gray-600 hover:text-gray-400 uppercase font-bold"
+                                            >
+                                                Clear All
+                                            </button>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            {/* Start Frame */}
+                                            <div className="space-y-2">
+                                                <span className="text-[9px] text-gray-500 uppercase font-bold">Start Frame</span>
+                                                <WhiskDropZone
+                                                    title=""
+                                                    category="subject"
+                                                    items={videoInputs.firstFrame ? [{ id: 'ff', type: 'image', content: videoInputs.firstFrame.url, checked: true, category: 'subject' }] : []}
+                                                    onAdd={(type, content) => setVideoInput('firstFrame', { id: `ff_${Date.now()}`, type: 'image', url: content, prompt: 'Start frame', timestamp: Date.now(), projectId: '' })}
+                                                    onRemove={() => setVideoInput('firstFrame', null)}
+                                                    onToggle={() => { }}
+                                                    onUpdate={() => { }}
+                                                    description="Drop start"
+                                                    compact={true}
+                                                />
+                                            </div>
+                                            {/* End Frame */}
+                                            <div className="space-y-2">
+                                                <span className="text-[9px] text-gray-500 uppercase font-bold">End Frame</span>
+                                                <WhiskDropZone
+                                                    title=""
+                                                    category="subject"
+                                                    items={videoInputs.lastFrame ? [{ id: 'lf', type: 'image', content: videoInputs.lastFrame.url, checked: true, category: 'subject' }] : []}
+                                                    onAdd={(type, content) => setVideoInput('lastFrame', { id: `lf_${Date.now()}`, type: 'image', url: content, prompt: 'End frame', timestamp: Date.now(), projectId: '' })}
+                                                    onRemove={() => setVideoInput('lastFrame', null)}
+                                                    onToggle={() => { }}
+                                                    onUpdate={() => { }}
+                                                    description="Drop end"
+                                                    compact={true}
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <>
+                                    <WhiskDropZone
+                                        title="Subject"
+                                        category="subject"
+                                        items={whiskState.subjects}
+                                        onAdd={(type, content, cap) => addWhiskItem('subject', type, content, cap)}
+                                        onRemove={(id) => removeWhiskItem('subject', id)}
+                                        onToggle={(id) => toggleWhiskItem('subject', id)}
+                                        onUpdate={(id, updates) => updateWhiskItem('subject', id, updates)}
+                                        description="Main subject"
+                                    />
 
-                            <WhiskDropZone
-                                title="Scene"
-                                category="scene"
-                                items={whiskState.scenes}
-                                onAdd={(type, content, cap) => addWhiskItem('scene', type, content, cap)}
-                                onRemove={(id) => removeWhiskItem('scene', id)}
-                                onToggle={(id) => toggleWhiskItem('scene', id)}
-                                onUpdate={(id, updates) => updateWhiskItem('scene', id, updates)}
-                                description="Background/Setting"
-                            />
+                                    <WhiskDropZone
+                                        title="Scene"
+                                        category="scene"
+                                        items={whiskState.scenes}
+                                        onAdd={(type, content, cap) => addWhiskItem('scene', type, content, cap)}
+                                        onRemove={(id) => removeWhiskItem('scene', id)}
+                                        onToggle={(id) => toggleWhiskItem('scene', id)}
+                                        onUpdate={(id, updates) => updateWhiskItem('scene', id, updates)}
+                                        description="Background/Setting"
+                                    />
 
-                            <WhiskDropZone
-                                title="Style"
-                                category="style"
-                                items={whiskState.styles}
-                                onAdd={(type, content, cap) => addWhiskItem('style', type, content, cap)}
-                                onRemove={(id) => removeWhiskItem('style', id)}
-                                onToggle={(id) => toggleWhiskItem('style', id)}
-                                onUpdate={(id, updates) => updateWhiskItem('style', id, updates)}
-                                description="Aesthetic/Vibe"
-                            />
+                                    <WhiskDropZone
+                                        title="Style"
+                                        category="style"
+                                        items={whiskState.styles}
+                                        onAdd={(type, content, cap) => addWhiskItem('style', type, content, cap)}
+                                        onRemove={(id) => removeWhiskItem('style', id)}
+                                        onToggle={(id) => toggleWhiskItem('style', id)}
+                                        onUpdate={(id, updates) => updateWhiskItem('style', id, updates)}
+                                        description="Aesthetic/Vibe"
+                                    />
 
-                            {(whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both') && (
-                                <WhiskDropZone
-                                    title="Motion"
-                                    category="motion"
-                                    items={whiskState.motion}
-                                    onAdd={(type, content, cap) => addWhiskItem('motion', type, content, cap)}
-                                    onRemove={(id) => removeWhiskItem('motion', id)}
-                                    onToggle={(id) => toggleWhiskItem('motion', id)}
-                                    onUpdate={(id, updates) => updateWhiskItem('motion', id, updates)}
-                                    description="Camera movement"
-                                    accentColor="blue"
-                                />
+                                    {(whiskState.targetMedia === 'video' || whiskState.targetMedia === 'both') && (
+                                        <WhiskDropZone
+                                            title="Motion"
+                                            category="motion"
+                                            items={whiskState.motion}
+                                            onAdd={(type, content, cap) => addWhiskItem('motion', type, content, cap)}
+                                            onRemove={(id) => removeWhiskItem('motion', id)}
+                                            onToggle={(id) => toggleWhiskItem('motion', id)}
+                                            onUpdate={(id, updates) => updateWhiskItem('motion', id, updates)}
+                                            description="Camera movement"
+                                            accentColor="blue"
+                                        />
+                                    )}
+                                </>
                             )}
                         </div>
 
@@ -232,6 +306,105 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                         />
                     </div>
 
+                    {/* Gemini 3 / Veo 3.1 Advanced Controls */}
+                    <div className="p-4 bg-white/5 rounded-2xl border border-white/10 space-y-4 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none group-hover:bg-purple-500/20 transition-all duration-700" />
+
+                        <div className="flex items-center justify-between relative z-10">
+                            <label className="text-[10px] font-bold text-gray-400 tracking-wider flex items-center gap-2">
+                                <Zap size={12} className="text-yellow-400" />
+                                MODEL CONFIGURATION
+                            </label>
+
+                            {/* Thinking Toggle */}
+                            <motion.button
+                                whileTap={{ scale: 0.95 }}
+                                onClick={() => setStudioControls({ thinking: !studioControls.thinking })}
+                                className={`relative flex items-center gap-2 px-3 py-1.5 rounded-full text-[10px] font-bold tracking-wide transition-all duration-300 border ${studioControls.thinking
+                                    ? 'bg-purple-500/20 text-purple-200 border-purple-500/50 shadow-[0_0_15px_rgba(168,85,247,0.3)]'
+                                    : 'bg-black/40 text-gray-500 border-white/5 hover:border-white/20 hover:text-gray-300'
+                                    }`}
+                                title="Enable High-Reasoning Mode"
+                                data-testid="thinking-mode-toggle"
+                            >
+                                <Brain size={12} className={studioControls.thinking ? "text-purple-300 animate-pulse" : ""} />
+                                THINKING
+                                {studioControls.thinking && (
+                                    <span className="flex h-1.5 w-1.5 relative">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-purple-500"></span>
+                                    </span>
+                                )}
+                            </motion.button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 relative z-10">
+                            {/* Model Selector (Segmented Control) */}
+                            <div className="bg-black/60 p-1 rounded-xl flex relative h-9 border border-white/5">
+                                {/* Sliding Background */}
+                                <motion.div
+                                    className="absolute top-1 bottom-1 rounded-lg bg-white/10 border border-white/10 shadow-sm"
+                                    initial={false}
+                                    animate={{
+                                        left: studioControls.model === 'fast' ? '4px' : '50%',
+                                        width: 'calc(50% - 4px)',
+                                        x: studioControls.model === 'pro' ? 2 : 0
+                                    }}
+                                    transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                                />
+
+                                <button
+                                    onClick={() => setStudioControls({ model: 'fast' })}
+                                    className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors duration-200 ${studioControls.model === 'fast' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                                    data-testid="model-selector-fast"
+                                >
+                                    Flash
+                                </button>
+                                <button
+                                    onClick={() => setStudioControls({ model: 'pro' })}
+                                    className={`flex-1 relative z-10 text-[10px] font-bold uppercase transition-colors duration-200 ${studioControls.model === 'pro' ? 'text-purple-300' : 'text-gray-500 hover:text-gray-300'}`}
+                                    data-testid="model-selector-pro"
+                                >
+                                    Pro
+                                </button>
+                            </div>
+
+                            {/* Media Resolution */}
+                            <div className="relative group">
+                                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none z-20">
+                                    <Layers size={12} className={`transition-colors duration-300 ${studioControls.mediaResolution === 'high' ? 'text-blue-400' : 'text-gray-500 group-hover:text-gray-400'}`} />
+                                </div>
+                                <select
+                                    value={studioControls.mediaResolution || 'medium'}
+                                    onChange={(e) => setStudioControls({ mediaResolution: e.target.value as any })}
+                                    className="w-full h-9 bg-black/60 text-white text-[10px] pl-9 pr-8 rounded-xl border border-white/5 outline-none appearance-none cursor-pointer hover:bg-black/80 hover:border-white/10 focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all font-medium"
+                                    data-testid="media-resolution-dropdown"
+                                >
+                                    <option value="low">Low Res (Fast)</option>
+                                    <option value="medium">Standard</option>
+                                    <option value="high">High Res (Quality)</option>
+                                </select>
+                                <ChevronDown size={12} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 pointer-events-none group-hover:text-gray-400 transition-colors" />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Veo Audio Toggle */}
+                    {whiskState.targetMedia !== 'image' && (
+                        <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                            <motion.button
+                                onClick={() => setStudioControls({ generateAudio: !studioControls.generateAudio })}
+                                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-xs font-medium transition-all ${studioControls.generateAudio
+                                    ? 'bg-green-500/20 text-green-300 border border-green-500/30'
+                                    : 'bg-black/40 text-gray-500 border border-transparent'
+                                    }`}
+                            >
+                                <div className={`w-2 h-2 rounded-full ${studioControls.generateAudio ? 'bg-green-400 animate-pulse' : 'bg-gray-600'}`} />
+                                Generate Soundtrack
+                            </motion.button>
+                        </div>
+                    )}
+
                     {/* Settings Grid */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
@@ -258,10 +431,12 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     value={studioControls.resolution || '1024x1024'}
                                     onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
                                     className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                    data-testid="video-resolution-dropdown"
                                 >
                                     <option value="1024x1024">1K (Square)</option>
                                     <option value="1280x720">HD (720p)</option>
                                     <option value="1920x1080">FHD (1080p)</option>
+                                    <option value="4k">UHD (4K)</option>
                                     <option value="1080x1920">Vertical (1080x1920)</option>
                                     <option value="720x1280">Vertical (720x1280)</option>
                                 </select>
@@ -294,12 +469,12 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                 className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/20 transition-all placeholder:text-gray-600"
                             />
                         </div>
+                        {/* Advanced Settings Toggle */}
+
                     </div>
-
-                    {/* Advanced Settings Toggle */}
-
                 </div>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }

@@ -4,6 +4,7 @@ import { ConversationSession } from '@/core/store/slices/agentSlice'; // Direct 
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
 import { where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { cleanFirestoreData } from '@/services/utils/firebase';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {
@@ -31,7 +32,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         };
 
         // We use set since we already generated an ID in the store
-        await this.set(session.id, doc);
+        await this.set(session.id, cleanFirestoreData(doc));
 
         // KEEPER: Dual Write for Electron Local Persistence
         this.saveToLocal(session.id, session);
@@ -50,7 +51,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             delete firestoreUpdates.createdAt;
         }
 
-        await this.update(id, firestoreUpdates);
+        await this.update(id, cleanFirestoreData(firestoreUpdates));
 
         // KEEPER: Dual Write for Electron Local Persistence
         this.saveToLocal(id, updates);

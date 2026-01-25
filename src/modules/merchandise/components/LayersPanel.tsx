@@ -8,17 +8,7 @@ import type {
     LayerPropertyValue,
 } from '../types/fabric-extensions';
 
-/**
- * Debounce helper for throttling rapid property updates
- */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const debounce = <T extends (...args: any[]) => void>(fn: T, ms: number): ((...args: Parameters<T>) => void) => {
-    let timeoutId: NodeJS.Timeout;
-    return (...args: Parameters<T>) => {
-        clearTimeout(timeoutId);
-        timeoutId = setTimeout(() => fn(...args), ms);
-    };
-};
+import { debounce } from '@/lib/debounce';
 
 export interface LayersPanelProps {
     layers: CanvasObject[];
@@ -72,11 +62,12 @@ const LayerProperties: React.FC<{
             <div className="space-y-3">
                 {/* Opacity */}
                 <div>
-                    <label className="text-xs text-neutral-400 block mb-1.5">
+                    <label htmlFor={`opacity-${layer.id}`} className="text-xs text-neutral-400 block mb-1.5">
                         Opacity
                         <span className="ml-2 text-[#FFE135]">{localOpacity}%</span>
                     </label>
                     <input
+                        id={`opacity-${layer.id}`}
                         type="range"
                         min="0"
                         max="100"
@@ -94,8 +85,9 @@ const LayerProperties: React.FC<{
                 {layer.type === 'text' && (
                     <>
                         <div>
-                            <label className="text-xs text-neutral-400 block mb-1.5">Font Size</label>
+                            <label htmlFor={`fontsize-${layer.id}`} className="text-xs text-neutral-400 block mb-1.5">Font Size</label>
                             <input
+                                id={`fontsize-${layer.id}`}
                                 type="number"
                                 min="8"
                                 max="200"
@@ -109,8 +101,9 @@ const LayerProperties: React.FC<{
                             />
                         </div>
                         <div>
-                            <label className="text-xs text-neutral-400 block mb-1.5">Color</label>
+                            <label htmlFor={`color-${layer.id}`} className="text-xs text-neutral-400 block mb-1.5">Color</label>
                             <input
+                                id={`color-${layer.id}`}
                                 type="color"
                                 value={localColor}
                                 onChange={(e) => {
@@ -126,8 +119,9 @@ const LayerProperties: React.FC<{
 
                 {/* Blend Mode */}
                 <div>
-                    <label className="text-xs text-neutral-400 block mb-1.5">Blend Mode</label>
+                    <label htmlFor={`blendmode-${layer.id}`} className="text-xs text-neutral-400 block mb-1.5">Blend Mode</label>
                     <select
+                        id={`blendmode-${layer.id}`}
                         value={localBlendMode}
                         onChange={(e) => {
                             const value = e.target.value as GlobalCompositeOperation;

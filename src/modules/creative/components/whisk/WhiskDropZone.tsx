@@ -19,9 +19,10 @@ interface WhiskDropZoneProps {
     onUpdate: (id: string, updates: Partial<WhiskItem>) => void;
     description: string;
     accentColor?: string; // For video-related categories
+    compact?: boolean;
 }
 
-export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor: _accentColor = 'purple' }: WhiskDropZoneProps) => {
+export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggle, onUpdate, description, accentColor: _accentColor = 'purple', compact }: WhiskDropZoneProps) => {
     const [isDragOver, setIsDragOver] = useState(false);
     const [isExpanded, setIsExpanded] = useState(true);
     const [isAdding, setIsAdding] = useState(false);
@@ -122,45 +123,46 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
 
     return (
         <div className="mb-4">
-            {/* Section Header */}
-            <div className="flex items-center justify-between mb-2 px-1">
-                <button
-                    onClick={() => setIsExpanded(!isExpanded)}
-                    className="flex items-center gap-2 group"
-                    aria-expanded={isExpanded}
-                    aria-label={isExpanded ? `Collapse ${title} section` : `Expand ${title} section`}
-                >
-                    <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
-                        {title}
-                    </h3>
-                    {activeItems.length > 0 && (
-                        <span className="flex items-center gap-1 text-[9px] text-purple-400 bg-purple-500/20 px-1.5 py-0.5 rounded">
-                            <Lock size={8} />
-                            {activeItems.length}
-                        </span>
-                    )}
-                    {isExpanded ? <ChevronUp size={12} className="text-gray-500" /> : <ChevronDown size={12} className="text-gray-500" />}
-                </button>
-                <div className="flex gap-1">
+            {!compact && (
+                <div className="flex items-center justify-between mb-2 px-1">
                     <button
-                        onClick={handleInspire}
-                        disabled={isInspiring}
-                        className="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
-                        title="Inspire Me"
-                        aria-label={isInspiring ? "Generating inspiration..." : `Inspire me with ${title} ideas`}
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="flex items-center gap-2 group"
+                        aria-expanded={isExpanded}
+                        aria-label={isExpanded ? `Collapse ${title} section` : `Expand ${title} section`}
                     >
-                        {isInspiring ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-widest group-hover:text-white transition-colors">
+                            {title}
+                        </h3>
+                        {activeItems.length > 0 && (
+                            <span className="flex items-center gap-1 text-[9px] text-purple-400 bg-purple-500/20 px-1.5 py-0.5 rounded">
+                                <Lock size={8} />
+                                {activeItems.length}
+                            </span>
+                        )}
+                        {isExpanded ? <ChevronUp size={12} className="text-gray-500" /> : <ChevronDown size={12} className="text-gray-500" />}
                     </button>
-                    <button
-                        onClick={() => setIsAdding(!isAdding)}
-                        className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
-                        aria-label={isAdding ? "Cancel adding item" : `Add new ${title}`}
-                        aria-expanded={isAdding}
-                    >
-                        <Plus size={14} />
-                    </button>
+                    <div className="flex gap-1">
+                        <button
+                            onClick={handleInspire}
+                            disabled={isInspiring}
+                            className="p-1.5 text-gray-500 hover:text-yellow-400 hover:bg-yellow-500/10 rounded transition-colors disabled:opacity-50"
+                            title="Inspire Me"
+                            aria-label={isInspiring ? "Generating inspiration..." : `Inspire me with ${title} ideas`}
+                        >
+                            {isInspiring ? <Loader2 size={14} className="animate-spin" /> : <Wand2 size={14} />}
+                        </button>
+                        <button
+                            onClick={() => setIsAdding(!isAdding)}
+                            className={`p-1.5 rounded transition-all ${isAdding ? 'text-red-400 rotate-45 bg-red-500/10' : 'text-purple-400 hover:text-purple-300 hover:bg-purple-500/10'}`}
+                            aria-label={isAdding ? "Cancel adding item" : `Add new ${title}`}
+                            aria-expanded={isAdding}
+                        >
+                            <Plus size={14} />
+                        </button>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <AnimatePresence>
                 {isExpanded && (
@@ -246,7 +248,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                             onDragOver={(e) => { e.preventDefault(); setIsDragOver(true); }}
                             onDragLeave={() => setIsDragOver(false)}
                             onDrop={handleDrop}
-                            className={`relative min-h-[80px] rounded-xl border-2 border-dashed transition-all duration-200 ${isDragOver
+                            className={`relative transition-all duration-200 ${compact ? 'min-h-[60px]' : 'min-h-[80px]'} rounded-xl border-2 border-dashed ${isDragOver
                                 ? 'border-purple-500 bg-purple-500/10 shadow-[0_0_20px_rgba(147,51,234,0.3)]'
                                 : hasItems
                                     ? 'border-transparent bg-[#111]'
@@ -296,7 +298,7 @@ export const WhiskDropZone = ({ title, category, items, onAdd, onRemove, onToggl
                                             <div className="flex-1 min-w-0 flex items-center gap-2">
                                                 {item.type === 'image' ? (
                                                     <>
-                                                        <div className="w-12 h-12 rounded-lg border border-gray-700 overflow-hidden bg-black flex-shrink-0 shadow-inner">
+                                                        <div className={`${compact ? 'w-full h-full' : 'w-12 h-12'} rounded-lg border border-gray-700 overflow-hidden bg-black flex-shrink-0 shadow-inner`}>
                                                             <img src={item.content} className="w-full h-full object-cover" alt="" />
                                                         </div>
                                                         <span className="text-[10px] text-gray-300 truncate flex-1">

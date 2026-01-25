@@ -1,12 +1,13 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minimize2, RefreshCw, Bot, GripHorizontal } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2 } from 'lucide-react';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
 import { MessageItem } from './chat/ChatMessage';
 import { useDragControls } from 'framer-motion';
+import { PromptArea } from './command-bar/PromptArea';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -19,9 +20,62 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
     const chatChannel = useStore(state => state.chatChannel);
+    const isCommandBarDetached = useStore(state => state.isCommandBarDetached);
+    const setCommandBarDetached = useStore(state => state.setCommandBarDetached);
+    const windowSize = useStore(state => state.agentWindowSize);
+    const setAgentWindowSize = useStore(state => state.setAgentWindowSize);
+    const userProfile = useStore(state => state.userProfile);
+
     const dragControls = useDragControls();
 
-    // Derived state for active agent (defaulting to 'generalist' or first participant)
+    // Resize State
+    const [localSize, setLocalSize] = useState(windowSize);
+    const isResizing = useRef(false);
+
+    // Sync local size when store changes (e.g. from another component or initialization)
+    useEffect(() => {
+        setLocalSize(windowSize);
+    }, [windowSize]);
+
+    const handleResize = useCallback((direction: string, e: React.PointerEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        isResizing.current = true;
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = localSize.width;
+        const startHeight = localSize.height;
+
+        const onPointerMove = (moveEvent: PointerEvent) => {
+            if (!isResizing.current) return;
+
+            const deltaX = moveEvent.clientX - startX;
+            const deltaY = moveEvent.clientY - startY;
+
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+
+            if (direction.includes('right')) newWidth = Math.max(300, startWidth + deltaX);
+            if (direction.includes('left')) newWidth = Math.max(300, startWidth - deltaX);
+            if (direction.includes('bottom')) newHeight = Math.max(400, startHeight + deltaY);
+            if (direction.includes('top')) newHeight = Math.max(400, startHeight - deltaY);
+
+            setLocalSize({ width: newWidth, height: newHeight });
+        };
+
+        const onPointerUp = () => {
+            isResizing.current = false;
+            setAgentWindowSize(localSize);
+            window.removeEventListener('pointermove', onPointerMove);
+            window.removeEventListener('pointerup', onPointerUp);
+        };
+
+        window.addEventListener('pointermove', onPointerMove);
+        window.addEventListener('pointerup', onPointerUp);
+    }, [localSize, setAgentWindowSize]);
+
+    // Derived state for active agent
     const activeAgentId = useStore(state => {
         const session = state.sessions[state.activeSessionId || ''];
         return session?.participants[0] || 'generalist';
@@ -33,23 +87,36 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
+
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
 
-    // No avatar property on SpecializedAgent, use null
     const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
-        // Avatar functionality removed - SpecializedAgent doesn't have avatar
         return undefined;
     }, []);
 
-    const itemContent = useCallback((index: number, msg: AgentMessage) => {
-        // Determine identity for this message
-        // If model, it could be INDII or SPECIALIST
-        // We can look at activeAgent state, BUT message history might contain mixed messages?
-        // For now, assume the current context applies or we'd need 'agentId' stored in message.
-        // Existing system stores 'role' but not 'agentId'.
-        // We'll use the 'displayAgent' logic derived from chatChannel for consistency in current session.
-        // A robust solution would store agentId on the message object.
+    // Placeholder state for features that seemed to be missing definitions
+    const [showHistory, setShowHistory] = useState(false);
+    const [ConversationHistoryList, setConversationHistoryList] = useState<React.ComponentType<any> | null>(null);
 
+    const [showInvite, setShowInvite] = useState(false);
+    const [AgentSelector, setAgentSelector] = useState<React.ComponentType<any> | null>(null);
+
+    useEffect(() => {
+        if (showHistory && !ConversationHistoryList) {
+            import('./ConversationHistoryList').then(m => setConversationHistoryList(() => m.ConversationHistoryList));
+        }
+    }, [showHistory, ConversationHistoryList]);
+
+    useEffect(() => {
+        if (showInvite && !AgentSelector) {
+            import('./AgentSelector').then(m => setAgentSelector(() => m.AgentSelector));
+        }
+    }, [showInvite, AgentSelector]);
+
+    // Get the first available reference image to use as avatar
+    const avatarUrl = userProfile?.brandKit?.referenceImages?.[0]?.url;
+
+    const itemContent = useCallback((index: number, msg: AgentMessage) => {
         const msgIdentity = msg.role === 'model' && chatChannel === 'agent' && activeAgent
             ? { color: activeAgent.color, initials: activeAgent.name.charAt(0) }
             : undefined;
@@ -79,8 +146,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
         }
     }, [messages, isAutoScrolling, isProcessing]);
 
-    // Agent Avatar/Header Info - channel-aware
-    // When in 'indii' mode, always show indii. When in 'agent' mode, show the active agent.
     const displayAgent = chatChannel === 'indii' ? null : activeAgent;
     const agentName = displayAgent?.name || 'indii';
     const agentRole = displayAgent?.description || 'Creative Orchestrator';
@@ -98,15 +163,37 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                     dragControls={dragControls}
                     dragListener={false}
                     dragMomentum={false}
-                    className="fixed inset-0 md:inset-auto md:bottom-6 md:right-6 w-full h-full md:w-[500px] md:h-[800px] bg-[#0c0c0e]/95 backdrop-blur-3xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[100] isolate ring-0 md:ring-1 ring-white/10"
+                    dragElastic={0}
+                    style={{
+                        width: localSize.width,
+                        height: localSize.height,
+                        bottom: 32,
+                        right: 32,
+                        position: 'fixed'
+                    }}
+                    className="bg-[#0c0c0e]/80 backdrop-blur-xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-0 md:ring-1 ring-white/10"
                 >
+                    {/* Resize Handles */}
+                    <div className="absolute inset-0 pointer-events-none z-50">
+                        {/* Edges */}
+                        <div onPointerDown={(e) => handleResize('top', e)} className="absolute top-0 left-8 right-8 h-2 cursor-ns-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('bottom', e)} className="absolute bottom-0 left-8 right-8 h-2 cursor-ns-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('left', e)} className="absolute left-0 top-8 bottom-8 w-2 cursor-ew-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+                        <div onPointerDown={(e) => handleResize('right', e)} className="absolute right-0 top-8 bottom-8 w-2 cursor-ew-resize pointer-events-auto hover:bg-purple-500/20 transition-colors" />
+
+                        {/* Corners */}
+                        <div onPointerDown={(e) => handleResize('top-left', e)} className="absolute top-0 left-0 w-8 h-8 cursor-nwse-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-tl-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('top-right', e)} className="absolute top-0 right-0 w-8 h-8 cursor-nesw-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-tr-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('bottom-left', e)} className="absolute bottom-0 left-0 w-8 h-8 cursor-nesw-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-bl-[2rem]" />
+                        <div onPointerDown={(e) => handleResize('bottom-right', e)} className="absolute bottom-0 right-0 w-8 h-8 cursor-nwse-resize pointer-events-auto hover:bg-purple-500/40 transition-colors z-[60] rounded-br-[2rem]" />
+                    </div>
+
                     {/* Header */}
                     <div
                         onPointerDown={(e) => dragControls.start(e)}
                         className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 cursor-grab active:cursor-grabbing"
                     />
                     <div className="relative z-30 px-6 py-5 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
-                        {/* Drag Handle Overlay for easy grabbing in header area without blocking buttons */}
                         <div
                             onPointerDown={(e) => dragControls.start(e)}
                             className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing"
@@ -136,23 +223,35 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         </div>
 
                         {/* Right Actions */}
-                        <div className="flex items-center gap-2 relative z-10">
+                        <div className="flex items-center gap-1 relative z-10">
                             <div
                                 onPointerDown={(e) => dragControls.start(e)}
                                 className="p-2 text-white/20 hover:text-white/40 cursor-grab active:cursor-grabbing transition-colors mr-1"
                             >
                                 <GripHorizontal size={20} />
                             </div>
+
+                            <button
+                                onClick={() => setCommandBarDetached(!isCommandBarDetached)}
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                                title={isCommandBarDetached ? "Dock Input" : "Detach Input"}
+                                aria-label={isCommandBarDetached ? "Dock Input" : "Detach Input"}
+                                data-testid="detach-input-btn"
+                            >
+                                {isCommandBarDetached ? <Maximize2 size={18} /> : <ExternalLink size={18} />}
+                            </button>
+
                             <button
                                 onClick={onToggleMinimize}
-                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white"
+                                className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                                 aria-label="Minimize chat"
+                                data-testid="minimize-chat-btn"
                             >
                                 <Minimize2 size={18} />
                             </button>
                             <button
                                 onClick={onClose}
-                                className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400"
+                                className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                                 aria-label="Close Agent"
                             >
                                 <X size={18} />
@@ -162,7 +261,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                     {/* Messages Area */}
                     <div className="flex-1 relative bg-[#0c0c0e]">
-                        {/* Background Ambient Glow */}
                         <div className={`absolute top-1/4 left-1/4 w-64 h-64 bg-${agentColor}-900/10 rounded-full blur-[100px] opacity-50 animate-pulse-slow`} />
                         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 bg-blue-900/10 rounded-full blur-[80px] opacity-30 animate-pulse-slow delay-1000" />
 
@@ -197,26 +295,37 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             />
                         )}
 
-                        {/* Resume Auto-scroll Button */}
                         {!isAutoScrolling && messages.length > 0 && (
                             <motion.button
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 onClick={() => {
                                     setIsAutoScrolling(true);
                                     virtuosoRef.current?.scrollToIndex({ index: messages.length - 1, behavior: 'smooth' });
                                 }}
-                                className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-purple-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg flex items-center gap-2 z-20 hover:bg-purple-500 transition-colors"
+                                className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
+                                title="Resume Feed"
+                                aria-label="Scroll to newest messages"
                             >
-                                <RefreshCw size={12} />
-                                Resume Feed
+                                <RefreshCw size={18} />
                             </motion.button>
                         )}
                     </div>
 
+                    {/* Integrated Prompt Area (Docked Mode) */}
+                    {!isCommandBarDetached && (
+                        <div className="flex-shrink-0">
+                            <PromptArea isDocked />
+                        </div>
+                    )}
+
                     {/* Footer Status Bar (Voice/Processing) */}
                     {(isListening || isProcessing || transcript) && (
-                        <div className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30">
+                        <div
+                            className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30"
+                            role="status"
+                            aria-live="polite"
+                        >
                             <div className="flex items-center gap-3 overflow-hidden">
                                 {isProcessing ? (
                                     <>
@@ -237,6 +346,13 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             </div>
                         </div>
                     )}
+
+                    {/* indii Branding Footer */}
+                    <div className="px-6 py-2 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30">
+                        <span className="text-xs text-white/30 font-medium">
+                            Powered by <span className="font-semibold text-white/40">indii</span>
+                        </span>
+                    </div>
                 </motion.div>
             )}
         </AnimatePresence>

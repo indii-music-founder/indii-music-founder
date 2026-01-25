@@ -10,7 +10,8 @@
     "logs": "firebase functions:log",
     "serve": "npm run build && firebase emulators:start --only functions",
     "shell": "npm run build && firebase functions:shell",
-    "start": "npm run shell"
+    "start": "npm run shell",
+    "test": "vitest"
   },
   "dependencies": {
     "@google-cloud/bigquery": "^8.1.1",
@@ -24,12 +25,17 @@
     "google-auth-library": "^10.5.0",
     "googleapis": "^170.0.0",
     "inngest": "^3.22.12",
+    "sharp": "^0.34.5",
     "stripe": "^20.1.2",
     "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
+    "@types/jest": "^30.0.0",
+    "@types/sharp": "^0.31.1",
     "firebase-functions-test": "^3.1.0",
+    "jest": "^30.2.0",
+    "ts-jest": "^29.4.6",
     "typescript": "^5.6.3"
   },
   "engines": {

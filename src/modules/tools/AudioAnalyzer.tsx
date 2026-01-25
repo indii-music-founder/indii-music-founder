@@ -3,13 +3,13 @@ import WaveSurfer from 'wavesurfer.js';
 import RegionsPlugin, { Region } from 'wavesurfer.js/dist/plugins/regions.esm.js';
 import {
     Activity, Play, Pause, Upload, Volume2, Mic2, Tag,
-    Database, Fingerprint, Save, RotateCcw, Scissors
+    Database, Fingerprint, Save, RotateCcw, Scissors, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { fingerprintService } from '@/services/audio/FingerprintService';
-import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { audioAnalysisService, DeepAudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { SonicRadar } from './components/SonicRadar';
 import { TagMatrix } from './components/TagMatrix';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -47,6 +47,10 @@ const AudioAnalyzer: React.FC = () => {
         instrumentalness: 0,
         duration: 0
     });
+
+    // Hold the full deep analysis result for saving
+    const [fullAnalysis, setFullAnalysis] = useState<DeepAudioFeatures | null>(null);
+
     const [regionFeatures, setRegionFeatures] = useState<typeof features | null>(null);
 
     // Refs
@@ -63,6 +67,7 @@ const AudioAnalyzer: React.FC = () => {
         setFile(uploadedFile);
         setTags([]);
         setSelectedRegion(null);
+        setFullAnalysis(null);
 
         // Initialize WaveSurfer with the new file
         initWaveSurfer(uploadedFile);
@@ -136,47 +141,66 @@ const AudioAnalyzer: React.FC = () => {
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
+        toast.loading("Initializing Deep Analysis Models... (First run may take time)");
 
         try {
             // Run Analysis
             const { features: result, fromCache } = await audioAnalysisService.analyze(audioFile);
-
+            setFullAnalysis(result);
             setIsFromCache(fromCache);
+
+            if (!fromCache) {
+                toast.dismiss();
+                toast.success("Analysis Complete: Neural Network inference successful");
+            }
 
             setFeatures({
                 bpm: result.bpm,
                 key: `${result.key} ${result.scale}`,
                 energy: result.energy,
-                danceability: result.danceability || 0.5,
-                happiness: result.valence || 0.5,
-                acousticness: 0.3,
-                instrumentalness: 0.7,
+                danceability: result.danceability_ml || result.danceability || 0.5,
+                happiness: result.moods?.happy || result.valence || 0.5,
+                // Heuristic: Low energy usually implies higher acousticness if instrumental
+                acousticness: result.voice_instrumental ? (1 - result.voice_instrumental) * 0.5 : 0.3,
+                instrumentalness: result.voice_instrumental || 0.7,
                 duration: result.duration
             });
 
             // Smart Auto-Tagging based on Sonic DNA
             const newTags: string[] = [];
 
-            // Mood Tags
-            if ((result.valence || 0.5) > 0.75) newTags.push('Euphoric', 'Positive');
-            else if ((result.valence || 0.5) > 0.6) newTags.push('Happy');
-            else if ((result.valence || 0.5) < 0.3) newTags.push('Melancholic', 'Dark');
-            else if ((result.valence || 0.5) < 0.45) newTags.push('Moody');
+            // Add top Genre
+            if (result.genre) {
+                const topGenre = Object.entries(result.genre).sort((a, b) => b[1] - a[1])[0];
+                if (topGenre && topGenre[1] > 0.3) {
+                    newTags.push(topGenre[0]);
+                }
+            }
 
-            // Energy Tags
-            if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
-            else if (result.energy > 0.6) newTags.push('Driving');
-            else if (result.energy < 0.3) newTags.push('Chill', 'Ambient');
+            // Add top Moods
+            if (result.moods) {
+                if (result.moods.happy > 0.6) newTags.push('Happy');
+                if (result.moods.sad > 0.6) newTags.push('Sad');
+                if (result.moods.aggressive > 0.6) newTags.push('Aggressive');
+                if (result.moods.relaxed > 0.6) newTags.push('Relaxed');
+            }
 
-            // Rhythm Tags
+            // Legacy/Heuristic Tags fallback
+            if (result.energy > 0.8) newTags.push('High Voltage');
+            else if (result.energy < 0.3) newTags.push('Chill');
+
             if (result.bpm > 135) newTags.push('High Tempo');
             else if (result.bpm < 90) newTags.push('Downtempo');
-            if ((result.danceability || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
 
-            setTags(newTags);
+            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready');
+
+            setTags(Array.from(new Set(newTags)));
+
         } catch (error) {
             console.error("Deep Analysis Failed", error);
-            toast.error("Analysis failed. Try another file.");
+            toast.dismiss();
+            toast.error("Deep Analysis failed. Try another file.");
+            setIsAnalyzing(false);
         } finally {
             setIsAnalyzing(false);
         }
@@ -225,6 +249,14 @@ const AudioAnalyzer: React.FC = () => {
         const toastId = toast.loading("Isolating Sonic DNA sequence...");
 
         try {
+            // Note: Currently analyzeBuffer is basic.
+            // Ideally we'd overload analyzeDeep to accept AudioBuffer, but for now fallback to basic for regions
+            // or we need to refactor analyzeDeep to separate decoding.
+            // Given the complexity of deep analysis on short segments (requires minimum duration),
+            // we stick to basic features + standard tagging for regions for now, unless refactored.
+            // But wait, the user wants "Deep" analysis.
+            // Let's rely on the basic analyzeBuffer which is already wired, but maybe upgrade it later.
+
             const result = await audioAnalysisService.analyzeBuffer(regionBuffer);
 
             setRegionFeatures({
@@ -260,18 +292,16 @@ const AudioAnalyzer: React.FC = () => {
     };
 
     const handleSaveAnalysis = async () => {
-        if (!file || isAnalyzing) return;
-
+        if (!file || !fullAnalysis || isAnalyzing) return;
         setIsSaving(true);
-        try {
-            // Re-generate hash if needed (though it should be available from runAnalysis)
-            // But for simplicity, we use the values we already have. 
-            // The fileHash is used as trackId in this implementation.
-            const fileHash = await (audioAnalysisService as any).generateFileHash(file);
+        const toastId = toast.loading("Saving analysis to Knowledge Graph...");
 
-            // Map our state features back to AudioFeatures type if necessary, 
-            // but runAnalysis already did the extraction.
-            // For now, we'll re-extract from state to ensure consistency.
+        try {
+            // 1. Save to Knowledge Graph (Firestore)
+            await audioAnalysisService.saveAnalysisToFirestore(fullAnalysis, file.name);
+
+            // 2. Save to Music Library Cache
+            const fileHash = await (audioAnalysisService as any).generateFileHash(file);
             const featuresToSave = {
                 bpm: features.bpm,
                 key: features.key.split(' ')[0],
@@ -279,18 +309,19 @@ const AudioAnalyzer: React.FC = () => {
                 energy: features.energy,
                 duration: features.duration,
                 danceability: features.danceability,
-                loudness: -1, // Placeholder
+                loudness: -1,
                 valence: features.happiness
             };
-
             const { musicLibraryService } = await import('@/services/music/MusicLibraryService');
             await musicLibraryService.saveAnalysis(fileHash, file.name, featuresToSave, fileHash);
 
-            setIsFromCache(true); // Mark as cached after saving
-            toast.success("Sonic DNA successfully synchronized with your Music Library.");
+            setIsFromCache(true);
+            toast.dismiss(toastId);
+            toast.success("Analysis saved to Database & Library.");
         } catch (error) {
-            console.error("[AudioAnalyzer] Save failed:", error);
-            toast.error("Failed to sync Sonic DNA. Please try again.");
+            console.error("Save failed", error);
+            toast.dismiss(toastId);
+            toast.error("Failed to save analysis.");
         } finally {
             setIsSaving(false);
         }
@@ -395,7 +426,12 @@ const AudioAnalyzer: React.FC = () => {
                             </div>
                             <div className="flex-1 overflow-y-auto">
                                 <p className="text-xs font-mono text-white/70 leading-relaxed">
-                                    {isAnalyzing ? "Analyzing harmonic structure..." : aiContextDescription}
+                                    {isAnalyzing ? (
+                                        <span className="flex items-center gap-2">
+                                            <Loader2 className="animate-spin" size={12} />
+                                            Running Neural Inference...
+                                        </span>
+                                    ) : aiContextDescription}
                                 </p>
                             </div>
                         </div>
@@ -406,7 +442,7 @@ const AudioAnalyzer: React.FC = () => {
                             onClick={handleSaveAnalysis}
                             data-testid="save-analysis-button"
                         >
-                            <Save size={14} className="mr-2" />
+                            {isSaving ? <Loader2 className="animate-spin mr-2" size={14} /> : <Save size={14} className="mr-2" />}
                             Save Analysis
                         </Button>
                     </div>

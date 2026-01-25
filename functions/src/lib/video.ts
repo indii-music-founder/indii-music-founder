@@ -14,6 +14,7 @@ export const VideoJobSchema = z.object({
     motionStrength: z.number().optional().nullable(),
     shotList: z.array(z.any()).optional().nullable(),
     firstFrame: z.string().optional().nullable(),
+    inputVideo: z.string().optional().nullable(), // For video extension
     image: z.object({
         imageBytes: z.string(),
         mimeType: z.string().optional()
@@ -21,12 +22,19 @@ export const VideoJobSchema = z.object({
     lastFrame: z.string().optional().nullable(),
     timeOffset: z.number().optional().nullable(),
     ingredients: z.array(z.string()).optional().nullable(),
+    referenceImages: z.array(z.object({
+        image: z.object({
+            imageBytes: z.string().optional(),
+            uri: z.string().optional()
+        }).optional(),
+        referenceType: z.enum(["ASSET"]).optional().default("ASSET")
+    })).optional().nullable(),
     duration: z.union([z.string(), z.number()]).optional().nullable(), // Allow number and null
     durationSeconds: z.number().optional().nullable(),
     generateAudio: z.boolean().optional().nullable(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional(),
-        resolution: z.enum(["720p", "1080p"]).optional(),
+        resolution: z.enum(["720p", "1080p", "4k"]).optional(),
     }).optional().nullable(),
 });
 
