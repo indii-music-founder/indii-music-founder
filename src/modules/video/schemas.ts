@@ -32,7 +32,7 @@ export const VideoGenerationOptionsSchema = z.object({
         mimeType: z.string().optional()
     }).optional(),
     timeOffset: z.number().optional(),
-    ingredients: z.array(z.string()).optional(),
+    ingredients: z.array(z.string().url()).optional(),
     referenceImages: z.array(z.any()).optional(), // Veo 3.1 alias
     duration: z.number().min(1).max(300).optional(), // 5 minutes max per atomic job
     durationSeconds: z.number().optional(), // Alias for consistency

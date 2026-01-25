@@ -110,8 +110,12 @@ interface VideoEditorState {
     setTimelineZoom: (zoom: number) => void;
 
     // View Mode (Director vs Editor)
-    viewMode: 'director' | 'editor';
-    setViewMode: (mode: 'director' | 'editor') => void;
+    viewMode: 'director' | 'editor' | 'composer';
+    setViewMode: (mode: 'director' | 'editor' | 'composer') => void;
+
+    // AI Composition State
+    aiComposition: any | null; // Typed as any to avoid import cycles, but roughly AIComposition
+    setAIComposition: (comp: any | null) => void;
 }
 
 const INITIAL_PROJECT: VideoProject = {
@@ -153,6 +157,9 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     generateAudio: true,
     timelineZoom: 1,
 
+    // AI Composition
+    aiComposition: null,
+
     viewMode: 'director',
     setViewMode: (mode) => set({ viewMode: mode }),
 
@@ -193,6 +200,8 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
 
     // Timeline zoom (0.25 to 4x)
     setTimelineZoom: (zoom) => set({ timelineZoom: Math.max(0.25, Math.min(4, zoom)) }),
+
+    setAIComposition: (comp) => set({ aiComposition: comp }),
 
     getMaxDurationFrames: () => {
         const { membershipTier, project } = get();

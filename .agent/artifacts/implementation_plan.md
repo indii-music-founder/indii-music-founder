@@ -14,7 +14,7 @@ The user requested an automated image resizing solution using Cloud Functions. W
 - [x] **Implement Function**: Create `functions/src/lib/image_resizing.ts` with `onObjectFinalized` trigger.
 - [x] **Export Function**: Update `functions/src/index.ts` to export `imageResizing`.
 - [x] **Build**: Verify `npm run build` succeeds (Done).
-- [ ] **Deploy**: `firebase deploy --only functions:imageResizing-generateThumbnail` (Pending user trigger).
+- [x] **Deploy**: `firebase deploy --only functions:imageResizing-generateThumbnail` (Completed).
 
 ## Goal
 

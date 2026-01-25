@@ -270,16 +270,21 @@ Ensure all versions respect the platform's character limit.
                     ? this.enhanceImagePrompt(post.imageAsset.caption)
                     : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-                const base64 = await AI.generateImage({
+                const imageResult = await AI.generateImage({
                     model: AI_MODELS.IMAGE.GENERATION,
                     prompt: imagePrompt
                 });
+
+                // Handle URL (new) or Base64 (legacy fallback)
+                const imageUrl = imageResult.startsWith('http')
+                    ? imageResult
+                    : `data:image/png;base64,${imageResult}`;
 
                 updatedPosts.set(post.id, {
                     ...post,
                     imageAsset: {
                         ...post.imageAsset,
-                        imageUrl: `data:image/png;base64,${base64}`
+                        imageUrl: imageUrl
                     }
                 });
 
@@ -315,12 +320,14 @@ Ensure all versions respect the platform's character limit.
                 ? this.enhanceImagePrompt(post.imageAsset.caption)
                 : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-            const base64 = await AI.generateImage({
+            const imageResult = await AI.generateImage({
                 model: AI_MODELS.IMAGE.GENERATION,
                 prompt: imagePrompt
             });
 
-            return `data:image/png;base64,${base64}`;
+            return imageResult.startsWith('http')
+                ? imageResult
+                : `data:image/png;base64,${imageResult}`;
         } catch (error) {
             return null;
         }

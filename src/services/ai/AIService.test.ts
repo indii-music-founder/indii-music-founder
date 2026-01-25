@@ -93,7 +93,7 @@ describe('AIService', () => {
     it('should pass safetySettings and toolConfig to FirebaseAIService', async () => {
         const prompt = 'Test';
         const safetySettings = [{ category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_NONE' }];
-        const toolConfig = { functionCallingConfig: { mode: 'ANY' } };
+        const toolConfig = { functionCallingConfig: { mode: 'ANY' as const } };
 
         await aiService.generateContent(prompt, {
             safetySettings,
