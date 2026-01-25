@@ -363,7 +363,8 @@ export class FirebaseAIService {
                     toolConfig,
                     safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
                 } as any,
-```typescript
+            });
+
             // Convert to Firebase AI SDK format for compatibility
             return {
                 response: {
