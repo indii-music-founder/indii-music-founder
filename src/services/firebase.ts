@@ -14,7 +14,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 // Prevent crash if config is missing (e.g. CI/Dev without env vars)
 const safeConfig = firebaseConfig.apiKey ? firebaseConfig : {
     ...firebaseConfig,
-    apiKey: "AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000", // valid format placeholder
+    apiKey: "AIzaSy_FAKE_KEY_FOR_DEV_BYPASS_00000000",
     projectId: "demo-project",
     authDomain: "demo-project.firebaseapp.com"
 };
