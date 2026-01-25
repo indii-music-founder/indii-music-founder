@@ -9,7 +9,3 @@
 ## 2026-01-25 - Regex-based Length Filtering
 **Learning:** JS-level length checks inside string processing loops (e.g., `word.length > 3`) still incur allocation costs for the short strings.
 **Action:** Move length filtering to the Regex engine (e.g., `/\S{4,}/g`) to prevent allocation of filtered-out strings entirely.
-
-## 2025-01-25 - Sorting Strings
-**Learning:** `localeCompare` is significantly slower (~45x) than binary operators (`<`, `>`) for simple ASCII strings like ISO dates (`YYYY-MM-DD`).
-**Action:** When sorting IDs, ISO dates, or other ASCII keys where locale rules don't matter, prefer binary comparison.
