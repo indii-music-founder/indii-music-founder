@@ -60,13 +60,41 @@ export const CatalogProductSchema = z.object({
     id: z.string(),
     title: z.string(),
     basePrice: z.number(),
-    image: z.string().url().optional(),
+    image: z.string().url(),
     tags: z.array(z.string()).optional(),
     features: z.array(z.string()).optional(),
     category: z.enum(['standard', 'pro']),
     description: z.string().optional()
 });
 
+export const ManufactureRequestSchema = z.object({
+    productId: z.string(),
+    variantId: z.string(),
+    quantity: z.number().min(1),
+    userId: z.string().optional(),
+    status: z.enum(['pending', 'processing', 'completed']).optional(),
+    orderId: z.string().optional(),
+    createdAt: z.any().optional()
+});
+
+export const SampleRequestSchema = z.object({
+    productId: z.string(),
+    variantId: z.string(),
+    shippingAddress: z.object({
+        street: z.string(),
+        city: z.string(),
+        state: z.string(),
+        zip: z.string(),
+        country: z.string()
+    }),
+    userId: z.string().optional(),
+    status: z.enum(['pending', 'processing', 'shipped', 'delivered']).optional(),
+    requestId: z.string().optional(),
+    createdAt: z.any().optional()
+});
+
 export type MockupGeneration = z.infer<typeof MockupGenerationSchema>;
 export type VideoGeneration = z.infer<typeof VideoGenerationSchema>;
 export type CatalogProduct = z.infer<typeof CatalogProductSchema>;
+export type ManufactureRequest = z.infer<typeof ManufactureRequestSchema>;
+export type SampleRequest = z.infer<typeof SampleRequestSchema>;

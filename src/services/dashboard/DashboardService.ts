@@ -2,7 +2,6 @@ import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
-import { MOCK_SALES_ANALYTICS } from './mockData';
 
 export interface ProjectMetadata {
     id: string;
@@ -479,6 +478,17 @@ export class DashboardService {
     }
 
     static async getSalesAnalytics(period: string = '30d'): Promise<SalesAnalyticsData> {
+        // Zero-state fallback for safe "empty" loading or error cases
+        const zeroState: SalesAnalyticsData = {
+            conversionRate: { value: 0, trend: 'neutral', formatted: '0%' },
+            totalVisitors: { value: 0, trend: 'neutral', formatted: '0' },
+            clickRate: { value: 0, trend: 'neutral', formatted: '0%' },
+            avgOrderValue: { value: 0, trend: 'neutral', formatted: '$0.00' },
+            revenueChart: [],
+            period: period,
+            lastUpdated: Date.now()
+        };
+
         try {
             // 1. Check Cache
             const cached = this.cache.get(period);
@@ -512,8 +522,8 @@ export class DashboardService {
 
                     return data;
                 } catch (apiError) {
-                    console.warn("API fetch failed, falling back to Firestore/Mock:", apiError);
-                    // Fallthrough to Firestore/Mock
+                    console.warn("API fetch failed, falling back to Firestore:", apiError);
+                    // Fallthrough to Firestore
                 }
             }
 
@@ -529,6 +539,8 @@ export class DashboardService {
                             // Update Cache
                             this.cache.set(period, { data: parseResult.data, timestamp: Date.now() });
                             return parseResult.data;
+                        } else {
+                            console.warn("Firestore data failed schema validation:", parseResult.error);
                         }
                     }
                 } catch (e) {
@@ -536,21 +548,14 @@ export class DashboardService {
                 }
             }
 
-            // 4. Final Fallback: Mock Data (Dev/Offline Mode)
-            // Ensure consistency by updating the period
-            return { ...MOCK_SALES_ANALYTICS, period };
+            // 4. Return zero state if all else fails
+            // We removed the mock data fallback here to ensure production correctness.
+            return zeroState;
 
         } catch (error) {
             console.error("Critical failure in getSalesAnalytics:", error);
             // Return safe default to prevent UI crash
-            return {
-                conversionRate: { value: 0, trend: 'neutral', formatted: '0%' },
-                totalVisitors: { value: 0, trend: 'neutral', formatted: '0' },
-                clickRate: { value: 0, trend: 'neutral', formatted: '0%' },
-                avgOrderValue: { value: 0, trend: 'neutral', formatted: '$0.00' },
-                revenueChart: [],
-                period: period
-            };
+            return zeroState;
         }
     }
 }

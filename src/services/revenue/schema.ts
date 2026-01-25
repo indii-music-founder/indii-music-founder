@@ -85,7 +85,25 @@ export const EarningsSummarySchema = z.object({
   createdAt: z.any().optional(),
 });
 
+export const DashboardEarningsSummarySchema = z.object({
+    totalEarnings: z.number(),
+    pendingPayouts: z.number(),
+    lastPayout: z.number(),
+    lastPayoutDate: z.string().optional(),
+    currency: z.string(),
+    trends: z.object({
+        earningsChange: z.number(),
+        payoutsChange: z.number()
+    }),
+    sources: z.array(z.object({
+        name: z.string(),
+        amount: z.number(),
+        percentage: z.number()
+    }))
+});
+
 export type PlatformEarnings = z.infer<typeof PlatformEarningsSchema>;
 export type TerritoryEarnings = z.infer<typeof TerritoryEarningsSchema>;
 export type ReleaseEarnings = z.infer<typeof ReleaseEarningsSchema>;
 export type EarningsSummary = z.infer<typeof EarningsSummarySchema>;
+export type DashboardEarningsSummary = z.infer<typeof DashboardEarningsSummarySchema>;
