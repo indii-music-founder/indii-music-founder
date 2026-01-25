@@ -42,7 +42,6 @@ export default function DirectGenerationTab() {
                     aspectRatio: studioControls.aspectRatio,
                     resolution: studioControls.resolution,
                     model: studioControls.model,
-                    mediaResolution: studioControls.mediaResolution,
                     thinking: studioControls.thinking
                 });
 

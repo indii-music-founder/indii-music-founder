@@ -171,7 +171,6 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: args.resolution || studioControls.resolution,
                 aspectRatio: effectiveAspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
-                mediaResolution: args.quality === 'hd' ? 'high' : 'medium',
                 model: 'pro', // Default to pro for agent-driven creative tasks
                 thinking: true,
                 seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
