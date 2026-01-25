@@ -13,7 +13,8 @@ export default defineConfig({
     environment: 'jsdom',
     include: [
       'electron/handlers/agent_security.test.ts',
-      'src/services/agent/AgentService.security.test.ts'
+      'src/services/agent/AgentService.security.test.ts',
+      'src/services/agent/AgentService.torture.test.ts'
     ],
   },
 });

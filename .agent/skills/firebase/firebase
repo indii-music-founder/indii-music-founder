@@ -27,4 +27,10 @@ description: Google Firebase Architect rules for Auth, Firestore, Hosting, and A
 
 * **App Hosting:** Next.js/Angular (SSR).
 * **Functions (Blaze):** Gen 2 (Cloud Run). Avoid infinite triggers.
-* **Costs:** Set Budget Alerts. Check for Hotspotting (1 write/sec/doc).
+
+## 5. API Keys (Security Model)
+
+* **Identities, Not Secrets:** Firebase API Keys (`AIza*`) are publicly visible identifiers. They are safe for inclusion in config files.
+* **Authorization:** Always enforce security at the resource level via **Firestore/Storage Security Rules** and **App Check**.
+* **Restrictions:** Ensure keys have API restrictions for specific Firebase services (Identity Toolkit, Firestore, etc.).
+* **Isolation:** Use environment-specific keys via `.env` (VITE_FIREBASE_API_KEY) to avoid cross-environment conflicts.

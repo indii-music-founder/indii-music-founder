@@ -168,17 +168,54 @@ If AI stops working due to key issues:
 
 ---
 
+## Firebase API Key Architecture & Management
+
+Based on best practices, Firebase API keys follow a different security model than typical backend secrets:
+
+### 1. The Nature of Firebase API Keys
+
+Unlike typical API keys, Firebase API keys are **not used for authorization** and do not need to be treated as high-risk secrets. They serve to **identify** your Firebase project and associate requests with it for quota and billing purposes.
+- **Safety:** It is safe to include these keys in your code or checked-in configuration files.
+- **Authorization:** Access to backend resources (database, storage, etc.) must be controlled via **Firebase Security Rules** and **App Check**, not by hiding the API key.
+
+### 2. API Restrictions
+
+While keys aren't secrets, they must still be restricted to limit their scope.
+- **Allowlisting:** Restrict API keys to only the specific APIs required (e.g., Identity Toolkit, Firestore).
+- **Caution:** When modifying restrictions, ensure you do not remove required APIs (like `firebaseinstallations.googleapis.com` or `identitytoolkit.googleapis.com`), which would cause app failure.
+
+### 3. Service Separation
+
+If using other Google Cloud APIs (Maps, Vision), create **separate, restricted API keys** for those services. This allows for granular rotation or revocation without disrupting core Firebase functionality.
+
+### 4. Environment Isolation
+
+Do not share API keys across testing, staging, and production.
+- **Project Isolation:** Ensure staging apps interact only with staging Firebase projects.
+- **Configuration:** Use environment variables or configuration files to inject the correct keys for the current environment rather than hardcoding.
+
+### 5. Quota Management
+
+To prevent abuse (e.g., brute-force attacks):
+- **Tighten Quotas:** Lower default quotas for sensitive endpoints like `identitytoolkit.googleapis.com` in the GCP Console to match expected traffic.
+
+### 6. Client-Side Security Logic
+
+Since configuration files are public in web/mobile apps, **never trust client-side configurations** for security. Always enforce validation and authorization on the server-side via Security Rules.
+
+---
+
 ## Agent Instructions
 
 > [!IMPORTANT]
 > **FOR ALL AI AGENTS:**
 >
-> 1. **You MAY NOT modify `.env` files** without explicit user approval
-> 2. **You MAY NOT generate or rotate API keys** without explicit user approval
-> 3. **You MAY diagnose** API key issues and propose solutions
-> 4. **You MUST present changes** to the user before executing
-> 5. **You MUST reference this document** when handling credential issues
+> 1. **You MAY NOT modify `.env` files** without explicit user approval.
+> 2. **You MAY NOT generate or rotate API keys** without explicit user approval.
+> 3. **Firebase API Keys (`AIza*`) are identifiers**, not secrets. They are safe for inclusion in public-facing configuration files, but preferred to be managed via env vars for environment isolation.
+> 4. **True Secrets** (Service Account Keys, Stripe Secrets, etc.) MUST NEVER be hardcoded.
+> 5. **You MUST reference this document** when handling credential issues.
 
 ---
 
-**Document Hash:** `sha256:API_CREDENTIALS_POLICY_V1_2026-01-19`
+**Document Hash:** `sha256:API_CREDENTIALS_POLICY_V2_2026-01-25`

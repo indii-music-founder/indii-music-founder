@@ -28,13 +28,17 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
-    functions: {}
+    functions: {},
+    functionsWest1: {},
+    remoteConfig: {}
 }));
 
 vi.mock('../firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
-    auth: mocks.auth
+    auth: mocks.auth,
+    remoteConfig: {}
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
