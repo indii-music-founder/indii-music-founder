@@ -34,7 +34,7 @@ export const generateImageV3Fn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { prompt, aspectRatio, count, model, imageSize, thinking, images, useGrounding, mediaResolution } = validation.data;
+        const { prompt, aspectRatio, count, model, imageSize, thinking, images, useGrounding } = validation.data;
 
         try {
             console.log(`[generateImageV3] Using REST API for key preservation`);
@@ -64,20 +64,13 @@ export const generateImageV3Fn = () => functions
             // 4. Call Model via REST
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
-            // Map mediaResolution to API enum values
-            const resolutionMap: Record<string, string> = {
-                low: "MEDIA_RESOLUTION_LOW",
-                medium: "MEDIA_RESOLUTION_MEDIUM",
-                high: "MEDIA_RESOLUTION_HIGH"
-            };
-            const apiMediaResolution = mediaResolution ? resolutionMap[mediaResolution] : undefined;
-
             const response = await fetch(apiUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ role: "user", parts }],
                     generationConfig: {
+                        temperature: 1.0,
                         candidateCount: count || 1,
                         responseModalities: ["IMAGE"],
                         ...(aspectRatio || imageSize ? {
@@ -86,7 +79,6 @@ export const generateImageV3Fn = () => functions
                                 ...(imageSize ? { imageSize } : {})
                             }
                         } : {}),
-                        ...(apiMediaResolution ? { mediaResolution: apiMediaResolution } : {}),
                         ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
                         ...(useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
                     }
