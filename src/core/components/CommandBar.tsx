@@ -1,10 +1,16 @@
 import React, { memo } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PromptArea } from './command-bar/PromptArea';
 
 function CommandBar() {
-    const { isCommandBarDetached, isAgentOpen } = useStore();
+    const { isCommandBarDetached, isAgentOpen } = useStore(
+        useShallow(state => ({
+            isCommandBarDetached: state.isCommandBarDetached,
+            isAgentOpen: state.isAgentOpen
+        }))
+    );
 
     // In docked mode, if the chat overlay is open, we hide this standalone bar 
     // because it's rendered inside ChatOverlay.
