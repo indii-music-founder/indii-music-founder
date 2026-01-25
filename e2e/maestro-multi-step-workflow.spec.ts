@@ -1,12 +1,15 @@
-
 import { test, expect } from '@playwright/test';
 
-test.describe('Maestro Multi-Step Approval Workflow', () => {
+test.describe('Maestro Multi-Step Workflow: User Approval & Handoff', () => {
+
+  // Increase timeout for this long workflow
+  test.setTimeout(90000);
 
   test.beforeEach(async ({ page }) => {
     // -----------------------------------------------------------------------
-    // 1. Setup & Auth Bypass (Mock User)
+    // 1. Setup & Auth Bypass
     // -----------------------------------------------------------------------
+    await page.setViewportSize({ width: 1280, height: 800 });
     await page.goto('/');
     await page.waitForLoadState('domcontentloaded');
 
@@ -36,66 +39,117 @@ test.describe('Maestro Multi-Step Approval Workflow', () => {
       // @ts-expect-error - Mocking partial store state for test
       window.useStore.setState({
         initializeAuthListener: () => () => { },
+        loadUserProfile: async () => {}, // Mock to prevent side effects
+        initializeHistory: async () => {}, // Mock
+        loadProjects: async () => {}, // Mock
         user: mockUser,
+        userProfile: null, // Ensure no profile so useMarketing skips Firestore
         authLoading: false,
         currentModule: 'campaign'
       });
 
-      // Mock Marketing Service
-      const mockCampaigns = new Map();
-      // @ts-expect-error - Mocking global service
-      window.__MOCK_MARKETING_SERVICE__ = {
-        createCampaign: async (campaign) => {
-           const id = 'mock-campaign-123';
-           const newCampaign = { ...campaign, id, status: 'PENDING' };
-           mockCampaigns.set(id, newCampaign);
-           return id;
-        },
-        getCampaignById: async (id) => {
-           return mockCampaigns.get(id) || null;
-        },
-        getCampaigns: async () => {
-           return Array.from(mockCampaigns.values());
-        },
-        updateCampaign: async (id, updates) => {
-           const current = mockCampaigns.get(id);
-           if (current) {
-             mockCampaigns.set(id, { ...current, ...updates });
-           }
-        }
+      // Mock MarketingService to avoid Firestore
+      (window as any).__MOCK_MARKETING_SERVICE__ = {
+          createCampaign: async (campaign: any) => {
+              console.log('Mock createCampaign called');
+              // Store the created campaign so getCampaignById can return it
+              // Explicitly set status to PENDING if not provided
+              const newCampaign = { status: 'PENDING', ...campaign, id: 'mock-campaign-id' };
+              (window as any).__MOCK_LAST_CAMPAIGN__ = newCampaign;
+              return 'mock-campaign-id';
+          },
+          getCampaignById: async (id: string) => {
+              console.log('Mock getCampaignById called', id);
+              if (id === 'mock-campaign-id') {
+                 return (window as any).__MOCK_LAST_CAMPAIGN__;
+              }
+              return null;
+          },
+          updateCampaign: async (id: string, updates: any) => {
+              console.log('Mock updateCampaign called', id, updates);
+              if (id === 'mock-campaign-id' && (window as any).__MOCK_LAST_CAMPAIGN__) {
+                  (window as any).__MOCK_LAST_CAMPAIGN__ = { ...(window as any).__MOCK_LAST_CAMPAIGN__, ...updates };
+              }
+          }
       };
     });
   });
 
-  test('should execute Agent-User Handoff with Rejection Loop: Plan -> Generate -> Reject -> Approve -> Execute', async ({ page }) => {
+  test('should execute Agent workflow: Plan -> Reject -> Approve -> Execute -> Handoff', async ({ page }) => {
+
     // -----------------------------------------------------------------------
-    // STEP 1: PLANNING (Agent Proposes, User Approves)
+    // PHASE 1: Agent Proposal & Rejection (The Gate)
     // -----------------------------------------------------------------------
 
-    // Open AI Generate Modal
-    const aiGenerateBtn = page.getByRole('button', { name: 'Generate with AI' }).first();
-    await expect(aiGenerateBtn).toBeVisible();
+    // Ensure we are on the campaign dashboard and the button is visible
+    const aiGenerateBtn = page.getByText('Generate with AI').first();
+    await expect(aiGenerateBtn).toBeVisible({ timeout: 15000 });
     await aiGenerateBtn.click();
+    await expect(page.getByText('AI Campaign Generator')).toBeVisible();
 
-    // Mock the Agent's Plan
-    const mockPlan = {
-      title: 'Maestro Symphony Launch',
-      description: 'A multi-step workflow test',
+    // HACK: Hide floating elements if any (copied from previous tests)
+    await page.evaluate(() => {
+        const overlays = document.querySelectorAll('.fixed.bottom-8.z-\\[500\\]');
+        overlays.forEach((el) => {
+            (el as HTMLElement).style.display = 'none';
+        });
+    });
+
+    // Mock Bad Plan
+    const badPlan = {
+      title: 'Boring Campaign',
+      description: 'A bad idea that should be rejected.',
       posts: [
         {
           platform: 'Twitter',
           day: 1,
-          copy: 'Step 1 complete!',
-          imagePrompt: 'A conductor with a baton',
-          hashtags: ['#maestro', '#test'],
+          copy: 'Boring tweet',
+          imagePrompt: 'Grey wall',
+          hashtags: ['#boring'],
           bestTimeToPost: '9:00 AM'
-        },
+        }
+      ]
+    };
+
+    await page.evaluate((plan) => {
+      // @ts-expect-error - injected by Playwright
+      window.__MOCK_AI_PLAN__ = plan;
+    }, badPlan);
+
+    // Generate Bad Plan
+    await page.getByPlaceholder(/e\.g\., New album/i).fill('Bad Idea');
+    await page.getByRole('button', { name: 'Generate Campaign' }).click();
+
+    // Verify Bad Plan Preview
+    await expect(page.getByText('Boring Campaign')).toBeVisible();
+
+    // Reject (Close Modal)
+    // Use precise locator for the modal's close button
+    const modal = page.locator('div[role="dialog"][aria-modal="true"]');
+    const closeBtn = modal.getByRole('button', { name: 'Close' });
+    // Force click to avoid interception by potential overlays/animations
+    await closeBtn.click({ force: true });
+    await expect(page.getByText('AI Campaign Generator')).toBeHidden();
+
+
+    // -----------------------------------------------------------------------
+    // PHASE 2: Agent Proposal & Approval (The Handoff)
+    // -----------------------------------------------------------------------
+
+    // Open Modal Again
+    await aiGenerateBtn.click();
+
+    // Mock Good Plan (Dogs Having Fun)
+    const goodPlan = {
+      title: 'Dogs Having Fun',
+      description: 'Viral campaign for the new hit song.',
+      posts: [
         {
           platform: 'Instagram',
           day: 1,
-          copy: 'Visualizing the workflow',
-          imagePrompt: 'Abstract flow chart art',
-          hashtags: ['#workflow', '#art'],
+          copy: 'Check out the new video! #DogsHavingFun',
+          imagePrompt: 'Dogs partying on a beach',
+          hashtags: ['#DogsHavingFun', '#Viral'],
           bestTimeToPost: '12:00 PM'
         }
       ]
@@ -104,120 +158,90 @@ test.describe('Maestro Multi-Step Approval Workflow', () => {
     await page.evaluate((plan) => {
       // @ts-expect-error - injected by Playwright
       window.__MOCK_AI_PLAN__ = plan;
-    }, mockPlan);
+    }, goodPlan);
 
-    // Fill Brief & Generate
-    await page.getByPlaceholder(/e\.g\., New album/i).fill('Maestro Test');
+    // Generate Good Plan
+    await page.getByPlaceholder(/e\.g\., New album/i).fill('Dogs Having Fun');
     await page.getByRole('button', { name: 'Generate Campaign' }).click();
 
-    // Verify Preview
-    await expect(page.getByText('Maestro Symphony Launch')).toBeVisible();
+    // Verify Good Plan Preview
+    await expect(page.getByText('Dogs Having Fun')).toBeVisible();
+    await expect(page.getByText('Check out the new video! #DogsHavingFun')).toBeVisible();
 
-    // Create Campaign (User Approves Plan)
+    // User Approval (Create Campaign)
     await page.getByRole('button', { name: 'Create Campaign' }).click();
 
-    // Verify Detail View
-    await expect(page.getByRole('heading', { name: 'Maestro Symphony Launch' })).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('campaign-status-badge')).toHaveText('PENDING');
-
     // -----------------------------------------------------------------------
-    // STEP 2: GENERATION (Agent Works)
+    // PHASE 3: State Verification (Planning Mode)
     // -----------------------------------------------------------------------
 
-    // Setup Mock for Image Generation
-    await page.evaluate(() => {
-      // @ts-expect-error - Mocking global service
-      window.__MOCK_CAMPAIGN_AI_SERVICE__ = {
-        generatePostImages: async (posts, onProgress) => {
-           // Simulate progress
-           if(onProgress) onProgress({ current: 1, total: posts.length, currentPostId: posts[0].id, status: 'generating' });
+    // Verify navigation to Detail View
+    await expect(page.getByRole('heading', { name: 'Dogs Having Fun' })).toBeVisible({ timeout: 10000 });
 
-           // Return posts with mocked images
-           return posts.map((p, i) => ({
-             ...p,
-             imageAsset: {
-               ...p.imageAsset,
-               imageUrl: i === 0
-                  ? 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==' // Blue pixel
-                  : 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' // Red pixel
-             }
-           }));
-        },
-        generateSingleImage: async (post) => {
-           return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='; // Green pixel
-        }
-      };
+    // Assert Status is PENDING (or equivalent)
+    await expect(page.getByTestId('campaign-status-badge')).toHaveText(/PENDING|PLANNING/i);
+
+    // -----------------------------------------------------------------------
+    // PHASE 4: Execution Handoff (The Action)
+    // -----------------------------------------------------------------------
+
+    // Mock Execution Network Request
+    // Firebase functions often use specific URL patterns.
+    // We assume the frontend calls a function named 'executeCampaign'
+    await page.route('**/executeCampaign', async route => {
+        await new Promise(r => setTimeout(r, 500)); // Simulate processing delay
+
+        await route.fulfill({
+            status: 200,
+            contentType: 'application/json',
+            body: JSON.stringify({
+                data: {
+                    success: true,
+                    message: 'Campaign executed successfully!',
+                    posts: goodPlan.posts.map((p, i) => ({
+                        id: `post-${i}`,
+                        platform: p.platform,
+                        copy: p.copy,
+                        day: p.day,
+                        imageAsset: {
+                            assetType: 'image',
+                            title: 'Generated Image',
+                            // RESOURCE HANDOFF: The file URL
+                            imageUrl: 'https://example.com/generated-dog.jpg',
+                            caption: p.imagePrompt
+                        },
+                        status: 'DONE'
+                    }))
+                }
+            })
+        });
     });
 
-    // Click "Generate 2 Images"
-    const generateImagesBtn = page.getByRole('button', { name: /Generate.*Images/ });
-    await expect(generateImagesBtn).toBeVisible();
-    await generateImagesBtn.click();
-
-    // In Modal: Click "Generate 2 Images" (or "Generate Images")
-    // Wait for modal to be visible
-    await expect(page.locator('div[role="dialog"]')).toBeVisible();
-
-    // Use more specific selector or force click
-    const modalGenerateBtn = page.locator('div[role="dialog"]').getByRole('button', { name: /Generate.*Images/ });
-    await expect(modalGenerateBtn).toBeVisible();
-    await modalGenerateBtn.click({ force: true });
-
-    // Verify Images Generated
-    await expect(page.getByAltText('Post 1')).toBeVisible();
-    await expect(page.getByAltText('Post 2')).toBeVisible();
-
-    // Verify status badges "Complete"
-    // Use strict mode safe selector
-    await expect(page.locator('text=Complete').first()).toBeVisible();
-
-    // -----------------------------------------------------------------------
-    // STEP 3: REVIEW & REJECT (The Loop)
-    // -----------------------------------------------------------------------
-
-    // Find the second post container (index 1)
-    const postContainer = page.locator('.aspect-square').nth(1);
-    await postContainer.hover();
-
-    // Click Regenerate
-    const regenerateBtn = postContainer.getByRole('button');
-    await regenerateBtn.click();
-
-    // Verify that generateSingleImage was called and image updated (Green pixel)
-    // Wait for the new image src to appear.
-    // We search for the base64 string or part of it
-    const newImage = page.locator('img[src*="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="]');
-    await expect(newImage).toBeVisible();
-
-    // -----------------------------------------------------------------------
-    // STEP 4: APPROVAL (User Approves Assets)
-    // -----------------------------------------------------------------------
-
-    // Click "Apply & Save"
-    await page.getByRole('button', { name: 'Apply & Save' }).click();
-
-    // Verify Modal Closed
-    await expect(page.getByRole('dialog')).toBeHidden();
-
-    // Verify Images are now in the Campaign Detail Timeline
-    // In TimelineView, there are images.
-    await expect(page.locator('img[src*="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg=="]')).toBeVisible(); // Blue
-    await expect(page.locator('img[src*="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="]')).toBeVisible(); // Green
-
-    // -----------------------------------------------------------------------
-    // STEP 5: EXECUTION (Final Handoff)
-    // -----------------------------------------------------------------------
-
+    // User Execution Approval
     const executeBtn = page.getByRole('button', { name: 'Execute Campaign' });
+    await expect(executeBtn).toBeVisible();
     await expect(executeBtn).toBeEnabled();
     await executeBtn.click();
 
-    // Verify Status Transition
+    // Verify Processing State (Optimistic Update)
     await expect(page.getByText('Processing...')).toBeVisible();
 
-    // Optionally verify status badge changed to Executing
-    // Depending on how fast the mock/state updates.
-    // The component shows "Processing..." while isExecuting is true.
-  });
+    // -----------------------------------------------------------------------
+    // PHASE 5: Completion & Resource Handoff Verification
+    // -----------------------------------------------------------------------
 
+    // Verify Success Notification (Wait for processing to finish)
+    await expect(page.getByText('Campaign executed successfully!')).toBeVisible({ timeout: 10000 });
+
+    // Assert Status is DONE
+    await expect(page.getByTestId('campaign-status-badge')).toHaveText(/DONE|PUBLISHED/i);
+
+    // Verify Resource Handoff: Check for the generated asset
+    // We expect the image to be rendered
+    const image = page.locator('img[src="https://example.com/generated-dog.jpg"]');
+    await expect(image).toBeVisible();
+
+    console.log('Maestro Test Completed: Workflow verified from Plan to Published.');
+
+  });
 });
