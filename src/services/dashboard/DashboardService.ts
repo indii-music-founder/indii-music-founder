@@ -101,7 +101,7 @@ export class DashboardService {
                 return updatedState.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
-                    lastModified: p.date,
+                    lastModified: p.lastModified,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));

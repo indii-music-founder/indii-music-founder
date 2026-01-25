@@ -13,6 +13,7 @@ import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "
 import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { FUNCTION_AI_MODELS } from "./config/models";
+import { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
 // import { VertexAI } from "@google-cloud/vertexai";
@@ -791,6 +792,10 @@ import * as gceService from './devops/gceService';
 import * as bigqueryService from './analytics/bigqueryService';
 import * as touringService from './lib/touring';
 import * as marketingService from './lib/marketing';
+
+export const imageResizing = {
+    generateThumbnail
+};
 
 /**
  * List GKE Clusters
