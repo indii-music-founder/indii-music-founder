@@ -65,7 +65,7 @@ export interface GoogleSearchRetrieval {
     dynamicRetrievalConfig?: DynamicRetrievalConfig;
 }
 
-export interface CodeExecution {}
+export interface CodeExecution { }
 
 export interface FunctionCallingConfig {
     mode?: 'MODE_UNSPECIFIED' | 'AUTO' | 'ANY' | 'NONE';
@@ -353,7 +353,6 @@ export interface GenerateContentOptions {
     toolConfig?: ToolConfig;
     thoughtSignature?: string;
     safetySettings?: SafetySetting[];
-    thoughtSignature?: string;
     signal?: AbortSignal;
     timeout?: number;
     // Caching options
