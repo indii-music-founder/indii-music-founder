@@ -1,5 +1,7 @@
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
+// import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules
+import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 
 export interface AudioFeatures {
@@ -13,9 +15,28 @@ export interface AudioFeatures {
     valence?: number; // Happiness/Sadness
 }
 
+export interface DeepAudioFeatures extends AudioFeatures {
+    genre?: { [key: string]: number };
+    moods?: {
+        happy: number;
+        aggressive: number;
+        relaxed: number;
+        sad: number;
+    };
+    voice_instrumental?: number; // >0.5 instrumental
+    danceability_ml?: number;
+}
+
+// const MODEL_URLS = { ... }; // Removed
+
+// Genre labels for Rosamerica model
+const GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
+
 export class AudioAnalysisService {
     private essentia: InstanceType<EssentiaModule['Essentia']> | null = null;
     private initPromise: Promise<void> | null = null;
+
+    // private models: { [key: string]: any } = {}; // Removed
 
     private async init(): Promise<void> {
         if (this.essentia) return;
@@ -82,14 +103,18 @@ export class AudioAnalysisService {
         return this.initPromise;
     }
 
-    /**
-     * Analyzes an audio file/blob to extract high-level features.
-     */
+    /*
+    private async loadModel(key: string): Promise<any> {
+        // Implementation removed
+        throw new Error("TensorFlow.js not available");
+    }
+    */
+
     /**
      * Analyzes an audio file/blob to extract high-level features.
      * Checks MusicLibraryService cache first to avoid expensive re-computation.
      */
-    async analyze(file: File): Promise<{ features: AudioFeatures, fromCache: boolean }> {
+    async analyze(file: File): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
         // 1. Generate a robust hash for the file
         const fileHash = await this.generateFileHash(file);
 
@@ -98,25 +123,47 @@ export class AudioAnalysisService {
             const cached = await musicLibraryService.getAnalysis(fileHash);
             if (cached) {
                 console.info(`[AudioAnalysis] Cache hit for ${file.name}`);
-                return { features: cached.features, fromCache: true };
+                // Safely cast cached features to DeepAudioFeatures if compatible, or just return as is
+                return { features: cached.features as DeepAudioFeatures, fromCache: true };
             }
         } catch (e) {
             console.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
         }
 
-        // 3. Perform Fresh Analysis
-        await this.init(); // Ensure init
+        // 3. Perform Fresh Analysis (Deep)
+        return this.analyzeDeep(file, fileHash);
+    }
+
+    /**
+     * Deep Analysis (Downgraded to Basic due to architecture constraints)
+     */
+    async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
+        await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
 
+        // Decode Audio
         const audioContext = new (window.AudioContext || (window as unknown as Window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
         const arrayBuffer = await file.arrayBuffer();
         const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
 
-        const features = await this.analyzeBuffer(audioBuffer);
+        // Close context immediately after decoding to prevent resource leaks
+        await audioContext.close();
 
-        // 4. Save to Cache
+        // 1. Basic Features (BPM, Key, Energy)
+        const basicFeatures = await this.analyzeBuffer(audioBuffer);
+        const features: DeepAudioFeatures = basicFeatures;
+
+        // 2. Deep Learning Features (SKIPPED)
+        console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
+
+        // 4. Save to Cache and Firestore
+        const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
         try {
-            await musicLibraryService.saveAnalysis(fileHash, file.name, features, fileHash);
+            await musicLibraryService.saveAnalysis(fileHash, (file as File).name || 'audio', features, fileHash);
+            // Also save to Firestore
+            if ((file as File).name) {
+                await this.saveAnalysisToFirestore(features, (file as File).name);
+            }
         } catch (e) {
             console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
         }
@@ -125,25 +172,34 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Generates a unique hash for the file based on metadata and partial content (first 1MB).
+     * Helper: Extract Log-Mel Spectrogram using Essentia (Removed)
      */
-    private async generateFileHash(file: File): Promise<string> {
-        // Read the first 1MB for hashing to ensure decent collision resistance without full file read
+    /*
+    private extractMelSpectrogram(signal: any): number[][] {
+        // ...
+        return [];
+    }
+    */
+
+    /*
+    private async getResampledSignal(audioBuffer: AudioBuffer, targetRate: number) {
+        // ...
+    }
+    */
+
+    private async generateFileHash(file: Blob): Promise<string> {
         const CHUNK_SIZE = 1024 * 1024; // 1MB
         const blob = file.slice(0, CHUNK_SIZE);
         const arrayBuffer = await blob.arrayBuffer();
 
-        // Combine metadata with partial content
-        const metadata = `${file.name}-${file.size}-${file.lastModified}`;
+        const metadata = `${(file as File).name || 'blob'}-${file.size}`;
         const encoder = new TextEncoder();
         const metadataBuffer = encoder.encode(metadata);
 
-        // Concatenate buffers
         const combinedBuffer = new Uint8Array(metadataBuffer.length + arrayBuffer.byteLength);
         combinedBuffer.set(metadataBuffer, 0);
         combinedBuffer.set(new Uint8Array(arrayBuffer), metadataBuffer.length);
 
-        // Use SHA-256 for a robust hash
         const hashBuffer = await crypto.subtle.digest('SHA-256', combinedBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
@@ -151,7 +207,6 @@ export class AudioAnalysisService {
 
     /**
      * Analyzes an already decoded AudioBuffer.
-     * Useful for analyzing segments/regions without re-decoding.
      */
     async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
         await this.init();
@@ -159,10 +214,8 @@ export class AudioAnalysisService {
 
         console.info(`[AudioAnalysis] Analyzing buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate}Hz`);
 
-        // Convert to Essentia-compatible vector (first channel)
         const channelData = audioBuffer.getChannelData(0);
 
-        // Basic sanity check: is the buffer actually containing data?
         let hasSignal = false;
         for (let i = 0; i < Math.min(channelData.length, 1000); i++) {
             if (Math.abs(channelData[i]) > 0.0001) {
@@ -178,20 +231,16 @@ export class AudioAnalysisService {
         const signal = this.essentia.arrayToVector(channelData);
 
         try {
-            // 1. Rhythm (BPM)
             const rhythm = this.essentia.RhythmExtractor2013(signal);
             const bpm = rhythm.bpm;
 
-            // 2. Tonal (Key/Scale)
             const keyData = this.essentia.KeyExtractor(signal);
             const key = keyData.key;
             const scale = keyData.scale;
 
-            // 3. Energy / Loudness
             const rms = this.essentia.RMS(signal);
             const energyValue = rms.rms;
 
-            // 4. Danceability
             const danceabilityValue = this.essentia.Danceability(signal).danceability;
 
             console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
@@ -200,7 +249,6 @@ export class AudioAnalysisService {
                 bpm: Math.round(bpm),
                 key: key,
                 scale: scale,
-                // Normalize RMS to 0-1 range
                 energy: Math.min(1, Math.max(0, energyValue * 3.5)),
                 duration: audioBuffer.duration,
                 danceability: danceabilityValue,
@@ -210,11 +258,31 @@ export class AudioAnalysisService {
                 loudness: -1
             };
         } finally {
-            // If using the official WASM build, memory management is important.
-            // Some versions of essentia.js require explicit deletion of vectors.
             if ((this.essentia as any).deleteVector && signal) {
                 (this.essentia as any).deleteVector(signal);
             }
+        }
+    }
+
+    /**
+     * Saves analysis result to Firestore
+     */
+    async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
+        try {
+            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+            const { db } = await import('@/services/firebase');
+
+            const docData = {
+                filename,
+                ...analysis,
+                createdAt: serverTimestamp(),
+            };
+
+            await addDoc(collection(db, 'audio_analyses'), docData);
+            console.info(`[AudioAnalysis] Saved analysis for ${filename}`);
+        } catch (error) {
+            console.error("[AudioAnalysis] Failed to save to Firestore", error);
+            throw error;
         }
     }
 }

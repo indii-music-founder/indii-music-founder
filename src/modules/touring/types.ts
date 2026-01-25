@@ -8,6 +8,11 @@ export interface ItineraryStop {
     notes: string;
     type?: string;
     distance?: number;
+    // Enhancement: specific coordinates for venues
+    coordinates?: {
+        lat: number;
+        lng: number;
+    };
 }
 
 export interface Itinerary {
@@ -39,4 +44,12 @@ export interface RiderItem {
     category: 'food' | 'drink' | 'essential';
     createdAt?: Timestamp;
     updatedAt?: Timestamp;
+}
+
+// Visual Mapping Types
+export interface MapMarker {
+    position: { lat: number; lng: number };
+    title: string;
+    type: 'venue' | 'gas' | 'hotel' | 'current' | 'waypoint';
+    meta?: any;
 }

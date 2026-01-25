@@ -113,32 +113,8 @@ export class LoopDetector {
             }
         }
 
-        // Check 6: After generation tools, only allow 'speak' - block everything else
-        const FINAL_TOOLS = ['generate_image', 'generate_video'];
-        const finalToolCalls = this.toolCallHistory.filter(c => FINAL_TOOLS.includes(c.name));
-        if (finalToolCalls.length > 0) {
-            // After a generation tool, only 'speak' is allowed to announce the result
-            const ALLOWED_AFTER_GENERATION = ['speak'];
-            if (!ALLOWED_AFTER_GENERATION.includes(name)) {
-                return {
-                    isLoop: true,
-                    reason: `Task complete - '${name}' blocked after generation`,
-                    pattern: `${finalToolCalls[0].name} → ${name} (blocked)`
-                };
-            }
-        }
-
-        // Check 7: Calling generate_image or generate_video twice (unless explicitly chaining)
-        if (FINAL_TOOLS.includes(name)) {
-            const previousGenerations = this.toolCallHistory.filter(c => FINAL_TOOLS.includes(c.name));
-            if (previousGenerations.length >= 1) {
-                return {
-                    isLoop: true,
-                    reason: `Multiple generation calls detected - task should be complete`,
-                    pattern: `${previousGenerations.map(c => c.name).join(' → ')} → ${name}`
-                };
-            }
-        }
+        // Check 6 & 7: Removed to allow multi-turn generation workflows.
+        // Standard loop counters (Check 1-4) will catch actual runaways.
 
         return { isLoop: false };
     }

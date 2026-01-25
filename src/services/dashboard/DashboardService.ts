@@ -1,10 +1,13 @@
-
+import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
+import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { MOCK_SALES_ANALYTICS } from './mockData';
 
 export interface ProjectMetadata {
     id: string;
     name: string;
+    type: ModuleId;
     lastModified: number;
     assetCount: number;
     thumbnail?: string;
@@ -34,7 +37,7 @@ export interface AnalyticsData {
 
 // Local interface for the parts of the store we access
 interface DashboardStoreState {
-    projects: ProjectMetadata[];
+    projects: Project[];
     generatedHistory: HistoryItem[];
     agentMessages?: unknown[]; // Optional as it might be missing
     userProfile?: {
@@ -45,6 +48,7 @@ interface DashboardStoreState {
     removeProject?: (id: string) => void;
     addToHistory?: (item: HistoryItem) => void;
     removeFromHistory?: (id: string) => void;
+    loadProjects: () => Promise<void>;
 }
 
 // Tier-based storage quotas in bytes
@@ -56,19 +60,48 @@ const STORAGE_QUOTAS = {
 
 const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'is', 'it', 'as', 'be', 'this', 'that', 'from']);
 
+interface CachedAnalytics {
+    historyRef: HistoryItem[];
+    agentMessagesRef: unknown[];
+    projectsRef: ProjectMetadata[];
+    day: number;
+    data: AnalyticsData;
+}
+
+interface CachedStorageStats {
+    historyRef: HistoryItem[];
+    kbRef: unknown;
+    tier: string;
+    data: StorageStats;
+}
+
 export class DashboardService {
+    private static cache = new Map<string, { data: SalesAnalyticsData; timestamp: number }>();
+    private static CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+    private static analyticsCache: CachedAnalytics | null = null;
+    private static storageCache: CachedStorageStats | null = null;
 
     static async getProjects(): Promise<ProjectMetadata[]> {
         try {
             const { useStore } = await import('@/core/store');
             const state = useStore.getState() as unknown as DashboardStoreState;
 
+            // Bolt Binding: Load if empty
+            if (!state.projects || state.projects.length === 0) {
+                if (typeof state.loadProjects === 'function') {
+                    await state.loadProjects();
+                }
+            }
+
+            // Re-read state after async load
+            const updatedState = useStore.getState() as unknown as DashboardStoreState;
+
             // Get projects from store
-            if (state.projects && state.projects.length > 0) {
-                return state.projects.map((p) => ({
+            if (updatedState.projects && updatedState.projects.length > 0) {
+                return updatedState.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
-                    lastModified: p.lastModified || Date.now(),
+                    lastModified: p.lastModified,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
@@ -87,6 +120,24 @@ export class DashboardService {
 
             // Get membership tier
             const tier = state.userProfile?.membership?.tier || 'free';
+            const history = state.generatedHistory || [];
+            const kb = state.userProfile?.knowledgeBase || [];
+
+            // Bolt Optimization: Check Cache
+            if (
+                DashboardService.storageCache &&
+                DashboardService.storageCache.historyRef === history &&
+                DashboardService.storageCache.kbRef === kb &&
+                DashboardService.storageCache.tier === tier
+            ) {
+                // Return cached data, but we might want to update browser usage if possible?
+                // Browser usage is async and external, so strictly speaking it makes the cache imperfect.
+                // However, for performance, we assume it doesn't change drastically within the same app state session
+                // unless we explicitly invalidate.
+                // If we want to be safe, we could just re-fetch browser usage, but that requires await.
+                return DashboardService.storageCache.data;
+            }
+
             const quotaBytes = STORAGE_QUOTAS[tier as keyof typeof STORAGE_QUOTAS] || STORAGE_QUOTAS.free;
 
             // Calculate usage from generated history
@@ -126,7 +177,7 @@ export class DashboardService {
 
             const usedBytes = imagesBytes + videosBytes + kbBytes + browserUsage;
 
-            return {
+            const result: StorageStats = {
                 usedBytes,
                 quotaBytes,
                 percentUsed: Math.min((usedBytes / quotaBytes) * 100, 100),
@@ -137,6 +188,16 @@ export class DashboardService {
                     knowledgeBase: kbBytes + browserUsage
                 }
             };
+
+            // Update Cache
+            DashboardService.storageCache = {
+                historyRef: history,
+                kbRef: kb,
+                tier: tier,
+                data: result
+            };
+
+            return result;
         } catch (error) {
             // Silently fail in beta production build, just return empty stats
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
@@ -148,33 +209,23 @@ export class DashboardService {
             const { useStore } = await import('@/core/store');
             const { ProjectService } = await import('@/services/ProjectService');
             const { OrganizationService } = await import('@/services/OrganizationService');
+            const { projectToMetadata } = await import('./projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
             // Create in Firestore
-            // Defaulting to 'creative' type for generic dashboard creation, or logic might need to be smarter
             const newProject = await ProjectService.createProject(name, 'creative', orgId);
+
+            // Convert Project to ProjectMetadata at the service boundary
+            const metadata = projectToMetadata(newProject, 0);
 
             // Update local store
             if (typeof state.addProject === 'function') {
-                const metadata: ProjectMetadata = {
-                    id: newProject.id,
-                    name: newProject.name,
-                    lastModified: newProject.date,
-                    assetCount: 0,
-                    thumbnail: undefined
-                };
                 state.addProject(metadata);
-                return metadata;
             }
 
-            return {
-                id: newProject.id,
-                name: newProject.name,
-                lastModified: newProject.date,
-                assetCount: 0
-            };
+            return metadata;
 
         } catch (error) {
             console.error("Error creating project:", error);
@@ -188,6 +239,7 @@ export class DashboardService {
             const { ProjectService } = await import('@/services/ProjectService');
             const { StorageService } = await import('@/services/StorageService');
             const { OrganizationService } = await import('@/services/OrganizationService');
+            const { projectToMetadata } = await import('./projectTypeUtils');
 
             const state = useStore.getState() as unknown as DashboardStoreState;
             const orgId = OrganizationService.getCurrentOrgId() || 'personal';
@@ -228,13 +280,8 @@ export class DashboardService {
             }));
 
             // 4. Update local store
-            const metadata: ProjectMetadata = {
-                id: newProject.id,
-                name: newProject.name,
-                lastModified: newProject.date,
-                assetCount: historyItems.length,
-                thumbnail: undefined // Logic to copy thumbnail if needed
-            };
+            // Convert Project to ProjectMetadata at the service boundary
+            const metadata = projectToMetadata(newProject, historyItems.length);
 
             if (typeof state.addProject === 'function') {
                 state.addProject(metadata);
@@ -299,12 +346,27 @@ export class DashboardService {
 
             const history = state.generatedHistory || [];
             const agentMessages = state.agentMessages || [];
+            const projects = state.projects || [];
+
+            // Check current day for cache invalidation (since weekly activity depends on "now")
+            const now = Date.now();
+            const dayMs = 24 * 60 * 60 * 1000;
+            const currentDay = Math.floor(now / dayMs);
+
+            // Bolt Optimization: Check Cache
+            if (
+                DashboardService.analyticsCache &&
+                DashboardService.analyticsCache.historyRef === history &&
+                DashboardService.analyticsCache.agentMessagesRef === agentMessages &&
+                DashboardService.analyticsCache.projectsRef === projects &&
+                DashboardService.analyticsCache.day === currentDay
+            ) {
+                return DashboardService.analyticsCache.data;
+            }
 
             // Bolt Optimization: Calculate all analytics in a single pass to reduce iteration overhead
             let imageCount = 0;
             let totalVideoSeconds = 0;
-            const now = Date.now();
-            const dayMs = 24 * 60 * 60 * 1000;
             const weeklyActivity = Array(7).fill(0);
             const wordCounts: Record<string, number> = {};
 
@@ -329,9 +391,10 @@ export class DashboardService {
                 // 3. Word Cloud
                 if (item.prompt) {
                     // Bolt: Use matchAll to avoid creating large intermediate strings and arrays
-                    for (const match of item.prompt.matchAll(/\S+/g)) {
+                    // ⚡ OPTIMIZATION: Filter length at regex level (/\S{4,}/g) to avoid string allocation for short words
+                    for (const match of item.prompt.matchAll(/\S{4,}/g)) {
                         const word = match[0].toLowerCase();
-                        if (word.length > 3 && !STOP_WORDS.has(word)) {
+                        if (!STOP_WORDS.has(word)) {
                             wordCounts[word] = (wordCounts[word] || 0) + 1;
                         }
                     }
@@ -353,15 +416,26 @@ export class DashboardService {
                 .slice(0, 8)
                 .map(([word, count]) => ({ word, count }));
 
-            return {
+            const result: AnalyticsData = {
                 totalGenerations: imageCount,
                 totalMessages: agentMessages.length,
                 totalVideoSeconds,
-                totalProjects: (state.projects || []).length,
+                totalProjects: projects.length,
                 weeklyActivity,
                 topPromptWords,
                 streak
             };
+
+            // Update Cache
+            DashboardService.analyticsCache = {
+                historyRef: history,
+                agentMessagesRef: agentMessages,
+                projectsRef: projects,
+                day: currentDay,
+                data: result
+            };
+
+            return result;
         } catch (error) {
             return {
                 totalGenerations: 0,
@@ -406,16 +480,45 @@ export class DashboardService {
 
     static async getSalesAnalytics(period: string = '30d'): Promise<SalesAnalyticsData> {
         try {
+            // 1. Check Cache
+            const cached = this.cache.get(period);
+            if (cached && (Date.now() - cached.timestamp < this.CACHE_TTL)) {
+                return cached.data;
+            }
+
             const { useStore } = await import('@/core/store');
             const { db } = await import('@/services/firebase');
             const { doc, getDoc } = await import('firebase/firestore');
 
             const userProfile = useStore.getState().userProfile;
 
-            // Allow public/guest access for now with default data if no user
-            // But if user is logged in, try to fetch
+            // 2. Attempt Fetch from API
+            // Bolt: "Production Bridge" - prefer API over Firestore/Mock if available
+            const apiUrl = import.meta.env.VITE_API_URL;
+
+            if (apiUrl) {
+                try {
+                    const response = await fetch(`${apiUrl}/api/analytics/sales?period=${period}`);
+
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.statusText}`);
+                    }
+
+                    const rawData = await response.json();
+                    const data = SalesAnalyticsSchema.parse(rawData);
+
+                    // Update Cache
+                    this.cache.set(period, { data, timestamp: Date.now() });
+
+                    return data;
+                } catch (apiError) {
+                    console.warn("API fetch failed, falling back to Firestore/Mock:", apiError);
+                    // Fallthrough to Firestore/Mock
+                }
+            }
+
+            // 3. Fallback to Firestore (Legacy/Hybrid Support)
             if (userProfile?.id) {
-                 // Attempt to fetch from Firestore
                 const statsRef = doc(db, 'users', userProfile.id, 'stats', 'sales_analytics');
                 try {
                     const snapshot = await getDoc(statsRef);
@@ -423,30 +526,23 @@ export class DashboardService {
                         const data = snapshot.data();
                         const parseResult = SalesAnalyticsSchema.safeParse(data);
                         if (parseResult.success) {
+                            // Update Cache
+                            this.cache.set(period, { data: parseResult.data, timestamp: Date.now() });
                             return parseResult.data;
-                        } else {
-                            console.warn("Invalid sales analytics data:", parseResult.error);
                         }
                     }
                 } catch (e) {
-                    console.warn("Failed to fetch sales analytics doc, falling back to simulation", e);
+                    console.warn("Firestore fetch failed:", e);
                 }
             }
 
-            // Fallback / Simulation (Preserving the "Mock" behavior but through a typed service)
-            // This is the "Bridge" - providing a structure that mirrors what the backend WILL provide
-            return {
-                conversionRate: { value: 4.2, change: 0.5, trend: 'up', formatted: '4.2%' },
-                totalVisitors: { value: 12500, change: 12, trend: 'up', formatted: '12.5k' },
-                clickRate: { value: 18.3, change: 0, trend: 'neutral', formatted: '18.3%' },
-                avgOrderValue: { value: 24.00, change: 2, trend: 'up', formatted: '$24.00' },
-                revenueChart: [30, 45, 35, 60, 55, 70, 65, 80, 75, 90],
-                period: period
-            };
+            // 4. Final Fallback: Mock Data (Dev/Offline Mode)
+            // Ensure consistency by updating the period
+            return { ...MOCK_SALES_ANALYTICS, period };
 
         } catch (error) {
-            console.error("Failed to fetch sales analytics:", error);
-            // Return safe default
+            console.error("Critical failure in getSalesAnalytics:", error);
+            // Return safe default to prevent UI crash
             return {
                 conversionRate: { value: 0, trend: 'neutral', formatted: '0%' },
                 totalVisitors: { value: 0, trend: 'neutral', formatted: '0' },

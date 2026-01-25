@@ -4,7 +4,7 @@ import path from 'path';
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
-    app: { getPath: vi.fn(() => '/mock/user-data') },
+    app: { getPath: vi.fn(() => '/mock/user-data'), getAppPath: vi.fn(() => '/app') },
     fs: {
         rm: vi.fn(),
         mkdir: vi.fn(),
@@ -18,13 +18,18 @@ const mocks = vi.hoisted(() => ({
         existsSync: vi.fn(() => true)
     },
     os: { tmpdir: vi.fn(() => '/mock/tmp') },
-    pythonBridge: { runScript: vi.fn() }
+    pythonBridge: { runScript: vi.fn() },
+    accessControlService: { verifyAccess: vi.fn(() => true), grantAccess: vi.fn() }
 }));
 
 // Mock modules
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
     app: mocks.app
+}));
+
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: mocks.accessControlService
 }));
 vi.mock('fs/promises', () => mocks.fs);
 // Mock fs default export for synchronous methods used in security checks
@@ -181,5 +186,20 @@ describe('🛡️ Shield: Distribution Security Test', () => {
         expect(mocks.fs.writeFile).toHaveBeenCalled();
         const expectedPath = path.resolve('/mock/tmp/indiiOS-releases', releaseId, 'metadata.xml');
         expect(mocks.fs.writeFile).toHaveBeenCalledWith(expectedPath, '<xml></xml>', 'utf-8');
+    });
+
+    it('should BLOCK Path Traversal in package-itmsp', async () => {
+        const maliciousReleaseId = '../../../../etc';
+
+        const result = await invoke('distribution:package-itmsp', maliciousReleaseId);
+
+        // Should return failure
+        expect(result.success).toBe(false);
+        // Should catch validation error
+        // Note: We might need to adjust the error message expectation once we implement the fix
+        // For now, just checking success: false is good enough to prove it fails (currently it will likely succeed or fail differently)
+
+        // CRITICAL: Python script should NOT be executed with malicious path
+        expect(mocks.pythonBridge.runScript).not.toHaveBeenCalled();
     });
 });

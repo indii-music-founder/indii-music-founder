@@ -1,16 +1,23 @@
 
 import { VideoGeneration } from '../VideoGenerationService';
 import { useStore } from '@/core/store';
-import { MembershipService } from '@/services/MembershipService';
+import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { httpsCallable } from 'firebase/functions';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mocks
 vi.mock('@/core/store');
-vi.mock('@/services/MembershipService');
+vi.mock('@/services/subscription/SubscriptionService', () => ({
+    subscriptionService: {
+        canPerformAction: vi.fn(),
+        getCurrentSubscription: vi.fn()
+    }
+}));
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     functions: {},
+    functionsWest1: {},
+    remoteConfig: {},
     db: {}
 }));
 vi.mock('firebase/functions', () => ({
@@ -30,7 +37,8 @@ describe('VideoGenerationService - Distributor Integration', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         (useStore.getState as any).mockReturnValue({ currentOrganizationId: 'org-1' });
-        (MembershipService.checkQuota as any).mockResolvedValue({ allowed: true });
+        (subscriptionService.canPerformAction as any).mockResolvedValue({ allowed: true });
+        (subscriptionService.getCurrentSubscription as any).mockResolvedValue({ tier: 'pro' });
     });
 
     describe('Distributors with Canvas support (9:16)', () => {
@@ -196,7 +204,7 @@ describe('VideoGenerationService - Distributor Integration', () => {
         it('applies distributor constraints to long-form videos', async () => {
             const mockTriggerLongFormJob = vi.fn().mockResolvedValue({ data: { success: true } });
             vi.mocked(httpsCallable).mockReturnValue(mockTriggerLongFormJob as any);
-            (MembershipService.checkVideoDurationQuota as any).mockResolvedValue({ allowed: true });
+            (subscriptionService.canPerformAction as any).mockResolvedValue({ allowed: true });
 
             await VideoGeneration.generateLongFormVideo({
                 prompt: 'A long video',

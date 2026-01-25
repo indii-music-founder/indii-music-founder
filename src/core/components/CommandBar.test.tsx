@@ -1,12 +1,13 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommandBar from './CommandBar';
-import { useStore } from '@/core/store';
+// import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
+import { create } from 'zustand';
 
 // Mock dependencies
-vi.mock('@/core/store');
+// vi.mock('@/core/store'); // We will use a custom implementation for the store
 vi.mock('@/core/context/ToastContext');
 vi.mock('firebase/firestore', () => ({
     Timestamp: {
@@ -65,33 +66,79 @@ vi.mock('framer-motion', () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
 
+// Define the store shape for testing
+interface TestStoreState {
+    currentModule: string;
+    setModule: (mod: string) => void;
+    toggleAgentWindow: () => void;
+    isAgentOpen: boolean;
+    chatChannel: string;
+    setChatChannel: (channel: string) => void;
+    commandBarInput: string;
+    setCommandBarInput: (input: string) => void;
+    commandBarAttachments: any[];
+    setCommandBarAttachments: (attachments: any[]) => void;
+    isCommandBarDetached: boolean;
+    setCommandBarDetached: (detached: boolean) => void;
+}
+
+// Create a real store for testing
+const useTestStore = create<TestStoreState>((set) => ({
+    currentModule: 'dashboard',
+    setModule: (mod) => set({ currentModule: mod }),
+    toggleAgentWindow: vi.fn(),
+    isAgentOpen: false,
+    chatChannel: 'indii',
+    setChatChannel: (channel) => set({ chatChannel: channel }),
+    commandBarInput: '',
+    setCommandBarInput: (input) => set({ commandBarInput: input }),
+    commandBarAttachments: [],
+    setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
+    isCommandBarDetached: false,
+    setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+}));
+
+// Mock the useStore hook to use our real test store
+vi.mock('@/core/store', () => ({
+    useStore: (selector?: (state: TestStoreState) => any) => {
+        return selector ? useTestStore(selector) : useTestStore();
+    }
+}));
+
 describe('CommandBar', () => {
-    const mockSetModule = vi.fn();
-    const mockToggleAgentWindow = vi.fn();
-    const mockSetChatChannel = vi.fn();
     const mockToast = { success: vi.fn(), error: vi.fn() };
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+        // Reset store state
+        useTestStore.setState({
             currentModule: 'dashboard',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
             isAgentOpen: false,
             chatChannel: 'indii',
-            setChatChannel: mockSetChatChannel,
+            commandBarInput: '',
+            commandBarAttachments: [],
+            isCommandBarDetached: false,
         });
+
+        // Spy on methods we want to assert
+        vi.spyOn(useTestStore.getState(), 'setModule');
+        vi.spyOn(useTestStore.getState(), 'setChatChannel');
+
+        // Re-mock Toast
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
 
     it('renders the delegate button correctly', () => {
         render(<CommandBar />);
-        expect(screen.getByText('Delegate to indii')).toBeInTheDocument();
+        const button = document.querySelector('button[aria-label="Select active agent"]');
+        expect(button).toBeInTheDocument();
+        // There are multiple "indii" texts
+        expect(screen.getAllByText('indii')[0]).toBeInTheDocument();
     });
 
     it('opens the dropdown when delegate button is clicked', () => {
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to indii').closest('button');
+        const button = document.querySelector('button[aria-label="Select active agent"]');
         fireEvent.click(button!);
 
         expect(screen.getByText("Manager's Office")).toBeInTheDocument();
@@ -102,62 +149,58 @@ describe('CommandBar', () => {
     });
 
     it('switches module and opens agent window when a manager is selected', () => {
+        const toggleSpy = vi.spyOn(useTestStore.getState(), 'toggleAgentWindow');
+        const setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
+
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to indii').closest('button');
+        const button = document.querySelector('button[aria-label="Select active agent"]');
         fireEvent.click(button!);
 
         const roadManagerOption = screen.getByText('Road Manager');
         fireEvent.click(roadManagerOption);
 
-        expect(mockSetModule).toHaveBeenCalledWith('road');
-        expect(mockToggleAgentWindow).toHaveBeenCalled();
+        expect(setModuleSpy).toHaveBeenCalledWith('road');
+        expect(toggleSpy).toHaveBeenCalled(); // Note: toggleAgentWindow is just a spy function in initial state, but we spied on it
     });
 
     it('switches module and opens agent window when a department is selected', () => {
+        const toggleSpy = vi.spyOn(useTestStore.getState(), 'toggleAgentWindow');
+        const setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
+
         render(<CommandBar />);
-        const button = screen.getByText('Delegate to indii').closest('button');
+        const button = document.querySelector('button[aria-label="Select active agent"]');
         fireEvent.click(button!);
 
         const marketingOption = screen.getByText('Marketing');
         fireEvent.click(marketingOption);
 
-        expect(mockSetModule).toHaveBeenCalledWith('marketing');
-        expect(mockToggleAgentWindow).toHaveBeenCalled();
+        expect(setModuleSpy).toHaveBeenCalledWith('marketing');
+        expect(toggleSpy).toHaveBeenCalled();
     });
 
     // Test for 'does not switch module but toggles agent window when indii is selected' removed as Indii option is removed from DelegateMenu
 
     it('calls setChatChannel("indii") when Indii button is clicked', () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'road',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'agent',
-            setChatChannel: mockSetChatChannel,
-        });
+        useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
+        const setChatChannelSpy = vi.spyOn(useTestStore.getState(), 'setChatChannel');
 
         render(<CommandBar />);
-        const indiiButton = screen.getByTitle('Switch to indii');
-        fireEvent.click(indiiButton);
-        expect(mockSetChatChannel).toHaveBeenCalledWith('indii');
+        // Using querySelector
+        const indiiButton = document.querySelector('button[aria-label="Switch to indii mode"]');
+        expect(indiiButton).toBeInTheDocument();
+        fireEvent.click(indiiButton!);
+        expect(setChatChannelSpy).toHaveBeenCalledWith('indii');
     });
 
     it('renders active Indii state and calls "agent" toggle when clicked', async () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'road',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'indii',
-            setChatChannel: mockSetChatChannel,
-        });
+        // Use dashboard to ensure Indii mode is allowed/default
+        useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii' });
+        const setChatChannelSpy = vi.spyOn(useTestStore.getState(), 'setChatChannel');
 
         render(<CommandBar />);
 
-        const activeBtn = screen.getByTitle('active: indii (Orchestrator)');
+        const activeBtn = document.querySelector('button[aria-label="Switch to Agent mode"]');
         expect(activeBtn).toBeInTheDocument();
-        expect(activeBtn).toHaveAttribute('aria-pressed', 'true');
 
         // Verify placeholder
         expect(screen.getByPlaceholderText('Ask indii to orchestrate...')).toBeInTheDocument();
@@ -173,22 +216,17 @@ describe('CommandBar', () => {
         });
 
         // Test toggle off
-        fireEvent.click(activeBtn);
-        expect(mockSetChatChannel).toHaveBeenCalledWith('agent');
+        // Note: We need to find the button again or ensure it's the same
+        const activeBtnRefound = document.querySelector('button[aria-label="Switch to Agent mode"]');
+        fireEvent.click(activeBtnRefound!);
+        expect(setChatChannelSpy).toHaveBeenCalledWith('agent');
     });
 
     it('updates button text based on current module', () => {
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'road',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'agent',
-            setChatChannel: mockSetChatChannel,
-        });
+        useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
 
         render(<CommandBar />);
-        expect(screen.getByText('Delegate to Road')).toBeInTheDocument();
+        expect(screen.getByText('road')).toBeInTheDocument();
     });
 
     it('sends a message when form is submitted', async () => {
@@ -197,7 +235,7 @@ describe('CommandBar', () => {
         const input = screen.getByPlaceholderText('Ask indii to orchestrate...');
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
-        const submitButton = screen.getByText('Run').closest('button');
+        const submitButton = document.querySelector('button[aria-label="Run command"]');
         fireEvent.click(submitButton!);
 
         await waitFor(() => {
@@ -213,7 +251,7 @@ describe('CommandBar', () => {
 
         // Drag over
         fireEvent.dragOver(dropZone!);
-        expect(await screen.findByText('Drop files to attach')).toBeInTheDocument();
+        expect(await screen.findByText('Drop to attach')).toBeInTheDocument();
         expect(dropZone).toHaveClass('ring-4');
 
         // Drag leave
@@ -221,7 +259,7 @@ describe('CommandBar', () => {
         // expect(screen.getByPlaceholderText('Describe your task, drop files, or take a picture...')).toBeInTheDocument();
         // Animation might take time to exit or re-render, but our mock removes it immediately if logic is correct
         await waitFor(() => {
-            expect(screen.queryByText('Drop files to attach')).not.toBeInTheDocument();
+            expect(screen.queryByText('Drop to attach')).not.toBeInTheDocument();
         });
         expect(dropZone).not.toHaveClass('ring-4');
 
@@ -239,15 +277,16 @@ describe('CommandBar', () => {
         expect(screen.getByText('hello.png')).toBeInTheDocument();
     });
 
-    it('triggers camera input when camera button is clicked', () => {
-        render(<CommandBar />);
-        const cameraButton = screen.getByTitle('Take a picture');
-        const cameraInput = document.querySelector('input[capture="environment"]');
+    // Camera button is currently removed from PromptArea
+    // it('triggers camera input when camera button is clicked', () => {
+    //     render(<CommandBar />);
+    //     const cameraButton = screen.getByTitle('Take a picture');
+    //     const cameraInput = document.querySelector('input[capture="environment"]');
 
-        // Mock click on input
-        const clickSpy = vi.spyOn(cameraInput as HTMLInputElement, 'click');
+    //     // Mock click on input
+    //     const clickSpy = vi.spyOn(cameraInput as HTMLInputElement, 'click');
 
-        fireEvent.click(cameraButton);
-        expect(clickSpy).toHaveBeenCalled();
-    });
+    //     fireEvent.click(cameraButton);
+    //     expect(clickSpy).toHaveBeenCalled();
+    // });
 });

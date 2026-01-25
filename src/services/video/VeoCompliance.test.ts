@@ -34,13 +34,17 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
-    functions: {}
+    functions: {},
+    functionsWest1: {},
+    remoteConfig: {}
 }));
 
 vi.mock('../firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
-    auth: mocks.auth
+    auth: mocks.auth,
+    remoteConfig: {}
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
@@ -142,11 +146,10 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
             vi.advanceTimersByTime(20);
-            const job = await jobPromise;
 
             // In a real player, this would be a critical failure.
-            // Here we verify that we CAN detect it.
-            expect(job.output.metadata.mime_type).not.toBe('video/mp4');
+            // Here we verify that we CAN detect it by asserting that the promise rejects
+            await expect(jobPromise).rejects.toThrow(/Security Violation: Invalid MIME type/);
         });
     });
 

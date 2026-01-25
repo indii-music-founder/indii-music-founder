@@ -15,11 +15,8 @@ const mockPost: SocialPost = {
     timestamp: 1620000000000
 };
 
-const mockFormatDate = (ts: number) => new Date(ts).toISOString();
-
 const defaultProps: FeedItemProps = {
-    post: mockPost,
-    formatDate: mockFormatDate
+    post: mockPost
 };
 
 describe('SocialFeed.utils', () => {
@@ -93,13 +90,7 @@ describe('SocialFeed.utils', () => {
             expect(areFeedItemPropsEqual(defaultProps, nextProps)).toBe(false);
         });
 
-        it('returns false when formatDate function reference changes', () => {
-            const nextProps = {
-                ...defaultProps,
-                formatDate: (ts: number) => new Date(ts).toString() // New function
-            };
-            expect(areFeedItemPropsEqual(defaultProps, nextProps)).toBe(false);
-        });
+
 
         it('handles null/undefined mediaUrls gracefully', () => {
             const propsWithNoMedia = {
@@ -117,11 +108,11 @@ describe('SocialFeed.utils', () => {
                 post: { ...mockPost, mediaUrls: undefined }
             })).toBe(true);
 
-             // undefined vs [] -> false (length check fails or explicit check)
-             // In my implementation: undefined vs []
-             // undefined is falsy. [] is truthy.
-             // if (!prevMedia || !nextMedia) return prevMedia === nextMedia;
-             // undefined === [] is false. Correct.
+            // undefined vs [] -> false (length check fails or explicit check)
+            // In my implementation: undefined vs []
+            // undefined is falsy. [] is truthy.
+            // if (!prevMedia || !nextMedia) return prevMedia === nextMedia;
+            // undefined === [] is false. Correct.
             expect(areFeedItemPropsEqual(propsWithNoMedia, propsWithEmptyMedia)).toBe(false);
         });
     });

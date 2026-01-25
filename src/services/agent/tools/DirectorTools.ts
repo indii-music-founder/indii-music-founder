@@ -71,6 +71,8 @@ interface GenerateImageArgs extends ToolFunctionArgs {
     resolution?: string;
     aspectRatio?: string;
     negativePrompt?: string;
+    style?: string;
+    quality?: string;
     seed?: string;
     referenceImageIndex?: number;
     referenceAssetIndex?: number;
@@ -169,6 +171,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 resolution: args.resolution || studioControls.resolution,
                 aspectRatio: effectiveAspectRatio,
                 negativePrompt: args.negativePrompt || studioControls.negativePrompt,
+                model: 'pro', // Default to pro for agent-driven creative tasks
+                thinking: true,
                 seed: args.seed ? parseInt(args.seed) : (studioControls.seed ? parseInt(studioControls.seed) : undefined),
                 sourceImages,
                 userProfile
@@ -187,7 +191,8 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
                 });
                 return toolSuccess({
                     count: results.length,
-                    image_ids: results.map(r => r.id)
+                    image_ids: results.map(r => r.id),
+                    urls: results.map(r => r.url)
                 }, `Successfully generated ${results.length} images. They are now in the Gallery.`);
             }
             return toolError("Generation completed but no images were returned.", "EMPTY_RESULT");

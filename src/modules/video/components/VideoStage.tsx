@@ -18,6 +18,26 @@ export const VideoStage = React.memo<VideoStageProps>(({
     activeVideo,
     setVideoInputs
 }) => {
+    const [videoError, setVideoError] = React.useState<string | null>(null);
+
+    React.useEffect(() => {
+        setVideoError(null);
+        if (activeVideo?.meta && activeVideo.type === 'video') {
+            try {
+                const meta = JSON.parse(activeVideo.meta);
+                if (meta.mime_type && meta.mime_type !== 'video/mp4') {
+                    setVideoError(`Invalid video format: ${meta.mime_type}. Lens requires video/mp4.`);
+                }
+            } catch {
+                // Ignore parse errors, treating metadata as optional if malformed
+            }
+        }
+    }, [activeVideo]);
+
+    const handleVideoError = () => {
+        setVideoError("Playback Error: Video source unavailable or corrupted.");
+    };
+
     return (
         <div className="flex-1 flex items-center justify-center p-8 bg-gradient-to-b from-gray-900 to-black relative overflow-hidden">
             {/* Background Grid Ambience */}
@@ -48,6 +68,14 @@ export const VideoStage = React.memo<VideoStageProps>(({
                             />
                         </div>
                     </div>
+                ) : videoError ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm z-20">
+                        <div className="bg-red-500/10 p-4 rounded-full mb-4">
+                            <Video size={48} className="text-red-500" />
+                        </div>
+                        <h3 className="text-xl font-bold text-red-500 mb-2">Playback Error</h3>
+                        <p className="text-gray-400 text-center max-w-sm px-4">{videoError}</p>
+                    </div>
                 ) : activeVideo ? (
                     <div className="relative w-full h-full flex items-center justify-center">
                         {activeVideo.url.startsWith('data:image') || activeVideo.type === 'image' ? (
@@ -59,6 +87,8 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 className="max-h-full max-w-full rounded-lg shadow-2xl border border-white/10"
                                 poster={activeVideo.url} // Note: poster expects an image URL. If activeVideo.url is video, this might fail or be ignored.
                                 preload="metadata" // ⚡ Bolt Optimization: efficient loading
+                                onError={handleVideoError}
+                                data-testid="video-player"
                             />
                         )}
                         {/* Info Overlay */}
@@ -73,14 +103,16 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 <button
                                     onClick={() => setVideoInputs({ firstFrame: activeVideo })}
                                     data-testid="set-anchor-btn"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                    aria-label="Set as anchor frame for next generation"
+                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                                 >
                                     Set Anchor
                                 </button>
                                 <button
                                     onClick={() => setVideoInputs({ lastFrame: activeVideo })}
                                     data-testid="set-end-frame-btn"
-                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors"
+                                    aria-label="Set as end frame for next generation"
+                                    className="px-2 py-1 bg-white/10 hover:bg-white/20 rounded text-[10px] text-white transition-colors focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:outline-none"
                                 >
                                     Set End Frame
                                 </button>

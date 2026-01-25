@@ -38,6 +38,7 @@ vi.mock('firebase-admin', () => ({
 // Mock firebase-functions
 vi.mock('firebase-functions/v1', () => ({
     runWith: vi.fn().mockReturnThis(),
+    region: vi.fn().mockReturnThis(),
     https: {
         onCall: vi.fn((handler) => handler),
         onRequest: vi.fn((handler) => handler),
@@ -66,7 +67,7 @@ describe('Image and Content Generation Functions', () => {
     });
 
     describe('generateImageV3', () => {
-        it('should call GoogleGenAI.models.generateContent with correct parameters', async () => {
+        it('should call REST API via fetch with correct parameters', async () => {
             const context: any = { auth: { uid: 'user123' } };
             const data = {
                 prompt: 'a beautiful cat',
@@ -74,27 +75,33 @@ describe('Image and Content Generation Functions', () => {
                 count: 2
             };
 
-            mocks.generateContent.mockResolvedValue({
-                candidates: [{
-                    content: {
-                        parts: [
-                            { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
-                            { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
-                        ]
-                    }
-                }]
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                json: async () => ({
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { inlineData: { data: 'base64-image-1', mimeType: 'image/png' } },
+                                { inlineData: { data: 'base64-image-2', mimeType: 'image/png' } }
+                            ]
+                        }
+                    }]
+                })
             });
+            global.fetch = mockFetch;
 
             const result = await generateImageV3(data, context);
 
-            expect(mocks.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-                contents: [{ role: 'user', parts: [{ text: 'a beautiful cat' }] }],
-                config: expect.objectContaining({
-                    responseModalities: ['IMAGE'],
-                    candidateCount: 2,
-                    imageConfig: { aspectRatio: '1:1' }
+            expect(mockFetch).toHaveBeenCalledWith(
+                expect.stringContaining('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'),
+                expect.objectContaining({
+                    method: 'POST',
+                    body: expect.stringContaining('"temperature":1')
                 })
-            }));
+            );
+            // mediaResolution should NOT be present (v1alpha only)
+            const [, fetchOptions] = mockFetch.mock.calls[0];
+            expect(fetchOptions.body).not.toContain('mediaResolution');
 
             expect(result).toEqual({
                 images: [

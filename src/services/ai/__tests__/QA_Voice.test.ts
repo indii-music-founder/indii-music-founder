@@ -13,13 +13,15 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'user-123' } }
 }));
 
-// Mock Google Generative AI (Fallback)
-vi.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: vi.fn(function () {
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: vi.fn(function () {
         return {
-            getGenerativeModel: vi.fn(() => ({
-                generateContent: mockGenerateContent
-            }))
+            models: {
+                generateContent: mockGenerateContent,
+                generateContentStream: vi.fn(),
+                embedContent: vi.fn()
+            }
         };
     })
 }));
@@ -37,6 +39,21 @@ vi.mock('firebase/ai', () => ({
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn(() => ({ asString: () => '' }))
+}));
+
+vi.mock('@/config/env', () => ({
+    env: {
+        VITE_API_KEY: 'mock-key',
+        apiKey: 'mock-key'
+    }
+}));
+
+vi.mock('../billing/TokenUsageService', () => ({
+    TokenUsageService: {
+        checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(undefined),
+        trackUsage: vi.fn().mockResolvedValue(undefined)
+    }
 }));
 
 describe('Voice Interface QA', () => {

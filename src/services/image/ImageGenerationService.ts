@@ -1,6 +1,6 @@
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { functions } from '@/services/firebase';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { env } from '@/config/env';
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
@@ -22,6 +22,10 @@ export interface ImageGenerationOptions {
     // Distributor-aware options
     userProfile?: UserProfile;
     isCoverArt?: boolean; // If true, enforces distributor cover art specs
+    // Gemini 3 Configuration
+    model?: 'fast' | 'pro';
+    thinking?: boolean;
+    useGrounding?: boolean;
 }
 
 export interface RemixOptions {
@@ -112,6 +116,9 @@ export class ImageGenerationService {
                 aspectRatio: aspectRatio,
                 count: count,
                 images: options.sourceImages?.length ? options.sourceImages : [],
+                model: options.model || 'fast',
+                thinking: options.thinking ?? false,
+                useGrounding: options.useGrounding ?? false
             });
 
             interface GenerateImageResponse {
@@ -127,17 +134,53 @@ export class ImageGenerationService {
                 return [];
             }
 
-            for (const img of data.images) {
-                if (img.bytesBase64Encoded) {
-                    const mimeType = img.mimeType || 'image/png';
-                    const url = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url,
-                        prompt: options.prompt
-                    });
+            // Bolt Optimization: Parallelize image processing and uploading
+            // processing images in parallel significantly reduces total latency for batches (count > 1)
+            const promises = data.images.map(async (img) => {
+                if (!img.bytesBase64Encoded) return null;
+
+                const mimeType = img.mimeType || 'image/png';
+                const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                const id = crypto.randomUUID();
+
+                let finalUrl = dataUri;
+
+                try {
+                    const { useStore } = await import('@/core/store');
+                    const userId = useStore.getState().userProfile?.id;
+
+                    if (userId) {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        const saved = await CloudStorageService.smartSave(dataUri, id, userId);
+                        finalUrl = saved.url;
+                    }
+                } catch (e) {
+                    console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                    try {
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
+                        const compressed = await CloudStorageService.compressImage(dataUri, {
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            quality: 0.6
+                        });
+                        finalUrl = compressed.dataUri;
+                    } catch (compressionError) {
+                        console.warn("Compression failed, using original size:", compressionError);
+                    }
                 }
-            }
+
+                return {
+                    id,
+                    url: finalUrl,
+                    prompt: options.prompt
+                };
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (err: any) {
             console.error("❌ Image Generation Error:", err);
             console.error("Error details:", {
@@ -253,47 +296,76 @@ export class ImageGenerationService {
         prompt?: string;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         const results: { id: string, url: string, prompt: string }[] = [];
-
-        // Use Cloud Function for image generation (properly uses REST API)
         const generateImage = httpsCallable(functions, 'generateImageV3');
 
         try {
-            for (const target of options.targetImages) {
-                // Determine aspect ratio based on target image dimensions
-                let aspectRatio = '1:1';
-                if (target.width && target.height) {
-                    if (target.width > target.height * 1.2) aspectRatio = '16:9';
-                    else if (target.height > target.width * 1.2) aspectRatio = '9:16';
-                }
+            // Bolt Optimization: Parallelize requests to improve batch latency
+            const promises = options.targetImages.map(async (target) => {
+                try {
+                    // Determine aspect ratio based on target image dimensions
+                    let aspectRatio = '1:1';
+                    if (target.width && target.height) {
+                        if (target.width > target.height * 1.2) aspectRatio = '16:9';
+                        else if (target.height > target.width * 1.2) aspectRatio = '9:16';
+                    }
 
-                const result = await generateImage({
-                    prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                    images: [
-                        { mimeType: target.mimeType, data: target.data },
-                        { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                    ],
-                    aspectRatio
-                });
-
-                interface GenerateImageResponse {
-                    images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-                }
-                const data = result.data as GenerateImageResponse;
-
-                if (data.images?.[0]?.bytesBase64Encoded) {
-                    const mimeType = data.images[0].mimeType || 'image/png';
-                    results.push({
-                        id: crypto.randomUUID(),
-                        url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                        prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                    const result = await generateImage({
+                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        images: [
+                            { mimeType: target.mimeType, data: target.data },
+                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
+                        ],
+                        aspectRatio
                     });
+
+                    interface GenerateImageResponse {
+                        images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
+                    }
+                    const data = result.data as GenerateImageResponse;
+
+                    if (data.images?.[0]?.bytesBase64Encoded) {
+                        const mimeType = data.images[0].mimeType || 'image/png';
+                        return {
+                            id: crypto.randomUUID(),
+                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                        };
+                    }
+                    return null;
+                } catch (error) {
+                    console.error("Individual Batch Remix Error:", error);
+                    return null;
                 }
-            }
+            });
+
+            const parallelResults = await Promise.all(promises);
+            parallelResults.forEach(res => {
+                if (res) results.push(res);
+            });
         } catch (e) {
             console.error("Batch Remix Error:", e);
             throw e;
         }
         return results;
+    }
+
+    async editImage(options: {
+        image: string;
+        prompt: string;
+        mask?: string;
+        referenceImage?: string;
+        imageMimeType?: string;
+        maskMimeType?: string;
+        refMimeType?: string;
+    }): Promise<any> {
+        try {
+            const editImage = httpsCallable(functions, 'editImage');
+            const result = await editImage(options);
+            return result.data;
+        } catch (e) {
+            console.error("Image Edit Error:", e);
+            throw e;
+        }
     }
 
     /**

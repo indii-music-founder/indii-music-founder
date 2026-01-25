@@ -16,7 +16,12 @@ const {
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn((rc, key) => ({
-        asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1'
+        asString: () => {
+            if (key === 'model_name') return 'mock-model-v1';
+            // Return empty string (valid falsy) for ai_system_config to trigger default fallback
+            // console.log(`[Test Debug] getValue called for ${key}`);
+            return '';
+        }
     }))
 }));
 
@@ -70,21 +75,19 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user-id' } }
 }));
 
-vi.mock('@google/generative-ai', () => {
+// Mock Google GenAI SDK (Fallback) - new @google/genai package
+vi.mock('@google/genai', () => {
     return {
-        GoogleGenerativeAI: class {
-            getGenerativeModel() {
-                return {
-                    generateContent: mockGenerateContent,
-                    generateContentStream: vi.fn().mockResolvedValue({
-                        stream: (async function* () { yield { text: () => 'Fallback Stream' }; })(),
-                        response: Promise.resolve({ candidates: [] })
-                    }),
-                    embedContent: vi.fn().mockResolvedValue({
-                        embedding: { values: [0.1, 0.2, 0.3] }
-                    })
-                };
-            }
+        GoogleGenAI: class {
+            models = {
+                generateContent: mockGenerateContent,
+                generateContentStream: vi.fn().mockResolvedValue(
+                    (async function* () { yield { text: 'Fallback Stream', candidates: [] }; })()
+                ),
+                embedContent: vi.fn().mockResolvedValue({
+                    embeddings: [{ values: [0.1, 0.2, 0.3] }]
+                })
+            };
         }
     };
 });
@@ -101,6 +104,7 @@ vi.mock('@/config/env', () => ({
 vi.mock('./billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(true),
         trackUsage: vi.fn().mockResolvedValue(undefined)
     }
 }));
@@ -166,7 +170,11 @@ describe('FirebaseAIService', () => {
         expect(getGenerativeModel).toHaveBeenCalledWith(expect.anything(), expect.objectContaining({
             systemInstruction: 'Be a cat',
             generationConfig: expect.objectContaining({
-                thinkingConfig: { thinkingBudget: 1024 }
+                thinkingConfig: expect.objectContaining({
+                    thinkingBudget: 1024,
+                    budgetTokenCount: 1024,
+                    includeThoughts: true
+                })
             })
         }));
     });

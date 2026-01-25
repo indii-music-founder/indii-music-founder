@@ -6,6 +6,7 @@ import { DistributionStageReleaseSchema } from '../utils/validation';
 import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
+import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 
 import { PythonBridge } from '../utils/python-bridge';
@@ -80,6 +81,11 @@ export const setupDistributionHandlers = () => {
                     const rawPath = file.data.startsWith('file://') ? new URL(file.data).pathname : file.data;
                     const sourcePath = decodeURIComponent(rawPath);
 
+                    // Security: Verify Access Authorization
+                    if (!accessControlService.verifyAccess(sourcePath)) {
+                        throw new Error(`Security Violation: Access to ${sourcePath} is denied. File was not authorized by user.`);
+                    }
+
                     // Security Check: LFI Prevention
                     validateSafeDistributionSource(sourcePath);
 
@@ -127,6 +133,12 @@ export const setupDistributionHandlers = () => {
     ipcMain.handle('distribution:package-itmsp', async (event, releaseId: string) => {
         try {
             validateSender(event);
+
+            // Security: Validate releaseId to prevent path traversal
+            if (!z.string().uuid().safeParse(releaseId).success) {
+                throw new Error("Security Error: Invalid releaseId format. Must be a UUID.");
+            }
+
             console.log(`[Distribution] Packaging ITMSP for release: ${releaseId}`);
 
             // Resolve the staging path (using the same logic as stage-release)
@@ -184,7 +196,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [2]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -199,7 +211,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -214,7 +226,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact metadata
             return { success: report.valid, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -353,12 +365,20 @@ export const setupDistributionHandlers = () => {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
             }
 
+            // Security: Verify Access Authorization for source path
+            if (!accessControlService.verifyAccess(localPath)) {
+                throw new Error(`Security Violation: Access to ${localPath} is denied. File was not authorized by user.`);
+            }
+
             // Security: Validate source path
             validateSafeDistributionSource(localPath);
 
             // Security: If key is a path, validate it
             if (key && (key.includes('/') || key.includes('\\'))) {
-                validateSafeDistributionSource(key);
+                if (!accessControlService.verifyAccess(key)) {
+                    throw new Error(`Security Violation: Access to key file ${key} is denied.`);
+                }
+                validateSafeDistributionSource(key, { allowKeys: true });
             }
 
             const storagePath = getStoragePath();

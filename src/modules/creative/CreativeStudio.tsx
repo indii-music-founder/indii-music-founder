@@ -11,6 +11,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 import { WhiskService } from '@/services/WhiskService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import DirectGenerationTab from './components/DirectGenerationTab';
 
 // Lazy load CreativePanel for mobile controls tab
 const CreativePanel = lazy(() => import('@/core/components/right-panel/CreativePanel'));
@@ -48,7 +49,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         if (initialMode) {
             setGenerationMode(initialMode);
         }
-    }, [initialMode]);
+    }, [initialMode, setGenerationMode]);
 
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
@@ -59,7 +60,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             // But if we just mounted with initialMode='image', generationMode might be 'image' already.
             setViewMode('gallery');
         }
-    }, [generationMode]);
+    }, [generationMode, viewMode, setViewMode]);
 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {
@@ -91,7 +92,11 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         sourceImages: sourceImages,
                         // Pass distributor context for cover art mode
                         userProfile: isCoverArt ? userProfile : undefined,
-                        isCoverArt
+                        isCoverArt,
+                        // Gemini 3 Params
+                        model: studioControls.model,
+                        thinking: studioControls.thinking,
+                        useGrounding: studioControls.useGrounding
                     });
 
                     if (results.length > 0) {
@@ -125,7 +130,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             };
             generateImage();
         }
-    }, [pendingPrompt, generationMode, whiskState]);
+    }, [pendingPrompt, generationMode, whiskState, setPrompt, setPendingPrompt, studioControls, addToHistory, currentProjectId, userProfile, toast]);
 
     return (
         <ModuleErrorBoundary moduleName="Creative Director">
@@ -163,6 +168,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'gallery' && <CreativeGallery />}
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
+                        {viewMode === 'direct' && <DirectGenerationTab />}
                     </div>
                 </div>
 

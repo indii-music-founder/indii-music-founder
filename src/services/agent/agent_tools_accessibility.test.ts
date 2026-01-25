@@ -72,7 +72,7 @@ describe('Agent Tool Accessibility Audit', () => {
                 }
             });
 
-            console.log(`\n📋 TOOL_REGISTRY has ${Object.keys(TOOL_REGISTRY).length} tools registered`);
+            // console.log(`\n📋 TOOL_REGISTRY has ${Object.keys(TOOL_REGISTRY).length} tools registered`);
 
             if (missingTools.length > 0) {
                 console.error(`❌ Missing critical tools: ${missingTools.join(', ')}`);
@@ -83,10 +83,10 @@ describe('Agent Tool Accessibility Audit', () => {
 
         it('should list all registered tools', () => {
             const tools = Object.keys(TOOL_REGISTRY);
-            console.log('\n🛠️ All Registered Tools:');
-            tools.forEach((tool, i) => {
-                console.log(`   ${i + 1}. ${tool}`);
-            });
+            // console.log('\n🛠️ All Registered Tools:');
+            // tools.forEach((tool, i) => {
+            //     console.log(`   ${i + 1}. ${tool}`);
+            // });
             expect(tools.length).toBeGreaterThan(0);
         });
     });
@@ -99,7 +99,7 @@ describe('Agent Tool Accessibility Audit', () => {
 
             // GeneralistAgent uses TOOL_REGISTRY directly
             // Check that it's properly constructed
-            console.log(`\n🤖 GeneralistAgent loaded: ${agent?.name}`);
+            // console.log(`\n🤖 GeneralistAgent loaded: ${agent?.name}`);
         });
 
         it('should have BASE_TOOLS string describing all tools', () => {
@@ -108,7 +108,7 @@ describe('Agent Tool Accessibility Audit', () => {
 
             // Count tool descriptions in BASE_TOOLS
             const toolCount = (BASE_TOOLS.match(/\d+\.\s+\w+\(/g) || []).length;
-            console.log(`\n📝 BASE_TOOLS describes ${toolCount} tools in system prompt`);
+            // console.log(`\n📝 BASE_TOOLS describes ${toolCount} tools in system prompt`);
         });
     });
 
@@ -117,8 +117,8 @@ describe('Agent Tool Accessibility Audit', () => {
         const CURRENT_LIMIT = 24; // Updated limit in BaseAgent (was 12)
 
         it('should audit each agent configuration for tool limits', () => {
-            console.log('\n📊 Agent Tool Configuration Audit:');
-            console.log('═══════════════════════════════════════════════════════════');
+            // console.log('\n📊 Agent Tool Configuration Audit:');
+            // console.log('═══════════════════════════════════════════════════════════');
 
             const auditResults: Array<{
                 id: string;
@@ -151,10 +151,10 @@ describe('Agent Tool Accessibility Audit', () => {
                 const status = overLimit ? '⚠️' : '✅';
                 const lostTools = overLimit ? ` (${totalPotential - CURRENT_LIMIT} tools cut off!)` : '';
 
-                console.log(`${status} ${config.name.padEnd(25)} | Configured: ${configuredToolCount.toString().padStart(2)} | Functions: ${functionsCount.toString().padStart(2)} | Effective: ${effectiveTools}${lostTools}`);
+                // console.log(`${status} ${config.name.padEnd(25)} | Configured: ${configuredToolCount.toString().padStart(2)} | Functions: ${functionsCount.toString().padStart(2)} | Effective: ${effectiveTools}${lostTools}`);
             });
 
-            console.log('═══════════════════════════════════════════════════════════');
+            // console.log('═══════════════════════════════════════════════════════════');
 
             const overLimitAgents = auditResults.filter(a => a.overLimit);
             if (overLimitAgents.length > 0) {
@@ -194,7 +194,7 @@ describe('Agent Tool Accessibility Audit', () => {
 
     describe('Tool Function Implementation Verification', () => {
         it('should verify all agent-specific tools have implementations', () => {
-            console.log('\n🔧 Verifying Tool Implementations:');
+            // console.log('\n🔧 Verifying Tool Implementations:');
 
             const missingImplementations: Array<{ agent: string; tool: string }> = [];
 
@@ -219,7 +219,7 @@ describe('Agent Tool Accessibility Audit', () => {
                     console.log(`   - ${agent}: ${tool}`);
                 });
             } else {
-                console.log('   ✅ All declared tools have implementations');
+                // console.log('   ✅ All declared tools have implementations');
             }
 
             // This is a warning, not a failure - some tools might be in TOOL_REGISTRY

@@ -3,6 +3,7 @@ import { CREATIVE_TOOLS } from '@/modules/creative/tools';
 import { DirectorTools } from './tools/DirectorTools';
 import { VideoTools } from './tools/VideoTools';
 import { MemoryTools } from './tools/MemoryTools';
+import { UserMemoryTools } from './tools/UserMemoryTools';
 import { AnalysisTools } from './tools/AnalysisTools';
 import { FinanceTools } from './tools/FinanceTools';
 import { SocialTools } from './tools/SocialTools';
@@ -27,6 +28,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...VideoTools,
     ...CREATIVE_TOOLS,
     ...MemoryTools,
+    ...UserMemoryTools,
     ...AnalysisTools,
     ...SocialTools,
     ...OrganizationTools,
@@ -99,4 +101,13 @@ AVAILABLE TOOLS:
 48. scan_content(text: string) - Scan content for sensitive data.
 49. rotate_credentials(service_name: string) - Rotate credentials.
 50. verify_zero_touch_prod(service_name: string) - Verify zero-touch prod.
+51. save_user_memory(content: string, category?: string, importance?: string, tags?: string[]) - Save to user's persistent memory across all sessions.
+52. search_user_memory(query: string, categories?: string[], importance?: string[], tags?: string[], limit?: number) - Search user's persistent memory semantically.
+53. get_user_context() - Get aggregated user context summary (preferences, goals, key facts).
+54. list_user_memories(categories?: string[], isActive?: boolean, limit?: number) - List user memories with filtering.
+55. update_user_memory(memoryId: string, content?: string, category?: string, importance?: string, tags?: string[], isActive?: boolean) - Update existing user memory.
+56. deactivate_user_memory(memoryId: string) - Deactivate a user memory (soft delete).
+57. delete_user_memory(memoryId: string) - Permanently delete a user memory.
+58. get_user_memory_analytics(days?: number) - Get analytics about user memories.
+59. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
 `;
