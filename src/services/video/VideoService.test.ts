@@ -32,6 +32,19 @@ vi.mock('@/core/config/ai-models', () => ({
     }
 }));
 
+// Mock MembershipService to avoid Firebase initialization
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkQuota: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
+        checkVideoDurationQuota: vi.fn().mockResolvedValue({ allowed: true, maxDuration: 60, tierName: 'Pro' }),
+        getCurrentTier: vi.fn().mockResolvedValue('pro'),
+        getUpgradeMessage: vi.fn().mockReturnValue('Upgrade please'),
+        formatDuration: vi.fn().mockReturnValue('1 minute'),
+        incrementUsage: vi.fn()
+    },
+    TIER_LIMITS: { free: {}, pro: {}, enterprise: {} }
+}));
+
 import { Video, VideoService } from './VideoService';
 import { AI } from '../ai/AIService';
 

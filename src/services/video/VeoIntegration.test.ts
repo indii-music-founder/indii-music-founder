@@ -37,11 +37,13 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
-    functions: {}
+    functions: {},
+    functionsWest1: {}
 }));
 
 vi.mock('../firebase', () => ({ // Handle relative import in service
     functions: {},
+    functionsWest1: {},
     db: {},
     auth: mocks.auth
 }));
