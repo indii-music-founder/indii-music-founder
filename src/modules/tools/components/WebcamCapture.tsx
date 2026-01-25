@@ -75,11 +75,20 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="webcam-capture-title"
+        >
             <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 w-full max-w-lg flex flex-col gap-4">
                 <div className="flex justify-between items-center">
-                    <h3 className="text-lg font-bold text-white">Capture Reference</h3>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white">
+                    <h3 id="webcam-capture-title" className="text-lg font-bold text-white">Capture Reference</h3>
+                    <button
+                        onClick={onClose}
+                        className="text-gray-400 hover:text-white"
+                        aria-label="Close camera"
+                    >
                         <X size={24} />
                     </button>
                 </div>
