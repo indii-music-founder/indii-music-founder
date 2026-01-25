@@ -40,10 +40,6 @@ import { BREAKER_CONFIGS } from './config/breaker-configs';
 import { STANDARD_SAFETY_SETTINGS } from './config/safety-settings';
 import { InputSanitizer } from './utils/InputSanitizer';
 import { TokenUsageService } from './billing/TokenUsageService';
-import { Project } from '@/core/store/slices/appSlice';
-import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
-import { MOCK_SALES_ANALYTICS } from './mockData';
-import { ProjectMetadata } from './DashboardService';
 import { auth } from '@/services/firebase';
 import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
@@ -367,8 +363,7 @@ export class FirebaseAIService {
                     toolConfig,
                     safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
                 } as any,
-            });
-
+```typescript
             // Convert to Firebase AI SDK format for compatibility
             return {
                 response: {
@@ -862,7 +857,7 @@ export class FirebaseAIService {
                     if (data?.status === 'failed') {
                         throw new AppException(
                             AppErrorCode.INTERNAL_ERROR,
-                            `Video generation failed: ${data.error || 'Unknown error'}`
+                            `Video generation failed: ${ data.error || 'Unknown error' }`
                         );
                     }
                 }
@@ -1003,7 +998,7 @@ export class FirebaseAIService {
                 // Check if it was blocked or just text returned (e.g. "I cannot generate that")
                 const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
                 if (textPart && 'text' in textPart) {
-                    throw new Error(`Generation blocked or failed: ${textPart.text}`);
+                    throw new Error(`Generation blocked or failed: ${ textPart.text }`);
                 }
                 throw new Error('No image data found in response');
             }
@@ -1183,7 +1178,7 @@ export class FirebaseAIService {
      */
     public parseJSON<T = unknown>(text: string | undefined): T | Record<string, never> {
         if (!text) return {};
-        const clean = text.replace(/```json\n?|```/g, '').trim();
+        const clean = text.replace(/```json\n ?| ```/g, '').trim();
         try {
             return JSON.parse(clean);
         } catch {
@@ -1247,7 +1242,7 @@ export class FirebaseAIService {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${ msg }`, { retryable: false });
     }
 
     private async withRetry<T>(
@@ -1281,7 +1276,7 @@ export class FirebaseAIService {
                     const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
                     const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
 
-                    console.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
+                    console.warn(`[FirebaseAIService] Transient error, retrying in ${ Math.round(waitTime) }ms... (Attempt ${ attempt + 1}/${retries})`);
 
                     await new Promise((resolve, reject) => {
                         const timer = setTimeout(resolve, waitTime);
