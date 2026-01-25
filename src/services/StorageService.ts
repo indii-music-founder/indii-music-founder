@@ -7,6 +7,8 @@ import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
 import { Logger } from '@/core/logger/Logger';
+import { VideoUploadService } from './video/VideoUploadService';
+
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -33,14 +35,23 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         return await getDownloadURL(storageRef);
     }
 
+
+
     /**
      * Uploads a file with progress tracking.
+     * Delegates to VideoUploadService for video files to ensure correct metadata and optimization.
      */
     async uploadFileWithProgress(
         file: Blob | File,
         path: string,
         onProgress: (progress: number) => void
     ): Promise<string> {
+        // Delegate video uploads to the specialized service
+        if (file.type.startsWith('video/')) {
+            const result = await VideoUploadService.uploadVideo(file, path, { onProgress });
+            return result.url;
+        }
+
         const { uploadBytesResumable } = await import('firebase/storage');
         const storageRef = ref(storage, path);
         const uploadTask = uploadBytesResumable(storageRef, file);

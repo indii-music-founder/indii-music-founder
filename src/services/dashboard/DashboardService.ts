@@ -63,7 +63,7 @@ const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'a
 interface CachedAnalytics {
     historyRef: HistoryItem[];
     agentMessagesRef: unknown[];
-    projectsRef: ProjectMetadata[];
+    projectsRef: Project[]; // Use Project[] since state.projects is Project[]
     day: number;
     data: AnalyticsData;
 }
@@ -101,7 +101,8 @@ export class DashboardService {
                 return updatedState.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
-                    lastModified: p.lastModified,
+                    lastModified: p.date || Date.now(),
+                    type: p.type,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
@@ -358,7 +359,8 @@ export class DashboardService {
                 DashboardService.analyticsCache &&
                 DashboardService.analyticsCache.historyRef === history &&
                 DashboardService.analyticsCache.agentMessagesRef === agentMessages &&
-                DashboardService.analyticsCache.projectsRef === projects &&
+                DashboardService.analyticsCache.projectsRef.length === projects.length &&
+                DashboardService.analyticsCache.projectsRef.every((p, i) => projects[i] && p.id === projects[i].id) &&
                 DashboardService.analyticsCache.day === currentDay
             ) {
                 return DashboardService.analyticsCache.data;
@@ -430,7 +432,7 @@ export class DashboardService {
             DashboardService.analyticsCache = {
                 historyRef: history,
                 agentMessagesRef: agentMessages,
-                projectsRef: projects,
+                projectsRef: projects, // state.projects is Project[]
                 day: currentDay,
                 data: result
             };
@@ -529,10 +531,12 @@ export class DashboardService {
                             // Update Cache
                             this.cache.set(period, { data: parseResult.data, timestamp: Date.now() });
                             return parseResult.data;
+                        } else {
+                            console.warn("Invalid sales analytics data:", parseResult.error);
                         }
                     }
                 } catch (e) {
-                    console.warn("Firestore fetch failed:", e);
+                    console.warn("Failed to fetch sales analytics doc, falling back to simulation", e);
                 }
             }
 

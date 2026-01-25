@@ -201,7 +201,7 @@ describe('🛡️ Shield: Agent Torture Test', () => {
 
         // 1. Check User Prompt is present
         // The first part of the user message should contain the prompt and context
-        const userMessageParts = callArgs.contents[0].parts;
+        const userMessageParts = (callArgs.contents as any)[0].parts;
         const promptText = userMessageParts.find((p: any) => p.text)?.text;
 
         // 2. Assert System Guardrails are present in the prompt text

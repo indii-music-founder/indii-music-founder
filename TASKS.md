@@ -11,9 +11,9 @@ We are validating the release candidate by simulating a user journey for the tra
   - [x] Sign in as `marcus.deep@test.indiios.com`
   - [ ] Verify successful landing on dashboard (FAILED: `ReferenceError: input is not defined`)
 
-- [ ] **1.1 Debugging Dashboard Crash**
-  - [ ] Reproduce `ReferenceError` locally
-  - [ ] Fix the `input` variable issue
+- [x] **1.1 Debugging Dashboard Crash**
+  - [x] Reproduce `ReferenceError` locally (Fixed via static analysis in PromptArea.tsx)
+  - [x] Fix the `input` variable issue
   - [ ] Verify dashboard loads
 
 - [ ] **2. Project Setup**

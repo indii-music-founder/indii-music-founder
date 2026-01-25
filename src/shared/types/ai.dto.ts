@@ -317,6 +317,7 @@ export interface WrappedResponse {
     text: () => string;
     functionCalls: () => FunctionCallPart['functionCall'][];
     usage: () => UsageMetadata | undefined;
+    thoughtSignature?: string;
 }
 
 // ============================================================================
