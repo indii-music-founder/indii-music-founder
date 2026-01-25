@@ -391,9 +391,10 @@ export class DashboardService {
                 // 3. Word Cloud
                 if (item.prompt) {
                     // Bolt: Use matchAll to avoid creating large intermediate strings and arrays
-                    for (const match of item.prompt.matchAll(/\S+/g)) {
+                    // ⚡ OPTIMIZATION: Filter length at regex level (/\S{4,}/g) to avoid string allocation for short words
+                    for (const match of item.prompt.matchAll(/\S{4,}/g)) {
                         const word = match[0].toLowerCase();
-                        if (word.length > 3 && !STOP_WORDS.has(word)) {
+                        if (!STOP_WORDS.has(word)) {
                             wordCounts[word] = (wordCounts[word] || 0) + 1;
                         }
                     }

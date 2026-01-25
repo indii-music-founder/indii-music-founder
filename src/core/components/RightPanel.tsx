@@ -1,5 +1,6 @@
 import React from 'react';
 import { useStore } from '../store';
+import { useShallow } from 'zustand/react/shallow';
 import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide-react';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
@@ -9,7 +10,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function RightPanel() {
-    const { currentModule, setModule, isRightPanelOpen, toggleRightPanel } = useStore();
+    const { currentModule, setModule, isRightPanelOpen, toggleRightPanel } = useStore(
+        useShallow(state => ({
+            currentModule: state.currentModule,
+            setModule: state.setModule,
+            isRightPanelOpen: state.isRightPanelOpen,
+            toggleRightPanel: state.toggleRightPanel
+        }))
+    );
 
     // Placeholder content based on module
     const renderContent = () => {

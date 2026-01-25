@@ -130,7 +130,10 @@ service cloud.firestore {
     // Users can only read/write their own profile
     match /users/{userId} {
       allow read: if isOwner(userId);
-      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      // Prevent privilege escalation during creation: Users can only assign 'user' or 'artist' roles to themselves.
+      allow create: if isOwner(userId) &&
+                    isValidUser(request.resource.data) &&
+                    request.resource.data.role in ['user', 'artist'];
       allow update: if isOwner(userId) && (
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
         request.auth.token.admin == true
