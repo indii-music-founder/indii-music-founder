@@ -3,6 +3,10 @@
 **Learning:** Checking paths purely as strings (`path.normalize`) is insufficient for security when the underlying file system supports symlinks. An attacker can mask the true target of a path.
 **Prevention:** Always use `fs.realpathSync` (or async equivalent) to resolve the canonical path *before* applying blocklists or allowlists (extensions, directories). This ensures validation is performed on the actual file being accessed.
 
+## 2025-02-18 - [HIGH] Path Traversal in Video Asset Handlers
+**Vulnerability:** The `video:save-asset` and `video:open-folder` handlers in `electron/handlers/video.ts` lacked sender validation and input sanitization. `video:save-asset` could potentially write files to arbitrary locations via path traversal in `filename`, and `video:open-folder` could reveal existence/content of arbitrary directories.
+**Learning:** File system operations exposed via IPC must strictly validate input paths against an allowed root directory using `path.resolve` and checking `startsWith` (or strict equality). Relying on client-provided filenames without checking for `..` is dangerous.
+**Prevention:** Added `validateSender` to all handlers. Enforced `http`/`https` protocols for downloads. Implemented strict path containment checks for `open-folder` and filename validation for `save-asset`.
 ## 2025-02-18 - [HIGH] Unsecured Electron IPC Handlers (SSRF & Arbitrary File Write)
 **Vulnerability:** The `video:save-asset` IPC handler accepted arbitrary URLs and filenames without validation or sender verification. This allowed a compromised renderer (via XSS) to trigger SSRF (accessing internal/local network resources via `downloadFile`) and write files to the user's disk. The `video:open-folder` handler also lacked sender verification and path containment, potentially exposing file system structure.
 **Learning:** Electron IPC handlers operate with high privileges (Node.js). Relying solely on the frontend to send "correct" data is a security flaw. Every IPC handler must be treated as an untrusted public API endpoint.

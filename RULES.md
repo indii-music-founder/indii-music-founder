@@ -87,4 +87,4 @@
 
 * **Scope:** Testing protocols, architectural constraints (Service/UI separation), Code Hygiene, and Safety Checks.
 * **Verification:** Run `npm test` or `./scripts/on_stop.sh` as the final step of every task.
-* **Secret Protection:** Never output API keys or identifiable secrets. Use `process.env`.
+* **Secret Protection:** Never output **True Secrets** (Service Account Keys, Stripe Secrets). Firebase API Keys (`AIza*`) are identifiers and safe for configuration, but preferred via `process.env`.

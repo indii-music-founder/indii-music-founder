@@ -5,7 +5,7 @@ import { getColorForModule } from '@/core/theme/moduleColors';
 import {
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film, Image,
     Scale, Book, DollarSign, FileText, ShoppingBag, Radio, Globe,
-    Menu, X, Layout
+    Menu, X, Layout, Clock
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
@@ -79,6 +79,7 @@ export const MobileNav = () => {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'history', icon: Clock, label: 'History' },
     ];
 
     const handleItemClick = (id: ModuleId) => {

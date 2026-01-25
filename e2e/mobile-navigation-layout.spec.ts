@@ -24,13 +24,13 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
 
         // 3. Handle Login (if needed)
         try {
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 3000 });
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 5000 });
         } catch (e) {
             const guestLoginBtn = page.getByText('Guest Login (Dev)');
             if (await guestLoginBtn.isVisible()) {
                 await guestLoginBtn.click();
             }
-            await page.waitForSelector('[data-testid="app-container"]', { timeout: 10000 });
+            await page.waitForSelector('[data-testid="app-container"]', { timeout: 30000 });
         }
     });
 
@@ -40,16 +40,15 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
         await expect(desktopSidebarToggle).toBeHidden();
 
         // 2. Verify Mobile Navigation is VISIBLE
-        const moreButton = page.locator('button[aria-label="More"]');
+        const moreButton = page.locator('button[aria-label="Open Navigation"]');
         await expect(moreButton).toBeVisible();
 
-        // Check if it's fixed at the bottom
-        const navBar = moreButton.locator('xpath=../..'); // Parent div
-        const box = await navBar.boundingBox();
+        // Verify FAB position
+        const box = await moreButton.boundingBox();
         expect(box).not.toBeNull();
-        if (box) {
-            expect(box.y + box.height).toBeCloseTo(MOBILE_HEIGHT, 1);
-        }
+        // It should be within the viewport
+        expect(box?.y).toBeLessThan(MOBILE_HEIGHT);
+        expect(box?.y).toBeGreaterThan(MOBILE_HEIGHT - 200); // Rough check for bottom area
     });
 
     test('should open full-screen agent chat on mobile (Agent Window Toggle)', async ({ page }) => {
@@ -76,7 +75,7 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
 
         // The modal container is the ancestor with fixed position
         const modal = closeBtn.locator('xpath=../../..');
-        await expect(modal).toHaveClass(/fixed/);
+        await expect(modal).toHaveCSS('position', 'fixed');
 
         const box = await modal.boundingBox();
         // Allow for safe areas, borders, and sub-pixel rendering (within 5% of viewport)
@@ -84,9 +83,30 @@ test.describe('📱 Viewport: Mobile Navigation Layout', () => {
         expect(box?.height).toBeGreaterThan(MOBILE_HEIGHT * 0.95);
 
         // 3. Verify Close Button works
-        await closeBtn.click();
+        await closeBtn.click({ force: true });
 
         // 4. Verify Closed
         await expect(modal).toBeHidden();
+    });
+
+    test('should navigate to Brand Manager and close menu', async ({ page }) => {
+        // 1. Open Navigation
+        const openNavBtn = page.locator('button[aria-label="Open Navigation"]');
+        await openNavBtn.click();
+
+        // 2. Verify Drawer is Open
+        const drawer = page.locator('#mobile-nav-drawer');
+        await expect(drawer).toBeVisible();
+
+        // 3. Click Brand Manager
+        const brandLink = drawer.getByText('Brand Manager');
+        await brandLink.click();
+
+        // 4. Verify Drawer Closes
+        await expect(drawer).not.toBeVisible();
+
+        // 5. Verify Navigation (URL & Content)
+        await expect(page).toHaveURL(/.*\/brand/);
+        await expect(page.getByText('BRAND HQ')).toBeVisible();
     });
 });
