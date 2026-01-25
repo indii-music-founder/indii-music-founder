@@ -87,6 +87,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
+
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
 
     const getAgentAvatar = useCallback((_agentId: string): string | undefined => {
@@ -304,7 +305,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 }}
                                 className="absolute bottom-6 right-6 bg-purple-600 text-white w-10 h-10 rounded-full shadow-lg flex items-center justify-center z-20 hover:bg-purple-500 transition-colors hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
                                 title="Resume Feed"
-                                aria-label="Resume Feed"
                                 aria-label="Scroll to newest messages"
                             >
                                 <RefreshCw size={18} />

@@ -20,6 +20,9 @@ vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: {
         speak: vi.fn(),
         stopSpeaking: vi.fn(),
+        isSupported: () => true,
+        startListening: vi.fn(), // Don't call callback immediately to keep listening state
+        stopListening: vi.fn(),
     }
 }));
 
@@ -263,5 +266,26 @@ describe('ChatOverlay Accessibility', () => {
         const footerStatus = screen.getByRole('status');
         expect(footerStatus).toHaveAttribute('aria-live', 'polite');
         expect(footerStatus).toHaveTextContent('PROCESSING RESPONSE...');
+    });
+
+    it('should toggle accessible name on Dictate button when clicked', () => {
+        render(<ChatOverlay onClose={vi.fn()} />);
+
+        // PromptArea is not detached, so it should be visible.
+        const dictateBtn = screen.getByRole('button', { name: "Voice Input" });
+        expect(dictateBtn).toBeInTheDocument();
+
+        // Simulate click to start listening
+        fireEvent.click(dictateBtn);
+
+        // Name should change to "Stop listening"
+        const stopBtn = screen.getByRole('button', { name: "Stop listening" });
+        expect(stopBtn).toBeInTheDocument();
+
+        // Simulate click to stop listening
+        fireEvent.click(stopBtn);
+
+        // Name should revert
+        expect(screen.getByRole('button', { name: "Voice Input" })).toBeInTheDocument();
     });
 });
