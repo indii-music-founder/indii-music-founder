@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
     Briefcase, Users, Megaphone, Network, Mic, Palette, Film, Image,
@@ -16,7 +17,12 @@ interface NavItem {
 }
 
 export const MobileNav = () => {
-    const { currentModule, setModule } = useStore();
+    const { currentModule, setModule } = useStore(
+        useShallow(state => ({
+            currentModule: state.currentModule,
+            setModule: state.setModule
+        }))
+    );
     const [isOpen, setIsOpen] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const closeButtonRef = useRef<HTMLButtonElement>(null);
