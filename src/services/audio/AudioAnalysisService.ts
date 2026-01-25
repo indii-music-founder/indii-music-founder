@@ -1,6 +1,6 @@
 // Lazy-load essentia.js (2.6MB) only when audio analysis is needed
 type EssentiaModule = typeof import('essentia.js');
-import * as tf from '@tensorflow/tfjs';
+// import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules
 import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 
@@ -27,14 +27,7 @@ export interface DeepAudioFeatures extends AudioFeatures {
     danceability_ml?: number;
 }
 
-const MODEL_URLS = {
-    genre: "https://essentia.upf.edu/models/classifiers/genre_rosamerica/genre_rosamerica-musicnn-msd-2-tfjs.zip",
-    mood_happy: "https://essentia.upf.edu/models/classifiers/mood_happy/mood_happy-musicnn-msd-2-tfjs.zip",
-    danceability: "https://essentia.upf.edu/models/classifiers/danceability/danceability-musicnn-msd-2-tfjs.zip",
-    mood_aggressive: "https://essentia.upf.edu/models/classifiers/mood_aggressive/mood_aggressive-musicnn-msd-2-tfjs.zip",
-    mood_relaxed: "https://essentia.upf.edu/models/classifiers/mood_relaxed/mood_relaxed-musicnn-msd-2-tfjs.zip",
-    voice_instrumental: "https://essentia.upf.edu/models/classifiers/voice_instrumental/voice_instrumental-musicnn-msd-2-tfjs.zip"
-};
+// const MODEL_URLS = { ... }; // Removed
 
 // Genre labels for Rosamerica model
 const GENRE_LABELS = ['Classical', 'Dance', 'Hip-Hop', 'Jazz', 'Metal', 'Pop', 'Reggae', 'Rock'];
@@ -43,8 +36,7 @@ export class AudioAnalysisService {
     private essentia: InstanceType<EssentiaModule['Essentia']> | null = null;
     private initPromise: Promise<void> | null = null;
 
-    // Model Cache
-    private models: { [key: string]: tf.GraphModel } = {};
+    // private models: { [key: string]: any } = {}; // Removed
 
     private async init(): Promise<void> {
         if (this.essentia) return;
@@ -111,65 +103,12 @@ export class AudioAnalysisService {
         return this.initPromise;
     }
 
-    /**
-     * Loads a TFJS model from a zipped URL (Essentia standard format)
-     */
-    private async loadModel(key: keyof typeof MODEL_URLS): Promise<tf.GraphModel> {
-        if (this.models[key]) return this.models[key];
-
-        console.info(`[AudioAnalysis] Downloading model: ${key}...`);
-        const url = MODEL_URLS[key];
-
-        try {
-            // 1. Fetch Zip
-            const response = await fetch(url);
-            const blob = await response.blob();
-            const zip = await JSZip.loadAsync(blob);
-
-            // 2. Extract model.json and weights
-            const jsonFile = Object.keys(zip.files).find(name => name.endsWith('model.json'));
-            if (!jsonFile) throw new Error(`model.json not found in zip for ${key}`);
-
-            const jsonStr = await zip.file(jsonFile)?.async('string');
-            if (!jsonStr) throw new Error("Failed to read model.json");
-
-            const modelTopology = JSON.parse(jsonStr);
-
-            // 3. Create Blob URLs for weights
-            const weightFiles = modelTopology.weightsManifest[0].paths;
-            const weightBlobs = await Promise.all(weightFiles.map(async (path: string) => {
-                // The path in manifest might be relative, e.g. "./group1-shard1of1.bin"
-                // We need to find the matching file in zip (ignoring directory structure if flat)
-                const fileName = path.split('/').pop()!;
-                const zipFileName = Object.keys(zip.files).find(name => name.endsWith(fileName));
-
-                if (!zipFileName) throw new Error(`Weight file ${fileName} not found in zip`);
-
-                const weightBlob = await zip.file(zipFileName)?.async('blob');
-                return URL.createObjectURL(weightBlob!);
-            }));
-
-            // 4. Update manifest to point to Blob URLs
-            modelTopology.weightsManifest[0].paths = weightBlobs;
-
-            // 5. Load model using tf.io.fromMemory or just a Blob URL for the JSON
-            const modelBlob = new Blob([JSON.stringify(modelTopology)], { type: 'application/json' });
-            const modelUrl = URL.createObjectURL(modelBlob);
-
-            // 6. Load
-            const model = await tf.loadGraphModel(modelUrl);
-            this.models[key] = model;
-
-            // Cleanup URLs? No, we need them for the model to work. Browser cleans up eventually or we can track them.
-
-            console.info(`[AudioAnalysis] Model loaded: ${key}`);
-            return model;
-
-        } catch (error) {
-            console.error(`[AudioAnalysis] Failed to load model ${key}:`, error);
-            throw error;
-        }
+    /*
+    private async loadModel(key: string): Promise<any> {
+        // Implementation removed
+        throw new Error("TensorFlow.js not available");
     }
+    */
 
     /**
      * Analyzes an audio file/blob to extract high-level features.
@@ -196,7 +135,7 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Deep Analysis using TensorFlow models
+     * Deep Analysis (Downgraded to Basic due to architecture constraints)
      */
     async analyzeDeep(file: File | Blob, precalculatedHash?: string): Promise<{ features: DeepAudioFeatures, fromCache: boolean }> {
         await this.init();
@@ -212,98 +151,10 @@ export class AudioAnalysisService {
 
         // 1. Basic Features (BPM, Key, Energy)
         const basicFeatures = await this.analyzeBuffer(audioBuffer);
-        let features: DeepAudioFeatures = basicFeatures;
+        const features: DeepAudioFeatures = basicFeatures;
 
-        // 2. Deep Learning Features
-        // We'll process a few segments to get an average.
-        let signal = await this.getResampledSignal(audioBuffer, 16000);
-
-        try {
-            // Load models in parallel
-            const [genreModel, happyModel, aggressiveModel, danceModel, relaxedModel, voiceModel] = await Promise.all([
-                this.loadModel('genre'),
-                this.loadModel('mood_happy'),
-                this.loadModel('mood_aggressive'),
-                this.loadModel('danceability'),
-                this.loadModel('mood_relaxed'),
-                this.loadModel('voice_instrumental')
-            ]);
-
-            // Prepare Input (Melspectrogram)
-            const melSpectrogram = this.extractMelSpectrogram(signal);
-            const PATCH_frames = 187; // ~3 seconds
-            const N_BANDS = 96;
-
-            // Generate patches
-            const patches: number[][][] = [];
-            const step = Math.floor(melSpectrogram.length / 5); // Take 5 patches across the song
-
-            for (let i = 0; i < 5; i++) {
-                const start = i * step;
-                if (start + PATCH_frames < melSpectrogram.length) {
-                    const patch = [];
-                    for (let j = 0; j < PATCH_frames; j++) {
-                        patch.push(melSpectrogram[start + j]); // Array of 96 values
-                    }
-                    patches.push(patch);
-                }
-            }
-
-            if (patches.length > 0) {
-                // Convert to Tensor [Batch, 187, 96]
-                const inputTensor = tf.tensor(patches, [patches.length, PATCH_frames, N_BANDS], 'float32');
-                const inputTensor4D = inputTensor.expandDims(-1); // [Batch, 187, 96, 1]
-
-                // Predict Helper
-                const getMeanPrediction = async (model: tf.GraphModel, input: tf.Tensor): Promise<number | number[]> => {
-                    const output = model.predict(input) as tf.Tensor;
-                    const mean = output.mean(0);
-                    const data = await mean.data();
-                    return Array.from(data);
-                };
-
-                // Genre
-                const genreProbs = await getMeanPrediction(genreModel, inputTensor4D) as number[];
-                const genreMap: { [key: string]: number } = {};
-                GENRE_LABELS.forEach((label, i) => genreMap[label] = genreProbs[i]);
-
-                // Moods
-                const predictBinary = async (model: tf.GraphModel): Promise<number> => {
-                    const res = await getMeanPrediction(model, inputTensor4D) as number[];
-                    if (res.length === 2) return res[1]; // Softmax
-                    if (res.length === 1) return res[0]; // Sigmoid
-                    return res[0];
-                };
-
-                const happyVal = await predictBinary(happyModel);
-                const aggressiveVal = await predictBinary(aggressiveModel);
-                const danceVal = await predictBinary(danceModel);
-                const relaxedVal = await predictBinary(relaxedModel);
-                const voiceVal = await predictBinary(voiceModel);
-
-                // Cleanup
-                inputTensor.dispose();
-                inputTensor4D.dispose();
-
-                features = {
-                    ...basicFeatures,
-                    genre: genreMap,
-                    moods: {
-                        happy: happyVal,
-                        aggressive: aggressiveVal,
-                        relaxed: relaxedVal,
-                        sad: 1.0 - happyVal
-                    },
-                    danceability_ml: danceVal,
-                    danceability: (basicFeatures.danceability + danceVal) / 2,
-                    voice_instrumental: voiceVal
-                };
-            }
-
-        } catch (err) {
-            console.error("[AudioAnalysis] Deep analysis failed, returning basic features", err);
-            // features remains basicFeatures
-        }
+        // 2. Deep Learning Features (SKIPPED)
+        console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
 
         // 4. Save to Cache and Firestore
         const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
@@ -321,44 +172,20 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Helper: Extract Log-Mel Spectrogram using Essentia
+     * Helper: Extract Log-Mel Spectrogram using Essentia (Removed)
      */
+    /*
     private extractMelSpectrogram(signal: any): number[][] {
-        const frameSize = 512;
-        const hopSize = 256;
-        const sampleRate = 16000;
-        const nBands = 96;
-
-        const frames = this.essentia!.FrameGenerator(signal, frameSize, hopSize);
-        const melBands: number[][] = [];
-
-        for (let i = 0; i < frames.size(); i++) {
-            const frame = frames.get(i);
-            const windowed = this.essentia!.Windowing(frame, "hann", frameSize).frame;
-            const spectrum = this.essentia!.Spectrum(windowed).spectrum;
-            const mel = this.essentia!.MelBands(spectrum, sampleRate, nBands, frameSize, 0, sampleRate / 2, "htk").bands;
-            const logMel = [];
-            for (let j = 0; j < mel.size(); j++) {
-                logMel.push(Math.log10(1 + 10 * mel.get(j)));
-            }
-            melBands.push(logMel);
-        }
-
-        return melBands;
+        // ...
+        return [];
     }
+    */
 
+    /*
     private async getResampledSignal(audioBuffer: AudioBuffer, targetRate: number) {
-        const length = Math.ceil(audioBuffer.duration * targetRate);
-        const offlineCtx = new OfflineAudioContext(1, length, targetRate);
-        const source = offlineCtx.createBufferSource();
-        source.buffer = audioBuffer;
-        source.connect(offlineCtx.destination);
-        source.start(0);
-        const resampled = await offlineCtx.startRendering();
-
-        const channelData = resampled.getChannelData(0);
-        return this.essentia!.arrayToVector(channelData);
+        // ...
     }
+    */
 
     private async generateFileHash(file: Blob): Promise<string> {
         const CHUNK_SIZE = 1024 * 1024; // 1MB
