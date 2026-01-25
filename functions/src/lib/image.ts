@@ -10,7 +10,6 @@ export const GenerateImageRequestSchema = z.object({
     })).optional(),
     model: z.enum(["fast", "pro"]).optional().default("fast"),
     imageSize: z.enum(["1k", "2k", "4k"]).optional().default("1k"),
-    mediaResolution: z.enum(["low", "medium", "high"]).optional().default("medium"),
     thinking: z.boolean().optional().default(false),
     useGrounding: z.boolean().optional().default(false)
 });

@@ -1,24 +1,23 @@
-
+import { describe, it, expect, vi, beforeAll, beforeEach, afterAll } from 'vitest';
 import { generateImageV3Fn } from './image_generation';
-import * as functions from 'firebase-functions-test';
-import { GenerateImageRequest } from './image';
+import functionsTest from 'firebase-functions-test';
 
-// Mock dependencies
-jest.mock('firebase-admin', () => ({
-    initializeApp: jest.fn(),
+// Mock firebase-admin
+vi.mock('firebase-admin', () => ({
+    initializeApp: vi.fn(),
     firestore: () => ({
-        collection: jest.fn(),
+        collection: vi.fn(),
     }),
 }));
 
-const testEnv = functions();
+const testEnv = functionsTest();
 
 describe('generateImageV3Fn', () => {
     let wrapped: any;
-    const mockFetch = jest.fn();
+    const mockFetch = vi.fn();
 
     beforeAll(() => {
-        global.fetch = mockFetch;
+        global.fetch = mockFetch as any;
         // Mock secrets
         process.env.GEMINI_API_KEY = 'test-api-key';
     });
@@ -34,13 +33,14 @@ describe('generateImageV3Fn', () => {
     });
 
     it('should construct correct payload with new parameters', async () => {
-        const data: GenerateImageRequest = {
+        const data: any = {
             prompt: 'test prompt',
             aspectRatio: '16:9',
             imageSize: '4k',
             count: 2,
             thinking: true,
-            useGrounding: true
+            useGrounding: true,
+            model: 'pro'
         };
 
         const context = {
@@ -77,6 +77,7 @@ describe('generateImageV3Fn', () => {
         expect(url).toContain('gemini-3-pro-image-preview');
 
         const body = JSON.parse(options.body);
+        expect(body.generationConfig.temperature).toBe(1.0);
         expect(body.generationConfig.imageConfig).toEqual({
             aspectRatio: '16:9',
             imageSize: '4k',
@@ -87,10 +88,12 @@ describe('generateImageV3Fn', () => {
         expect(body.generationConfig.groundingConfig).toEqual({
             searchGrounding: { enableSearch: true },
         });
+        // mediaResolution should NOT be present (v1alpha only)
+        expect(body.generationConfig.mediaResolution).toBeUndefined();
     });
 
     it('should fallback to default parameters', async () => {
-        const data: GenerateImageRequest = {
+        const data: any = {
             prompt: 'simple prompt',
         };
 
@@ -120,13 +123,17 @@ describe('generateImageV3Fn', () => {
             // Expected error due to empty candidates in mock
         }
 
-        const [url, options] = mockFetch.mock.calls[0];
+        const [, options] = mockFetch.mock.calls[0];
         const body = JSON.parse(options.body);
 
+        // Required temperature
+        expect(body.generationConfig.temperature).toBe(1.0);
         // Defaults from Zod schema
         expect(body.generationConfig.imageConfig).toEqual({
             imageSize: '1k'
         });
         expect(body.generationConfig.thinkingConfig).toBeUndefined();
+        // mediaResolution should NOT be present
+        expect(body.generationConfig.mediaResolution).toBeUndefined();
     });
 });

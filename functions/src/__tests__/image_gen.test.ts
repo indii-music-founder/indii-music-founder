@@ -72,8 +72,7 @@ describe('Image and Content Generation Functions', () => {
             const data = {
                 prompt: 'a beautiful cat',
                 aspectRatio: '1:1',
-                count: 2,
-                mediaResolution: 'medium'
+                count: 2
             };
 
             const mockFetch = vi.fn().mockResolvedValue({
@@ -97,9 +96,12 @@ describe('Image and Content Generation Functions', () => {
                 expect.stringContaining('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent'),
                 expect.objectContaining({
                     method: 'POST',
-                    body: expect.stringContaining('"mediaResolution":"MEDIA_RESOLUTION_MEDIUM"')
+                    body: expect.stringContaining('"temperature":1')
                 })
             );
+            // mediaResolution should NOT be present (v1alpha only)
+            const [, fetchOptions] = mockFetch.mock.calls[0];
+            expect(fetchOptions.body).not.toContain('mediaResolution');
 
             expect(result).toEqual({
                 images: [
