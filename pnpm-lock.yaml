@@ -20,9 +20,6 @@ importers:
       '@google/genai':
         specifier: ^1.30.0
         version: 1.35.0
-      '@google/generative-ai':
-        specifier: ^0.24.1
-        version: 0.24.1
       '@googlemaps/react-wrapper':
         specifier: ^1.2.0
         version: 1.2.0(react@18.3.1)
@@ -2193,10 +2190,6 @@ packages:
     peerDependenciesMeta:
       '@modelcontextprotocol/sdk':
         optional: true
-
-  '@google/generative-ai@0.24.1':
-    resolution: {integrity: sha512-MqO+MLfM6kjxcKoy0p1wRzG3b4ZZXtPI+z2IE26UogS2Cm/XHO+7gGRBh6gcJsOiIVoH93UwKvW4HdgiOZCy9Q==}
-    engines: {node: '>=18.0.0'}
 
   '@googlemaps/google-maps-services-js@3.4.2':
     resolution: {integrity: sha512-QjxiJSt8woyPaaQIUUDNL1nRfCEXTiv8KfJSNq/YzKEUVXABT75GLG+Zo267UwOcq70n8OsZbaro5VrY962mJg==}
@@ -14680,8 +14673,6 @@ snapshots:
       - bufferutil
       - supports-color
       - utf-8-validate
-
-  '@google/generative-ai@0.24.1': {}
 
   '@googlemaps/google-maps-services-js@3.4.2':
     dependencies:

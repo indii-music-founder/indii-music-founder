@@ -20,6 +20,16 @@ vi.mock('@/services/ai/VoiceService', () => ({
     }
 }));
 
+// Mock ToastContext
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+    })
+}));
+
 // Mock VoiceContext
 const mockSetVoiceEnabled = vi.fn();
 vi.mock('@/core/context/VoiceContext', () => ({
@@ -69,6 +79,14 @@ describe('ChatOverlay', () => {
         toggleAgentWindow: vi.fn(),
         isAgentProcessing: false,
         chatChannel: 'indii',
+        setChatChannel: vi.fn(),
+        currentModule: 'dashboard',
+        agentWindowSize: { width: 400, height: 600 },
+        setAgentWindowSize: vi.fn(),
+        isCommandBarDetached: false,
+        setCommandBarDetached: vi.fn(),
+        commandBarAttachments: [],
+        commandBarInput: '',
     };
 
     beforeEach(() => {
