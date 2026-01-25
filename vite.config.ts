@@ -1,154 +1,157 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vitest/config';
+import { loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
-export default defineConfig({
-  base: './',
-  define: {
-    'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
-    'process.env': {},
-    'global': 'globalThis',
-  },
-  plugins: [
-    react(),
-    tailwindcss(),
-    // Custom Startup Log for Developer Clarity
-    {
-      name: 'startup-log',
-      configureServer(server) {
-        server.httpServer?.on('listening', () => {
-          console.log('\n\x1b[36m%s\x1b[0m', '  🚀 INDII OS - STUDIO (ELECTRON)');
-          console.log('\x1b[36m%s\x1b[0m', '  Running at http://localhost:4242');
-          console.log('\x1b[90m%s\x1b[0m', '  (Landing Page runs on :3000)\n');
-        });
-      }
+export default defineConfig(({ mode }) => {
+  return {
+    base: './',
+    define: {
+      'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
+      'process.env': {},
+      'global': 'globalThis',
     },
-    // Source Code Obfuscation (HEY Audit Appendix D)
-    // process.env.NODE_ENV === 'production' && WebpackObfuscator({
-    //   rotateStringArray: true,
-    //   stringArray: true,
-    //   target: 'browser',
-    //   debugProtection: true,
-    //   controlFlowFlattening: true
-    // }, ['node_modules/**']),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.svg'],
-      manifest: {
-        name: 'Indii OS - Creative Studio',
-        short_name: 'Indii',
-        description: 'AI-Native music business studio',
-        theme_color: '#0f0f0f',
-        background_color: '#0f0f0f',
-        display: 'standalone',
-        start_url: '/',
-        scope: '/',
-        orientation: 'any',
-        icons: [
-          {
-            src: 'favicon.svg',
-            sizes: 'any',
-            type: 'image/svg+xml',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/icons/icon-192x192.png',
-            sizes: '192x192',
-            type: 'image/png',
-            purpose: 'any maskable'
-          },
-          {
-            src: '/icons/icon-512x512.png',
-            sizes: '512x512',
-            type: 'image/png',
-            purpose: 'any maskable'
-          }
-        ],
-        categories: ['productivity', 'music', 'creative'],
-        shortcuts: [
-          {
-            name: 'Quick Image',
-            short_name: 'Image',
-            description: 'Generate AI images instantly',
-            url: '/?module=creative',
-            icons: [{ src: 'favicon.svg', sizes: 'any' }]
-          }
-        ]
+    plugins: [
+      react(),
+      tailwindcss(),
+      // Custom Startup Log for Developer Clarity
+      {
+        name: 'startup-log',
+        configureServer(server) {
+          server.httpServer?.on('listening', () => {
+            console.log('\n\x1b[36m%s\x1b[0m', '  🚀 INDII OS - STUDIO (ELECTRON)');
+            console.log('\x1b[36m%s\x1b[0m', '  Running at http://localhost:4242');
+            console.log('\x1b[90m%s\x1b[0m', '  (Landing Page runs on :3000)\n');
+          });
+        }
       },
-      workbox: {
-        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for Essentia WASM
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
-            handler: 'CacheFirst',
-            options: {
-              cacheName: 'firebase-storage-cache',
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
-              },
-              cacheableResponse: {
-                statuses: [0, 200]
+      // Source Code Obfuscation (HEY Audit Appendix D)
+      // process.env.NODE_ENV === 'production' && WebpackObfuscator({
+      //   rotateStringArray: true,
+      //   stringArray: true,
+      //   target: 'browser',
+      //   debugProtection: true,
+      //   controlFlowFlattening: true
+      // }, ['node_modules/**']),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: ['favicon.svg'],
+        manifest: {
+          name: 'Indii OS - Creative Studio',
+          short_name: 'Indii',
+          description: 'AI-Native music business studio',
+          theme_color: '#0f0f0f',
+          background_color: '#0f0f0f',
+          display: 'standalone',
+          start_url: '/',
+          scope: '/',
+          orientation: 'any',
+          icons: [
+            {
+              src: 'favicon.svg',
+              sizes: 'any',
+              type: 'image/svg+xml',
+              purpose: 'any maskable'
+            },
+            {
+              src: '/icons/icon-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any maskable'
+            },
+            {
+              src: '/icons/icon-512x512.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'any maskable'
+            }
+          ],
+          categories: ['productivity', 'music', 'creative'],
+          shortcuts: [
+            {
+              name: 'Quick Image',
+              short_name: 'Image',
+              description: 'Generate AI images instantly',
+              url: '/?module=creative',
+              icons: [{ src: 'favicon.svg', sizes: 'any' }]
+            }
+          ]
+        },
+        workbox: {
+          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for Essentia WASM
+          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/firebasestorage\.googleapis\.com\/.*/i,
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'firebase-storage-cache',
+                expiration: {
+                  maxEntries: 100,
+                  maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+                },
+                cacheableResponse: {
+                  statuses: [0, 200]
+                }
               }
             }
-          }
-        ]
-      }
-    })
-  ],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      '@agents': path.resolve(__dirname, './agents'),
-    },
-  },
-  server: {
-    port: 4242,
-    watch: {
-      ignored: ['**/temp_comparison_repo_backup/**']
-    },
-    headers: {
-      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-      'Cross-Origin-Embedder-Policy': 'unsafe-none'
-    }
-  },
-  optimizeDeps: {
-    exclude: ['temp_comparison_repo_backup']
-  },
-  build: {
-    chunkSizeWarningLimit: 3000,
-    // Use terser for more aggressive console stripping
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true, // Remove console logs for cleaner production
-        drop_debugger: true, // Remove debugger statements
+          ]
+        }
+      })
+    ],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src'),
+        '@agents': path.resolve(__dirname, './agents'),
       },
     },
-    rollupOptions: {
-      output: {
-        manualChunks: {
-          'vendor-react': ['react', 'react-dom', 'framer-motion', 'reactflow', 'zustand'],
-          'vendor-google': ['@google/genai', '@googlemaps/react-wrapper'],
-          'vendor-essentia': ['essentia.js'],
-          'vendor-wavesurfer': ['wavesurfer.js'],
-          'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
-          'vendor-fabric': ['fabric'],
+    server: {
+      port: 4242,
+      watch: {
+        ignored: ['**/temp_comparison_repo_backup/**']
+      },
+      headers: {
+        'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+        'Cross-Origin-Embedder-Policy': 'unsafe-none'
+      }
+    },
+    optimizeDeps: {
+      exclude: ['temp_comparison_repo_backup']
+    },
+    build: {
+      chunkSizeWarningLimit: 3000,
+      // Use terser for more aggressive console stripping
+      minify: 'terser',
+      terserOptions: {
+        compress: {
+          drop_console: true, // Remove console logs for cleaner production
+          drop_debugger: true, // Remove debugger statements
+        },
+      },
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom', 'framer-motion', 'reactflow', 'zustand'],
+            'vendor-google': ['@google/genai', '@googlemaps/react-wrapper'],
+            'vendor-essentia': ['essentia.js'],
+            'vendor-wavesurfer': ['wavesurfer.js'],
+            'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
+            'vendor-fabric': ['fabric'],
 
-          'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
+            'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
+          },
         },
       },
     },
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    setupFiles: './src/test/setup.ts',
-    css: true,
-    exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**', '**/landing-page/**'], // Exclude e2e, compiled functions, and Next.js landing page from unit tests
-  },
+    test: {
+      globals: true,
+      environment: 'jsdom',
+      setupFiles: './src/test/setup.ts',
+      css: true,
+      exclude: ['**/node_modules/**', '**/dist/**', '**/temp_comparison_repo_backup/**', '**/e2e/**', '**/functions/lib/**', '**/.git/**', '**/landing-page/**'], // Exclude e2e, compiled functions, and Next.js landing page from unit tests
+    },
+  };
 });
