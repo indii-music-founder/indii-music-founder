@@ -828,16 +828,26 @@ export class FirebaseAIService {
             const triggerVideoJobFn = httpsCallable<GenerateVideoRequest, GenerateVideoResponse>(functions, 'triggerVideoJob');
             const jobId = generateSecureId('job', 9);
 
-            // 1. Trigger the background job
+            // 1. Resolve Model (Enforce Veo 3.1 Default with Remote Override support)
+            // 'VIDEO_GEN' key maps to 'veo-3.1-generate-preview' in APPROVED_MODELS
+            const modelName = this.getModelName(options.model || AI_MODELS.VIDEO.GENERATION);
+
+            // 2. Sanitize Prompt
+            const sanitizedPrompt = this.sanitizePrompt(options.prompt);
+            const finalPrompt = typeof sanitizedPrompt === 'string' ? sanitizedPrompt : JSON.stringify(sanitizedPrompt);
+
+            logger.info(`[FirebaseAIService] Triggering video job ${jobId} with model: ${modelName}`);
+
+            // 3. Trigger the background job
             await this.withRetry(() => triggerVideoJobFn({
                 jobId,
-                prompt: options.prompt,
-                model: options.model,
+                prompt: finalPrompt,
+                model: modelName,
                 image: options.image,
                 ...options.config
             }));
 
-            // 2. Poll for completion with dynamic timeout (FIX #7: using shared config)
+            // 4. Poll for completion with dynamic timeout (FIX #7: using shared config)
             const { calculateVideoTimeout, AI_CONFIG } = await import('@/core/config/ai-models');
             const durationSeconds = options.config?.durationSeconds || AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS;
             const timeoutMs = options.timeoutMs || calculateVideoTimeout(durationSeconds);
@@ -1004,7 +1014,118 @@ export class FirebaseAIService {
                 throw new Error('No image data found in response');
             }
 
-            return imagePart.inlineData.data;
+            // 5. Upload to Cloud Storage (High Fidelity Asset Preservation)
+            const userId = auth.currentUser?.uid || 'anonymous';
+            const { getStorage, ref, uploadString, getDownloadURL, uploadBytes } = await import('firebase/storage');
+            const storage = getStorage();
+
+            // Create a unique path: users/{uid}/generated/{uuid}.png
+            const fileId = generateSecureId('img', 12);
+            const storagePath = `users/${userId}/generated/${fileId}.png`;
+            const storageRef = ref(storage, storagePath);
+
+            // Convert Base64 to Blob/Buffer for upload
+            // Note: inlineData.data is Base64 string
+            const base64Data = imagePart.inlineData.data;
+            const link = `data:${imagePart.inlineData.mimeType};base64,${base64Data}`;
+
+            // Metadata for traceability
+            const metadata = {
+                contentType: imagePart.inlineData.mimeType,
+                customMetadata: {
+                    prompt: prompt.substring(0, 1000), // Truncate if too long
+                    model: model,
+                    generatedAt: new Date().toISOString()
+                }
+            };
+
+            await uploadString(storageRef, link, 'data_url', metadata);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            logger.info(`[FirebaseAIService] Generated image saved to ${storagePath}`);
+
+            return downloadUrl; // Return URL instead of Base64
+        });
+    }
+
+    /**
+     * MULTIMODAL: Edit an image using text instructions (Image-to-Image)
+     * Compatible with Gemini 3 Pro "Nano Banana Pro" editing capabilities.
+     */
+    async editImage(
+        originalImage: string,
+        prompt: string,
+        modelOverride?: string
+    ): Promise<string> {
+        return this.mediaBreaker.execute(async () => {
+            await this.ensureInitialized();
+
+            const modelName = modelOverride || AI_MODELS.IMAGE.GENERATION;
+
+            // 1. Prepare Inputs
+            // Clean base64 if needed
+            const base64Data = originalImage.replace(/^data:image\/\w+;base64,/, "");
+            const imagePart: Part = {
+                inlineData: { data: base64Data, mimeType: 'image/jpeg' } // Defaulting to jpeg, but model handles most
+            };
+
+            // 2. Setup Config for Image Output
+            const generationConfig: GenerationConfig = {
+                responseModalities: ['IMAGE'],
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
+                imageConfig: {
+                    aspectRatio: '1:1', // Default for edits, often follows input but SDK requires param
+                    imageSize: '4K',
+                } as any
+            };
+
+            // 3. Generate (Prompt + Image -> New Image)
+            const result = await this.rawGenerateContent(
+                [{ role: 'user', parts: [{ text: prompt }, imagePart] }],
+                modelName,
+                generationConfig
+            );
+
+            // 4. Extract Result
+            const candidates = result.response.candidates;
+            if (!candidates || candidates.length === 0) throw new Error('No candidates returned');
+
+            const resultImagePart = candidates[0].content?.parts?.find(p => p.inlineData && p.inlineData.mimeType.startsWith('image/'));
+
+            if (!resultImagePart || !resultImagePart.inlineData) {
+                const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
+                if (textPart && 'text' in textPart) {
+                    throw new Error(`Editing blocked or failed: ${textPart.text}`);
+                }
+                throw new Error('No image data found in response');
+            }
+
+            // 5. Upload to Storage
+            const userId = auth.currentUser?.uid || 'anonymous';
+            const { getStorage, ref, uploadString, getDownloadURL } = await import('firebase/storage');
+            const storage = getStorage();
+
+            const fileId = generateSecureId('edit', 12);
+            const storagePath = `users/${userId}/generated/${fileId}.png`;
+            const storageRef = ref(storage, storagePath);
+            const link = `data:${resultImagePart.inlineData.mimeType};base64,${resultImagePart.inlineData.data}`;
+
+            const metadata = {
+                contentType: resultImagePart.inlineData.mimeType,
+                customMetadata: {
+                    prompt: prompt.substring(0, 1000),
+                    model: modelName,
+                    action: 'edit',
+                    generatedAt: new Date().toISOString()
+                }
+            };
+
+            await uploadString(storageRef, link, 'data_url', metadata);
+            const downloadUrl = await getDownloadURL(storageRef);
+
+            logger.info(`[FirebaseAIService] Edited image saved to ${storagePath}`);
+
+            return downloadUrl;
         });
     }
 

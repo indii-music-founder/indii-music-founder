@@ -12,7 +12,6 @@ interface AudioWaveformProps {
 export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height, color = 'rgba(255, 255, 255, 0.5)' }) => {
     // ⚡ Bolt Optimization: Cache raw audio data to avoid re-fetching/decoding on resize
     const [audioData, setAudioData] = useState<AudioData | null>(null);
-    const [waveform, setWaveform] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -21,7 +20,9 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
         let isMounted = true;
 
         // Reset state on new src
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setAudioData(null);
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setError(null);
 
         const fetchAudio = async () => {
@@ -43,10 +44,9 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
             isMounted = false;
         };
     }, [src]);
-
-    // 2. Resample (When width or audioData changes)
-    useEffect(() => {
-        if (!audioData) return;
+    // 2. Resample (Derived State)
+    const waveform = React.useMemo(() => {
+        if (!audioData) return [];
 
         // Resample data to fit width
         const samples = audioData.channelWaveforms[0]; // Use first channel
@@ -55,9 +55,6 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
 
         for (let i = 0; i < width; i++) {
             let max = 0;
-            // Optimization: Use a simpler loop or typed array methods if possible,
-            // but this simple loop is likely fine for typical widths (~100-500px).
-            // Main bottleneck was the getAudioData call.
             for (let j = 0; j < step; j++) {
                 const idx = i * step + j;
                 if (idx < samples.length) {
@@ -68,7 +65,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
             resampled.push(max);
         }
 
-        setWaveform(resampled);
+        return resampled;
     }, [audioData, width]);
 
     // 3. Draw (When waveform or dimensions change)

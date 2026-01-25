@@ -17,7 +17,10 @@ export const RemoteAIConfigSchema = z.object({
     // Map of APPROVED_MODELS keys (e.g. TEXT_AGENT) to new Model IDs
     // Example: { "TEXT_AGENT": "gemini-4-ultra" }
     overrides: z.record(
-        z.enum(Object.keys(APPROVED_MODELS) as [string, ...string[]]),
+        z.enum([
+            ...Object.keys(APPROVED_MODELS),
+            'IMAGE_MODEL_NAME'
+        ] as unknown as [string, ...string[]]),
         z.string()
     ).optional().default({}),
 
