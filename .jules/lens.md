@@ -29,3 +29,9 @@
 **Action:** Created `LensVeoAssetIntegrity.test.ts` to verify:
 - **Refresh Token Flow:** Confirmed that identical quality updates (Pro -> Pro) with new URLs are accepted by the subscription listener.
 - **Massive Payload Handling:** Verified service resilience against large metadata blobs (simulating debug logs or complex motion vectors).
+## 2026-01-26 - [Veo 3.1 Aspect Ratio Compliance]
+**Learning:** Veo 3.1 generation pipeline must strictly adhere to aspect ratio constraints, especially for distributor-specific formats like Spotify Canvas (9:16). Explicit user overrides must take precedence over distributor defaults.
+**Action:** Implemented `LensVeoAspectRatio.test.ts` to verify:
+- **Explicit 16:9:** Requests are correctly passed to the backend.
+- **Distributor Fallback:** Users with "DistroKid" get automatic 9:16 (Canvas) defaults.
+- **User Override:** Users can force 16:9 even if their distributor suggests otherwise.
