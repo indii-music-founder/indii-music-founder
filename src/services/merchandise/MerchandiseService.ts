@@ -294,3 +294,5 @@ export const MerchandiseService = {
         });
     }
 };
+
+export type { CatalogProduct };
