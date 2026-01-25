@@ -47,11 +47,14 @@ describe('FingerprintService', () => {
     it('should generate a fingerprint successfully', async () => {
         // Mock feature extraction
         (audioAnalysisService.analyze as any).mockResolvedValue({
-            bpm: 120,
-            key: 'C',
-            scale: 'Major',
-            energy: 0.8,
-            duration: 180
+            features: {
+                bpm: 120,
+                key: 'C',
+                scale: 'Major',
+                energy: 0.8,
+                duration: 180
+            },
+            fromCache: false
         });
 
         const fingerprint = await service.generateFingerprint(mockFile);
