@@ -267,7 +267,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         {!isMobile && (
                             <div className="relative">
                                 <button
-                                    onClick={() => setOpenDelegate(!openDelegate)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenDelegate(!openDelegate);
+                                    }}
                                     aria-haspopup="true"
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
@@ -287,7 +290,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                     <div className="flex items-center gap-2 ml-auto">
                         <button
-                            onClick={() => setCommandBarDetached(!isCommandBarDetached)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCommandBarDetached(!isCommandBarDetached);
+                            }}
                             className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                             title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
                             aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
@@ -296,7 +302,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         </button>
 
                         <button
-                            onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setChatChannel(isIndiiMode ? 'agent' : 'indii');
+                            }}
                             className={cn(
                                 "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"

@@ -122,7 +122,7 @@ describe('CommandBar Accessibility', () => {
         });
     });
 
-    it.skip('should return focus to the trigger button when Delegate Menu is closed', async () => {
+    it('should return focus to the trigger button when Delegate Menu is closed', async () => {
         render(<CommandBar />);
 
         const delegateBtn = screen.getByLabelText('Select active agent').closest('button');
