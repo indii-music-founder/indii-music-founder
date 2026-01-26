@@ -192,7 +192,7 @@ export class VideoGenerationService {
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const jobPromise = new Promise((resolve, reject) => {
-            unsub = this.subscribeToJob(jobId, (job) => {
+            unsub = this.subscribeToJob(jobId, async (job) => {
                 if (!job) return;
                 if (job.status === 'completed' || job.status === 'failed') {
                     if (job.status === 'completed') {
@@ -200,11 +200,37 @@ export class VideoGenerationService {
                         const mimeType = job.output?.metadata?.mime_type;
                         if (mimeType && mimeType !== 'video/mp4') {
                             reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
-                        } else {
-                            resolve(job);
+                            return;
                         }
+
+                        // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
+                        const videoUrl = job.output?.url;
+                        if (videoUrl) {
+                            try {
+                                // HEAD request to verify existence without downloading payload
+                                const response = await fetch(videoUrl, { method: 'HEAD' });
+                                if (!response.ok) {
+                                    reject(new Error(`Video Asset Not Found (${response.status})`));
+                                    return;
+                                }
+                            } catch (e) {
+                                // Network error during verification should not block generation unless strictly required.
+                                // However, for test purposes and integrity, we log it.
+                                console.warn("Lens: Video verification check failed", e);
+                            }
+                        }
+
+                        resolve(job);
                     } else {
-                        reject(new Error(job.error || 'Video generation failed.'));
+                        // Enhanced Safety Reporting
+                        let errorMsg = job.error || 'Video generation failed.';
+                        if (job.safety_ratings && Array.isArray(job.safety_ratings)) {
+                            const blocked = job.safety_ratings.find((r: any) => r.blocked);
+                            if (blocked) {
+                                errorMsg = `Safety Violation: ${blocked.category} (${blocked.probability})`;
+                            }
+                        }
+                        reject(new Error(errorMsg));
                     }
                 }
             });
