@@ -15,6 +15,7 @@ import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
+import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
@@ -108,6 +109,9 @@ export class VideoGenerationService {
             throw new Error(`Quota exceeded: ${quota.reason}`);
         }
 
+        // Security: Sanitize Prompt (Redact PII)
+        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+
         // Temporal context analysis
         let temporalContext = "";
         if (options.firstFrame || options.lastFrame) {
@@ -118,7 +122,7 @@ export class VideoGenerationService {
         }
 
         // Map internal parameters to AI service expectations
-        let enrichedPrompt = this.enrichPrompt(options.prompt, {
+        let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps
@@ -263,6 +267,9 @@ export class VideoGenerationService {
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Security: Sanitize Prompt (Redact PII)
+        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+
         // Pre-flight duration quota check
         const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
         if (!quotaCheck.allowed) {
@@ -281,7 +288,7 @@ export class VideoGenerationService {
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
-        const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
+        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {}, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
