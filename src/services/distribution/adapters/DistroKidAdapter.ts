@@ -145,21 +145,14 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
                 };
             }
 
-            // 4. Mock Fallback (Browser / No Creds)
-            if (import.meta.env.DEV) {
-                console.warn('[DistroKid] SFTP unavailable or credentials missing. Returning MOCK success.');
-                return {
-                    success: true,
-                    status: 'processing',
-                    releaseId: metadata.id,
-                    distributorReleaseId: 'MOCK-DK-ID',
-                    metadata: {
-                        reviewRequired: true
-                    }
-                };
-            }
+            // 4. Fallback: Fail if SFTP/Credentials are missing
+            console.error('[DistroKid] SFTP unavailable or credentials missing.');
+            return {
+                success: false,
+                status: 'failed',
+                errors: [{ code: 'CONNECTION_ERROR', message: 'DistroKid SFTP credentials missing or Electron bridge unavailable.' }]
+            };
 
-            throw new Error('DistroKid SFTP credentials missing in production.');
         } catch (e) {
             console.error('[DistroKid] Create Release Error:', e);
             return {
@@ -208,7 +201,8 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-1', period)];
+        // Return empty array until real implementation
+        return [];
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

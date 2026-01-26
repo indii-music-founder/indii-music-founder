@@ -33,3 +33,10 @@
 ## 2026-01-25 - Modal Accessibility and Label Association
 **Learning:** Custom modals often lack the necessary ARIA roles (`dialog`, `aria-modal`) and labeling (`aria-labelledby`) to be perceived correctly by screen readers. Additionally, inputs within them must have explicit label associations (`htmlFor`/`id`) rather than just visual proximity.
 **Action:** When creating or refactoring modals, always implement the standard Dialog pattern (role="dialog", aria-modal="true") and verify that all form inputs have programmatic label associations.
+
+## 2026-02-20 - Modal Dismissal Patterns
+**Learning:** Modals that rely solely on a "Cancel" button at the bottom for dismissal force users to tab through all content to exit. Users expect standard patterns like top-right "X" buttons and backdrop clicks for quick dismissal.
+**Action:** Always include a top-right icon-only close button (with `aria-label="Close modal"`) and a backdrop click handler (`fixed` position, `e.target === e.currentTarget`) in custom modal implementations.
+## 2026-05-25 - Nested Interactive Controls in Lists
+**Learning:** Wrapping a list item in `role="button"` (or `onClick`) while having nested interactive elements (like a delete button) creates invalid semantics and navigation issues for screen readers.
+**Action:** Refactor such patterns to use a layout where the main "card" action is a button element, and secondary actions (like delete) are sibling buttons, positioned visually using CSS (e.g., absolute positioning) to appear nested while remaining DOM siblings.
