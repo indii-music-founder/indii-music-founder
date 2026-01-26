@@ -13,7 +13,6 @@ import {
 } from '../types/distributor';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
-import { delay } from '@/utils/async';
 
 export class SymphonicAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'symphonic';
@@ -73,22 +72,21 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
                 console.info('[Symphonic] Delivering via Electron SFTP IPC...');
                 // Here we would use the already connected SFTP session
+                // TODO: Implement actual SFTP put logic here when API is ready
             }
 
-            // Mock delay
-            await delay(1000);
-
+            // Bolt Hardening: Fail if no real delivery method is available
+            console.error('[Symphonic] Real delivery not implemented or SFTP unavailable.');
             return {
-                success: true,
-                status: 'delivered',
-                releaseId: releaseId,
-                distributorReleaseId: `INT-SYM-${Date.now()}`,
-                metadata: {
-                    estimatedLiveDate: '2025-01-20',
-                    upcAssigned: metadata.upc,
-                    isrcAssigned: metadata.isrc,
-                },
+                success: false,
+                status: 'failed',
+                errors: [{
+                    code: 'DELIVERY_UNAVAILABLE',
+                    message: 'Symphonic delivery requires active SFTP session.'
+                }],
+                releaseId
             };
+
         } catch (error) {
             console.error('[Symphonic] Delivery failed:', error);
             return {
