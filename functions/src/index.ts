@@ -12,6 +12,7 @@ import { GenerateSpeechRequestSchema } from "./lib/audio";
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
+import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
 import { generateThumbnail } from "./lib/image_resizing";
 
@@ -551,6 +552,7 @@ export const inngestApi = functions
 // Deployed to us-west1 for Model Availability
 export const generateImageV3 = generateImageV3Fn();
 export const editImage = editImageFn();
+export const analyzeAudio = analyzeAudioFn();
 
 export const generateSpeech = functions
     .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })

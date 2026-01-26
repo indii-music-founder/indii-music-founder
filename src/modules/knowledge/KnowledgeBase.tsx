@@ -42,7 +42,7 @@ export default function KnowledgeBase() {
         toast.info(`Uploading ${files.length} file(s)...`);
 
         try {
-            const count = await knowledgeBaseService.uploadFiles(files, (name) => {
+            const count = await knowledgeBaseService.uploadFiles(files, undefined, (name: string) => {
                 // Optional: Toast for each file, but might be too noisy
             });
 

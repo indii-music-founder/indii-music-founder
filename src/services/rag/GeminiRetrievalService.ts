@@ -178,23 +178,29 @@ export class GeminiRetrievalService {
      * File Search API Helpers
      */
 
-    // Cache the default store name to avoid repeated lookups/creation
-    private defaultStoreName: string | null = null;
+    // Cache stores by projectId (or default)
+    private storeCache: Map<string, string> = new Map();
 
     /**
-     * Finds or creates a default FileSearchStore.
+     * Finds or creates a FileSearchStore for a specific project.
+     * @param projectId Optional Project ID for isolation. Defaults to global default.
      */
-    async ensureFileSearchStore(): Promise<string> {
-        if (this.defaultStoreName) return this.defaultStoreName;
+    async ensureFileSearchStore(projectId?: string): Promise<string> {
+        const cacheKey = projectId || 'default';
+        if (this.storeCache.has(cacheKey)) return this.storeCache.get(cacheKey)!;
 
-        // 1. List existing stores to see if we have one
+        const displayName = projectId ? `indiiOS Store - ${projectId}` : "indiiOS Default Store";
+
+        // 1. List existing stores to find a match
         try {
             const listRes = await this.fetch('fileSearchStores');
             if (listRes.fileSearchStores && listRes.fileSearchStores.length > 0) {
-                // Use the first one found
-                this.defaultStoreName = listRes.fileSearchStores[0].name;
-                console.info("Using existing FileSearchStore:", this.defaultStoreName);
-                return this.defaultStoreName!;
+                const match = listRes.fileSearchStores.find((s: any) => s.displayName === displayName);
+                if (match) {
+                    this.storeCache.set(cacheKey, match.name);
+                    console.info(`[RAG] Found existing store for ${cacheKey}:`, match.name);
+                    return match.name;
+                }
             }
         } catch (e) {
             console.warn("Failed to list FileSearchStores, trying create...", e);
@@ -204,11 +210,12 @@ export class GeminiRetrievalService {
         try {
             const createRes = await this.fetch('fileSearchStores', {
                 method: 'POST',
-                body: JSON.stringify({ displayName: "indiiOS Default Store" })
+                body: JSON.stringify({ displayName })
             });
-            this.defaultStoreName = createRes.name;
-            console.info("Created new FileSearchStore:", this.defaultStoreName);
-            return this.defaultStoreName!;
+            const newStoreName = createRes.name;
+            this.storeCache.set(cacheKey, newStoreName);
+            console.info(`[RAG] Created new FileSearchStore for ${cacheKey}:`, newStoreName);
+            return newStoreName;
         } catch (e: unknown) {
             const err = e as Error;
             console.error("Failed to create FileSearchStore:", err);
@@ -279,13 +286,14 @@ export class GeminiRetrievalService {
      * If fileUri is provided, it ensures that file is present in the store.
      * If fileUri is null/empty, it searches the entire store.
      */
-    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string) {
+    async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string) {
         let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
-                const storeName = await this.ensureFileSearchStore();
+                // Use project-specific store if projectId is provided
+                const storeName = await this.ensureFileSearchStore(projectId);
 
                 if (fileUri) {
                     await this.importFileToStore(fileUri, storeName);
@@ -296,7 +304,7 @@ export class GeminiRetrievalService {
                         fileSearchStoreNames: [storeName]
                     }
                 }];
-                console.info(`[RAG] Querying Store: ${storeName} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
+                console.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
                 console.error("[RAG] File Search Setup Failed:", e);
             }
@@ -325,13 +333,13 @@ export class GeminiRetrievalService {
     /**
      * Streams query responses using the Gemini API.
      */
-    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string): AsyncGenerator<string> {
+    async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string): AsyncGenerator<string> {
         let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
-                const storeName = await this.ensureFileSearchStore();
+                const storeName = await this.ensureFileSearchStore(projectId);
                 if (fileUri) await this.importFileToStore(fileUri, storeName);
                 tools = [{ fileSearch: { fileSearchStoreNames: [storeName] } }];
             } catch (e) {

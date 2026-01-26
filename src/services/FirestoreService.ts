@@ -64,7 +64,7 @@ export class FirestoreService<T extends DocumentData = DocumentData> {
     }
 
     private pruneUndefined(obj: any): any {
-        if (obj === null || typeof obj !== 'object' || obj instanceof Timestamp) return obj;
+        if (obj === null || typeof obj !== 'object' || (typeof Timestamp === 'function' && obj instanceof Timestamp)) return obj;
         if (Array.isArray(obj)) return obj.map(item => this.pruneUndefined(item));
 
         const pruned: any = {};
