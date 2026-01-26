@@ -99,10 +99,7 @@ export const AuthorityPanel: React.FC = () => {
                 throw new Error('Missing UPC for release');
             }
 
-            const result = await distributionService.generateDDEX({
-                ...releasePayload,
-                upc: releasePayload.upc ?? undefined
-            });
+            const result = await distributionService.generateDDEX(releasePayload);
             setDdexXml(result);
             success('DDEX ERN 4.3 Message Generated');
         } catch (error) {
