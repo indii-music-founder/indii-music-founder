@@ -220,7 +220,7 @@ export class VideoGenerationService {
                                 }
                             } catch (e) {
                                 // Network error during verification should not block generation unless strictly required.
-                                // However, for test purposes and integrity, we log it.
+                                // We log the warning for debugging purposes, but proceed with strict verification logic.
                                 console.warn("Lens: Video verification check failed", e);
                             }
                         }
