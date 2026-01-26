@@ -6,6 +6,7 @@ import { Readable } from 'stream';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
+import { validateSafeVideoOutputPath } from '../utils/file-security';
 import { FetchUrlSchema } from '../utils/validation';
 import { accessControlService } from '../security/AccessControlService';
 
@@ -119,6 +120,13 @@ export function registerVideoHandlers() {
             // Basic validation
             if (!config || typeof config !== 'object') throw new Error('Invalid config');
             if (!config.compositionId) throw new Error('Missing compositionId');
+
+            // SECURITY: Validate outputLocation if provided
+            if (config.outputLocation) {
+                // This validates extension, blocklist, and allowlist (must be in Docs/IndiiOS or Temp)
+                // It throws if invalid
+                config.outputLocation = validateSafeVideoOutputPath(config.outputLocation);
+            }
 
             return await electronRenderService.render(config);
         } catch (error) {
