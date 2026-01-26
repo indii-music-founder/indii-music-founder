@@ -27,27 +27,32 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
-const processEnv = {
-    // 🛡️ Sentinel: Using strict import.meta.env for Vite compatibility
-    apiKey: import.meta.env.VITE_API_KEY,
-    projectId: import.meta.env.VITE_VERTEX_PROJECT_ID,
-    location: import.meta.env.VITE_VERTEX_LOCATION || "us-central1",
-    useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX),
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_API_KEY,
+const getEnv = (metaValue: any, processValue: any): string | undefined => {
+    const val = metaValue || processValue;
+    return val || undefined;
+};
 
-    VITE_FUNCTIONS_URL: import.meta.env.VITE_FUNCTIONS_URL,
-    VITE_RAG_PROXY_URL: import.meta.env.VITE_RAG_PROXY_URL,
+const processEnv = {
+    // 🛡️ Sentinel: Using static lookups for Vite compatibility
+    apiKey: getEnv(import.meta.env.VITE_API_KEY, process.env.VITE_API_KEY),
+    projectId: getEnv(import.meta.env.VITE_VERTEX_PROJECT_ID, process.env.VITE_VERTEX_PROJECT_ID),
+    location: getEnv(import.meta.env.VITE_VERTEX_LOCATION, process.env.VITE_VERTEX_LOCATION) || "us-central1",
+    useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || process.env.VITE_USE_VERTEX),
+    googleMapsApiKey: getEnv(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, process.env.VITE_GOOGLE_MAPS_API_KEY),
+
+    VITE_FUNCTIONS_URL: getEnv(import.meta.env.VITE_FUNCTIONS_URL, process.env.VITE_FUNCTIONS_URL),
+    VITE_RAG_PROXY_URL: getEnv(import.meta.env.VITE_RAG_PROXY_URL, process.env.VITE_RAG_PROXY_URL),
     DEV: import.meta.env.DEV,
 
     // Firebase specific overrides
-    firebaseApiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    firebaseProjectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    firebaseStorageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    firebaseDatabaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-    appCheckKey: import.meta.env.VITE_FIREBASE_APP_CHECK_KEY,
-    appCheckDebugToken: import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN,
+    firebaseApiKey: getEnv(import.meta.env.VITE_FIREBASE_API_KEY, process.env.VITE_FIREBASE_API_KEY),
+    firebaseProjectId: getEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID, process.env.VITE_FIREBASE_PROJECT_ID),
+    firebaseStorageBucket: getEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, process.env.VITE_FIREBASE_STORAGE_BUCKET),
+    firebaseDatabaseURL: getEnv(import.meta.env.VITE_FIREBASE_DATABASE_URL, process.env.VITE_FIREBASE_DATABASE_URL),
+    appCheckKey: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_KEY, process.env.VITE_FIREBASE_APP_CHECK_KEY),
+    appCheckDebugToken: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN, process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
 
-    skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING),
+    skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || process.env.VITE_SKIP_ONBOARDING),
 };
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);
@@ -91,15 +96,17 @@ export const firebaseDefaultConfig = {
     measurementId: ""
 };
 
+const firebaseEnv = processEnv;
+
 export const firebaseConfig = {
-    apiKey: processEnv.firebaseApiKey || "",
-    authDomain: (processEnv.firebaseProjectId || processEnv.projectId || "indiios-v-1-1") + ".firebaseapp.com",
-    databaseURL: processEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: processEnv.firebaseProjectId || processEnv.projectId || "indiios-v-1-1",
-    storageBucket: processEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "223837784072",
-    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:28eabcf0c5dd985395e9bd",
-    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-KNWPRGE5JK"
+    apiKey: firebaseEnv.firebaseApiKey || "",
+    authDomain: (firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1") + ".firebaseapp.com",
+    databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
+    projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
+    messagingSenderId: getEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "223837784072",
+    appId: getEnv(import.meta.env.VITE_FIREBASE_APP_ID, process.env.VITE_FIREBASE_APP_ID) || "1:223837784072:web:3af738739465ea4095e9bd",
+    measurementId: getEnv(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, process.env.VITE_FIREBASE_MEASUREMENT_ID) || "G-7WW3HEHFTF"
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {

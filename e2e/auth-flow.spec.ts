@@ -38,6 +38,6 @@ test.describe('The Gatekeeper: Authentication Protocol', () => {
         await page.getByRole('button', { name: /sign in/i }).click();
 
         // Verify Access Granted
-        await expect(page.getByRole('heading', { name: /Agent Workspace/i })).toBeVisible({ timeout: 15000 });
+        await expect(page.getByRole('heading', { name: /STUDIO HQ/i })).toBeVisible({ timeout: 15000 });
     });
 });

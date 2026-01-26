@@ -79,7 +79,7 @@ describe('VideoUploadService', () => {
             expect.anything(),
             expect.objectContaining({
                 contentType: 'video/mp4',
-                cacheControl: 'public, max-age=31536000'
+                cacheControl: 'public, max-age=3600'
             })
         );
     });

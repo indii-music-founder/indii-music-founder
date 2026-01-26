@@ -37,3 +37,12 @@
 ## 2026-02-15 - Input Appearance and Focus Indicators
 **Learning:** Input elements using `appearance-none` (like Sliders) lose their native browser focus ring. Without explicit `focus-visible` styles, they become invisible to keyboard navigators, even if technically focusable.
 **Action:** Always pair `appearance-none` with explicit `focus-visible` utilities (ring, outline) to restore the visual focus indicator, ensuring the element's state is perceptible.
+## 2026-05-25 - Custom Input Focus Indicators
+**Learning:** Using `appearance-none` on form inputs (like sliders or checkboxes) to enable custom styling removes the browser's default focus ring, making the element invisible to keyboard users.
+**Action:** Always explicitly re-add focus styles (e.g., `focus-visible:ring`) when using `appearance-none` to ensure keyboard navigability is preserved.
+## 2026-02-20 - Modal Dismissal Patterns
+**Learning:** Modals that rely solely on a "Cancel" button at the bottom for dismissal force users to tab through all content to exit. Users expect standard patterns like top-right "X" buttons and backdrop clicks for quick dismissal.
+**Action:** Always include a top-right icon-only close button (with `aria-label="Close modal"`) and a backdrop click handler (`fixed` position, `e.target === e.currentTarget`) in custom modal implementations.
+## 2026-05-25 - Nested Interactive Controls in Lists
+**Learning:** Wrapping a list item in `role="button"` (or `onClick`) while having nested interactive elements (like a delete button) creates invalid semantics and navigation issues for screen readers.
+**Action:** Refactor such patterns to use a layout where the main "card" action is a button element, and secondary actions (like delete) are sibling buttons, positioned visually using CSS (e.g., absolute positioning) to appear nested while remaining DOM siblings.
