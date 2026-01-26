@@ -212,4 +212,54 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
     expect(offspring.systemPrompt).toBe('Valid Compact Prompt');
     expect(mockMutationFn).toHaveBeenCalledTimes(2); // 1 fail + 1 success
   });
+
+  it('Safety Filter Resilience: Retries mutation when Gemini raises a Safety Violation', async () => {
+    // Scenario: The Mutation Function interacts with an LLM that has strict safety filters.
+    // The engine must discard these attempts and try again.
+    engine = new EvolutionEngine(baseConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const safetyError = new Error("Safety Violation: Dangerous Content");
+
+    // Mock sequence: Fail (Safety) -> Success
+    mockMutationFn
+      .mockRejectedValueOnce(safetyError) // Fail
+      .mockResolvedValue({
+        ...baseGene,
+        id: 'safe-child',
+        systemPrompt: 'Safe Content'
+      });
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'P1', fitness: 100 },
+      { ...baseGene, id: 'P2', fitness: 100 }
+    ];
+
+    const nextGen = await engine.evolve(population);
+
+    expect(nextGen).toHaveLength(3); // 2 Elites + 1 Offspring
+    expect(mockMutationFn).toHaveBeenCalledTimes(2); // 1 fail + 1 success
+  });
+
+  it('Diversity Assurance: Ensures offspring are distinct from parents (Inbreeding Check)', async () => {
+    // Scenario: "Diversity is a metric; measure it."
+    // Ensure that the offspring is not just a clone of the parent.
+    engine = new EvolutionEngine(baseConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+
+    const population: AgentGene[] = [
+      { ...baseGene, id: 'Parent-A', systemPrompt: 'Prompt A', fitness: 100 },
+      { ...baseGene, id: 'Parent-B', systemPrompt: 'Prompt B', fitness: 100 }
+    ];
+
+    const nextGen = await engine.evolve(population);
+
+    // Offspring is at index 2 (EliteCount=2)
+    const offspring = nextGen[2];
+
+    expect(offspring.id).not.toBe('Parent-A');
+    expect(offspring.id).not.toBe('Parent-B');
+    expect(offspring.systemPrompt).not.toBe('Prompt A');
+    expect(offspring.systemPrompt).not.toBe('Prompt B');
+    // Ensure mutation happened (based on our mock that adds [GEMINI-3-PRO-EVOLVED])
+    expect(offspring.systemPrompt).toContain('[GEMINI-3-PRO-EVOLVED]');
+  });
 });

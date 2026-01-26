@@ -15,3 +15,7 @@
 ## 2026-05-21 - Cold Boot Verification
 **Learning:** To verify "Cold Boot" persistence in backend tests (`electron/`), we must instantiate the Store class *twice*: once to write, and once to read (new instance), pointing to the same file path. This proves that the data is not just in memory but successfully serialized and deserialized.
 **Action:** Use `electron/services/HistoryStore.test.ts` as the pattern for testing offline persistence.
+
+## 2026-01-26 - Context Anchor Preservation
+**Learning:** The `ContextManager` uses a 'Smart Sliding Window' that explicitly preserves the *First Message* (Anchor) when truncating history due to token limits. This is crucial for maintaining the "System Persona" or "Original Request" in long conversations, preventing the AI from drifting away from the original task as the middle context is lost.
+**Action:** When debugging "Context Amnesia" or "Persona Drift", check if the token limit (currently estimated at ~4 chars/token) is being hit and if the truncation logic is preserving the 0-index message correctly. Use `src/services/ai/context/Keeper_TokenBudget.test.ts` to verify.
