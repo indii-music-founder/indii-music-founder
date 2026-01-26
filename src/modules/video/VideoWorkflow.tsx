@@ -1,22 +1,19 @@
+
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import { WhiskService } from '../../services/WhiskService';
+// Removed unused imports from framer-motion and lucide-react as they are now in VideoStage
+import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 // Components
 import { DirectorPromptBar } from './components/DirectorPromptBar';
-import { CompositionPromptBar } from './components/CompositionPromptBar'; // New
 import { DailiesStrip } from './components/DailiesStrip';
-import { VideoStage } from './components/VideoStage';
+import { VideoStage } from './components/VideoStage'; // ⚡ Bolt Optimization
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
-
-// Remotion Player
-import { Player } from '@remotion/player';
-import { AIGeneratedComposition } from './remotion/compositions/AIGeneratedComposition';
-
 
 /** Valid job status values for video generation */
 export type JobStatus = 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching';
@@ -76,8 +73,10 @@ export const processJobUpdate = (
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The AI community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
+            const localPath = '';
 
             // Trigger background download via Electron
+            // We don't await this to avoid blocking the UI update, but we log it
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
                     .then((path: string) => {
@@ -115,6 +114,7 @@ export const processJobUpdate = (
 
 export default function VideoWorkflow() {
     // Global State
+    // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates (like prompt keystrokes)
     const {
         generatedHistory,
         addToHistory,
@@ -154,8 +154,7 @@ export default function VideoWorkflow() {
         status: jobStatus,
         setStatus: setJobStatus,
         progress: jobProgress,
-        setProgress: setJobProgress,
-        aiComposition
+        setProgress: setJobProgress
     } = useVideoEditorStore(useShallow(state => ({
         viewMode: state.viewMode,
         setViewMode: state.setViewMode,
@@ -164,13 +163,12 @@ export default function VideoWorkflow() {
         status: state.status,
         setStatus: state.setStatus,
         progress: state.progress,
-        setProgress: state.setProgress,
-        aiComposition: state.aiComposition
+        setProgress: state.setProgress
     })));
 
     const toast = useToast();
 
-    // View State
+    // View State: 'director' (Generation) or 'editor' (Timeline)
     const [localPrompt, setLocalPrompt] = useState('');
     const localPromptRef = useRef(localPrompt);
 
@@ -185,31 +183,46 @@ export default function VideoWorkflow() {
         // Drag logic
     }, []);
 
+    // ⚡ Bolt Optimization: Memoize filtered video list to prevent DailiesStrip re-renders
     const videoHistory = useMemo(() => {
         return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || h.projectId === currentProjectId));
     }, [generatedHistory, currentProjectId]);
 
     // Sync pending prompt
     useEffect(() => {
+
         if (pendingPrompt) {
-            setTimeout(() => {
-                setLocalPrompt(pendingPrompt);
-                setPrompt(pendingPrompt);
-                setPendingPrompt(null);
-            }, 0);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLocalPrompt(pendingPrompt);
+            setPrompt(pendingPrompt);
+            setPendingPrompt(null);
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
+    // Keyboard Shortcut for Mode Toggle
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key === 'e') {
+                e.preventDefault();
+                setViewMode(viewMode === 'director' ? 'editor' : 'director');
+                toast.info(`Switched to ${viewMode === 'director' ? 'Editor' : 'Director'} Mode`);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [viewMode, setViewMode]);
+
     // Set initial active video
     useEffect(() => {
-        setTimeout(() => {
-            if (selectedItem?.type === 'video') {
-                setActiveVideo(selectedItem);
-            } else if (generatedHistory.length > 0 && !activeVideo) {
-                const recent = generatedHistory.find(h => h.type === 'video');
-                if (recent) setActiveVideo(recent);
-            }
-        }, 0);
+
+        if (selectedItem?.type === 'video') {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setActiveVideo(selectedItem);
+        } else if (generatedHistory.length > 0 && !activeVideo) {
+            // Find most recent video
+            const recent = generatedHistory.find(h => h.type === 'video');
+            if (recent) setActiveVideo(recent);
+        }
     }, [selectedItem, generatedHistory, activeVideo]);
 
     // Job Listener
@@ -219,9 +232,11 @@ export default function VideoWorkflow() {
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
             if (data) {
                 const newStatus = data.status;
-                const currentStatus = useVideoEditorStore.getState().status;
 
+                // Check current status to avoid unnecessary updates
+                const currentStatus = useVideoEditorStore.getState().status;
                 if (newStatus && newStatus !== currentStatus) {
+                    // Start of type guard
                     if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
                         setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
                     }
@@ -233,9 +248,13 @@ export default function VideoWorkflow() {
                 }
 
                 if (newStatus === 'completed' && data.videoUrl) {
+                    // Extract metadata from Veo 3.1 output (enforcing contract)
                     const metadata = data.output?.metadata || data.metadata;
+
+                    // ⚡ Automatic Local Save (Veo 3.1 Requirement)
                     const filename = `veo_${jobId}.mp4`;
 
+                    // Trigger background download via Electron
                     if (window.electronAPI?.video?.saveAsset) {
                         window.electronAPI.video.saveAsset(data.videoUrl, filename)
                             .then((path: string) => console.log('Video saved locally to:', path))
@@ -288,20 +307,25 @@ export default function VideoWorkflow() {
     }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
 
     const handleGenerate = async (promptOverride?: string) => {
-        // Veo generation logic
         setJobStatus('queued');
         const isInterpolation = !!(videoInputs.firstFrame && videoInputs.lastFrame);
         toast.info(isInterpolation ? 'Queuing interpolation...' : 'Queuing scene generation...');
 
+        // ⚡ Bolt Optimization: Use prompt passed from child component (which has local state)
+        // to avoid using stale state due to debounce, falling back to localPrompt.
         const promptToUse = promptOverride || localPrompt;
 
         try {
+            // Update global prompt before generating
             setPrompt(promptToUse);
-            if (promptOverride) setLocalPrompt(promptToUse);
+            if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
+            // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
             const finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
+
             let results: { id: string; url: string; prompt: string; }[] = [];
 
+            // Check for long-form Video
             if (studioControls.duration > 8) {
                 results = await VideoGeneration.generateLongFormVideo({
                     prompt: finalPrompt,
@@ -311,7 +335,10 @@ export default function VideoWorkflow() {
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
-                    onProgress: (current, total) => console.info(`Segment ${current}/${total}`)
+                    onProgress: (current, total) => {
+                        // Optional: Could wire this up to a local progress update if store supports it
+                        console.info(`Segment ${current}/${total}`);
+                    }
                 });
             } else {
                 results = await VideoGeneration.generateVideo({
@@ -335,18 +362,25 @@ export default function VideoWorkflow() {
 
             if (results && results.length > 0) {
                 const firstResult = results[0];
+
+                // If the URL is provided immediately, complete it. Otherwise, set jobId to listen for updates.
                 if (firstResult.url) {
                     results.forEach(res => {
                         const filename = `veo_${res.id}.mp4`;
+
                         if (window.electronAPI?.video?.saveAsset) {
                             window.electronAPI.video.saveAsset(res.url, filename)
-                                .then((path: string) => updateHistoryItem(res.id, { localPath: path }))
+                                .then((path: string) => {
+                                    console.log('Video saved locally to:', path);
+                                    updateHistoryItem(res.id, { localPath: path });
+                                })
                                 .catch((err: any) => console.error('Failed to save to local folder:', err));
                         }
+
                         const newAsset = {
                             id: res.id,
                             url: res.url,
-                            localPath: '',
+                            localPath: '', // Will be updated async
                             prompt: res.prompt,
                             type: 'video' as const,
                             timestamp: Date.now(),
@@ -358,6 +392,7 @@ export default function VideoWorkflow() {
                     setJobStatus('completed');
                     toast.success('Scene generated!');
                 } else {
+                    // Start listening for the background job
                     setJobId(firstResult.id);
                     setJobStatus('processing');
                 }
@@ -372,40 +407,34 @@ export default function VideoWorkflow() {
 
     return (
         <div className={`flex-1 flex overflow-hidden h-full bg-background relative`}>
-
-            {/* Mode Switcher Overlay (Top Right) */}
-            <div className="absolute top-4 right-4 z-[60] flex gap-2 bg-black/40 backdrop-blur-md p-1 rounded-xl border border-white/10">
-                {(['director', 'composer', 'editor'] as const).map(mode => (
-                    <button
-                        key={mode}
-                        onClick={() => setViewMode(mode)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${viewMode === mode
-                            ? 'bg-white text-black shadow-lg'
-                            : 'text-white/60 hover:text-white hover:bg-white/10'
-                            }`}
-                    >
-                        {mode}
-                    </button>
-                ))}
-            </div>
-
-            {/* Director Panel */}
+            {/* Main Stage (Director View) */}
             <div
                 id="director-panel"
-                className={`flex-1 flex flex-col relative transition-all duration-500 absolute inset-0 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
+                role="tabpanel"
+                aria-label="Director Mode"
+                className={`flex-1 flex flex-col relative transition-all duration-500 ${viewMode === 'director' ? 'opacity-100 z-10' : 'opacity-0 z-0 hidden'}`}
             >
+
+                {/* Director Prompt Bar (Top Overlay) */}
                 <DirectorPromptBar
                     prompt={localPrompt}
-                    onPromptChange={(val) => { setLocalPrompt(val); setPrompt(val); }}
+                    onPromptChange={(val) => {
+                        setLocalPrompt(val);
+                        setPrompt(val); // Sync real-time
+                    }}
                     onGenerate={handleGenerate}
                     isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
                 />
+
+                {/* Central Preview Stage (Memoized) */}
                 <VideoStage
                     jobStatus={jobStatus}
                     jobProgress={jobProgress}
                     activeVideo={activeVideo}
                     setVideoInputs={setVideoInputs}
                 />
+
+                {/* Dailies Strip (Bottom Overlay) */}
                 <DailiesStrip
                     items={videoHistory}
                     selectedId={activeVideo?.id || null}
@@ -414,41 +443,22 @@ export default function VideoWorkflow() {
                 />
             </div>
 
-            {/* Composer Panel */}
-            <div
-                id="composer-panel"
-                className={`flex-1 flex flex-col relative transition-all duration-500 absolute inset-0 bg-background ${viewMode === 'composer' ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'}`}
-            >
-                <CompositionPromptBar onBack={() => setViewMode('director')} />
-
-                <div className="flex-1 flex items-center justify-center p-8">
-                    {aiComposition ? (
-                        <div className="w-full max-w-5xl aspect-video rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-                            <Player
-                                component={AIGeneratedComposition}
-                                inputProps={{ composition: aiComposition }}
-                                durationInFrames={300} // This should be dynamic based on comp
-                                fps={30}
-                                compositionWidth={1920}
-                                compositionHeight={1080}
-                                style={{ width: '100%', height: '100%' }}
-                                controls
-                            />
-                        </div>
-                    ) : (
-                        <div className="text-center text-white/30">
-                            <p className="text-xl">Describe a scene to begin composition.</p>
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Editor Panel */}
+            {/* Editor Container (Full Screen Overlay) */}
             {viewMode === 'editor' && (
-                <div className="absolute inset-0 z-50 bg-background">
+                <div
+                    id="editor-panel"
+                    role="tabpanel"
+                    aria-label="Editor Mode"
+                    className="absolute inset-0 z-50 bg-background"
+                >
                     <ErrorBoundary fallback={<div className="p-10 text-red-500">Editor Error</div>}>
                         <React.Suspense fallback={<div className="flex items-center justify-center h-full text-yellow-500">Loading Cutting Room...</div>}>
-                            <VideoEditor initialVideo={activeVideo || undefined} />
+                            <div className="h-full flex flex-col">
+                                {/* Editor Header Removed - using Global Navbar */}
+                                <div className="flex-1 relative">
+                                    <VideoEditor initialVideo={activeVideo || undefined} />
+                                </div>
+                            </div>
                         </React.Suspense>
                     </ErrorBoundary>
                 </div>
