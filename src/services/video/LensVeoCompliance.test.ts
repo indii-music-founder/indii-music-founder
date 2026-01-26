@@ -60,6 +60,7 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         vi.useFakeTimers();
         vi.clearAllMocks();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
     });
 

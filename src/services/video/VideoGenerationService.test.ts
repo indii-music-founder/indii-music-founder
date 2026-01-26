@@ -73,6 +73,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
         // Default happy path for quota
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
         mocks.subscriptionService.getCurrentSubscription.mockResolvedValue({ tier: 'pro' });

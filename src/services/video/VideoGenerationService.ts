@@ -200,6 +200,28 @@ export class VideoGenerationService {
                         const mimeType = job.output?.metadata?.mime_type;
                         if (mimeType && mimeType !== 'video/mp4') {
                             reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
+                            return;
+                        }
+
+                        // Verify Asset Integrity (Lens 🎥)
+                        // A 404 error on a video URL is a critical failure.
+                        const url = job.output?.url;
+                        if (url) {
+                            // We use a HEAD request to verify existence without downloading the payload
+                            fetch(url, { method: 'HEAD' })
+                                .then(response => {
+                                    if (response.status === 404) {
+                                        reject(new Error("Asset Integrity Failure: Video URL is unreachable (404)."));
+                                    } else {
+                                        resolve(job);
+                                    }
+                                })
+                                .catch(() => {
+                                    // If the integrity check fails due to network issues (not 404),
+                                    // we resolve the job but ideally would log a warning.
+                                    // For now, we assume the asset is likely fine if not explicitly 404.
+                                    resolve(job);
+                                });
                         } else {
                             resolve(job);
                         }

@@ -65,6 +65,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
     });
 
