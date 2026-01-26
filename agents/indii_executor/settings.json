@@ -1,7 +1,13 @@
 {
-    "chat_model": "gemini/gemini-3-flash-preview",
-    "utility_model": "gemini/gemini-3-flash-preview",
-    "embeddings_model": "gemini/text-embedding-004",
+    "chat_model_provider": "google",
+    "chat_model_name": "gemini-3-pro-preview",
+    "util_model_provider": "google",
+    "util_model_name": "gemini-3-flash-preview",
+    "embed_model_provider": "google",
+    "embed_model_name": "models/text-embedding-004",
+    "chat_model": "gemini-3-pro-preview",
+    "utility_model": "gemini-3-flash-preview",
+    "embeddings_model": "models/text-embedding-004",
     "auto_memory_count": 0,
     "rate_limit_seconds": 0,
     "temperature": 0.5

@@ -794,7 +794,7 @@ export class FirebaseAIService {
                     dynamicThreshold: options.dynamicThreshold
                 }
             } : undefined
-        }];
+        }] as unknown as Tool[];
         return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
     }
 
@@ -868,7 +868,7 @@ export class FirebaseAIService {
                     if (data?.status === 'failed') {
                         throw new AppException(
                             AppErrorCode.INTERNAL_ERROR,
-                            `Video generation failed: ${ data.error || 'Unknown error' }`
+                            `Video generation failed: ${data.error || 'Unknown error'}`
                         );
                     }
                 }
@@ -1009,7 +1009,7 @@ export class FirebaseAIService {
                 // Check if it was blocked or just text returned (e.g. "I cannot generate that")
                 const textPart = candidates[0].content?.parts?.find(p => 'text' in p);
                 if (textPart && 'text' in textPart) {
-                    throw new Error(`Generation blocked or failed: ${ textPart.text }`);
+                    throw new Error(`Generation blocked or failed: ${textPart.text}`);
                 }
                 throw new Error('No image data found in response');
             }
@@ -1253,7 +1253,7 @@ export class FirebaseAIService {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${ msg }`, { retryable: false });
+        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
     }
 
     private async withRetry<T>(
@@ -1287,7 +1287,7 @@ export class FirebaseAIService {
                     const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
                     const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
 
-                    console.warn(`[FirebaseAIService] Transient error, retrying in ${ Math.round(waitTime) }ms... (Attempt ${ attempt + 1}/${retries})`);
+                    console.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
 
                     await new Promise((resolve, reject) => {
                         const timer = setTimeout(resolve, waitTime);

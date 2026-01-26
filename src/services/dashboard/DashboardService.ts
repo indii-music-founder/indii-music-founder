@@ -63,7 +63,7 @@ interface CachedAnalytics {
     historyRef: HistoryItem[];
     agentMessagesRef: unknown[];
     projectsCount: number;
-    projectsRef: ProjectMetadata[];
+    projectsRef: Project[];
     day: number;
     data: AnalyticsData;
 }
@@ -101,7 +101,8 @@ export class DashboardService {
                 return updatedState.projects.map((p) => ({
                     id: p.id,
                     name: p.name,
-                    lastModified: p.lastModified,
+                    type: (p as any).type || 'creative', // Default to creative if missing in old projects
+                    lastModified: (p as any).lastModified || 0,
                     assetCount: p.assetCount || 0,
                     thumbnail: p.thumbnail
                 }));
@@ -509,7 +510,7 @@ export class DashboardService {
 
             // 2. Attempt Fetch from API
             // Bolt: "Production Bridge" - prefer API over Firestore/Mock if available
-            const apiUrl = import.meta.env.VITE_API_URL;
+            const apiUrl = (import.meta as any).env?.VITE_API_URL;
 
             if (apiUrl) {
                 try {

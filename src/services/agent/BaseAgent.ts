@@ -637,13 +637,13 @@ ${task}
                             }))
                         ]
                     }],
-                    config: { ...AI_CONFIG.THINKING.LOW },
+                    config: { ...AI_CONFIG.THINKING.LOW } as any,
                     tools: allTools as any,
                     thoughtSignature: currentThoughtSignature
                 });
 
-                if (response.thoughtSignature) {
-                    currentThoughtSignature = response.thoughtSignature;
+                if ((response as any).thoughtSignature) {
+                    currentThoughtSignature = (response as any).thoughtSignature;
                 }
 
                 // LEDGER: Record Spend based on Token Usage
