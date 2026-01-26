@@ -4,6 +4,10 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
 
+// Mock global fetch
+const fetchMock = vi.fn();
+global.fetch = fetchMock;
+
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
     onSnapshot: vi.fn(),
@@ -67,6 +71,8 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
+        // Default happy path for fetch
+        fetchMock.mockResolvedValue({ ok: true, status: 200 });
     });
 
     afterEach(() => {
@@ -177,5 +183,66 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
 
         expect(result.output.metadata.debug_logs).toHaveLength(4194304);
         expect(result.output.metadata.mime_type).toBe('video/mp4');
+    });
+
+    it('should reject job if video URL returns 404 (Asset Integrity Guard)', async () => {
+        // Scenario: Veo reports success, but the asset is missing (404)
+        mocks.doc.mockReturnValue('doc-ref');
+
+        // Mock fetch to return 404
+        fetchMock.mockResolvedValue({ ok: false, status: 404 });
+
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-ghost',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'https://veo.google.com/ghost.mp4',
+                            metadata: { mime_type: 'video/mp4' }
+                        }
+                    })
+                });
+            }, 100);
+            return vi.fn();
+        });
+
+        const jobPromise = service.waitForJob('job-ghost', 2000);
+        vi.advanceTimersByTime(200);
+
+        // We expect the integrity check (fetch) to fail the job
+        await expect(jobPromise).rejects.toThrow("Asset Integrity Failure: Video URL is unreachable (404).");
+
+        expect(fetchMock).toHaveBeenCalledWith('https://veo.google.com/ghost.mp4', { method: 'HEAD' });
+    });
+
+    it('should accept job if video URL returns 200', async () => {
+        mocks.doc.mockReturnValue('doc-ref');
+        fetchMock.mockResolvedValue({ ok: true, status: 200 });
+
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: 'job-good',
+                    data: () => ({
+                        status: 'completed',
+                        output: {
+                            url: 'https://veo.google.com/good.mp4',
+                            metadata: { mime_type: 'video/mp4' }
+                        }
+                    })
+                });
+            }, 100);
+            return vi.fn();
+        });
+
+        const jobPromise = service.waitForJob('job-good', 2000);
+        vi.advanceTimersByTime(200);
+
+        await expect(jobPromise).resolves.toHaveProperty('status', 'completed');
+        expect(fetchMock).toHaveBeenCalledWith('https://veo.google.com/good.mp4', { method: 'HEAD' });
     });
 });
