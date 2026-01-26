@@ -150,7 +150,7 @@ const AudioAnalyzer: React.FC = () => {
             setIsFromCache(fromCache);
 
             if (!fromCache) {
-                toast.dismiss('analyzing');
+                toast.dismiss();
                 toast.success("Analysis Complete: Neural Network inference successful");
             }
 
@@ -198,7 +198,7 @@ const AudioAnalyzer: React.FC = () => {
 
         } catch (error) {
             console.error("Deep Analysis Failed", error);
-            toast.dismiss('analyzing');
+            toast.dismiss();
             toast.error("Deep Analysis failed. Try another file.");
             setIsAnalyzing(false);
         } finally {
