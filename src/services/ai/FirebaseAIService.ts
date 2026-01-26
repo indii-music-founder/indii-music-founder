@@ -61,7 +61,10 @@ function isAppCheckError(error: unknown): boolean {
         msg.includes('PERMISSION_DENIED') ||
         msg.includes('permission-denied') ||
         msg.includes('app-check-token') ||
-        msg.includes('The caller does not have permission')
+        msg.includes('The caller does not have permission') ||
+        msg.includes('403') ||
+        msg.includes('unauthenticated') ||
+        msg.toLowerCase().includes('verification failed')
     );
 }
 
@@ -604,6 +607,13 @@ export class FirebaseAIService {
         tools?: Tool[],
         options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
     ): Promise<GenerateContentResult> {
+        // [DEBUG] Log payload for deep diagnosis
+        try {
+            console.log('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
+            console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(prompt).substring(0, 500) + "...");
+            console.log('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
+        } catch (e) { }
+
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 

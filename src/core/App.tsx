@@ -50,6 +50,7 @@ const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
+const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
 
 
 
@@ -85,6 +86,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'observability': ObservabilityDashboard,
     'reference-manager': ReferenceManager,
     'history': HistoryDashboard,
+    'debug': MultimodalGauntlet,
 };
 
 // ============================================================================
