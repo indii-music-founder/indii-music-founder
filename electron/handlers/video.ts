@@ -155,6 +155,19 @@ export function registerVideoHandlers() {
                 config.outputLocation = validateSafeVideoOutputPath(config.outputLocation);
             }
 
+            // SECURITY: Validate Output Path if provided
+            if (config.outputLocation) {
+                const allowedRoots = [
+                    app.getPath('documents'),
+                    app.getPath('downloads'),
+                    app.getPath('desktop'),
+                    app.getPath('userData'),
+                    app.getPath('temp')
+                ];
+                // Update config with the validated, safe path
+                config.outputLocation = validateSafeVideoOutputPath(config.outputLocation, allowedRoots);
+            }
+
             return await electronRenderService.render(config);
             await shell.showItemInFolder(target);
         } catch (error) {
