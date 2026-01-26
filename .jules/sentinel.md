@@ -43,3 +43,8 @@
 2. Removed generic `http:`, `https:`, and `ws:` protocols from the allowlist.
 3. Added `media-src` directive (previously missing) to strictly control media playback sources.
 4. Removed dead/insecure code (`SecureStore.ts`) to reduce attack surface.
+
+## 2025-05-19 - [HIGH] Path Traversal in Video Render Configuration
+**Vulnerability:** The `video:render` IPC handler accepted a `config` object containing `outputLocation` which was passed directly to the `ElectronRenderService` without validation. This allowed arbitrary file writes (Arbitrary File Overwrite) if a malicious path was provided.
+**Learning:** Validating top-level IPC arguments is insufficient. Complex configuration objects passed to services must have their sensitive properties (like file paths) validated at the IPC boundary.
+**Prevention:** Implemented `validateSafeVideoOutputPath` which resolves the parent directory using `fs.realpathSync` (to prevent symlink attacks) and enforces containment within allowed user directories.
