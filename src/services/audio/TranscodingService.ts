@@ -36,15 +36,27 @@ export class TranscodingService {
             return false;
         }
 
-        // 2. Mock Transcoding Process
-        // Simulate processing time
-        // await new Promise(resolve => setTimeout(resolve, 100));
+        // 2. Execution (Hardened)
+        // Check for Electron Native Transcoding capability
+        if (typeof window !== 'undefined' && window.electronAPI?.audio && 'transcode' in window.electronAPI.audio) {
+            try {
+                // @ts-ignore - 'transcode' not yet typed in window.electronAPI
+                const result = await window.electronAPI.audio.transcode(options);
+                return result.success;
+            } catch (error) {
+                console.error('[TranscodingService] Native transcode failed:', error);
+                return false;
+            }
+        }
 
-        // 3. "Write" Output
-        // In a real implementation, we would spawn an ffmpeg process here.
-        // For now, we assume the caller handles the file system mock or we just log success.
-        console.info(`[TranscodingService] Transcode complete: ${options.outputPath}`);
-        return true;
+        // 3. Cloud Fallback (Optional Future)
+        // const cloudResult = await this.transcodeCloud(options);
+        // if (cloudResult) return true;
+
+        // 4. Failure (No valid transcoding engine found)
+        // Bolt Hardening: Fail explicitly instead of mocking success in production.
+        console.error('[TranscodingService] No transcoding engine available (Native/Cloud).');
+        return false;
     }
 
     /**
@@ -59,8 +71,8 @@ export class TranscodingService {
      * Check if file contains Spatial Audio Metadata (ADM BWF)
      * 2026 Requirement: Support Dolby Atmos/Spatial Audio ingestion.
      *
-     * Mock Implementation: Checks for specific naming convention (e.g. "_atmos.wav")
-     * since we cannot parse binary headers in this environment.
+     * Heuristic Implementation: Checks for specific naming convention (e.g. "_atmos.wav").
+     * Deep validation requires server-side/Electron ADM BWF header parsing.
      */
     isSpatialAudio(filePath: string): boolean {
         return filePath.toLowerCase().includes('atmos') || filePath.toLowerCase().includes('spatial');

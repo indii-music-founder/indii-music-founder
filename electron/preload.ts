@@ -73,7 +73,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     video: {
         saveAsset: (url: string, filename: string) => ipcRenderer.invoke('video:save-asset', url, filename),
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
-        render: (config: any) => ipcRenderer.invoke('video:render', config),
     },
 
     // Distribution

@@ -38,12 +38,9 @@ describe('DashboardService - Sales Analytics', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        // Clear the service cache to ensure tests run against fresh logic
-        (DashboardService as any).cache.clear();
-
         // Default console mocks to keep test output clean
-        vi.spyOn(console, 'warn').mockImplementation(() => { });
-        vi.spyOn(console, 'error').mockImplementation(() => { });
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.spyOn(console, 'error').mockImplementation(() => {});
     });
 
     afterEach(() => {
