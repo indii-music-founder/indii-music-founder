@@ -27,7 +27,7 @@ export function useFinance() {
         }
 
         setEarningsLoading(true);
-        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: ValidatedEarningsSummary | null) => {
+        const unsubscribe = financeService.subscribeToEarnings(userProfile.id, (data: any) => {
             setEarningsSummary(data);
             setEarningsLoading(false);
             if (!data) {

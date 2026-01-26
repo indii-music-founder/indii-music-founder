@@ -3,6 +3,7 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import CreativeGallery from './components/CreativeGallery';
 import CreativeNavbar from './components/CreativeNavbar';
 import InfiniteCanvas from './components/InfiniteCanvas';
+import AILab from './components/AILab';
 import VideoWorkflow from '../video/VideoWorkflow';
 import CreativeCanvas from './components/CreativeCanvas';
 import { useStore } from '@/core/store';
@@ -169,6 +170,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'canvas' && <InfiniteCanvas />}
                         {viewMode === 'video_production' && <VideoWorkflow />}
                         {viewMode === 'direct' && <DirectGenerationTab />}
+                        {viewMode === 'lab' && <AILab />}
                     </div>
                 </div>
 

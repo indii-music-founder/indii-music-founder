@@ -23,12 +23,13 @@ interface CreativeCanvasProps {
 }
 
 export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefine }: CreativeCanvasProps) {
-    const { generatedHistory } = useStore();
+    const { generatedHistory, currentProjectId } = useStore();
     const toast = useToast();
 
     // UI State
     const [isEditing, setIsEditing] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [processingStatus, setProcessingStatus] = useState<string>('');
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
@@ -190,68 +191,98 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
     const handleRefine = async () => {
         if (!item) return;
-
-        // 1. Close the canvas (this logic is handled by the caller usually, but we can do it here if needed)
-        // Actually, we want to transition view.
         onClose();
-
-        const {
-            addWhiskItem,
-            setPendingPrompt,
-            setViewMode,
-            setGenerationMode // Ensure we are in image mode
-        } = useStore.getState();
-
-        // 2. Set up UI state for refinement
-        // We'll optimistically add it to Whisk even before caption is ready? 
-        // Better to get caption first, or use a placeholder?
-        // Let's use a "Thinking..." or reuse original prompt as temporary caption.
-
+        const { addWhiskItem, setPendingPrompt, setViewMode, setGenerationMode } = useStore.getState();
         toast.info("Refining... Analyzing image essence.");
-
-        // Ensure we are in the right mode
         setGenerationMode('image');
-        setViewMode('gallery'); // Or keep same view? Gallery seems standard.
-
-        // 3. Add to Whisk
-        // We need an ID for the whisk item.
+        setViewMode('gallery');
         const whiskId = crypto.randomUUID();
-
-        // Use original prompt as fallback initial caption
         const initialCaption = item.prompt || "Image Reference";
-
-        // Store signature: addWhiskItem: (category, type, content, aiCaption, explicitId)
         addWhiskItem('subject', 'image', item.url, initialCaption, whiskId);
-
-        // 4. Set pending prompt to original prompt so user can iterate
         setPendingPrompt(item.prompt);
-
-        // 5. Async: Get the real caption
         try {
-            // Dynamic import to avoid circular deps if any, or just good practice for heavy services
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-
-            // Parse data URL (assuming base64 for generated items)
             const [mimeType, b64] = item.url.split(',');
             const pureMime = mimeType.split(':')[1].split(';')[0];
-
-            const caption = await ImageGeneration.captionImage(
-                { mimeType: pureMime, data: b64 },
-                'subject'
-            );
-
-            // Update the item with the real caption
-            // Store signature: updateWhiskItem: (category, id, updates)
+            const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, 'subject');
             const { updateWhiskItem } = useStore.getState();
             updateWhiskItem('subject', whiskId, { aiCaption: caption });
             toast.success("Image essence extracted and locked!");
-        } catch (e: unknown) {
-            const err = e as { name?: string; code?: string; message?: string };
-            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
-                toast.error(err.message || 'Quota exceeded during analysis.');
-            } else {
-                toast.warning("Could not auto-caption. Using original prompt.");
-            }
+        } catch (e: any) {
+            toast.warning("Could not auto-caption. Using original prompt.");
+        }
+    };
+
+    const handleCreateLastFrame = async () => {
+        if (!item || item.type !== 'image') return;
+
+        setIsProcessing(true);
+        setProcessingStatus("Analyzing Scene...");
+        toast.info("Analyzing scene to architect cinematic climax...");
+
+        try {
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            // Remove unused import if not needed, or keep if CloudStorageService is used elsewhere
+
+            // 1. Get Base64 & Mime
+            const res = await fetch(item.url);
+            const blob = await res.blob();
+            // Use the blob's actual type, default to png if missing
+            const mimeType = blob.type || 'image/png';
+
+            const seedBase64 = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result as string;
+                    // Robustly strip ALL data headers: data:image/xxx;base64,
+                    const base64Clean = result.replace(/^data:.*;base64,/, '');
+                    resolve(base64Clean);
+                };
+                reader.readAsDataURL(blob);
+            });
+
+            // 2. Analyze
+            const climaxDescription = await ImageGeneration.captionImage(
+                { mimeType, data: seedBase64 },
+                'subject'
+            );
+
+            // 3. Synthesize
+            setProcessingStatus("Synthesizing End-Frame...");
+            toast.info("Synthesizing climax end-frame...");
+
+            const refinedPrompt = `${climaxDescription}, capturing the high-energy climax of the scene with dramatic lighting and motion energy.`;
+            const synthResults = await ImageGeneration.remixImage({
+                contentImage: { mimeType, data: seedBase64 },
+                styleImage: { mimeType, data: seedBase64 },
+                prompt: refinedPrompt
+            });
+
+            if (!synthResults) throw new Error("Synthesis failed.");
+
+            // 4. Save & Set
+            setProcessingStatus("Finalizing...");
+            const targetId = crypto.randomUUID();
+            const targetAsset: HistoryItem = {
+                id: targetId,
+                url: synthResults.url,
+                prompt: `End Frame Climax: ${refinedPrompt.substring(0, 50)}...`,
+                type: 'image',
+                timestamp: Date.now(),
+                projectId: currentProjectId
+            };
+
+            const { addToHistory } = useStore.getState();
+            addToHistory(targetAsset);
+            setEndFrameItem(targetAsset as any);
+
+            toast.success("Cinematic climax bridge created!");
+        } catch (error: any) {
+            console.error("Create Last Frame failed:", error);
+            toast.error(`Architect Error: ${error.message}`);
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
         }
     };
 
@@ -290,6 +321,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         onClose={onClose}
                         onSendToWorkflow={onSendToWorkflow}
                         onRefine={onRefine || handleRefine}
+                        onCreateLastFrame={handleCreateLastFrame}
+                        processingStatus={processingStatus}
                     />
 
                     <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">

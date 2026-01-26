@@ -79,7 +79,8 @@ export const generateImageV3Fn = () => functions
                                 ...(imageSize ? { imageSize } : {})
                             }
                         } : {}),
-                        ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
+                        // Thinking is not yet supported for gemini-3-image in us-west1 preview
+                        // ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
                         ...(useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
                     }
                 })
