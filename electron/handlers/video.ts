@@ -9,6 +9,7 @@ import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
 import { FetchUrlSchema } from '../utils/validation';
 import { accessControlService } from '../security/AccessControlService';
+import { validateSafeDistributionSource } from '../utils/security-checks';
 
 /**
  * Downloads a file from a URL to a local path.
@@ -135,6 +136,18 @@ export function registerVideoHandlers() {
                 target = resolvedPath;
             }
 
+            // SECURITY: Validate Output Location (Arbitrary File Write Protection)
+            if (config.outputLocation) {
+                // 1. Check against System Roots and Forbidden Extensions
+                validateSafeDistributionSource(config.outputLocation);
+
+                // 2. Verify Access Authorization (Must be in user data, temp, or explicitly granted)
+                if (!accessControlService.verifyAccess(config.outputLocation)) {
+                    throw new Error(`Security Violation: Access to ${config.outputLocation} is denied.`);
+                }
+            }
+
+            return await electronRenderService.render(config);
             await shell.showItemInFolder(target);
         } catch (error) {
             console.error('[VideoHandler] Failed to open folder:', error);
