@@ -63,6 +63,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         vi.useFakeTimers();
         vi.clearAllMocks();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     });
 
     afterEach(() => {
