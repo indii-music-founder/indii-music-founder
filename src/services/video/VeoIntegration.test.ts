@@ -70,6 +70,7 @@ describe('Veo 3.1 Integration Pipeline', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
         mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'job-uuid-123' } }));
     });
