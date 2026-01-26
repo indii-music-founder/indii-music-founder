@@ -129,7 +129,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-3', period)];
+        return [];
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
