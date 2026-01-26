@@ -107,7 +107,6 @@ vi.mock('../registry', () => ({
             return new BaseAgent({
                 id,
                 name: 'Test Agent',
-                description: 'A test agent',
                 systemPrompt: 'You are test.',
                 category: 'specialist',
                 color: 'blue',
