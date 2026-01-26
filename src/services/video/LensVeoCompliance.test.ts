@@ -61,10 +61,17 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         vi.clearAllMocks();
         service = new VideoGenerationService();
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
+
+        // Mock fetch for video URL verification
+        global.fetch = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200
+        });
     });
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.resetAllMocks();
     });
 
     it('should generate "Flash" video within 2 seconds (simulated) and verify Veo 3.1 metadata contract', async () => {
