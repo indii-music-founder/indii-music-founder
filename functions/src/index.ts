@@ -1,9 +1,5 @@
-// indiiOS Cloud Functions - V2.0
+// indiiOS Cloud Functions - V1.1
 import * as functions from "firebase-functions/v1";
-import { onCall, onRequest, HttpsError } from "firebase-functions/v2/https";
-import { setGlobalOptions } from "firebase-functions/v2";
-
-setGlobalOptions({ region: "us-west1" });
 import * as admin from "firebase-admin";
 import { Inngest } from "inngest";
 import { serve } from "inngest/express";
@@ -191,224 +187,230 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
  * This callable function acts as the bridge between the Client App (Electron)
  * and the Asynchronous Worker Queue (Inngest).
  */
-export const triggerVideoJob = onCall({
-    secrets: [inngestEventKey],
-    timeoutSeconds: 60,
-    memory: "256MiB"
-}, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError(
-            "unauthenticated",
-            "User must be authenticated to trigger video generation."
-        );
-    }
+export const triggerVideoJob = functions
+    .region("us-west1")
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError(
+                "unauthenticated",
+                "User must be authenticated to trigger video generation."
+            );
+        }
 
-    const userId = request.auth.uid;
-    // Construct input matching the schema
-    const safeData = (typeof request.data === 'object' && request.data !== null) ? request.data : {};
-    const inputData: any = { ...safeData, userId };
+        const userId = context.auth.uid;
+        // Construct input matching the schema
+        const safeData = (typeof data === 'object' && data !== null) ? data : {};
+        const inputData: any = { ...safeData, userId };
 
-    // Zod Validation
-    const validation = VideoJobSchema.safeParse(inputData);
-    if (!validation.success) {
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-        );
-    }
+        // Zod Validation
+        const validation = VideoJobSchema.safeParse(inputData);
+        if (!validation.success) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
+            );
+        }
 
-    const { prompt, jobId, orgId, ...options } = inputData;
+        const { prompt, jobId, orgId, ...options } = inputData;
 
-    // SECURITY: Verify Org Access
-    await validateOrgAccess(userId, orgId);
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
 
-    try {
-        // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
-        await admin.firestore().collection("videoJobs").doc(jobId).create({
-            id: jobId,
-            userId: userId,
-            orgId: orgId || "personal",
-            prompt: prompt,
-            status: "queued",
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
-
-        // 2. Publish Event to Inngest
-        const inngest = getInngestClient();
-
-        await inngest.send({
-            name: "video/generate.requested",
-            data: {
-                jobId: jobId,
+        try {
+            // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
+                id: jobId,
                 userId: userId,
                 orgId: orgId || "personal",
                 prompt: prompt,
-                options: options,
-                timestamp: Date.now(),
-            },
-            user: {
-                id: userId,
-            }
-        });
+                status: "queued",
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
 
-        console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+            // 2. Publish Event to Inngest
+            const inngest = getInngestClient();
 
-        return { success: true, message: "Video generation job queued." };
+            await inngest.send({
+                name: "video/generate.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    orgId: orgId || "personal",
+                    prompt: prompt,
+                    options: options,
+                    timestamp: Date.now(),
+                },
+                user: {
+                    id: userId,
+                }
+            });
 
-    } catch (error: any) {
-        console.error("[VideoJob] Error triggering Inngest:", error);
-        throw new functions.https.HttpsError(
-            "internal",
-            `Failed to queue video job: ${error.message}`
-        );
-    }
-});
+            console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
+
+            return { success: true, message: "Video generation job queued." };
+
+        } catch (error: any) {
+            console.error("[VideoJob] Error triggering Inngest:", error);
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue video job: ${error.message}`
+            );
+        }
+    });
 
 /**
  * Trigger Long Form Video Generation Job
  *
  * Handles multi-segment video generation (daisychaining) as a background process.
  */
-export const triggerLongFormVideoJob = onCall({
-    secrets: [inngestEventKey],
-    timeoutSeconds: 60,
-    memory: "256MiB"
-}, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError(
-            "unauthenticated",
-            "User must be authenticated for long form generation."
-        );
-    }
-    const userId = request.auth.uid;
-
-    // Zod Validation
-    const safeData = (typeof request.data === 'object' && request.data !== null) ? request.data : {};
-    const inputData = { ...safeData, userId };
-    const validation = LongFormVideoJobSchema.safeParse(inputData);
-
-    if (!validation.success) {
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
-        );
-    }
-
-    // Destructure validated data
-    const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
-
-    // SECURITY: Verify Org Access
-    await validateOrgAccess(userId, orgId);
-
-    // Additional validation
-    if (prompts.length === 0) {
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            "Prompts array must not be empty."
-        );
-    }
-
-    try {
-        // ------------------------------------------------------------------
-        // Quota Enforcement (Server-Side)
-        // ------------------------------------------------------------------
-        let userTier: MembershipTier = 'free';
-        if (orgId && orgId !== 'personal') {
-            const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
-            if (orgDoc.exists) {
-                const orgData = orgDoc.data();
-                userTier = (orgData?.plan as MembershipTier) || 'free';
-            }
-        }
-
-        const limits = TIER_LIMITS[userTier];
-        const durationNum = parseFloat((totalDuration || 0).toString());
-
-        // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
-        const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
-        const isGodMode = request.auth?.token?.admin === true ||
-            godModeEmails.includes(request.auth?.token?.email || '');
-
-        // 2. Validate Duration Limit
-        if (!isGodMode && durationNum > limits.maxVideoDuration) {
+export const triggerLongFormVideoJob = functions
+    .region("us-west1")
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        if (!context.auth) {
             throw new functions.https.HttpsError(
-                "resource-exhausted",
-                `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
+                "unauthenticated",
+                "User must be authenticated for long form generation."
+            );
+        }
+        const userId = context.auth.uid;
+
+        // Zod Validation
+        const safeData = (typeof data === 'object' && data !== null) ? data : {};
+        const inputData = { ...safeData, userId };
+        const validation = LongFormVideoJobSchema.safeParse(inputData);
+
+        if (!validation.success) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
 
-        // Daily Usage Check
-        const today = new Date().toISOString().split('T')[0];
-        const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
+        // Destructure validated data
+        const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
 
-        await admin.firestore().runTransaction(async (transaction) => {
-            const usageDoc = await transaction.get(usageRef);
-            const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
+        // SECURITY: Verify Org Access
+        await validateOrgAccess(userId, orgId);
 
-            if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
+        // Additional validation
+        if (prompts.length === 0) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Prompts array must not be empty."
+            );
+        }
+
+        try {
+            // ------------------------------------------------------------------
+            // Quota Enforcement (Server-Side)
+            // ------------------------------------------------------------------
+            let userTier: MembershipTier = 'free';
+            if (orgId && orgId !== 'personal') {
+                const orgDoc = await admin.firestore().collection('organizations').doc(orgId).get();
+                if (orgDoc.exists) {
+                    const orgData = orgDoc.data();
+                    userTier = (orgData?.plan as MembershipTier) || 'free';
+                }
+            }
+
+            const limits = TIER_LIMITS[userTier];
+            const durationNum = parseFloat((totalDuration || 0).toString());
+
+            // FIX #4: GOD MODE via admin claim or environment config (no hardcoded email)
+            const godModeEmails = (process.env.GOD_MODE_EMAILS || '').split(',').map(e => e.trim()).filter(Boolean);
+            const isGodMode = context.auth?.token?.admin === true ||
+                godModeEmails.includes(context.auth?.token?.email || '');
+
+            // 2. Validate Duration Limit
+            if (!isGodMode && durationNum > limits.maxVideoDuration) {
                 throw new functions.https.HttpsError(
                     "resource-exhausted",
-                    `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
+                    `Video duration ${durationNum}s exceeds ${userTier} tier limit of ${limits.maxVideoDuration}s.`
                 );
             }
 
-            // Increment Usage Optimistically
-            if (!usageDoc.exists) {
-                transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-            } else {
-                transaction.update(usageRef, { videosGenerated: admin.firestore.FieldValue.increment(1), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
-            }
-        });
+            // Daily Usage Check
+            const today = new Date().toISOString().split('T')[0];
+            const usageRef = admin.firestore().collection('users').doc(userId).collection('usage').doc(today);
 
-        // ------------------------------------------------------------------
+            await admin.firestore().runTransaction(async (transaction) => {
+                const usageDoc = await transaction.get(usageRef);
+                const currentUsage = usageDoc.exists ? (usageDoc.data()?.videosGenerated || 0) : 0;
 
-        // 4. Create Parent Job Record
-        // 1. Create Parent Job Record (Atomic Create)
-        await admin.firestore().collection("videoJobs").doc(jobId).create({
-            id: jobId,
-            userId: userId,
-            orgId: orgId || "personal",
-            prompt: prompts[0], // Main prompt
-            status: "queued",
-            isLongForm: true,
-            totalSegments: prompts.length,
-            completedSegments: 0,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+                if (!isGodMode && currentUsage >= limits.maxVideoGenerationsPerDay) {
+                    throw new functions.https.HttpsError(
+                        "resource-exhausted",
+                        `Daily video generation limit reached for ${userTier} tier (${limits.maxVideoGenerationsPerDay}/day).`
+                    );
+                }
 
-        // 5. Publish Event to Inngest for Long Form
-        const inngest = getInngestClient();
+                // Increment Usage Optimistically
+                if (!usageDoc.exists) {
+                    transaction.set(usageRef, { videosGenerated: 1, date: today, updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                } else {
+                    transaction.update(usageRef, { videosGenerated: admin.firestore.FieldValue.increment(1), updatedAt: admin.firestore.FieldValue.serverTimestamp() });
+                }
+            });
 
-        await inngest.send({
-            name: "video/long_form.requested",
-            data: {
-                jobId,
-                userId,
+            // ------------------------------------------------------------------
+
+            // 4. Create Parent Job Record
+            // 1. Create Parent Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
+                id: jobId,
+                userId: userId,
                 orgId: orgId || "personal",
-                prompts,
-                totalDuration,
-                startImage,
-                options,
-                timestamp: Date.now(),
-            },
-            user: { id: userId }
-        });
+                prompt: prompts[0], // Main prompt
+                status: "queued",
+                isLongForm: true,
+                totalSegments: prompts.length,
+                completedSegments: 0,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
 
-        return { success: true, message: "Long form video generation started." };
+            // 5. Publish Event to Inngest for Long Form
+            const inngest = getInngestClient();
 
-    } catch (error: any) {
-        console.error("[LongFormVideoJob] Error:", error);
-        if (error instanceof functions.https.HttpsError) {
-            throw error;
+            await inngest.send({
+                name: "video/long_form.requested",
+                data: {
+                    jobId,
+                    userId,
+                    orgId: orgId || "personal",
+                    prompts,
+                    totalDuration,
+                    startImage,
+                    options,
+                    timestamp: Date.now(),
+                },
+                user: { id: userId }
+            });
+
+            return { success: true, message: "Long form video generation started." };
+
+        } catch (error: any) {
+            console.error("[LongFormVideoJob] Error:", error);
+            if (error instanceof functions.https.HttpsError) {
+                throw error;
+            }
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue long form job: ${error.message}`
+            );
         }
-        throw new functions.https.HttpsError(
-            "internal",
-            `Failed to queue long form job: ${error.message}`
-        );
-    }
-});
+    });
 
 /**
  * Render Video Composition (Stitching)
@@ -416,92 +418,95 @@ export const triggerLongFormVideoJob = onCall({
  * Receives a project composition from the frontend editor, flattens it,
  * and queues a stitching job via Inngest.
  */
-export const renderVideo = onCall({
-    secrets: [inngestEventKey],
-    timeoutSeconds: 60,
-    memory: "256MiB"
-}, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError(
-            "unauthenticated",
-            "User must be authenticated to render video."
-        );
-    }
-
-    const userId = request.auth.uid;
-    const safeData = (typeof request.data === 'object' && request.data !== null) ? request.data as Record<string, any> : {};
-    const { compositionId, inputProps } = safeData;
-    const project = inputProps?.project;
-
-    if (!project || !project.tracks || !project.clips) {
-        throw new functions.https.HttpsError(
-            "invalid-argument",
-            "Invalid project data. Missing tracks or clips."
-        );
-    }
-
-    const jobId = compositionId || `render_${Date.now()}`;
-
-    try {
-        // 1. Flatten Tracks to Segment List
-        // Simple logic: sort clips by startFrame.
-        // Note: This MVP implementation assumes sequential non-overlapping clips
-        // or prioritizes the first track for stitching.
-        // Google Transcoder Stitching requires a list of inputs.
-
-        // Filter only video clips
-        const videoClips = project.clips
-            .filter((c: any) => c.type === 'video')
-            .sort((a: any, b: any) => a.startFrame - b.startFrame);
-
-        if (videoClips.length === 0) {
+export const renderVideo = functions
+    .region("us-west1")
+    .runWith({
+        secrets: [inngestEventKey],
+        timeoutSeconds: 60,
+        memory: "256MB"
+    })
+    .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
+        if (!context.auth) {
             throw new functions.https.HttpsError(
-                "failed-precondition",
-                "No video clips found in project to render."
+                "unauthenticated",
+                "User must be authenticated to render video."
             );
         }
 
-        const segmentUrls = videoClips.map((c: any) => c.src);
+        const userId = context.auth.uid;
+        const safeData = (typeof data === 'object' && data !== null) ? data as Record<string, any> : {};
+        const { compositionId, inputProps } = safeData;
+        const project = inputProps?.project;
 
-        // 2. Create Job Record (Atomic Create)
-        await admin.firestore().collection("videoJobs").doc(jobId).create({
-            id: jobId,
-            userId: userId,
-            orgId: "personal",
-            status: "queued",
-            type: "render_stitch",
-            clipCount: videoClips.length,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp()
-        });
+        if (!project || !project.tracks || !project.clips) {
+            throw new functions.https.HttpsError(
+                "invalid-argument",
+                "Invalid project data. Missing tracks or clips."
+            );
+        }
 
-        // 3. Trigger Stitching via Inngest
-        const inngest = getInngestClient();
+        const jobId = compositionId || `render_${Date.now()}`;
 
-        await inngest.send({
-            name: "video/stitch.requested",
-            data: {
-                jobId: jobId,
+        try {
+            // 1. Flatten Tracks to Segment List
+            // Simple logic: sort clips by startFrame.
+            // Note: This MVP implementation assumes sequential non-overlapping clips
+            // or prioritizes the first track for stitching.
+            // Google Transcoder Stitching requires a list of inputs.
+
+            // Filter only video clips
+            const videoClips = project.clips
+                .filter((c: any) => c.type === 'video')
+                .sort((a: any, b: any) => a.startFrame - b.startFrame);
+
+            if (videoClips.length === 0) {
+                throw new functions.https.HttpsError(
+                    "failed-precondition",
+                    "No video clips found in project to render."
+                );
+            }
+
+            const segmentUrls = videoClips.map((c: any) => c.src);
+
+            // 2. Create Job Record (Atomic Create)
+            await admin.firestore().collection("videoJobs").doc(jobId).create({
+                id: jobId,
                 userId: userId,
-                segmentUrls: segmentUrls,
-                options: {
-                    resolution: `${project.width}x${project.height}`,
-                    aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
-                }
-            },
-            user: { id: userId }
-        });
+                orgId: "personal",
+                status: "queued",
+                type: "render_stitch",
+                clipCount: videoClips.length,
+                createdAt: admin.firestore.FieldValue.serverTimestamp(),
+                updatedAt: admin.firestore.FieldValue.serverTimestamp()
+            });
 
-        return { success: true, renderId: jobId, message: "Render job queued." };
+            // 3. Trigger Stitching via Inngest
+            const inngest = getInngestClient();
 
-    } catch (error: any) {
-        console.error("[RenderVideo] Error:", error);
-        throw new functions.https.HttpsError(
-            "internal",
-            `Failed to queue render job: ${error.message}`
-        );
-    }
-});
+            await inngest.send({
+                name: "video/stitch.requested",
+                data: {
+                    jobId: jobId,
+                    userId: userId,
+                    segmentUrls: segmentUrls,
+                    options: {
+                        resolution: `${project.width}x${project.height}`,
+                        aspectRatio: project.width > project.height ? "16:9" : "9:16" // Rough approximation
+                    }
+                },
+                user: { id: userId }
+            });
+
+            return { success: true, renderId: jobId, message: "Render job queued." };
+
+        } catch (error: any) {
+            console.error("[RenderVideo] Error:", error);
+            throw new functions.https.HttpsError(
+                "internal",
+                `Failed to queue render job: ${error.message}`
+            );
+        }
+    });
 
 /**
  * Inngest API Endpoint
@@ -509,29 +514,32 @@ export const renderVideo = onCall({
  * This is the entry point for Inngest Cloud to call back into our functions
  * to execute steps.
  */
-export const inngestApi = onRequest({
-    secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
-    timeoutSeconds: 540 // 9 minutes
-}, async (req, res) => {
-    const inngestClient = getInngestClient();
+export const inngestApi = functions
+    .runWith({
+        secrets: [inngestSigningKey, inngestEventKey, geminiApiKey],
+        timeoutSeconds: 540 // 9 minutes
+    })
 
-    // 1. Single Video Generation Logic using Veo
-    const generateVideo = generateVideoFn(inngestClient, geminiApiKey);
+    .https.onRequest(async (req, res) => {
+        const inngestClient = getInngestClient();
 
-    // 2. Long Form Video Generation Logic (Daisychaining)
-    const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
+        // 1. Single Video Generation Logic using Veo
+        const generateVideo = generateVideoFn(inngestClient, geminiApiKey);
 
-    // 3. Stitching Function (Server-Side using Google Transcoder)
-    const stitchVideo = stitchVideoFn(inngestClient);
+        // 2. Long Form Video Generation Logic (Daisychaining)
+        const generateLongFormVideo = generateLongFormVideoFn(inngestClient, geminiApiKey);
 
-    const handler = serve({
-        client: inngestClient,
-        functions: [generateVideo, generateLongFormVideo, stitchVideo],
-        signingKey: inngestSigningKey.value(),
+        // 3. Stitching Function (Server-Side using Google Transcoder)
+        const stitchVideo = stitchVideoFn(inngestClient);
+
+        const handler = serve({
+            client: inngestClient,
+            functions: [generateVideo, generateLongFormVideo, stitchVideo],
+            signingKey: inngestSigningKey.value(),
+        });
+
+        return handler(req, res);
     });
-
-    return handler(req, res);
-});
 
 // ----------------------------------------------------------------------------
 // Image Generation (Gemini)
@@ -544,234 +552,236 @@ export const inngestApi = onRequest({
 export const generateImageV3 = generateImageV3Fn();
 export const editImage = editImageFn();
 
-export const generateSpeech = onCall({
-    secrets: [geminiApiKey],
-    timeoutSeconds: 60,
-    memory: "512MiB"
-}, async (request) => {
-    if (!request.auth) {
-        throw new HttpsError("unauthenticated", "User must be authenticated.");
-    }
+export const generateSpeech = functions
+    .runWith({ secrets: [geminiApiKey], timeoutSeconds: 60, memory: "512MB" })
+    .https.onCall(async (data: unknown, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
+        }
 
-    const validation = GenerateSpeechRequestSchema.safeParse(request.data);
-    if (!validation.success) {
-        throw new functions.https.HttpsError("invalid-argument", validation.error.message);
-    }
-    const { text, voice, model } = validation.data;
+        const validation = GenerateSpeechRequestSchema.safeParse(data);
+        if (!validation.success) {
+            throw new functions.https.HttpsError("invalid-argument", validation.error.message);
+        }
+        const { text, voice, model } = validation.data;
 
-    try {
-        console.log(`[generateSpeech] Generating speech with model: ${model}`);
-        const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
-        const apiKey = getGeminiApiKey();
+        try {
+            console.log(`[generateSpeech] Generating speech with model: ${model}`);
+            const modelId = model || FUNCTION_AI_MODELS.SPEECH.GENERATION;
+            const apiKey = getGeminiApiKey();
 
-        // Use REST API for precise control over TTS config
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                contents: [{ parts: [{ text }] }],
-                generationConfig: {
-                    responseModalities: ["AUDIO"],
-                    speechConfig: {
-                        voiceConfig: {
-                            prebuiltVoiceConfig: {
-                                voiceName: voice
+            // Use REST API for precise control over TTS config
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text }] }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: {
+                                    voiceName: voice
+                                }
                             }
                         }
                     }
-                }
-            })
-        });
-
-        if (!response.ok) {
-            const errText = await response.text();
-            throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
-        }
-
-        const result = await response.json();
-
-        // Extract audio data (inlineData)
-        const part = result.candidates?.[0]?.content?.parts?.[0];
-        const audioContent = part?.inlineData?.data;
-
-        if (!audioContent) {
-            console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
-            throw new Error("No audio content returned from API");
-        }
-
-        return { audioContent };
-
-    } catch (error: any) {
-        console.error("[generateSpeech] Error:", error);
-        throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
-    }
-});
-
-export const generateContentStream = onRequest({
-    secrets: [geminiApiKey],
-    timeoutSeconds: 300
-}, (req, res) => {
-    corsHandler(req, res, async () => {
-        if (req.method !== 'POST') {
-            res.status(405).send('Method Not Allowed');
-            return;
-        }
-
-        // Verify Authentication
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).send('Unauthorized');
-            return;
-        }
-        const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
-        if (!idToken) {
-            res.status(401).send('Unauthorized: Missing token');
-            return;
-        }
-        try {
-            await admin.auth().verifyIdToken(idToken);
-        } catch (error) {
-            res.status(403).send('Forbidden: Invalid Token');
-            return;
-        }
-
-        try {
-            const { model, contents, config } = req.body;
-            const modelId = model || "gemini-3-pro-preview";
-
-            // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
-            // Only allow approved models for streaming text generation.
-            // See src/core/config/ai-models.ts for the master list.
-            const ALLOWED_MODELS = [
-                "gemini-3-pro-preview",
-                "gemini-3-flash-preview",
-                "gemini-2.5-flash"
-            ];
-
-            if (!ALLOWED_MODELS.includes(modelId)) {
-                console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
-                res.status(400).send('Invalid or unauthorized model ID.');
-                return;
-            }
-
-            // Initialize SDK Client
-            // Initialize SDK Client
-            const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-
-            // Generate Content Stream
-            const result = await client.models.generateContentStream({
-                model: modelId,
-                contents: contents, // SDK accepts standard Content format
-                config: config
+                })
             });
 
-            res.setHeader('Content-Type', 'text/plain');
-            res.setHeader('Cache-Control', 'no-cache');
-            res.setHeader('Connection', 'keep-alive');
+            if (!response.ok) {
+                const errText = await response.text();
+                throw new Error(`Gemini TTS API Error: ${response.status} ${errText}`);
+            }
 
-            // Iterate over SDK Stream
-            for await (const chunk of result) {
-                const text = chunk.text;
-                if (text) {
-                    res.write(JSON.stringify({ text }) + '\n');
+            const result = await response.json();
+
+            // Extract audio data (inlineData)
+            const part = result.candidates?.[0]?.content?.parts?.[0];
+            const audioContent = part?.inlineData?.data;
+
+            if (!audioContent) {
+                console.error("[generateSpeech] Unexpected response structure:", JSON.stringify(result));
+                throw new Error("No audio content returned from API");
+            }
+
+            return { audioContent };
+
+        } catch (error: any) {
+            console.error("[generateSpeech] Error:", error);
+            throw new functions.https.HttpsError("internal", error.message || "Speech generation failed");
+        }
+    });
+
+export const generateContentStream = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 300
+    })
+    .https.onRequest((req, res) => {
+        corsHandler(req, res, async () => {
+            if (req.method !== 'POST') {
+                res.status(405).send('Method Not Allowed');
+                return;
+            }
+
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+            if (!idToken) {
+                res.status(401).send('Unauthorized: Missing token');
+                return;
+            }
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
+                return;
+            }
+
+            try {
+                const { model, contents, config } = req.body;
+                const modelId = model || "gemini-3-pro-preview";
+
+                // SECURITY: Strict Model Allowlist (Anti-SSRF / Cost Control)
+                // Only allow approved models for streaming text generation.
+                // See src/core/config/ai-models.ts for the master list.
+                const ALLOWED_MODELS = [
+                    "gemini-3-pro-preview",
+                    "gemini-3-flash-preview",
+                    "gemini-2.5-flash"
+                ];
+
+                if (!ALLOWED_MODELS.includes(modelId)) {
+                    console.warn(`[Security] Blocked unauthorized model access: ${modelId}`);
+                    res.status(400).send('Invalid or unauthorized model ID.');
+                    return;
+                }
+
+                // Initialize SDK Client
+                // Initialize SDK Client
+                const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+
+                // Generate Content Stream
+                const result = await client.models.generateContentStream({
+                    model: modelId,
+                    contents: contents, // SDK accepts standard Content format
+                    config: config
+                });
+
+                res.setHeader('Content-Type', 'text/plain');
+                res.setHeader('Cache-Control', 'no-cache');
+                res.setHeader('Connection', 'keep-alive');
+
+                // Iterate over SDK Stream
+                for await (const chunk of result) {
+                    const text = chunk.text;
+                    if (text) {
+                        res.write(JSON.stringify({ text }) + '\n');
+                    }
+                }
+
+                res.end();
+
+            } catch (error: any) {
+                console.error("[generateContentStream] Error:", error);
+                if (!res.headersSent) {
+                    res.status(500).send(error.message);
+                } else {
+                    res.end();
                 }
             }
-
-            res.end();
-
-        } catch (error: any) {
-            console.error("[generateContentStream] Error:", error);
-            if (!res.headersSent) {
-                res.status(500).send(error.message);
-            } else {
-                res.end();
-            }
-        }
+        });
     });
-});
 
-export const ragProxy = onRequest({
-    secrets: [geminiApiKey],
-    timeoutSeconds: 60
-}, (req, res) => {
-    corsHandler(req, res, async () => {
-        // Verify Authentication
-        const authHeader = req.headers.authorization;
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-            res.status(401).send('Unauthorized');
-            return;
-        }
-        const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
-        if (!idToken) {
-            res.status(401).send('Unauthorized: Missing token');
-            return;
-        }
-        try {
-            await admin.auth().verifyIdToken(idToken);
-        } catch (error) {
-            res.status(403).send('Forbidden: Invalid Token');
-            return;
-        }
-
-        try {
-            // SECURITY: Block Method Override Headers to prevent bypassing method checks
-            // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
-
-            // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
-            // Prevents users from deleting files that might belong to others in the shared project.
-            if (req.method === 'DELETE') {
-                res.status(403).send('Forbidden: Method not allowed');
+export const ragProxy = functions
+    .runWith({
+        secrets: [geminiApiKey],
+        timeoutSeconds: 60
+    })
+    .https.onRequest((req, res) => {
+        corsHandler(req, res, async () => {
+            // Verify Authentication
+            const authHeader = req.headers.authorization;
+            if (!authHeader || !authHeader.startsWith('Bearer ')) {
+                res.status(401).send('Unauthorized');
+                return;
+            }
+            const idToken = authHeader.substring(7).trim(); // 'Bearer '.length === 7
+            if (!idToken) {
+                res.status(401).send('Unauthorized: Missing token');
+                return;
+            }
+            try {
+                await admin.auth().verifyIdToken(idToken);
+            } catch (error) {
+                res.status(403).send('Forbidden: Invalid Token');
                 return;
             }
 
-            const baseUrl = 'https://generativelanguage.googleapis.com';
-            const targetPath = req.path;
-            const allowedPrefixes = [
-                '/v1beta/files',
-                '/v1beta/models',
-                '/upload/v1beta/files'
-            ];
+            try {
+                // SECURITY: Block Method Override Headers to prevent bypassing method checks
+                // Express might handle X-HTTP-Method-Override automatically, so strict method checking is key.
 
-            // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
-            // Prevents users from listing all files uploaded to the shared project.
-            // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
-            // Path must NOT be exactly '/v1beta/files' if method is GET.
-            if (req.method === 'GET' && req.path === '/v1beta/files') {
-                res.status(403).send('Forbidden: Listing files is disabled for security');
-                return;
+                // 1. BLOCK DELETE (Data Integrity / Anti-Griefing)
+                // Prevents users from deleting files that might belong to others in the shared project.
+                if (req.method === 'DELETE') {
+                    res.status(403).send('Forbidden: Method not allowed');
+                    return;
+                }
+
+                const baseUrl = 'https://generativelanguage.googleapis.com';
+                const targetPath = req.path;
+                const allowedPrefixes = [
+                    '/v1beta/files',
+                    '/v1beta/models',
+                    '/upload/v1beta/files'
+                ];
+
+                // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
+                // Prevents users from listing all files uploaded to the shared project.
+                // Exception: Getting metadata for a SPECIFIC file is allowed (path has extra segments).
+                // Path must NOT be exactly '/v1beta/files' if method is GET.
+                if (req.method === 'GET' && req.path === '/v1beta/files') {
+                    res.status(403).send('Forbidden: Listing files is disabled for security');
+                    return;
+                }
+
+                const isAllowed = allowedPrefixes.some(prefix =>
+                    req.path === prefix || req.path.startsWith(prefix + '/')
+                );
+
+                if (!isAllowed) {
+                    res.status(403).send('Forbidden: Path not allowed');
+                    return;
+                }
+
+                const queryString = req.url.split('?')[1] || '';
+                const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
+
+                const fetchOptions: RequestInit = {
+                    method: req.method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: (req.method !== 'GET' && req.method !== 'HEAD') ?
+                        (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
+                        : undefined
+                };
+
+                const response = await fetch(targetUrl, fetchOptions);
+                const data = await response.text();
+                res.status(response.status);
+                try { res.send(JSON.parse(data)); } catch { res.send(data); }
+            } catch (error: any) {
+                res.status(500).send({ error: error.message });
             }
-
-            const isAllowed = allowedPrefixes.some(prefix =>
-                req.path === prefix || req.path.startsWith(prefix + '/')
-            );
-
-            if (!isAllowed) {
-                res.status(403).send('Forbidden: Path not allowed');
-                return;
-            }
-
-            const queryString = req.url.split('?')[1] || '';
-            const targetUrl = `${baseUrl}${targetPath}?key=${getGeminiApiKey()}${queryString ? `&${queryString}` : ''}`;
-
-            const fetchOptions: RequestInit = {
-                method: req.method,
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: (req.method !== 'GET' && req.method !== 'HEAD') ?
-                    (typeof req.body === 'object' ? JSON.stringify(req.body) : req.body)
-                    : undefined
-            };
-
-            const response = await fetch(targetUrl, fetchOptions);
-            const data = await response.text();
-            res.status(response.status);
-            try { res.send(JSON.parse(data)); } catch { res.send(data); }
-        } catch (error: any) {
-            res.status(500).send({ error: error.message });
-        }
+        });
     });
-});
 
 // ----------------------------------------------------------------------------
 // DevOps Tools - GKE & GCE Management
