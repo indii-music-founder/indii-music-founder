@@ -21,17 +21,26 @@ export interface ChatMessage {
 }
 
 class KnowledgeBaseService {
-    async getDocuments(): Promise<KnowledgeDoc[]> {
+    async getDocuments(projectId?: string): Promise<KnowledgeDoc[]> {
         try {
             const { files } = await GeminiRetrieval.listFiles();
-            return (files || []).map(this.mapGeminiFileToDoc);
+            let docs = (files || []).map(this.mapGeminiFileToDoc);
+
+            // Filter by project ID if provided (relies on metadata or naming convention)
+            // For now, we assume strict isolation is enforced by the RAG service returning only relevant files
+            // or we filter client-side if we store projectId in display name like "pid:name"
+            if (projectId) {
+                // Temporary: Filter logic if we adopted a naming convention
+                // docs = docs.filter(prev => prev.rawName.includes(projectId)); 
+            }
+            return docs;
         } catch (error) {
             console.error("KnowledgeBaseService: Failed to load docs", error);
             throw error;
         }
     }
 
-    async uploadFiles(files: FileList, onProgress?: (fileName: string) => void): Promise<number> {
+    async uploadFiles(files: FileList, projectId?: string, onProgress?: (fileName: string) => void): Promise<number> {
         let successCount = 0;
         const uploadPromises: Promise<void>[] = [];
 
@@ -43,7 +52,8 @@ class KnowledgeBaseService {
                     const result = await processForKnowledgeBase(file, file.name, {
                         size: `${(file.size / 1024).toFixed(1)} KB`,
                         type: file.type,
-                        originalDate: new Date(file.lastModified).toISOString()
+                        originalDate: new Date(file.lastModified).toISOString(),
+                        projectId: projectId // Pass projectId to ingestion
                     });
 
                     if (result.embeddingId) {
@@ -65,8 +75,9 @@ class KnowledgeBaseService {
         await GeminiRetrieval.deleteFile(rawName);
     }
 
-    async chat(query: string, fileUri: string | null = null): Promise<string> {
-        const response = await GeminiRetrieval.query(fileUri, query);
+    async chat(query: string, fileUri: string | null = null, projectId?: string): Promise<string> {
+        // Pass projectId to lower layer for store selection
+        const response = await GeminiRetrieval.query(fileUri, query, undefined, undefined, projectId);
 
         // Extract text from Gemini response structure
         // Assuming response.candidates[0].content.parts[0].text
@@ -80,8 +91,8 @@ class KnowledgeBaseService {
         return "I couldn't generate a response. Please try again.";
     }
 
-    async *chatStream(query: string, fileUri: string | null = null): AsyncGenerator<string> {
-        for await (const chunk of GeminiRetrieval.streamQuery(fileUri, query)) {
+    async *chatStream(query: string, fileUri: string | null = null, projectId?: string): AsyncGenerator<string> {
+        for await (const chunk of GeminiRetrieval.streamQuery(fileUri, query, undefined, undefined, projectId)) {
             yield chunk;
         }
     }

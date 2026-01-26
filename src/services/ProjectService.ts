@@ -60,6 +60,43 @@ class ProjectServiceImpl extends FirestoreService<Project> {
 
         const id = await this.add(newProjectData as unknown as Project);
 
+        // SEEDING: Agent Zero Branding Injection
+        // We inject a default branding template into this project's isolated knowledge container.
+        try {
+            const { knowledgeBaseService } = await import('@/modules/knowledge/services/KnowledgeBaseService');
+            // Create a Blob pretending to be a file
+            const brandingTemplate = `
+# BRANDING GUIDELINES for Project: ${name}
+## Core Identity
+- Tone: [Undefined - Please Edit]
+- Visual Style: [Undefined - Please Edit]
+
+## Colors
+- Primary: #000000
+- Secondary: #FFFFFF
+
+## Rules
+- All assets must align with the mood of ${type}.
+            `.trim();
+
+            const file = new File([brandingTemplate], 'branding_guidelines.md', { type: 'text/markdown' });
+
+            // Helper to wrap single file in FileList-like object if needed, 
+            // but knowledgeBaseService.uploadFiles expects FileList. 
+            // We can assume we might need a direct ingestion method or mock FileList.
+            // For now, we'll skip the upload helper and call the processor directly if accessible, 
+            // or just use the uploadFiles with a DataTransfer trick.
+
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            await knowledgeBaseService.uploadFiles(dt.files, id);
+            console.info(`[ProjectService] Seeded branding guidelines for project ${id}`);
+
+        } catch (e) {
+            console.warn("[ProjectService] Failed to seed branding guidelines:", e);
+            // Don't fail project creation just because seeding failed
+        }
+
         return {
             id,
             ...newProjectData

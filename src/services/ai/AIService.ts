@@ -24,7 +24,7 @@ import {
     UsageMetadata
 } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 // import { trace } from '../agent/observability/TraceService';
 import { RateLimiter } from './RateLimiter';
 import { delay as asyncDelay } from '@/utils/async';
@@ -337,6 +337,7 @@ export class AIService {
         return requestPromise;
     }
 
+
     /**
      * Retry logic with exponential backoff for transient errors
      */
@@ -429,6 +430,32 @@ export class AIService {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
             logger.error('[AIService] Image Gen Error:', err.message);
             throw err;
+        }
+    }
+
+    /**
+     * Analyze an image using a multimodal model (Flash)
+     */
+    async analyzeImage(prompt: string, imageBase64: string, mimeType: string = 'image/png'): Promise<string> {
+        try {
+            const response = await this.generateContent({
+                model: AI_MODELS.TEXT.FAST, // Flash is best for Vision
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: prompt },
+                        { inlineData: { mimeType, data: imageBase64 } }
+                    ]
+                }],
+                config: {
+                    // Vision tasks usually don't need High Thinking
+                    ...AI_CONFIG.THINKING.LOW
+                }
+            });
+            return response.text();
+        } catch (error) {
+            logger.error('[AIService] Analyze Image Failed:', error);
+            throw error;
         }
     }
 

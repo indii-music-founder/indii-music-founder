@@ -67,6 +67,7 @@ export const departmentCssVars = {
     files: '--color-dept-default',
     dashboard: '--color-dept-default',
     'select-org': '--color-dept-default',
+    debug: '--color-dept-default',
 } as const;
 
 /**
@@ -345,6 +346,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         ring: 'focus-within:ring-dept-default/50',
         hoverText: 'hover:text-white',
         hoverBg: 'hover:bg-dept-default/5',
+        cssVar: '--color-dept-default',
+    },
+    debug: {
+        text: 'text-red-500',
+        bg: 'bg-red-500/10',
+        border: 'border-red-500',
+        ring: 'focus-within:ring-red-500/50',
+        hoverText: 'hover:text-red-400',
+        hoverBg: 'hover:bg-red-500/5',
         cssVar: '--color-dept-default',
     }
 };

@@ -101,7 +101,7 @@ export async function runAgenticWorkflow(
 export async function processForKnowledgeBase(
     content: string | File | Blob,
     fileName: string,
-    _extraMetadata: { size?: string; type?: string; originalDate?: string } = {}
+    _extraMetadata: { size?: string; type?: string; originalDate?: string; projectId?: string } = {}
 ): Promise<{ title: string; content: string; entities: string[]; tags: string[]; embeddingId?: string }> {
     // 1. Extract Metadata (Title, Summary) using standard Gemini
     // We only do this if content is a string or we can read it easily for metadata extraction

@@ -131,6 +131,24 @@ export class AgentRegistry {
         } catch (e) {
             console.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
+        // Register Curriculum Agent (Agent Zero Automation)
+        try {
+            const curriculumMeta = {
+                id: 'curriculum',
+                name: 'Curriculum Agent',
+                description: 'Automates branding alignment by generating tasks and enforcing project-specific style guides.',
+                color: '#FF4081',
+                category: 'specialist',
+                execute: async () => { throw new Error('Cannot execute metadata-only agent'); }
+            } as SpecializedAgent;
+
+            this.registerLazy(curriculumMeta, async () => {
+                const { CurriculumAgent } = await import('./specialists/CurriculumAgent');
+                return new CurriculumAgent();
+            });
+        } catch (e) {
+            console.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
+        }
     }
 
     register(agent: SpecializedAgent) {

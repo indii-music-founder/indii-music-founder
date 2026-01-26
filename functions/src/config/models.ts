@@ -8,7 +8,7 @@
 export const FUNCTION_AI_MODELS = {
     IMAGE: {
         GENERATION: 'gemini-3-pro-image-preview',
-        FAST: 'gemini-3-pro-image-preview', // Force Pro Image (Imagen 3) as Flash Text cannot generate images
+        FAST: 'gemini-2.5-flash-image',
     },
     TEXT: {
         FAST: 'gemini-3-flash-preview',
@@ -16,10 +16,13 @@ export const FUNCTION_AI_MODELS = {
     },
     VIDEO: {
         GENERATION: 'veo-3.1-generate-preview',
-        FAST: 'veo-2.0-generate-001',
+        FAST: 'veo-3.1-generate-preview', // Fixed to use 3.1
     },
     SPEECH: {
         GENERATION: 'gemini-2.5-pro-tts',
+    },
+    AUDIO: {
+        ANALYSIS: 'gemini-3-pro-preview', // Multimodal audio support (Corrected per Model Policy)
     }
 } as const;
 
