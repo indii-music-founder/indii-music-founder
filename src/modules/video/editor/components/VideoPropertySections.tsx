@@ -16,8 +16,9 @@ export const ProjectSettingsSection = memo(({ project }: ProjectSettingsSectionP
             <PropertyRow label="Project Name">
                 <StyledInput
                     type="text"
-                    value={project.name}
+                    value={(project as any).name || 'Untitled Project'}
                     readOnly
+                    onChange={() => { }}
                 />
             </PropertyRow>
         </PanelSection>

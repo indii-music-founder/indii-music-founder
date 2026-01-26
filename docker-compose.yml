@@ -31,6 +31,8 @@ services:
       # Map the full agents directory for profiles
       - ./agents/indii_curriculum:/a0/agents/indii_curriculum
       - ./agents/indii_executor:/a0/agents/indii_executor
+      - ./agents/default:/a0/agents/default
+      - ./agents/agent0:/a0/agents/agent0
     environment:
       - PORT=80
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}

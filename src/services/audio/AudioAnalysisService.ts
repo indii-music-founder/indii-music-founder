@@ -187,7 +187,7 @@ export class AudioAnalysisService {
     }
     */
 
-    private async generateFileHash(file: Blob): Promise<string> {
+    public async generateFileHash(file: Blob): Promise<string> {
         const CHUNK_SIZE = 1024 * 1024; // 1MB
         const blob = file.slice(0, CHUNK_SIZE);
         const arrayBuffer = await blob.arrayBuffer();

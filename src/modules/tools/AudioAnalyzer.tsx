@@ -141,17 +141,24 @@ const AudioAnalyzer: React.FC = () => {
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
-        toast.loading("Initializing Deep Analysis Models... (First run may take time)");
+        const toastId = toast.loading("Initializing Deep Analysis Models... (First run may take time)");
+        let currentToastId = toastId;
 
         try {
             // Run Analysis
-            const { features: result, fromCache } = await audioAnalysisService.analyze(audioFile);
+            // Explicitly type the result to ensure TS knows the shape
+            const analysisResult = await audioAnalysisService.analyze(audioFile);
+            const result = analysisResult.features;
+            const fromCache = analysisResult.fromCache;
+
             setFullAnalysis(result);
             setIsFromCache(fromCache);
 
             if (!fromCache) {
-                toast.dismiss();
+                toast.dismiss(currentToastId);
                 toast.success("Analysis Complete: Neural Network inference successful");
+            } else {
+                toast.dismiss(currentToastId);
             }
 
             setFeatures({
@@ -171,9 +178,12 @@ const AudioAnalyzer: React.FC = () => {
 
             // Add top Genre
             if (result.genre) {
-                const topGenre = Object.entries(result.genre).sort((a, b) => b[1] - a[1])[0];
-                if (topGenre && topGenre[1] > 0.3) {
-                    newTags.push(topGenre[0]);
+                const entries = Object.entries(result.genre);
+                if (entries.length > 0) {
+                    const topGenre = entries.sort((a, b) => b[1] - a[1])[0];
+                    if (topGenre && topGenre[1] > 0.3) {
+                        newTags.push(topGenre[0]);
+                    }
                 }
             }
 
@@ -198,7 +208,7 @@ const AudioAnalyzer: React.FC = () => {
 
         } catch (error) {
             console.error("Deep Analysis Failed", error);
-            toast.dismiss();
+            toast.dismiss(currentToastId);
             toast.error("Deep Analysis failed. Try another file.");
             setIsAnalyzing(false);
         } finally {
@@ -301,7 +311,7 @@ const AudioAnalyzer: React.FC = () => {
             await audioAnalysisService.saveAnalysisToFirestore(fullAnalysis, file.name);
 
             // 2. Save to Music Library Cache
-            const fileHash = await (audioAnalysisService as any).generateFileHash(file);
+            const fileHash = await audioAnalysisService.generateFileHash(file);
             const featuresToSave = {
                 bpm: features.bpm,
                 key: features.key.split(' ')[0],
