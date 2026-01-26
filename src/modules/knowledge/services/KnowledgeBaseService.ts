@@ -24,7 +24,7 @@ class KnowledgeBaseService {
     async getDocuments(projectId?: string): Promise<KnowledgeDoc[]> {
         try {
             const { files } = await GeminiRetrieval.listFiles();
-            let docs = (files || []).map(this.mapGeminiFileToDoc);
+            const docs = (files || []).map(this.mapGeminiFileToDoc);
 
             // Filter by project ID if provided (relies on metadata or naming convention)
             // For now, we assume strict isolation is enforced by the RAG service returning only relevant files
