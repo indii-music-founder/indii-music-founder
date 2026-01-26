@@ -229,10 +229,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             >
                 <PromptInputTextarea
                     placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
+                    aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                 />
 
-                <AttachmentList attachments={commandBarAttachments || []} onRemove={removeAttachment} />
+                <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 
                 <PromptInputActions className="px-2 pb-2">
                     <div className="flex items-center gap-1">
@@ -267,7 +268,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         {!isMobile && (
                             <div className="relative">
                                 <button
-                                    onClick={() => setOpenDelegate(!openDelegate)}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setOpenDelegate(!openDelegate);
+                                    }}
                                     aria-haspopup="true"
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
@@ -287,7 +291,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
                     <div className="flex items-center gap-2 ml-auto">
                         <button
-                            onClick={() => setCommandBarDetached(!isCommandBarDetached)}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCommandBarDetached(!isCommandBarDetached);
+                            }}
                             className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                             title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
                             aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
@@ -296,12 +303,16 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         </button>
 
                         <button
-                            onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setChatChannel(isIndiiMode ? 'agent' : 'indii');
+                            }}
                             className={cn(
                                 "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
                             )}
                             aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
+                            data-testid="mode-toggle-btn"
                         >
                             <div className={cn("w-1.5 h-1.5 rounded-full", isIndiiMode ? "bg-purple-400" : "bg-gray-600")} />
                             indii
@@ -309,7 +320,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <PromptInputAction tooltip="Run command">
                             <button
                                 onClick={(e) => handleSubmit(e)}
-                                disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length || 0) === 0) || isProcessing}
+                                disabled={(!(commandBarInput || '').trim() && commandBarAttachments.length === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                                 data-testid="command-bar-run-btn"
                             >

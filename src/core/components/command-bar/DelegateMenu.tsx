@@ -16,9 +16,6 @@ export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, manag
     // Handle Escape key and initial focus
     useEffect(() => {
         if (isOpen) {
-            // Capture focus
-            const previouslyFocused = document.activeElement as HTMLElement;
-
             // Move focus to the menu container when opened
             // Use requestAnimationFrame to ensure the element is mounted and transitioned
             const timer = setTimeout(() => {
@@ -36,8 +33,6 @@ export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, manag
             return () => {
                 document.removeEventListener('keydown', handleKeyDown);
                 clearTimeout(timer);
-                // Restore focus
-                setTimeout(() => previouslyFocused?.focus(), 0);
             };
         }
     }, [isOpen, onClose]);

@@ -15,6 +15,7 @@ import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
+import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
@@ -108,6 +109,9 @@ export class VideoGenerationService {
             throw new Error(`Quota exceeded: ${quota.reason}`);
         }
 
+        // Security: Sanitize Prompt (Redact PII)
+        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+
         // Temporal context analysis
         let temporalContext = "";
         if (options.firstFrame || options.lastFrame) {
@@ -118,7 +122,7 @@ export class VideoGenerationService {
         }
 
         // Map internal parameters to AI service expectations
-        let enrichedPrompt = this.enrichPrompt(options.prompt, {
+        let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
             fps: options.fps
@@ -192,7 +196,7 @@ export class VideoGenerationService {
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const jobPromise = new Promise((resolve, reject) => {
-            unsub = this.subscribeToJob(jobId, (job) => {
+            unsub = this.subscribeToJob(jobId, async (job) => {
                 if (!job) return;
                 if (job.status === 'completed' || job.status === 'failed') {
                     if (job.status === 'completed') {
@@ -200,11 +204,58 @@ export class VideoGenerationService {
                         const mimeType = job.output?.metadata?.mime_type;
                         if (mimeType && mimeType !== 'video/mp4') {
                             reject(new Error(`Security Violation: Invalid MIME type '${mimeType}'. Expected 'video/mp4'.`));
+                            return;
+                        }
+
+                        // Verify Asset Integrity (Lens 🎥)
+                        // A 404 error on a video URL is a critical failure.
+                        const url = job.output?.url;
+                        if (url) {
+                            // We use a HEAD request to verify existence without downloading the payload
+                            fetch(url, { method: 'HEAD' })
+                                .then(response => {
+                                    if (response.status === 404) {
+                                        reject(new Error("Asset Integrity Failure: Video URL is unreachable (404)."));
+                                    } else {
+                                        resolve(job);
+                                    }
+                                })
+                                .catch(() => {
+                                    // If the integrity check fails due to network issues (not 404),
+                                    // we resolve the job but ideally would log a warning.
+                                    // For now, we assume the asset is likely fine if not explicitly 404.
+                                    resolve(job);
+                                });
                         } else {
                             resolve(job);
+                        // Lens 🎥 Integrity Check: Verify Video Asset Availability (404 Protection)
+                        const videoUrl = job.output?.url;
+                        if (videoUrl) {
+                            try {
+                                // HEAD request to verify existence without downloading payload
+                                const response = await fetch(videoUrl, { method: 'HEAD' });
+                                if (!response.ok) {
+                                    reject(new Error(`Video Asset Not Found (${response.status})`));
+                                    return;
+                                }
+                            } catch (e) {
+                                // Network error during verification should not block generation unless strictly required.
+                                // However, for test purposes and integrity, we log it.
+                                console.warn("Lens: Video verification check failed", e);
+                            }
                         }
+
+                        resolve(job);
                     } else {
-                        reject(new Error(job.error || 'Video generation failed.'));
+                        // Enhanced Safety Reporting
+                        let errorMsg = job.error || 'Video generation failed.';
+                        if (job.safety_ratings && Array.isArray(job.safety_ratings)) {
+                            const blocked = job.safety_ratings.find((r: any) => r.blocked);
+                            if (blocked) {
+                                errorMsg = `Safety Violation: ${blocked.category} (${blocked.probability})`;
+                            }
+                        }
+                        reject(new Error(errorMsg));
                     }
                 }
             });
@@ -237,6 +288,9 @@ export class VideoGenerationService {
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
     }): Promise<{ id: string, url: string, prompt: string }[]> {
+        // Security: Sanitize Prompt (Redact PII)
+        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+
         // Pre-flight duration quota check
         const quotaCheck = await subscriptionService.canPerformAction('generateVideo', options.totalDuration);
         if (!quotaCheck.allowed) {
@@ -255,7 +309,7 @@ export class VideoGenerationService {
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
-        const enrichedPrompt = this.enrichPrompt(options.prompt, {}, options.userProfile);
+        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {}, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 

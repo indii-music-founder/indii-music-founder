@@ -92,19 +92,6 @@ function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
         },
         usage: (): UsageMetadata | undefined => {
             return rawResponse.usageMetadata;
-        },
-        get thoughtSignature() {
-            const parts = rawResponse.candidates?.[0]?.content?.parts;
-            if (parts && parts.length > 0) {
-                // Return the thought signature from the last part that has one
-                for (let i = parts.length - 1; i >= 0; i--) {
-                    const part = parts[i];
-                    if ('thoughtSignature' in part && part.thoughtSignature) {
-                        return part.thoughtSignature;
-                    }
-                }
-            }
-            return undefined;
         }
     };
 }

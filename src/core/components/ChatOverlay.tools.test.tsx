@@ -15,6 +15,17 @@ vi.mock('@/services/ai/VoiceService', () => ({
     voiceService: { speak: vi.fn(), stopSpeaking: vi.fn() }
 }));
 
+// Mock Toast Context
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        toast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+    })
+}));
+
 // Mock Virtuoso
 vi.mock('react-virtuoso', () => ({
     Virtuoso: ({ data, itemContent }: any) => (
@@ -59,6 +70,16 @@ vi.mock('lucide-react', () => ({
     GripHorizontal: () => <span data-testid="icon-grip-horizontal" />,
     Minimize2: () => <span data-testid="icon-minimize-2" />,
     RefreshCw: () => <span data-testid="icon-refresh-cw" />,
+    ExternalLink: () => <span data-testid="icon-external-link" />,
+    Maximize2: () => <span data-testid="icon-maximize-2" />,
+    Camera: () => <span data-testid="icon-camera" />,
+    Mic: () => <span data-testid="icon-mic" />,
+    Paperclip: () => <span data-testid="icon-paperclip" />,
+    ArrowRight: () => <span data-testid="icon-arrow-right" />,
+    Loader2: () => <span data-testid="icon-loader-2" />,
+    ChevronUp: () => <span data-testid="icon-chevron-up" />,
+    PanelTopClose: () => <span data-testid="icon-panel-top-close" />,
+    PanelTopOpen: () => <span data-testid="icon-panel-top-open" />,
 }));
 
 // Mock Child Renderers (Keep these simple)
@@ -96,6 +117,17 @@ const INITIAL_STATE = {
     setGenerationMode: vi.fn(),
     setViewMode: vi.fn(),
     setSelectedItem: vi.fn(),
+    chatChannel: 'agent',
+    setChatChannel: vi.fn(),
+    setCommandBarDetached: vi.fn(),
+    setCommandBarInput: vi.fn(),
+    setCommandBarAttachments: vi.fn(),
+    isCommandBarDetached: false,
+    commandBarInput: '',
+    commandBarAttachments: [],
+    currentModule: 'dashboard',
+    setAgentWindowSize: vi.fn(),
+    agentWindowSize: { width: 400, height: 600 },
 };
 
 describe('👁️ Pixel: Chat Tool Output Verification', () => {

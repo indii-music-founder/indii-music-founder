@@ -69,6 +69,9 @@ vi.mock('framer-motion', () => ({
 describe('PromptArea Accessibility', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // Mock window.innerWidth for desktop
+    Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1024 });
+    window.dispatchEvent(new Event('resize'));
   });
 
   it('renders all action buttons with focus-visible styles', () => {
@@ -88,16 +91,12 @@ describe('PromptArea Accessibility', () => {
     // 3. Delegate/Module Button & Indii Toggle
     // There are two "indii" buttons. One is the delegate menu trigger (left), one is the mode toggle (right).
 
-    const modeToggleBtn = screen.getByRole('button', { name: /toggle indii mode/i });
+    const modeToggleBtn = screen.getByRole('button', { name: /switch to (indii|agent) mode/i });
     expect(modeToggleBtn).toBeInTheDocument();
 
     // The delegate button (module selector) is the one that is NOT the toggle button.
-    // We can find it by finding all buttons with text 'indii' and filtering out the toggle one.
-    // Or, simpler: The delegate button has a ChevronUp icon inside.
-    // But testing implementation details like icons is brittle.
-    // Let's just find all buttons and check them.
-    const allIndiiButtons = screen.getAllByRole('button', { name: /indii/i });
-    const delegateBtn = allIndiiButtons.find(btn => btn !== modeToggleBtn);
+    // Use the explicit aria-label "Select active agent"
+    const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
     expect(delegateBtn).toBeInTheDocument();
 
     // 4. Dock/Detach Button
@@ -135,5 +134,13 @@ describe('PromptArea Accessibility', () => {
     // We can find it via the chevron icon or just by index if we are careful.
     // <button onClick={() => setOpenDelegate(!openDelegate)} ...>
     // It is rendered conditionally !isMobile. We assume desktop environment (default for JSDOM).
+  });
+
+  it('renders textarea with accessible name', () => {
+    render(<PromptArea />);
+    // Based on mock: currentModule='dashboard', isIndiiMode=false (initially)
+    // Label should be "Message dashboard"
+    const textarea = screen.getByRole('textbox', { name: /message dashboard/i });
+    expect(textarea).toBeInTheDocument();
   });
 });
