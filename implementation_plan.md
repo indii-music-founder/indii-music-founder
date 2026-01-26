@@ -1,25 +1,22 @@
-# Implementation Plan - Video Pipeline Hardening
+# Implementation Plan - Video Keyframe Architect & UX Polish
 
-## Objective
+## 1. UX Improvement: Explicit Analysis State
 
-Implement robust video upload handling using Firebase Storage Resumable Uploads and ensure correct metadata handling to align with Firebase Video Best Practices.
+- **Goal**: Clarify to the user *exactly* what the AI is doing (`Analyzing Scene` -> `Predicting Climax` -> `Synthesizing Image`).
+- **Files**: `src/modules/creative/components/CreativeCanvas.tsx`
+- **Change**:
+  - Introduce a `processingStage` state (`idle` | `analyzing` | `synthesizing`).
+  - Pass this state to `CanvasHeader` to display granular toast/status updates.
 
-## Proposed Changes
+## 2. API Hardening: Fix Vision Analysis (400 Error)
 
-### 1. New Service: `VideoUploadService.ts`
+- **Goal**: Resolve the `Invalid Argument` error in `ImageGenerationService.captionImage`.
+- **Files**: `src/services/image/ImageGenerationService.ts`
+- **Fix**:
+  - Verify `AI.generateContent` payload structure matches SDK v1.55+ requirements.
+  - Ensure `AI_MODELS.TEXT.AGENT` supports Vision/Multimodal input (it might be text-only). Switch to a model confirmed for vision if needed (e.g. `gemini-1.5-pro` or the specific preview alias).
+  - `THINKING` config might be incompatible with Vision queries on some models.
 
-- **Location**: `src/services/video/VideoUploadService.ts`
-- **Features**:
-  - `uploadVideo(file, path, metadata)`: Wraps `uploadBytesResumable`.
-  - Enforces `Content-Type: video/mp4` (or detection).
-  - Sets `Cache-Control: public, max-age=3600`.
-  - Progress tracking support.
-  - Error handling for network interruptions.
+## 3. Verification
 
-### 2. Integration
-
-- Ensure `StorageService` can delegate large video uploads to this service or user it directly.
-
-## Verification
-
-- **Test**: `src/services/video/VideoUploadService.test.ts` to mock Firebase Storage and verify metadata setting.
+- **Manual**: Run the `Create Last Frame` flow again via Browser Subagent.

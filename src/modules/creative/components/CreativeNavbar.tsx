@@ -66,6 +66,13 @@ export default function CreativeNavbar() {
                         >
                             Direct
                         </button>
+                        <button
+                            onClick={() => setViewMode('lab')}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'lab' ? 'bg-purple-500/20 text-purple-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                        >
+                            Lab
+                        </button>
                     </div>
                 </div>
 

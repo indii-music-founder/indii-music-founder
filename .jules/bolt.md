@@ -9,3 +9,11 @@
 ## 2026-01-25 - Regex-based Length Filtering
 **Learning:** JS-level length checks inside string processing loops (e.g., `word.length > 3`) still incur allocation costs for the short strings.
 **Action:** Move length filtering to the Regex engine (e.g., `/\S{4,}/g`) to prevent allocation of filtered-out strings entirely.
+
+## 2025-01-25 - Sorting Strings
+**Learning:** `localeCompare` is significantly slower (~45x) than binary operators (`<`, `>`) for simple ASCII strings like ISO dates (`YYYY-MM-DD`).
+**Action:** When sorting IDs, ISO dates, or other ASCII keys where locale rules don't matter, prefer binary comparison.
+
+## 2025-01-26 - Premature React.memo on Atoms
+**Learning:** Applying `React.memo` to generic atomic components (like Button) without profiling is risky. If props (like `onClick` or `children`) are unstable, the memoization overhead is wasted.
+**Action:** Only memoize atoms if measurement shows they are re-rendering frequently with stable props, or if they are "pure" presentational components often used in large lists.

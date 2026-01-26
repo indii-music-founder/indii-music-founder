@@ -1,0 +1,22 @@
+[
+    {
+        "origin": [
+            "http://localhost:4242",
+            "http://localhost:3000",
+            "https://indiios-v-1-1.web.app",
+            "https://indiios-studio.web.app"
+        ],
+        "method": [
+            "GET",
+            "POST",
+            "PUT",
+            "DELETE",
+            "HEAD"
+        ],
+        "responseHeader": [
+            "Content-Type",
+            "x-goog-resumable"
+        ],
+        "maxAgeSeconds": 3600
+    }
+]
