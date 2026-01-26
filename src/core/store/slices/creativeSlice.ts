@@ -128,8 +128,8 @@ export interface CreativeSlice {
     entityAnchor: HistoryItem | null;
     setEntityAnchor: (img: HistoryItem | null) => void;
 
-    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct';
-    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct') => void;
+    viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab';
+    setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab') => void;
 
     prompt: string;
     setPrompt: (prompt: string) => void;

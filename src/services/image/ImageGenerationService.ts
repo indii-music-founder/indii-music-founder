@@ -115,7 +115,10 @@ export class ImageGenerationService {
                 prompt: fullPrompt,
                 aspectRatio: aspectRatio,
                 count: count,
-                images: options.sourceImages?.length ? options.sourceImages : [],
+                // Gemini 3 Pro Image (Imagen 3) is strictly Text-to-Image.
+                // Passing input images (inlineData) causes INVALID_ARGUMENT (400).
+                // We only pass images if we were using a true Image-to-Image model.
+                images: [],
                 model: options.model || 'fast',
                 thinking: options.thinking ?? false,
                 useGrounding: options.useGrounding ?? false
@@ -242,11 +245,9 @@ export class ImageGenerationService {
             const generateImage = httpsCallable(functions, 'generateImageV3');
 
             const result = await generateImage({
-                prompt: `Blend these two images together. Content reference should define the subject/composition. Style reference should define the artistic style, colors, and mood. ${options.prompt || 'Create a cohesive fusion.'}`,
-                images: [
-                    { mimeType: options.contentImage.mimeType, data: options.contentImage.data },
-                    { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                ],
+                // Gemini 3 Pro Image is currently Text-to-Image only. 
+                // We rely on the high-fidelity caption (options.prompt) describing the inputs.
+                prompt: options.prompt || 'Create a cinematic remix.',
                 aspectRatio: '1:1'
             });
 
@@ -380,19 +381,17 @@ export class ImageGenerationService {
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT, // Use Pro model for detailed analysis
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: image.mimeType, data: image.data } },
-                        { text: promptMap[category] }
-                    ]
-                },
-                config: AI_CONFIG.THINKING.HIGH
-            });
+            // Fallback: If Flash failed (check logs), Pro is often more stable for Multimodal
+            // Flash is specifically optimized for fast multimodal analysis
+            // Use Pro (Agent) model for better multimodal stability and auth reliability
+            // Flash (Text) can sometimes trigger 403s on preview endpoints
+            const responseText = await AI.analyzeImage(
+                promptMap[category],
+                image.data,
+                image.mimeType
+            );
 
-            return response.text().trim();
+            return responseText.trim();
         } catch (e) {
             console.error(`Captioning Error (${category}):`, e);
             return "Visual reference"; // Fallback

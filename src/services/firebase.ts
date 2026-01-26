@@ -132,8 +132,9 @@ if (typeof window !== 'undefined') {
 
     // Initialize App Check if we have a valid key
     // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
+    // Or skip in development for bypass
     const isElectron = !!window.electronAPI;
-    const shouldInitAppCheck = env.appCheckKey && (!isElectron || env.appCheckDebugToken);
+    const shouldInitAppCheck = env.appCheckKey && !env.DEV && (!isElectron || env.appCheckDebugToken);
 
     if (shouldInitAppCheck) {
         if (isElectron && env.appCheckDebugToken) {

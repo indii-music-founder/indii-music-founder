@@ -20,6 +20,8 @@ interface CanvasHeaderProps {
     onClose: () => void;
     onSendToWorkflow?: (type: 'firstFrame' | 'lastFrame', item: HistoryItem) => void;
     onRefine?: () => void;
+    onCreateLastFrame?: () => void;
+    processingStatus?: string;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -38,7 +40,9 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     handleAnimate,
     onClose,
     onSendToWorkflow,
-    onRefine
+    onRefine,
+    onCreateLastFrame,
+    processingStatus
 }) => {
     const toast = useToast();
 
@@ -89,7 +93,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                     className="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded flex items-center gap-1"
                                 >
                                     {isProcessing ? <Wand2 size={12} className="animate-spin" /> : <Wand2 size={12} />}
-                                    Generate
+                                    {isProcessing ? (processingStatus || 'Generating...') : 'Generate'}
                                 </button>
                             </div>
                         )}
@@ -154,11 +158,22 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             </div>
                         ) : (
                             <button
-                                onClick={() => setIsSelectingEndFrame(true)}
-                                data-testid="set-last-frame-inline-btn"
-                                className="px-3 py-2 bg-gray-700 hover:bg-gray-600 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                                onClick={onCreateLastFrame || (() => setIsSelectingEndFrame(true))}
+                                data-testid="create-last-frame-inline-btn"
+                                disabled={isProcessing}
+                                className="px-3 py-2 bg-dept-creative hover:bg-dept-creative/80 text-white text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-lg shadow-dept-creative/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
-                                <ImageIcon size={14} /> Set Last Frame
+                                {isProcessing && processingStatus ? (
+                                    <>
+                                        <Wand2 size={14} className="animate-spin" />
+                                        <span>{processingStatus}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        <Sparkles size={14} />
+                                        <span>Create Last Frame</span>
+                                    </>
+                                )}
                             </button>
                         )}
                         <button
