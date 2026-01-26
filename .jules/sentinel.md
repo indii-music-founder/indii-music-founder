@@ -43,3 +43,12 @@
 2. Removed generic `http:`, `https:`, and `ws:` protocols from the allowlist.
 3. Added `media-src` directive (previously missing) to strictly control media playback sources.
 4. Removed dead/insecure code (`SecureStore.ts`) to reduce attack surface.
+
+## 2026-02-19 - [HIGH] Arbitrary File Write in Video Render
+**Vulnerability:** The `video:render` IPC handler accepted an optional `outputLocation` path from the renderer without validation. This allowed a compromised renderer to overwrite arbitrary files on the user's system (e.g., system configuration files) by supplying a malicious path (e.g., `/etc/passwd`).
+**Learning:** Optional parameters in IPC handlers are just as dangerous as required ones. Any path provided by the client (renderer) must be treated as untrusted and strictly validated against allowlists (directories and extensions).
+**Prevention:** Implemented `validateSafeVideoOutputPath` which enforces that output paths are within specific allowed directories (Documents/IndiiOS, UserData, Temp), use allowed extensions (.mp4, .webm, .mov), and do not target system roots. Applied this validation in the `video:render` handler.
+## 2026-01-26 - [HIGH] Arbitrary File Write in Video Render
+**Vulnerability:** The `video:render` IPC handler accepted an arbitrary `outputLocation` path in its configuration object without validation. This allowed a compromised renderer to overwrite arbitrary files on the system (subject to OS user permissions) by triggering a render to a sensitive path.
+**Learning:** Validating specific input fields is insufficient if other fields in the payload control sensitive operations like file writing. Complex config objects passed to IPC need comprehensive validation.
+**Prevention:** Enforced `accessControlService.verifyAccess` and `validateSafeDistributionSource` on `config.outputLocation` in the `video:render` handler.

@@ -98,10 +98,11 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
     }
 
     async updateRelease(releaseId: string, updates: Partial<ExtendedGoldenMetadata>): Promise<ReleaseResult> {
+        // TuneCore API integration needed for updates
         return {
-            success: true,
-            status: 'processing',
-            // Mock update for TuneCore
+            success: false,
+            status: 'failed',
+            errors: [{ code: 'NOT_IMPLEMENTED', message: 'Update API not integrated.' }]
         };
     }
 
@@ -132,7 +133,7 @@ export class TuneCoreAdapter extends BaseDistributorAdapter {
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        return [await this.getEarnings('mock-release-2', period)];
+        return [];
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {
