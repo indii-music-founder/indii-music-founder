@@ -17,3 +17,7 @@
 ## 2025-01-26 - Premature React.memo on Atoms
 **Learning:** Applying `React.memo` to generic atomic components (like Button) without profiling is risky. If props (like `onClick` or `children`) are unstable, the memoization overhead is wasted.
 **Action:** Only memoize atoms if measurement shows they are re-rendering frequently with stable props, or if they are "pure" presentational components often used in large lists.
+
+## 2025-01-26 - Canvas Stroke Batching
+**Learning:** Calling `ctx.stroke()` inside a loop (e.g., for a grid) triggers expensive rasterization for every segment, causing high CPU/GPU overhead (~1300 calls/frame vs 1).
+**Action:** Batch path construction using `ctx.moveTo`/`ctx.lineTo` inside the loop, and call `ctx.stroke()` ONCE at the end. Use separate loops if fill/stroke layering is required.
