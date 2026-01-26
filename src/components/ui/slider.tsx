@@ -25,7 +25,7 @@ const Slider = React.forwardRef<HTMLInputElement, SliderProps>(
             <input
                 type="range"
                 className={cn(
-                    "w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary",
+                    "w-full h-2 bg-secondary rounded-lg appearance-none cursor-pointer accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
                     className
                 )}
                 min={0}
