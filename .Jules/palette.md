@@ -33,3 +33,7 @@
 ## 2026-01-25 - Modal Accessibility and Label Association
 **Learning:** Custom modals often lack the necessary ARIA roles (`dialog`, `aria-modal`) and labeling (`aria-labelledby`) to be perceived correctly by screen readers. Additionally, inputs within them must have explicit label associations (`htmlFor`/`id`) rather than just visual proximity.
 **Action:** When creating or refactoring modals, always implement the standard Dialog pattern (role="dialog", aria-modal="true") and verify that all form inputs have programmatic label associations.
+
+## 2026-05-25 - Custom Input Focus Indicators
+**Learning:** Using `appearance-none` on form inputs (like sliders or checkboxes) to enable custom styling removes the browser's default focus ring, making the element invisible to keyboard users.
+**Action:** Always explicitly re-add focus styles (e.g., `focus-visible:ring`) when using `appearance-none` to ensure keyboard navigability is preserved.
