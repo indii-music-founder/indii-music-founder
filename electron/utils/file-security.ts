@@ -69,6 +69,65 @@ const ALLOWED_AUDIO_EXTENSIONS = new Set([
 ]);
 
 const ALLOWED_VIDEO_EXTENSIONS = new Set([
+    '.mp4', '.webm', '.mov', '.avi', '.mkv'
+]);
+
+/**
+ * Validates that a video output path is safe to write to.
+ * Enforces:
+ * 1. Extension whitelist.
+ * 2. Parent directory existence and safety (via realpath).
+ * 3. Containment within allowed roots.
+ *
+ * @param filePath The raw output path.
+ * @param allowedRoots List of allowed root directories (absolute paths).
+ * @returns The resolved, safe absolute path.
+ * @throws Error if the path is unsafe.
+ */
+export function validateSafeVideoOutputPath(filePath: string, allowedRoots: string[]): string {
+    // 1. Validate Extension
+    const ext = path.extname(filePath).toLowerCase();
+    if (!ALLOWED_VIDEO_EXTENSIONS.has(ext)) {
+        throw new Error(`Security Violation: File type '${ext}' is not allowed`);
+    }
+
+    // 2. Resolve Parent Path (Canonicalize & Resolve Symlinks)
+    const dir = path.dirname(filePath);
+    let resolvedDir: string;
+    try {
+        resolvedDir = fs.realpathSync(dir);
+    } catch {
+        throw new Error(`Security Violation: Parent directory does not exist or is inaccessible`);
+    }
+
+    // 3. Verify Containment in Allowed Roots
+    const resolvedRoots = allowedRoots.map(root => {
+        try {
+            return fs.realpathSync(root);
+        } catch {
+            return root;
+        }
+    });
+
+    const isAllowed = resolvedRoots.some(root => {
+        const safeRoot = root.endsWith(path.sep) ? root : root + path.sep;
+        return resolvedDir === root || resolvedDir.startsWith(safeRoot);
+    });
+
+    if (!isAllowed) {
+        throw new Error(`Security Violation: Output directory '${resolvedDir}' is not in an allowed location`);
+    }
+
+    // 4. Block Hidden Files/Dirs in the filename part
+    const filename = path.basename(filePath);
+    if (filename.startsWith('.')) {
+        throw new Error("Security Violation: Hidden files are not allowed");
+    }
+
+    // Reconstruct the full path using the safe directory and validated filename
+    return path.join(resolvedDir, filename);
+}
+
     '.mp4', '.webm', '.mov'
 ]);
 
@@ -90,7 +149,7 @@ export function validateSafeAudioPath(filePath: string): string {
     try {
         // This throws if file doesn't exist, which is also a security check (don't probe non-existent files)
         resolvedPath = fs.realpathSync(filePath);
-    } catch (error) {
+    } catch {
         throw new Error(`Security Violation: Invalid file path or file not found`);
     }
 
