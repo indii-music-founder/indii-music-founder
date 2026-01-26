@@ -1,3 +1,4 @@
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import NewProjectModal from "./NewProjectModal";
 import { vi } from "vitest";
@@ -74,5 +75,52 @@ describe("NewProjectModal Accessibility", () => {
     fireEvent.click(dialog);
 
     expect(defaultProps.onClose).not.toHaveBeenCalled();
+  });
+});
+
+describe("NewProjectModal Interaction", () => {
+  const defaultProps = {
+    isOpen: true,
+    onClose: vi.fn(),
+    onCreate: vi.fn(),
+    error: null,
+  };
+
+  it("shows loading state during creation", async () => {
+    let resolveCreation: () => void;
+    const onCreatePromise = new Promise<void>((resolve) => {
+      resolveCreation = resolve;
+    });
+    const onCreate = vi.fn().mockReturnValue(onCreatePromise);
+
+    render(
+      <NewProjectModal
+        {...defaultProps}
+        onCreate={onCreate}
+        initialName="My Project"
+      />,
+    );
+
+    const createButton = screen.getByRole("button", {
+      name: /create project/i,
+    });
+
+    // Click to start creation
+    fireEvent.click(createButton);
+
+    // Assert loading state
+    expect(createButton).toBeDisabled();
+    expect(screen.getByText(/creating.../i)).toBeInTheDocument();
+
+    // Resolve the promise
+    resolveCreation!();
+
+    // Wait for loading state to finish (button should be enabled or component unmounted/closed)
+    // In this specific component, it stays open until parent closes it, so we check if it reverts to enabled
+    await waitFor(() => {
+        expect(screen.queryByText(/creating.../i)).not.toBeInTheDocument();
+    });
+
+    expect(screen.getByRole("button", { name: /create project/i })).toBeEnabled();
   });
 });

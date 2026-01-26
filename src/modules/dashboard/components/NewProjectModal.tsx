@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
+import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -27,13 +28,28 @@ export default function NewProjectModal({
   const [type, setType] = useState<
     "creative" | "music" | "marketing" | "legal"
   >(initialType);
+  const [isCreating, setIsCreating] = useState(false);
 
   React.useEffect(() => {
     if (isOpen) {
       setName(initialName);
       setType(initialType);
+      setIsCreating(false);
     }
   }, [isOpen, initialName, initialType]);
+
+  const handleCreate = async () => {
+    if (!name.trim()) return;
+    setIsCreating(true);
+    try {
+      await onCreate(name, type);
+    } catch (e) {
+      // Parent component handles error display via 'error' prop
+      console.error(e);
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -115,16 +131,24 @@ export default function NewProjectModal({
           <div className="flex gap-3 mt-6">
             <button
               onClick={onClose}
-              className="flex-1 py-3 min-h-11 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold transition-colors"
+              disabled={isCreating}
+              className="flex-1 py-3 min-h-11 bg-white/5 hover:bg-white/10 text-white rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cancel
             </button>
             <button
-              onClick={() => onCreate(name, type)}
-              disabled={!name.trim()}
-              className="flex-1 py-3 min-h-11 bg-white hover:bg-neon-blue hover:text-black text-black rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={handleCreate}
+              disabled={!name.trim() || isCreating}
+              className="flex-1 py-3 min-h-11 bg-white hover:bg-neon-blue hover:text-black text-black rounded-lg font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Create Project
+              {isCreating ? (
+                <>
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  Creating...
+                </>
+              ) : (
+                "Create Project"
+              )}
             </button>
           </div>
         </div>
