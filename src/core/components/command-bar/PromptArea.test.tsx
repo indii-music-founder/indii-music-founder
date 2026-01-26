@@ -125,6 +125,41 @@ describe('PromptArea Interaction', () => {
     expect(textarea).toHaveValue('')
     expect(runBtn).toBeDisabled() // Because input is empty
   })
+
+  it('toggles the chat channel between agent and indii modes', async () => {
+    const user = userEvent.setup()
+    render(<PromptArea />)
+
+    // 1. Initial State: Agent mode
+    // Button should offer to switch TO indii mode
+    const toggleBtn = screen.getByTestId('mode-toggle-btn')
+    expect(toggleBtn).toBeInTheDocument()
+    expect(toggleBtn).toHaveAttribute('aria-label', 'Switch to indii mode')
+    // Verify visual state (gray text)
+    expect(toggleBtn.className).toContain('text-gray-500')
+
+    // 2. Interaction: Click to switch to indii
+    await user.click(toggleBtn)
+
+    // 3. Feedback: Button label changes (Switch TO agent)
+    await waitFor(() => {
+      expect(toggleBtn).toHaveAttribute('aria-label', 'Switch to Agent mode')
+    })
+
+    // Verify visual state (purple text)
+    expect(toggleBtn.className).toContain('text-purple-200')
+
+    // 4. Interaction: Click to switch back to agent
+    await user.click(toggleBtn)
+
+    // 5. Feedback: Button label reverts
+    await waitFor(() => {
+      expect(toggleBtn).toHaveAttribute('aria-label', 'Switch to indii mode')
+    })
+
+    // Verify visual state (gray text)
+    expect(toggleBtn.className).toContain('text-gray-500')
+  })
 })
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
