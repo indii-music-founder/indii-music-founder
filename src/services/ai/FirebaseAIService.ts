@@ -612,7 +612,7 @@ export class FirebaseAIService {
             console.log('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
             console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(prompt).substring(0, 500) + "...");
             console.log('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
-        } catch (e) { }
+        } catch (e) { /* Ignore logging errors */ }
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -1207,6 +1207,7 @@ export class FirebaseAIService {
     }
 
     private handleError(error: unknown): AppException {
+        if (error instanceof AppException) return error;
         const msg = error instanceof Error ? error.message : String(error);
 
         // Handle abort signals explicitly (these are retryable)
