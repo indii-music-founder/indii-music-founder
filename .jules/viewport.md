@@ -13,3 +13,7 @@
 ## 2026-05-24 - Mobile Navigation Config Drift
 **Learning:** `MobileNav.tsx` and `Sidebar.tsx` maintain separate, hardcoded lists of navigation items (`toolItems`, `managerItems`). This led to a regression where the "History" module was accessible on desktop but completely missing on mobile.
 **Action:** In the future, verify navigation parity between Desktop (`Sidebar`) and Mobile (`MobileNav`) whenever adding new modules. Ideally, refactor to a shared navigation configuration constant.
+
+## 2026-05-25 - Mobile Layout Fixed Dimensions vs Inset
+**Learning:** `ChatOverlay` was applying fixed pixel dimensions (e.g. `width: 400px`, `bottom: 32px`) from Zustand state even on mobile viewports, breaking the "Virtual Keyboard Squeeze" behavior.
+**Action:** Implemented `useMediaQuery` to switch between fixed positioning (Desktop) and `inset: 0` (Mobile) to ensure the chat window resizes gracefully when the keyboard opens (viewport height shrinks).
