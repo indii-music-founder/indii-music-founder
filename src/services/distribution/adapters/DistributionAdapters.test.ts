@@ -39,6 +39,7 @@ vi.stubGlobal('electronAPI', {
     },
     distribution: {
         buildPackage: vi.fn().mockResolvedValue({ success: true, packagePath: '/tmp/package', files: [] }),
+        stageRelease: vi.fn().mockResolvedValue({ success: true, packagePath: '/tmp/package', files: [] }),
         validateMetadata: vi.fn().mockResolvedValue({ isValid: true })
     }
 });
