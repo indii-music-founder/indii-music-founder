@@ -23,7 +23,7 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     id: 'gene-template',
     name: 'Agent Template',
     systemPrompt: 'Base Prompt',
-    parameters: { temperature: 0.7 },
+    parameters: { temperature: 0.7, thinkingBudget: 1024 },
     generation: 0,
     lineage: []
   };
@@ -42,7 +42,9 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
       systemPrompt: p1.systemPrompt + ' + ' + p2.systemPrompt,
       parameters: {
         // Average temperature (Smart Crossover)
-        temperature: (p1.parameters.temperature + p2.parameters.temperature) / 2
+        temperature: (p1.parameters.temperature + p2.parameters.temperature) / 2,
+        // Average thinking budget
+        thinkingBudget: Math.floor(((p1.parameters.thinkingBudget || 0) + (p2.parameters.thinkingBudget || 0)) / 2)
       },
       generation: Math.max(p1.generation, p2.generation), // Engine increments this
       lineage: [p1.id, p2.id]
@@ -55,7 +57,9 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
       parameters: {
         ...g.parameters,
         // Drift: Add 0.1 to temperature
-        temperature: g.parameters.temperature + 0.1
+        temperature: g.parameters.temperature + 0.1,
+        // Drift: Increase thinking budget (Evolution towards higher intelligence)
+        thinkingBudget: (g.parameters.thinkingBudget || 0) + 512
       }
     }));
 
@@ -75,9 +79,9 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // 1. Setup Micro-Universe (3 Mock Agents)
     const population: AgentGene[] = [
-      { ...mockGene, id: 'agent-1', name: 'Alpha', fitness: 1.0, systemPrompt: 'PROMPT_A', parameters: { temperature: 0.8 } },
-      { ...mockGene, id: 'agent-2', name: 'Beta', fitness: 0.8, systemPrompt: 'PROMPT_B', parameters: { temperature: 0.6 } },
-      { ...mockGene, id: 'agent-3', name: 'Gamma', fitness: 0.5, systemPrompt: 'PROMPT_C', parameters: { temperature: 0.1 } }
+      { ...mockGene, id: 'agent-1', name: 'Alpha', fitness: 1.0, systemPrompt: 'PROMPT_A', parameters: { temperature: 0.8, thinkingBudget: 2048 } },
+      { ...mockGene, id: 'agent-2', name: 'Beta', fitness: 0.8, systemPrompt: 'PROMPT_B', parameters: { temperature: 0.6, thinkingBudget: 1024 } },
+      { ...mockGene, id: 'agent-3', name: 'Gamma', fitness: 0.5, systemPrompt: 'PROMPT_C', parameters: { temperature: 0.1, thinkingBudget: 0 } }
     ];
 
     // 2. Run ONE step
@@ -94,8 +98,12 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     expect(survivor1.id).toBe('agent-1'); // Alpha
     expect(survivor1.fitness).toBe(1.0);
+    // Helix: Verify Gene Loss Prevention (Thinking Budget must be preserved in Elites)
+    expect(survivor1.parameters.thinkingBudget).toBe(2048);
+
     expect(survivor2.id).toBe('agent-2'); // Beta
     expect(survivor2.fitness).toBe(0.8);
+    expect(survivor2.parameters.thinkingBudget).toBe(1024);
 
     // Helix: Verify Elites were NOT mutated (Gene Preservation)
     // The mutation function should NOT have been called for these agents
@@ -136,8 +144,14 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     // Parent 2 (Beta) Temp: 0.6
     // Crossover Average: (0.8 + 0.6) / 2 = 0.7
     // Mutation Drift: 0.7 + 0.1 = 0.8
-    // Note: Floating point precision might need CloseTo
     expect(offspring.parameters.temperature).toBeCloseTo(0.8);
+
+    // Verify Thinking Budget Evolution
+    // Parent 1 (Alpha) Budget: 2048
+    // Parent 2 (Beta) Budget: 1024
+    // Crossover Average: (2048 + 1024) / 2 = 1536
+    // Mutation Drift: 1536 + 512 = 2048
+    expect(offspring.parameters.thinkingBudget).toBe(2048);
   });
 
   it('Mutation Safety: Rejects invalid JSON/Empty Mutations and Retries (Death to the buggy)', async () => {
@@ -148,7 +162,7 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
     mockMutationFn
         .mockRejectedValueOnce(error) // Fail 1 (Invalid JSON)
         .mockResolvedValueOnce({ ...mockGene, systemPrompt: '' }) // Fail 2 (Empty Prompt - Logic should catch this)
-        .mockResolvedValue({ ...mockGene, id: 'child-valid', systemPrompt: 'VALID_MUTATION', parameters: { temperature: 0.5 } }); // Success
+        .mockResolvedValue({ ...mockGene, id: 'child-valid', systemPrompt: 'VALID_MUTATION', parameters: { temperature: 0.5, thinkingBudget: 1024 } }); // Success
 
     // 2. Setup Population (Need breeding)
     const population: AgentGene[] = [
@@ -171,9 +185,6 @@ describe('🧬 Helix: Micro-Universe (Minimal Evolution Scenario)', () => {
 
     // Verify Retries happened
     // Should be called EXACTLY 3 times (Fail, Fail, Success)
-    // 1. mockRejectedValueOnce -> throws error inside mutationFn
-    // 2. mockResolvedValueOnce -> returns empty prompt -> Caught by "Empty Soul" check in Engine
-    // 3. mockResolvedValue -> returns valid
     expect(mockMutationFn).toHaveBeenCalledTimes(3);
   });
 });
