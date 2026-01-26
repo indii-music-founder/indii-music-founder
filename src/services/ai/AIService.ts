@@ -434,29 +434,15 @@ export class AIService {
     }
 
     /**
-     * Analyze an image using a multimodal model (Flash)
+     * MULTIMODAL: Analyze an image (base64 or URL).
+     * Now unified to use FirebaseAIService for consistency.
      */
-    async analyzeImage(prompt: string, imageBase64: string, mimeType: string = 'image/png'): Promise<string> {
-        try {
-            const response = await this.generateContent({
-                model: AI_MODELS.TEXT.FAST, // Flash is best for Vision
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType, data: imageBase64 } }
-                    ]
-                }],
-                config: {
-                    // Vision tasks usually don't need High Thinking
-                    ...AI_CONFIG.THINKING.LOW
-                }
-            });
-            return response.text();
-        } catch (error) {
-            logger.error('[AIService] Analyze Image Failed:', error);
-            throw error;
-        }
+    async analyzeImage(
+        prompt: string,
+        imageBase64: string,
+        mimeType: string = 'image/jpeg'
+    ): Promise<string> {
+        return this.withRetry(() => firebaseAI.analyzeImage(prompt, imageBase64, mimeType));
     }
 
     /**

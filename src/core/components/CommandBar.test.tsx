@@ -101,7 +101,8 @@ const useTestStore = create<TestStoreState>((set) => ({
 // Mock the useStore hook to use our real test store
 vi.mock('@/core/store', () => ({
     useStore: (selector?: (state: TestStoreState) => any) => {
-        return selector ? useTestStore(selector) : useTestStore();
+        const state = useTestStore();
+        return selector ? selector(state) : state;
     }
 }));
 

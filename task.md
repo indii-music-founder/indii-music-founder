@@ -4,8 +4,10 @@
 - [x] API: Fix `captionImage` payload in `ImageGenerationService` (Fix 400 Error). <!-- id: 1 -->
 - [x] API: Fix MIME type detection in `CreativeCanvas` to prevent image/png mismatches. <!-- id: 3 -->
 - [x] Fix build errors in `VideoGenerationService.ts`
+- [x] Stabilization: Fix all type-checking and linting errors for production build.
 - [ ] **USER ACTION**: Verify Agent Zero at <http://localhost:50080> (Auth fixed: Default & Agent0 profiles forced to Gemini 3) <!-- id: 3 -->
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
+- [x] Final Verification: Full `npm run build` success.
 
 ## Tasks - indii Agent (Agent Zero Integration)
 

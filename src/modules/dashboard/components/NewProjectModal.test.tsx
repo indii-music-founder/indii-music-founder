@@ -1,5 +1,4 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { render, screen, fireEvent } from "@testing-library/react";
 import NewProjectModal from "./NewProjectModal";
 import { vi } from "vitest";
 import React from "react";
@@ -118,7 +117,7 @@ describe("NewProjectModal Interaction", () => {
     // Wait for loading state to finish (button should be enabled or component unmounted/closed)
     // In this specific component, it stays open until parent closes it, so we check if it reverts to enabled
     await waitFor(() => {
-        expect(screen.queryByText(/creating.../i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/creating.../i)).not.toBeInTheDocument();
     });
 
     expect(screen.getByRole("button", { name: /create project/i })).toBeEnabled();
