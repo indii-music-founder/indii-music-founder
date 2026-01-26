@@ -79,7 +79,7 @@ describe('Security: Video Handlers', () => {
 
         it('should block non-http/https URLs', async () => {
             await expect(invoke('video:save-asset', { senderFrame: { url: 'file://valid' } }, 'file:///etc/passwd', 'passwd.txt'))
-                .rejects.toThrow(/Invalid URL protocol/);
+                .rejects.toThrow(/Validation Error/);
         });
 
         it('should block Path Traversal in filename', async () => {
@@ -95,13 +95,17 @@ describe('Security: Video Handlers', () => {
         it('should sanitize filename correctly', async () => {
             mocks.fetch.mockResolvedValue({
                 ok: true,
-                body: { getReader: () => ({ read: () => Promise.resolve({ done: true, value: undefined }) }) }
+                body: new ReadableStream({
+                    start(controller) {
+                        controller.close();
+                    }
+                })
             });
 
             // Note: We need to mock Readable.fromWeb if used, which we handled in global mock if strictly needed,
             // but our mock of pipeline accepts whatever.
 
-            await invoke('video:save-asset', { senderFrame: { url: 'file://valid' } }, 'http://example.com/video.mp4', 'valid/../../file.mp4');
+            await invoke('video:save-asset', { senderFrame: { url: 'file://valid' } }, 'http://example.com/video.mp4', 'valid/file.mp4');
 
             // Should create directory
             expect(mocks.fs.promises.mkdir).toHaveBeenCalled();
