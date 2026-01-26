@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { DashboardService } from './DashboardService';
-import { MOCK_SALES_ANALYTICS } from './mockData';
+import { SalesAnalyticsData } from './schema';
 
 // Mock the store
 vi.mock('@/core/store', () => ({
@@ -8,6 +8,17 @@ vi.mock('@/core/store', () => ({
         getState: vi.fn()
     }
 }));
+
+// Define local mock data for testing positive cases
+const TEST_ANALYTICS_DATA: SalesAnalyticsData = {
+    conversionRate: { value: 2.5, trend: 'up', formatted: '2.5%' },
+    totalVisitors: { value: 1000, trend: 'up', formatted: '1,000' },
+    clickRate: { value: 5.0, trend: 'neutral', formatted: '5.0%' },
+    avgOrderValue: { value: 50, trend: 'down', formatted: '$50.00' },
+    revenueChart: [10, 20, 30, 40, 50],
+    period: '30d',
+    lastUpdated: 1234567890
+};
 
 describe('DashboardService', () => {
     beforeEach(() => {
@@ -96,25 +107,15 @@ describe('DashboardService', () => {
 
         const analytics = await DashboardService.getAnalytics();
 
-        // Total generations (images)
-        // Index 1 (image), Index 3 (image), Index 4 (image)
-        // Total 3 images.
         expect(analytics.totalGenerations).toBe(3);
-
-        // Video seconds: 10 + 5 (default) = 15
         expect(analytics.totalVideoSeconds).toBe(15);
 
-        // Weekly Activity:
-        // Index 6: Today (1 item)
-        // Index 5: Yesterday (1 item)
-        // Index 4: 2 days ago (1 item)
-        // Others: 0
         const expectedActivity = [0, 0, 0, 0, 1, 1, 1];
         expect(analytics.weeklyActivity).toEqual(expectedActivity);
     });
 
     it('getSalesAnalytics fetches from API and caches result', async () => {
-        const mockData = { ...MOCK_SALES_ANALYTICS, totalVisitors: { value: 9999, trend: 'up' as const } };
+        const mockData = { ...TEST_ANALYTICS_DATA, totalVisitors: { value: 9999, trend: 'up' as const, formatted: '9,999' } };
 
         // Mock global.fetch
         const fetchMock = vi.fn().mockResolvedValue({
@@ -141,7 +142,7 @@ describe('DashboardService', () => {
         expect(result2.totalVisitors.value).toBe(9999);
     });
 
-    it('getSalesAnalytics falls back to mock data on fetch failure', async () => {
+    it('getSalesAnalytics falls back to zero state on fetch failure', async () => {
         // Mock global.fetch to fail
         const fetchMock = vi.fn().mockRejectedValue(new Error('Network Error'));
         global.fetch = fetchMock;
@@ -151,8 +152,10 @@ describe('DashboardService', () => {
         // Use a different period to avoid cache from previous test
         const result = await DashboardService.getSalesAnalytics('90d');
 
-        // Should return mock data (default values from schema or mockData)
-        expect(result.conversionRate.value).toBe(MOCK_SALES_ANALYTICS.conversionRate.value);
+        // Should return ZERO state, NOT mock data
+        expect(result.conversionRate.value).toBe(0);
+        expect(result.totalVisitors.value).toBe(0);
+        expect(result.period).toBe('90d');
         expect(fetchMock).toHaveBeenCalled();
     });
 
