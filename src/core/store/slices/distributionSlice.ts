@@ -1,5 +1,5 @@
 import { StateCreator } from 'zustand';
-import { DistributorConnection, DistributorId, DashboardRelease } from '@/services/distribution/types/distributor';
+import { DistributorConnection, DistributorId, DashboardRelease, DistributorCredentials } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
 
 import { DistributionSyncService } from '@/services/distribution/DistributionSyncService';
@@ -15,7 +15,7 @@ export interface DistributionSlice {
         error: string | null;
     };
     fetchDistributors: () => Promise<void>;
-    connectDistributor: (distributorId: DistributorId) => Promise<void>;
+    connectDistributor: (distributorId: DistributorId, credentials?: DistributorCredentials) => Promise<void>;
     fetchReleases: () => Promise<void>;
     setReleases: (releases: DashboardRelease[]) => void;
     subscribeToReleases: () => () => void;
@@ -34,8 +34,18 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
         set((state) => ({ distribution: { ...state.distribution, loading: true } }));
 
         try {
-            const connections = await DistributorService.getConnectionStatus();
             const available = DistributorService.getRegisteredDistributors();
+
+            // Attempt to auto-connect using stored credentials for all available distributors
+            await Promise.all(available.map(async (id) => {
+                try {
+                    await DistributorService.connect(id);
+                } catch {
+                    // Ignore connection failures during fetch (e.g. no credentials stored)
+                }
+            }));
+
+            const connections = await DistributorService.getConnectionStatus();
 
             set((state) => ({
                 distribution: {
@@ -56,12 +66,11 @@ export const createDistributionSlice: StateCreator<DistributionSlice> = (set, ge
             }));
         }
     },
-    connectDistributor: async (distributorId: DistributorId) => {
+    connectDistributor: async (distributorId: DistributorId, credentials?: DistributorCredentials) => {
         set((state) => ({ distribution: { ...state.distribution, isConnecting: true, error: null } }));
 
         try {
-            // For Alpha, we simulate connection with mock credentials if none provided
-            await DistributorService.connect(distributorId, { apiKey: 'ALPHA_MOCK_KEY' });
+            await DistributorService.connect(distributorId, credentials);
 
             // Refresh connections after successful connect
             const connections = await DistributorService.getConnectionStatus();
