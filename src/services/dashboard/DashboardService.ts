@@ -62,6 +62,7 @@ const STOP_WORDS = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'a
 interface CachedAnalytics {
     historyRef: HistoryItem[];
     agentMessagesRef: unknown[];
+    projectsCount: number;
     projectsRef: ProjectMetadata[];
     day: number;
     data: AnalyticsData;
@@ -353,10 +354,13 @@ export class DashboardService {
             const currentDay = Math.floor(now / dayMs);
 
             // Bolt Optimization: Check Cache
+            // ⚡ OPTIMIZATION: Use O(1) length check for projects instead of O(N) iteration
+            // The analytics data only uses the count of projects, not their content.
             if (
                 DashboardService.analyticsCache &&
                 DashboardService.analyticsCache.historyRef === history &&
                 DashboardService.analyticsCache.agentMessagesRef === agentMessages &&
+                DashboardService.analyticsCache.projectsCount === projects.length &&
                 DashboardService.analyticsCache.projectsRef === projects &&
                 DashboardService.analyticsCache.day === currentDay
             ) {
@@ -429,6 +433,7 @@ export class DashboardService {
             DashboardService.analyticsCache = {
                 historyRef: history,
                 agentMessagesRef: agentMessages,
+                projectsCount: projects.length,
                 projectsRef: projects,
                 day: currentDay,
                 data: result
