@@ -34,27 +34,33 @@ export const WorkspaceCanvas = () => {
             const cols = Math.ceil(canvas.width / gridSize);
             const rows = Math.ceil(canvas.height / gridSize);
 
+            // 1. Draw Grid Lines (Batched for performance)
+            // Bolt: Batched stroke calls from ~300 to 1 per frame
             ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
             ctx.lineWidth = 1;
+            ctx.beginPath();
 
             for (let i = 0; i < cols; i++) {
                 for (let j = 0; j < rows; j++) {
                     const x = i * gridSize;
                     const y = j * gridSize;
 
-                    // Calculate noise/wave effect
-                    const noise = Math.sin(x * 0.01 + time) * Math.cos(y * 0.01 + time) * 2;
-
-                    ctx.beginPath();
                     ctx.moveTo(x, y);
                     ctx.lineTo(x + gridSize, y);
                     ctx.lineTo(x + gridSize, y + gridSize);
-                    // ctx.lineTo(x, y + gridSize); // Open grid look
-                    ctx.stroke();
+                }
+            }
+            ctx.stroke();
 
+            // 2. Draw Active Points (Overlay)
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.1)'; // Light blue pulse
+
+            for (let i = 0; i < cols; i++) {
+                for (let j = 0; j < rows; j++) {
                     // Occasional active points
                     if (Math.sin(i * 0.5 + time * 2) * Math.cos(j * 0.5 + time) > 0.95) {
-                        ctx.fillStyle = 'rgba(56, 189, 248, 0.1)'; // Light blue pulse
+                        const x = i * gridSize;
+                        const y = j * gridSize;
                         ctx.fillRect(x, y, gridSize, gridSize);
                     }
                 }
