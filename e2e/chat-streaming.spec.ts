@@ -17,10 +17,13 @@ test.describe('Chat Streaming & Interaction', () => {
         await page.waitForFunction(() => !!(window as any).useStore);
 
         // 3. Open Chat Overlay
-        const toggleBtn = page.locator('button[aria-label="Open chat"]');
-        if (await toggleBtn.isVisible()) {
-            await toggleBtn.click();
-        }
+        // Force open via store to be robust against UI changes/animations
+        await page.evaluate(() => {
+            const store = (window as any).useStore;
+            store.setState({ isAgentOpen: true });
+            // Ensure history is empty so we see the "How can I help you?" text
+            store.setState({ agentHistory: [] });
+        });
 
         // Wait for overlay to appear
         // Use a more specific selector if possible, or text that is unique to the overlay
