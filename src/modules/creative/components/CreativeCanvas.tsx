@@ -27,23 +27,21 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     const toast = useToast();
 
     // UI State
-    const [isEditing, setIsEditing] = useState(false);
+    // UI State
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string>('');
+    // Magic Fill is now always available if needed, but we start with standard interaction
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
-    const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
 
     // Data State
     const [prompt, setPrompt] = useState('');
     const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]);
-    const [editDefinitions, setEditDefinitions] = useState<Record<string, string>>({});
-    const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string; data: string } | null>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [magicFillPrompt, setMagicFillPrompt] = useState('');
 
-    // Canvas ref
+    // Canvas ref (kept for potential future restoration of advanced edit features if requested)
     const canvasEl = useRef<HTMLCanvasElement>(null);
 
     // Sync prompt from item
@@ -51,35 +49,12 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         if (item) setPrompt(item.prompt);
     }, [item]);
 
-    // Initialize/dispose canvas
+    // Simplified initialization: removed complex Fabric.js setup for now per user request to simplify layers
     useEffect(() => {
-        if (!item) return;
-
-        if (isEditing && canvasEl.current && !canvasOps.isInitialized()) {
-            const imageUrl = item.url && item.type === 'image' ? item.url : undefined;
-
-            // Initialize with image, then try to load saved state
-            canvasOps.initialize(canvasEl.current, imageUrl, async () => {
-                if (!item) return;
-                const savedState = await getCanvasStateFromStorage(item.id);
-                if (savedState) {
-                    console.info(`[CreativeCanvas] Loading saved state for ${item.id}`);
-                    await canvasOps.loadFromJSON(savedState);
-                }
-            });
-        }
-
         return () => {
-            if (!isEditing) {
-                canvasOps.dispose();
-            }
+            canvasOps.dispose();
         };
-    }, [isEditing, item]);
-
-    // Update brush color when active color changes
-    useEffect(() => {
-        canvasOps.updateBrushColor(activeColor);
-    }, [activeColor]);
+    }, []);
 
     if (!item) return null;
 
@@ -98,37 +73,52 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         }
     };
 
-    const handleMultiEdit = async () => {
-        const prepared = canvasOps.prepareMasksForEdit(editDefinitions, referenceImages);
-
-        if (!prepared) {
-            toast.error('Please define at least one edit prompt and draw annotations.');
-            setIsDefinitionsOpen(true);
+    // Simplified Magic Fill Handler using direct editing (Future: Integreate with mask drawing if needed)
+    const handleMagicFill = async () => {
+        if (!magicFillPrompt) {
+            toast.error("Please describe the edit you want to make.");
             return;
         }
 
         setIsProcessing(true);
-        toast.info('Processing Studio Edits...');
+        toast.info('Processing Magic Edit...');
 
         try {
-            const results = await Editing.multiMaskEdit({
-                image: prepared.baseImage,
-                masks: prepared.masks
-            });
+            // Use ImageGeneration.editImage directly for semantic edits without masks if supported, 
+            // or default to whole image remix. 
+            // For now, we'll assume remixing for simplicity or we can re-introduce masking later.
+            // As per user request "simplify layers", we rely on semantic editing.
 
-            if (results && results.length > 0) {
-                setGeneratedCandidates(results);
-                toast.success(`Generated ${results.length} variations!`);
-            } else {
-                toast.error('Generation failed to produce candidates.');
+            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+            // Extract base64
+            const res = await fetch(item.url);
+            const blob = await res.blob();
+            const mimeType = blob.type || 'image/png';
+            const reader = new FileReader();
+            reader.readAsDataURL(blob);
+
+            reader.onloadend = async () => {
+                const base64data = (reader.result as string).split(',')[1];
+
+                // Using remix for "Magic Fill" style editing on the whole image for now
+                const result = await ImageGeneration.remixImage({
+                    contentImage: { mimeType, data: base64data },
+                    styleImage: { mimeType, data: base64data }, // Self-ref for style
+                    prompt: magicFillPrompt
+                });
+
+                if (result) {
+                    setGeneratedCandidates([{
+                        id: crypto.randomUUID(),
+                        url: result.url,
+                        prompt: magicFillPrompt // Add prompted text to satisfy interface
+                    }]);
+                    toast.success("Edit Generated!");
+                }
             }
-        } catch (error: unknown) {
-            const err = error as { name?: string; code?: string; message?: string };
-            if (err?.name === 'QuotaExceededError' || err?.code === 'QUOTA_EXCEEDED') {
-                toast.error(err.message || 'Limit reached. Please upgrade.');
-            } else {
-                toast.error('Failed to process edits');
-            }
+
+        } catch (error: any) {
+            toast.error(error.message || 'Failed to process edit');
         } finally {
             setIsProcessing(false);
         }
@@ -305,12 +295,10 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     data-testid="creative-canvas-modal-content"
                 >
                     <CanvasHeader
-                        isEditing={isEditing}
-                        setIsEditing={setIsEditing}
                         isMagicFillMode={isMagicFillMode}
                         magicFillPrompt={magicFillPrompt}
                         setMagicFillPrompt={setMagicFillPrompt}
-                        handleMagicFill={handleMultiEdit}
+                        handleMagicFill={handleMagicFill}
                         isProcessing={isProcessing}
                         saveCanvas={saveCanvas}
                         item={item}
@@ -325,57 +313,32 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         processingStatus={processingStatus}
                     />
 
-                    <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative">
-                        {isEditing ? (
-                            <>
-                                <div className="flex h-full w-full">
-                                    <AnnotationPalette
-                                        activeColor={activeColor}
-                                        onColorSelect={setActiveColor}
-                                        colorDefinitions={editDefinitions}
-                                        onOpenDefinitions={() => setIsDefinitionsOpen(true)}
-                                    />
-                                    <CanvasToolbar
-                                        addRectangle={() => canvasOps.addRectangle()}
-                                        addCircle={() => canvasOps.addCircle()}
-                                        addText={() => canvasOps.addText()}
-                                        toggleMagicFill={toggleMagicFill}
-                                        isMagicFillMode={isMagicFillMode}
-                                    />
-                                    <div className="flex-1 flex items-center justify-center bg-gray-900 overflow-auto p-8">
-                                        <canvas ref={canvasEl} />
-                                    </div>
-                                </div>
-
-                                <EditDefinitionsPanel
-                                    isOpen={isDefinitionsOpen}
-                                    onClose={() => setIsDefinitionsOpen(false)}
-                                    definitions={editDefinitions}
-                                    onUpdateDefinition={(id, val) => setEditDefinitions(prev => ({ ...prev, [id]: val }))}
-                                    referenceImages={referenceImages}
-                                    onUpdateReferenceImage={(id, val) => setReferenceImages(prev => ({ ...prev, [id]: val }))}
-                                />
-
-                                <CandidatesCarousel
-                                    candidates={generatedCandidates}
-                                    onSelect={handleCandidateSelect}
-                                    onClose={() => setGeneratedCandidates([])}
-                                />
-                            </>
+                    <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative p-8">
+                        {item.type === 'video' && !item.url.startsWith('data:image') ? (
+                            <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
                         ) : (
-                            item.type === 'video' && !item.url.startsWith('data:image') ? (
-                                <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl" />
-                            ) : (
-                                <div className="relative max-w-full max-h-full">
-                                    <img src={item.url} alt={item.prompt || 'Content'} className="max-w-full max-h-full object-contain shadow-2xl" />
-                                    {item.type === 'video' && item.url.startsWith('data:image') && (
-                                        <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
-                                            STORYBOARD PREVIEW
-                                        </div>
-                                    )}
+                            <div className="relative max-w-full max-h-full group">
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+                                    <p className="text-white font-medium bg-black/50 px-3 py-1 rounded backdrop-blur-md">
+                                        {isMagicFillMode ? "Magic Edit Mode Active" : "Interactive Canvas"}
+                                    </p>
                                 </div>
-                            )
-                        )}
+                                <img src={item.url} alt={item.prompt || 'Content'} className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                                {item.type === 'video' && item.url.startsWith('data:image') && (
+                                    <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
+                                        STORYBOARD PREVIEW
+                                    </div>
+                                )}
+                            </div>
+                        )
+                        }
+
+                        {/* Candidates Overlay */}
+                        <CandidatesCarousel
+                            candidates={generatedCandidates}
+                            onSelect={handleCandidateSelect}
+                            onClose={() => setGeneratedCandidates([])}
+                        />
 
                         <EndFrameSelector
                             isOpen={isSelectingEndFrame}

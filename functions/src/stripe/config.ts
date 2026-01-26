@@ -3,7 +3,7 @@
  */
 
 import Stripe from 'stripe';
-import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
+import { Subscription, SubscriptionTier } from '../shared/subscription/types';
 
 // Initialize Stripe with secret key
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_dummy_for_build', {

@@ -8,8 +8,8 @@ import { onCall } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, getPriceId } from '../stripe/config';
 import Stripe from 'stripe';
-import { CheckoutSessionParams, CheckoutSessionResponse } from '../../../src/services/subscription/types';
-import { Subscription, SubscriptionTier } from '../../../src/services/subscription/types';
+import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
+import { Subscription, SubscriptionTier } from '../shared/subscription/types';
 
 export const createCheckoutSession = onCall(async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;

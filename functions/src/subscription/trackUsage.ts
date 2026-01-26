@@ -6,7 +6,7 @@
 
 import { onCall } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
-import { UsageRecord } from '../../../src/services/subscription/types';
+import { UsageRecord } from '../shared/subscription/types';
 import * as crypto from 'crypto';
 
 export const trackUsage = onCall(async (request) => {
