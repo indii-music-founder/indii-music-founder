@@ -34,7 +34,7 @@ export const generateImageV3Fn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { prompt, aspectRatio, count, model, imageSize, thinking, images, useGrounding } = validation.data;
+        const { prompt, aspectRatio, count, model, imageSize, images, useGrounding } = validation.data;
 
         try {
             console.log(`[generateImageV3] Using REST API for key preservation`);

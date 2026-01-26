@@ -6,8 +6,8 @@
 
 import { onCall } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
-import { UsageStats, SubscriptionTier } from '../../../src/services/subscription/types';
-import { TIER_CONFIGS } from '../../../src/services/subscription/SubscriptionTier';
+import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
+import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
 
 export const getUsageStats = onCall(async (request) => {
   const { userId } = request.data;
@@ -28,7 +28,7 @@ export const getUsageStats = onCall(async (request) => {
     const subscription = subscriptionDoc.data();
 
     if (!subscription) {
-       throw new Error('Subscription data not found');
+      throw new Error('Subscription data not found');
     }
 
     const tier = subscription.tier as SubscriptionTier;
