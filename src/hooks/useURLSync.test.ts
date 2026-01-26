@@ -1,72 +1,73 @@
 import { renderHook } from '@testing-library/react';
+import { useURLSync } from './useURLSync';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { useURLSync } from '@/hooks/useURLSync';
 
-// Mock dependencies
-const mockSetModule = vi.fn();
-const mockNavigate = vi.fn();
-let mockPathname = '/';
-let mockCurrentModule = 'dashboard';
+// Use vi.hoisted to create variables accessible inside vi.mock
+const mocks = vi.hoisted(() => ({
+    navigate: vi.fn(),
+    location: { pathname: '/' },
+    setModule: vi.fn(),
+    currentModule: { value: 'dashboard' }
+}));
 
+// Mock react-router-dom
+vi.mock('react-router-dom', () => ({
+    useNavigate: () => mocks.navigate,
+    useLocation: () => mocks.location
+}));
+
+// Mock Store
 vi.mock('@/core/store', () => ({
     useStore: () => ({
-        currentModule: mockCurrentModule,
-        setModule: mockSetModule,
+        currentModule: mocks.currentModule.value,
+        setModule: mocks.setModule
     })
 }));
 
-vi.mock('react-router-dom', () => ({
-    useNavigate: () => mockNavigate,
-    useLocation: () => ({ pathname: mockPathname })
-}));
-
+// Mock constants
 vi.mock('@/core/constants', () => ({
-    isValidModule: (mod: string) => ['dashboard', 'creative', 'marketing'].includes(mod)
+    isValidModule: (m: string) => ['dashboard', 'creative', 'finance'].includes(m)
 }));
 
 describe('useURLSync', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockPathname = '/';
-        mockCurrentModule = 'dashboard';
+        // Reset mutable mocks
+        mocks.location.pathname = '/';
+        mocks.currentModule.value = 'dashboard';
     });
 
-    it('should update store when URL changes (Deep Link)', () => {
-        mockPathname = '/creative';
-        // Rerender hook to trigger effect
+    it('updates store when URL changes (Deep Link)', () => {
+        mocks.location.pathname = '/creative';
+
         renderHook(() => useURLSync());
 
-        expect(mockSetModule).toHaveBeenCalledWith('creative');
+        expect(mocks.setModule).toHaveBeenCalledWith('creative');
     });
 
-    it('should update URL when store changes', () => {
-        mockCurrentModule = 'marketing';
+    it('updates URL when store changes (Navigation)', () => {
+        mocks.currentModule.value = 'finance';
+        mocks.location.pathname = '/'; // Mismatch
+
         renderHook(() => useURLSync());
 
-        expect(mockNavigate).toHaveBeenCalledWith('/marketing');
+        expect(mocks.navigate).toHaveBeenCalledWith('/finance');
     });
 
-    it('should NOT update URL if store matches URL (Stable)', () => {
-        mockPathname = '/creative';
-        mockCurrentModule = 'creative';
+    it('does not update URL if already matching', () => {
+        mocks.currentModule.value = 'dashboard';
+        mocks.location.pathname = '/';
+
         renderHook(() => useURLSync());
 
-        expect(mockNavigate).not.toHaveBeenCalled();
-        expect(mockSetModule).not.toHaveBeenCalled();
+        expect(mocks.navigate).not.toHaveBeenCalled();
     });
 
-    it('should NOT navigate if sub-path exists but module matches', () => {
-        mockPathname = '/creative/123';
-        mockCurrentModule = 'creative';
+    it('does not update store if module is invalid', () => {
+        mocks.location.pathname = '/invalid';
+
         renderHook(() => useURLSync());
 
-        expect(mockNavigate).not.toHaveBeenCalled();
-    });
-
-    it('should NOT update store for invalid modules', () => {
-        mockPathname = '/invalid-thing';
-        renderHook(() => useURLSync());
-
-        expect(mockSetModule).not.toHaveBeenCalled();
+        expect(mocks.setModule).not.toHaveBeenCalled();
     });
 });
