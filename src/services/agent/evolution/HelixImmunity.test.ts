@@ -27,7 +27,7 @@ describe('🧬 Helix: Immune System & Gene Integrity', () => {
     id: 'base',
     name: 'Base Agent',
     systemPrompt: 'Original Prompt',
-    parameters: { temp: 0.5, model: 'gemini-1' },
+    parameters: { temp: 0.5, model: 'gemini-3-pro-preview' },
     generation: 0,
     lineage: []
   };

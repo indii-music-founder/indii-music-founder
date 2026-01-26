@@ -65,7 +65,7 @@ export interface GoogleSearchRetrieval {
     dynamicRetrievalConfig?: DynamicRetrievalConfig;
 }
 
-export interface CodeExecution { }
+export type CodeExecution = Record<string, never>;
 
 export interface FunctionCallingConfig {
     mode?: 'MODE_UNSPECIFIED' | 'AUTO' | 'ANY' | 'NONE';

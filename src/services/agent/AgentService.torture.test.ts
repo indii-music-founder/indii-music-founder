@@ -201,8 +201,9 @@ describe('🛡️ Shield: Agent Torture Test', () => {
 
         // 1. Check User Prompt is present
         // The first part of the user message should contain the prompt and context
-        const userMessageParts = callArgs.contents[0].parts;
-        const promptText = userMessageParts.find((p: any) => p.text)?.text;
+        const contentsArray = Array.isArray(callArgs.contents) ? callArgs.contents : [callArgs.contents];
+        const userMessageParts = contentsArray?.[0]?.parts;
+        const promptText = userMessageParts?.find((p): p is import('@/shared/types/ai.dto').TextPart => 'text' in p)?.text;
 
         // 2. Assert System Guardrails are present in the prompt text
         // (Since Gemin V2/V3 often puts system prompt in the text or systemInstruction field)
@@ -218,8 +219,8 @@ describe('🛡️ Shield: Agent Torture Test', () => {
         expect(promptText).toContain("CRITICAL RULES");
 
         // Check that the Jailbreak attempt is AFTER the system prompt (Context preservation)
-        const systemIndex = promptText.indexOf("You are indii");
-        const attackIndex = promptText.indexOf(jailbreakPrompt);
+        const systemIndex = (promptText || '').indexOf("You are indii");
+        const attackIndex = (promptText || '').indexOf(jailbreakPrompt);
 
         expect(systemIndex).toBeLessThan(attackIndex);
     });
