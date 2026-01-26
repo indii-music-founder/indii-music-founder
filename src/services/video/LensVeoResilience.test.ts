@@ -55,6 +55,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         vi.useFakeTimers();
         vi.clearAllMocks();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
 
         // Default successful mocks
         mocks.analyzeImage.mockResolvedValue('Calculated temporal context');

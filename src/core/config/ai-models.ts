@@ -59,7 +59,7 @@ export const AI_CONFIG = {
     },
     IMAGE: {
         DEFAULT: {
-            imageConfig: { imageSize: '4K' }, // Changed from 2K to 4K for Pro model
+            imageConfig: { imageSize: '2K' },
             mediaResolution: 'MEDIA_RESOLUTION_HIGH'
         }
     },

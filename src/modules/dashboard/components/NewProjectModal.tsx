@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2 } from "lucide-react";
+import { X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface NewProjectModalProps {
   isOpen: boolean;
@@ -52,18 +54,32 @@ export default function NewProjectModal({
   if (!isOpen) return null;
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4"
+      onClick={(e) => e.target === e.currentTarget && onClose()}
+    >
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        className="glass-panel rounded-2xl p-6 w-full max-w-md shadow-2xl"
+        className="glass-panel rounded-2xl p-6 w-full max-w-md shadow-2xl relative"
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
       >
-        <h2 id="modal-title" className="text-2xl font-bold text-white mb-6">
-          Create New Project
-        </h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 id="modal-title" className="text-2xl font-bold text-white">
+            Create New Project
+          </h2>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            aria-label="Close modal"
+            className="text-white/50 hover:text-white hover:bg-white/10"
+          >
+            <X size={20} />
+          </Button>
+        </div>
         {error && (
           <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg text-red-200 text-sm">
             {error}

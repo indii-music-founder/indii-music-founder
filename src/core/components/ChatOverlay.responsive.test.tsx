@@ -21,6 +21,17 @@ vi.mock('@/core/context/VoiceContext', () => ({
     })
 }));
 
+// Mock Toast Context
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: () => ({
+        toast: vi.fn(),
+        success: vi.fn(),
+        error: vi.fn(),
+        info: vi.fn(),
+        warning: vi.fn(),
+    })
+}));
+
 // Mock react-virtuoso
 vi.mock('react-virtuoso', () => ({
     Virtuoso: ({ data, itemContent }: any) => (
@@ -69,6 +80,18 @@ const veryLongVariableName = "This is a very long string that would definitely b
             activeSessionId: null,
             loadSessions: vi.fn(),
             toggleAgentWindow: vi.fn(),
+            chatChannel: 'agent',
+            setChatChannel: vi.fn(),
+            setModule: vi.fn(),
+            setCommandBarDetached: vi.fn(),
+            setCommandBarInput: vi.fn(),
+            setCommandBarAttachments: vi.fn(),
+            isCommandBarDetached: false,
+            commandBarInput: '',
+            commandBarAttachments: [],
+            currentModule: 'dashboard',
+            setAgentWindowSize: vi.fn(),
+            agentWindowSize: { width: 400, height: 600 },
         };
 
         // Mock useStore selector behavior

@@ -64,6 +64,7 @@ describe('Veo Timeout Handler (Lens)', () => {
         vi.clearAllMocks();
         vi.useFakeTimers();
         service = new VideoGenerationService();
+        global.fetch = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     });
 
     afterEach(() => {
