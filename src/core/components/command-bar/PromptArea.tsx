@@ -302,6 +302,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
                             )}
                             aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
+                            data-testid="mode-toggle-btn"
                         >
                             <div className={cn("w-1.5 h-1.5 rounded-full", isIndiiMode ? "bg-purple-400" : "bg-gray-600")} />
                             indii
