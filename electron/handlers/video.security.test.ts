@@ -233,6 +233,10 @@ describe('Security: Video Handlers', () => {
                 .rejects.toThrow('Security: Unauthorized sender URL');
         });
 
+        it('should block non-http/https URLs', async () => {
+            await expect(invoke('video:save-asset', { senderFrame: { url: 'file://valid' } }, 'file:///etc/passwd', 'passwd.txt'))
+                .rejects.toThrow(/Validation Error/);
+        });
         it('should block SSRF (Local IP)', async () => {
             const handler = handlers['video:save-asset'];
 
@@ -262,6 +266,11 @@ describe('Security: Video Handlers', () => {
             // Mock successful fetch
             (global.fetch as any).mockResolvedValue({
                 ok: true,
+                body: new ReadableStream({
+                    start(controller) {
+                        controller.close();
+                    }
+                })
                 body: new ReadableStream(), // Empty stream
                 statusText: 'OK'
             });
@@ -273,6 +282,7 @@ describe('Security: Video Handlers', () => {
                 '../../../../etc/passwd'
             );
 
+            await invoke('video:save-asset', { senderFrame: { url: 'file://valid' } }, 'http://example.com/video.mp4', 'valid/file.mp4');
             // Verify: Path should be sanitized to just 'passwd' inside the asset dir
             // Mock path is /mock/documents/IndiiOS/Assets/Video
             expect(fs.createWriteStream).toHaveBeenCalledWith(
