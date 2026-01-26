@@ -7,6 +7,7 @@ import { validateSender } from '../utils/ipc-security';
 import { z } from 'zod';
 import { validateSender } from '../utils/ipc-security';
 import { validateSafeUrlAsync } from '../utils/network-security';
+import { validateSafeVideoOutputPath } from '../utils/file-security';
 import { FetchUrlSchema } from '../utils/validation';
 import { accessControlService } from '../security/AccessControlService';
 import { validateSafeDistributionSource } from '../utils/security-checks';
@@ -145,6 +146,13 @@ export function registerVideoHandlers() {
                 if (!accessControlService.verifyAccess(config.outputLocation)) {
                     throw new Error(`Security Violation: Access to ${config.outputLocation} is denied.`);
                 }
+            }
+
+            // SECURITY: Validate outputLocation if provided
+            if (config.outputLocation) {
+                // This validates extension, blocklist, and allowlist (must be in Docs/IndiiOS or Temp)
+                // It throws if invalid
+                config.outputLocation = validateSafeVideoOutputPath(config.outputLocation);
             }
 
             return await electronRenderService.render(config);

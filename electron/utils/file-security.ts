@@ -55,6 +55,8 @@ export function validateSafeAudioPath(filePath: string): string {
     return realPath;
 import fs from 'fs';
 import path from 'path';
+import os from 'os';
+import { app } from 'electron';
 
 // Define Safe System Roots (Allow User directories, deny System)
 const SYSTEM_ROOTS = [
@@ -64,6 +66,10 @@ const SYSTEM_ROOTS = [
 
 const ALLOWED_AUDIO_EXTENSIONS = new Set([
     '.wav', '.mp3', '.flac', '.aiff', '.aif', '.ogg', '.m4a'
+]);
+
+const ALLOWED_VIDEO_EXTENSIONS = new Set([
+    '.mp4', '.webm', '.mov'
 ]);
 
 /**
@@ -103,6 +109,52 @@ export function validateSafeAudioPath(filePath: string): string {
     const segments = resolvedPath.split(path.sep);
     if (segments.some(segment => segment.startsWith('.') && segment !== '.' && segment !== '..')) {
         throw new Error("Security Violation: Access to hidden files is denied");
+    }
+
+    return resolvedPath;
+}
+
+/**
+ * Validates that a video output path is safe to write to.
+ * Does NOT require file existence (since we are writing).
+ * Enforces:
+ * 1. Allowed Extensions.
+ * 2. Path Containment (must be in Documents/IndiiOS, UserData, or Temp).
+ * 3. No System Directories.
+ */
+export function validateSafeVideoOutputPath(filePath: string): string {
+    // 1. Resolve Path (Canonicalize)
+    // We use resolve, not realpathSync, because file might not exist.
+    const resolvedPath = path.resolve(filePath);
+
+    // 2. Validate Extension
+    const ext = path.extname(resolvedPath).toLowerCase();
+    if (!ALLOWED_VIDEO_EXTENSIONS.has(ext)) {
+        throw new Error(`Security Violation: Output file type '${ext}' is not allowed`);
+    }
+
+    // 3. Block System Directories (Explicit Denylist)
+    if (SYSTEM_ROOTS.some(root => resolvedPath.startsWith(root))) {
+        throw new Error(`Security Violation: Write access to system directory '${resolvedPath}' is denied`);
+    }
+
+    // 4. Enforce Containment (Allowlist)
+    // We want to ensure we are writing to expected locations.
+    const allowedRoots = [
+        path.join(app.getPath('documents'), 'IndiiOS'),
+        app.getPath('userData'),
+        os.tmpdir()
+    ].map(p => path.resolve(p)); // Ensure roots are resolved
+
+    const isAllowed = allowedRoots.some(root => {
+        // Check if resolvedPath is inside root
+        // Add separator to ensure we don't match partial folder names (e.g. /tmp vs /tmp_evil)
+        const rootWithSep = root.endsWith(path.sep) ? root : root + path.sep;
+        return resolvedPath === root || resolvedPath.startsWith(rootWithSep);
+    });
+
+    if (!isAllowed) {
+         throw new Error(`Security Violation: Output path '${resolvedPath}' is outside allowed directories`);
     }
 
     return resolvedPath;
