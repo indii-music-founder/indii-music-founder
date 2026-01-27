@@ -201,11 +201,13 @@ export class FirebaseAIService {
      * This is used in development or when App Check is not configured.
      */
     private async initializeFallbackMode(): Promise<void> {
-        const apiKey = env.VITE_API_KEY || env.apiKey;
+        // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
+        const apiKey = env.VITE_API_KEY || env.apiKey || (import.meta as any).env?.GOOGLE_API_KEY || (import.meta as any).env?.GEMINI_API_KEY;
+
         if (!apiKey) {
             throw new AppException(
                 AppErrorCode.INTERNAL_ERROR,
-                'No API key found. Please set VITE_API_KEY in your .env file.'
+                'No API key found. Please set VITE_API_KEY or GOOGLE_API_KEY in your .env file.'
             );
         }
 
