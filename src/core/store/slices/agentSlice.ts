@@ -1,4 +1,15 @@
 import { StateCreator } from 'zustand';
+import { z } from 'zod';
+import { SpecializedAgent } from '@/services/agent/types';
+import { agentRegistry } from '@/services/agent/registry';
+
+const AgentSchema = z.object({
+    id: z.string(),
+    name: z.string(),
+    description: z.string(),
+    color: z.string(),
+    category: z.string(),
+});
 
 export interface AgentMessage {
     id: string;
@@ -68,6 +79,11 @@ export interface AgentSlice {
     // Window Management
     agentWindowSize: { width: number; height: number };
 
+    // Available Agents
+    availableAgents: SpecializedAgent[];
+    isLoadingAgents: boolean;
+    agentsError: string | null;
+
     // Actions
     createSession: (title?: string, initialAgents?: string[]) => string;
     setActiveSession: (sessionId: string) => void;
@@ -93,6 +109,7 @@ export interface AgentSlice {
     setAgentProcessing: (isProcessing: boolean) => void;
     setAgentWindowSize: (size: { width: number; height: number }) => void;
     loadSessions: () => Promise<void>;
+    loadAgents: () => Promise<void>;
 }
 
 export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
@@ -100,6 +117,9 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentHistory: [],
     sessions: {},
     activeSessionId: null,
+    availableAgents: [],
+    isLoadingAgents: false,
+    agentsError: null,
     chatChannel: 'indii', // Default to indii (main orchestrator)
     activeAgentProvider: 'native',
     isKnowledgeBaseEnabled: false,
@@ -349,5 +369,30 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
                 agentHistory: activeId ? sessionMap[activeId].messages : []
             };
         });
+    },
+
+    loadAgents: async () => {
+        set({ isLoadingAgents: true, agentsError: null });
+        try {
+            // Simulate async if needed, or just handle sync failure
+            const agents = agentRegistry.getAll();
+
+            // Validate data integrity
+            const validatedAgents = agents.filter(agent => {
+                const result = AgentSchema.safeParse(agent);
+                if (!result.success) {
+                    console.warn(`[AgentSlice] Invalid agent data for ${agent.id}:`, result.error);
+                    return false;
+                }
+                return true;
+            });
+
+            set({ availableAgents: validatedAgents });
+        } catch (error) {
+            console.error('[AgentSlice] Failed to load agents:', error);
+            set({ agentsError: (error as Error).message || 'Failed to load agents' });
+        } finally {
+            set({ isLoadingAgents: false });
+        }
     }
 });
