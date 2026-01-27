@@ -36,6 +36,46 @@ describe('FileUpload', () => {
         expect(clickSpy).toHaveBeenCalled();
     });
 
+    it('displays error message with alert role', () => {
+        const validateFile = vi.fn().mockReturnValue({ message: 'Invalid file', code: 'INVALID' });
+        render(<FileUpload validateFile={validateFile} />);
+
+        const fileInput = screen.getByLabelText('File input');
+        const file = new File(['test'], 'test.png', { type: 'image/png' });
+
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        const alert = screen.getByRole('alert');
+        expect(alert).toBeInTheDocument();
+        expect(alert).toHaveTextContent('Invalid file');
+    });
+
+    it('displays progress bar with correct ARIA attributes', async () => {
+        render(<FileUpload uploadDelay={500} />); // Slow down upload to capture state
+
+        const fileInput = screen.getByLabelText('File input');
+        const file = new File(['test'], 'test.png', { type: 'image/png' });
+
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        const progressBar = await screen.findByRole('progressbar');
+        expect(progressBar).toBeInTheDocument();
+        expect(progressBar).toHaveAttribute('aria-valuemin', '0');
+        expect(progressBar).toHaveAttribute('aria-valuemax', '100');
+        // Initial value might be 0
+        expect(progressBar).toHaveAttribute('aria-valuenow');
+    });
+
+    it('cancel button has accessible name', async () => {
+        render(<FileUpload uploadDelay={500} />);
+
+        const fileInput = screen.getByLabelText('File input');
+        const file = new File(['test'], 'test.png', { type: 'image/png' });
+
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        const cancelButton = await screen.findByRole('button', { name: /cancel upload/i });
+        expect(cancelButton).toBeInTheDocument();
     it('displays error message with role="alert" when file is too large', async () => {
         render(<FileUpload maxFileSize={100} />); // 100 bytes limit
 
