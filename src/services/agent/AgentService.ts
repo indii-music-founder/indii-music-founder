@@ -102,8 +102,27 @@ export class AgentService {
             if (activeAgentProvider === 'agent-zero') {
                 // Delegate to Agent Zero Service (autonomous Docker container)
                 try {
-                    // TODO: Adapt attachments for Agent Zero (files base64)
-                    const response = await agentZeroService.sendMessage(redactedText);
+                    // Adapt attachments for Agent Zero (files base64 with filenames)
+                    let agentZeroAttachments: { filename: string; base64: string }[] = [];
+
+                    if (attachments && attachments.length > 0) {
+                        agentZeroAttachments = attachments.map((att, index) => {
+                            // Determine extension from mimeType
+                            let ext = 'bin';
+                            if (att.mimeType === 'image/jpeg') ext = 'jpg';
+                            else if (att.mimeType === 'image/png') ext = 'png';
+                            else if (att.mimeType === 'image/webp') ext = 'webp';
+                            else if (att.mimeType === 'application/pdf') ext = 'pdf';
+                            else if (att.mimeType === 'text/plain') ext = 'txt';
+
+                            return {
+                                filename: `upload_${Date.now()}_${index}.${ext}`,
+                                base64: att.base64
+                            };
+                        });
+                    }
+
+                    const response = await agentZeroService.sendMessage(redactedText, agentZeroAttachments);
 
                     updateAgentMessage(responseId, {
                         text: response.message,

@@ -32,6 +32,19 @@ vi.mock('@/services/rag/GeminiRetrievalService', () => ({
     }
 }));
 
+// Mock VideoTools to prevent real execution if not mocked at service level
+vi.mock('@/services/agent/tools/VideoTools', () => ({
+    VideoTools: {
+        generate_video: vi.fn().mockResolvedValue({ success: true, data: { id: 'mock-video' } }),
+        generate_motion_brush: vi.fn().mockResolvedValue({ success: true, data: { url: 'mock-url' } }),
+        batch_edit_videos: vi.fn().mockResolvedValue({ success: true }),
+        extend_video: vi.fn().mockResolvedValue({ success: true }),
+        generate_video_chain: vi.fn().mockResolvedValue({ success: true }),
+        interpolate_sequence: vi.fn().mockResolvedValue({ success: true }),
+        update_keyframe: vi.fn().mockResolvedValue({ success: true })
+    }
+}));
+
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
     db: {},
@@ -93,6 +106,16 @@ vi.mock('@/services/MembershipService', () => ({
         recordSpend: vi.fn().mockResolvedValue(true),
         getCurrentUserId: vi.fn().mockResolvedValue('test-user'),
         getCurrentTier: vi.fn().mockResolvedValue('free')
+    }
+}));
+
+// Mock VideoGenerationService to prevent accidental API calls
+vi.mock('@/services/video/VideoGenerationService', () => ({
+    VideoGeneration: {
+        generateVideo: vi.fn().mockResolvedValue([{ id: 'mock-video-job', url: '', prompt: 'mock prompt' }]),
+        generateLongFormVideo: vi.fn().mockResolvedValue([{ id: 'mock-long-video-job', url: '', prompt: 'mock prompt' }]),
+        waitForJob: vi.fn().mockResolvedValue({ status: 'completed', url: 'http://mock-url' }),
+        subscribeToJob: vi.fn(() => () => { })
     }
 }));
 
