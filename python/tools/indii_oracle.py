@@ -58,7 +58,7 @@ class IndiiOracle(Tool):
 
             # 4. Result Handoff
             return Response(
-                output=f"**Oracle Evaluation Report:**\n\n{response.text}",
+                message=f"**Oracle Evaluation Report:**\n\n{response.text}",
                 additional={
                     "oracle_score": response.text, # Assuming JSON in text
                     "refined_prompt_candidate": True
