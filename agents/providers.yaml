@@ -1,0 +1,11 @@
+architect:
+  model: gemini-3-pro-preview
+  role: "The Architect"
+  description: "High-level reasoning, strategy, and curriculum design."
+  thinking: HIGH
+
+sentinel:
+  model: gemini-3-flash-preview
+  role: "The Sentinel"
+  description: "Fast execution, tool operation, and safety checks."
+  thinking: MEDIUM
