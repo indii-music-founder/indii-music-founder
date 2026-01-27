@@ -75,9 +75,8 @@ class IndiiVideoGen(Tool):
             protocol_path = f"img://{abs_path}&t={time.time()}"
 
             return Response(
-                output=f"**Gemini Video Generation Complete.**\n\nVideo asset ready at: {protocol_path}",
-                additional={"visual": protocol_path},
-                files=[abs_path]
+                message=f"**Gemini Video Generation Complete.**\n\nVideo asset ready at: {protocol_path}",
+                additional={"visual": protocol_path}
             )
 
         except Exception as e:

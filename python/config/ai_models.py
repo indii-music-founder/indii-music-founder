@@ -8,8 +8,8 @@ Centralized to prevent "hard coating" and ensure compliance with Model Policy.
 APPROVED_MODELS = {
     "TEXT_AGENT": "gemini-3-pro-preview",
     "TEXT_FAST": "gemini-3-flash-preview",
-    "IMAGE_GEN": "imagen-4.0-generate-001",
-    "IMAGE_FAST": "imagen-4.0-fast-generate-001",
+    "IMAGE_GEN": "gemini-3-pro-image-preview",
+    "IMAGE_FAST": "gemini-3-flash-image-preview", # Assuming Flash Image variant or mapping to Pro for now if unavailable
     "AUDIO_PRO": "gemini-1.5-pro", # Placeholder until 2.5/3.0 audio IDs confirmed
     "AUDIO_FLASH": "gemini-1.5-flash",
     "VIDEO_GEN": "veo-3.1-generate-preview",

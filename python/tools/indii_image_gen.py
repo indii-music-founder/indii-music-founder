@@ -65,9 +65,8 @@ class IndiiImageGen(Tool):
             # Vector A: Inline Chat (Markdown) 
             # Vector B: Tool Result (Metadata for UI thumbnails)
             return Response(
-                output=f"**Gemini Image Generation Complete.**\n\n![Generated Image]({protocol_path})",
-                additional={"visual": protocol_path},
-                files=[abs_path]
+                message=f"**Gemini Image Generation Complete.**\n\n![Generated Image]({protocol_path})",
+                additional={"visual": protocol_path}
             )
 
         except Exception as e:
