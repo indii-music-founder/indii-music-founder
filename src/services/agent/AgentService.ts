@@ -81,7 +81,6 @@ export class AgentService {
             const context = await this.contextPipeline.buildContext();
 
             // 2. Workflow Coordination (The Brain)
-            // Decide if this is a simple generation or complex orchestration
             const responseId = uuidv4();
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
@@ -96,170 +95,204 @@ export class AgentService {
                 agentId: 'generalist' // Default initially
             });
 
-            // CHECK PROVIDER: If set to 'agent-zero', delegate immediately
-            const { activeAgentProvider } = useStore.getState();
+            // Create a timeout controller
+            const timeoutMs = 60000; // 60s Safety Timeout
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
+            });
 
-            if (activeAgentProvider === 'agent-zero') {
-                // Delegate to Agent Zero Service (autonomous Docker container)
-                try {
-                    // Adapt attachments for Agent Zero (files base64 with filenames)
-                    let agentZeroAttachments: { filename: string; base64: string }[] = [];
-
-                    if (attachments && attachments.length > 0) {
-                        agentZeroAttachments = attachments.map((att, index) => {
-                            // Determine extension from mimeType
-                            let ext = 'bin';
-                            if (att.mimeType === 'image/jpeg') ext = 'jpg';
-                            else if (att.mimeType === 'image/png') ext = 'png';
-                            else if (att.mimeType === 'image/webp') ext = 'webp';
-                            else if (att.mimeType === 'application/pdf') ext = 'pdf';
-                            else if (att.mimeType === 'text/plain') ext = 'txt';
-
-                            return {
-                                filename: `upload_${Date.now()}_${index}.${ext}`,
-                                base64: att.base64
-                            };
-                        });
-                    }
-
-                    const response = await agentZeroService.sendMessage(redactedText, agentZeroAttachments);
-
-                    updateAgentMessage(responseId, {
-                        text: response.message,
-                        isStreaming: false,
-                        thoughts: [{
-                            id: uuidv4(),
-                            text: 'Executed on Agent Zero Container',
-                            timestamp: Date.now(),
-                            type: 'logic',
-                            toolName: 'Agent Zero'
-                        }]
-                    });
-
-                    // If there are tool calls or attachments in response, handle them here
-                    // (e.g. inject as thoughts or formatted text)
-                    if (response.attachments && response.attachments.length > 0) {
-                        // Append attachment links to text
-                        const links = response.attachments.map(url => `\n\n![Generated Asset](${url})`).join('');
-                        updateAgentMessage(responseId, {
-                            text: response.message + links
-                        });
-                    }
-
-                } catch (err: any) {
-                    updateAgentMessage(responseId, {
-                        text: `Agent Zero Error: ${err.message}`,
-                        isStreaming: false,
-                        thoughts: [{
-                            id: uuidv4(),
-                            text: 'Agent Zero Connection Failed',
-                            timestamp: Date.now(),
-                            type: 'error'
-                        }]
-                    });
-                }
-                return;
-            }
-
-            // Use Coordinator
-            let coordinatorResult: string;
-
-            if (forcedAgentId) {
-                coordinatorResult = 'DELEGATED_TO_AGENT';
-            } else {
-                // Pass REDACTED text to the coordinator
-                coordinatorResult = await coordinator.handleUserRequest(redactedText, context, (chunk) => {
-                    // Update the UI optimistically if chunks arrive from fast path
-                    updateAgentMessage(responseId, { text: chunk });
-                });
-            }
-
-            if (coordinatorResult !== 'DELEGATED_TO_AGENT') {
-                // Direct Response from GenAI
+            try {
+                // Main execution logic wrapped in a race with timeout
+                await Promise.race([
+                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId),
+                    timeoutPromise
+                ]);
+            } catch (err: any) {
+                console.error('[AgentService] Message Flow Failed:', err);
                 updateAgentMessage(responseId, {
-                    text: coordinatorResult,
-                    isStreaming: false,
+                    text: `❌ **Error:** ${err.message || 'The request timed out or failed.'}`,
                     thoughts: [{
                         id: uuidv4(),
-                        text: "Executed via Fast Path (Workflow Coordinator)",
+                        text: 'Execution aborted',
                         timestamp: Date.now(),
-                        type: 'logic',
-                        toolName: 'Direct Generation'
+                        type: 'error'
                     }]
                 });
-                return;
-            }
-
-            // 3. Fallback to Agent Orchestration
-            let agentId = forcedAgentId;
-            if (!agentId) {
-                // If coordinator delegated, we determine the best agent
-                // Pass REDACTED text for classification
-                agentId = await this.orchestrator.determineAgent(context, redactedText);
-            }
-
-            // Update agent ID in the placeholder
-            updateAgentMessage(responseId, { agentId });
-
-            let currentStreamedText = '';
-
-            // Pass REDACTED text to the executor
-            const result = await this.executor.execute(agentId, redactedText, context, (event) => {
-                if (event.type === 'token') {
-                    currentStreamedText += event.content;
-                    updateAgentMessage(responseId, { text: currentStreamedText });
-                }
-
-                if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
-                    const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
-
-                    // Firestore explicitly rejects 'undefined' values. We must sanitize.
-                    const newThought: AgentThought = {
-                        id: uuidv4(),
-                        text: event.content || '', // Ensure no undefined text
-                        timestamp: Date.now(),
-                        type: event.type as any, // Typed in interface
-                    };
-
-                    if (event.type === 'tool' || event.type === 'tool_result') {
-                        if (event.toolName) {
-                            newThought.toolName = event.toolName;
-                        }
-                    }
-
-                    // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
-                    // stringify/parse removes all undefined keys.
-                    const safeThought = JSON.parse(JSON.stringify(newThought));
-                    console.log('[AgentService] Adding thought:', safeThought);
-
-                    if (currentMsg) {
-                        updateAgentMessage(responseId, {
-                            thoughts: [...(currentMsg.thoughts || []), safeThought]
-                        });
-                    }
-                }
-            }, undefined, undefined, attachments);
-
-            if (result && result.text) {
-                if (!result.text.includes("Agent Zero")) {
-                    updateAgentMessage(responseId, {
-                        text: result.text,
-                        isStreaming: false,
-                        thoughtSignature: result.thoughtSignature
-                    });
-                }
-            } else {
-                updateAgentMessage(responseId, {
-                    isStreaming: false,
-                    thoughtSignature: result?.thoughtSignature
-                });
+            } finally {
+                // CRITICAL: Always clear streaming state to avoid stuck "..." loading
+                updateAgentMessage(responseId, { isStreaming: false });
             }
 
         } catch (e: unknown) {
             const error = e instanceof Error ? e : new Error(String(e));
-            this.addSystemMessage(`❌ **Error:** ${error.message || 'Unknown error occurred.'}`);
+            this.addSystemMessage(`❌ **Fatal Error:** ${error.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
+        }
+    }
+
+    /**
+     * Internal execution flow for sendMessage, separated for timeout racing.
+     */
+    private async executeFlow(
+        text: string,
+        attachments: { mimeType: string; base64: string }[] | undefined,
+        context: AgentContext,
+        responseId: string,
+        forcedAgentId?: string
+    ): Promise<void> {
+        const { updateAgentMessage } = useStore.getState();
+        const { activeAgentProvider } = useStore.getState();
+
+        // 1. Check Provider: If set to 'agent-zero', delegate immediately
+        if (activeAgentProvider === 'agent-zero') {
+            await this.handleAgentZeroFlow(text, attachments, responseId);
+            return;
+        }
+
+        // 2. Use Coordinator
+        let coordinatorResult: string;
+        if (forcedAgentId) {
+            coordinatorResult = 'DELEGATED_TO_AGENT';
+        } else {
+            // Pass REDACTED text to the coordinator
+            coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
+                // Update the UI optimistically if chunks arrive from fast path
+                updateAgentMessage(responseId, { text: chunk });
+            });
+        }
+
+        if (coordinatorResult !== 'DELEGATED_TO_AGENT') {
+            // Direct Response from GenAI
+            updateAgentMessage(responseId, {
+                text: coordinatorResult,
+                thoughts: [{
+                    id: uuidv4(),
+                    text: "Executed via Fast Path (Workflow Coordinator)",
+                    timestamp: Date.now(),
+                    type: 'logic',
+                    toolName: 'Direct Generation'
+                }]
+            });
+            return;
+        }
+
+        // 3. Fallback to Agent Orchestration (Executor)
+        let agentId = forcedAgentId;
+        if (!agentId) {
+            // If coordinator delegated, we determine the best agent
+            agentId = await this.orchestrator.determineAgent(context, text);
+        }
+
+        // Update agent ID in the placeholder
+        updateAgentMessage(responseId, { agentId });
+
+        let currentStreamedText = '';
+
+        // Pass REDACTED text to the executor
+        const result = await this.executor.execute(agentId, text, context as PipelineContext, (event) => {
+            if (event.type === 'token') {
+                currentStreamedText += event.content;
+                updateAgentMessage(responseId, { text: currentStreamedText });
+            }
+
+            if (event.type === 'thought' || event.type === 'tool' || event.type === 'tool_result') {
+                const currentMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
+
+                // Firestore explicitly rejects 'undefined' values. We must sanitize.
+                const newThought: AgentThought = {
+                    id: uuidv4(),
+                    text: event.content || '', // Ensure no undefined text
+                    timestamp: Date.now(),
+                    type: event.type as any, // Typed in interface
+                };
+
+                if (event.type === 'tool' || event.type === 'tool_result') {
+                    if (event.toolName) {
+                        newThought.toolName = event.toolName;
+                    }
+                }
+
+                // AGGRESSIVE SANITIZATION: Firestore chokes on undefined.
+                const safeThought = JSON.parse(JSON.stringify(newThought));
+
+                if (currentMsg) {
+                    updateAgentMessage(responseId, {
+                        thoughts: [...(currentMsg.thoughts || []), safeThought]
+                    });
+                }
+            }
+        }, undefined, undefined, attachments);
+
+        if (result && result.text) {
+            // Final update with full text and signature
+            updateAgentMessage(responseId, {
+                text: result.text,
+                thoughtSignature: result.thoughtSignature
+            });
+        } else {
+            updateAgentMessage(responseId, {
+                thoughtSignature: result?.thoughtSignature
+            });
+        }
+    }
+
+    private async handleAgentZeroFlow(text: string, attachments: any[] | undefined, responseId: string): Promise<void> {
+        const { updateAgentMessage } = useStore.getState();
+
+        // Adapt attachments for Agent Zero (files base64 with filenames)
+        let agentZeroAttachments: { filename: string; base64: string }[] = [];
+
+        if (attachments && attachments.length > 0) {
+            agentZeroAttachments = attachments.map((att, index) => {
+                // Determine extension from mimeType
+                let ext = 'bin';
+                if (att.mimeType === 'image/jpeg') ext = 'jpg';
+                else if (att.mimeType === 'image/png') ext = 'png';
+                else if (att.mimeType === 'image/webp') ext = 'webp';
+                else if (att.mimeType === 'application/pdf') ext = 'pdf';
+                else if (att.mimeType === 'text/plain') ext = 'txt';
+
+                return {
+                    filename: `upload_${Date.now()}_${index}.${ext}`,
+                    base64: att.base64
+                };
+            });
+        }
+
+        try {
+            const response = await agentZeroService.sendMessage(text, agentZeroAttachments);
+
+            updateAgentMessage(responseId, {
+                text: response.message,
+                thoughts: [{
+                    id: uuidv4(),
+                    text: 'Executed on Agent Zero Container',
+                    timestamp: Date.now(),
+                    type: 'logic',
+                    toolName: 'Agent Zero'
+                }]
+            });
+
+            // If there are tool calls or attachments in response, handle them here
+            if (response.attachments && response.attachments.length > 0) {
+                // Append attachment links to text
+                const links = response.attachments.map(url => `\n\n![Generated Asset](${url})`).join('');
+                updateAgentMessage(responseId, {
+                    text: response.message + links
+                });
+            }
+        } catch (err: any) {
+            updateAgentMessage(responseId, {
+                text: `Agent Zero Error: ${err.message}`,
+                thoughts: [{
+                    id: uuidv4(),
+                    text: 'Agent Zero Connection Failed',
+                    timestamp: Date.now(),
+                    type: 'error'
+                }]
+            });
+            throw err; // Re-throw to be caught by executeFlow catch block
         }
     }
 

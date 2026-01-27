@@ -554,8 +554,17 @@ CURRENT REQUEST: ${task}
                 console.error('[indii:AgentZero] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
-                if (iterations >= MAX_ITERATIONS) {
-                    return { text: `Error after ${iterations} attempts: ${message}`, error: message };
+                // CRITICAL: Break loop immediately on fatal errors to prevent "AI Verification Failed" spam
+                const isFatal = message.includes('Verification Failed') ||
+                    message.includes('PERMISSION_DENIED') ||
+                    message.includes('Unauthenticated') ||
+                    message.includes('App Check');
+
+                if (isFatal || iterations >= MAX_ITERATIONS) {
+                    return {
+                        text: accumulatedResponse || `Fatal Error: ${message}`,
+                        error: message
+                    };
                 }
             }
         }
