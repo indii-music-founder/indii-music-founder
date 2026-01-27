@@ -129,4 +129,68 @@ describe('CreativeSlice - initializeHistory', () => {
         const item = history.find((i: HistoryItem) => i.id === 'item1');
         expect(item.url).toBe('http://real.url/image.png');
     });
+
+    it('should correctly separate items into generated, uploadedImages, and uploadedAudio', async () => {
+        const generatedItem: HistoryItem = {
+            id: 'gen1',
+            type: 'image',
+            url: 'url',
+            prompt: 'prompt',
+            timestamp: 300,
+            projectId: 'p1',
+            origin: 'generated'
+        };
+
+        const uploadedImageItem: HistoryItem = {
+            id: 'upImg1',
+            type: 'image',
+            url: 'url',
+            prompt: 'prompt',
+            timestamp: 200,
+            projectId: 'p1',
+            origin: 'uploaded'
+        };
+
+        const uploadedAudioItem: HistoryItem = {
+            id: 'upAud1',
+            type: 'music',
+            url: 'url',
+            prompt: 'prompt',
+            timestamp: 100,
+            projectId: 'p1',
+            origin: 'uploaded'
+        };
+
+        const otherUploadedItem: HistoryItem = {
+            id: 'upVideo1',
+            type: 'video',
+            url: 'url',
+            prompt: 'prompt',
+            timestamp: 50,
+            projectId: 'p1',
+            origin: 'uploaded'
+        };
+
+        (mockStorageService.loadHistory as any).mockResolvedValue([
+            generatedItem,
+            uploadedImageItem,
+            uploadedAudioItem,
+            otherUploadedItem
+        ]);
+
+        await slice.initializeHistory();
+
+        expect(slice.generatedHistory).toContainEqual(generatedItem);
+        expect(slice.generatedHistory).not.toContainEqual(uploadedImageItem);
+
+        expect(slice.uploadedImages).toContainEqual(uploadedImageItem);
+        expect(slice.uploadedImages).not.toContainEqual(generatedItem);
+
+        expect(slice.uploadedAudio).toContainEqual(uploadedAudioItem);
+
+        // Ensure other uploaded items (like video) don't end up in specific lists if logic dictates
+        expect(slice.generatedHistory).not.toContainEqual(otherUploadedItem);
+        expect(slice.uploadedImages).not.toContainEqual(otherUploadedItem);
+        expect(slice.uploadedAudio).not.toContainEqual(otherUploadedItem);
+    });
 });

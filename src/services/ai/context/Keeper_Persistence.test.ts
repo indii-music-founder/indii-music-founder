@@ -1,6 +1,9 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { sessionService } from '@/services/agent/SessionService';
+
+// ----------------------------------------------------------------------------
+// Mocks - MUST BE HOISTED
+// ----------------------------------------------------------------------------
 
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({
@@ -10,9 +13,7 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('firebase/auth', async (importOriginal) => {
-    const actual = await importOriginal() as any;
     return {
-        ...actual,
         getAuth: vi.fn(() => ({
             currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
         })),
@@ -25,9 +26,7 @@ vi.mock('firebase/auth', async (importOriginal) => {
 });
 
 vi.mock('firebase/firestore', async (importOriginal) => {
-    const actual = await importOriginal() as any;
     return {
-        ...actual,
         Timestamp: {
             now: () => ({ toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
             fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
@@ -38,7 +37,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
         doc: vi.fn(),
-        setDoc: vi.fn(), // Mock setDoc
+        setDoc: vi.fn(),
         getDoc: vi.fn(),
         collection: vi.fn(),
         onSnapshot: vi.fn(),
@@ -54,6 +53,30 @@ vi.mock('firebase/firestore', async (importOriginal) => {
     }
 });
 
+vi.mock('firebase/storage', () => ({
+    getStorage: vi.fn(() => ({}))
+}));
+
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(() => ({})),
+    connectFunctionsEmulator: vi.fn(),
+    httpsCallable: vi.fn()
+}));
+
+vi.mock('firebase/app-check', () => ({
+    initializeAppCheck: vi.fn(),
+    ReCaptchaEnterpriseProvider: vi.fn()
+}));
+
+vi.mock('firebase/remote-config', () => ({
+    getRemoteConfig: vi.fn(() => ({}))
+}));
+
+vi.mock('firebase/ai', () => ({
+    getAI: vi.fn(),
+    VertexAIBackend: vi.fn()
+}));
+
 vi.mock('@/services/OrganizationService', () => ({
     OrganizationService: {
         getCurrentOrgId: vi.fn(() => 'test-org')
@@ -64,8 +87,13 @@ vi.mock('@/services/OrganizationService', () => ({
 const mockSaveHistory = vi.fn().mockResolvedValue({ success: true });
 const mockDeleteHistory = vi.fn().mockResolvedValue({ success: true });
 
+// ----------------------------------------------------------------------------
+// Test Suite
+// ----------------------------------------------------------------------------
+
+import { sessionService } from '@/services/agent/SessionService';
+
 describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
-    let sessionService: any;
 
     beforeEach(async () => {
         vi.clearAllMocks();
@@ -81,12 +109,6 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
                 }
             }
         });
-
-        // Re-import SessionService to ensure mocks are applied and window is seen
-        // Note: In strict ESM this might be tricky, but we are using vitest.
-        // We might need to access the singleton instance if it's already created.
-        const module = await import('@/services/agent/SessionService');
-        sessionService = module.sessionService;
     });
 
     afterEach(() => {
@@ -104,7 +126,7 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
         };
 
         // Act
-        await sessionService.createSession(newSession);
+        await sessionService.createSession(newSession as any);
 
         // Assert: Check if Electron API was called
         expect(mockSaveHistory).toHaveBeenCalledTimes(1);
@@ -130,7 +152,7 @@ describe('📚 Keeper: Persistence (Electron Local Storage)', () => {
         };
 
         // Act
-        await sessionService.updateSession(sessionId, updates);
+        await sessionService.updateSession(sessionId, updates as any);
 
         // Assert
         expect(mockSaveHistory).toHaveBeenCalledTimes(1);
