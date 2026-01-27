@@ -632,6 +632,7 @@ export default function FileUpload({
                   exit={{ opacity: 0, y: -10 }}
                   initial={{ opacity: 0, y: 10 }}
                   role="alert"
+                  aria-live="assertive"
                 >
                   <p className="text-red-500 text-sm dark:text-red-400">
                     {error.message}
