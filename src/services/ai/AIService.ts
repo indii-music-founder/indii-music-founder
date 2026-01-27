@@ -3,7 +3,9 @@ import {
     Content,
     ContentPart,
     TextPart,
+    InlineDataPart,
     FunctionCallPart,
+    FunctionResponsePart,
     GenerateContentResponse,
     GenerateVideoRequest,
     GenerateVideoResponse,
@@ -63,8 +65,22 @@ function isFunctionCallPart(part: ContentPart): part is FunctionCallPart {
  * Wraps raw API response to provide consistent accessor methods
  */
 function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
+    let thoughtSignature: string | undefined;
+
+    // Extract thoughtSignature from the first part of the first candidate if available
+    if (rawResponse.candidates && rawResponse.candidates.length > 0) {
+        const candidate = rawResponse.candidates[0];
+        if (candidate.content?.parts && candidate.content.parts.length > 0) {
+            const part = candidate.content.parts[0];
+            if ('thoughtSignature' in part) {
+                thoughtSignature = part.thoughtSignature;
+            }
+        }
+    }
+
     return {
         response: rawResponse,
+        thoughtSignature,
         text: (): string => {
             const candidates = rawResponse.candidates;
             if (candidates && candidates.length > 0) {
@@ -199,8 +215,9 @@ export class AIService {
                             const lastContent = validContents[validContents.length - 1];
                             if (lastContent.parts.length > 0) {
                                 const lastPart = lastContent.parts[lastContent.parts.length - 1];
-                                // Attach signature to the last part (Text, InlineData, or FunctionCall)
-                                (lastPart as any).thoughtSignature = options.thoughtSignature;
+                                if ('text' in lastPart || 'inlineData' in lastPart || 'functionCall' in lastPart || 'functionResponse' in lastPart) {
+                                    (lastPart as TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart).thoughtSignature = options.thoughtSignature;
+                                }
                             }
                         }
 
@@ -225,13 +242,13 @@ export class AIService {
                                     if ('text' in p) {
                                         return {
                                             text: p.text || '',
-                                            thoughtSignature: (p as any).thoughtSignature
+                                            thoughtSignature: 'thoughtSignature' in p ? (p as { thoughtSignature: string }).thoughtSignature : undefined
                                         } as TextPart;
                                     }
                                     if ('functionCall' in p) {
                                         return {
-                                            functionCall: p.functionCall,
-                                            thoughtSignature: (p as any).thoughtSignature
+                                            functionCall: p.functionCall as { name: string; args: Record<string, unknown> },
+                                            thoughtSignature: 'thoughtSignature' in p ? (p as { thoughtSignature: string }).thoughtSignature : undefined
                                         } as FunctionCallPart;
                                     }
                                     return { text: '' } as TextPart;
@@ -243,7 +260,7 @@ export class AIService {
 
                         if (options.cache !== false && cacheKey) {
                             // Default TTL or from options if added later
-                            this.cache.set(cacheKey, result.response as any, options.cacheTTL);
+                            this.cache.set(cacheKey, result.response as unknown as GenerateContentResponse, options.cacheTTL);
                         }
 
                         return wrapResponse({
@@ -378,8 +395,19 @@ export class AIService {
         try {
             await this.rateLimiter.acquire();
 
-            const contents = options.contents ?? [];
+            const contents = Array.isArray(options.contents) ? [...options.contents] : (options.contents ? [options.contents] : []);
             const tools = options.tools ?? [];
+
+            // Inject thoughtSignature if present
+            if (options.thoughtSignature && contents.length > 0) {
+                const lastContent = contents[contents.length - 1];
+                if (lastContent.parts.length > 0) {
+                    const lastPart = lastContent.parts[lastContent.parts.length - 1];
+                    if ('text' in lastPart || 'inlineData' in lastPart || 'functionCall' in lastPart || 'functionResponse' in lastPart) {
+                        (lastPart as TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart).thoughtSignature = options.thoughtSignature;
+                    }
+                }
+            }
 
             return await firebaseAI.generateContentStream(
                 contents as Content[],
@@ -424,7 +452,7 @@ export class AIService {
             return await this.withRetry(() => firebaseAI.generateImage(
                 options.prompt,
                 options.model,
-                options.config as any
+                options.config as Record<string, unknown>
             ));
         } catch (error) {
             const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
@@ -434,29 +462,15 @@ export class AIService {
     }
 
     /**
-     * Analyze an image using a multimodal model (Flash)
+     * MULTIMODAL: Analyze an image (base64 or URL).
+     * Now unified to use FirebaseAIService for consistency.
      */
-    async analyzeImage(prompt: string, imageBase64: string, mimeType: string = 'image/png'): Promise<string> {
-        try {
-            const response = await this.generateContent({
-                model: AI_MODELS.TEXT.FAST, // Flash is best for Vision
-                contents: [{
-                    role: 'user',
-                    parts: [
-                        { text: prompt },
-                        { inlineData: { mimeType, data: imageBase64 } }
-                    ]
-                }],
-                config: {
-                    // Vision tasks usually don't need High Thinking
-                    ...AI_CONFIG.THINKING.LOW
-                }
-            });
-            return response.text();
-        } catch (error) {
-            logger.error('[AIService] Analyze Image Failed:', error);
-            throw error;
-        }
+    async analyzeImage(
+        prompt: string,
+        imageBase64: string,
+        mimeType: string = 'image/jpeg'
+    ): Promise<string> {
+        return this.withRetry(() => firebaseAI.analyzeImage(prompt, imageBase64, mimeType));
     }
 
     /**

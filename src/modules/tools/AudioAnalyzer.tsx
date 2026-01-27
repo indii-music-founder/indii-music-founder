@@ -142,7 +142,7 @@ const AudioAnalyzer: React.FC = () => {
         setIsAnalyzing(true);
         setIsFromCache(false);
         const toastId = toast.loading("Initializing Deep Analysis Models... (First run may take time)");
-        let currentToastId = toastId;
+        const currentToastId = toastId;
 
         try {
             // Run Analysis

@@ -8,7 +8,8 @@ import {
     Content,
     Part,
     Schema,
-    Tool
+    Tool,
+    SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
 import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
@@ -174,7 +175,7 @@ export class FirebaseAIService {
             // 3. Initialize SDK
             this.model = getGenerativeModel(firebaseAI, {
                 model: modelName,
-                safetySettings: STANDARD_SAFETY_SETTINGS as any
+                safetySettings: STANDARD_SAFETY_SETTINGS as FirebaseSafetySetting[]
             });
 
             if (!this.model) {
@@ -200,11 +201,13 @@ export class FirebaseAIService {
      * This is used in development or when App Check is not configured.
      */
     private async initializeFallbackMode(): Promise<void> {
-        const apiKey = env.VITE_API_KEY || env.apiKey;
+        // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
+        const apiKey = env.VITE_API_KEY || env.apiKey || (import.meta as any).env?.GOOGLE_API_KEY || (import.meta as any).env?.GEMINI_API_KEY;
+
         if (!apiKey) {
             throw new AppException(
                 AppErrorCode.INTERNAL_ERROR,
-                'No API key found. Please set VITE_API_KEY in your .env file.'
+                'No API key found. Please set VITE_API_KEY or GOOGLE_API_KEY in your .env file.'
             );
         }
 
@@ -558,8 +561,12 @@ export class FirebaseAIService {
                         chunks.push(chunk);
                         const chunkText = chunk.text || '';
                         finalText += chunkText;
+                        const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
                         controller.enqueue({
                             text: () => chunkText,
+                            thoughtSignature,
                             functionCalls: () => {
                                 const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
                                     typeof p === 'object' && p !== null && 'functionCall' in p
@@ -576,22 +583,33 @@ export class FirebaseAIService {
         });
 
         // Build wrapped response from accumulated chunks
-        const wrappedResponsePromise = Promise.resolve({
-            response: {
-                candidates: chunks[chunks.length - 1]?.candidates || [],
-                usageMetadata: chunks[chunks.length - 1]?.usageMetadata,
-                text: () => finalText
-            } as unknown as GenerateContentResponse,
-            text: () => finalText,
-            functionCalls: () => {
-                const lastChunk = chunks[chunks.length - 1];
-                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                    typeof p === 'object' && p !== null && 'functionCall' in p
-                );
-                return part ? [part.functionCall] : [];
-            },
-            usage: () => chunks[chunks.length - 1]?.usageMetadata
-        });
+        const wrappedResponsePromise = (async () => {
+            const lastChunk = chunks[chunks.length - 1];
+            // Find the first chunk that had a thoughtSignature
+            const firstWithSignature = chunks.find(c => {
+                const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                return part && 'thoughtSignature' in part && (part as any).thoughtSignature;
+            });
+            const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+            const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
+            return {
+                response: {
+                    candidates: lastChunk?.candidates || [],
+                    usageMetadata: lastChunk?.usageMetadata,
+                    text: () => finalText
+                } as unknown as GenerateContentResponse,
+                text: () => finalText,
+                thoughtSignature,
+                functionCalls: () => {
+                    const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                        typeof p === 'object' && p !== null && 'functionCall' in p
+                    );
+                    return part ? [part.functionCall] : [];
+                },
+                usage: () => lastChunk?.usageMetadata
+            };
+        })();
 
         return { stream, response: wrappedResponsePromise };
     }
@@ -612,7 +630,7 @@ export class FirebaseAIService {
             console.log('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
             console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(prompt).substring(0, 500) + "...");
             console.log('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
-        } catch (e) { }
+        } catch (e) { /* Ignore logging errors */ }
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
@@ -657,8 +675,8 @@ export class FirebaseAIService {
             if (typeof systemInstructionOrConfig === 'string') {
                 systemInstruction = systemInstructionOrConfig;
             } else {
-                config = systemInstructionOrConfig || {};
-                systemInstruction = (config as any).systemInstruction;
+                config = (systemInstructionOrConfig as Record<string, unknown>) || {};
+                systemInstruction = config && typeof config === 'object' && 'systemInstruction' in config ? (config as { systemInstruction: string }).systemInstruction : undefined;
             }
         }
 
@@ -1207,6 +1225,7 @@ export class FirebaseAIService {
     }
 
     private handleError(error: unknown): AppException {
+        if (error instanceof AppException) return error;
         const msg = error instanceof Error ? error.message : String(error);
 
         // Handle abort signals explicitly (these are retryable)

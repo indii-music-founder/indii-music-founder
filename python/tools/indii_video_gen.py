@@ -22,32 +22,42 @@ class IndiiVideoGen(Tool):
             self.set_progress("Initializing Veo video generation...")
 
             # 1. API Call Setup (Zero Hardcoding)
+            from google import genai
+            from google.genai import types
+            
             api_key = AIConfig.get_api_key()
-            # client = genai.Client(api_key=api_key)
-            # model_id = AIConfig.VIDEO_GEN # Ready for production usage
+            client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
+            model_id = AIConfig.VIDEO_GEN 
 
             # Validating input
             if not prompt and not image_path:
                  return Response(message="Error: Prompt or Image Path required.", break_loop=False)
 
-            # Placeholder for actual Veo Call
-            # client = genai.Client(api_key=api_key)
-            # operation = client.models.generate_video(model='veo-...', prompt=prompt, ...)
+            self.set_progress(f"Submitting video request to {model_id}...")
             
-            # Since Veo is preview/experimental, we'll implement the polling simulation
-            # or usage of the actual method if available in the SDK version installed.
-            
-            # Simulation of generation
-            await asyncio.sleep(2) 
-            self.set_progress("Processing video frames...")
-            await asyncio.sleep(2)
+            # 2. Call Veo API
+            # Note: For Image-to-Video, we would pass the image as a part.
+            contents = [prompt] if prompt else []
+            if image_path:
+                # We need to handle local path to binary or URI
+                with open(image_path, "rb") as f:
+                    image_data = f.read()
+                contents.append(types.Part.from_bytes(data=image_data, mime_type="image/png"))
 
-            # 2. Path Resolution
-            # Attempt to get project ID from agent context
+            response = client.models.generate_videos(
+                model=model_id,
+                prompt=prompt,
+                # config=types.GenerateVideosConfig( ... ) # Optional params
+            )
+
+            if not response.generated_videos:
+                return Response(message="Error: Veo API returned no video data.", break_loop=False)
+
+            # 3. Path Resolution
             try:
-                project_id = self.agent.context.id
-            except AttributeError:
-                project_id = "default"
+                project_id = getattr(self.agent.context, 'id', 'default_project')
+            except Exception:
+                project_id = "default_project"
             
             assets_dir = os.path.join(self.PROJECT_ROOT, project_id, "assets", "video")
             os.makedirs(assets_dir, exist_ok=True)
@@ -56,20 +66,21 @@ class IndiiVideoGen(Tool):
             video_filename = f"vid_{timestamp}.mp4"
             video_path = os.path.join(assets_dir, video_filename)
             
-            # Save mock video
+            # Save actual video
+            video_bytes = response.generated_videos[0].video.video_bytes
             with open(video_path, "wb") as f:
-                f.write(self.MOCK_VIDEO_CONTENT) 
+                f.write(video_bytes) 
 
-            # 3. Handle Thumbnail
-            thumb_filename = f"vid_{timestamp}_thumb.png"
-            thumb_path = os.path.join(assets_dir, thumb_filename)
-            # Create dummy thumb
-            with open(thumb_path, "wb") as f:
-                f.write(b"") # Placeholder
-
+            # 4. Handle Thumbnail (Veo might not return one directly yet, so we use the input or a placeholder)
+            thumb_path = image_path if image_path else ""
+            
             return Response(
-                message=f"Video generated! Preview: img://{thumb_path} \n\n[Download Video]({video_path})",
-                break_loop=False
+                message=f"Video generated successfully! \n\n[Download Video]({video_path})",
+                break_loop=False,
+                additional={
+                    "video_path": video_path,
+                    "model": model_id
+                }
             )
 
         except Exception as e:

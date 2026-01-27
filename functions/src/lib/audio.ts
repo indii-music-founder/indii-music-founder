@@ -69,7 +69,7 @@ export const analyzeAudioFn = () => functions
             let audioBase64: string;
             if (audioUrl.startsWith('gs://')) {
                 const admin = await import("firebase-admin");
-                const bucketRegex = /^gs:\/\/([^\/]+)\/(.+)$/;
+                const bucketRegex = /^gs:\/\/([^/]+)\/(.+)$/;
                 const match = audioUrl.match(bucketRegex);
 
                 if (!match) throw new Error("Invalid GCS URI format");

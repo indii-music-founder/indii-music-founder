@@ -28,6 +28,7 @@ export interface FunctionResponsePart {
         name: string;
         response: Record<string, unknown>;
     };
+    thoughtSignature?: string;
 }
 
 export type ContentPart = TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart;
@@ -65,7 +66,7 @@ export interface GoogleSearchRetrieval {
     dynamicRetrievalConfig?: DynamicRetrievalConfig;
 }
 
-export interface CodeExecution { }
+export type CodeExecution = Record<string, never>;
 
 export interface FunctionCallingConfig {
     mode?: 'MODE_UNSPECIFIED' | 'AUTO' | 'ANY' | 'NONE';
@@ -317,6 +318,7 @@ export interface WrappedResponse {
     text: () => string;
     functionCalls: () => FunctionCallPart['functionCall'][];
     usage: () => UsageMetadata | undefined;
+    thoughtSignature?: string;
 }
 
 // ============================================================================
@@ -401,6 +403,7 @@ export interface EmbedContentOptions {
 export interface StreamChunk {
     text: () => string;
     functionCalls: () => FunctionCallPart['functionCall'][];
+    thoughtSignature?: string;
 }
 
 export interface RetryableError extends Error {

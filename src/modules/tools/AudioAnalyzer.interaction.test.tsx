@@ -37,8 +37,24 @@ vi.mock('@/services/music/MusicLibraryService', () => ({
 
 vi.mock('@/services/audio/AudioAnalysisService', () => ({
     audioAnalysisService: {
-        analyze: vi.fn().mockResolvedValue({ bpm: 120, key: 'C', scale: 'major', energy: 0.5, duration: 100 }),
+        analyze: vi.fn().mockResolvedValue({
+            features: {
+                bpm: 120,
+                key: 'C',
+                scale: 'major',
+                energy: 0.5,
+                duration: 100,
+                moods: { happy: 0.8 },
+                genre: { House: 0.9 },
+                danceability: 0.5,
+                valence: 0.8,
+                voice_instrumental: 0,
+            },
+            fromCache: false
+        }),
         generateFileHash: vi.fn().mockResolvedValue('MOCK-HASH'),
+        saveAnalysisToFirestore: vi.fn().mockResolvedValue(undefined),
+        analyzeBuffer: vi.fn().mockResolvedValue({ bpm: 120, key: 'C', scale: 'major', energy: 0.5, duration: 20 }),
     },
 }));
 
@@ -93,7 +109,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
                 expect.objectContaining({ bpm: 120 }),
                 'MOCK-HASH'
             );
-            expect(mockToast.success).toHaveBeenCalledWith('Sonic DNA successfully synchronized with your Music Library.');
+            expect(mockToast.success).toHaveBeenCalledWith('Analysis saved to Database & Library.');
         });
     });
 });

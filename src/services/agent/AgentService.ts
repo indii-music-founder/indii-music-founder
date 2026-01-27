@@ -7,6 +7,7 @@ import { AgentContext } from './types';
 import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
+import { agentZeroService } from './AgentZeroService';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -94,6 +95,71 @@ export class AgentService {
                 thoughts: [],
                 agentId: 'generalist' // Default initially
             });
+
+            // CHECK PROVIDER: If set to 'agent-zero', delegate immediately
+            const { activeAgentProvider } = useStore.getState();
+
+            if (activeAgentProvider === 'agent-zero') {
+                // Delegate to Agent Zero Service (autonomous Docker container)
+                try {
+                    // Adapt attachments for Agent Zero (files base64 with filenames)
+                    let agentZeroAttachments: { filename: string; base64: string }[] = [];
+
+                    if (attachments && attachments.length > 0) {
+                        agentZeroAttachments = attachments.map((att, index) => {
+                            // Determine extension from mimeType
+                            let ext = 'bin';
+                            if (att.mimeType === 'image/jpeg') ext = 'jpg';
+                            else if (att.mimeType === 'image/png') ext = 'png';
+                            else if (att.mimeType === 'image/webp') ext = 'webp';
+                            else if (att.mimeType === 'application/pdf') ext = 'pdf';
+                            else if (att.mimeType === 'text/plain') ext = 'txt';
+
+                            return {
+                                filename: `upload_${Date.now()}_${index}.${ext}`,
+                                base64: att.base64
+                            };
+                        });
+                    }
+
+                    const response = await agentZeroService.sendMessage(redactedText, agentZeroAttachments);
+
+                    updateAgentMessage(responseId, {
+                        text: response.message,
+                        isStreaming: false,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Executed on Agent Zero Container',
+                            timestamp: Date.now(),
+                            type: 'logic',
+                            toolName: 'Agent Zero'
+                        }]
+                    });
+
+                    // If there are tool calls or attachments in response, handle them here
+                    // (e.g. inject as thoughts or formatted text)
+                    if (response.attachments && response.attachments.length > 0) {
+                        // Append attachment links to text
+                        const links = response.attachments.map(url => `\n\n![Generated Asset](${url})`).join('');
+                        updateAgentMessage(responseId, {
+                            text: response.message + links
+                        });
+                    }
+
+                } catch (err: any) {
+                    updateAgentMessage(responseId, {
+                        text: `Agent Zero Error: ${err.message}`,
+                        isStreaming: false,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Agent Zero Connection Failed',
+                            timestamp: Date.now(),
+                            type: 'error'
+                        }]
+                    });
+                }
+                return;
+            }
 
             // Use Coordinator
             let coordinatorResult: string;
