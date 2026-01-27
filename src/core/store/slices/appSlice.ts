@@ -18,6 +18,7 @@ export interface Project {
     name: string;
     type: AppSlice['currentModule'];
     date?: number;
+    lastModified?: number;
     orgId: string;
     thumbnail?: string;
     assetCount?: number;

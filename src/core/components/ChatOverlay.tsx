@@ -26,6 +26,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const windowSize = useStore(state => state.agentWindowSize);
     const setAgentWindowSize = useStore(state => state.setAgentWindowSize);
     const userProfile = useStore(state => state.userProfile);
+    const activeAgentProvider = useStore(state => state.activeAgentProvider);
+    const setActiveAgentProvider = useStore(state => state.setActiveAgentProvider);
 
     const dragControls = useDragControls();
 
@@ -229,6 +231,28 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 </h3>
                                 <p className={`text-xs text-${agentColor}-300 font-medium tracking-wide uppercase opacity-80`}>{agentRole}</p>
                             </div>
+                        </div>
+
+                        {/* Middle Actions: Provider Toggle */}
+                        <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
+                            <button
+                                onClick={() => setActiveAgentProvider('native')}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native'
+                                        ? 'bg-purple-600 text-white shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                Native
+                            </button>
+                            <button
+                                onClick={() => setActiveAgentProvider('agent-zero')}
+                                className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero'
+                                        ? 'bg-blue-600 text-white shadow-sm'
+                                        : 'text-gray-500 hover:text-gray-300'
+                                    }`}
+                            >
+                                Zero
+                            </button>
                         </div>
 
                         {/* Right Actions */}
