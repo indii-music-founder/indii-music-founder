@@ -254,13 +254,13 @@ export const FileTreeNode = memo(({
                                 {node.type === 'folder' && (
                                     <>
                                         <DropdownMenu.Item
-                                            className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                            className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 data-[highlighted]:bg-white/10 data-[highlighted]:text-white cursor-pointer outline-none"
                                             onSelect={(e) => { e.preventDefault(); onCreateFolder(node); }}
                                         >
                                             <Plus size={12} /> New Folder
                                         </DropdownMenu.Item>
                                         <DropdownMenu.Item
-                                            className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                            className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 data-[highlighted]:bg-white/10 data-[highlighted]:text-white cursor-pointer outline-none"
                                             onSelect={(e) => { e.preventDefault(); onUploadTrigger(node.id); }}
                                         >
                                             <Upload size={12} /> Upload Files
@@ -269,7 +269,7 @@ export const FileTreeNode = memo(({
                                     </>
                                 )}
                                 <DropdownMenu.Item
-                                    className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                    className="text-xs text-gray-300 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 data-[highlighted]:bg-white/10 data-[highlighted]:text-white cursor-pointer outline-none"
                                     onSelect={(e) => {
                                         e.preventDefault();
                                         setLocalEditName(node.name);
@@ -279,7 +279,7 @@ export const FileTreeNode = memo(({
                                     <div className="w-3" /> Rename
                                 </DropdownMenu.Item>
                                 <DropdownMenu.Item
-                                    className="text-xs text-red-400 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 cursor-pointer outline-none"
+                                    className="text-xs text-red-400 flex items-center gap-2 px-2 py-1.5 rounded hover:bg-white/5 data-[highlighted]:bg-white/10 cursor-pointer outline-none"
                                     onSelect={(e) => { e.preventDefault(); onDelete(node); }}
                                 >
                                     <div className="w-3" /> Delete

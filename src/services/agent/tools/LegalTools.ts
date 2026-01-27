@@ -15,6 +15,14 @@ export const LegalTools: Record<string, AnyToolFunction> = {
         parties: string[];
         terms: string;
     }) => {
+        // Input Validation
+        if (!args.type || typeof args.type !== 'string') {
+            throw new Error("Validation Error: 'type' is required and must be a string.");
+        }
+        if (!Array.isArray(args.parties) || args.parties.length === 0) {
+            throw new Error("Validation Error: 'parties' must be a non-empty array of strings.");
+        }
+
         const systemPrompt = `
 You are a senior entertainment lawyer.
 Draft a legally binding contract in Markdown format.
