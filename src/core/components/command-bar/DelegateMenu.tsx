@@ -63,11 +63,10 @@ export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, isInd
                             <div className="p-2">
                                 <button
                                     onClick={() => onSelectIndii?.()}
-                                    className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-all flex items-center gap-3 group focus:outline-none ${
-                                        isIndiiMode
+                                    className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-all flex items-center gap-3 group focus:outline-none ${isIndiiMode
                                             ? 'bg-purple-600/20 text-purple-200'
                                             : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                    }`}
+                                        }`}
                                     role="menuitem"
                                 >
                                     <div className={`w-2 h-2 rounded-full ${isIndiiMode ? 'bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.6)]' : 'bg-purple-600'} group-hover:scale-125 transition-transform`} />

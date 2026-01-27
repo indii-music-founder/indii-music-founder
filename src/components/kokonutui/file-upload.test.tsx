@@ -76,6 +76,8 @@ describe('FileUpload', () => {
 
         const cancelButton = await screen.findByRole('button', { name: /cancel upload/i });
         expect(cancelButton).toBeInTheDocument();
+    });
+
     it('displays error message with role="alert" when file is too large', async () => {
         render(<FileUpload maxFileSize={100} />); // 100 bytes limit
 
