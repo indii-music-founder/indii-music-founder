@@ -32,7 +32,7 @@ class AgentZeroService {
         // Defaults - in production, these should be loaded from secure storage or env
         // For the single-user desktop app, we use the values we found/know.
         this.config = {
-            baseUrl: 'http://localhost:50080',
+            baseUrl: 'http://127.0.0.1:50080',
             // Defaulting to the value found in the docker container. 
             // In a real app this should be configurable.
             runtimeId: import.meta.env.VITE_A0_RUNTIME_ID || 'c13febd01bf518de389462d4d48b2285',
@@ -76,6 +76,7 @@ class AgentZeroService {
         return {
             'Content-Type': 'application/json',
             'X-API-KEY': this.token || '',
+            'X-Requested-With': 'XMLHttpRequest' // Helps bypass some simple CORS/security filters
         };
     }
 
@@ -117,11 +118,15 @@ class AgentZeroService {
                 // TODO: Parse tool calls if available in data
             };
         } catch (e: any) {
-            console.error('[AgentZeroService] Send Message Failed:', e);
+            console.error('[AgentZeroService] Send Message Failed:', {
+                message: e.message,
+                stack: e.stack,
+                cause: e.cause
+            });
 
             // Check for connection refusal (Docker container down)
-            if (e.message && e.message.includes('Failed to fetch')) {
-                throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080?');
+            if (e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
+                throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080? (Check CORS in Browser Console)');
             }
 
             throw e;

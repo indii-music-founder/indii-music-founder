@@ -114,6 +114,17 @@ export class FirebaseAIService {
     // Dynamic Configuration
     private remoteConfig: RemoteAIConfig = DEFAULT_REMOTE_CONFIG;
 
+    /**
+     * Permanently switches the service to direct Gemini SDK for the current session.
+     * This prevents infinite "AI Verification Failed" loops.
+     */
+    private async triggerGlobalFallback(): Promise<void> {
+        if (!this.useFallbackMode) {
+            console.warn('[FirebaseAIService] Global fallback triggered (App Check non-responsive or failing)');
+            await this.initializeFallbackMode();
+        }
+    }
+
     constructor() { }
 
     /**
@@ -325,8 +336,7 @@ export class FirebaseAIService {
                 } catch (error) {
                     // If we hit an App Check error during normal mode, switch to fallback
                     if (isAppCheckError(error) && !this.useFallbackMode) {
-                        console.warn('[FirebaseAIService] App Check error during generation, switching to fallback mode');
-                        await this.initializeFallbackMode();
+                        await this.triggerGlobalFallback();
                         return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
                     }
                     throw this.handleError(error);
@@ -506,8 +516,7 @@ export class FirebaseAIService {
                 } catch (error) {
                     // If we hit an App Check error during normal mode, switch to fallback
                     if (isAppCheckError(error) && !this.useFallbackMode) {
-                        console.warn('[FirebaseAIService] App Check error during streaming, switching to fallback mode');
-                        await this.initializeFallbackMode();
+                        await this.triggerGlobalFallback();
                         return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
                     }
                     throw this.handleError(error);
