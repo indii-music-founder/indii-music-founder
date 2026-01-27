@@ -8,7 +8,8 @@ import {
     Content,
     Part,
     Schema,
-    Tool
+    Tool,
+    SafetySetting as FirebaseSafetySetting
 } from 'firebase/ai';
 import { GoogleGenAI } from '@google/genai';
 import { getFirebaseAI, remoteConfig, functions } from '@/services/firebase';
@@ -174,7 +175,7 @@ export class FirebaseAIService {
             // 3. Initialize SDK
             this.model = getGenerativeModel(firebaseAI, {
                 model: modelName,
-                safetySettings: STANDARD_SAFETY_SETTINGS as any
+                safetySettings: STANDARD_SAFETY_SETTINGS as FirebaseSafetySetting[]
             });
 
             if (!this.model) {
@@ -558,8 +559,12 @@ export class FirebaseAIService {
                         chunks.push(chunk);
                         const chunkText = chunk.text || '';
                         finalText += chunkText;
+                        const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
                         controller.enqueue({
                             text: () => chunkText,
+                            thoughtSignature,
                             functionCalls: () => {
                                 const part = chunk.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
                                     typeof p === 'object' && p !== null && 'functionCall' in p
@@ -576,22 +581,33 @@ export class FirebaseAIService {
         });
 
         // Build wrapped response from accumulated chunks
-        const wrappedResponsePromise = Promise.resolve({
-            response: {
-                candidates: chunks[chunks.length - 1]?.candidates || [],
-                usageMetadata: chunks[chunks.length - 1]?.usageMetadata,
-                text: () => finalText
-            } as unknown as GenerateContentResponse,
-            text: () => finalText,
-            functionCalls: () => {
-                const lastChunk = chunks[chunks.length - 1];
-                const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
-                    typeof p === 'object' && p !== null && 'functionCall' in p
-                );
-                return part ? [part.functionCall] : [];
-            },
-            usage: () => chunks[chunks.length - 1]?.usageMetadata
-        });
+        const wrappedResponsePromise = (async () => {
+            const lastChunk = chunks[chunks.length - 1];
+            // Find the first chunk that had a thoughtSignature
+            const firstWithSignature = chunks.find(c => {
+                const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                return part && 'thoughtSignature' in part && (part as any).thoughtSignature;
+            });
+            const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+            const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
+            return {
+                response: {
+                    candidates: lastChunk?.candidates || [],
+                    usageMetadata: lastChunk?.usageMetadata,
+                    text: () => finalText
+                } as unknown as GenerateContentResponse,
+                text: () => finalText,
+                thoughtSignature,
+                functionCalls: () => {
+                    const part = lastChunk?.candidates?.[0]?.content?.parts?.find((p: unknown): p is FunctionCallPart =>
+                        typeof p === 'object' && p !== null && 'functionCall' in p
+                    );
+                    return part ? [part.functionCall] : [];
+                },
+                usage: () => lastChunk?.usageMetadata
+            };
+        })();
 
         return { stream, response: wrappedResponsePromise };
     }
@@ -657,8 +673,8 @@ export class FirebaseAIService {
             if (typeof systemInstructionOrConfig === 'string') {
                 systemInstruction = systemInstructionOrConfig;
             } else {
-                config = systemInstructionOrConfig || {};
-                systemInstruction = (config as any).systemInstruction;
+                config = (systemInstructionOrConfig as Record<string, unknown>) || {};
+                systemInstruction = config && typeof config === 'object' && 'systemInstruction' in config ? (config as { systemInstruction: string }).systemInstruction : undefined;
             }
         }
 

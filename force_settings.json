@@ -4,10 +4,10 @@
     "util_model_provider": "google",
     "util_model_name": "gemini-3-flash-preview",
     "embed_model_provider": "google",
-    "embed_model_name": "text-embedding-004",
+    "embed_model_name": "models/embedding-001",
     "chat_model": "gemini-3-pro-preview",
     "utility_model": "gemini-3-flash-preview",
-    "embeddings_model": "text-embedding-004",
+    "embeddings_model": "models/embedding-001",
     "auto_memory_count": 0,
     "rate_limit_seconds": 0,
     "temperature": 0.5

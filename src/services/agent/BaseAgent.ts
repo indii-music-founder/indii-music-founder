@@ -1,5 +1,6 @@
 import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
 import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
+import type { Tool } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
@@ -637,13 +638,14 @@ ${task}
                             }))
                         ]
                     }],
-                    config: { ...AI_CONFIG.THINKING.LOW } as any,
-                    tools: allTools as any,
+                    config: { ...AI_CONFIG.THINKING.LOW },
+                    tools: allTools as Tool[],
                     thoughtSignature: currentThoughtSignature
                 });
 
-                if ((response as any).thoughtSignature) {
-                    currentThoughtSignature = (response as any).thoughtSignature;
+                // Transfer thought signature for function calling continuity
+                if (response.thoughtSignature) {
+                    currentThoughtSignature = response.thoughtSignature;
                 }
 
                 // LEDGER: Record Spend based on Token Usage

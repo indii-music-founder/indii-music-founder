@@ -25,6 +25,7 @@ services:
       - ./python/tools/indii_image_gen.py:/a0/python/tools/indii_image_gen.py
       - ./python/tools/indii_video_gen.py:/a0/python/tools/indii_video_gen.py
       - ./python/tools/indii_audio_ear.py:/a0/python/tools/indii_audio_ear.py
+      - ./python/config/ai_models.py:/a0/python/config/ai_models.py
       - ./prompts/agent.system.tool.indii_image_gen.md:/a0/prompts/agent.system.tool.indii_image_gen.md
       - ./prompts/agent.system.tool.indii_video_gen.md:/a0/prompts/agent.system.tool.indii_video_gen.md
       - ./prompts/agent.system.tool.indii_audio_ear.md:/a0/prompts/agent.system.tool.indii_audio_ear.md
