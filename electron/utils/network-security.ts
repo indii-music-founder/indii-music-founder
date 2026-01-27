@@ -121,6 +121,48 @@ export function isPrivateIP(ip: string): boolean {
 }
 
 /**
+ * Validates that a Host (hostname or IP) is safe to access (SSRF Protection).
+ * Resolves DNS and blocks Private/Local IPs.
+ */
+export async function validateSafeHostAsync(hostInput: string): Promise<void> {
+    if (!hostInput) throw new Error('Invalid host');
+
+    let hostname = hostInput;
+
+    // Normalize using URL parser if possible, to handle IPv6 brackets [::1] correctly and ports
+    try {
+        const u = new URL('https://' + hostInput);
+        hostname = u.hostname;
+    } catch (e) {
+        // Fallback to raw input if URL parsing fails
+    }
+
+    // 1. Initial Blocklist (Defense in Depth)
+    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '0.0.0.0' || hostname === '::1') {
+        throw new Error(`Security Violation: Access to localhost is denied.`);
+    }
+    if (hostname === '169.254.169.254') {
+        throw new Error(`Security Violation: Access to Cloud Metadata services is denied.`);
+    }
+
+    // 2. Resolve DNS
+    try {
+        const addresses = await dns.promises.lookup(hostname, { all: true });
+
+        // 3. Validate ALL Resolved IPs
+        for (const { address } of addresses) {
+            if (isPrivateIP(address)) {
+                throw new Error(`Security Violation: Domain '${hostInput}' resolves to private IP ${address}.`);
+            }
+        }
+    } catch (error: any) {
+        if (error.message.startsWith('Security Violation')) throw error;
+        // Fail closed if DNS resolution fails
+        throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${error.message}`);
+    }
+}
+
+/**
  * Validates that a URL is safe to fetch by resolving DNS.
  */
 export async function validateSafeUrlAsync(urlString: string): Promise<void> {
@@ -138,29 +180,7 @@ export async function validateSafeUrlAsync(urlString: string): Promise<void> {
     const hostname = url.hostname;
     if (!hostname) throw new Error('Invalid URL: Missing hostname');
 
-    // 1. Initial Blocklist (Defense in Depth)
-    if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]' || hostname === '0.0.0.0') {
-        throw new Error(`Security Violation: Access to localhost is denied.`);
-    }
-    if (hostname === '169.254.169.254') {
-        throw new Error(`Security Violation: Access to Cloud Metadata services is denied.`);
-    }
-
-    // 2. Resolve DNS
-    try {
-        const addresses = await dns.promises.lookup(hostname, { all: true });
-
-        // 3. Validate ALL Resolved IPs
-        for (const { address } of addresses) {
-            if (isPrivateIP(address)) {
-                throw new Error(`Security Violation: Domain '${hostname}' resolves to private IP ${address}.`);
-            }
-        }
-    } catch (error: any) {
-        if (error.message.startsWith('Security Violation')) throw error;
-        // Fail closed if DNS resolution fails
-        throw new Error(`Security Violation: Could not verify DNS for '${hostname}': ${error.message}`);
-    }
+    await validateSafeHostAsync(hostname);
 }
 
 /**
