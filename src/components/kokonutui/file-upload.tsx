@@ -548,7 +548,7 @@ export default function FileUpload({
                     </div>
 
                     <button
-                      className="group flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                      className="group flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                       onClick={triggerFileInput}
                       type="button"
                       aria-label="Upload file"
@@ -558,7 +558,7 @@ export default function FileUpload({
                     </button>
 
                     <button
-                      className="group md:hidden flex w-4/5 items-center justify-center gap-2 rounded-lg bg-blue-50/50 px-4 py-2.5 font-semibold text-blue-600 text-sm transition-all duration-200 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 mt-2"
+                      className="group md:hidden flex w-4/5 items-center justify-center gap-2 rounded-lg bg-blue-50/50 px-4 py-2.5 font-semibold text-blue-600 text-sm transition-all duration-200 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 mt-2"
                       onClick={triggerCamera}
                       type="button"
                       aria-label="Take photo"
@@ -567,7 +567,7 @@ export default function FileUpload({
                       <Camera className="h-4 w-4 transition-transform duration-200 group-hover:scale-110" />
                     </button>
 
-                    <p className="mt-3 text-gray-500 text-xs dark:text-gray-400">
+                    <p className="mt-3 text-gray-600 text-xs dark:text-gray-400">
                       or drag and drop your file here
                     </p>
 
@@ -593,7 +593,7 @@ export default function FileUpload({
                       <UploadingAnimation progress={progress} />
                     </div>
 
-                    <div className="mb-4 space-y-1.5 text-center">
+                    <div className="mb-4 space-y-1.5 text-center" aria-live="polite">
                       <h3 className="truncate font-semibold text-gray-900 text-sm dark:text-white">
                         {file?.name}
                       </h3>
@@ -608,7 +608,7 @@ export default function FileUpload({
                     </div>
 
                     <button
-                      className="flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
+                      className="flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                       onClick={resetState}
                       type="button"
                     >
@@ -626,6 +626,7 @@ export default function FileUpload({
                   className="-translate-x-1/2 absolute bottom-4 left-1/2 transform rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2"
                   exit={{ opacity: 0, y: -10 }}
                   initial={{ opacity: 0, y: 10 }}
+                  role="alert"
                 >
                   <p className="text-red-500 text-sm dark:text-red-400">
                     {error.message}
