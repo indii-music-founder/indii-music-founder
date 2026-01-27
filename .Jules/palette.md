@@ -46,3 +46,7 @@
 ## 2026-05-25 - Nested Interactive Controls in Lists
 **Learning:** Wrapping a list item in `role="button"` (or `onClick`) while having nested interactive elements (like a delete button) creates invalid semantics and navigation issues for screen readers.
 **Action:** Refactor such patterns to use a layout where the main "card" action is a button element, and secondary actions (like delete) are sibling buttons, positioned visually using CSS (e.g., absolute positioning) to appear nested while remaining DOM siblings.
+
+## 2026-06-03 - Dropdown Menu Item Focus and Icon Button Visibility
+**Learning:** `DropdownMenu.Item` primitives from Radix UI do not have visible focus states by default when using custom classes, and standard `hover:` classes don't apply to keyboard focus. Also, icon-only buttons often lack clear focus rings.
+**Action:** Always add `data-[highlighted]:bg-...` to DropdownMenu items and explicit `focus-visible:ring` to icon buttons to ensure they are perceivable by keyboard users.
