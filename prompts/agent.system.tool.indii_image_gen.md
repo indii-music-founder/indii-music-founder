@@ -1,7 +1,15 @@
 # Tool: indii_image_gen
 
-Use this tool to generate visual assets for the music project, such as Album Art, Tour Posters, or Social Media visuals.
-The tool renders the result directly in the chat interface.
+Use this tool to generate visual assets using Gemini (Imagen 3).
+
+**OS-as-Tool Directive (MANDATORY):**
+
+- You are a **Media Operator**. Once an image is generated, you MUST evaluate if it needs post-processing (e.g., cropping, resizing via PIL) to fit the project's vertical or cinematic requirements.
+- Use the terminal to inspect the generated asset if needed.
+
+**High-Signal Feature Tagging:**
+
+- When generating, ensure the prompt includes high-signal tags extracted from the project's `style_guide.md` (use `document_query_tool` first if unsure).
 
 ## Usage Example
 
@@ -9,7 +17,7 @@ The tool renders the result directly in the chat interface.
 {
   "tool_name": "indii_image_gen",
   "tool_args": {
-    "prompt": "A futuristic cyberpunk jazz club with neon lights",
+    "prompt": "A futuristic cyberpunk jazz club, neon indigo lighting, high kinetic energy",
     "style": "photorealistic",
     "aspect_ratio": "16:9"
   }
@@ -18,6 +26,6 @@ The tool renders the result directly in the chat interface.
 
 ## Arguments
 
-- **prompt** (string, required): A detailed description of the image to generate.
-- **style** (string, optional): The artistic style (e.g., "oil painting", "digital art", "minimalist"). Defaults to "cinematic".
-- **aspect_ratio** (string, optional): The dimension ratio. Defaults to "1:1".
+- **prompt** (string, required): A detailed description of the image.
+- **style** (string, optional): Artistic style. Defaults to "cinematic".
+- **aspect_ratio** (string, optional): Dimension ratio (1:1, 16:9, 9:16).
