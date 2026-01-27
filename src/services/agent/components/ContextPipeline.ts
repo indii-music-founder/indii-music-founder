@@ -2,6 +2,7 @@ import { ContextResolver } from './ContextResolver';
 import { AgentContext } from '../types';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
+import { useStore } from '@/core/store';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
@@ -29,10 +30,11 @@ export class ContextPipeline {
         const chatHistoryString = this.historyManager.getCompiledView();
 
         // 3. Retrieve Relevant Memories (Semantic Long-Term Memory)
-        const relevantMemories = await this.retrieveRelevantMemories(
-            stateContext.projectId,
-            chatHistoryString
-        );
+        // Only retrieve if Knowledge Base toggle is enabled
+        const { isKnowledgeBaseEnabled } = useStore.getState();
+        const relevantMemories = isKnowledgeBaseEnabled
+            ? await this.retrieveRelevantMemories(stateContext.projectId, chatHistoryString)
+            : [];
 
         // 4. Format memory context for agent consumption
         const memoryContext = this.formatMemoryContext(relevantMemories);

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2 } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2, Database } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
@@ -28,6 +28,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const userProfile = useStore(state => state.userProfile);
     const activeAgentProvider = useStore(state => state.activeAgentProvider);
     const setActiveAgentProvider = useStore(state => state.setActiveAgentProvider);
+    const isKnowledgeBaseEnabled = useStore(state => state.isKnowledgeBaseEnabled);
+    const setKnowledgeBaseEnabled = useStore(state => state.setKnowledgeBaseEnabled);
 
     const dragControls = useDragControls();
 
@@ -254,6 +256,21 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                                 Zero
                             </button>
                         </div>
+
+                        {/* KB Toggle */}
+                        <button
+                            onClick={() => setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled)}
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all border relative z-10 pointer-events-auto ${
+                                isKnowledgeBaseEnabled
+                                    ? 'bg-teal-600/20 border-teal-500/50 text-teal-300'
+                                    : 'bg-black/40 border-white/5 text-gray-500 hover:text-gray-300'
+                            }`}
+                            title={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}
+                            aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
+                            aria-pressed={isKnowledgeBaseEnabled}
+                        >
+                            <Database size={15} />
+                        </button>
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-1 relative z-10">

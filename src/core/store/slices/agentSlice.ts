@@ -54,6 +54,9 @@ export interface AgentSlice {
     // Provider switching: 'native' (Gemini direct) or 'agent-zero' (Docker container)
     activeAgentProvider: 'native' | 'agent-zero';
 
+    // Knowledge Base RAG toggle: when true, inject memory + knowledge into system prompt
+    isKnowledgeBaseEnabled: boolean;
+
     isAgentOpen: boolean;
     isCommandBarDetached: boolean;
     commandBarInput: string;
@@ -82,6 +85,7 @@ export interface AgentSlice {
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
     setActiveAgentProvider: (provider: 'native' | 'agent-zero') => void;
+    setKnowledgeBaseEnabled: (enabled: boolean) => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
 
@@ -98,6 +102,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     activeSessionId: null,
     chatChannel: 'indii', // Default to indii (main orchestrator)
     activeAgentProvider: 'native',
+    isKnowledgeBaseEnabled: false,
 
     isAgentOpen: false,
     isCommandBarDetached: false,
@@ -273,6 +278,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     setChatChannel: (channel) => set({ chatChannel: channel }),
     setActiveAgentProvider: (provider) => set({ activeAgentProvider: provider }),
+    setKnowledgeBaseEnabled: (enabled) => set({ isKnowledgeBaseEnabled: enabled }),
 
     requestApproval: (content: string, type: string): Promise<boolean> => {
         return new Promise((resolve) => {

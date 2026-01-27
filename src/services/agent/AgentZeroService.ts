@@ -110,6 +110,7 @@ class AgentZeroService {
                 throw new Error(`Agent Zero API Error (${response.status}): ${errorText}`);
             }
 
+            console.log(`[AgentZeroService] Received response: ${response.status} ${response.statusText}`);
             const data = await response.json();
             // Map python 'response' key to 'message'
             return {
