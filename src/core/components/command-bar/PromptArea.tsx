@@ -47,7 +47,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         commandBarInput,
         setCommandBarInput,
         commandBarAttachments,
-        setCommandBarAttachments
+        setCommandBarAttachments,
+        activeAgentProvider,
+        setActiveAgentProvider
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
@@ -61,7 +63,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         commandBarInput: state.commandBarInput,
         setCommandBarInput: state.setCommandBarInput,
         commandBarAttachments: state.commandBarAttachments,
-        setCommandBarAttachments: state.setCommandBarAttachments
+        setCommandBarAttachments: state.setCommandBarAttachments,
+        activeAgentProvider: state.activeAgentProvider,
+        setActiveAgentProvider: state.setActiveAgentProvider
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -301,6 +305,39 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         >
                             {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
                         </button>
+
+                        <div className="flex items-center gap-1 bg-black/40 rounded-full p-0.5 border border-white/5 h-8">
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveAgentProvider('native');
+                                }}
+                                className={cn(
+                                    "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
+                                    activeAgentProvider === 'native'
+                                        ? "bg-purple-600 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-300"
+                                )}
+                                title="Use Native Gemini API"
+                            >
+                                Native
+                            </button>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setActiveAgentProvider('agent-zero');
+                                }}
+                                className={cn(
+                                    "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
+                                    activeAgentProvider === 'agent-zero'
+                                        ? "bg-blue-600 text-white shadow-sm"
+                                        : "text-gray-500 hover:text-gray-300"
+                                )}
+                                title="Use Agent Zero (Autonomous)"
+                            >
+                                Zero
+                            </button>
+                        </div>
 
                         <button
                             onClick={(e) => {
