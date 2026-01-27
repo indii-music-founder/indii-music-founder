@@ -69,14 +69,7 @@ class AgentZeroService {
         if (!this.token) this.generateAuthToken();
         return {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.token}`, // Agent Zero might expect specific header, usually 'Authorization'
-            // Based on api_message.py, it checks LoginRequired. login.py usually checks a cookie or header.
-            // Let's verify how Agent Zero expects the token. 
-            // Looking at `api.py` or standard Flask expectations. 
-            // Often it's 'X-API-Key' or similar if it's a custom token.
-            // BUT: The UI uses a cookie 'auth_token'. 
-            // Let's try sending it as a Cookie header if possible, or looking for a specific header key.
-            // If it's a standard Bearer token for API, Authorization is standard.
+            'X-API-KEY': this.token || '',
         };
     }
 
@@ -94,11 +87,8 @@ class AgentZeroService {
                 payload.attachments = attachments;
             }
 
-            // Note: Since we are calling localhost from the renderer (browser context),
-            // we might hit CORS issues if the Docker container doesn't allow it.
-            // Electron webSecurity might need to be disabled or we proxy through Main process.
-            // For now, we assume standard fetch.
-            const response = await fetch(`${this.config.baseUrl}/api/message`, {
+            // Note: Endpoint is /api_message (defaults to 50080 port logic)
+            const response = await fetch(`${this.config.baseUrl}/api_message`, {
                 method: 'POST',
                 headers: this.getHeaders(),
                 body: JSON.stringify(payload)
@@ -106,13 +96,27 @@ class AgentZeroService {
 
             if (!response.ok) {
                 const errorText = await response.text();
+                // Handle non-JSON error responses (like 404 HTML pages)
+                if (errorText.includes('<html')) {
+                    throw new Error(`Agent Zero API Error (${response.status}): Agent Zero might be down or unreachable.`);
+                }
                 throw new Error(`Agent Zero API Error (${response.status}): ${errorText}`);
             }
 
             const data = await response.json();
-            return data;
-        } catch (e) {
+            // Map python 'response' key to 'message'
+            return {
+                message: data.response,
+                // TODO: Parse tool calls if available in data
+            };
+        } catch (e: any) {
             console.error('[AgentZeroService] Send Message Failed:', e);
+
+            // Check for connection refusal (Docker container down)
+            if (e.message && e.message.includes('Failed to fetch')) {
+                throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080?');
+            }
+
             throw e;
         }
     }
