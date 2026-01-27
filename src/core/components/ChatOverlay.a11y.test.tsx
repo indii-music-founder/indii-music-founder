@@ -116,10 +116,8 @@ describe('ChatOverlay Accessibility', () => {
         currentModule: 'dashboard',
         setModule: vi.fn(),
         commandBarInput: '',
-        commandBarAttachments: [],
+
         setCommandBarInput: vi.fn(),
-        setCommandBarInput: vi.fn(),
-        commandBarAttachments: [],
         setCommandBarAttachments: vi.fn(),
     };
 

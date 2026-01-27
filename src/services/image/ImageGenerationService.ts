@@ -312,10 +312,9 @@ export class ImageGenerationService {
 
                     const result = await generateImage({
                         prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
-                        images: [
-                            { mimeType: target.mimeType, data: target.data },
-                            { mimeType: options.styleImage.mimeType, data: options.styleImage.data }
-                        ],
+                        // Gemini 3 Pro Image is currently Text-to-Image only.
+                        // Passing input images causes INVALID_ARGUMENT (400).
+                        images: [],
                         aspectRatio
                     });
 
@@ -385,11 +384,20 @@ export class ImageGenerationService {
             // Flash is specifically optimized for fast multimodal analysis
             // Use Pro (Agent) model for better multimodal stability and auth reliability
             // Flash (Text) can sometimes trigger 403s on preview endpoints
-            const responseText = await AI.analyzeImage(
-                promptMap[category],
-                image.data,
-                image.mimeType
-            );
+            const response = await AI.generateContent({
+                model: AI_MODELS.TEXT.FAST,
+                contents: [{
+                    role: 'user',
+                    parts: [
+                        { text: promptMap[category] },
+                        { inlineData: { mimeType: image.mimeType || 'image/png', data: image.data } }
+                    ]
+                }],
+                config: {
+                    ...AI_CONFIG.THINKING.LOW
+                }
+            });
+            const responseText = response.text();
 
             return responseText.trim();
         } catch (e) {

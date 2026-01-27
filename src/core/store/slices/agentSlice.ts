@@ -51,6 +51,9 @@ export interface AgentSlice {
     // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
     chatChannel: 'indii' | 'agent';
 
+    // Provider switching: 'native' (Gemini direct) or 'agent-zero' (Docker container)
+    activeAgentProvider: 'native' | 'agent-zero';
+
     isAgentOpen: boolean;
     isCommandBarDetached: boolean;
     commandBarInput: string;
@@ -78,6 +81,7 @@ export interface AgentSlice {
     setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
     setChatChannel: (channel: 'indii' | 'agent') => void;
+    setActiveAgentProvider: (provider: 'native' | 'agent-zero') => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
 
@@ -93,6 +97,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     sessions: {},
     activeSessionId: null,
     chatChannel: 'indii', // Default to indii (main orchestrator)
+    activeAgentProvider: 'native',
 
     isAgentOpen: false,
     isCommandBarDetached: false,
@@ -267,6 +272,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     setAgentMode: (mode) => set({ agentMode: mode }),
 
     setChatChannel: (channel) => set({ chatChannel: channel }),
+    setActiveAgentProvider: (provider) => set({ activeAgentProvider: provider }),
 
     requestApproval: (content: string, type: string): Promise<boolean> => {
         return new Promise((resolve) => {

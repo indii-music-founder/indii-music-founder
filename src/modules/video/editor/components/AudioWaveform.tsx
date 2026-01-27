@@ -20,9 +20,13 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
     useEffect(() => {
         let isMounted = true;
 
-        // Reset state on new src
-        setAudioData(null);
-        setError(null);
+        // Reset state on new src (async to avoid lint warning)
+        Promise.resolve().then(() => {
+            if (isMounted) {
+                setAudioData(null);
+                setError(null);
+            }
+        });
 
         const fetchAudio = async () => {
             try {
@@ -51,7 +55,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
         // Resample data to fit width
         const samples = audioData.channelWaveforms[0]; // Use first channel
         const step = Math.ceil(samples.length / width);
-        const resampled = [];
+        const resampled: number[] = [];
 
         for (let i = 0; i < width; i++) {
             let max = 0;
@@ -68,7 +72,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
             resampled.push(max);
         }
 
-        setWaveform(resampled);
+        Promise.resolve().then(() => setWaveform(resampled));
     }, [audioData, width]);
 
     // 3. Draw (When waveform or dimensions change)

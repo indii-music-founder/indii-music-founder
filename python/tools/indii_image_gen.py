@@ -22,7 +22,7 @@ class IndiiImageGen(Tool):
 
             # 3. Call Gemini API
             api_key = AIConfig.get_api_key()
-            client = genai.Client(api_key=api_key)
+            client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
             
             self.set_progress(f"Generating image ({aspect_ratio}) with Gemini 3 Pro...")
             

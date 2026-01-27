@@ -35,7 +35,7 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
     id: 'genesis',
     name: 'Genesis Agent',
     systemPrompt: 'You are a helpful AI.',
-    parameters: { temperature: 0.5, model: 'gemini-1.5-pro' },
+    parameters: { temperature: 0.5, model: 'gemini-3-pro-preview' },
     generation: 0,
     lineage: []
   };
@@ -131,8 +131,8 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
 
     expect(nextGen).toHaveLength(3);
     nextGen.forEach(child => {
-        expect(child.lineage).not.toContain('Zombie');
-        expect(child.lineage).toContain('Healthy1'); // Or Healthy2
+      expect(child.lineage).not.toContain('Zombie');
+      expect(child.lineage).toContain('Healthy1'); // Or Healthy2
     });
   });
 
@@ -165,9 +165,9 @@ describe('🧬 Helix: Evolutionary Loop & Guardrails', () => {
       .mockResolvedValueOnce({ ...baseGene, parameters: undefined as any }) // Defect
       .mockResolvedValueOnce({ ...baseGene, parameters: null as any })      // Defect
       .mockResolvedValue({
-          ...baseGene,
-          systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
-          parameters: { temperature: 0.7 }
+        ...baseGene,
+        systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
+        parameters: { temperature: 0.7 }
       });
 
     const population: AgentGene[] = [

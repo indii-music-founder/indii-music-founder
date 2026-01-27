@@ -10,7 +10,8 @@ export const AudioFidelitySchema = z.object({
   pythonPath: z.string().optional().default('python3'),
 });
 
-export type AudioFidelityOptions = z.infer<typeof AudioFidelitySchema>;
+export type AudioFidelityInput = z.input<typeof AudioFidelitySchema>;
+export type AudioFidelityOptions = z.output<typeof AudioFidelitySchema>; // The internal full options
 
 export interface AudioFidelityResult {
   success: boolean;
@@ -21,9 +22,9 @@ export interface AudioFidelityResult {
     bit_depth: string;
     channels: number;
     compliance: {
-        CD_Quality: boolean;
-        Hi_Res: boolean;
-        Atmos_Ready: boolean;
+      CD_Quality: boolean;
+      Hi_Res: boolean;
+      Atmos_Ready: boolean;
     };
     summary_status: string;
     error?: string;
@@ -43,7 +44,7 @@ export class AudioFidelityFeature {
    * @param options The audit options (filePath, targetStandard)
    * @returns Standardized result object
    */
-  async execute(options: AudioFidelityOptions): Promise<AudioFidelityResult> {
+  async execute(options: AudioFidelityInput): Promise<AudioFidelityResult> {
     // 1. Validation
     const validation = AudioFidelitySchema.safeParse(options);
     if (!validation.success) {
@@ -105,8 +106,8 @@ export class AudioFidelityFeature {
             });
           }
         } catch (e) {
-            const err = e as Error;
-            resolve({
+          const err = e as Error;
+          resolve({
             success: false,
             error: `Failed to parse script output: ${err.message}. Raw output: ${stdout}`
           });

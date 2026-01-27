@@ -37,7 +37,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     id: 'genesis',
     name: 'Genesis Agent',
     systemPrompt: 'You are a helpful AI.',
-    parameters: { temperature: 0.5, model: 'gemini-1.5-pro' },
+    parameters: { temperature: 0.5, model: 'gemini-3-pro-preview' },
     generation: 0,
     lineage: []
   };
@@ -163,17 +163,17 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
     // Mock first attempt to fail (Missing Parameters)
     mockMutationFn.mockResolvedValueOnce({
-        ...baseGene,
-        id: 'defective',
-        parameters: undefined as any // Force defect
+      ...baseGene,
+      id: 'defective',
+      parameters: undefined as any // Force defect
     });
 
     // Mock second attempt to succeed
     mockMutationFn.mockResolvedValueOnce({
-        ...baseGene,
-        id: 'valid-child',
-        systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
-        parameters: { temperature: 0.7 }
+      ...baseGene,
+      id: 'valid-child',
+      systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
+      parameters: { temperature: 0.7 }
     });
 
     const population: AgentGene[] = [
@@ -203,9 +203,9 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
     // 1. Mock attempt: Parameters as Array (Schema Integrity)
     mockMutationFn.mockResolvedValueOnce({
-        ...baseGene,
-        id: 'child-array',
-        parameters: [] as any // Force Array defect
+      ...baseGene,
+      id: 'child-array',
+      parameters: [] as any // Force Array defect
     });
 
     // 2. Mock attempt: Circular Reference (Serialization Safety)
@@ -215,10 +215,10 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
 
     // 3. Mock attempt: Valid
     mockMutationFn.mockResolvedValueOnce({
-        ...baseGene,
-        id: 'valid-child-2',
-        systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
-        parameters: { temperature: 0.8 }
+      ...baseGene,
+      id: 'valid-child-2',
+      systemPrompt: 'Valid [GEMINI-3-PRO-EVOLVED]',
+      parameters: { temperature: 0.8 }
     });
 
     const population: AgentGene[] = [
