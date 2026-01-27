@@ -56,3 +56,7 @@
 **Vulnerability:** The `video:render` IPC handler accepted an arbitrary `outputLocation` path in its configuration object without validation. This allowed a compromised renderer to overwrite arbitrary files on the system (subject to OS user permissions) by triggering a render to a sensitive path.
 **Learning:** Validating specific input fields is insufficient if other fields in the payload control sensitive operations like file writing. Complex config objects passed to IPC need comprehensive validation.
 **Prevention:** Enforced `accessControlService.verifyAccess` and `validateSafeDistributionSource` on `config.outputLocation` in the `video:render` handler.
+## 2026-02-19 - [HIGH] SSRF in Distribution & SFTP Handlers
+**Vulnerability:** The `distribution:transmit` and `sftp:connect` handlers allowed arbitrary `host` values for SFTP connections. This enabled Server-Side Request Forgery (SSRF) where a compromised renderer could force the main process to connect to local services (e.g., `127.0.0.1:22` or Metadata IP `169.254.169.254`) via the SFTP client or Python bridge.
+**Learning:** Network clients in the main process (SFTP, SSH) are just as dangerous as `fetch` when supplied with user-controlled hosts. They must be validated against the same DNS/SSRF protections (blocklists, DNS resolution) as HTTP requests.
+**Prevention:** Implemented `validateSafeHostAsync` in `electron/utils/network-security.ts` to resolve DNS and block private IPs for arbitrary hostnames. Applied this validation to both `distribution:transmit` and `sftp:connect` handlers.
