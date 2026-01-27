@@ -215,7 +215,7 @@ export class VideoGenerationService {
                                 // HEAD request to verify existence without downloading payload
                                 const response = await fetch(videoUrl, { method: 'HEAD' });
                                 if (!response.ok) {
-                                    reject(new Error(`Video Asset Not Found (${response.status})`));
+                                    reject(new Error(`Asset Integrity Failure: Video URL is unreachable (${response.status}).`));
                                     return;
                                 }
                             } catch (e) {
