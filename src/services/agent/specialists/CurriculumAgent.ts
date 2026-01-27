@@ -8,7 +8,7 @@ export class CurriculumAgent extends BaseAgent {
             id: 'curriculum',
             name: 'Curriculum Agent',
             description: 'Automates branding alignment by generating style compliance tasks and evaluating results.',
-            color: '#FF4081', // Pink Accent
+            color: 'bg-pink-500',
             category: 'specialist',
             systemPrompt: `
 # ROLE: Curriculum Agent (The Art Director)

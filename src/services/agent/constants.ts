@@ -13,7 +13,7 @@ export const AGENT_SYSTEM_BRANDING = Object.freeze({
   fullName: 'indii AI Agent System',
 
   /** The hub agent in the hub-and-spoke architecture */
-  hubName: 'Agent Zero',
+  hubName: 'indii',
 
   /** Short description for user-facing components */
   description: 'Your AI-powered assistant for independent artists',

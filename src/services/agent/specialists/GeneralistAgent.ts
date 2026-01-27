@@ -78,9 +78,9 @@ CRITICAL RULES:
     constructor() {
         super({
             id: 'generalist',
-            name: 'Agent Zero',
-            description: 'General assistance, complex reasoning, fallback.',
-            color: 'bg-stone-500',
+            name: 'indii',
+            description: 'Creative orchestrator — plans, delegates, and executes across all departments.',
+            color: 'bg-purple-500',
             category: 'manager',
             systemPrompt: 'You are indii, the Autonomous Studio Manager (Agent Zero).',
             tools: []
