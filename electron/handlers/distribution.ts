@@ -6,6 +6,7 @@ import { DistributionStageReleaseSchema } from '../utils/validation';
 import { validateSafeDistributionSource } from '../utils/security-checks';
 import { validateSafeAudioPath } from '../utils/file-security';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeHostAsync } from '../utils/network-security';
 import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 
@@ -364,6 +365,9 @@ export const setupDistributionHandlers = () => {
             if (!host || !user || !localPath) {
                 throw new Error('Missing required transmission configuration (host, user, or localPath)');
             }
+
+            // Security: Validate host to prevent SSRF
+            await validateSafeHostAsync(host);
 
             // Security: Verify Access Authorization for source path
             if (!accessControlService.verifyAccess(localPath)) {

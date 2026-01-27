@@ -2,6 +2,7 @@ import { ipcMain, app } from 'electron';
 import { sftpService } from '../services/SFTPService';
 import { SFTPConfigSchema, SftpUploadSchema } from '../utils/validation';
 import { validateSender } from '../utils/ipc-security';
+import { validateSafeHostAsync } from '../utils/network-security';
 import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 import path from 'path';
@@ -13,6 +14,10 @@ export const registerSFTPHandlers = () => {
         try {
             validateSender(event);
             const validatedConfig = SFTPConfigSchema.parse(config);
+
+            // Security: Validate host to prevent SSRF
+            await validateSafeHostAsync(validatedConfig.host);
+
             await sftpService.connect(validatedConfig);
             return { success: true };
         } catch (error) {
