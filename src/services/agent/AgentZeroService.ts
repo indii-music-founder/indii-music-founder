@@ -21,6 +21,35 @@ export interface HistoryItem {
     timestamp: number;
 }
 
+export interface AgentTaskRequest {
+    project_id: string;
+    instruction: string;
+    agent_profile?: string;
+    variables?: Record<string, any>;
+}
+
+export interface AgentTaskResponse {
+    status: 'success' | 'error';
+    data?: {
+        response: string;
+        project_id: string;
+        files: string[];
+    };
+    message?: string;
+}
+
+export interface ProvisionProjectRequest {
+    project_id: string; // e.g., "dept_legal" or "artist_uuid"
+    role_type: string; // e.g., "legal_expert"
+    initial_secrets?: Record<string, string>;
+}
+
+export interface SyncProjectRequest {
+    project_id: string;
+    sync_type: 'metadata_update' | 'asset_refresh';
+    data: Record<string, any>;
+}
+
 /**
  * Service to communicate with the Agent Zero Docker container.
  */
@@ -81,6 +110,21 @@ class AgentZeroService {
     }
 
     /**
+     * Processes strings to find img:// URLs and append cache busting timestamps.
+     */
+    private processUrls(text: string): string {
+        if (!text || typeof text !== 'string') return text;
+
+        const timestamp = Date.now();
+        // Regex to find img://... sequences
+        // Note: We assume the image path ends with a space, newline, quote, or end of string
+        return text.replace(/img:\/\/([^\s"']+)/g, (match, path) => {
+            const separator = path.includes('?') ? '&' : '?';
+            return `img://${path}${separator}t=${timestamp}`;
+        });
+    }
+
+    /**
      * Sends a message to Agent Zero.
      */
     async sendMessage(message: string, attachments?: { filename: string; base64: string }[], contextId?: string): Promise<AgentZeroResponse> {
@@ -112,11 +156,14 @@ class AgentZeroService {
 
             console.log(`[AgentZeroService] Received response: ${response.status} ${response.statusText}`);
             const data = await response.json();
-            // Map python 'response' key to 'message'
+
+            // Apply img:// cache busting
+            const processedMessage = this.processUrls(data.response || data.message || "Agent Zero: No text response.");
+            const processedAttachments = (data.attachments || []).map((a: string) => this.processUrls(a));
+
             return {
-                message: data.response || data.message || "Agent Zero: No text response.",
-                attachments: data.attachments || []
-                // TODO: Parse tool calls if available in data
+                message: processedMessage,
+                attachments: processedAttachments
             };
         } catch (e: any) {
             console.error('[AgentZeroService] Send Message Failed:', {
@@ -142,7 +189,92 @@ class AgentZeroService {
         });
 
         if (!response.ok) throw new Error('Failed to fetch history');
-        return await response.json();
+        const history: HistoryItem[] = await response.json();
+        return history.map(item => ({
+            ...item,
+            content: this.processUrls(item.content)
+        }));
+    }
+
+    /**
+     * Executes a structured task via the custom Indii API handler.
+     * Enforces project isolation and context switching.
+     */
+    async executeTask(request: AgentTaskRequest): Promise<AgentTaskResponse> {
+        // Endpoint matches the filename of the python api handler: indii_task.py -> /api/indii_task
+        const endpoint = `${this.config.baseUrl}/indii_task`;
+
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify(request)
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Task Execution Failed (${response.status}): ${text}`);
+            }
+
+            const data = await response.json();
+            if (data.agent_response) {
+                data.agent_response = this.processUrls(data.agent_response);
+            }
+            return data;
+        } catch (e: any) {
+            console.error('[AgentZeroService] Execute Task Error:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Provisions a new project environment (Department/Artist).
+     * Mapped to /api/provision_project
+     */
+    async provisionProject(request: ProvisionProjectRequest): Promise<any> {
+        const endpoint = `${this.config.baseUrl}/provision_project`;
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify(request)
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Provisioning Failed (${response.status}): ${text}`);
+            }
+
+            return await response.json();
+        } catch (e: any) {
+            console.error('[AgentZeroService] Provision Project Error:', e);
+            throw e;
+        }
+    }
+
+    /**
+     * Synchronize state/metadata with the Agent.
+     * Mapped to /api/indii_sync
+     */
+    async syncProject(request: SyncProjectRequest): Promise<any> {
+        const endpoint = `${this.config.baseUrl}/indii_sync`;
+        try {
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify(request)
+            });
+
+            if (!response.ok) {
+                const text = await response.text();
+                throw new Error(`Sync Failed (${response.status}): ${text}`);
+            }
+
+            return await response.json();
+        } catch (e: any) {
+            console.error('[AgentZeroService] Sync Project Error:', e);
+            throw e;
+        }
     }
 }
 

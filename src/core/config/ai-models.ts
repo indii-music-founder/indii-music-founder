@@ -16,7 +16,8 @@ export const APPROVED_MODELS = {
     AUDIO_PRO: 'gemini-2.5-pro-preview-tts',
     AUDIO_FLASH: 'gemini-2.5-flash-preview-tts',
     VIDEO_GEN: 'veo-3.1-generate-preview',
-    BROWSER_AGENT: 'gemini-2.5-pro-ui-checkpoint'
+    BROWSER_AGENT: 'gemini-2.5-pro-ui-checkpoint',
+    EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
 
 export const AI_MODELS = {

@@ -143,7 +143,7 @@ describe('📚 Keeper: End-to-End Context & Persistence', () => {
 
         // Initialize Agent
         agent = new BaseAgent({
-            id: 'keeper-agent',
+            id: 'keeper',
             name: 'Keeper',
             description: 'The Guardian of Context',
             systemPrompt: 'You are Keeper. You never forget.',

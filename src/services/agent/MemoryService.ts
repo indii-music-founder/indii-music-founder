@@ -1,7 +1,7 @@
 
 import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 
 export interface MemoryItem {
@@ -33,7 +33,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 class MemoryService {
-    private embeddingModel = 'text-embedding-004';
+    private embeddingModel = APPROVED_MODELS.EMBEDDING_DEFAULT;
 
     // Batcher for embedding requests to save tokens and improve performance
     private embeddingBatcher = new RequestBatcher<string, number[]>(

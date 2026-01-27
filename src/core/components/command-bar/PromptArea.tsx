@@ -115,8 +115,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         if (!isAgentOpen) {
             toggleAgentWindow();
         }
+        setActiveAgentProvider('native'); // Switch back to Native for specific agents
         setOpenDelegate(false);
-    }, [isAgentOpen, setModule, toggleAgentWindow]);
+    }, [isAgentOpen, setModule, toggleAgentWindow, setActiveAgentProvider]);
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
@@ -292,7 +293,13 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     <span>{currentModule === 'dashboard' ? 'indii' : currentModule}</span>
                                     <ChevronUp size={12} className={cn("transition-transform", openDelegate && "rotate-180")} />
                                 </button>
-                                <DelegateMenu isOpen={openDelegate} currentModule={currentModule} isIndiiMode={isIndiiMode} managerAgents={managerAgents} departmentAgents={departmentAgents} onSelect={handleDelegate} onSelectIndii={() => { setChatChannel('indii'); setModule('dashboard' as ModuleId); setOpenDelegate(false); if (!isAgentOpen) toggleAgentWindow(); }} onClose={handleCloseDelegate} />
+                                <DelegateMenu isOpen={openDelegate} currentModule={currentModule} isIndiiMode={isIndiiMode} managerAgents={managerAgents} departmentAgents={departmentAgents} onSelect={handleDelegate} onSelectIndii={() => {
+                                    setChatChannel('indii');
+                                    setModule('dashboard' as ModuleId);
+                                    setActiveAgentProvider('agent-zero'); // Explicitly engage Sidecar
+                                    setOpenDelegate(false);
+                                    if (!isAgentOpen) toggleAgentWindow();
+                                }} onClose={handleCloseDelegate} />
                             </div>
                         )}
 
@@ -329,41 +336,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
                         </button>
 
-                        {/* NATIVE/ZERO — only when agent window is closed (header has it when open) */}
-                        {!isAgentOpen && (
-                            <div className="flex items-center gap-1 bg-black/40 rounded-full p-0.5 border border-white/5 h-8">
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveAgentProvider('native');
-                                    }}
-                                    className={cn(
-                                        "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
-                                        activeAgentProvider === 'native'
-                                            ? "bg-purple-600 text-white shadow-sm"
-                                            : "text-gray-500 hover:text-gray-300"
-                                    )}
-                                    title="Use Native Gemini API"
-                                >
-                                    Native
-                                </button>
-                                <button
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        setActiveAgentProvider('agent-zero');
-                                    }}
-                                    className={cn(
-                                        "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
-                                        activeAgentProvider === 'agent-zero'
-                                            ? "bg-blue-600 text-white shadow-sm"
-                                            : "text-gray-500 hover:text-gray-300"
-                                    )}
-                                    title="Use Agent Zero (Autonomous)"
-                                >
-                                    Zero
-                                </button>
-                            </div>
-                        )}
+                        {/* NATIVE/ZERO controls removed to reduce crowding - Indii mode via DelegateMenu now controls this */}
 
                         <PromptInputAction tooltip="Run command">
                             <button

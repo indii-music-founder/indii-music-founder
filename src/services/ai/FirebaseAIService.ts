@@ -17,7 +17,7 @@ import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
+import { AI_MODELS, APPROVED_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
     InlineDataPart,
@@ -936,7 +936,7 @@ export class FirebaseAIService {
                 await TokenUsageService.checkQuota(userId);
             }
 
-            const modelName = modelOverride || 'text-embedding-004';
+            const modelName = modelOverride || APPROVED_MODELS.EMBEDDING_DEFAULT;
 
             // FALLBACK MODE: Use direct Gemini SDK (new @google/genai)
             if (this.useFallbackMode && this.fallbackClient) {

@@ -7,6 +7,7 @@ services:
     ports:
       - "50080:80"   # UI Port
       - "8880:8080"  # RFC Port
+    working_dir: /a0
     volumes:
       - ~/Documents/indii_Workspace:/a0/usr/projects
       - ./python/tools:/a0/python/tools/custom  # Map custom tools to a subdirectory or overlay
@@ -31,11 +32,22 @@ services:
       - ./prompts/agent.system.tool.indii_audio_ear.md:/a0/prompts/agent.system.tool.indii_audio_ear.md
       # Map the full agents directory for profiles
       - ./agents/indii_curriculum:/a0/agents/indii_curriculum
+      # Provisioning & Knowledge
+      - ./python/api/provision_project.py:/a0/python/api/provision_project.py
+      - ./python/api/indii_sync.py:/a0/python/api/indii_sync.py
+      - ./prompts/templates:/a0/prompts/templates
+      - ./global_assets/knowledge:/a0/knowledge
       - ./agents/indii_executor:/a0/agents/indii_executor
       - ./agents/default:/a0/agents/default
       - ./agents/agent0:/a0/agents/agent0
+      # Custom API Handler for Indii Task Execution
+      - ./python/api/indii_task.py:/a0/python/api/indii_task.py
+      - ./python/api/auth_broker.py:/a0/python/api/auth_broker.py
+      - ./settings.json:/a0/tmp/settings.json
     environment:
       - PORT=80
+      - WEB_UI_HOST=0.0.0.0
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - GEMINI_API_KEY=${GOOGLE_API_KEY}
+      - EMBEDDING_MODEL=models/embedding-001
     restart: unless-stopped

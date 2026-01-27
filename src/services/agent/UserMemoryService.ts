@@ -7,7 +7,7 @@
 
 import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
-import { AI_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { Timestamp } from 'firebase/firestore';
 import {
@@ -45,7 +45,7 @@ const DEFAULT_CONSOLIDATION_CONFIG: MemoryConsolidationConfig = {
 };
 
 class UserMemoryService {
-  private embeddingModel = 'text-embedding-004';
+  private embeddingModel = APPROVED_MODELS.EMBEDDING_DEFAULT;
 
   // Batcher for embedding requests to save tokens and improve performance
   private embeddingBatcher = new RequestBatcher<string, number[]>(
