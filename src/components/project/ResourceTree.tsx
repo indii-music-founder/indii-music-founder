@@ -234,7 +234,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 <div className="flex items-center gap-1">
                     <button
                         onClick={() => triggerUpload(null)}
-                        className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                        className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                         title="Upload File"
                         aria-label="Upload File"
                     >
@@ -242,7 +242,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                     </button>
                     <button
                         onClick={handleCreateRootFolder}
-                        className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors"
+                        className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                         title="New Folder"
                         aria-label="New Folder"
                     >
