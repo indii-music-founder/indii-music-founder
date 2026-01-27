@@ -627,8 +627,10 @@ export class FirebaseAIService {
     ): Promise<GenerateContentResult> {
         // [DEBUG] Log payload for deep diagnosis
         try {
+            // Security: Redact PII from logs
+            const sanitizedForLog = this.sanitizePrompt(prompt);
             console.log('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
-            console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(prompt).substring(0, 500) + "...");
+            console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
             console.log('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
         } catch (e) { /* Ignore logging errors */ }
 
