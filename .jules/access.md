@@ -29,3 +29,7 @@
 ## 2026-01-26 - Focus Stealing by Click-to-Focus Wrappers
 **Learning:** Wrapping interactive elements (e.g., secondary buttons) inside a container that implements "click to focus" (e.g., focusing a textarea) creates a conflict. The container's click handler fires after the button's, stealing focus away from the button or the newly opened menu.
 **Action:** Use `event.stopPropagation()` on the `onClick` handlers of all nested interactive elements to prevent the event from bubbling to the focus-stealing container.
+
+## 2026-06-26 - Dual Error Strategy for Animated Alerts
+**Learning:** `AnimatePresence` can unmount visual elements before screen readers finish announcing them, and `aria-live` regions inside animating containers can be unreliable.
+**Action:** Implement a "Dual Error Strategy": render the visual error (with `aria-hidden="true"`) for sighted users, and a separate, persistent `sr-only` element with `role="alert"` and `aria-live="assertive"` for screen readers.

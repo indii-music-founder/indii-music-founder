@@ -548,7 +548,6 @@ export default function FileUpload({
                     </div>
 
                     <button
-                      className="group flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                       className="group flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                       onClick={triggerFileInput}
                       type="button"
@@ -559,7 +558,6 @@ export default function FileUpload({
                     </button>
 
                     <button
-                      className="group md:hidden flex w-4/5 items-center justify-center gap-2 rounded-lg bg-blue-50/50 px-4 py-2.5 font-semibold text-blue-600 text-sm transition-all duration-200 hover:bg-blue-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 mt-2"
                       className="group md:hidden flex w-4/5 items-center justify-center gap-2 rounded-lg bg-blue-50/50 px-4 py-2.5 font-semibold text-blue-600 text-sm transition-all duration-200 hover:bg-blue-100 dark:bg-blue-500/10 dark:text-blue-400 dark:hover:bg-blue-500/20 mt-2 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                       onClick={triggerCamera}
                       type="button"
@@ -614,7 +612,6 @@ export default function FileUpload({
                     </div>
 
                     <button
-                      className="flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 dark:bg-white/10 dark:text-white dark:hover:bg-white/20"
                       className="flex w-4/5 items-center justify-center gap-2 rounded-lg bg-gray-100 px-4 py-2.5 font-semibold text-gray-900 text-sm transition-all duration-200 hover:bg-gray-200 dark:bg-white/10 dark:text-white dark:hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                       onClick={resetState}
                       type="button"
@@ -634,8 +631,7 @@ export default function FileUpload({
                   className="-translate-x-1/2 absolute bottom-4 left-1/2 transform rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2"
                   exit={{ opacity: 0, y: -10 }}
                   initial={{ opacity: 0, y: 10 }}
-                  role="alert"
-                  aria-live="assertive"
+                  aria-hidden="true"
                 >
                   <p className="text-red-500 text-sm dark:text-red-400">
                     {error.message}
@@ -643,6 +639,17 @@ export default function FileUpload({
                 </motion.div>
               )}
             </AnimatePresence>
+
+            {/* Persistent accessible error message - ensures announcement even if visual element animates out */}
+            {error && (
+              <div
+                role="alert"
+                aria-live="assertive"
+                className="sr-only"
+              >
+                {error.message}
+              </div>
+            )}
           </div>
         </div>
       </div>
