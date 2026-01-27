@@ -14,30 +14,46 @@ import React, {
   useLayoutEffect,
   useRef,
   useState,
+  useMemo,
+  memo,
+  useCallback
 } from "react"
 
-type PromptInputContextType = {
+// Split Context Types
+type PromptStateContextType = {
   isLoading: boolean
-  value: string
-  setValue: (value: string) => void
   maxHeight: number | string
   onSubmit?: () => void
   disabled?: boolean
+}
+
+type PromptValueContextType = {
+  value: string
+  setValue: (value: string) => void
   textareaRef: React.MutableRefObject<HTMLTextAreaElement | null>
 }
 
-const PromptInputContext = createContext<PromptInputContextType>({
+// Define Contexts
+const PromptStateContext = createContext<PromptStateContextType>({
   isLoading: false,
-  value: "",
-  setValue: () => { },
   maxHeight: 240,
   onSubmit: undefined,
   disabled: false,
+})
+
+const PromptValueContext = createContext<PromptValueContextType>({
+  value: "",
+  setValue: () => { },
   textareaRef: { current: null },
 })
 
-function usePromptInput() {
-  return useContext(PromptInputContext)
+// Internal Hooks
+function usePromptState() {
+  return useContext(PromptStateContext)
+}
+
+function usePromptValue() {
+  return useContext(PromptValueContext)
 }
 
 export type PromptInputProps = {
@@ -66,10 +82,10 @@ function PromptInput({
   const [internalValue, setInternalValue] = useState(value || "")
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const handleChange = (newValue: string) => {
+  const handleChange = useCallback((newValue: string) => {
     setInternalValue(newValue)
     onValueChange?.(newValue)
-  }
+  }, [onValueChange])
 
   const effectiveDisabled = disabled || isLoading
 
@@ -78,32 +94,38 @@ function PromptInput({
     onClick?.(e)
   }
 
+  // Bolt Optimization: Split Contexts to prevent re-renders of actions on value change
+  const stateContextValue = useMemo<PromptStateContextType>(() => ({
+    isLoading,
+    maxHeight,
+    onSubmit,
+    disabled: effectiveDisabled
+  }), [isLoading, maxHeight, onSubmit, effectiveDisabled])
+
+  const valueContextValue = useMemo<PromptValueContextType>(() => ({
+    value: value ?? internalValue,
+    setValue: handleChange,
+    textareaRef
+  }), [value, internalValue, handleChange])
+
   return (
     <TooltipProvider>
-      <PromptInputContext.Provider
-        value={{
-          isLoading,
-          value: value ?? internalValue,
-          setValue: handleChange,
-          maxHeight,
-          onSubmit,
-          disabled: effectiveDisabled,
-          textareaRef,
-        }}
-      >
-        <div
-          onClick={handleClick}
-          data-testid="prompt-input"
-          className={cn(
-            "border-input bg-background cursor-text rounded-3xl border p-2 shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
-            effectiveDisabled && "cursor-not-allowed opacity-60",
-            className
-          )}
-          {...props}
-        >
-          {children}
-        </div>
-      </PromptInputContext.Provider>
+      <PromptStateContext.Provider value={stateContextValue}>
+        <PromptValueContext.Provider value={valueContextValue}>
+          <div
+            onClick={handleClick}
+            data-testid="prompt-input"
+            className={cn(
+              "border-input bg-background cursor-text rounded-3xl border p-2 shadow-xs focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+              effectiveDisabled && "cursor-not-allowed opacity-60",
+              className
+            )}
+            {...props}
+          >
+            {children}
+          </div>
+        </PromptValueContext.Provider>
+      </PromptStateContext.Provider>
     </TooltipProvider>
   )
 }
@@ -112,16 +134,17 @@ export type PromptInputTextareaProps = {
   disableAutosize?: boolean
 } & React.ComponentProps<typeof Textarea>
 
-function PromptInputTextarea({
+const PromptInputTextarea = memo(function PromptInputTextarea({
   className,
   onKeyDown,
   disableAutosize = false,
   ...props
 }: PromptInputTextareaProps) {
-  const { value, setValue, maxHeight, onSubmit, disabled, textareaRef } =
-    usePromptInput()
+  // Needs both contexts
+  const { value, setValue, textareaRef } = usePromptValue()
+  const { maxHeight, onSubmit, disabled } = usePromptState()
 
-  const adjustHeight = (el: HTMLTextAreaElement | null) => {
+  const adjustHeight = useCallback((el: HTMLTextAreaElement | null) => {
     if (!el || disableAutosize) return
 
     el.style.height = "auto"
@@ -131,12 +154,12 @@ function PromptInputTextarea({
     } else {
       el.style.height = `min(${el.scrollHeight}px, ${maxHeight})`
     }
-  }
+  }, [disableAutosize, maxHeight])
 
-  const handleRef = (el: HTMLTextAreaElement | null) => {
+  const handleRef = useCallback((el: HTMLTextAreaElement | null) => {
     textareaRef.current = el
     adjustHeight(el)
-  }
+  }, [adjustHeight, textareaRef])
 
   useLayoutEffect(() => {
     if (!textareaRef.current || disableAutosize) return
@@ -181,11 +204,11 @@ function PromptInputTextarea({
       {...props}
     />
   )
-}
+})
 
 export type PromptInputActionsProps = React.HTMLAttributes<HTMLDivElement>
 
-function PromptInputActions({
+const PromptInputActions = memo(function PromptInputActions({
   children,
   className,
   ...props
@@ -195,7 +218,7 @@ function PromptInputActions({
       {children}
     </div>
   )
-}
+})
 
 export type PromptInputActionProps = {
   className?: string
@@ -204,14 +227,15 @@ export type PromptInputActionProps = {
   side?: "top" | "bottom" | "left" | "right"
 } & React.ComponentProps<typeof Tooltip>
 
-function PromptInputAction({
+const PromptInputAction = memo(function PromptInputAction({
   tooltip,
   children,
   className,
   side = "top",
   ...props
 }: PromptInputActionProps) {
-  const { disabled } = usePromptInput()
+  // Bolt Optimization: Only subscribe to state context (disabled), ignoring value changes
+  const { disabled } = usePromptState()
   const ariaLabel = typeof tooltip === "string" ? tooltip : undefined
 
   return (
@@ -229,7 +253,7 @@ function PromptInputAction({
       </TooltipContent>
     </Tooltip>
   )
-}
+})
 
 export {
   PromptInput,
