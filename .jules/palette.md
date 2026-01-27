@@ -1,0 +1,3 @@
+## 2024-05-23 - Interactive Elements in Studio UI
+**Learning:** The Studio UI (specifically `PropertiesPanel.tsx`) relies on `div` elements with `onClick` handlers for accordion toggles, which breaks keyboard accessibility and screen reader support. This pattern might be prevalent in other custom UI components in the Studio.
+**Action:** When working on Studio components, always check for `div` interactions and replace them with semantic `<button>` elements or add proper ARIA roles (`role="button"`) and keyboard handlers (`onKeyDown`). For `PanelSection`, separating the toggle action from nested actions (like "Reset") into sibling elements is a robust pattern to avoid event propagation issues.
