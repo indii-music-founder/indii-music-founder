@@ -1,55 +1,76 @@
 import os
 import time
 from python.helpers.tool import Tool, Response
+from python.config.ai_models import AIConfig
 
 class IndiiImageGen(Tool):
+    """
+    Executes actual image generation via Gemini (Imagen 3).
+    Strictly follows the OS-as-Tool Persistence Rule and img:// Protocol Bridge.
+    """
     async def execute(self, prompt, style="", aspect_ratio="1:1", **kwargs):
-        """
-        Simulates image generation and returns a debugging directory listing.
-        """
-        # 1. DEBUG RECONNAISSANCE
-        try:
-            target_file = "/a0/python/api/indii_task.py"
-            if os.path.exists(target_file):
-                with open(target_file, "r") as f:
-                    content = f.read()
-                debug_info = f"CONTENT OF {target_file}:\n\n{content}"
-            else:
-                debug_info = f"FILE NOT FOUND: {target_file}"
-        except Exception as e:
-            debug_info = f"DEBUG_ERR: {str(e)}"
-
-        # 2. Mock Image Creation
-        # We save a dummy file so the UI has something to render (avoiding 404s on the image itself)
-        # In the container, projects are at /a0/usr/projects/{id}
-        # The agent should have injected the project_id into self.agent.project_id if context switching works.
-        # But for tools, we often rely on the 'assets' folder being current.
+        self.set_progress("Initializing Imagen 3 synthesis...")
         
-        # Safe fallback for assets dir
-        assets_dir = "assets"
-        if hasattr(self.agent, "project_id") and self.agent.project_id:
-             # Try to construct absolute path if possible, or trust relative 'assets'
-             pass
-
-        # Ensure assets dir exists
-        if not os.path.exists(assets_dir):
-            try:
-                os.makedirs(assets_dir)
-            except:
-                pass # Might already exist or permission error
-
-        filename = f"debug_{int(time.time())}.png"
-        local_path = os.path.join(assets_dir, filename)
-
         try:
-            with open(local_path, "w") as f:
-                f.write(f"DEBUG IMAGE\n{debug_info}")
-        except Exception as e:
-            debug_info += f" | FileWriteErr: {e}"
+            # 1. API Call Setup
+            from google import genai
+            from google.genai import types
+            
+            api_key = AIConfig.get_api_key()
+            client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
+            model_id = AIConfig.IMAGE_GEN 
 
-        # 3. Return the Spy Report
-        # adhering to the img:// protocol but embedding our intel in the text
-        return Response(
-            output=f"img://{assets_dir}/{filename}\n\n**SYSTEM RECONNAISSANCE REPORT:**\n{debug_info}",
-            files=[local_path]
-        )
+            # 2. Tag Extraction & Enrichment
+            enriched_prompt = f"{prompt}, style: {style}, aspect_ratio: {aspect_ratio}"
+            self.set_progress(f"Generating image with {model_id}...")
+
+            # 3. Call Imagen API
+            response = client.models.generate_images(
+                model=model_id,
+                prompt=enriched_prompt,
+                config=types.GenerateImagesConfig(
+                    number_of_images=1,
+                    aspect_ratio=aspect_ratio,
+                    add_watermark=False 
+                )
+            )
+
+            if not response.generated_images:
+                return Response(message="Error: Image API returned no data.", break_loop=False)
+
+            # 4. Persistence Rule (Physicality First)
+            # Standardizing to absolute project-based paths
+            try:
+                project_id = getattr(self.agent.context, 'id', 'default_project')
+            except:
+                project_id = "default_project"
+
+            # Blueprint Path: /a0/usr/projects/{project_id}/assets/image/
+            assets_dir = f"/a0/usr/projects/{project_id}/assets/image"
+            if not os.path.exists(assets_dir):
+                os.makedirs(assets_dir, exist_ok=True)
+
+            image_data = response.generated_images[0].image.image_bytes
+            filename = f"gen_{int(time.time())}.png"
+            abs_path = os.path.join(assets_dir, filename)
+
+            with open(abs_path, "wb") as f:
+                f.write(image_data)
+
+            # 5. Protocol Bridge (The Magic String)
+            # Logic: img://{abs_path}&t={timestamp}
+            protocol_path = f"img://{abs_path}&t={time.time()}"
+
+            # 3. Response Payload (The Handoff)
+            # Vector A: Inline Chat (Markdown) 
+            # Vector B: Tool Result (Metadata for UI thumbnails)
+            return Response(
+                output=f"**Gemini Image Generation Complete.**\n\n![Generated Image]({protocol_path})",
+                additional={"visual": protocol_path},
+                files=[abs_path]
+            )
+
+        except Exception as e:
+            import traceback
+            error_msg = f"Image Generation Failed: {str(e)}\n{traceback.format_exc()}"
+            return Response(message=error_msg, break_loop=False)
