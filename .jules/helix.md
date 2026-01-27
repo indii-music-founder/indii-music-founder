@@ -34,3 +34,7 @@
 ## 2026-10-25 - [Population Explosion Control]
 **Learning:** If 'eliteCount' exceeds 'populationSize', the selection phase can accidentally grow the population beyond limits, leading to memory bloat over generations.
 **Action:** Enforced a hard cap in 'EvolutionEngine': effectiveEliteCount = Math.min(eliteCount, populationSize). Added 'HelixPopulationControl.test.ts' to verify strict adherence to population limits.
+
+## 2026-10-27 - [Infinite Loop Protection]
+**Learning:** If the breeding process (mutation/crossover) fails consistently (e.g. 100% failure rate due to API outage), the engine must not retry indefinitely.
+**Action:** Verified that `EvolutionEngine` uses a `MAX_ATTEMPTS` safety break and returns a partial population (elites only) when breeding is exhausted. Added `HelixResilience.test.ts` case to lock this behavior.
