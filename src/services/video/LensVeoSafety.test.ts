@@ -136,7 +136,7 @@ describe('Lens 🎥 - Veo Safety & Integrity', () => {
         vi.advanceTimersByTime(1000);
 
         // Expect rejection due to URL check
-        await expect(jobPromise).rejects.toThrow(/Video Asset Not Found \(404\)/);
+        await expect(jobPromise).rejects.toThrow(/Asset Integrity Failure: Video URL is unreachable \(404\)/);
 
         // Verify fetch was called
         expect(global.fetch).toHaveBeenCalledWith(brokenUrl, expect.objectContaining({ method: 'HEAD' }));
