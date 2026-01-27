@@ -49,7 +49,13 @@ class AgentZeroService {
      */
     private generateAuthToken() {
         const { runtimeId, authLogin, authPassword } = this.config;
-        const rawString = `${runtimeId}:${authLogin}:${authPassword}`;
+
+        // Match the working diagnostic pattern: 
+        // If login/pass are empty, only use runtimeId + "::"
+        // This is important because the container we probed works with this format.
+        const rawString = authLogin || authPassword
+            ? `${runtimeId}:${authLogin}:${authPassword}`
+            : `${runtimeId}::`;
 
         // SHA256 Hash
         const hash = CryptoJS.SHA256(rawString);
@@ -106,7 +112,8 @@ class AgentZeroService {
             const data = await response.json();
             // Map python 'response' key to 'message'
             return {
-                message: data.response,
+                message: data.response || data.message || "Agent Zero: No text response.",
+                attachments: data.attachments || []
                 // TODO: Parse tool calls if available in data
             };
         } catch (e: any) {
