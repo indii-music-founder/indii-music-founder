@@ -239,9 +239,13 @@ export const setupDistributionHandlers = () => {
             validateSender(event);
             const storagePath = getStoragePath();
             const args = ['generate_isrc'];
-            if (options) args.push(JSON.stringify(options));
+            let sensitiveIndices: number[] = [];
+            if (options) {
+                args.push(JSON.stringify(options));
+                sensitiveIndices = [1];
+            }
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
             return { success: true, isrc: report.isrc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -266,7 +270,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact JSON data
 
             // If result is a string (CSV content), wrap it. If it's an object (report), return it.
             if (typeof result === 'string') {
@@ -283,9 +287,13 @@ export const setupDistributionHandlers = () => {
             validateSender(event);
             const storagePath = getStoragePath();
             const args = ['generate_upc'];
-            if (options) args.push(JSON.stringify(options));
+            let sensitiveIndices: number[] = [];
+            if (options) {
+                args.push(JSON.stringify(options));
+                sensitiveIndices = [1];
+            }
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
             return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -297,9 +305,10 @@ export const setupDistributionHandlers = () => {
             validateSender(event);
             const storagePath = getStoragePath();
             const args = ['register', JSON.stringify(metadata)];
+            const sensitiveIndices = [1];
             if (releaseId) args.push(releaseId);
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args);
+            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
             return { success: true, release: report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -314,7 +323,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [0]); // Redact metadata
             // Enhanced ddex_generator returns JSON with xml field
             if (typeof result === 'object' && result.xml) {
                 return { success: result.status === 'SUCCESS', xml: result.xml, report: result };
@@ -335,7 +344,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [1]); // Redact JSON data
             return { success: report.status === 'SUCCESS', csv: report.csv, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -351,7 +360,7 @@ export const setupDistributionHandlers = () => {
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ]);
+            ], undefined, {}, [1]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
