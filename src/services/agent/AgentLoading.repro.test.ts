@@ -23,7 +23,7 @@ describe('AgentRegistry Loading', () => {
             const agent = await agentRegistry.getAsync('generalist');
             expect(agent).toBeDefined();
             expect(agent?.id).toBe('generalist');
-            expect(agent?.name).toBe('Agent Zero');
+            expect(agent?.name).toBe('indii');
             console.log('Generalist agent loaded successfully');
         } catch (error) {
             console.error('Failed to load generalist agent:', error);

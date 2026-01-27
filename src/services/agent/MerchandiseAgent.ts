@@ -197,10 +197,10 @@ export class MerchandiseAgent extends BaseAgent {
     constructor() {
         super({
             id: 'merchandise',
-            name: 'Merchandise Specialist',
+            name: 'Producer',
             description: 'AI-powered merchandise creation expert. Handles product design, mockup generation, video production, and manufacturing coordination.',
-            color: '#FFE135',
-            category: 'specialist',
+            color: 'bg-yellow-400',
+            category: 'manager',
             systemPrompt: `You are the Merchandise Specialist, an AI expert in product creation and production workflows.
 
 ## YOUR MISSION
