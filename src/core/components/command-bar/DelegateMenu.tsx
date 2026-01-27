@@ -4,13 +4,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 export interface DelegateMenuProps {
     isOpen: boolean;
     currentModule: string;
+    isIndiiMode?: boolean;
     managerAgents: { id: string; name: string; color: string; description: string }[];
     departmentAgents: { id: string; name: string; color: string; description: string }[];
     onSelect: (id: string) => void;
+    onSelectIndii?: () => void;
     onClose: () => void;
 }
 
-export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, managerAgents, departmentAgents, onSelect, onClose }: DelegateMenuProps) => {
+export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, isIndiiMode, managerAgents, departmentAgents, onSelect, onSelectIndii, onClose }: DelegateMenuProps) => {
     const menuRef = useRef<HTMLDivElement>(null);
 
     // Handle Escape key and initial focus
@@ -58,8 +60,22 @@ export const DelegateMenu = memo(({ isOpen, currentModule: _currentModule, manag
                         aria-label="Delegate to agent"
                     >
                         <div className="overflow-y-auto custom-scrollbar">
-                            <div className="p-1">
-                                {/* indii removed from delegate menu as it has a dedicated toggle */}
+                            <div className="p-2">
+                                <button
+                                    onClick={() => onSelectIndii?.()}
+                                    className={`w-full text-left px-3 py-2.5 text-xs rounded-lg transition-all flex items-center gap-3 group focus:outline-none ${
+                                        isIndiiMode
+                                            ? 'bg-purple-600/20 text-purple-200'
+                                            : 'text-gray-400 hover:text-white hover:bg-white/5'
+                                    }`}
+                                    role="menuitem"
+                                >
+                                    <div className={`w-2 h-2 rounded-full ${isIndiiMode ? 'bg-purple-400 shadow-[0_0_8px_rgba(168,85,247,0.6)]' : 'bg-purple-600'} group-hover:scale-125 transition-transform`} />
+                                    <div>
+                                        <span className="font-semibold">indii</span>
+                                        <span className="text-[10px] text-gray-500 ml-2">Orchestrator</span>
+                                    </div>
+                                </button>
                             </div>
 
                             <div className="border-t border-gray-800 my-1" />

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -49,7 +49,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         commandBarAttachments,
         setCommandBarAttachments,
         activeAgentProvider,
-        setActiveAgentProvider
+        setActiveAgentProvider,
+        isKnowledgeBaseEnabled,
+        setKnowledgeBaseEnabled
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
@@ -65,7 +67,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         commandBarAttachments: state.commandBarAttachments,
         setCommandBarAttachments: state.setCommandBarAttachments,
         activeAgentProvider: state.activeAgentProvider,
-        setActiveAgentProvider: state.setActiveAgentProvider
+        setActiveAgentProvider: state.setActiveAgentProvider,
+        isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
+        setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -288,9 +292,28 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     <span>{currentModule === 'dashboard' ? 'indii' : currentModule}</span>
                                     <ChevronUp size={12} className={cn("transition-transform", openDelegate && "rotate-180")} />
                                 </button>
-                                <DelegateMenu isOpen={openDelegate} currentModule={currentModule} managerAgents={managerAgents} departmentAgents={departmentAgents} onSelect={handleDelegate} onClose={handleCloseDelegate} />
+                                <DelegateMenu isOpen={openDelegate} currentModule={currentModule} isIndiiMode={isIndiiMode} managerAgents={managerAgents} departmentAgents={departmentAgents} onSelect={handleDelegate} onSelectIndii={() => { setChatChannel('indii'); setModule('dashboard' as ModuleId); setOpenDelegate(false); if (!isAgentOpen) toggleAgentWindow(); }} onClose={handleCloseDelegate} />
                             </div>
                         )}
+
+                        {/* KB Toggle — grouped with agent selector */}
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
+                            }}
+                            className={cn(
+                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border",
+                                isKnowledgeBaseEnabled
+                                    ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
+                                    : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
+                            )}
+                            title={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}
+                            aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
+                            aria-pressed={isKnowledgeBaseEnabled}
+                        >
+                            <Database size={13} />
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-2 ml-auto">
@@ -306,54 +329,42 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
                         </button>
 
-                        <div className="flex items-center gap-1 bg-black/40 rounded-full p-0.5 border border-white/5 h-8">
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveAgentProvider('native');
-                                }}
-                                className={cn(
-                                    "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
-                                    activeAgentProvider === 'native'
-                                        ? "bg-purple-600 text-white shadow-sm"
-                                        : "text-gray-500 hover:text-gray-300"
-                                )}
-                                title="Use Native Gemini API"
-                            >
-                                Native
-                            </button>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setActiveAgentProvider('agent-zero');
-                                }}
-                                className={cn(
-                                    "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
-                                    activeAgentProvider === 'agent-zero'
-                                        ? "bg-blue-600 text-white shadow-sm"
-                                        : "text-gray-500 hover:text-gray-300"
-                                )}
-                                title="Use Agent Zero (Autonomous)"
-                            >
-                                Zero
-                            </button>
-                        </div>
+                        {/* NATIVE/ZERO — only when agent window is closed (header has it when open) */}
+                        {!isAgentOpen && (
+                            <div className="flex items-center gap-1 bg-black/40 rounded-full p-0.5 border border-white/5 h-8">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveAgentProvider('native');
+                                    }}
+                                    className={cn(
+                                        "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
+                                        activeAgentProvider === 'native'
+                                            ? "bg-purple-600 text-white shadow-sm"
+                                            : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    title="Use Native Gemini API"
+                                >
+                                    Native
+                                </button>
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        setActiveAgentProvider('agent-zero');
+                                    }}
+                                    className={cn(
+                                        "px-2.5 h-full rounded-full text-[9px] font-bold uppercase transition-all",
+                                        activeAgentProvider === 'agent-zero'
+                                            ? "bg-blue-600 text-white shadow-sm"
+                                            : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    title="Use Agent Zero (Autonomous)"
+                                >
+                                    Zero
+                                </button>
+                            </div>
+                        )}
 
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setChatChannel(isIndiiMode ? 'agent' : 'indii');
-                            }}
-                            className={cn(
-                                "p-1.5 rounded-full border flex items-center gap-2 px-4 text-[10px] font-bold tracking-widest lowercase min-h-[44px] md:min-h-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                                isIndiiMode ? "bg-purple-600/20 border-purple-500/50 text-purple-200" : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-200"
-                            )}
-                            aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
-                            data-testid="mode-toggle-btn"
-                        >
-                            <div className={cn("w-1.5 h-1.5 rounded-full", isIndiiMode ? "bg-purple-400" : "bg-gray-600")} />
-                            indii
-                        </button>
                         <PromptInputAction tooltip="Run command">
                             <button
                                 onClick={(e) => handleSubmit(e)}

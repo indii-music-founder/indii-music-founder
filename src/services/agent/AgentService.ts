@@ -96,7 +96,7 @@ export class AgentService {
             });
 
             // Create a timeout controller
-            const timeoutMs = 60000; // 60s Safety Timeout
+            const timeoutMs = 300000; // 300s Safety Timeout (Increased for Agent Zero)
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
