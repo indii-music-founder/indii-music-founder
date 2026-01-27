@@ -37,12 +37,17 @@ export function PanelSection({ title, children, defaultOpen = true, actions }: P
 
     return (
         <div className="border-b border-gray-800">
-            <div className="flex items-center justify-between p-3 bg-gray-900/30 hover:bg-gray-900/50 transition-colors cursor-pointer group" onClick={() => setIsOpen(!isOpen)}>
-                <div className="flex items-center gap-2">
+            <div className="flex items-center bg-gray-900/30 hover:bg-gray-900/50 transition-colors group">
+                <button
+                    type="button"
+                    onClick={() => setIsOpen(!isOpen)}
+                    className="flex items-center gap-2 flex-1 p-3 text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                    aria-expanded={isOpen}
+                >
                     {isOpen ? <ChevronDown size={12} className="text-gray-500" /> : <ChevronRight size={12} className="text-gray-500" />}
                     <span className="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors">{title}</span>
-                </div>
-                {actions && <div onClick={e => e.stopPropagation()}>{actions}</div>}
+                </button>
+                {actions && <div className="pr-3 flex items-center">{actions}</div>}
             </div>
             <AnimatePresence initial={false}>
                 {isOpen && (
