@@ -207,9 +207,22 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                         // Convert back to array and sort by timestamp (newest first)
                         const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
-                        const generated = mergedHistory.filter(item => item.origin !== 'uploaded');
-                        const uploadedImages = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'image');
-                        const uploadedAudio = mergedHistory.filter(item => item.origin === 'uploaded' && item.type === 'music');
+                        // Bolt Optimization: Filter in a single pass O(N) instead of 3 passes O(3N)
+                        const generated: HistoryItem[] = [];
+                        const uploadedImages: HistoryItem[] = [];
+                        const uploadedAudio: HistoryItem[] = [];
+
+                        for (const item of mergedHistory) {
+                            if (item.origin !== 'uploaded') {
+                                generated.push(item);
+                            } else {
+                                if (item.type === 'image') {
+                                    uploadedImages.push(item);
+                                } else if (item.type === 'music') {
+                                    uploadedAudio.push(item);
+                                }
+                            }
+                        }
 
                         return {
                             generatedHistory: generated,
