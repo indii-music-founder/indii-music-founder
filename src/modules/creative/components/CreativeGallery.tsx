@@ -202,13 +202,15 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         onSelectRef.current = onSelect;
     });
 
+    const { setViewMode } = useStore();
     const handleSelect = useCallback((item: HistoryItem) => {
         if (onSelectRef.current) {
             onSelectRef.current(item);
         } else {
             setSelectedItem(item);
+            setViewMode('editor');
         }
-    }, [setSelectedItem]);
+    }, [setSelectedItem, setViewMode]);
 
     // Filter items based on search query
     const filteredUploadedImages = (searchQuery
