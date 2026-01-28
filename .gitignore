@@ -62,6 +62,8 @@ tsconfig.verify.json
 functions/lib/
 dist-electron-studio/
 .gemini
+.firebase/
+*.backup
 
 # Distribution Engine Runtime Data
 upc_store.json
