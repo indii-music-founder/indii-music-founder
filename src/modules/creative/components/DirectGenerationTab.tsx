@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { useStore } from '@/core/store';
+import { useStore, HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
@@ -15,7 +15,7 @@ interface GeneratedItem {
 }
 
 export default function DirectGenerationTab() {
-    const { studioControls, setPrompt, addToHistory, currentProjectId, whiskState } = useStore();
+    const { studioControls, setPrompt, addToHistory, currentProjectId, whiskState, setSelectedItem } = useStore();
     const toast = useToast();
 
     // Local state for direct mode isolation
@@ -51,10 +51,16 @@ export default function DirectGenerationTab() {
                         url: g.url,
                         type: 'image' as const,
                         prompt: localPrompt,
-                        timestamp: Date.now()
+                        timestamp: Date.now(),
+                        projectId: currentProjectId,
+                        origin: 'generated' as const
                     }));
                     setResults(prev => [...newItems, ...prev]);
-                    newItems.forEach(item => addToHistory({ ...item, projectId: currentProjectId }));
+                    newItems.forEach(item => addToHistory({ ...item }));
+
+                    // Open the FIRST generated image in CreativeCanvas for editing
+                    setSelectedItem(newItems[0] as HistoryItem);
+
                     toast.success('Image generated successfully');
                 }
             } else {
@@ -95,7 +101,17 @@ export default function DirectGenerationTab() {
             }
         } catch (error: any) {
             console.error("Direct Generation Failed:", error);
-            toast.error(`Generation failed: ${error.message || 'Unknown error'}`);
+
+            // Provide specific error messages based on error type
+            if (error?.code === 'deadline-exceeded' || error?.message?.includes('timeout')) {
+                toast.error('Generation timed out. The API may be busy - please try again.');
+            } else if (error?.code === 'resource-exhausted') {
+                toast.error(error.message || 'Quota exceeded. Please upgrade your plan.');
+            } else if (error?.code === 'internal' && error?.message?.includes('No image data')) {
+                toast.error('No image was generated. Try rephrasing your prompt.');
+            } else {
+                toast.error(`Generation failed: ${error.message || 'Unknown error'}`);
+            }
         } finally {
             setIsGenerating(false);
         }

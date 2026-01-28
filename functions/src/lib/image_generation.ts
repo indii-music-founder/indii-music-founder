@@ -61,30 +61,57 @@ export const generateImageV3Fn = () => functions
 
             console.log(`[generateImageV3] Model: ${modelId} | Prompt: "${prompt}"`);
 
-            // 4. Call Model via REST
+            // 4. Call Model via REST with AbortController timeout
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
-            const response = await fetch(apiUrl, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ role: "user", parts }],
-                    generationConfig: {
-                        temperature: 1.0,
-                        candidateCount: count || 1,
-                        responseModalities: ["IMAGE"],
-                        ...(aspectRatio || imageSize ? {
-                            imageConfig: {
-                                ...(aspectRatio ? { aspectRatio } : {}),
-                                ...(imageSize ? { imageSize } : {})
-                            }
-                        } : {}),
-                        // Thinking is not yet supported for gemini-3-image in us-west1 preview
-                        // ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
-                        ...(useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
-                    }
-                })
-            });
+            // AbortController with 90s timeout (leaving 30s buffer for function's 120s timeout)
+            const FETCH_TIMEOUT_MS = 90000;
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                controller.abort();
+                console.error(`[generateImageV3] Fetch timeout after ${FETCH_TIMEOUT_MS}ms`);
+            }, FETCH_TIMEOUT_MS);
+
+            const startTime = Date.now();
+            console.log(`[generateImageV3] Starting API call at ${new Date().toISOString()}`);
+
+            let response: Response;
+            try {
+                response = await fetch(apiUrl, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts }],
+                        generationConfig: {
+                            temperature: 1.0,
+                            candidateCount: count || 1,
+                            responseModalities: ["IMAGE"],
+                            ...(aspectRatio || imageSize ? {
+                                imageConfig: {
+                                    ...(aspectRatio ? { aspectRatio } : {}),
+                                    ...(imageSize ? { imageSize } : {})
+                                }
+                            } : {}),
+                            // Thinking is not yet supported for gemini-3-image in us-west1 preview
+                            // ...(thinking ? { thinkingConfig: { thinkingLevel: "HIGH" as any } } : {}),
+                            ...(useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
+                        }
+                    }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+                console.log(`[generateImageV3] API response received in ${Date.now() - startTime}ms, status: ${response.status}`);
+            } catch (fetchError: any) {
+                clearTimeout(timeoutId);
+                if (fetchError.name === 'AbortError') {
+                    throw new functions.https.HttpsError(
+                        "deadline-exceeded",
+                        "Image generation timed out after 90 seconds. The API may be overloaded. Please try again."
+                    );
+                }
+                throw fetchError;
+            }
 
             if (!response.ok) {
                 const errText = await response.text();
