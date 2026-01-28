@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Brush, Wand2 } from 'lucide-react';
 import { useStore, HistoryItem } from '@/core/store';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -49,12 +50,22 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         if (item) setPrompt(item.prompt);
     }, [item]);
 
-    // Simplified initialization: removed complex Fabric.js setup for now per user request to simplify layers
+    // Simplified initialization: re-enabled Fabric.js for functional annotations
     useEffect(() => {
+        if (canvasEl.current && item && item.type === 'image') {
+            canvasOps.initialize(canvasEl.current, item.url);
+        }
         return () => {
             canvasOps.dispose();
         };
-    }, []);
+    }, [item]);
+
+    // Sync brush color
+    useEffect(() => {
+        if (isMagicFillMode) {
+            canvasOps.updateBrushColor(activeColor);
+        }
+    }, [activeColor, isMagicFillMode]);
 
     if (!item) return null;
 
@@ -69,7 +80,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         canvasOps.setMagicFillMode(newMode, activeColor);
 
         if (newMode) {
-            toast.info(`Annotating with ${activeColor.name}. Define edit in settings.`);
+            toast.info(`Annotating with ${activeColor.name}. Describe your edit.`);
         }
     };
 
@@ -282,56 +293,74 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4"
-                onClick={onClose}
-                data-testid="creative-canvas-modal-overlay"
+                className="absolute inset-0 z-40 bg-background flex flex-col overflow-hidden"
+                data-testid="creative-canvas-container"
             >
-                <motion.div
-                    initial={{ scale: 0.9, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.9, opacity: 0 }}
-                    className="relative max-w-6xl w-full h-[90vh] bg-[#1a1a1a] rounded-xl border border-gray-800 overflow-hidden flex flex-col shadow-2xl"
-                    onClick={e => e.stopPropagation()}
-                    data-testid="creative-canvas-modal-content"
-                >
-                    <CanvasHeader
-                        isMagicFillMode={isMagicFillMode}
-                        magicFillPrompt={magicFillPrompt}
-                        setMagicFillPrompt={setMagicFillPrompt}
-                        handleMagicFill={handleMagicFill}
-                        isProcessing={isProcessing}
-                        saveCanvas={saveCanvas}
-                        item={item}
-                        endFrameItem={endFrameItem}
-                        setEndFrameItem={setEndFrameItem}
-                        setIsSelectingEndFrame={setIsSelectingEndFrame}
-                        handleAnimate={handleAnimate}
-                        onClose={onClose}
-                        onSendToWorkflow={onSendToWorkflow}
-                        onRefine={onRefine || handleRefine}
-                        onCreateLastFrame={handleCreateLastFrame}
-                        processingStatus={processingStatus}
-                    />
+                <CanvasHeader
+                    isMagicFillMode={isMagicFillMode}
+                    magicFillPrompt={magicFillPrompt}
+                    setMagicFillPrompt={setMagicFillPrompt}
+                    handleMagicFill={handleMagicFill}
+                    isProcessing={isProcessing}
+                    saveCanvas={saveCanvas}
+                    item={item}
+                    endFrameItem={endFrameItem}
+                    setEndFrameItem={setEndFrameItem}
+                    setIsSelectingEndFrame={setIsSelectingEndFrame}
+                    handleAnimate={handleAnimate}
+                    onClose={onClose}
+                    onSendToWorkflow={onSendToWorkflow}
+                    onRefine={onRefine || handleRefine}
+                    onCreateLastFrame={handleCreateLastFrame}
+                    processingStatus={processingStatus}
+                />
 
-                    <div className="flex-1 overflow-hidden flex items-center justify-center bg-[#0f0f0f] relative p-8">
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Sidebar: Tools & Annotations */}
+                    <aside className="border-r border-gray-800 bg-[#0a0a0a] flex flex-col items-center">
+                        <CanvasToolbar
+                            addRectangle={() => canvasOps.addRectangle()}
+                            addCircle={() => canvasOps.addCircle()}
+                            addText={() => canvasOps.addText()}
+                            toggleMagicFill={toggleMagicFill}
+                            isMagicFillMode={isMagicFillMode}
+                        />
+                        <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">
+                            <AnnotationPalette
+                                activeColor={activeColor}
+                                onColorSelect={setActiveColor}
+                                colorDefinitions={{}} // TODO: Sync with store
+                                onOpenDefinitions={() => { }} // TODO: Implement UI
+                            />
+                        </div>
+                    </aside>
+
+                    {/* Stage: Main Viewport */}
+                    <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-12">
                         {item.type === 'video' && !item.url.startsWith('data:image') ? (
                             <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
                         ) : (
-                            <div className="relative max-w-full max-h-full group">
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                                    <p className="text-white font-medium bg-black/50 px-3 py-1 rounded backdrop-blur-md">
-                                        {isMagicFillMode ? "Magic Edit Mode Active" : "Interactive Canvas"}
-                                    </p>
-                                </div>
-                                <img src={item.url} alt={item.prompt || 'Content'} className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
+                            <div className="relative w-full h-full flex items-center justify-center group" onClick={(e) => isMagicFillMode && e.stopPropagation()}>
+                                <canvas
+                                    ref={canvasEl}
+                                    className="max-w-full max-h-full object-contain shadow-2xl rounded-lg cursor-crosshair"
+                                    data-testid="creative-canvas-element"
+                                />
                                 {item.type === 'video' && item.url.startsWith('data:image') && (
-                                    <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20">
+                                    <div className="absolute top-4 left-4 bg-purple-600/90 text-white text-xs font-bold px-3 py-1 rounded-md backdrop-blur-sm shadow-lg border border-white/20 pointer-events-none">
                                         STORYBOARD PREVIEW
                                     </div>
                                 )}
                             </div>
-                        )
-                        }
+                        )}
+
+                        {/* Floating Interaction Status */}
+                        {isMagicFillMode && (
+                            <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-blue-600/20 border border-blue-500/50 text-blue-400 px-4 py-1 rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-2">
+                                <Wand2 size={12} />
+                                Magic Edit Mode
+                            </div>
+                        )}
 
                         {/* Candidates Overlay */}
                         <CandidatesCarousel
@@ -350,8 +379,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 setIsSelectingEndFrame(false);
                             }}
                         />
-                    </div>
-                </motion.div>
+                    </main>
+
+                    {/* Right Panel: Contextual Options (Optional / Future) */}
+                    {/* <EditDefinitionsPanel /> */}
+                </div>
             </motion.div>
         </AnimatePresence>
     );

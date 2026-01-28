@@ -31,3 +31,30 @@
 - [x] Polish: Error handling for offset port/container down.
 - [x] Fix: Update Service to use correct `/api_message` and `X-API-KEY` (Fixed 404).
 - [ ] Feature: Add UI for Agent Zero Tool Execution feedback. (Deferred - requires backend fork).
+
+## Proving Ground: Agent Zero Sidecar (System Directive)
+
+### Phase 1: Infrastructure & "Air Gap"
+
+- [x] Test 1: "Ghost in the Shell" (Volume Mapping Check). **PASSED**
+- [ ] Test 2: "Silent LAN" (Network Isolation Check). **Retrying after dependency fix (aiohttp)**
+
+### Phase 2: Gemini Brain Handshake
+
+- [ ] Test 3: "Identity" (ADC Authentication Check).
+- [ ] Test 4: "Native Ear" (Multimodal Input Check).
+
+### Phase 3: Sidecar Bridge (API Handlers)
+
+- [ ] Test 5: "Headless" Command (Async API Trigger Check).
+- [ ] Test 6: "Context Bleed" (Project Isolation Stress Test).
+
+### Phase 4: Tooling & "The Hands"
+
+- [ ] Test 7: "Protocol" (Image Rendering path `img://` Check).
+- [ ] Test 8: "Zeroization" (Secrets Hygiene Check).
+
+### Phase 5: Overlook Protection
+
+- [ ] Test 9: "Zombie" Process Check (SIGTERM Handling).
+- [ ] Test 10: "Prompt Injection" Honeypot (Gatekeeper Check).

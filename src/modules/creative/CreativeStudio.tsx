@@ -171,27 +171,29 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         {viewMode === 'video_production' && <VideoWorkflow />}
                         {viewMode === 'direct' && <DirectGenerationTab />}
                         {viewMode === 'lab' && <AILab />}
+                        {viewMode === 'editor' && selectedItem && (
+                            <CreativeCanvas
+                                item={selectedItem}
+                                onClose={() => {
+                                    setSelectedItem(null);
+                                    setViewMode('gallery');
+                                }}
+                                onSendToWorkflow={(type, item) => {
+                                    const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
+                                    setVideoInput(type, item);
+                                    setGenerationMode('video');
+                                    setViewMode('video_production');
+                                    setSelectedItem(null);
+                                    toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
 
                 {/* Main Prompt Bar Removed - Using Global CommandBar */}
 
-                {/* Global Overlay */}
-                {selectedItem && (
-                    <CreativeCanvas
-                        item={selectedItem}
-                        onClose={() => setSelectedItem(null)}
-                        onSendToWorkflow={(type, item) => {
-                            // type is 'firstFrame' | 'lastFrame'
-                            const { setVideoInput, setGenerationMode, setViewMode, setSelectedItem } = useStore.getState();
-                            setVideoInput(type, item);
-                            setGenerationMode('video');
-                            setViewMode('video_production');
-                            setSelectedItem(null);
-                            toast.success(`Set as ${type === 'firstFrame' ? 'Start' : 'End'} Frame`);
-                        }}
-                    />
-                )}
+                {/* Transitions handled via viewMode === 'editor' above */}
             </div>
         </ModuleErrorBoundary>
     );
