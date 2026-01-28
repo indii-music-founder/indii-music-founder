@@ -40,6 +40,7 @@ services:
       - ./agents/indii_executor:/a0/agents/indii_executor
       - ./agents/default:/a0/agents/default
       - ./agents/agent0:/a0/agents/agent0
+      - ./agents/providers.yaml:/a0/agents/providers.yaml
       # Custom API Handler for Indii Task Execution
       - ./python/api/indii_task.py:/a0/python/api/indii_task.py
       - ./python/api/auth_broker.py:/a0/python/api/auth_broker.py
