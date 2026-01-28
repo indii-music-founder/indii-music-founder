@@ -5,7 +5,7 @@
 - [x] API: Fix MIME type detection in `CreativeCanvas` to prevent image/png mismatches. <!-- id: 3 -->
 - [x] Fix build errors in `VideoGenerationService.ts`
 - [x] Stabilization: Fix all type-checking and linting errors for production build.
-- [ ] **USER ACTION**: Verify Agent Zero at <http://localhost:50080> (Auth fixed: Default & Agent0 profiles forced to Gemini 3) <!-- id: 3 -->
+- [x] **USER ACTION**: Verify Agent Zero at <http://localhost:50080> (Auth fixed: App Check Logic patched for DEV, Debug Token registered) <!-- id: 3 -->
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
 - [x] Final Verification: Full `npm run build` success.
 

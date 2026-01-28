@@ -74,6 +74,18 @@ function isAppCheckError(error: unknown): boolean {
  * If not, we should use direct Gemini SDK from the start.
  */
 function isAppCheckConfigured(): boolean {
+    // Force fallback in dev mode unless a debug token is explicitly set
+    // This allows localhost to work without App Check emulation
+    console.log('[FirebaseAIService] App Check Debug:', {
+        DEV: env.DEV,
+        debugToken: env.appCheckDebugToken,
+        key: env.appCheckKey
+    });
+
+    if (env.DEV && !env.appCheckDebugToken) {
+        console.warn('[FirebaseAIService] DEV mode detected without Debug Token. Disabling App Check.');
+        return false;
+    }
     return !!(env.appCheckKey || env.appCheckDebugToken);
 }
 
@@ -213,7 +225,22 @@ export class FirebaseAIService {
      */
     private async initializeFallbackMode(): Promise<void> {
         // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
-        const apiKey = env.VITE_API_KEY || env.apiKey || (import.meta as any).env?.GOOGLE_API_KEY || (import.meta as any).env?.GEMINI_API_KEY;
+        // Explicitly check sources to log which one is used
+        const keySources = {
+            'env.VITE_API_KEY': env.VITE_API_KEY,
+            'env.apiKey': env.apiKey,
+            'import.meta.env.GOOGLE_API_KEY': (import.meta as any).env?.GOOGLE_API_KEY,
+            'import.meta.env.GEMINI_API_KEY': (import.meta as any).env?.GEMINI_API_KEY
+        };
+
+        const foundSource = Object.entries(keySources).find(([_, val]) => !!val);
+        const apiKey = foundSource ? foundSource[1] : undefined;
+
+        console.log('[FirebaseAIService] Fallback Mode Initialization:', {
+            foundKey: !!apiKey,
+            source: foundSource ? foundSource[0] : 'NONE',
+            keyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'N/A'
+        });
 
         if (!apiKey) {
             throw new AppException(
