@@ -1,21 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
-import { Check, Search, UserPlus, X, Sparkles } from 'lucide-react';
+import { Check, Search, UserPlus, X, Sparkles, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
-
-// MOCK AGENT DIRECTORY - Ideally fetch this from a service
-const AVAILABLE_AGENTS = [
-    { id: 'marketing_director', name: 'Marketing Director', role: 'marketing', description: 'Campaign strategy & execution' },
-    { id: 'creative_director', name: 'Creative Director', role: 'creative', description: 'Visual arts & asset generation' },
-    { id: 'legal_counsel', name: 'Legal Counsel', role: 'legal', description: 'Contracts & compliance' },
-    { id: 'finance_head', name: 'Finance Head', role: 'finance', description: 'Budgeting & projections' },
-    { id: 'publicist', name: 'Publicist', role: 'pr', description: 'Media relations & press' },
-];
 
 export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
     const activeSessionId = useStore(state => state.activeSessionId);
     const sessions = useStore(state => state.sessions);
     const addParticipant = useStore(state => state.addParticipant);
+    const availableAgents = useStore(state => state.availableAgents);
+    const isLoadingAgents = useStore(state => state.isLoadingAgents);
+    const agentsError = useStore(state => state.agentsError);
+    const loadAgents = useStore(state => state.loadAgents);
+
+    useEffect(() => {
+        loadAgents();
+    }, [loadAgents]);
 
     // Safety check
     const currentSession = activeSessionId ? sessions[activeSessionId] : null;
@@ -23,9 +22,9 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
 
     const [searchTerm, setSearchTerm] = useState('');
 
-    const filteredAgents = AVAILABLE_AGENTS.filter(agent =>
-        agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        agent.role.toLowerCase().includes(searchTerm.toLowerCase())
+    const filteredAgents = availableAgents.filter(agent =>
+        (agent.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (agent.category || '').toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleInvite = (agentId: string) => {
@@ -70,49 +69,61 @@ export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
                 </div>
             </div>
 
-            <div className="p-4 max-h-[420px] overflow-y-auto custom-scrollbar grid grid-cols-1 gap-3">
-                {filteredAgents.map((agent, index) => {
-                    const isPresent = currentParticipants.includes(agent.id);
+            <div className="p-4 max-h-[420px] overflow-y-auto custom-scrollbar grid grid-cols-1 gap-3 min-h-[200px]">
+                {isLoadingAgents ? (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-3 py-12">
+                        <Loader2 size={24} className="animate-spin text-purple-500" />
+                        <span className="text-xs uppercase tracking-wider">Summoning Agents...</span>
+                    </div>
+                ) : agentsError ? (
+                    <div className="flex flex-col items-center justify-center h-full text-red-400 gap-3 text-center px-4 py-12">
+                        <AlertCircle size={24} />
+                        <span className="text-xs">{agentsError}</span>
+                    </div>
+                ) : (
+                    filteredAgents.map((agent, index) => {
+                        const isPresent = currentParticipants.includes(agent.id);
 
-                    return (
-                        <motion.div
-                            key={agent.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            whileHover={isPresent ? {} : { scale: 1.01, backgroundColor: 'rgba(255,255,255,0.04)' }}
-                            whileTap={isPresent ? {} : { scale: 0.99 }}
-                            className={`relative p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${isPresent
-                                ? 'bg-purple-500/5 border-purple-500/20 mix-blend-screen opacity-60'
-                                : 'bg-white/5 border-white/5 hover:border-white/10 cursor-pointer shadow-sm'
-                                }`}
-                            onClick={() => !isPresent && handleInvite(agent.id)}
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${isPresent ? 'bg-purple-500/20 border-purple-500/40' : 'bg-black/40 border-white/10 group-hover:border-purple-500/30'}`}>
-                                    <Sparkles size={16} className={isPresent ? 'text-purple-300' : 'text-gray-500 group-hover:text-purple-400'} />
+                        return (
+                            <motion.div
+                                key={agent.id}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.05 }}
+                                whileHover={isPresent ? {} : { scale: 1.01, backgroundColor: 'rgba(255,255,255,0.04)' }}
+                                whileTap={isPresent ? {} : { scale: 0.99 }}
+                                className={`relative p-4 rounded-2xl border transition-all duration-300 flex items-center justify-between group ${isPresent
+                                    ? 'bg-purple-500/5 border-purple-500/20 mix-blend-screen opacity-60'
+                                    : 'bg-white/5 border-white/5 hover:border-white/10 cursor-pointer shadow-sm'
+                                    }`}
+                                onClick={() => !isPresent && handleInvite(agent.id)}
+                            >
+                                <div className="flex items-center gap-4">
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${isPresent ? 'bg-purple-500/20 border-purple-500/40' : 'bg-black/40 border-white/10 group-hover:border-purple-500/30'}`}>
+                                        <Sparkles size={16} className={isPresent ? 'text-purple-300' : 'text-gray-500 group-hover:text-purple-400'} />
+                                    </div>
+                                    <div>
+                                        <div className="text-[13px] font-bold text-gray-200 tracking-tight">{agent.name}</div>
+                                        <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{agent.category}</div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <div className="text-[13px] font-bold text-gray-200 tracking-tight">{agent.name}</div>
-                                    <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">{agent.role}</div>
-                                </div>
-                            </div>
 
-                            {isPresent ? (
-                                <div className="flex items-center gap-2 text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full border border-purple-500/20">
-                                    <Check size={10} strokeWidth={3} />
-                                    ACTIVE
-                                </div>
-                            ) : (
-                                <motion.div
-                                    className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 p-2 rounded-lg text-white"
-                                >
-                                    <UserPlus size={14} />
-                                </motion.div>
-                            )}
-                        </motion.div>
-                    );
-                })}
+                                {isPresent ? (
+                                    <div className="flex items-center gap-2 text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-1 rounded-full border border-purple-500/20">
+                                        <Check size={10} strokeWidth={3} />
+                                        ACTIVE
+                                    </div>
+                                ) : (
+                                    <motion.div
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity bg-white/10 p-2 rounded-lg text-white"
+                                    >
+                                        <UserPlus size={14} />
+                                    </motion.div>
+                                )}
+                            </motion.div>
+                        );
+                    })
+                )}
             </div>
 
             <div className="p-4 bg-white/[0.01] border-t border-white/5 flex justify-center">
