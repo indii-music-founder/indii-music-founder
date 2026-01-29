@@ -60,8 +60,14 @@ export const AI_CONFIG = {
     },
     IMAGE: {
         DEFAULT: {
-            imageConfig: { imageSize: '2K' },
-            mediaResolution: 'MEDIA_RESOLUTION_HIGH'
+            imageConfig: { imageSize: '4K' }, // Nano Banana Pro supports up to 4K
+            mediaResolution: 'MEDIA_RESOLUTION_HIGH',
+            maxReferenceImages: 14
+        },
+        FAST: {
+            imageConfig: { imageSize: '1K' }, // Nano Banana Flash supports up to 1K
+            mediaResolution: 'MEDIA_RESOLUTION_LOW',
+            maxReferenceImages: 8
         }
     },
     VIDEO: {
@@ -78,13 +84,17 @@ export const AI_CONFIG = {
 } as const;
 
 /**
- * Model Pricing (Approximate USD per 1M tokens or per generation)
+ * Model Pricing (USD per 1M tokens) 
+ * 
+ * Data sourced from Nano Banana series specifications:
+ * - Pro: $120.00 / 1M Output
+ * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
     [APPROVED_MODELS.TEXT_AGENT]: { input: 1.25, output: 3.75 },
     [APPROVED_MODELS.TEXT_FAST]: { input: 0.10, output: 0.40 },
-    [APPROVED_MODELS.IMAGE_GEN]: { perGeneration: 0.04 },
-    [APPROVED_MODELS.IMAGE_FAST]: { perGeneration: 0.005 },
+    [APPROVED_MODELS.IMAGE_GEN]: { output: 120.00, resolution: "4K", capacity: 14 },
+    [APPROVED_MODELS.IMAGE_FAST]: { output: 30.00, resolution: "1K", capacity: 8 },
     [APPROVED_MODELS.VIDEO_GEN]: { perGeneration: 0.05 },
     [APPROVED_MODELS.AUDIO_PRO]: { perGeneration: 0.01 },
     [APPROVED_MODELS.AUDIO_FLASH]: { perGeneration: 0.005 },
