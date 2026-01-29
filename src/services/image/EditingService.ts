@@ -40,21 +40,30 @@ export class EditingService {
     }
 
     /**
-     * Edit a single image with optional mask and reference image.
-     * Uses Cloud Function backend for rate limiting and security.
+     * Edit a single image using the Dual-View Pipeline (original + binary mask).
+     * 
+     * Pro (High Fidelity): Uses gemini-3-pro-image-preview for complex reasoning.
+     * Flash (High Speed): Uses gemini-2.5-flash-image for sub-second inpainting.
      */
     async editImage(options: {
         image: { mimeType: string; data: string };
         mask?: { mimeType: string; data: string };
+        decoratedImage?: { mimeType: string; data: string }; // Legacy/Flattened
         referenceImage?: { mimeType: string; data: string };
         prompt: string;
+        forceHighFidelity?: boolean;
+        model?: 'pro' | 'flash' | string;
     }): Promise<{ id: string; url: string; prompt: string } | null> {
         const editImageFn = httpsCallable(functions, 'editImage');
 
         // Sanitize prompt input
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
 
-        // Call backend with retry logic and mimeType information
+        // Selection Logic:
+        const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || options.decoratedImage;
+        const modelId = useHighFidelity ? AI_MODELS.IMAGE.GENERATION : AI_MODELS.IMAGE.FAST;
+
+        // Call backend with Dual-View payload
         const result = await this.withRetry(() => editImageFn({
             image: options.image.data,
             imageMimeType: options.image.mimeType,
@@ -62,7 +71,8 @@ export class EditingService {
             maskMimeType: options.mask?.mimeType,
             referenceImage: options.referenceImage?.data,
             refMimeType: options.referenceImage?.mimeType,
-            prompt: sanitizedPrompt
+            prompt: sanitizedPrompt,
+            model: modelId
         }));
 
         const data = result.data as unknown as { candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[] };
@@ -73,7 +83,7 @@ export class EditingService {
             return {
                 id: crypto.randomUUID(),
                 url,
-                prompt: `Edit: ${options.prompt}`
+                prompt: `Edit (${useHighFidelity ? 'Pro' : 'Flash'}): ${options.prompt}`
             };
         }
         return null;

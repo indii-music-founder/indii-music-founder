@@ -3,6 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
 import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
+import * as crypto from "crypto";
 
 /**
  * Generate Image V3 (Nano Banana Pro)
@@ -190,71 +191,118 @@ export const editImageFn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { image, imageMimeType, mask, maskMimeType, prompt } = validation.data;
+        const { image, imageMimeType, mask, maskMimeType, prompt, model, referenceImage, refMimeType } = validation.data;
+
+        // Cleanup tracking
+        const tempFiles: string[] = [];
 
         try {
-            console.log(`[editImage] Initializing Gemini 3 Client`);
+            console.log(`[editImage] Initializing Gemini Dual-View Pipeline`);
             const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
-            const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-            // 3. Call Model using the dedicated editImage method
-            console.log(`[editImage] Model: ${modelId} | Prompt: "${prompt}"`);
+            // Use requested model (Pro for high fidelity, Flash for speed)
+            const modelId = model || FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-            const referenceImages: any[] = [
-                {
-                    referenceId: 1,
-                    referenceImage: {
-                        imageBytes: image,
-                        mimeType: imageMimeType || "image/png"
-                    }
+            // Use File API for large images (e.g. over 15MB) or high fidelity path
+            const useFileApi = image.length > 15 * 1024 * 1024 || modelId.includes('pro');
+
+            // 1. Construct the Multimodal Prompt with Thinking Instructions
+            const compositePrompt = `
+                SYSTEM INSTRUCTION: You are an expert image editor. Think step-by-step about the spatial relationship between the source and the mask before acting. Ensure perfect edge blending and consistent lighting.
+                
+                TASK: Targeted Image Inpainting.
+                INPUTS: 
+                1. IMAGE_SOURCE: The original high-resolution photo.
+                2. IMAGE_MASK: A black and white image where the WHITE area marks the target for editing.
+                
+                INSTRUCTION: Using the context of IMAGE_SOURCE, modify ONLY the area specified by 
+                the white pixels in IMAGE_MASK. The new content should be: ${prompt}.
+                Maintain consistent lighting, shadows, and texture from the source image.
+            `;
+
+            // 2. Prepare Multimodal Parts
+            const contents: any[] = [{
+                role: "user",
+                parts: [{ text: compositePrompt }]
+            }];
+
+            if (useFileApi) {
+                console.log(`[editImage] Using File API for payload (Length: ${image.length})`);
+
+                // Helper to upload base64 to File API
+                const uploadPart = async (base64: string, mime: string, name: string) => {
+                    const tmpPath = `/tmp/${crypto.randomUUID()}.${mime.split('/')[1]}`;
+                    require('fs').writeFileSync(tmpPath, base64, 'base64');
+                    tempFiles.push(tmpPath);
+
+                    const upload = await client.files.upload({
+                        file: tmpPath,
+                        config: { mimeType: mime, displayName: name }
+                    });
+                    return { fileData: { fileUri: upload.uri, mimeType: upload.mimeType } };
+                };
+
+                contents[0].parts.push(await uploadPart(image, imageMimeType || "image/png", "Source Image"));
+                if (mask) {
+                    contents[0].parts.push(await uploadPart(mask, maskMimeType || "image/png", "Edit Mask"));
                 }
-            ];
-
-            if (mask) {
-                referenceImages.push({
-                    referenceId: 2,
-                    referenceImage: {
-                        imageBytes: mask,
-                        mimeType: maskMimeType || "image/png"
-                    }
+                if (referenceImage) {
+                    contents[0].parts.push(await uploadPart(referenceImage, refMimeType || "image/png", "Style Reference"));
+                }
+            } else {
+                contents[0].parts.push({
+                    inlineData: { data: image, mimeType: imageMimeType || "image/png" }
                 });
+                if (mask) {
+                    contents[0].parts.push({
+                        inlineData: { data: mask, mimeType: maskMimeType || "image/png" }
+                    });
+                }
+                if (referenceImage) {
+                    contents[0].parts.push({
+                        inlineData: { data: referenceImage, mimeType: refMimeType || "image/png" }
+                    });
+                }
             }
 
-            const result = await client.models.editImage({
+            console.log(`[editImage] Model: ${modelId} | Mode: ${useFileApi ? 'FileAPI' : 'Inline'} | Prompt: "${prompt.substring(0, 50)}..."`);
+
+            // 3. Execute Multimodal Generation
+            const result = await client.models.generateContent({
                 model: modelId,
-                prompt: prompt,
-                referenceImages,
+                contents,
                 config: {
-                    editMode: (mask ? 'EDIT_MODE_INPAINT_INSERTION' : 'EDIT_MODE_CONTROLLED_EDITING') as any,
-                    numberOfImages: 1,
-                }
+                    responseModalities: ["IMAGE"],
+                    candidateCount: 1,
+                    temperature: 1.0
+                } as any
             });
 
-            if (!result.generatedImages || result.generatedImages.length === 0) {
-                throw new functions.https.HttpsError("internal", "No images returned from Gemini Edit API.");
+            if (!result.candidates || result.candidates.length === 0) {
+                throw new functions.https.HttpsError("internal", "No candidates returned from Gemini API.");
             }
 
-            // Convert to candidates format for frontend compatibility
-            const candidates = result.generatedImages.map((genImg: any) => ({
-                content: {
-                    parts: [
-                        {
-                            inlineData: {
-                                mimeType: genImg.image.mimeType || "image/png",
-                                data: genImg.image.imageBytes
-                            }
-                        }
-                    ]
-                }
+            // Standardize output format
+            const candidates = result.candidates.map((cand: any) => ({
+                content: cand.content ? {
+                    parts: cand.content.parts ? cand.content.parts.filter((p: any) => p.inlineData) : []
+                } : { parts: [] }
             }));
+
+            if (!candidates[0] || !candidates[0].content || candidates[0].content.parts.length === 0) {
+                console.error("[editImage] No image data in parts:", JSON.stringify(result.candidates[0]?.content?.parts));
+                throw new functions.https.HttpsError("internal", "No image data found in result parts.");
+            }
 
             return { candidates };
 
         } catch (error: any) {
-            console.error("[editImage] Error:", error);
-            if (error instanceof functions.https.HttpsError) {
-                throw error;
-            }
+            console.error("[editImage] Pipeline Error:", error);
             throw new functions.https.HttpsError("internal", error.message || "Unknown error");
+        } finally {
+            // Cleanup temp files
+            tempFiles.forEach(f => {
+                try { require('fs').unlinkSync(f); } catch (e) { }
+            });
         }
     });

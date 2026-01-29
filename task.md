@@ -9,6 +9,17 @@
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
 - [x] Final Verification: Full `npm run build` success.
 
+## Tasks - Dual-Workflow Image Editing (Gemini 3 Pro + 2.5 Flash)
+
+- [x] UI: Add "High Fidelity" toggle in `CanvasHeader`. <!-- id: 101 -->
+- [x] Service: Implement "Ghost Export" (Binary Masks) in `CanvasOperationsService`. <!-- id: 102 -->
+- [x] Service: Support `model` and `Dual-View` payload in `EditingService`. <!-- id: 103 -->
+- [x] Backend: Implement `Dual-View` pipeline in `editImage` Cloud Function (Gemini 3 Multimodal). <!-- id: 104 -->
+- [x] Backend: Integrate Gemini File API for large images in `editImageFn`. <!-- id: 105 -->
+- [x] Logic: Refactor `handleMagicFill` in `CreativeCanvas` to route between Pro/Flash workflows. <!-- id: 106 -->
+- [x] Verification: Run `npm run typecheck` to verify no regressions. <!-- id: 107 -->
+- [ ] Verification: Test multimodal reasoning with complex prompts in browser. <!-- id: 108 -->
+
 ## Tasks - indii Agent (Agent Zero Integration)
 
 - [x] Infra: Create `Dockerfile.local` with Google GenAI SDK.

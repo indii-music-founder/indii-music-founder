@@ -202,8 +202,33 @@ export class CanvasOperationsService {
     }
 
     /**
-     * Prepare masks for multi-edit processing
-     * Extracts base image and color-coded masks from canvas
+     * Workflow A: Visual Prompting
+     * Returns a flattened image containing both the original content and the user's colorful highlights.
+     * Best for gemini-3-pro-image-preview.
+     */
+    async prepareVisualPrompt(): Promise<{ mimeType: string, data: string } | null> {
+        if (!this.canvas) return null;
+
+        // Ensure all layers are visible for flattened export
+        const objects = this.canvas.getObjects();
+        objects.forEach(obj => (obj.visible = true));
+
+        // Export flattened canvas at 1x multiplier for prompt precision
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 1
+        });
+
+        return {
+            mimeType: 'image/png',
+            data: dataUrl.split(',')[1]
+        };
+    }
+
+    /**
+     * Workflow B: Strict Masking
+     * Extracts isolated binary masks (White on Black) for each annotated color.
+     * Best for gemini-2.5-flash-image.
      */
     prepareMasksForEdit(
         definitions: Record<string, string>,
@@ -220,9 +245,14 @@ export class CanvasOperationsService {
         const maskObjects = originalObjects.filter(obj => obj.type === 'path');
         const contentObjects = originalObjects.filter(obj => obj.type !== 'path');
 
-        // Generate base image (content only, no masks)
+        // Step 1: Generate Base Image (Content only, hide all annotations)
         maskObjects.forEach(obj => (obj.visible = false));
-        this.canvas.backgroundColor = '#000000';
+        contentObjects.forEach(obj => (obj.visible = true));
+
+        // Store original canvas background
+        const originalBg = this.canvas.backgroundColor;
+        this.canvas.backgroundColor = '#000000'; // Black background for clean content extraction if transparent
+
         const baseDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
         const baseImage = {
             mimeType: 'image/png',
@@ -231,11 +261,12 @@ export class CanvasOperationsService {
 
         const masks: MaskData[] = [];
 
+        // Step 2: Extract Binary Masks for each defined color
         for (const [colorId, prompt] of activeDefinitions) {
             const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
             if (!colorDef) continue;
 
-            const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4); // Remove ', 0.5)' for partial match
+            const targetRgbaStart = hexToRgba(colorDef.hex, 0.5).slice(0, -4);
 
             const colorPaths = maskObjects.filter(obj => {
                 const stroke = obj.stroke;
@@ -243,15 +274,18 @@ export class CanvasOperationsService {
             });
 
             if (colorPaths.length > 0) {
-                // Hide all objects
+                // Hide ALL objects initially
                 originalObjects.forEach(obj => (obj.visible = false));
 
-                // Show only matching paths as white
+                // Show only matching paths and transform them to pure WHITE
                 colorPaths.forEach(obj => {
                     obj.visible = true;
+                    // Store original properties to restore later
+                    (obj as any)._originalStroke = obj.stroke;
                     obj.set({ stroke: '#ffffff', fill: '' });
                 });
 
+                // Clear background to pure BLACK for strict binary mask
                 this.canvas.backgroundColor = '#000000';
                 const maskDataUrl = this.canvas.toDataURL({ format: 'png', multiplier: 1 });
 
@@ -263,17 +297,16 @@ export class CanvasOperationsService {
                     referenceImage: referenceImages[colorId] || undefined
                 });
 
-                // Restore visual state for these paths
-                const colorRgba = hexToRgba(colorDef.hex, 0.5);
+                // Restore original stroke for these paths
                 colorPaths.forEach(obj => {
-                    obj.set({ stroke: colorRgba });
+                    obj.set({ stroke: (obj as any)._originalStroke });
                 });
             }
         }
 
-        // Restore all visibility
+        // Restore visual state for the user
         originalObjects.forEach(obj => (obj.visible = true));
-        this.canvas.backgroundColor = '#1a1a1a';
+        this.canvas.backgroundColor = originalBg;
         this.canvas.renderAll();
 
         if (masks.length === 0) return null;
@@ -292,6 +325,8 @@ export class CanvasOperationsService {
         if (!this.canvas) return;
 
         const img = await fabric.Image.fromURL(candidateUrl);
+
+        // Ensure standard dimensions
         img.scaleToWidth(this.canvas.width!);
         img.set({
             left: this.canvas.width! / 2,
@@ -300,19 +335,16 @@ export class CanvasOperationsService {
             originY: 'center'
         });
 
-        // Clear old canvas and add new base
+        // Clear and update
         this.canvas.clear();
         this.canvas.backgroundColor = '#1a1a1a';
         this.canvas.add(img);
 
-        // Re-initialize brush if in magic fill mode
         if (magicFillEnabled) {
             this.canvas.isDrawingMode = true;
             this.canvas.freeDrawingBrush = new fabric.PencilBrush(this.canvas);
             this.canvas.freeDrawingBrush.width = 30;
             this.canvas.freeDrawingBrush.color = hexToRgba(activeColor.hex, 0.5);
-        } else {
-            this.canvas.isDrawingMode = false;
         }
 
         this.canvas.renderAll();
@@ -323,7 +355,6 @@ export class CanvasOperationsService {
      */
     async toJSON(): Promise<string | null> {
         if (!this.canvas) return null;
-        // In Fabric v6, toJSON is synchronous
         const json = this.canvas.toJSON();
         return JSON.stringify(json);
     }
