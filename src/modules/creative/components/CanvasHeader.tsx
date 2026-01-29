@@ -21,6 +21,8 @@ interface CanvasHeaderProps {
     onRefine?: () => void;
     onCreateLastFrame?: () => void;
     processingStatus?: string;
+    isHighFidelity: boolean;
+    setIsHighFidelity: (val: boolean) => void;
 }
 
 export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
@@ -40,7 +42,9 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
     onSendToWorkflow,
     onRefine,
     onCreateLastFrame,
-    processingStatus
+    processingStatus,
+    isHighFidelity,
+    setIsHighFidelity
 }) => {
     const toast = useToast();
 
@@ -81,6 +85,18 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                                 <span>Refine</span>
                             </>
                         )}
+                    </button>
+
+                    {/* High Fidelity Toggle */}
+                    <button
+                        onClick={() => setIsHighFidelity(!isHighFidelity)}
+                        title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
+                        className={`p-1.5 rounded-lg border transition-all ${isHighFidelity
+                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20'
+                                : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white'
+                            }`}
+                    >
+                        <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
                     </button>
                 </div>
 

@@ -31,18 +31,20 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     // UI State
     const [isProcessing, setIsProcessing] = useState(false);
     const [processingStatus, setProcessingStatus] = useState<string>('');
-    // Magic Fill is now always available if needed, but we start with standard interaction
     const [isMagicFillMode, setIsMagicFillMode] = useState(false);
     const [isSelectingEndFrame, setIsSelectingEndFrame] = useState(false);
+    const [isDefinitionsOpen, setIsDefinitionsOpen] = useState(false);
 
     // Data State
     const [prompt, setPrompt] = useState('');
     const [activeColor, setActiveColor] = useState<CreativeColor>(STUDIO_COLORS[0]);
+    const [definitions, setDefinitions] = useState<Record<string, string>>({});
+    const [referenceImages, setReferenceImages] = useState<Record<string, { mimeType: string, data: string } | null>>({});
     const [generatedCandidates, setGeneratedCandidates] = useState<Candidate[]>([]);
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [magicFillPrompt, setMagicFillPrompt] = useState('');
 
-    // Canvas ref (kept for potential future restoration of advanced edit features if requested)
+    // Canvas ref
     const canvasEl = useRef<HTMLCanvasElement>(null);
 
     // Sync prompt from item
@@ -64,8 +66,19 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     useEffect(() => {
         if (isMagicFillMode) {
             canvasOps.updateBrushColor(activeColor);
+            // Sync magicFillPrompt to the active color's definition when switching colors
+            setMagicFillPrompt(definitions[activeColor.id] || '');
         }
     }, [activeColor, isMagicFillMode]);
+
+    // Handle prompt change from header
+    const handlePromptChange = (val: string) => {
+        setMagicFillPrompt(val);
+        setDefinitions(prev => ({
+            ...prev,
+            [activeColor.id]: val
+        }));
+    };
 
     if (!item) return null;
 
@@ -81,48 +94,94 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
         if (newMode) {
             toast.info(`Annotating with ${activeColor.name}. Describe your edit.`);
+            // Sync initial state
+            setMagicFillPrompt(definitions[activeColor.id] || '');
         }
     };
 
-    // Simplified Magic Fill Handler using direct editing (Future: Integreate with mask drawing if needed)
+    const handleUpdateDefinition = (colorId: string, prompt: string) => {
+        setDefinitions(prev => ({ ...prev, [colorId]: prompt }));
+        if (colorId === activeColor.id) {
+            setMagicFillPrompt(prompt);
+        }
+    };
+
+    const handleUpdateReferenceImage = (colorId: string, image: { mimeType: string, data: string } | null) => {
+        setReferenceImages(prev => ({ ...prev, [colorId]: image }));
+    };
+
+    // Quality preference state (Pro vs Flash)
+    const [isHighFidelity, setIsHighFidelity] = useState(false);
+
+    // Magic Fill Handler implementing dual-workflow architecture
     const handleMagicFill = async () => {
-        if (!magicFillPrompt) {
+        // Collect all non-empty definitions
+        const activeDefinitions = Object.fromEntries(
+            Object.entries(definitions).filter(([, val]) => val.trim().length > 0)
+        );
+
+        if (Object.keys(activeDefinitions).length === 0 && !magicFillPrompt) {
             toast.error("Please describe the edit you want to make.");
             return;
         }
 
+        // Ensure current prompt is in definitions if not already
+        const finalDefinitions = { ...activeDefinitions };
+        if (magicFillPrompt && !finalDefinitions[activeColor.id]) {
+            finalDefinitions[activeColor.id] = magicFillPrompt;
+        }
+
         setIsProcessing(true);
-        setProcessingStatus("Architecting Mask...");
-        toast.info('Synthesizing your targeted edit...');
+        setProcessingStatus(isHighFidelity ? "Capturing Visual Context..." : "Architecting Masks...");
+        toast.info(isHighFidelity ? 'Starting High-Fidelity Pro Edit...' : 'Starting High-Speed Flash Edit...');
 
         try {
-            // 1. Prepare Masks from Canvas
-            // We map the active color to the current magicFillPrompt
-            const definitions: Record<string, string> = {
-                [activeColor.id]: magicFillPrompt
-            };
+            setProcessingStatus(isHighFidelity ? "Reasoning (Pro)..." : "Inpainting (Flash)...");
 
-            const prepared = canvasOps.prepareMasksForEdit(definitions, {});
+            const prepared = canvasOps.prepareMasksForEdit(finalDefinitions, referenceImages);
 
             if (prepared && prepared.masks.length > 0) {
-                // TARGETED EDIT: Use the drawn mask
-                setProcessingStatus("Inpainting...");
-                const result = await Editing.editImage({
-                    image: prepared.baseImage,
-                    mask: prepared.masks[0], // Use the first (and likely only) matching mask
-                    prompt: magicFillPrompt
-                });
+                const combinedPrompt = Object.values(finalDefinitions).join(". ") || magicFillPrompt;
 
-                if (result) {
-                    setGeneratedCandidates([{
-                        id: crypto.randomUUID(),
-                        url: result.url,
-                        prompt: magicFillPrompt
-                    }]);
-                    toast.success("Targeted Edit Complete!");
+                if (prepared.masks.length === 1 || isHighFidelity) {
+                    // DUAL-VIEW PIPELINE (PRO or FLASH SINGLE)
+                    // Note: In High Fidelity mode, we collapse multiple masks into a single Pro reasoning task
+                    const result = await Editing.editImage({
+                        image: prepared.baseImage,
+                        mask: prepared.masks[0],
+                        prompt: combinedPrompt,
+                        forceHighFidelity: isHighFidelity,
+                        model: isHighFidelity ? 'pro' : 'flash'
+                    });
+
+                    if (result) {
+                        setGeneratedCandidates([{
+                            id: crypto.randomUUID(),
+                            url: result.url,
+                            prompt: combinedPrompt
+                        }]);
+                        toast.success(`${isHighFidelity ? 'High-Fidelity' : 'Speedy'} Edit Complete!`);
+                    }
+                } else {
+                    // MULTI-MASK CHAIN (FLASH ONLY)
+                    setProcessingStatus("Chaining Edits (Flash)...");
+                    const results = await Editing.multiMaskEdit({
+                        image: prepared.baseImage,
+                        masks: prepared.masks,
+                        variationCount: 1
+                    });
+
+                    if (results.length > 0) {
+                        setGeneratedCandidates(results.map(r => ({
+                            id: r.id,
+                            url: r.url,
+                            prompt: r.prompt
+                        })));
+                        toast.success("Multi-Region Chain Complete!");
+                    }
                 }
             } else {
-                // SEMANTIC REMIX: No mask found, fallback to whole image remix
+                // FALLBACK: Whole Image Remix
                 setProcessingStatus("Remixing Visuals...");
                 const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
                 const res = await fetch(item.url);
@@ -146,7 +205,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         url: result.url,
                         prompt: magicFillPrompt
                     }]);
-                    toast.success("Whole Image Remix Generated! Hint: For targeted edits, draw on the image first.");
+                    toast.success("Remix Generated! Hint: Draw on the image for targeted edits.");
                 }
             }
         } catch (error: any) {
@@ -321,7 +380,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 <CanvasHeader
                     isMagicFillMode={isMagicFillMode}
                     magicFillPrompt={magicFillPrompt}
-                    setMagicFillPrompt={setMagicFillPrompt}
+                    setMagicFillPrompt={handlePromptChange}
                     handleMagicFill={handleMagicFill}
                     isProcessing={isProcessing}
                     saveCanvas={saveCanvas}
@@ -335,6 +394,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     onRefine={onRefine || handleRefine}
                     onCreateLastFrame={handleCreateLastFrame}
                     processingStatus={processingStatus}
+                    isHighFidelity={isHighFidelity}
+                    setIsHighFidelity={setIsHighFidelity}
                 />
 
                 <div className="flex-1 flex overflow-hidden">
@@ -351,8 +412,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             <AnnotationPalette
                                 activeColor={activeColor}
                                 onColorSelect={setActiveColor}
-                                colorDefinitions={{}} // TODO: Sync with store
-                                onOpenDefinitions={() => { }} // TODO: Implement UI
+                                colorDefinitions={definitions}
+                                onOpenDefinitions={() => setIsDefinitionsOpen(true)}
                             />
                         </div>
                     </aside>
@@ -380,7 +441,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         {isMagicFillMode && (
                             <div className="absolute top-6 left-1/2 -translate-x-1/2 bg-blue-600/20 border border-blue-500/50 text-blue-400 px-4 py-1 rounded-full text-xs font-bold backdrop-blur-md flex items-center gap-2">
                                 <Wand2 size={12} />
-                                Magic Edit Mode
+                                Magic Edit Mode: {activeColor.name}
                             </div>
                         )}
 
@@ -403,8 +464,15 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         />
                     </main>
 
-                    {/* Right Panel: Contextual Options (Optional / Future) */}
-                    {/* <EditDefinitionsPanel /> */}
+                    {/* Right Panel: Contextual Options */}
+                    <EditDefinitionsPanel
+                        isOpen={isDefinitionsOpen}
+                        onClose={() => setIsDefinitionsOpen(false)}
+                        definitions={definitions}
+                        onUpdateDefinition={handleUpdateDefinition}
+                        referenceImages={referenceImages}
+                        onUpdateReferenceImage={handleUpdateReferenceImage}
+                    />
                 </div>
             </motion.div>
         </AnimatePresence>

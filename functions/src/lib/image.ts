@@ -22,6 +22,7 @@ export const EditImageRequestSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     referenceImage: z.string().optional(), // Base64
     refMimeType: z.string().optional(), // Reference image format
+    model: z.string().optional(), // Model ID
 });
 
 export type GenerateImageRequest = z.infer<typeof GenerateImageRequestSchema>;
