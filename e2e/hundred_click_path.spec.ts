@@ -208,28 +208,24 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
         await safeClick(24, 'save-canvas-btn', 'Click Save');
         await safeClick(25, 'canvas-close-btn', 'Close Canvas Modal');
 
-        // --- PHASE 4: ASSETS (Reference Manager) ---
-        console.log('--- Phase 4: Reference Manager ---');
-        await safeClick(26, 'nav-item-reference-manager', 'Navigate to Reference Assets');
+        // --- PHASE 4: BRAND MANAGER (Visual DNA Tab) ---
+        console.log('--- Phase 4: Brand Manager ---');
+        await safeClick(26, 'nav-item-brand', 'Navigate to Brand Manager');
         await page.waitForTimeout(2000);
-        await safeClick(27, 'add-new-btn', 'Click Add New Asset (Manual)');
-        await page.keyboard.press('Escape');
         try {
-            const refItemSelector = '[data-testid^="gallery-item-"]';
-            await page.waitForSelector(refItemSelector, { timeout: 10000 });
-            const refItems = await page.locator(refItemSelector).all();
-            if (refItems.length > 0) {
-                const firstItem = refItems[0];
-                await firstItem.hover();
-                await safeClick(28, '[data-testid^="gallery-item-"]', 'Click Ref Item', { rawSelector: true, force: true });
+            // Try to interact with Visual DNA tab where Asset Library now lives
+            const visualsTab = page.locator('button:has-text("Visual DNA")');
+            if (await visualsTab.isVisible().catch(() => false)) {
+                await visualsTab.click();
+                await page.waitForTimeout(1000);
             }
         } catch (e) {
-            console.log('[WARN] Step 28 skip');
+            console.log('[WARN] Step 27-28 skip');
         }
 
         // --- PHASE 5: STABILITY FILLER ---
         console.log('--- Phase 5: Cycle to 100 Clicks ---');
-        const modules = ['video', 'merch', 'creative', 'reference-manager'];
+        const modules = ['video', 'merch', 'creative', 'brand'];
         let cycleId = 30;
         let lastReloadCount = -1;
 
@@ -258,8 +254,12 @@ test.describe('100-Click Path Challenge: Creative Studio', () => {
                     }
                 } else if (mod === 'creative') {
                     await safeClick(cycleId, 'gallery-view-btn', 'Gallery View');
-                } else if (mod === 'reference-manager') {
-                    await safeClick(cycleId, '[data-testid^="gallery-item-"]', 'Ref Item', { rawSelector: true, noWait: true });
+                } else if (mod === 'brand') {
+                    // Brand Manager - try to click Visual DNA tab
+                    const visualsTab = page.locator('button:has-text("Visual DNA")');
+                    if (await visualsTab.isVisible().catch(() => false)) {
+                        await visualsTab.click().catch(() => {});
+                    }
                 }
             }
             cycleId++;

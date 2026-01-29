@@ -27,7 +27,6 @@ export const MODULE_IDS = [
     'merch',
     'audio-analyzer',
     'observability',
-    'reference-manager',
     'history',
     'debug'
 ] as const;

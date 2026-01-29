@@ -31,20 +31,20 @@ describe('Sidebar', () => {
         });
     });
 
-    it('renders Reference Assets in the Manager section', () => {
+    it('renders Brand Manager in the Manager section', () => {
         render(<Sidebar />);
 
         const managerSection = screen.getByTestId('manager-section');
-        const refAssetsBtn = screen.getByText('Reference Assets');
+        const brandManagerBtn = screen.getByText('Brand Manager');
 
-        // Check if Reference Assets button exists
-        expect(refAssetsBtn).toBeTruthy();
+        // Check if Brand Manager button exists
+        expect(brandManagerBtn).toBeTruthy();
 
         // Verify it is inside the manager section
-        expect(managerSection.contains(refAssetsBtn)).toBe(true);
+        expect(managerSection.contains(brandManagerBtn)).toBe(true);
     });
 
-    it('Reference Assets button is clickable', () => {
+    it('Brand Manager button is clickable', () => {
         const setModule = vi.fn();
         (useStore as any).mockReturnValue({
             currentModule: 'dashboard',
@@ -57,12 +57,12 @@ describe('Sidebar', () => {
         });
 
         render(<Sidebar />);
-        const refAssetsBtn = screen.getByText('Reference Assets');
+        const brandManagerBtn = screen.getByText('Brand Manager');
 
         // Click the button (parent button element)
-        fireEvent.click(refAssetsBtn.closest('button')!);
+        fireEvent.click(brandManagerBtn.closest('button')!);
 
-        expect(setModule).toHaveBeenCalledWith('reference-manager');
+        expect(setModule).toHaveBeenCalledWith('brand');
     });
 
     it('provides accessible labels when sidebar is collapsed', () => {
@@ -79,8 +79,8 @@ describe('Sidebar', () => {
         render(<Sidebar />);
 
         // Check for navigation item aria-label
-        const refAssetsBtn = screen.getByTestId('nav-item-reference-manager');
-        expect(refAssetsBtn).toHaveAttribute('aria-label', 'Reference Assets');
+        const brandManagerBtn = screen.getByTestId('nav-item-brand');
+        expect(brandManagerBtn).toHaveAttribute('aria-label', 'Brand Manager');
 
         // Check for logout button
         expect(screen.getByTestId('logout-btn')).toHaveAttribute('aria-label', 'Reload System');

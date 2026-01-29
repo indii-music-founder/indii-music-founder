@@ -1,5 +1,5 @@
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { createStore } from 'zustand';
+import { createStore, StoreApi } from 'zustand';
 import { createAgentSlice, AgentSlice } from './agentSlice';
 import { agentRegistry } from '@/services/agent/registry';
 
@@ -12,12 +12,12 @@ vi.mock('@/services/agent/registry', () => ({
 
 describe('AgentSlice - Available Agents', () => {
     // Correctly type the store creator
-    let useStore: ReturnType<typeof createStore<AgentSlice>>;
+    let useStore: StoreApi<AgentSlice>;
 
     beforeEach(() => {
         vi.clearAllMocks();
         // createStore returns the store hook/api, we can cast if needed or use inferred types
-        useStore = createStore<AgentSlice>((...a) => createAgentSlice(...a));
+        useStore = createStore<AgentSlice>(createAgentSlice);
     });
 
     it('should load agents from registry successfully', async () => {
@@ -59,7 +59,7 @@ describe('AgentSlice - Available Agents', () => {
     });
 
     it('should filter out invalid agents based on schema', async () => {
-         const mockAgents = [
+        const mockAgents = [
             { id: 'marketing', name: 'Marketing', description: 'Desc', color: 'red', category: 'manager' },
             { id: 'invalid', name: 'Invalid' } // Missing fields
         ];

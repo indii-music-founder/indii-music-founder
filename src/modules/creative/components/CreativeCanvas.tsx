@@ -92,29 +92,24 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         }
 
         setIsProcessing(true);
-        toast.info('Processing Magic Edit...');
+        setProcessingStatus("Architecting Mask...");
+        toast.info('Synthesizing your targeted edit...');
 
         try {
-            // Use ImageGeneration.editImage directly for semantic edits without masks if supported, 
-            // or default to whole image remix. 
-            // For now, we'll assume remixing for simplicity or we can re-introduce masking later.
-            // As per user request "simplify layers", we rely on semantic editing.
+            // 1. Prepare Masks from Canvas
+            // We map the active color to the current magicFillPrompt
+            const definitions: Record<string, string> = {
+                [activeColor.id]: magicFillPrompt
+            };
 
-            const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-            // Extract base64
-            const res = await fetch(item.url);
-            const blob = await res.blob();
-            const mimeType = blob.type || 'image/png';
-            const reader = new FileReader();
-            reader.readAsDataURL(blob);
+            const prepared = canvasOps.prepareMasksForEdit(definitions, {});
 
-            reader.onloadend = async () => {
-                const base64data = (reader.result as string).split(',')[1];
-
-                // Using remix for "Magic Fill" style editing on the whole image for now
-                const result = await ImageGeneration.remixImage({
-                    contentImage: { mimeType, data: base64data },
-                    styleImage: { mimeType, data: base64data }, // Self-ref for style
+            if (prepared && prepared.masks.length > 0) {
+                // TARGETED EDIT: Use the drawn mask
+                setProcessingStatus("Inpainting...");
+                const result = await Editing.editImage({
+                    image: prepared.baseImage,
+                    mask: prepared.masks[0], // Use the first (and likely only) matching mask
                     prompt: magicFillPrompt
                 });
 
@@ -122,16 +117,43 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     setGeneratedCandidates([{
                         id: crypto.randomUUID(),
                         url: result.url,
-                        prompt: magicFillPrompt // Add prompted text to satisfy interface
+                        prompt: magicFillPrompt
                     }]);
-                    toast.success("Edit Generated!");
+                    toast.success("Targeted Edit Complete!");
+                }
+            } else {
+                // SEMANTIC REMIX: No mask found, fallback to whole image remix
+                setProcessingStatus("Remixing Visuals...");
+                const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+                const res = await fetch(item.url);
+                const blob = await res.blob();
+                const mimeType = blob.type || 'image/png';
+                const base64data = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve((reader.result as string).split(',')[1]);
+                    reader.readAsDataURL(blob);
+                });
+
+                const result = await ImageGeneration.remixImage({
+                    contentImage: { mimeType, data: base64data },
+                    styleImage: { mimeType, data: base64data },
+                    prompt: magicFillPrompt
+                });
+
+                if (result) {
+                    setGeneratedCandidates([{
+                        id: crypto.randomUUID(),
+                        url: result.url,
+                        prompt: magicFillPrompt
+                    }]);
+                    toast.success("Whole Image Remix Generated! Hint: For targeted edits, draw on the image first.");
                 }
             }
-
         } catch (error: any) {
             toast.error(error.message || 'Failed to process edit');
         } finally {
             setIsProcessing(false);
+            setProcessingStatus('');
         }
     };
 
