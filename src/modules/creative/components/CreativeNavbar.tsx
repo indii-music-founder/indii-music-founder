@@ -9,7 +9,9 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
-export default function CreativeNavbar() {
+interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
+
+export default function CreativeNavbar(props: CreativeNavbarProps) {
     const { setVideoInput, prompt, setPrompt, generationMode, viewMode, setViewMode } = useStore();
     const toast = useToast();
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
@@ -18,7 +20,7 @@ export default function CreativeNavbar() {
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
     return (
-        <div className="flex flex-col z-20 relative bg-[#0a0a0a] border-b border-white/5 select-none">
+        <div {...props} className={`flex flex-col z-20 relative bg-[#0a0a0a] border-b border-white/5 select-none ${props.className || ''}`}>
             {/* Single Compact Header Row */}
             <div className="flex items-center justify-between px-4 py-2 h-14">
                 {/* Left: Branding & Title */}

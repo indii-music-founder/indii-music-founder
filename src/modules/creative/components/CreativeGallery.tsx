@@ -301,7 +301,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         : "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4";
 
     return (
-        <div className={`flex-1 flex flex-col h-full overflow-hidden ${className}`}>
+        <div data-testid="creative-gallery" className={`flex-1 flex flex-col h-full overflow-hidden ${className}`}>
             {/* Upload Header - Optional if compact */}
             {!compact && (
                 <div className="p-4 border-b border-gray-800 flex justify-between items-center">

@@ -79,13 +79,18 @@ export class ImageGenerationService {
     }
 
     async generateImages(options: ImageGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
+        console.log('[ImageGen DEBUG] Entering generateImages', options);
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
 
         // Pre-flight quota check
         const userId = options.userProfile?.id;
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
+        console.log('[ImageGen DEBUG] Quota check result:', quotaCheck);
+
         if (!quotaCheck.allowed) {
+            // ... existing error logic
+            console.error('[ImageGen DEBUG] Quota exceeded');
             let tier: any = 'free'; // Using any to bypass strict enum mismatch if needed, but MembershipTier includes 'free'
             try {
                 const sub = userId
@@ -107,6 +112,7 @@ export class ImageGenerationService {
 
         try {
             const generateImage = httpsCallable(functions, 'generateImageV3');
+            console.log('[ImageGen DEBUG] Calling generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
@@ -123,6 +129,7 @@ export class ImageGenerationService {
                 thinking: options.thinking ?? false,
                 useGrounding: options.useGrounding ?? false
             });
+            console.log('[ImageGen DEBUG] generateImageV3 returned:', result);
 
             interface GenerateImageResponse {
                 images: Array<{
