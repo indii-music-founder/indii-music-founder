@@ -330,15 +330,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-distribution/5',
         cssVar: '--color-dept-distribution',
     },
-    'reference-manager': {
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
-    },
     history: {
         text: 'text-dept-default',
         bg: 'bg-dept-default/10',

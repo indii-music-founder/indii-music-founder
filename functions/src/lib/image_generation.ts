@@ -190,65 +190,65 @@ export const editImageFn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { image, imageMimeType, mask, maskMimeType, prompt, referenceImage, refMimeType } = validation.data;
+        const { image, imageMimeType, mask, maskMimeType, prompt } = validation.data;
 
         try {
             console.log(`[editImage] Initializing Gemini 3 Client`);
             const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
             const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-            // 3. Construct Payload
-            const parts: any[] = [
+            // 3. Call Model using the dedicated editImage method
+            console.log(`[editImage] Model: ${modelId} | Prompt: "${prompt}"`);
+
+            const referenceImages: any[] = [
                 {
-                    inlineData: {
-                        mimeType: imageMimeType || "image/png",
-                        data: image
+                    referenceId: 1,
+                    referenceImage: {
+                        imageBytes: image,
+                        mimeType: imageMimeType || "image/png"
                     }
                 }
             ];
 
-            // Add Mask (if present)
             if (mask) {
-                parts.push({
-                    inlineData: {
-                        mimeType: maskMimeType || "image/png",
-                        data: mask
+                referenceImages.push({
+                    referenceId: 2,
+                    referenceImage: {
+                        imageBytes: mask,
+                        mimeType: maskMimeType || "image/png"
                     }
                 });
-                parts.push({ text: "Use the second image as a mask for inpainting." });
             }
 
-            // Add Reference Image (if present)
-            if (referenceImage) {
-                const position = mask ? "third" : "second";
-                parts.push({
-                    inlineData: {
-                        mimeType: refMimeType || "image/png",
-                        data: referenceImage
-                    }
-                });
-                parts.push({ text: `Use this ${position} image as a reference.` });
-            }
-
-            // Prompt
-            parts.push({ text: prompt });
-
-            console.log(`[editImage] Model: ${modelId} | Prompt: "${prompt}"`);
-
-            // 4. Call Model
-            const result = await client.models.generateContent({
+            const result = await client.models.editImage({
                 model: modelId,
-                contents: [{ role: "user", parts }],
+                prompt: prompt,
+                referenceImages,
                 config: {
-                    responseModalities: ["IMAGE"],
+                    editMode: (mask ? 'EDIT_MODE_INPAINT_INSERTION' : 'EDIT_MODE_CONTROLLED_EDITING') as any,
+                    numberOfImages: 1,
                 }
             });
 
-            if (!result.candidates || result.candidates.length === 0) {
-                throw new functions.https.HttpsError("internal", "No candidates returned from Gemini API.");
+            if (!result.generatedImages || result.generatedImages.length === 0) {
+                throw new functions.https.HttpsError("internal", "No images returned from Gemini Edit API.");
             }
 
-            return { candidates: result.candidates };
+            // Convert to candidates format for frontend compatibility
+            const candidates = result.generatedImages.map((genImg: any) => ({
+                content: {
+                    parts: [
+                        {
+                            inlineData: {
+                                mimeType: genImg.image.mimeType || "image/png",
+                                data: genImg.image.imageBytes
+                            }
+                        }
+                    ]
+                }
+            }));
+
+            return { candidates };
 
         } catch (error: any) {
             console.error("[editImage] Error:", error);

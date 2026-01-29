@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
-    Briefcase, Users, Megaphone, Network, Mic, Palette, Film, Image,
+    Briefcase, Users, Megaphone, Network, Mic, Palette, Film,
     Scale, Book, DollarSign, FileText, ShoppingBag, Radio, Globe,
     Menu, X, Layout, Clock
 } from 'lucide-react';
@@ -62,7 +62,6 @@ export const MobileNav = () => {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
-        { id: 'reference-manager', icon: Image, label: 'Reference Assets' },
     ];
 
     const departmentItems: NavItem[] = [

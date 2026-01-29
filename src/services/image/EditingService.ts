@@ -1,6 +1,6 @@
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { functions } from '@/services/firebase';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 

@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
 import { TourMap } from '@/modules/touring/components/TourMap';
+import UnifiedAssetLibrary from './UnifiedAssetLibrary';
 
 // --- Sub-Components ---
 
@@ -146,68 +147,6 @@ const TrackListEditor = ({ tracks, onChange }: { tracks: any[], onChange: (t: an
             <button onClick={addTrack} className="w-full py-2 border border-dashed border-gray-800 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:border-gray-600 transition-all flex items-center justify-center gap-2">
                 <Plus size={12} /> Add Track
             </button>
-        </div>
-    );
-};
-
-const AssetLibrary = ({ assets, onAdd, onRemove }: { assets: BrandAsset[], onAdd: (a: BrandAsset) => void, onRemove: (id: string) => void }) => {
-    const categories = ['logo', 'headshot', 'bodyshot', 'environment', 'other'];
-    const [filter, setFilter] = useState('all');
-
-    const filteredAssets = filter === 'all' ? assets : assets.filter(a => a.category === filter);
-
-    return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <div>
-                    <h3 className="text-lg font-bold text-gray-200 flex items-center gap-2">
-                        <Folder size={18} className="text-dept-marketing" />
-                        Asset Library
-                    </h3>
-                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mt-1">High-Res Brand Storage</p>
-                </div>
-                <div className="flex gap-2">
-                    <select
-                        value={filter}
-                        onChange={(e) => setFilter(e.target.value)}
-                        className="bg-[#0a0a0a] border border-gray-800 rounded-lg px-3 py-1.5 text-[10px] font-bold text-gray-400 outline-none cursor-pointer hover:border-gray-600 transition-colors"
-                    >
-                        <option value="all">View All</option>
-                        {categories.map(c => <option key={c} value={c} className="capitalize">{c}</option>)}
-                    </select>
-                    <button
-                        onClick={() => onAdd({ url: 'https://via.placeholder.com/300', description: 'New Asset', category: 'other' })}
-                        className="flex items-center gap-2 px-3 py-1.5 bg-dept-marketing text-white rounded-lg text-[10px] font-bold hover:opacity-90 transition-all active:scale-95"
-                    >
-                        <Plus size={12} />
-                        Upload
-                    </button>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                {filteredAssets?.map((asset, idx) => (
-                    <div key={idx} className="group relative aspect-square bg-[#0a0a0a] rounded-xl border border-gray-800 overflow-hidden hover:border-dept-marketing/50 transition-all">
-                        <img src={asset.url} alt={asset.description} className="w-full h-full object-cover opacity-60 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-end p-3">
-                            <p className="text-[10px] font-bold text-white truncate">{asset.description}</p>
-                            <span className="text-[8px] text-gray-400 font-bold uppercase tracking-wider">{asset.category}</span>
-                        </div>
-                        <button
-                            onClick={() => onRemove(asset.id || idx.toString())}
-                            className="absolute top-2 right-2 p-1.5 bg-black/60 backdrop-blur-md rounded-lg text-red-500 opacity-0 group-hover:opacity-100 transition-all border border-white/5"
-                        >
-                            <Trash2 size={10} />
-                        </button>
-                    </div>
-                ))}
-            </div>
-            {filteredAssets?.length === 0 && (
-                <div className="py-12 border border-dashed border-gray-800 rounded-2xl flex flex-col items-center justify-center text-center opacity-40">
-                    <ImageIcon size={32} className="mb-2" />
-                    <p className="text-xs font-bold uppercase tracking-widest text-gray-500">No assets in this category</p>
-                </div>
-            )}
         </div>
     );
 };
@@ -755,17 +694,17 @@ const BrandManager: React.FC = () => {
                                 <div className="p-8 rounded-2xl border border-gray-800 bg-[#111] relative overflow-hidden">
                                     <div className="absolute top-0 right-0 p-32 bg-dept-marketing/5 blur-[80px] rounded-full pointer-events-none" />
                                     <div className="relative z-10 space-y-8">
-                                        <AssetLibrary
-                                            assets={brandKit.brandAssets || []}
-                                            onAdd={(asset) => {
-                                                const newAssets = [...(brandKit.brandAssets || []), { ...asset, id: Date.now().toString() }];
-                                                updateBrandKit({ brandAssets: newAssets });
-                                                saveBrandKit({ brandAssets: newAssets });
+                                        <UnifiedAssetLibrary
+                                            userId={userProfile?.id || ''}
+                                            brandAssets={brandKit.brandAssets || []}
+                                            referenceImages={brandKit.referenceImages || []}
+                                            onUpdateBrandAssets={(assets) => {
+                                                updateBrandKit({ brandAssets: assets });
+                                                saveBrandKit({ brandAssets: assets });
                                             }}
-                                            onRemove={(id) => {
-                                                const newAssets = brandKit.brandAssets?.filter(a => (a.id || '') !== id) || [];
-                                                updateBrandKit({ brandAssets: newAssets });
-                                                saveBrandKit({ brandAssets: newAssets });
+                                            onUpdateReferenceImages={(assets) => {
+                                                updateBrandKit({ referenceImages: assets });
+                                                saveBrandKit({ referenceImages: assets });
                                             }}
                                         />
 

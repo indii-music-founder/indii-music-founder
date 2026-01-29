@@ -48,7 +48,6 @@ const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
 const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
-const ReferenceManager = lazy(() => import('../modules/tools/ReferenceManager'));
 const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
 
@@ -84,7 +83,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
     'observability': ObservabilityDashboard,
-    'reference-manager': ReferenceManager,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,
 };
