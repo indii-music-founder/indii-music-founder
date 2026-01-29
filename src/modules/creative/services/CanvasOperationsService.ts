@@ -33,7 +33,7 @@ export class CanvasOperationsService {
         });
 
         if (imageUrl) {
-            fabric.Image.fromURL(imageUrl).then((img: fabric.Image) => {
+            fabric.Image.fromURL(imageUrl, { crossOrigin: 'anonymous' }).then((img: fabric.Image) => {
                 if (!this.canvas) return;
                 scaleImageToCanvas(img, this.canvas);
                 this.canvas.add(img);
@@ -324,7 +324,7 @@ export class CanvasOperationsService {
     ): Promise<void> {
         if (!this.canvas) return;
 
-        const img = await fabric.Image.fromURL(candidateUrl);
+        const img = await fabric.Image.fromURL(candidateUrl, { crossOrigin: 'anonymous' });
 
         // Ensure standard dimensions
         img.scaleToWidth(this.canvas.width!);
@@ -348,6 +348,69 @@ export class CanvasOperationsService {
         }
 
         this.canvas.renderAll();
+    }
+
+    /**
+     * Extracts a binary "Ghost Mask" for Gemini 3 Dual-View.
+     * White pixels = Edit Area.
+     * Black pixels = Keep Context.
+     */
+    extractGeminiMask(): string | null {
+        if (!this.canvas) return null;
+
+        // 1. Save State
+        const originalBg = this.canvas.backgroundColor;
+        const originalObjects = this.canvas.getObjects();
+        const originalState = originalObjects.map(obj => ({
+            visible: obj.visible,
+            stroke: obj.stroke,
+            fill: obj.fill,
+            opacity: obj.opacity
+        }));
+
+        // 2. Transform to Binary Mask Mode
+        this.canvas.backgroundColor = "#000000"; // Black Context
+        // this.canvas.backgroundImage = null; // CanvasOperationsService uses an image object, not backgroundImage property usually
+
+        originalObjects.forEach(obj => {
+            // Only mask "path" objects (user drawings) -> White
+            if (obj.type === 'path') {
+                obj.set({
+                    stroke: "#FFFFFF",
+                    fill: (obj.fill && obj.fill !== 'transparent') ? "#FFFFFF" : undefined, // Keep fill logic if present
+                    opacity: 1,
+                    visible: true
+                });
+            } else {
+                // Hide other content (base image, etc)
+                obj.visible = false;
+            }
+        });
+
+        this.canvas.renderAll();
+
+        // 3. Export
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 1
+        });
+
+        // 4. Restore State
+        this.canvas.backgroundColor = originalBg;
+
+        originalObjects.forEach((obj, index) => {
+            const state = originalState[index];
+            obj.set({
+                visible: state.visible,
+                stroke: state.stroke,
+                fill: state.fill,
+                opacity: state.opacity
+            });
+        });
+
+        this.canvas.renderAll();
+
+        return dataUrl.split(',')[1];
     }
 
     /**

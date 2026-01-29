@@ -54,7 +54,8 @@ export class EditingService {
         prompt: string;
         forceHighFidelity?: boolean;
         model?: 'pro' | 'flash' | string;
-    }): Promise<{ id: string; url: string; prompt: string } | null> {
+        thoughtSignature?: string;
+    }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const editImageFn = httpsCallable(functions, 'editImage');
 
         // Generate structured prompt using PromptBuilder
@@ -77,18 +78,34 @@ export class EditingService {
             referenceImage: options.referenceImage?.data,
             refMimeType: options.referenceImage?.mimeType,
             prompt: structuredPrompt,
-            model: modelId
+            model: modelId,
+            thoughtSignature: options.thoughtSignature
         }));
 
-        const data = result.data as unknown as { candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[] };
-        const part = data.candidates?.[0]?.content?.parts?.[0];
+        const data = result.data as unknown as {
+            base64?: string;
+            mimeType?: string;
+            thoughtSignature?: string;
+            candidates?: any[]
+        };
 
-        if (part && part.inlineData) {
-            const url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        // Handle flattened response (base64) or nested candidate structure
+        let url = "";
+        const newSignature: string | undefined = data.thoughtSignature;
+
+        if (data.base64) {
+            url = `data:${data.mimeType || 'image/png'};base64,${data.base64}`;
+        } else if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
+            const part = data.candidates[0].content.parts[0];
+            url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+        }
+
+        if (url) {
             return {
                 id: crypto.randomUUID(),
                 url,
-                prompt: `Edit (${useHighFidelity ? 'Pro' : 'Flash'}): ${options.prompt}`
+                prompt: `Edit (${useHighFidelity ? 'Pro' : 'Flash'}): ${options.prompt}`,
+                thoughtSignature: newSignature
             };
         }
         return null;
