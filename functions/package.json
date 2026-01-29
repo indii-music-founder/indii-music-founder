@@ -4,6 +4,7 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
+    "gcp-build": "npm run build",
     "deploy": "firebase deploy --only functions",
     "lint": "eslint",
     "lint:fix": "eslint --fix",

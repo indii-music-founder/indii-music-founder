@@ -4,6 +4,7 @@ import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
 import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
 import * as crypto from "crypto";
+import * as fs from 'fs';
 
 /**
  * Generate Image V3 (Nano Banana Pro)
@@ -19,6 +20,7 @@ export const generateImageV3Fn = () => functions
         memory: "512MB"
     })
     .https.onCall(async (data: unknown, context) => {
+        console.log("!!! generateImageV3Fn: START !!!");
         // 1. Auth Check
         if (!context.auth) {
             throw new functions.https.HttpsError(
@@ -191,7 +193,7 @@ export const editImageFn = () => functions
                 `Validation failed: ${validation.error.issues.map(i => i.message).join(", ")}`
             );
         }
-        const { image, imageMimeType, mask, maskMimeType, prompt, model, referenceImage, refMimeType } = validation.data;
+        const { image, imageMimeType, mask, maskMimeType, prompt, model, referenceImage, refMimeType, thoughtSignature } = validation.data;
 
         // Cleanup tracking
         const tempFiles: string[] = [];
@@ -200,93 +202,75 @@ export const editImageFn = () => functions
             console.log(`[editImage] Initializing Gemini Dual-View Pipeline`);
             const client = new GoogleGenAI({ apiKey: getGeminiApiKey() });
 
-            // Use requested model (Pro for high fidelity, Flash for speed)
-            const modelId = model || FUNCTION_AI_MODELS.IMAGE.GENERATION;
+            // Use requested model
+            const modelId = (model === 'flash' || model === 'fast')
+                ? FUNCTION_AI_MODELS.IMAGE.FAST
+                : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-            // Use File API for large images (e.g. over 15MB) or high fidelity path
+            // Use File API for large images or high fidelity
             const useFileApi = image.length > 15 * 1024 * 1024 || modelId.includes('pro');
 
-            // 1. Construct the Multimodal Prompt following "Task-Inputs-Instruction" Best Practices
-            const isPro = modelId.includes('pro');
-            const reasoningLogic = isPro
-                ? "Apply advanced spatial reasoning to infer the exact object boundaries within the target region. Even if the IMAGE_MASK is loose or imprecise, look at the IMAGE_SOURCE and refine the edit area to match the object's natural contours. Think through the materials, shadows, and reflection properties before generating."
-                : "Modify ONLY the area specified by the white pixels in IMAGE_MASK.";
+            // 1. Prepare User Content Parts
+            const userParts: any[] = [{ text: prompt }];
 
-            const compositePrompt = `
-SYSTEM INSTRUCTION: You are the Gemini 3 "Nano Banana Pro" Image Engine. Your primary goal is high-fidelity semantic editing. 
-You must analyze the source image's lighting direction, focal length, and texture noise. 
-Modified pixels must be indistinguishable from the original camera sensor data.
-
-TASK: Targeted Image Inpainting.
-INPUTS: 
-1. IMAGE_SOURCE: The original high-resolution photo.
-2. IMAGE_MASK: A binary mask where the WHITE area marks the target for editing.
-
-INSTRUCTION: 
-Using the context of IMAGE_SOURCE, ${reasoningLogic}
-The new content for the target area should be: ${prompt}.
-
-CONSTRAINTS: 
-- Maintain consistent lighting, shadows, and resolution.
-- Ensure pixel-perfect blending at boundaries.
-- Respect the three-dimensional depth of the scene.
-            `.trim();
-
-            // 2. Prepare Multimodal Parts
-            const contents: any[] = [{
-                role: "user",
-                parts: [{ text: compositePrompt }]
-            }];
-
-            if (useFileApi) {
-                console.log(`[editImage] Using File API for payload (Length: ${image.length})`);
-
-                // Helper to upload base64 to File API
-                const uploadPart = async (base64: string, mime: string, name: string) => {
+            // Helper to upload or inline
+            const addImagePart = async (base64: string, mime: string, name: string) => {
+                if (useFileApi) {
                     const tmpPath = `/tmp/${crypto.randomUUID()}.${mime.split('/')[1]}`;
-                    require('fs').writeFileSync(tmpPath, base64, 'base64');
+                    fs.writeFileSync(tmpPath, base64, 'base64');
                     tempFiles.push(tmpPath);
-
                     const upload = await client.files.upload({
                         file: tmpPath,
                         config: { mimeType: mime, displayName: name }
                     });
                     return { fileData: { fileUri: upload.uri, mimeType: upload.mimeType } };
-                };
+                } else {
+                    return { inlineData: { data: base64, mimeType: mime } };
+                }
+            };
 
-                contents[0].parts.push(await uploadPart(image, imageMimeType || "image/png", "Source Image"));
-                if (mask) {
-                    contents[0].parts.push(await uploadPart(mask, maskMimeType || "image/png", "Edit Mask"));
-                }
-                if (referenceImage) {
-                    contents[0].parts.push(await uploadPart(referenceImage, refMimeType || "image/png", "Style Reference"));
-                }
-            } else {
-                contents[0].parts.push({
-                    inlineData: { data: image, mimeType: imageMimeType || "image/png" }
-                });
-                if (mask) {
-                    contents[0].parts.push({
-                        inlineData: { data: mask, mimeType: maskMimeType || "image/png" }
-                    });
-                }
-                if (referenceImage) {
-                    contents[0].parts.push({
-                        inlineData: { data: referenceImage, mimeType: refMimeType || "image/png" }
-                    });
-                }
+            // Add Source Image (Part 2)
+            userParts.push(await addImagePart(image, imageMimeType || "image/png", "Source Image"));
+
+            // Add Mask (Part 3) - Dual-View Ghost Mask
+            if (mask) {
+                userParts.push(await addImagePart(mask, maskMimeType || "image/png", "Edit Mask"));
             }
 
-            console.log(`[editImage] Model: ${modelId} | Mode: ${useFileApi ? 'FileAPI' : 'Inline'} | Prompt: "${prompt.substring(0, 50)}..."`);
+            // Add Reference (Optional)
+            if (referenceImage) {
+                userParts.push(await addImagePart(referenceImage, refMimeType || "image/png", "Style Reference"));
+            }
 
-            // 3. Execute Multimodal Generation
+            // 2. Construct Conversation History (Thought Signature)
+            const contents: any[] = [];
+
+            if (thoughtSignature) {
+                console.log("[editImage] Restoring Context via Thought Signature");
+                contents.push({
+                    role: "model",
+                    parts: [{
+                        // The string must be passed exactly as received in the `thought_signature` field?
+                        // The SDK types might require `thoughtSignature` property on the Part object.
+                        // We use `as any` to bypass strict typing if the SDK definitions lag behind the preview features.
+                        text: "Restoring Context",
+                        thoughtSignature: thoughtSignature
+                    }]
+                });
+            }
+
+            contents.push({ role: "user", parts: userParts });
+
+            console.log(`[editImage] Model: ${modelId} | History: ${!!thoughtSignature} | Prompt: "${prompt.substring(0, 50)}..."`);
+
+            // 3. Execute Generation
             const result = await client.models.generateContent({
                 model: modelId,
                 contents,
                 config: {
                     responseModalities: ["IMAGE"],
                     candidateCount: 1,
-                    temperature: 1.0
+                    temperature: 1.0 // High fidelity requires 1.0? Guide says "Temperature... Set to 1.0".
                 } as any
             });
 
@@ -294,27 +278,40 @@ CONSTRAINTS:
                 throw new functions.https.HttpsError("internal", "No candidates returned from Gemini API.");
             }
 
-            // Standardize output format
-            const candidates = result.candidates.map((cand: any) => ({
-                content: cand.content ? {
-                    parts: cand.content.parts ? cand.content.parts.filter((p: any) => p.inlineData) : []
-                } : { parts: [] }
-            }));
+            const candidate = result.candidates[0];
+            const contentPart = candidate.content?.parts?.find((p: any) => p.inlineData);
+            const signaturePart = candidate.content?.parts?.find((p: any) => (p as any).thoughtSignature);
 
-            if (!candidates[0] || !candidates[0].content || candidates[0].content.parts.length === 0) {
-                console.error("[editImage] No image data in parts:", JSON.stringify(result.candidates[0]?.content?.parts));
-                throw new functions.https.HttpsError("internal", "No image data found in result parts.");
+            // Extract Thought Signature for next turn
+            // It can be on the text part (first) or image part (inlineData).
+            // We check the first part likely.
+            const newSignature = (signaturePart as any)?.thoughtSignature || (candidate.content?.parts?.[0] as any)?.thoughtSignature;
+
+            if (!contentPart || !contentPart.inlineData) {
+                throw new functions.https.HttpsError("internal", "No image data found in result.");
             }
 
-            return { candidates };
+            return {
+                base64: contentPart.inlineData.data,
+                mimeType: contentPart.inlineData.mimeType,
+                thoughtSignature: newSignature
+            };
 
         } catch (error: any) {
             console.error("[editImage] Pipeline Error:", error);
+
+            if (error.message?.includes("400")) {
+                throw new functions.https.HttpsError(
+                    "invalid-argument",
+                    `Gemini API Error: 400. This usually means the mask or payload format is rejected. Details: ${error.message}`
+                );
+            }
+
             throw new functions.https.HttpsError("internal", error.message || "Unknown error");
         } finally {
             // Cleanup temp files
             tempFiles.forEach(f => {
-                try { require('fs').unlinkSync(f); } catch (e) { }
+                try { fs.unlinkSync(f); } catch (e) { /* ignore cleanup errors */ }
             });
         }
     });

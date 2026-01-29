@@ -44,6 +44,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
     const [endFrameItem, setEndFrameItem] = useState<{ id: string; url: string; prompt: string; type: 'image' | 'video' } | null>(null);
     const [magicFillPrompt, setMagicFillPrompt] = useState('');
 
+    // Quality preference state (Pro vs Flash)
+    const [isHighFidelity, setIsHighFidelity] = useState(false);
+
     // Canvas ref
     const canvasEl = useRef<HTMLCanvasElement>(null);
 
@@ -110,9 +113,6 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setReferenceImages(prev => ({ ...prev, [colorId]: image }));
     };
 
-    // Quality preference state (Pro vs Flash)
-    const [isHighFidelity, setIsHighFidelity] = useState(false);
-
     // Magic Fill Handler implementing dual-workflow architecture
     const handleMagicFill = async () => {
         // Collect all non-empty definitions
@@ -143,15 +143,38 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             if (prepared && prepared.masks.length > 0) {
                 const combinedPrompt = Object.values(finalDefinitions).join(". ") || magicFillPrompt;
 
-                if (prepared.masks.length === 1 || isHighFidelity) {
-                    // DUAL-VIEW PIPELINE (PRO or FLASH SINGLE)
-                    // Note: In High Fidelity mode, we collapse multiple masks into a single Pro reasoning task
+                if (isHighFidelity) {
+                    // DUAL-VIEW PIPELINE (PRO)
+                    // Use "Ghost Mask" (All annotations combined) for high-fidelity reasoning
+                    const ghostMask = canvasOps.extractGeminiMask();
+
+                    if (ghostMask) {
+                        const result = await Editing.editImage({
+                            image: prepared.baseImage,
+                            mask: { mimeType: 'image/png', data: ghostMask },
+                            prompt: combinedPrompt,
+                            forceHighFidelity: true,
+                            model: 'pro'
+                        });
+
+                        if (result) {
+                            setGeneratedCandidates([{
+                                id: crypto.randomUUID(),
+                                url: result.url,
+                                prompt: combinedPrompt,
+                                // thoughtSignature: result.thoughtSignature // TODO: Add to candidate type
+                            } as any]);
+                            toast.success(`High-Fidelity Edit Complete!`);
+                        }
+                    }
+                } else if (prepared.masks.length === 1) {
+                    // SINGLE MASK PIPELINE (FLASH)
                     const result = await Editing.editImage({
                         image: prepared.baseImage,
                         mask: prepared.masks[0],
                         prompt: combinedPrompt,
-                        forceHighFidelity: isHighFidelity,
-                        model: isHighFidelity ? 'pro' : 'flash'
+                        forceHighFidelity: false,
+                        model: 'flash'
                     });
 
                     if (result) {
@@ -160,7 +183,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             url: result.url,
                             prompt: combinedPrompt
                         }]);
-                        toast.success(`${isHighFidelity ? 'High-Fidelity' : 'Speedy'} Edit Complete!`);
+                        toast.success(`Speedy Edit Complete!`);
                     }
                 } else {
                     // MULTI-MASK CHAIN (FLASH ONLY)
