@@ -3,6 +3,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
+import { PromptBuilder } from './PromptBuilderService';
 
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
@@ -56,11 +57,15 @@ export class EditingService {
     }): Promise<{ id: string; url: string; prompt: string } | null> {
         const editImageFn = httpsCallable(functions, 'editImage');
 
-        // Sanitize prompt input
-        const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
+        // Generate structured prompt using PromptBuilder
+        const structuredPrompt = PromptBuilder.build({
+            userPrompt: options.prompt,
+            useDualView: !!options.mask,
+            task: options.mask ? "Targeted Image Inpainting" : "Object Modification via Visual Prompt"
+        });
 
         // Selection Logic:
-        const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || options.decoratedImage;
+        const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || !!options.decoratedImage;
         const modelId = useHighFidelity ? AI_MODELS.IMAGE.GENERATION : AI_MODELS.IMAGE.FAST;
 
         // Call backend with Dual-View payload
@@ -71,7 +76,7 @@ export class EditingService {
             maskMimeType: options.mask?.mimeType,
             referenceImage: options.referenceImage?.data,
             refMimeType: options.referenceImage?.mimeType,
-            prompt: sanitizedPrompt,
+            prompt: structuredPrompt,
             model: modelId
         }));
 

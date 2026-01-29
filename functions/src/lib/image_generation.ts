@@ -206,19 +206,31 @@ export const editImageFn = () => functions
             // Use File API for large images (e.g. over 15MB) or high fidelity path
             const useFileApi = image.length > 15 * 1024 * 1024 || modelId.includes('pro');
 
-            // 1. Construct the Multimodal Prompt with Thinking Instructions
+            // 1. Construct the Multimodal Prompt following "Task-Inputs-Instruction" Best Practices
+            const isPro = modelId.includes('pro');
+            const reasoningLogic = isPro
+                ? "Apply advanced spatial reasoning to infer the exact object boundaries within the target region. Even if the IMAGE_MASK is loose or imprecise, look at the IMAGE_SOURCE and refine the edit area to match the object's natural contours. Think through the materials, shadows, and reflection properties before generating."
+                : "Modify ONLY the area specified by the white pixels in IMAGE_MASK.";
+
             const compositePrompt = `
-                SYSTEM INSTRUCTION: You are an expert image editor. Think step-by-step about the spatial relationship between the source and the mask before acting. Ensure perfect edge blending and consistent lighting.
-                
-                TASK: Targeted Image Inpainting.
-                INPUTS: 
-                1. IMAGE_SOURCE: The original high-resolution photo.
-                2. IMAGE_MASK: A black and white image where the WHITE area marks the target for editing.
-                
-                INSTRUCTION: Using the context of IMAGE_SOURCE, modify ONLY the area specified by 
-                the white pixels in IMAGE_MASK. The new content should be: ${prompt}.
-                Maintain consistent lighting, shadows, and texture from the source image.
-            `;
+SYSTEM INSTRUCTION: You are the Gemini 3 "Nano Banana Pro" Image Engine. Your primary goal is high-fidelity semantic editing. 
+You must analyze the source image's lighting direction, focal length, and texture noise. 
+Modified pixels must be indistinguishable from the original camera sensor data.
+
+TASK: Targeted Image Inpainting.
+INPUTS: 
+1. IMAGE_SOURCE: The original high-resolution photo.
+2. IMAGE_MASK: A binary mask where the WHITE area marks the target for editing.
+
+INSTRUCTION: 
+Using the context of IMAGE_SOURCE, ${reasoningLogic}
+The new content for the target area should be: ${prompt}.
+
+CONSTRAINTS: 
+- Maintain consistent lighting, shadows, and resolution.
+- Ensure pixel-perfect blending at boundaries.
+- Respect the three-dimensional depth of the scene.
+            `.trim();
 
             // 2. Prepare Multimodal Parts
             const contents: any[] = [{
