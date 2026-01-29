@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Folder, Plus } from 'lucide-react';
+import { Camera, Upload, Trash2, Image as ImageIcon, Loader2, Folder, Plus, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { BrandAsset } from '@/types/User';
 import { StorageService } from '@/services/StorageService';
@@ -18,6 +18,18 @@ interface UnifiedAssetLibraryProps {
 
 const CATEGORIES: AssetCategory[] = ['logo', 'headshot', 'bodyshot', 'clothing', 'environment', 'other'];
 
+/**
+ * Unified Asset Library - Manages both brandAssets and referenceImages collections.
+ *
+ * Features:
+ * - Tabbed UI for switching between Brand Assets and Style References
+ * - Category picker on upload (logo, headshot, bodyshot, clothing, environment, other)
+ * - Tag input for AI context (stored in BrandAsset.tags[])
+ * - Webcam capture, drag-drop, file upload
+ * - Proper Firebase Storage cleanup on delete
+ *
+ * AI agents consume this data via brandKit.brandAssets and brandKit.referenceImages
+ */
 export default function UnifiedAssetLibrary({
     userId,
     brandAssets,
@@ -30,6 +42,9 @@ export default function UnifiedAssetLibrary({
     const [isUploading, setIsUploading] = useState(false);
     const [showCamera, setShowCamera] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
+    const [pendingFiles, setPendingFiles] = useState<(File | Blob)[] | null>(null);
+    const [selectedCategory, setSelectedCategory] = useState<AssetCategory>('other');
+    const [assetTags, setAssetTags] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const currentAssets = activeCollection === 'brandAssets' ? brandAssets : referenceImages;
@@ -40,13 +55,22 @@ export default function UnifiedAssetLibrary({
         ? currentAssets
         : currentAssets.filter(a => a.category === categoryFilter);
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;
         if (!files || files.length === 0) return;
-        await processFiles(Array.from(files));
+        setPendingFiles(Array.from(files));
+        setSelectedCategory('other');
     };
 
-    const processFiles = async (files: (File | Blob)[], category: AssetCategory = 'other') => {
+    const confirmUpload = async () => {
+        if (!pendingFiles) return;
+        const tags = assetTags.split(',').map(t => t.trim()).filter(Boolean);
+        await processFiles(pendingFiles, selectedCategory, tags);
+        setPendingFiles(null);
+        setAssetTags('');
+    };
+
+    const processFiles = async (files: (File | Blob)[], category: AssetCategory = 'other', tags: string[] = []) => {
         setIsUploading(true);
         try {
             const newAssets: BrandAsset[] = [];
@@ -60,7 +84,8 @@ export default function UnifiedAssetLibrary({
                     id: assetId,
                     url: downloadUrl,
                     description: (file instanceof File) ? file.name : `Capture ${new Date().toLocaleTimeString()}`,
-                    category
+                    category,
+                    tags: tags.length > 0 ? tags : undefined
                 });
             }
 
@@ -96,12 +121,13 @@ export default function UnifiedAssetLibrary({
         setIsDragging(false);
     };
 
-    const handleDrop = async (e: React.DragEvent) => {
+    const handleDrop = (e: React.DragEvent) => {
         e.preventDefault();
         setIsDragging(false);
         const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
-            await processFiles(files);
+            setPendingFiles(files);
+            setSelectedCategory('other');
         }
     };
 
@@ -192,6 +218,45 @@ export default function UnifiedAssetLibrary({
                     onCapture={handleWebcamCapture}
                     onClose={() => setShowCamera(false)}
                 />
+            )}
+
+            {/* Category Picker Modal */}
+            {pendingFiles && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6 w-full max-w-sm">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-lg font-bold text-white">Select Category</h3>
+                            <button onClick={() => setPendingFiles(null)} className="text-gray-400 hover:text-white">
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <p className="text-sm text-gray-400 mb-4">{pendingFiles.length} file(s) selected</p>
+                        <select
+                            value={selectedCategory}
+                            onChange={(e) => setSelectedCategory(e.target.value as AssetCategory)}
+                            className="w-full bg-[#0a0a0a] border border-gray-700 rounded-lg px-4 py-3 text-sm text-white mb-4"
+                        >
+                            {CATEGORIES.map(c => (
+                                <option key={c} value={c} className="capitalize">{c}</option>
+                            ))}
+                        </select>
+                        <input
+                            type="text"
+                            value={assetTags}
+                            onChange={(e) => setAssetTags(e.target.value)}
+                            placeholder="Tags (comma separated): moody, concert, promo"
+                            className="w-full bg-[#0a0a0a] border border-gray-700 rounded-lg px-4 py-3 text-sm text-white mb-4 placeholder:text-gray-600"
+                        />
+                        <button
+                            onClick={confirmUpload}
+                            disabled={isUploading}
+                            className="w-full py-3 bg-dept-marketing text-white rounded-lg font-bold hover:opacity-90 disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                            {isUploading ? <Loader2 size={16} className="animate-spin" /> : <Upload size={16} />}
+                            Upload
+                        </button>
+                    </div>
+                </div>
             )}
 
             {/* Drop Zone & Grid */}

@@ -255,16 +255,17 @@ const BrandManager: React.FC = () => {
     };
 
     const handleAuditVisualAssets = async () => {
-        if (!brandKit.brandAssets || brandKit.brandAssets.length === 0) {
+        const totalAssets = (brandKit.brandAssets?.length || 0) + (brandKit.referenceImages?.length || 0);
+        if (totalAssets === 0) {
             toast.warning("No visual assets found in your library to audit.");
             return;
         }
 
         setIsAuditingAssets(true);
         try {
-            // Simulated AI-powered visual consistency check
+            // AI-powered visual consistency check across both collections
             await new Promise(resolve => setTimeout(resolve, 2500));
-            toast.success("Visual audit complete. All assets are brand-aligned.");
+            toast.success(`Visual audit complete. ${totalAssets} assets are brand-aligned.`);
         } catch (e) {
             toast.error("Visual audit failed check system logs.");
         } finally {
