@@ -240,7 +240,7 @@ def run():
     # add the webapp, mcp, and a2a to the app
     middleware_routes = {
         "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
-        # "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
+        "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
     }
 
     app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
