@@ -143,6 +143,49 @@ class AgentZeroService {
     }
 
     /**
+     * Central API caller that handles Electron Proxy vs Web Fetch.
+     * Electron proxy is preferred to bypass CORS for localhost:50080.
+     */
+    private async callApi(endpoint: string, payload: any, timeoutMs: number = 30000): Promise<any> {
+        const fullUrl = endpoint.startsWith('http') ? endpoint : `${this.config.baseUrl}${endpoint}`;
+        const headers = this.getHeaders();
+
+        // 1. Try Electron Proxy (Full CORS bypass)
+        if (typeof window !== 'undefined' && (window as any).electronAPI?.agent?.proxyZero) {
+            console.debug(`[AgentZeroService] Using Electron Proxy for: ${fullUrl}`);
+            const result = await (window as any).electronAPI.agent.proxyZero(fullUrl, payload, headers);
+
+            if (!result.success) {
+                if (result.status === 401) throw new Error('Agent Zero: Unauthorized (Invalid Token)');
+                if (result.status === 404) throw new Error(`Agent Zero: Endpoint not found (${fullUrl})`);
+                throw new Error(result.error || `Agent Zero Proxy Error (${result.status || 'Network'})`);
+            }
+
+            return result.data;
+        }
+
+        // 2. Fallback to standard fetch (Web mode)
+        console.debug(`[AgentZeroService] Using Native Fetch for: ${fullUrl}`);
+        const response = await this.fetchWithTimeout(
+            fullUrl,
+            {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload)
+            },
+            timeoutMs
+        );
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            if (errorText.includes('<html')) throw new Error(`Agent Zero API Error (${response.status}): Down or unreachable.`);
+            throw new Error(`Agent Zero API Error (${response.status}): ${errorText}`);
+        }
+
+        return await response.json();
+    }
+
+    /**
      * Processes strings to find img:// URLs and append cache busting timestamps.
      */
     private processUrls(text: string): string {
@@ -171,29 +214,8 @@ class AgentZeroService {
                 payload.attachments = attachments;
             }
 
-            // Note: Endpoint is /api_message (defaults to 50080 port logic)
-            // Using 60s timeout for LLM operations which can be slow
-            const response = await this.fetchWithTimeout(
-                `${this.config.baseUrl}/api_message`,
-                {
-                    method: 'POST',
-                    headers: this.getHeaders(),
-                    body: JSON.stringify(payload)
-                },
-                60000 // 60s for LLM operations
-            );
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                // Handle non-JSON error responses (like 404 HTML pages)
-                if (errorText.includes('<html')) {
-                    throw new Error(`Agent Zero API Error (${response.status}): Agent Zero might be down or unreachable.`);
-                }
-                throw new Error(`Agent Zero API Error (${response.status}): ${errorText}`);
-            }
-
-            console.log(`[AgentZeroService] Received response: ${response.status} ${response.statusText}`);
-            const data = await response.json();
+            // Using 60s timeout for LLM operations via callApi helper
+            const data = await this.callApi('/api_message', payload, 60000);
 
             // Apply img:// cache busting
             const processedMessage = this.processUrls(data.response || data.message || "Agent Zero: No text response.");
@@ -211,8 +233,8 @@ class AgentZeroService {
             });
 
             // Check for connection refusal (Docker container down)
-            if (e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError'))) {
-                throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080? (Check CORS in Browser Console)');
+            if (e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('Proxy Error'))) {
+                throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080? (Main Process Proxy failed)');
             }
 
             throw e;
@@ -243,26 +265,10 @@ class AgentZeroService {
      * Enforces project isolation and context switching.
      */
     async executeTask(request: AgentTaskRequest): Promise<AgentTaskResponse> {
-        // Endpoint matches the filename of the python api handler: indii_task.py -> /api/indii_task
-        const endpoint = `${this.config.baseUrl}/indii_task`;
-
         try {
-            const response = await this.fetchWithTimeout(
-                endpoint,
-                {
-                    method: 'POST',
-                    headers: this.getHeaders(),
-                    body: JSON.stringify(request)
-                },
-                120000 // 2 min for task execution (can involve LLM + tools)
-            );
+            // Using 120s timeout for complex tasks via callApi helper
+            const data = await this.callApi('/indii_task', request, 120000);
 
-            if (!response.ok) {
-                const text = await response.text();
-                throw new Error(`Task Execution Failed (${response.status}): ${text}`);
-            }
-
-            const data = await response.json();
             if (data.agent_response) {
                 data.agent_response = this.processUrls(data.agent_response);
             }
