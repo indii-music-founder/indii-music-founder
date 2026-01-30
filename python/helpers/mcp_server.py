@@ -90,36 +90,36 @@ async def send_message(
             title="message",
         ),
     ],
-    attachments: (
+    attachments: Union[
         Annotated[
             list[str],
             Field(
                 description="Optional: A list of attachments (file paths or web urls) to send to the remote Agent Zero Instance with the message. Default: Empty list",
                 title="attachments",
             ),
-        ]
-        | None
-    ) = None,
-    chat_id: (
+        ],
+        None
+    ] = None,
+    chat_id: Union[
         Annotated[
             str,
             Field(
                 description="Optional: ID of the chat. Used to continue a chat. This value is returned in response to sending previous message. Default: Empty string",
                 title="chat_id",
             ),
-        ]
-        | None
-    ) = None,
-    persistent_chat: (
+        ],
+        None
+    ] = None,
+    persistent_chat: Union[
         Annotated[
             bool,
             Field(
                 description="Optional: Whether to use a persistent chat. If true, the chat will be saved and can be continued later. Default: False.",
                 title="persistent_chat",
             ),
-        ]
-        | None
-    ) = None,
+        ],
+        None
+    ] = None,
 ) -> Annotated[
     Union[ToolResponse, ToolError],
     Field(
@@ -218,7 +218,7 @@ async def finish_chat(
 
 
 async def _run_chat(
-    context: AgentContext, message: str, attachments: list[str] | None = None
+    context: AgentContext, message: str, attachments: Union[list[str], None] = None
 ):
     try:
         _PRINTER.print("MCP Chat message received")

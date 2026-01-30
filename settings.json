@@ -7,5 +7,6 @@
     "embed_model_name": "models/embedding-001",
     "browser_model_provider": "google",
     "browser_model_name": "gemini-3-flash-preview",
-    "mcp_server_enabled": true
+    "mcp_server_enabled": true,
+    "a2a_server_enabled": true
 }
