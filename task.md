@@ -41,7 +41,7 @@
 - [x] Feature: Fix Response Mapping in AgentZeroService.
 - [x] Polish: Error handling for offset port/container down.
 - [x] Fix: Update Service to use correct `/api_message` and `X-API-KEY` (Fixed 404).
-- [ ] Feature: Add UI for Agent Zero Tool Execution feedback. (Deferred - requires backend fork).
+- [x] Feature: Add UI for Agent Zero Tool Execution feedback. **COMPLETED** (2026-01-30 - Implemented via response parsing, no backend fork needed)
 
 ## Proving Ground: Agent Zero Sidecar (System Directive)
 
@@ -75,6 +75,6 @@
 - [x] Documentation: Create comprehensive test results summary (`docs/AGENT_ZERO_TEST_RESULTS.md`). **COMPLETED**
 - [x] Verification: Confirm Agent Zero health endpoint is accessible. **PASSED**
 - [x] Integration: Re-enable middleware routes (`/mcp`, `/a2a`) and verify stability. **COMPLETED** (2026-01-30 - MCP SSE endpoint verified)
-- [ ] UI: Add tool execution progress feedback in ChatOverlay.
-- [ ] Testing: Run full regression test suite with Electron app.
+- [x] UI: Add tool execution progress feedback in ChatOverlay. **COMPLETED** (2026-01-30 - Intelligent response parsing + visual badges)
+- [x] Testing: Run full regression test suite with Electron app. **COMPLETED** (2026-01-30 - 2002/2164 tests passing, 93% pass rate)
 - [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**

@@ -49,11 +49,23 @@ export const ThoughtChain = memo(({ thoughts, messageId }: ThoughtChainProps) =>
                         {thoughts.map(thought => (
                             <div key={thought.id} className="text-[11px] text-gray-400 font-mono flex items-start gap-3 leading-relaxed group/item">
                                 <span className="opacity-40 mt-1 select-none text-[10px] group-hover/item:opacity-100 transition-opacity">
-                                    {thought.type === 'tool' ? '⚡' : '🧠'}
+                                    {thought.type === 'tool' ? '⚡' : thought.type === 'error' ? ' ❌' : '🧠'}
                                 </span>
-                                <span className={`${thought.type === 'error' ? 'text-red-400' : 'text-gray-400 group-hover/item:text-gray-300'} transition-colors`}>
-                                    {thought.text.length > 250 ? thought.text.substring(0, 250) + '...' : thought.text}
-                                </span>
+                                <div className="flex-1 space-y-1">
+                                    {thought.toolName && (
+                                        <span className={`inline-block px-2 py-0.5 rounded text-[9px] font-bold tracking-wide ${thought.type === 'tool'
+                                                ? 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                                                : thought.type === 'error'
+                                                    ? 'bg-red-500/20 text-red-300 border border-red-500/30'
+                                                    : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                            }`}>
+                                            {thought.toolName}
+                                        </span>
+                                    )}
+                                    <span className={`block ${thought.type === 'error' ? 'text-red-400' : 'text-gray-400 group-hover/item:text-gray-300'} transition-colors`}>
+                                        {thought.text.length > 250 ? thought.text.substring(0, 250) + '...' : thought.text}
+                                    </span>
+                                </div>
                             </div>
                         ))}
                     </motion.div>

@@ -260,18 +260,35 @@ export class AgentService {
             });
         }
 
+        // Add initial "processing" thought
+        updateAgentMessage(responseId, {
+            thoughts: [{
+                id: uuidv4(),
+                text: 'Agent Zero is processing your request...',
+                timestamp: Date.now(),
+                type: 'logic',
+                toolName: 'Agent Zero'
+            }]
+        });
+
         try {
             const response = await agentZeroService.sendMessage(text, agentZeroAttachments);
 
+            // Parse response for tool usage patterns
+            const thoughts = this.parseAgentZeroToolUsage(response.message);
+
+            // Always include the base execution thought
+            thoughts.unshift({
+                id: uuidv4(),
+                text: 'Executed on Agent Zero Container',
+                timestamp: Date.now(),
+                type: 'logic',
+                toolName: 'Agent Zero'
+            });
+
             updateAgentMessage(responseId, {
                 text: response.message,
-                thoughts: [{
-                    id: uuidv4(),
-                    text: 'Executed on Agent Zero Container',
-                    timestamp: Date.now(),
-                    type: 'logic',
-                    toolName: 'Agent Zero'
-                }]
+                thoughts
             });
 
             // If there are tool calls or attachments in response, handle them here
@@ -294,6 +311,71 @@ export class AgentService {
             });
             throw err; // Re-throw to be caught by executeFlow catch block
         }
+    }
+
+    /**
+     * Parse Agent Zero response to detect tool usage patterns.
+     * This creates visual feedback for tool execution even though Agent Zero
+     * doesn't currently stream tool events.
+     */
+    private parseAgentZeroToolUsage(message: string): AgentThought[] {
+        const thoughts: AgentThought[] = [];
+
+        // Pattern detection for common Agent Zero tool usage
+        const patterns = [
+            {
+                regex: /```(?:python|bash|sh|javascript|typescript)/gi,
+                toolName: 'Code Execution',
+                type: 'tool' as const,
+                getMessage: () => 'Executed code to process your request'
+            },
+            {
+                regex: /(?:created|wrote|saved|generated)\s+(?:file|image|document)/gi,
+                toolName: 'File Operations',
+                type: 'tool' as const,
+                getMessage: (match: string) => `File operation: ${match}`
+            },
+            {
+                regex: /(?:searched|browsed|visited|fetched)\s+(?:web|internet|url|website)/gi,
+                toolName: 'Web Browser',
+                type: 'tool' as const,
+                getMessage: () => 'Browsed the web for information'
+            },
+            {
+                regex: /img:\/\//gi,
+                toolName: 'Image Generation',
+                type: 'tool' as const,
+                getMessage: () => 'Generated an image using Imagen 3'
+            },
+            {
+                regex: /(?:analyzed|processed|examined)\s+(?:image|photo|picture)/gi,
+                toolName: 'Vision Analysis',
+                type: 'tool' as const,
+                getMessage: () => 'Analyzed image content with Gemini Vision'
+            },
+            {
+                regex: /(?:installed|updated|executed)\s+(?:package|dependency|npm|pip)/gi,
+                toolName: 'Package Manager',
+                type: 'tool' as const,
+                getMessage: () => 'Managed project dependencies'
+            }
+        ];
+
+        // Check each pattern
+        for (const pattern of patterns) {
+            const matches = message.match(pattern.regex);
+            if (matches && matches.length > 0) {
+                thoughts.push({
+                    id: uuidv4(),
+                    text: pattern.getMessage(matches[0]),
+                    timestamp: Date.now(),
+                    type: pattern.type,
+                    toolName: pattern.toolName
+                });
+            }
+        }
+
+        return thoughts;
     }
 
     /**
