@@ -97,7 +97,40 @@ class AgentZeroService {
 
         // First 16 chars
         this.token = urlSafe.substring(0, 16);
-        console.log('[AgentZeroService] Generated Token:', this.token);
+        // Security: Token logging removed - only log in dev mode without exposing value
+        if (import.meta.env.DEV) {
+            console.debug('[AgentZeroService] Auth token generated');
+        }
+    }
+
+    /**
+     * Fetch wrapper with timeout support to prevent hung requests.
+     * @param url - The URL to fetch
+     * @param options - Fetch options
+     * @param timeoutMs - Timeout in milliseconds (default: 30s, LLM ops use 60s)
+     */
+    private async fetchWithTimeout(
+        url: string,
+        options: RequestInit,
+        timeoutMs: number = 30000
+    ): Promise<Response> {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            const response = await fetch(url, {
+                ...options,
+                signal: controller.signal
+            });
+            return response;
+        } catch (error: any) {
+            if (error.name === 'AbortError') {
+                throw new Error(`Request timed out after ${timeoutMs}ms`);
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
     }
 
     private getHeaders() {
@@ -139,11 +172,16 @@ class AgentZeroService {
             }
 
             // Note: Endpoint is /api_message (defaults to 50080 port logic)
-            const response = await fetch(`${this.config.baseUrl}/api_message`, {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify(payload)
-            });
+            // Using 60s timeout for LLM operations which can be slow
+            const response = await this.fetchWithTimeout(
+                `${this.config.baseUrl}/api_message`,
+                {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(payload)
+                },
+                60000 // 60s for LLM operations
+            );
 
             if (!response.ok) {
                 const errorText = await response.text();
@@ -182,11 +220,15 @@ class AgentZeroService {
     }
 
     async getHistory(contextId: string): Promise<HistoryItem[]> {
-        const response = await fetch(`${this.config.baseUrl}/api/history/get`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify({ context_id: contextId })
-        });
+        const response = await this.fetchWithTimeout(
+            `${this.config.baseUrl}/api/history/get`,
+            {
+                method: 'POST',
+                headers: this.getHeaders(),
+                body: JSON.stringify({ context_id: contextId })
+            },
+            30000 // 30s for history fetch
+        );
 
         if (!response.ok) throw new Error('Failed to fetch history');
         const history: HistoryItem[] = await response.json();
@@ -205,11 +247,15 @@ class AgentZeroService {
         const endpoint = `${this.config.baseUrl}/indii_task`;
 
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetchWithTimeout(
+                endpoint,
+                {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(request)
+                },
+                120000 // 2 min for task execution (can involve LLM + tools)
+            );
 
             if (!response.ok) {
                 const text = await response.text();
@@ -234,11 +280,15 @@ class AgentZeroService {
     async provisionProject(request: ProvisionProjectRequest): Promise<any> {
         const endpoint = `${this.config.baseUrl}/provision_project`;
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetchWithTimeout(
+                endpoint,
+                {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(request)
+                },
+                30000 // 30s for provisioning
+            );
 
             if (!response.ok) {
                 const text = await response.text();
@@ -259,11 +309,15 @@ class AgentZeroService {
     async syncProject(request: SyncProjectRequest): Promise<any> {
         const endpoint = `${this.config.baseUrl}/indii_sync`;
         try {
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify(request)
-            });
+            const response = await this.fetchWithTimeout(
+                endpoint,
+                {
+                    method: 'POST',
+                    headers: this.getHeaders(),
+                    body: JSON.stringify(request)
+                },
+                30000 // 30s for sync
+            );
 
             if (!response.ok) {
                 const text = await response.text();
