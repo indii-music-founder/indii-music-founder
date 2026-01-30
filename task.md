@@ -74,7 +74,7 @@
 
 - [x] Documentation: Create comprehensive test results summary (`docs/AGENT_ZERO_TEST_RESULTS.md`). **COMPLETED**
 - [x] Verification: Confirm Agent Zero health endpoint is accessible. **PASSED**
-- [ ] Integration: Re-enable middleware routes (`/mcp`, `/a2a`) and verify stability.
+- [x] Integration: Re-enable middleware routes (`/mcp`, `/a2a`) and verify stability. **COMPLETED** (2026-01-30 - MCP SSE endpoint verified)
 - [ ] UI: Add tool execution progress feedback in ChatOverlay.
 - [ ] Testing: Run full regression test suite with Electron app.
 - [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**
