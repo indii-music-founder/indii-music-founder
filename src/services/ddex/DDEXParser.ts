@@ -270,7 +270,10 @@ class DDEXParserImpl {
           },
           DisplayArtistName: r.displayArtistName,
           LabelName: r.labelName,
-          Genre: { GenreText: r.genre.genre },
+          Genre: {
+            GenreText: r.genre.genre,
+            SubGenre: r.genre.subGenre
+          },
           ParentalWarningType: r.parentalWarningType,
         },
         ReleaseType: r.releaseType,
@@ -359,6 +362,7 @@ class DDEXParserImpl {
             TitleText: r.resourceTitle.titleText,
           },
           DisplayArtistName: r.displayArtistName,
+          LanguageOfPerformance: r.soundRecordingDetails?.languageOfPerformance,
         },
       })),
       Image: resources.filter((r) => r.resourceType === 'Image').map((r) => ({
