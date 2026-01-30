@@ -3,7 +3,6 @@ import { MetadataEditor } from './components/MetadataEditor';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ernService } from '@/services/ddex/ERNService'; // Hook up the real service
-import { audioAnalysisService } from '@/services/audio/AudioAnalysisService'; // For type reference if needed
 
 import { ddexValidator } from '@/services/ddex/DDEXValidator';
 
@@ -104,6 +103,7 @@ export const ReleaseManager: React.FC = () => {
                 <div className="flex gap-8">
                     <div className="flex-1 max-w-3xl">
                         <MetadataEditor
+                            key={audioProfile?.id || 'empty'}
                             audioProfile={audioProfile}
                             initialMetadata={metadata || undefined}
                             onSave={handleSaveMetadata}

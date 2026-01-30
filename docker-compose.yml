@@ -3,13 +3,15 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.local
-    container_name: indii-agent-temp
+    container_name: indii-agent-working
     ports:
-      - "127.0.0.1:50080:80"   # UI Port - localhost only
-      - "127.0.0.1:8880:8080"  # RFC Port - localhost only
+      - "50080:80"
+      - "8880:8080"
     working_dir: /a0
+    entrypoint: ["/bin/bash", "/exe/init_agent.sh"]
     volumes:
-      - ./run_ui_temp.py:/a0/run_ui.py # Map patched run_ui
+      - ./init_agent.sh:/exe/init_agent.sh
+      - ./run_ui.py:/a0_indii/run_ui.py
       - ~/Documents/indii_Workspace:/a0/usr/projects
       - ./python/tools:/a0/python/tools/custom  # Map custom tools to a subdirectory or overlay
       - ./prompts:/a0/prompts/custom            # Map custom prompts
@@ -49,7 +51,8 @@ services:
       - ./settings.json:/a0/tmp/settings.json
     environment:
       - PORT=80
-      - WEB_UI_HOST=127.0.0.1
+      - WEB_UI_HOST=0.0.0.0
+      - WEB_UI_PORT=80
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - GEMINI_API_KEY=${GOOGLE_API_KEY}
       - EMBEDDING_MODEL=models/embedding-001
@@ -74,4 +77,4 @@ services:
 networks:
   indii-internal:
     driver: bridge
-    internal: true
+    internal: false

@@ -1,6 +1,12 @@
 /**
  * DistributorService
  * Main facade for managing releases across multiple music distributors
+ * 
+ * Phase 1 Hardening:
+ * - Retry logic with exponential backoff
+ * - Circuit breaker pattern for failing APIs
+ * - Request timeout handling
+ * - Graceful degradation
  */
 
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -20,12 +26,12 @@ import type {
 } from './types/distributor';
 import type { ReleaseDeploymentDocument } from '@/types/firestore';
 
-
 import { distributionStore } from './DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
 import { deliveryService, DeliveryResult } from './DeliveryService';
 import { currencyConversionService } from './CurrencyConversionService';
 import { useStore } from '@/core/store';
+import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resilience';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -36,6 +42,7 @@ import { SymphonicAdapter } from './adapters/SymphonicAdapter';
 class DistributorServiceImpl {
   private adapters: Map<DistributorId, IDistributorAdapter> = new Map();
   private store: typeof distributionStore = distributionStore;
+  private circuitBreakers: Map<DistributorId, CircuitBreaker> = new Map();
 
   constructor() {
     // Register default adapters for Alpha release
@@ -55,6 +62,7 @@ class DistributorServiceImpl {
    */
   registerAdapter(adapter: IDistributorAdapter): void {
     this.adapters.set(adapter.id, adapter);
+    this.circuitBreakers.set(adapter.id, new CircuitBreaker(5, 60000, 2));
     console.info(`[DistributorService] Registered adapter: ${adapter.name}`);
   }
 
@@ -100,9 +108,26 @@ class DistributorServiceImpl {
       throw new Error(`No credentials found for ${distributorId}. Please provide them to connect.`);
     }
 
-    // 2. Attempt real connection via adapter
+    // 2. Attempt real connection via adapter with retry + timeout
+    const breaker = this.circuitBreakers.get(distributorId);
+    if (!breaker) {
+      throw new Error(`Circuit breaker not initialized for ${distributorId}`);
+    }
+
     try {
-      await adapter.connect(finalCredentials);
+      await breaker.execute(async () => {
+        return await retryWithBackoff(
+          () => withTimeout(adapter.connect(finalCredentials), 30000, 'Connection timeout'),
+          {
+            maxAttempts: 3,
+            initialDelayMs: 1000,
+            onRetry: (attempt, error) => {
+              console.warn(`[DistributorService] Connection retry ${attempt}/3 for ${distributorId}:`, error.message);
+            },
+          }
+        );
+      });
+
       console.info(`[DistributorService] Connection verified for ${adapter.name}`);
 
       // 3. Save successful credentials if they were passed in
@@ -112,9 +137,6 @@ class DistributorServiceImpl {
       }
     } catch (error) {
       console.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
-      // If connection fails and we were using NEW credentials, don't save them.
-      // If it fails with OLD credentials, maybe we should offer to delete them? 
-      // For now, just throw the error back to UI.
       throw error;
     }
   }

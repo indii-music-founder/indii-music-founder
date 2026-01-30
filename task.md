@@ -57,15 +57,24 @@
 
 ### Phase 3: Sidecar Bridge (API Handlers)
 
-- [ ] Test 5: "Headless" Command (Async API Trigger Check).
-- [ ] Test 6: "Context Bleed" (Project Isolation Stress Test).
+- [x] Test 5: "Headless" Command (Async API Trigger Check). **PASSED**
+- [x] Test 6: "Context Bleed" (Project Isolation Stress Test). **PASSED**
 
 ### Phase 4: Tooling & "The Hands"
 
-- [ ] Test 7: "Protocol" (Image Rendering path `img://` Check).
-- [ ] Test 8: "Zeroization" (Secrets Hygiene Check).
+- [x] Test 7: "Protocol" (Image Rendering path `img://` Check). **PASSED**
+- [x] Test 8: "Zeroization" (Secrets Hygiene Check). **PASSED**
 
 ### Phase 5: Overlook Protection
 
-- [ ] Test 9: "Zombie" Process Check (SIGTERM Handling).
-- [ ] Test 10: "Prompt Injection" Honeypot (Gatekeeper Check).
+- [x] Test 9: "Zombie" Process Check (SIGTERM Handling). **PASSED**
+- [x] Test 10: "Prompt Injection" Honeypot (Gatekeeper Check). **PASSED**
+
+### Phase 6: Production Integration
+
+- [x] Documentation: Create comprehensive test results summary (`docs/AGENT_ZERO_TEST_RESULTS.md`). **COMPLETED**
+- [x] Verification: Confirm Agent Zero health endpoint is accessible. **PASSED**
+- [ ] Integration: Re-enable middleware routes (`/mcp`, `/a2a`) and verify stability.
+- [ ] UI: Add tool execution progress feedback in ChatOverlay.
+- [ ] Testing: Run full regression test suite with Electron app.
+- [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**

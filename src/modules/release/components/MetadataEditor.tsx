@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { DDEXMapper } from '@/services/ddex/DDEXMapper';
@@ -10,24 +10,24 @@ interface MetadataEditorProps {
 }
 
 export const MetadataEditor: React.FC<MetadataEditorProps> = ({ initialMetadata, audioProfile, onSave }) => {
-    // Merge AI data if available and not overridden
-    const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(initialMetadata || {});
-
-    useEffect(() => {
+    // Initialize state with merged metadata from props and AI profile
+    // The parent uses a 'key' to reset this component when the profile changes
+    const [metadata, setMetadata] = useState<Partial<ExtendedGoldenMetadata>>(() => {
+        const base = initialMetadata || {};
         if (audioProfile) {
             const aiMetadata = DDEXMapper.mapAudioProfileToMetadata(audioProfile);
-            setMetadata(prev => ({
-                ...prev,
+            return {
                 ...aiMetadata,
-                // Preserve user-entered title/artist if they exist
-                releaseTitle: prev.releaseTitle,
-                trackTitle: prev.trackTitle,
-            }));
+                ...base, // User edits override AI
+            };
         }
-    }, [audioProfile]);
+        return base;
+    });
 
     const handleChange = (field: keyof ExtendedGoldenMetadata, value: any) => {
-        setMetadata(prev => ({ ...prev, [field]: value }));
+        const updated = { ...metadata, [field]: value };
+        setMetadata(updated);
+        onSave(updated as ExtendedGoldenMetadata);
     };
 
     return (
