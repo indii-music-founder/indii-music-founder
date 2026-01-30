@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile.local
     container_name: indii-agent
     ports:
-      - "50080:80"   # UI Port
-      - "8880:8080"  # RFC Port
+      - "127.0.0.1:50080:80"   # UI Port - localhost only
+      - "127.0.0.1:8880:8080"  # RFC Port - localhost only
     working_dir: /a0
     volumes:
       - ~/Documents/indii_Workspace:/a0/usr/projects
@@ -44,10 +44,11 @@ services:
       # Custom API Handler for Indii Task Execution
       - ./python/api/indii_task.py:/a0/python/api/indii_task.py
       - ./python/api/auth_broker.py:/a0/python/api/auth_broker.py
+      - ./python/api/healthz.py:/a0/python/api/healthz.py
       - ./settings.json:/a0/tmp/settings.json
     environment:
       - PORT=80
-      - WEB_UI_HOST=0.0.0.0
+      - WEB_UI_HOST=127.0.0.1
       - GOOGLE_API_KEY=${GOOGLE_API_KEY}
       - GEMINI_API_KEY=${GOOGLE_API_KEY}
       - EMBEDDING_MODEL=models/embedding-001
