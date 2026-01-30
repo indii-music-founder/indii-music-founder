@@ -30,7 +30,7 @@ class IndiiAudioEar(Tool):
 
             # Upload file
             self.set_progress(f"Uploading {os.path.basename(file_path)}...")
-            uploaded_file = client.files.upload(path=file_path)
+            uploaded_file = client.files.upload(file=file_path)
             
             self.set_progress("Analyzing audio tokens (BPM, Key, Mood)...")
             

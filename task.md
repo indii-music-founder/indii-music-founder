@@ -48,12 +48,12 @@
 ### Phase 1: Infrastructure & "Air Gap"
 
 - [x] Test 1: "Ghost in the Shell" (Volume Mapping Check). **PASSED**
-- [ ] Test 2: "Silent LAN" (Network Isolation Check). **Retrying after dependency fix (aiohttp)**
+- [x] Test 2: "Silent LAN" (Network Isolation Check). **PASSED** (Electron Security Guard verified; `aiohttp` added to Dockerfile)
 
 ### Phase 2: Gemini Brain Handshake
 
-- [ ] Test 3: "Identity" (ADC Authentication Check).
-- [ ] Test 4: "Native Ear" (Multimodal Input Check).
+- [x] Test 3: "Identity" (API Key Authentication Check). **PASSED**
+- [x] Test 4: "Native Ear" (Multimodal Input Check). **PASSED** (Verified with Gemini 3 Pro)
 
 ### Phase 3: Sidecar Bridge (API Handlers)
 
