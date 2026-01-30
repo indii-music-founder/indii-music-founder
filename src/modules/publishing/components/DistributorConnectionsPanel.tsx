@@ -1,9 +1,11 @@
 import React from 'react';
-import { useStore } from '@/core/store';
+import { useDistributorConnections } from '../hooks/useDistributorConnections';
 import { Globe, Loader2, AlertCircle, ExternalLink, Plus } from 'lucide-react';
+import { useStore } from '@/core/store';
 
 export const DistributorConnectionsPanel: React.FC = () => {
-    const { distribution, setModule } = useStore();
+    const { connections, loading, refresh, disconnect } = useDistributorConnections();
+    const setModule = useStore(state => state.setModule);
 
     return (
         <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col h-full">
@@ -13,11 +15,11 @@ export const DistributorConnectionsPanel: React.FC = () => {
             </h3>
 
             <div className="flex-1">
-                {distribution.loading ? (
+                {loading ? (
                     <div className="flex items-center justify-center py-6 h-full">
                         <Loader2 size={24} className="text-blue-500 animate-spin" />
                     </div>
-                ) : distribution.connections.length === 0 ? (
+                ) : connections.length === 0 ? (
                     <div className="text-center py-8 bg-gray-900/30 rounded-xl border border-dashed border-gray-800 h-full flex flex-col justify-center">
                         <AlertCircle size={24} className="text-gray-700 mx-auto mb-3" />
                         <p className="text-gray-400 text-sm font-medium">No connectors active</p>
@@ -30,7 +32,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
                     </div>
                 ) : (
                     <div className="space-y-3">
-                        {distribution.connections.map((conn) => (
+                        {connections.map((conn) => (
                             <div key={conn.distributorId} className="flex items-center justify-between p-3 bg-gray-900/40 hover:bg-gray-900/60 rounded-xl border border-gray-800/50 transition-colors group cursor-pointer">
                                 <div className="flex items-center gap-3">
                                     <div className={`w-2 h-2 rounded-full ${conn.isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-gray-600'}`} />
@@ -45,8 +47,10 @@ export const DistributorConnectionsPanel: React.FC = () => {
                             </div>
                         ))}
 
-                        {/* Fake "Add" button for UI completeness */}
-                        <button className="w-full py-2 border border-dashed border-gray-800 rounded-xl text-gray-600 hover:text-white hover:border-gray-600 hover:bg-gray-900/50 transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider">
+                        <button
+                            onClick={() => setModule('distribution')}
+                            className="w-full py-2 border border-dashed border-gray-800 rounded-xl text-gray-600 hover:text-white hover:border-gray-600 hover:bg-gray-900/50 transition-all flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wider"
+                        >
                             <Plus size={12} /> Add Platform
                         </button>
                     </div>
@@ -60,8 +64,8 @@ export const DistributorConnectionsPanel: React.FC = () => {
                 Manage Connections
             </button>
 
-            {/* Background Decoration */}
             <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/5 blur-[60px] pointer-events-none -mr-10 -mt-10" />
         </div>
     );
 };
+

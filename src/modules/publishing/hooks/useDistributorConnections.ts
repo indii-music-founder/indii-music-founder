@@ -3,9 +3,7 @@ import { useStore } from '@/core/store';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import type { DistributorId, DistributorCredentials, DistributorConnection } from '@/services/distribution/types/distributor';
 
-export interface DistributorConnectionState extends DistributorConnection {
-    // Add any additional UI-specific state here if needed
-}
+export type DistributorConnectionState = DistributorConnection;
 
 export function useDistributorConnections() {
     const { distribution, fetchDistributors, connectDistributor } = useStore();

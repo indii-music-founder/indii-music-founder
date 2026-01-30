@@ -11,9 +11,10 @@ import { type DDEXReleaseRecord } from '../hooks/useReleases';
 
 interface ReleaseListViewProps {
     onNewRelease: () => void;
+    onReleaseClick?: (id: string) => void;
 }
 
-export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease }) => {
+export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease, onReleaseClick }) => {
     const {
         releases,
         loading,
@@ -155,6 +156,7 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease }
                                 release={release}
                                 isSelected={selectedIds.includes(release.id)}
                                 onToggleSelection={() => toggleSelection(release.id)}
+                                onOpenDetail={onReleaseClick}
                                 onDelete={() => deleteRelease(release.id)}
                             />
                         ))}
@@ -183,13 +185,17 @@ export const ReleaseListView: React.FC<ReleaseListViewProps> = ({ onNewRelease }
                                 {releases.map((release) => (
                                     <tr
                                         key={release.id}
-                                        className={`group hover:bg-white/[0.02] transition-colors ${selectedIds.includes(release.id) ? 'bg-blue-500/5' : ''}`}
+                                        onClick={() => onReleaseClick?.(release.id)}
+                                        className={`group hover:bg-white/[0.02] transition-colors cursor-pointer ${selectedIds.includes(release.id) ? 'bg-blue-500/5' : ''}`}
                                     >
                                         <td className="px-6 py-4">
                                             <input
                                                 type="checkbox"
                                                 checked={selectedIds.includes(release.id)}
-                                                onChange={() => toggleSelection(release.id)}
+                                                onChange={() => {
+                                                    toggleSelection(release.id);
+                                                }}
+                                                onClick={(e) => e.stopPropagation()}
                                                 className="rounded border-gray-800 bg-gray-900"
                                             />
                                         </td>

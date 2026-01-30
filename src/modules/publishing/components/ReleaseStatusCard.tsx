@@ -8,13 +8,15 @@ interface ReleaseStatusCardProps {
     isSelected: boolean;
     onToggleSelection: (id: string) => void;
     onDelete: (id: string) => void;
+    onOpenDetail?: (id: string) => void;
 }
 
 export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
     release,
     isSelected,
     onToggleSelection,
-    onDelete
+    onDelete,
+    onOpenDetail
 }) => {
     // Determine status color and label
     const statusMap: Record<string, { color: string; text: string }> = {
@@ -39,7 +41,7 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
                 ? 'bg-blue-500/5 border-blue-500/40 shadow-[0_0_20px_rgba(59,130,246,0.05)]'
                 : 'bg-[#121212] hover:bg-[#161616] border-gray-800/50 hover:border-gray-700 shadow-lg'
                 }`}
-            onClick={() => onToggleSelection(release.id)}
+            onClick={() => onOpenDetail?.(release.id)}
         >
             <div className="flex items-center gap-4">
                 {/* Selection Checkbox */}

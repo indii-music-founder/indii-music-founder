@@ -246,6 +246,101 @@ npm run build:all
 firebase deploy
 ```
 
+### 5. Agent Zero Sidecar (Optional AI Enhancement)
+
+The **Agent Zero Sidecar** provides advanced AI capabilities through a secure Docker container, including image generation (Imagen 3), video synthesis (Veo 3.1), and audio analysis.
+
+#### Prerequisites
+
+- **Docker Desktop** installed and running
+- **Docker Compose** v2.0+
+- Ports **50080** (API) and **8880** (Tunnel) available
+
+#### Quick Start
+
+```bash
+# 1. Start the Agent Zero container
+docker compose up -d
+
+# 2. Verify health
+curl http://localhost:50080/healthz
+# Expected: {"status": "healthy", "service": "indii-agent", "version": "0.1.0"}
+
+# 3. Run verification tests
+python3 scripts/verify_bridge.py
+```
+
+#### Environment Variables
+
+Add these to your `.env` file:
+
+```env
+# Required for Agent Zero
+GOOGLE_API_KEY=your_google_api_key
+GEMINI_API_KEY=your_gemini_api_key  # Optional, falls back to GOOGLE_API_KEY
+
+# Optional
+EMBEDDING_MODEL=models/embedding-001
+```
+
+#### Using Agent Zero in the App
+
+1. Launch the Electron app (`npm run electron:dev`)
+2. Open the Chat Overlay
+3. Toggle the provider from **"Native"** to **"Zero"**
+4. Send messages - Agent Zero will handle complex tasks with tool execution
+
+#### Available Tools
+
+- **Image Generation** (`indii_image_gen`) - Generates images using Gemini Imagen 3
+- **Video Generation** (`indii_video_gen`) - Creates videos using Google Veo 3.1
+- **Audio Analysis** (`indii_audio_ear`) - Analyzes audio files with Gemini multimodal
+
+#### Verification Tests
+
+Run the complete test suite to verify all functionality:
+
+```bash
+# Infrastructure tests
+python3 scripts/test_volume_mapping.py
+python3 scripts/test_network_isolation.py
+
+# API handler tests
+python3 scripts/verify_bridge.py
+python3 scripts/test_context_bleed.py
+
+# Tooling tests
+python3 scripts/test_protocol.py
+python3 scripts/test_zeroization.py
+
+# Security tests
+python3 scripts/test_honeypot.py
+```
+
+#### Troubleshooting
+
+**Container won't start:**
+
+```bash
+docker logs indii-agent-working
+docker compose down && docker compose build && docker compose up -d
+```
+
+**Connection refused:**
+
+```bash
+# Check port availability
+lsof -i :50080
+
+# Restart container
+docker compose restart
+```
+
+**For detailed setup and advanced usage, see:**
+
+- [Agent Zero Quick Start Guide](docs/AGENT_ZERO_QUICKSTART.md)
+- [Agent Zero Test Results](docs/AGENT_ZERO_TEST_RESULTS.md)
+
 ---
 
 ## Project Structure

@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { useReleases } from './hooks/useReleases';
+import { useAnalytics, usePayouts } from './hooks/useAnalytics';
 import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useToast } from '@/core/context/ToastContext';
@@ -31,6 +32,14 @@ import { PublishingSkeleton } from './components/PublishingSkeleton';
 import { ReleaseStatusCard } from './components/ReleaseStatusCard';
 import { DistributorConnectionsPanel } from './components/DistributorConnectionsPanel';
 import { EarningsDashboard } from './components/EarningsDashboard';
+import { ReleaseListView } from './components/ReleaseListView';
+import { ReleaseDetailPage } from './components/ReleaseDetailPage';
+import { AnalyticsCharts } from './components/AnalyticsCharts';
+import { PayoutHistory } from './components/PayoutHistory';
+import { DSRUploadModal } from './components/DSRUploadModal';
+import { ValidationRequirementsModal } from './components/ValidationRequirementsModal';
+import { PublishingErrorBoundary } from './components/PublishingErrorBoundary';
+import { LayoutGrid, BarChart2, CreditCard, Upload } from 'lucide-react';
 
 // Simple CSS-based Sparkline Component for Beta Visualization
 const Sparkline = ({ data, color = "text-green-500" }: { data: number[], color?: string }) => {
@@ -47,6 +56,19 @@ const Sparkline = ({ data, color = "text-green-500" }: { data: number[], color?:
     );
 };
 
+const TabButton = ({ active, onClick, icon, label }: { active: boolean, onClick: () => void, icon: React.ReactNode, label: string }) => (
+    <button
+        onClick={onClick}
+        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold transition-all ${active ? 'bg-white text-black shadow-lg scale-[1.02]' : 'text-gray-500 hover:text-gray-300'
+            }`}
+    >
+        {icon}
+        {label}
+    </button>
+);
+
+
+
 export default function PublishingDashboard() {
     // Beta Performance Mandate: Granular Selectors
     const setModule = useStore(state => state.setModule);
@@ -55,23 +77,37 @@ export default function PublishingDashboard() {
 
     // Core State
     const [isWizardOpen, setIsWizardOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState('all');
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+    const [activeTab, setActiveTab] = useState<'catalog' | 'analytics' | 'finance'>('catalog');
+    const [selectedReleaseId, setSelectedReleaseId] = useState<string | null>(null);
+    const [isDSRModalOpen, setIsDSRModalOpen] = useState(false);
+    const [isValidationModalOpen, setIsValidationModalOpen] = useState(false);
 
     // Data Hooks
-    const { releases, loading: releasesLoading, deleteRelease, archiveRelease } = useReleases(currentOrganizationId);
+    const { releases, loading: releasesLoading } = useReleases(currentOrganizationId);
 
-    // Initial Data Fetch
+    // Analytics State
+    const [selectedMetric, setSelectedMetric] = useState<'revenue' | 'streams'>('streams');
+
+    // Default date range (last 30 days)
+    const defaultDateRange = useMemo(() => {
+        const now = Date.now();
+        const endDate = new Date(now).toISOString().split('T')[0];
+        const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        return { start: startDate, end: endDate };
+    }, []);
+
+    // Real data hooks
+    const { data: analyticsData, loading: analyticsLoading } = useAnalytics(defaultDateRange);
+    const { payouts, loading: payoutsLoading } = usePayouts();
+
+
     useEffect(() => {
         if (currentOrganizationId) {
             fetchDistributors();
-            // Fetch earnings for the last 30 days
-            const endDate = new Date().toISOString().split('T')[0];
-            const startDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            fetchEarnings({ startDate, endDate });
+            // Use the same date range as analytics
+            fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
         }
-    }, [currentOrganizationId, fetchDistributors, fetchEarnings]);
+    }, [currentOrganizationId, fetchDistributors, fetchEarnings, defaultDateRange]);
 
     // Stats Calculation (Memoized)
     const stats = useMemo(() => {
@@ -95,82 +131,8 @@ export default function PublishingDashboard() {
         };
     }, [releases]);
 
-    // Filtering & Sorting (Memoized)
-    const filteredReleases = useMemo(() => {
-        return releases.filter(release => {
-            const matchesSearch =
-                release.metadata.trackTitle?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                release.metadata.artistName?.toLowerCase().includes(searchQuery.toLowerCase());
 
-            const matchesFilter = filterStatus === 'all' || release.status === filterStatus;
 
-            return matchesSearch && matchesFilter;
-        });
-    }, [releases, searchQuery, filterStatus]);
-
-    // Bulk Actions Handlers
-    const toggleSelection = useCallback((id: string) => {
-        setSelectedIds(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
-        });
-    }, []);
-
-    const toggleAll = useCallback(() => {
-        if (selectedIds.size === filteredReleases.length && filteredReleases.length > 0) {
-            setSelectedIds(new Set());
-        } else {
-            setSelectedIds(new Set(filteredReleases.map(r => r.id)));
-        }
-    }, [selectedIds, filteredReleases]);
-
-    const handleBulkDelete = useCallback(async () => {
-        if (window.confirm(`Are you sure you want to delete ${selectedIds.size} releases?`)) {
-            const deletePromises = Array.from(selectedIds).map(id => deleteRelease(id));
-            toast.promise(
-                Promise.all(deletePromises).then(() => {
-                    setSelectedIds(new Set());
-                }),
-                {
-                    loading: 'Deleting releases...',
-                    success: 'Releases deleted successfully',
-                    error: 'Failed to delete releases'
-                }
-            );
-        }
-    }, [selectedIds, deleteRelease, toast]);
-
-    const handleBulkArchive = useCallback(async () => {
-        if (window.confirm(`Are you sure you want to archive ${selectedIds.size} releases?`)) {
-            const archivePromises = Array.from(selectedIds).map(id => archiveRelease(id));
-            toast.promise(
-                Promise.all(archivePromises).then(() => {
-                    setSelectedIds(new Set());
-                }),
-                {
-                    loading: 'Archiving releases...',
-                    success: 'Releases archived successfully',
-                    error: 'Failed to archive releases'
-                }
-            );
-        }
-    }, [selectedIds, archiveRelease, toast]);
-
-    const handleDelete = useCallback(async (id: string) => {
-        if (window.confirm('Are you sure you want to delete this release?')) {
-            try {
-                await deleteRelease(id);
-                toast.success('Release deleted successfully');
-            } catch (error) {
-                toast.error('Failed to delete release');
-            }
-        }
-    }, [deleteRelease, toast]);
 
     const statsConfig = useMemo(() => [
         {
@@ -219,7 +181,7 @@ export default function PublishingDashboard() {
             <div className="min-h-screen bg-[#0A0A0A] text-white">
                 <div className="max-w-7xl mx-auto px-6 py-12">
                     {/* Header */}
-                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-6">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
                         <div>
                             <div className="flex items-center gap-3 mb-2">
                                 <h1 className="text-5xl font-black tracking-tighter uppercase italic">
@@ -235,13 +197,37 @@ export default function PublishingDashboard() {
                             </p>
                         </div>
 
-                        <button
-                            onClick={() => setIsWizardOpen(true)}
-                            className="group flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-gray-200 transition-all font-bold tracking-tight active:scale-[0.98] shadow-lg hover:shadow-xl"
-                        >
-                            <Plus size={18} className="transition-transform group-hover:rotate-90" />
-                            New Release
-                        </button>
+                        <div className="flex items-center gap-4">
+                            {/* Tab Navigation */}
+                            <div className="flex items-center p-1 bg-[#121212] border border-gray-800 rounded-xl">
+                                <TabButton
+                                    active={activeTab === 'catalog'}
+                                    onClick={() => { setActiveTab('catalog'); setSelectedReleaseId(null); }}
+                                    icon={<LayoutGrid size={16} />}
+                                    label="Catalog"
+                                />
+                                <TabButton
+                                    active={activeTab === 'analytics'}
+                                    onClick={() => { setActiveTab('analytics'); setSelectedReleaseId(null); }}
+                                    icon={<BarChart2 size={16} />}
+                                    label="Insights"
+                                />
+                                <TabButton
+                                    active={activeTab === 'finance'}
+                                    onClick={() => { setActiveTab('finance'); setSelectedReleaseId(null); }}
+                                    icon={<CreditCard size={16} />}
+                                    label="Royalties"
+                                />
+                            </div>
+
+                            <button
+                                onClick={() => setIsWizardOpen(true)}
+                                className="group flex items-center gap-2 px-6 py-3 bg-white text-black rounded-xl hover:bg-gray-200 transition-all font-bold tracking-tight active:scale-[0.98] shadow-lg hover:shadow-xl"
+                            >
+                                <Plus size={18} className="transition-transform group-hover:rotate-90" />
+                                New Release
+                            </button>
+                        </div>
                     </div>
 
                     {/* Stats Grid */}
@@ -270,161 +256,164 @@ export default function PublishingDashboard() {
                         ))}
                     </div>
 
-                    {/* Main Content Grid */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Releases List */}
-                        <div className="lg:col-span-2 space-y-6">
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                                <h3 className="text-2xl font-bold text-white tracking-tight">Your Catalog</h3>
-                                <div className="flex items-center gap-2 w-full sm:w-auto">
-                                    {/* Select All Button */}
-                                    {filteredReleases.length > 0 && (
-                                        <button
-                                            onClick={toggleAll}
-                                            className="hidden sm:flex items-center gap-2 px-3 py-2 bg-[#161616] border border-gray-800 rounded-xl text-xs font-bold uppercase tracking-wider text-gray-400 hover:text-white hover:border-gray-700 transition-all"
-                                        >
-                                            {selectedIds.size === filteredReleases.length ? (
-                                                <CheckSquare size={14} className="text-blue-500" />
-                                            ) : (
-                                                <Square size={14} />
-                                            )}
-                                            Select All
-                                        </button>
-                                    )}
-                                    <div className="relative flex-1 sm:w-64">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
-                                        <input
-                                            type="text"
-                                            placeholder="Search releases..."
-                                            value={searchQuery}
-                                            onChange={(e) => setSearchQuery(e.target.value)}
-                                            className="w-full pl-10 pr-4 py-2.5 bg-[#161616] border border-gray-800 rounded-xl text-sm text-white placeholder-gray-500 focus:outline-none focus:border-gray-700 focus:ring-1 focus:ring-gray-700 transition-all"
+                    {/* Main Content Viewport */}
+                    <AnimatePresence mode="wait">
+                        {selectedReleaseId ? (
+                            <motion.div
+                                key="detail"
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                            >
+                                <ReleaseDetailPage
+                                    releaseId={selectedReleaseId}
+                                    metadata={releases.find(r => r.id === selectedReleaseId)?.metadata as any}
+                                    assets={releases.find(r => r.id === selectedReleaseId)?.assets as any}
+                                    deployments={releases.find(r => r.id === selectedReleaseId)?.distributors?.map(d => ({
+                                        distributorId: d.distributorId as any,
+                                        status: d.status as any,
+                                        distributorReleaseId: d.releaseId,
+                                    })) || []}
+                                    onBack={() => setSelectedReleaseId(null)}
+                                    onEdit={() => {
+                                        const release = releases.find(r => r.id === selectedReleaseId);
+                                        if (release) {
+                                            // Close detail view and open wizard with existing data
+                                            setSelectedReleaseId(null);
+                                            setIsWizardOpen(true);
+                                            toast.info('Release editing will open in wizard mode');
+                                        }
+                                    }}
+                                />
+                            </motion.div>
+                        ) : activeTab === 'catalog' ? (
+                            <motion.div
+                                key="catalog"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+                            >
+                                <div className="lg:col-span-2 space-y-6">
+                                    <PublishingErrorBoundary componentName="Release List">
+                                        <ReleaseListView
+                                            onNewRelease={() => setIsWizardOpen(true)}
+                                            onReleaseClick={(id) => setSelectedReleaseId(id)}
                                         />
-                                    </div>
-                                    <div className="relative">
-                                        <select
-                                            value={filterStatus}
-                                            onChange={(e) => setFilterStatus(e.target.value)}
-                                            className="appearance-none pl-4 pr-10 py-2.5 bg-[#161616] border border-gray-800 rounded-xl text-sm text-gray-300 focus:outline-none focus:border-gray-700 transition-all cursor-pointer font-medium"
-                                        >
-                                            <option value="all">All Status</option>
-                                            <option value="live">Live</option>
-                                            <option value="draft">Draft</option>
-                                            <option value="pending_review">Pending</option>
-                                            <option value="metadata_complete">Processing</option>
-                                        </select>
-                                        <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" size={14} />
-                                    </div>
+                                    </PublishingErrorBoundary>
                                 </div>
-                            </div>
-
-                            {releasesLoading ? (
-                                <div data-testid="publishing-skeleton" className="space-y-4">
-                                    {[1, 2, 3].map((i) => (
-                                        <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-gray-800/50 bg-[#121212]">
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-5 h-5 rounded-md bg-gray-800/50 animate-pulse" />
-                                                <div className="w-14 h-14 bg-gray-800/50 rounded-lg animate-pulse" />
-                                                <div className="space-y-2">
-                                                    <div className="h-4 w-32 bg-gray-800/50 rounded animate-pulse" />
-                                                    <div className="h-3 w-24 bg-gray-800/50 rounded animate-pulse" />
-                                                </div>
-                                            </div>
-                                            <div className="hidden sm:flex items-center gap-6">
-                                                <div className="h-6 w-24 bg-gray-800/50 rounded animate-pulse" />
-                                                <div className="flex gap-2">
-                                                    <div className="h-8 w-8 bg-gray-800/50 rounded animate-pulse" />
-                                                    <div className="h-8 w-8 bg-gray-800/50 rounded animate-pulse" />
-                                                </div>
-                                            </div>
+                                <div className="space-y-6">
+                                    <PublishingErrorBoundary componentName="Distributor Connections">
+                                        <DistributorConnectionsPanel />
+                                    </PublishingErrorBoundary>
+                                    <PublishingErrorBoundary componentName="Earnings Dashboard">
+                                        <EarningsDashboard />
+                                    </PublishingErrorBoundary>
+                                </div>
+                            </motion.div>
+                        ) : activeTab === 'analytics' ? (
+                            <motion.div
+                                key="analytics"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
+                            >
+                                <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                                    {statsConfig.map((stat, index) => (
+                                        <div key={index} className="bg-[#121212] border border-gray-800 rounded-2xl p-6">
+                                            <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                                            <p className="text-3xl font-black text-white italic">{stat.value}</p>
                                         </div>
                                     ))}
                                 </div>
-                            ) : filteredReleases.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-24 text-center bg-[#121212] border border-gray-800/50 rounded-2xl border-dashed">
-                                    <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mb-4">
-                                        <Music size={24} className="text-gray-700" />
-                                    </div>
-                                    <h4 className="text-lg font-bold text-white mb-2">
-                                        {searchQuery ? "No matching releases" : "Build your discography"}
-                                    </h4>
-                                    <p className="text-gray-500 text-sm mb-6 max-w-sm">
-                                        {searchQuery
-                                            ? `We couldn't find anything matching "${searchQuery}".`
-                                            : "Your first step to global distribution starts here."}
-                                    </p>
-                                    {!searchQuery && (
-                                        <button
-                                            onClick={() => setIsWizardOpen(true)}
-                                            className="px-5 py-2 bg-gray-900 text-white border border-gray-800 rounded-lg hover:bg-gray-800 transition-colors text-sm font-medium"
-                                        >
-                                            Create First Release
-                                        </button>
-                                    )}
-                                </div>
-                            ) : (
-                                <motion.div className="space-y-4" layout>
-                                    <AnimatePresence mode="popLayout">
-                                        {filteredReleases.map((release) => (
-                                            <ReleaseStatusCard
-                                                key={release.id}
-                                                release={release}
-                                                isSelected={selectedIds.has(release.id)}
-                                                onToggleSelection={toggleSelection}
-                                                onDelete={handleDelete}
-                                            />
-                                        ))}
-                                    </AnimatePresence>
-                                </motion.div>
-                            )}
-                        </div>
-
-                        {/* Sidebar */}
-                        <div className="space-y-6">
-                            <DistributorConnectionsPanel />
-                            <EarningsDashboard />
-                        </div>
-                    </div>
-
-                    {/* Floating Actions Bar */}
-                    <AnimatePresence>
-                        {selectedIds.size > 0 && (
+                                <PublishingErrorBoundary componentName="Analytics Charts">
+                                    <AnalyticsCharts
+                                        data={analyticsData}
+                                        selectedMetric={selectedMetric}
+                                        onMetricChange={setSelectedMetric}
+                                        dateRange={defaultDateRange}
+                                        loading={analyticsLoading}
+                                    />
+                                </PublishingErrorBoundary>
+                            </motion.div>
+                        ) : (
                             <motion.div
-                                initial={{ opacity: 0, y: 50, scale: 0.95 }}
-                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                exit={{ opacity: 0, y: 50, scale: 0.95 }}
-                                className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 p-2 pl-4 bg-[#18181b] border border-gray-800 rounded-2xl shadow-2xl"
+                                key="finance"
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -20 }}
+                                className="space-y-8"
                             >
-                                <div className="flex items-center gap-2 mr-2">
-                                    <div className="flex items-center justify-center w-6 h-6 bg-blue-500 rounded-full text-xs font-bold text-white">
-                                        {selectedIds.size}
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                                    <div className="lg:col-span-2 space-y-6">
+                                        <div className="flex items-center justify-between p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl mb-2">
+                                            <div>
+                                                <h4 className="text-sm font-black text-white uppercase tracking-widest italic">Missing Sales Data?</h4>
+                                                <p className="text-xs text-gray-500 font-medium">Import reports from DSPs to sync your balance.</p>
+                                            </div>
+                                            <button
+                                                onClick={() => setIsDSRModalOpen(true)}
+                                                className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-xl text-xs font-black uppercase tracking-widest hover:bg-gray-200 transition-all"
+                                            >
+                                                <Upload size={14} />
+                                                Import DSR
+                                            </button>
+                                        </div>
+                                        <PayoutHistory payouts={payouts} loading={payoutsLoading} />
                                     </div>
-                                    <span className="text-sm font-bold text-white">Selected</span>
+                                    <div className="space-y-6">
+                                        <EarningsDashboard />
+                                    </div>
                                 </div>
-                                <div className="h-4 w-px bg-gray-700" />
-                                <button
-                                    onClick={() => setSelectedIds(new Set())}
-                                    className="px-3 py-1.5 text-xs font-bold text-gray-400 hover:text-white uppercase tracking-wider transition-colors"
-                                >
-                                    Deselect All
-                                </button>
-                                <button
-                                    onClick={handleBulkArchive}
-                                    className="flex items-center gap-2 px-4 py-2 bg-gray-800 text-gray-400 hover:bg-gray-700 hover:text-white rounded-xl transition-all font-bold text-sm active:scale-95"
-                                >
-                                    <Archive size={16} />
-                                    Archive
-                                </button>
-                                <button
-                                    onClick={handleBulkDelete}
-                                    className="flex items-center gap-2 px-4 py-2 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-xl transition-all font-bold text-sm active:scale-95"
-                                >
-                                    <Trash2 size={16} />
-                                    Delete
-                                </button>
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Modals */}
+                    <AnimatePresence>
+                        {isDSRModalOpen && (
+                            <DSRUploadModal
+                                isOpen={isDSRModalOpen}
+                                onClose={() => setIsDSRModalOpen(false)}
+                                onProcess={async (report) => {
+                                    try {
+                                        // Import the upload service
+                                        const { dsrUploadService } = await import('@/services/ddex/DSRUploadService');
+
+                                        // Build user catalog from releases for matching
+                                        const catalog = new Map(
+                                            releases
+                                                .filter(r => r.metadata.isrc)
+                                                .map(r => [r.metadata.isrc!, r.metadata])
+                                        );
+
+                                        // Note: The actual file upload is handled inside the modal
+                                        // This callback receives the parsed report
+                                        // In production, you might want to pass the processing result back
+
+                                        setIsDSRModalOpen(false);
+                                        toast.success('Sales report integrated successfully');
+
+                                        // Refresh earnings and payouts data
+                                        await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
+                                    } catch (error) {
+                                        console.error('[DSR Upload] Error:', error);
+                                        toast.error('Failed to process sales report');
+                                    }
+                                }}
+                            />
+                        )}
+
+                        {isValidationModalOpen && (
+                            <ValidationRequirementsModal
+                                isOpen={isValidationModalOpen}
+                                onClose={() => setIsValidationModalOpen(false)}
+                                distributors={[]} // Pass actual distributors if available
+                            />
+                        )}
+                    </AnimatePresence>
+
 
                     {/* Release Wizard Modal */}
                     {isWizardOpen && (

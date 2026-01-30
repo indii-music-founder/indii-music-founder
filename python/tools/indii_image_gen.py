@@ -10,15 +10,15 @@ class IndiiImageGen(Tool):
     """
     async def execute(self, prompt, style="", aspect_ratio="1:1", **kwargs):
         self.set_progress("Initializing Imagen 3 synthesis...")
-        
+
         try:
             # 1. API Call Setup
             from google import genai
             from google.genai import types
-            
+
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.IMAGE_GEN 
+            model_id = AIConfig.IMAGE_GEN
 
             # 2. Tag Extraction & Enrichment
             enriched_prompt = f"{prompt}, style: {style}, aspect_ratio: {aspect_ratio}"
@@ -31,7 +31,6 @@ class IndiiImageGen(Tool):
                 config=types.GenerateImagesConfig(
                     number_of_images=1,
                     aspect_ratio=aspect_ratio,
-                    add_watermark=False 
                 )
             )
 
@@ -62,14 +61,18 @@ class IndiiImageGen(Tool):
             protocol_path = f"img://{abs_path}&t={time.time()}"
 
             # 3. Response Payload (The Handoff)
-            # Vector A: Inline Chat (Markdown) 
+            # Vector A: Inline Chat (Markdown)
             # Vector B: Tool Result (Metadata for UI thumbnails)
             return Response(
-                message=f"**Gemini Image Generation Complete.**\n\n![Generated Image]({protocol_path})",
+                message=f"**Gemini Image Generation Complete.**
+
+![Generated Image]({protocol_path})",
+                break_loop=False,
                 additional={"visual": protocol_path}
             )
 
         except Exception as e:
             import traceback
-            error_msg = f"Image Generation Failed: {str(e)}\n{traceback.format_exc()}"
+            error_msg = f"Image Generation Failed: {str(e)}
+{traceback.format_exc()}"
             return Response(message=error_msg, break_loop=False)
