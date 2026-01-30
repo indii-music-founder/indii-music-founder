@@ -3,12 +3,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.local
-    container_name: indii-agent
+    container_name: indii-agent-temp
     ports:
       - "127.0.0.1:50080:80"   # UI Port - localhost only
       - "127.0.0.1:8880:8080"  # RFC Port - localhost only
     working_dir: /a0
     volumes:
+      - ./run_ui_temp.py:/a0/run_ui.py # Map patched run_ui
       - ~/Documents/indii_Workspace:/a0/usr/projects
       - ./python/tools:/a0/python/tools/custom  # Map custom tools to a subdirectory or overlay
       - ./prompts:/a0/prompts/custom            # Map custom prompts

@@ -1,4 +1,4 @@
-import { AudioFeatures } from './AudioAnalysisService';
+import type { AudioFeatures } from './AudioAnalysisService';
 
 export interface AudioSemanticData {
     mood: string[];         // e.g., ["Dark", "Energetic"]
