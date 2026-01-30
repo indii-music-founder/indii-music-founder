@@ -2,6 +2,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Define hoisted mocks first
+// Define hoisted mocks first
 const mocks = vi.hoisted(() => ({
     ipcMain: {
         handle: vi.fn()
@@ -11,6 +12,11 @@ const mocks = vi.hoisted(() => ({
     },
     fs: {
         realpathSync: vi.fn((p) => p),
+    },
+    app: {
+        getPath: () => '/tmp',
+        getAppPath: () => '/app',
+        isPackaged: false
     }
 }));
 
@@ -19,6 +25,7 @@ vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
     app: {
         getPath: () => '/tmp',
+        getAppPath: () => '/app',
         isPackaged: false
     }
 }));
