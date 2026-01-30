@@ -22,7 +22,7 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
 }) => {
     const [activeTab, setActiveTab] = useState<'platform' | 'territory' | 'track'>('platform');
 
-    const tabs = [
+    const tabs: { id: 'platform' | 'territory' | 'track'; label: string; icon: React.ReactNode }[] = [
         { id: 'platform', label: 'Platforms', icon: <Smartphone size={14} /> },
         { id: 'territory', label: 'Territories', icon: <MapPin size={14} /> },
         { id: 'track', label: 'Top Tracks', icon: <Music size={14} /> },
@@ -40,10 +40,10 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                     {tabs.map((tab) => (
                         <button
                             key={tab.id}
-                            onClick={() => setActiveTab(tab.id as any)}
+                            onClick={() => setActiveTab(tab.id)}
                             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${activeTab === tab.id
-                                    ? 'bg-gray-800 text-white shadow-sm'
-                                    : 'text-gray-500 hover:text-gray-300'
+                                ? 'bg-gray-800 text-white shadow-sm'
+                                : 'text-gray-500 hover:text-gray-300'
                                 }`}
                         >
                             {tab.icon}
@@ -85,7 +85,7 @@ export const EarningsBreakdown: React.FC<EarningsBreakdownProps> = ({
                                             animate={{ width: `${item.percentage}%` }}
                                             transition={{ duration: 1, delay: i * 0.1, ease: "circOut" }}
                                             className={`h-full rounded-full ${activeTab === 'platform' ? 'bg-blue-500' :
-                                                    activeTab === 'territory' ? 'bg-purple-500' : 'bg-green-500'
+                                                activeTab === 'territory' ? 'bg-purple-500' : 'bg-green-500'
                                                 } opacity-80`}
                                         />
                                         <div className="absolute right-2 top-0 h-full flex items-center">

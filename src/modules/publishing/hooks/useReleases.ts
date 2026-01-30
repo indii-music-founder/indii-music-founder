@@ -1,28 +1,30 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
-import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc, FirestoreError } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-export type { DDEXReleaseRecord };
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 
+export interface ClientReleaseRecord extends DDEXReleaseRecord {
+    _hasPendingWrites?: boolean;
+    _isFromCache?: boolean;
+}
+
 export function useReleases(orgId: string | undefined) {
-    const [releases, setReleases] = useState<DDEXReleaseRecord[]>([]);
+    const [releases, setReleases] = useState<ClientReleaseRecord[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
-
-    const [prevOrgId, setPrevOrgId] = useState(orgId);
-    if (orgId !== prevOrgId) {
-        setPrevOrgId(orgId);
-        setReleases([]);
-        setLoading(!!orgId);
-    }
+    const [hasPendingSync, setHasPendingSync] = useState(false);
 
     useEffect(() => {
-        if (!orgId) return;
+        if (!orgId) {
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (releases.length > 0) setReleases([]);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (loading) setLoading(false);
+            return;
+        }
 
-        // Fetching is initiated implicitly via the loading state and subscription below
-        // we don't need a separate setLoading(true) here as it's handled above during render
-
+        setLoading(true);
 
         const q = query(
             collection(db, 'ddexReleases'),
@@ -30,19 +32,23 @@ export function useReleases(orgId: string | undefined) {
             orderBy('createdAt', 'desc')
         );
 
-        const unsubscribe = onSnapshot(q,
+        const unsubscribe = onSnapshot(q, { includeMetadataChanges: true },
             (snapshot) => {
                 const releaseData = snapshot.docs.map(doc => ({
                     id: doc.id,
-                    ...doc.data()
-                })) as DDEXReleaseRecord[];
+                    ...doc.data(),
+                    _hasPendingWrites: doc.metadata.hasPendingWrites,
+                    _isFromCache: doc.metadata.fromCache
+                })) as unknown as ClientReleaseRecord[];
+
                 setReleases(releaseData);
                 setLoading(false);
+                setHasPendingSync(snapshot.metadata.hasPendingWrites);
             },
-            (err) => {
+            (err: FirestoreError) => {
                 console.error('Error fetching releases:', err);
                 Sentry.captureException(err);
-                setError(err as Error);
+                setError(err);
                 setLoading(false);
             }
         );
@@ -74,5 +80,5 @@ export function useReleases(orgId: string | undefined) {
         }
     }, []);
 
-    return useMemo(() => ({ releases, loading, error, deleteRelease, archiveRelease }), [releases, loading, error, deleteRelease, archiveRelease]);
+    return useMemo(() => ({ releases, loading, error, hasPendingSync, deleteRelease, archiveRelease }), [releases, loading, error, hasPendingSync, deleteRelease, archiveRelease]);
 }

@@ -1,23 +1,57 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PublishingDashboard from './PublishingDashboard';
+import { useReleases } from './hooks/useReleases';
+import { useStore } from '@/core/store';
 
-// Mock dependencies
+// Mock dependencies - Global
 const mockDeleteRelease = vi.fn();
 const mockArchiveRelease = vi.fn();
 const mockToastPromise = vi.fn();
+const mockSetModule = vi.fn();
+const mockFetchDistributors = vi.fn();
+const mockFetchEarnings = vi.fn();
+
+const mockStore = {
+    currentOrganizationId: 'test-org-id',
+    finance: {
+        earningsSummary: {
+            totalNetRevenue: 123.45,
+            totalStreams: 1000
+        },
+        loading: false
+    },
+    distribution: {
+        connections: [
+            { distributorId: 'distrokid', isConnected: true }
+        ],
+        loading: false
+    },
+    fetchDistributors: mockFetchDistributors,
+    fetchEarnings: mockFetchEarnings,
+    setModule: mockSetModule
+};
+
+// Mock the store implementation directly here to ensure consistent behavior
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn((selector) => {
+        if (selector && typeof selector === 'function') {
+            return selector(mockStore);
+        }
+        return mockStore;
+    })
+}));
 
 vi.mock('./hooks/useReleases', () => ({
     useReleases: vi.fn(() => ({
         releases: [],
         loading: false,
+        error: null,
+        hasPendingSync: false,
         deleteRelease: mockDeleteRelease,
         archiveRelease: mockArchiveRelease
     }))
-}));
-
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn()
 }));
 
 vi.mock('@/core/context/ToastContext', () => ({
@@ -49,62 +83,44 @@ vi.mock('framer-motion', () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
-import { useReleases } from './hooks/useReleases';
-import { useStore } from '@/core/store';
+vi.mock('react-virtuoso', () => ({
+    VirtuosoGrid: ({ totalCount, itemContent }: any) => (
+        <div data-testid="virtuoso-grid">
+            {Array.from({ length: totalCount }).map((_, i) => (
+                <div key={i}>{itemContent(i)}</div>
+            ))}
+        </div>
+    ),
+    TableVirtuoso: ({ data, itemContent, fixedHeaderContent }: any) => (
+        <table data-testid="virtuoso-table">
+            {fixedHeaderContent && <thead>{fixedHeaderContent()}</thead>}
+            <tbody>
+                {data.map((item: any, i: number) => (
+                    <tr key={i}>{itemContent(i, item)}</tr>
+                ))}
+            </tbody>
+        </table>
+    ),
+}));
 
 describe('PublishingDashboard', () => {
-    const mockFetchDistributors = vi.fn();
-    const mockFetchEarnings = vi.fn();
-    const mockSetModule = vi.fn();
-
-    const mockStore = {
-        currentOrganizationId: 'test-org-id',
-        finance: {
-            earningsSummary: {
-                totalNetRevenue: 123.45,
-                totalStreams: 1000
-            },
-            loading: false
-        },
-        distribution: {
-            connections: [
-                { distributorId: 'distrokid', isConnected: true }
-            ],
-            loading: false
-        },
-        fetchDistributors: mockFetchDistributors,
-        fetchEarnings: mockFetchEarnings,
-        setModule: mockSetModule
-    };
-
     beforeEach(() => {
         vi.clearAllMocks();
-        // Mock the granular selector pattern: useStore(state => state.foo)
-        // Mock the granular selector pattern: useStore(state => state.foo)
+        // Reset store mock implementation in case it was modified
         vi.mocked(useStore).mockImplementation(((selector: any) => {
-            if (selector) {
-                return selector(mockStore);
+            const state = { ...mockStore, setModule: mockSetModule };
+            if (selector && typeof selector === 'function') {
+                return selector(state);
             }
-            return mockStore;
+            return state;
         }) as any);
     });
 
     it('renders the dashboard title and stats', () => {
-        vi.mocked(useReleases).mockReturnValue({
-            releases: [],
-            loading: false,
-            deleteRelease: mockDeleteRelease,
-            error: null,
-            archiveRelease: mockArchiveRelease
-        });
-
         render(<PublishingDashboard />);
 
         expect(screen.getByText('Publishing')).toBeInTheDocument();
-        expect(screen.getByText('Beta')).toBeInTheDocument();
-        expect(screen.getByText('Total Releases')).toBeInTheDocument();
-        // Check for stats values
-        expect(screen.getAllByText('0').length).toBeGreaterThan(0);
+        // Check for stats (formatted currency)
         expect(screen.getAllByText('$123.45').length).toBeGreaterThan(0);
     });
 
@@ -114,6 +130,7 @@ describe('PublishingDashboard', () => {
             loading: true,
             deleteRelease: mockDeleteRelease,
             error: null,
+            hasPendingSync: false,
             archiveRelease: mockArchiveRelease
         });
 
@@ -129,13 +146,14 @@ describe('PublishingDashboard', () => {
             loading: false,
             deleteRelease: mockDeleteRelease,
             error: null,
+            hasPendingSync: false,
             archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
 
-        expect(screen.getByText('Build your discography')).toBeInTheDocument();
-        expect(screen.getByText('Create First Release')).toBeInTheDocument();
+        expect(screen.getByText('No Releases Found')).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Create Release/i })).toBeInTheDocument();
     });
 
     it('renders release cards and handles bulk selection', async () => {
@@ -159,7 +177,10 @@ describe('PublishingDashboard', () => {
         (useReleases as any).mockReturnValue({
             releases: mockReleases,
             loading: false,
-            deleteRelease: mockDeleteRelease
+            error: null,
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
@@ -168,22 +189,19 @@ describe('PublishingDashboard', () => {
         expect(screen.getByText('Apple')).toBeInTheDocument();
         expect(screen.getByText('Berry')).toBeInTheDocument();
 
-        // Ensure "Select All" button exists
-        const selectAllBtn = screen.getByText('Select All');
-        expect(selectAllBtn).toBeInTheDocument();
-
-        // Click Select All
-        fireEvent.click(selectAllBtn);
+        // Switch to list view and select items manually
+        fireEvent.click(screen.getByLabelText('List view'));
+        const checkboxes = screen.getAllByRole('checkbox');
+        // Select first two items (index 0 is header checkbox)
+        fireEvent.click(checkboxes[1]);
+        fireEvent.click(checkboxes[2]);
 
         // Verify Bulk Action Bar appears
-        const selectedCount = screen.getByText('2', { selector: '.rounded-full' }); // More specific
-        expect(selectedCount).toBeInTheDocument();
-        expect(screen.getByText('Selected')).toBeInTheDocument();
-        expect(screen.getByText('Deselect All')).toBeInTheDocument();
+        expect(screen.getByText(/2 items? selected/i)).toBeInTheDocument();
 
-        // Click Deselect All
-        fireEvent.click(screen.getByText('Deselect All'));
-        expect(screen.queryByText('Selected')).not.toBeInTheDocument();
+        // Verify Delete/Archive present
+        expect(screen.getByRole('button', { name: /Delete/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Archive/i })).toBeInTheDocument();
     });
 
     it('handles search and filtering correctly', () => {
@@ -197,13 +215,14 @@ describe('PublishingDashboard', () => {
             loading: false,
             deleteRelease: mockDeleteRelease,
             error: null,
+            hasPendingSync: false,
             archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
 
         // Search
-        const searchInput = screen.getByPlaceholderText('Search releases...');
+        const searchInput = screen.getByPlaceholderText('Search by title, artist, or ISRC...');
         fireEvent.change(searchInput, { target: { value: 'Apple' } });
         expect(screen.getByText('Apple')).toBeInTheDocument();
         expect(screen.queryByText('Berry')).not.toBeInTheDocument();
@@ -227,30 +246,23 @@ describe('PublishingDashboard', () => {
         (useReleases as any).mockReturnValue({
             releases: mockReleases,
             loading: false,
-            deleteRelease: mockDeleteRelease
+            error: null,
+            hasPendingSync: false,
+            deleteRelease: mockDeleteRelease,
+            archiveRelease: mockArchiveRelease
         });
 
         render(<PublishingDashboard />);
 
-        // Select the item
-        const selectAllBtn = screen.getByText('Select All');
-        fireEvent.click(selectAllBtn);
+        // Switch to list view and select items manually
+        fireEvent.click(screen.getByLabelText('List view'));
+        const checkboxes = screen.getAllByRole('checkbox');
+        // Select item (index 0 is header)
+        fireEvent.click(checkboxes[1]);
 
-        // Find delete button in floating bar (it's the second button, typically has Trash2 icon)
-        // Since we mocked Lucide icons, we can't search by icon. But we can search by class or structure if needed.
-        // Or simpler: verify the floating bar is there and click the button. 
-        // In the implementation, the delete button is one of two buttons in the floating bar.
-        // We can look for the button that calls handleBulkDelete.
-        // Let's assume the buttons are identifiable.
-        // Actually, looking at the code: <button onClick={handleBulkDelete}...>
-        // We can't identify it easily by text since it just has an icon.
-        // We'll rely on the structure or adding a test-id in the component would be better.
-        // For now, let's just find the button in the 'fixed' container.
-
-        const floatingBar = screen.getByText('Selected').closest('div')?.parentElement;
-        const deleteBtn = floatingBar?.querySelectorAll('button')[2]; // Third button is delete (Deselect, Archive, Delete)
-
-        fireEvent.click(deleteBtn!);
+        // Find delete button in floating bar
+        const deleteBtn = screen.getByRole('button', { name: /Delete/i });
+        fireEvent.click(deleteBtn);
 
         expect(global.confirm).toHaveBeenCalled();
         expect(mockToastPromise).toHaveBeenCalled();
@@ -270,17 +282,20 @@ describe('PublishingDashboard', () => {
             loading: false,
             deleteRelease: mockDeleteRelease,
             archiveRelease: mockArchiveRelease,
+            hasPendingSync: false,
             error: null
         });
 
         render(<PublishingDashboard />);
 
-        // Select the item
-        const selectAllBtn = screen.getByText('Select All');
-        fireEvent.click(selectAllBtn);
+        // Switch to list view and select items manually
+        fireEvent.click(screen.getByLabelText('List view'));
+        const checkboxes = screen.getAllByRole('checkbox');
+        // Select item (index 0 is header)
+        fireEvent.click(checkboxes[1]);
 
         // Find archive button
-        const archiveBtn = screen.getByText('Archive');
+        const archiveBtn = screen.getByRole('button', { name: /Archive/i });
 
         fireEvent.click(archiveBtn);
 
@@ -295,6 +310,7 @@ describe('PublishingDashboard', () => {
             loading: false,
             deleteRelease: mockDeleteRelease,
             error: null,
+            hasPendingSync: false,
             archiveRelease: mockArchiveRelease
         });
 

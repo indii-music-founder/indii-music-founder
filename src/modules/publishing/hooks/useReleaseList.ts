@@ -4,7 +4,7 @@ import { useStore } from '@/core/store';
 
 export function useReleaseList() {
     const currentOrganizationId = useStore(state => state.currentOrganizationId);
-    const { releases, loading, deleteRelease, archiveRelease } = useReleases(currentOrganizationId);
+    const { releases, loading, hasPendingSync, deleteRelease, archiveRelease } = useReleases(currentOrganizationId);
 
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -29,6 +29,7 @@ export function useReleaseList() {
         setSearchQuery,
         statusFilter,
         setStatusFilter,
+        hasPendingSync,
         deleteRelease,
         archiveRelease
     };

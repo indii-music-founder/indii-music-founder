@@ -10,6 +10,7 @@ export const EarningsDashboard: React.FC = () => {
         const now = Date.now();
         const endDate = new Date(now).toISOString().split('T')[0];
         const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         return { startDate, endDate };
     }, []);
 

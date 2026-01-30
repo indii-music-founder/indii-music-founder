@@ -32,6 +32,12 @@ import { deliveryService, DeliveryResult } from './DeliveryService';
 import { currencyConversionService } from './CurrencyConversionService';
 import { useStore } from '@/core/store';
 import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resilience';
+import {
+  ExtendedGoldenMetadataSchema,
+  DSRReportSchema,
+  ReleaseAssetsSchema,
+  DistributorEarningsSchema
+} from '@/services/ddex/validation';
 
 // Import default adapters
 import { DistroKidAdapter } from './adapters/DistroKidAdapter';
@@ -193,19 +199,59 @@ class DistributorServiceImpl {
     metadata: ExtendedGoldenMetadata,
     assets: ReleaseAssets
   ): Promise<ValidationResult> {
-    const adapter = this.adapters.get(distributorId);
+    const adapter = this.getAdapter(distributorId);
     if (!adapter) {
       throw new Error(`Unknown distributor: ${distributorId}`);
     }
 
-    const metadataValidation = await adapter.validateMetadata(metadata);
-    const assetValidation = await adapter.validateAssets(assets);
+    const breaker = this.circuitBreakers.get(distributorId);
+    if (!breaker) {
+      throw new Error(`Circuit breaker not initialized for ${distributorId}`);
+    }
 
-    return {
-      isValid: metadataValidation.isValid && assetValidation.isValid,
-      errors: [...metadataValidation.errors, ...assetValidation.errors],
-      warnings: [...metadataValidation.warnings, ...assetValidation.warnings],
-    };
+    // 4. Sanitize inputs using Zod for Phase 1.3
+    let validatedMetadata: ExtendedGoldenMetadata;
+    let validatedAssets: ReleaseAssets;
+
+    try {
+      // Validate metadata
+      validatedMetadata = ExtendedGoldenMetadataSchema.parse(metadata) as ExtendedGoldenMetadata;
+      // We'll trust ReleaseAssets type for now as it's complex, but we can add z.any() if needed
+      validatedAssets = assets;
+    } catch (error) {
+      if (error instanceof Error) {
+        return {
+          isValid: false,
+          errors: [{ code: 'VALIDATION_ERROR', message: `Metadata validation failed: ${error.message}`, severity: 'error' }],
+          warnings: []
+        };
+      }
+      throw error;
+    }
+
+    return await breaker.execute(async () => {
+      return await retryWithBackoff(
+        async () => {
+          const metadataValidation = await withTimeout(
+            adapter.validateMetadata(validatedMetadata),
+            15000,
+            `Metadata validation timeout for ${distributorId}`
+          );
+          const assetValidation = await withTimeout(
+            adapter.validateAssets(validatedAssets),
+            15000,
+            `Asset validation timeout for ${distributorId}`
+          );
+
+          return {
+            isValid: metadataValidation.isValid && assetValidation.isValid,
+            errors: [...metadataValidation.errors, ...assetValidation.errors],
+            warnings: [...metadataValidation.warnings, ...assetValidation.warnings],
+          };
+        },
+        { maxAttempts: 2, initialDelayMs: 500 }
+      );
+    });
   }
 
   /**
@@ -290,11 +336,20 @@ class DistributorServiceImpl {
         };
       }
 
-      // Update status to processing/submitting
-      this.store.updateDeploymentStatus(deployment.id, 'processing');
+      // 3. Create release via Adapter with timeout + breaker
+      const breaker = this.circuitBreakers.get(distributorId);
+      if (!breaker) {
+        throw new Error(`Circuit breaker not initialized for ${distributorId}`);
+      }
 
-      // 3. Create release via Adapter
-      const result = await adapter.createRelease(metadata, assets);
+      const result = await breaker.execute(async () => {
+        // We use a longer timeout for release creation as it might involve large uploads/processing
+        return await withTimeout(
+          adapter.createRelease(metadata, assets),
+          120000, // 2 minutes
+          `Release creation timed out for ${distributorId}`
+        );
+      });
 
       // 4. Update Persistence Record with Result
       this.store.updateDeploymentStatus(deployment.id, result.status as ReleaseDeploymentDocument['status'], {
@@ -387,14 +442,26 @@ class DistributorServiceImpl {
   ): Promise<AggregatedEarnings> {
     const byDistributor = await Promise.all(
       Array.from(this.adapters.entries()).map(async ([id, adapter]) => {
+        const breaker = this.circuitBreakers.get(id);
+        if (!breaker) return null;
+
         try {
-          if (await adapter.isConnected()) {
-            return await adapter.getEarnings(releaseId, period);
-          }
-        } catch (error) {
-          console.warn(`Failed to fetch earnings from ${id}:`, error);
+          return await breaker.execute(async () => {
+            if (await adapter.isConnected()) {
+              const earnings = await retryWithBackoff(
+                () => withTimeout(adapter.getEarnings(releaseId, period), 45000, `Earnings fetch timeout from ${id}`),
+                { maxAttempts: 3, initialDelayMs: 2000 }
+              );
+
+              // Validate/Sanitize earnings data from adapter
+              return DistributorEarningsSchema.parse(earnings);
+            }
+            return null;
+          });
+        } catch (error: any) {
+          console.warn(`[DistributorService] Failed to fetch earnings from ${id}:`, error instanceof Error ? error.message : error);
+          return null;
         }
-        return null;
       })
     );
 
@@ -485,20 +552,28 @@ class DistributorServiceImpl {
     distributorId: DistributorId,
     packagePath: string
   ): Promise<DeliveryResult> {
-    const adapter = this.adapters.get(distributorId);
+    const adapter = this.getAdapter(distributorId);
     if (!adapter) {
       throw new Error(`Unknown distributor: ${distributorId}`);
     }
 
-    // Update status to delivering
-    // Note: In a real app we'd want to find the specific deployment ID, 
-    // but for now we'll assume the most recent one or handle it in the calling layer.
-    // Ideally createRelease returns the deploymentId to track this lifecycle.
+    const breaker = this.circuitBreakers.get(distributorId);
+    if (!breaker) {
+      throw new Error(`Circuit breaker not initialized for ${distributorId}`);
+    }
 
-    return await deliveryService.deliverRelease({
-      releaseId,
-      distributorId,
-      packagePath,
+    // Delivering a package can take a long time, so we use a very generous timeout
+    // but still protect the system from infinite hangs.
+    return await breaker.execute(async () => {
+      return await withTimeout(
+        deliveryService.deliverRelease({
+          releaseId,
+          distributorId,
+          packagePath,
+        }),
+        300000, // 5 minutes
+        `Package delivery timed out for ${distributorId}`
+      );
     });
   }
 
@@ -512,25 +587,32 @@ class DistributorServiceImpl {
 
     await Promise.all(
       deployments.map(async (deployment: ReleaseDeploymentDocument) => {
-        const adapter = this.adapters.get(deployment.distributorId as DistributorId);
-        if (!adapter) return;
+        const distributorId = deployment.distributorId as DistributorId;
+        const adapter = this.getAdapter(distributorId);
+        const breaker = this.circuitBreakers.get(distributorId);
+
+        if (!adapter || !breaker) return;
 
         try {
-          if (await adapter.isConnected()) {
-            // Fetch latest status
-            // Note: Most APIs need the EXTERNAL ID, not our internal one.
-            const externalId = deployment.externalId || releaseId;
-            const status = await adapter.getReleaseStatus(externalId);
+          await breaker.execute(async () => {
+            if (await adapter.isConnected()) {
+              // Fetch latest status
+              const externalId = deployment.externalId || releaseId;
+              const status = await retryWithBackoff(
+                () => withTimeout(adapter.getReleaseStatus(externalId), 20000, `Status check timeout for ${distributorId}`),
+                { maxAttempts: 2, initialDelayMs: 1000 }
+              );
 
-            // Update store
-            this.store.updateDeploymentStatus(deployment.id, status as ReleaseDeploymentDocument['status']);
+              // Update store
+              this.store.updateDeploymentStatus(deployment.id, status as ReleaseDeploymentDocument['status']);
 
-            results[deployment.distributorId] = { status };
-          } else {
-            results[deployment.distributorId] = { status: 'not_connected' };
-          }
-        } catch (error) {
-          results[deployment.distributorId] = {
+              results[distributorId] = { status };
+            } else {
+              results[distributorId] = { status: 'not_connected' };
+            }
+          });
+        } catch (error: any) {
+          results[distributorId] = {
             status: 'error',
             error: error instanceof Error ? error.message : 'Unknown error',
           };
