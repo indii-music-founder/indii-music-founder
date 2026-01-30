@@ -239,30 +239,21 @@ def run():
 
     # add the webapp, mcp, and a2a to the app
     middleware_routes = {
-        "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
-        "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
+        # "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+        # "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
     }
 
     app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
 
     PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
 
-    server = make_server(
-        host=host,
-        port=port,
-        app=app,
-        request_handler=NoRequestLoggingWSGIRequestHandler,
-        threaded=True,
-    )
-    process.set_server(server)
-    server.log_startup()
-
-    # Start init_a0 in a background thread when server starts
-    # threading.Thread(target=init_a0, daemon=True).start()
-    # init_a0()
-
-    # run the server
-    server.serve_forever()
+    process.set_server(None) # Server object not available with run_simple easily
+    PrintStyle().print(f"Starting server at http://{host}:{port} ...")
+    
+    # Use run_simple to mimic app.run() which worked
+    from werkzeug.serving import run_simple
+    run_simple(host, port, app, threaded=True, request_handler=None)
+    # server.serve_forever()
 
 
 def init_a0():

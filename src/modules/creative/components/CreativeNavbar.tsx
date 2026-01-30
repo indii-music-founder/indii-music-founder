@@ -76,6 +76,13 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                         >
                             Lab
                         </button>
+                        <button
+                            onClick={() => setViewMode('release')}
+                            className={`px-3 py-1 rounded-md text-[10px] uppercase font-bold tracking-wider transition-all ${viewMode === 'release' ? 'bg-emerald-500/20 text-emerald-300 shadow-sm' : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                        >
+                            Release
+                        </button>
                     </div>
                 </div>
 
@@ -113,6 +120,12 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             />
                         </div>
                     )}
+
+                    {/* Main Systems Status */}
+                    <div className="flex items-center gap-2 px-2 py-1 bg-white/5 rounded border border-white/5" title="AI Systems Status">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                        <span className="text-[9px] font-mono text-white/50 uppercase tracking-widest hidden lg:block">ONLINE</span>
+                    </div>
 
                     <div className="h-4 w-px bg-white/10 mx-1"></div>
 
