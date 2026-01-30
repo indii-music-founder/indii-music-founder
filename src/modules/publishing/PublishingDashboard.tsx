@@ -28,6 +28,9 @@ import ReleaseWizard from './components/ReleaseWizard';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { useToast } from '@/core/context/ToastContext';
 import { PublishingSkeleton } from './components/PublishingSkeleton';
+import { ReleaseStatusCard } from './components/ReleaseStatusCard';
+import { DistributorConnectionsPanel } from './components/DistributorConnectionsPanel';
+import { EarningsDashboard } from './components/EarningsDashboard';
 
 // Simple CSS-based Sparkline Component for Beta Visualization
 const Sparkline = ({ data, color = "text-green-500" }: { data: number[], color?: string }) => {
@@ -363,78 +366,13 @@ export default function PublishingDashboard() {
                                 <motion.div className="space-y-4" layout>
                                     <AnimatePresence mode="popLayout">
                                         {filteredReleases.map((release) => (
-                                            <motion.div
+                                            <ReleaseStatusCard
                                                 key={release.id}
-                                                layout
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, scale: 0.98 }}
-                                                className={`group relative flex items-center justify-between p-4 rounded-xl border transition-all duration-200 cursor-pointer ${selectedIds.has(release.id)
-                                                    ? 'bg-blue-500/5 border-blue-500/40'
-                                                    : 'bg-[#121212] hover:bg-[#161616] border-gray-800/50 hover:border-gray-700'
-                                                    }`}
-                                            >
-                                                <div className="flex items-center gap-4">
-                                                    {/* Selection Checkbox */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            toggleSelection(release.id);
-                                                        }}
-                                                        className={`w-5 h-5 rounded-md flex items-center justify-center border transition-colors ${selectedIds.has(release.id)
-                                                            ? 'bg-blue-500 border-blue-500 text-white'
-                                                            : 'border-gray-700 hover:border-gray-500 text-transparent'
-                                                            }`}
-                                                    >
-                                                        <CheckSquare size={12} fill="currentColor" />
-                                                    </button>
-
-                                                    <div className="relative w-14 h-14 bg-gray-800 rounded-lg overflow-hidden flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
-                                                        {release.assets.coverArtUrl ? (
-                                                            <img src={release.assets.coverArtUrl} alt={release.metadata.trackTitle} className="w-full h-full object-cover" />
-                                                        ) : (
-                                                            <Music size={20} className="text-gray-600" />
-                                                        )}
-                                                    </div>
-                                                    <div>
-                                                        <h4 className="font-bold text-base text-white group-hover:text-blue-400 transition-colors mb-0.5">
-                                                            {release.metadata.trackTitle}
-                                                        </h4>
-                                                        <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                                                            <span>{release.metadata.artistName}</span>
-                                                            <span className="w-0.5 h-0.5 rounded-full bg-gray-600" />
-                                                            <span>{release.metadata.releaseType}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                                <div className="flex items-center gap-6">
-                                                    <div className="text-right hidden sm:block">
-                                                        <div className="flex items-center justify-end gap-1.5 px-2 py-1 bg-gray-900 rounded border border-gray-800">
-                                                            <div className={`w-1.5 h-1.5 rounded-full ${(release.status as string) === 'live' ? 'bg-green-500' :
-                                                                ['metadata_complete', 'assets_uploaded', 'validating', 'pending_review', 'approved', 'delivering'].includes(release.status) ? 'bg-blue-500' :
-                                                                    'bg-gray-500'
-                                                                }`} />
-                                                            <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
-                                                                {release.status.replace('_', ' ')}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1">
-                                                        <button className="p-2 text-gray-600 hover:text-white hover:bg-gray-800 rounded-lg transition-colors">
-                                                            <Edit2 size={16} />
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                handleDelete(release.id);
-                                                            }}
-                                                            className="p-2 text-gray-600 hover:text-red-400 hover:bg-gray-800 rounded-lg transition-colors"
-                                                        >
-                                                            <Trash2 size={16} />
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </motion.div>
+                                                release={release}
+                                                isSelected={selectedIds.has(release.id)}
+                                                onToggleSelection={toggleSelection}
+                                                onDelete={handleDelete}
+                                            />
                                         ))}
                                     </AnimatePresence>
                                 </motion.div>
@@ -443,96 +381,8 @@ export default function PublishingDashboard() {
 
                         {/* Sidebar */}
                         <div className="space-y-6">
-                            {/* Distribution Status */}
-                            <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                                <h3 className="text-lg font-bold text-white mb-6 flex items-center justify-between tracking-tight">
-                                    Distribution
-                                    <Globe size={16} className="text-gray-600" />
-                                </h3>
-                                {distribution.loading ? (
-                                    <div className="flex items-center justify-center py-6">
-                                        <Loader2 size={24} className="text-blue-500 animate-spin" />
-                                    </div>
-                                ) : distribution.connections.length === 0 ? (
-                                    <div className="text-center py-8 bg-gray-900/30 rounded-xl border border-dashed border-gray-800">
-                                        <AlertCircle size={24} className="text-gray-700 mx-auto mb-3" />
-                                        <p className="text-gray-400 text-sm font-medium">No connectors active</p>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-3">
-                                        {distribution.connections.map((conn) => (
-                                            <div key={conn.distributorId} className="flex items-center justify-between p-3 bg-gray-900/40 hover:bg-gray-900/60 rounded-xl border border-gray-800/50 transition-colors group">
-                                                <div className="flex items-center gap-3">
-                                                    <div className={`w-2 h-2 rounded-full ${conn.isConnected ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.3)]' : 'bg-gray-600'}`} />
-                                                    <span className={`text-sm font-medium ${conn.isConnected ? "text-gray-300" : "text-gray-600"}`}>
-                                                        {conn.distributorId.charAt(0).toUpperCase() + conn.distributorId.slice(1)}
-                                                    </span>
-                                                </div>
-                                                <ExternalLink size={14} className="text-gray-700 group-hover:text-white transition-colors" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                )}
-                                <button
-                                    onClick={() => setModule('distribution')}
-                                    className="w-full mt-6 px-4 py-3 bg-[#161616] text-white border border-gray-800 rounded-xl hover:bg-gray-800 transition-all text-xs font-bold uppercase tracking-widest active:scale-[0.98]"
-                                >
-                                    Manage Connections
-                                </button>
-                            </div>
-
-                            {/* Royalties */}
-                            <div className="bg-[#121212] border border-gray-800/50 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-                                <h3 className="text-lg font-bold text-white mb-1 tracking-tight">Royalties</h3>
-                                <p className="text-xs text-gray-500 font-bold uppercase tracking-widest mb-6">Estimated Income</p>
-
-                                {finance.loading ? (
-                                    <div className="flex flex-col items-center justify-center py-12">
-                                        <Loader2 size={32} className="text-purple-500 animate-spin mb-4" />
-                                        <p className="text-xs font-bold text-gray-500 uppercase tracking-widest">Calculating Royalties...</p>
-                                    </div>
-                                ) : finance.earningsSummary ? (
-                                    <>
-                                        <div className="flex items-baseline gap-1 mb-8">
-                                            <span className="text-2xl font-bold text-purple-500">$</span>
-                                            <span className="text-5xl font-black text-white tracking-tighter">
-                                                {finance.earningsSummary.totalNetRevenue.toFixed(2)}
-                                            </span>
-                                        </div>
-
-                                        <div className="space-y-3">
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
-                                                <div className="flex items-center gap-2">
-                                                    <Globe size={14} className="text-green-400" />
-                                                    <span className="text-sm text-gray-400 font-medium">Global Streams</span>
-                                                </div>
-                                                <span className="text-sm font-bold text-white">{finance.earningsSummary.totalStreams.toLocaleString()}</span>
-                                            </div>
-                                            <div className="flex items-center justify-between p-3 bg-gray-900/40 rounded-xl border border-gray-800/50">
-                                                <div className="flex items-center gap-2">
-                                                    <DollarSign size={14} className="text-purple-400" />
-                                                    <span className="text-sm text-gray-400 font-medium">Pending Payouts</span>
-                                                </div>
-                                                <span className="text-sm font-bold text-white">${(finance.earningsSummary.totalGrossRevenue - finance.earningsSummary.totalNetRevenue).toFixed(2)}</span>
-                                            </div>
-                                        </div>
-                                        <button className="w-full mt-6 py-3 bg-white text-black rounded-xl font-bold text-sm hover:bg-gray-200 transition-all active:scale-[0.98] shadow-lg shadow-white/5">
-                                            Request Withdrawal
-                                        </button>
-                                    </>
-                                ) : (
-                                    <div className="group relative text-center py-10 px-4 bg-gray-900/20 rounded-2xl border border-dashed border-gray-800 hover:border-gray-700 transition-all">
-                                        <div className="w-16 h-16 bg-gray-900 rounded-2xl flex items-center justify-center mb-4 mx-auto group-hover:scale-110 transition-transform">
-                                            <DollarSign size={24} className="text-gray-700 group-hover:text-purple-500 transition-colors" />
-                                        </div>
-                                        <h4 className="text-sm font-bold text-white mb-1 uppercase tracking-tight">Escrow Empty</h4>
-                                        <p className="text-gray-500 text-[11px] font-medium max-w-[180px] mx-auto leading-relaxed">
-                                            Connect a distributor or upload your first release to start generating royalties.
-                                        </p>
-                                        <div className="absolute inset-0 bg-gradient-to-b from-purple-500/0 to-purple-500/[0.02] pointer-events-none" />
-                                    </div>
-                                )}
-                            </div>
+                            <DistributorConnectionsPanel />
+                            <EarningsDashboard />
                         </div>
                     </div>
 

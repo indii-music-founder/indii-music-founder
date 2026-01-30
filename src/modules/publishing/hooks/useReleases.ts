@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react';
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
+export type { DDEXReleaseRecord };
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 
 export function useReleases(orgId: string | undefined) {

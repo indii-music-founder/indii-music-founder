@@ -226,3 +226,15 @@ vi.mock('firebase/ai', () => ({
         return {};
     })
 }));
+
+// Mock AgentZeroService to prevent 60s interaction timeouts in tests
+vi.mock('@/services/agent/AgentZeroService', () => ({
+    AgentZeroService: vi.fn(),
+    agentZeroService: {
+        sendMessage: vi.fn().mockResolvedValue({ message: 'Mock Agent Zero Response' }),
+        executeTask: vi.fn().mockResolvedValue({ status: 'success', data: { response: 'Mock Task Response' } }),
+        provisionProject: vi.fn().mockResolvedValue({ status: 'success' }),
+        syncProject: vi.fn().mockResolvedValue({ status: 'success' }),
+        getHistory: vi.fn().mockResolvedValue([])
+    }
+}));

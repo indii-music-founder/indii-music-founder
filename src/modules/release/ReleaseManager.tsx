@@ -5,11 +5,14 @@ import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ernService } from '@/services/ddex/ERNService'; // Hook up the real service
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService'; // For type reference if needed
 
+import { ddexValidator } from '@/services/ddex/DDEXValidator';
+
 export const ReleaseManager: React.FC = () => {
     const [step, setStep] = useState<'upload' | 'analyzing' | 'edit' | 'exporting'>('upload');
     const [audioProfile, setAudioProfile] = useState<AudioIntelligenceProfile | undefined>(undefined);
     const [metadata, setMetadata] = useState<ExtendedGoldenMetadata | null>(null);
     const [xmlOutput, setXmlOutput] = useState<string>('');
+    const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] } | null>(null);
 
     // Mock Audio Load for Demo
     const handleLoadAudio = async () => {
@@ -47,15 +50,27 @@ export const ReleaseManager: React.FC = () => {
     const handleExport = async () => {
         if (!metadata) return;
         setStep('exporting');
+        setValidationResult(null);
 
-        // Call the real ERNService (validated in tests!)
-        const result = await ernService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: true });
+        try {
+            // Call the real ERNService (validated in tests!)
+            const result = await ernService.generateERN(metadata, undefined, 'generic', undefined, { isTestMode: true });
 
-        if (result.success && result.xml) {
-            setXmlOutput(result.xml);
-        } else {
-            console.error(result.error);
-            alert('Failed to generate ERN');
+            if (result.success && result.xml) {
+                setXmlOutput(result.xml);
+                // Validate generated XML
+                const validation = ddexValidator.validateXML(result.xml);
+                setValidationResult({
+                    isValid: validation.valid,
+                    errors: validation.valid ? [] : validation.errors
+                });
+            } else {
+                console.error(result.error);
+                setValidationResult({ isValid: false, errors: [result.error || 'Failed to generate ERN'] });
+            }
+        } catch (e) {
+            console.error(e);
+            setValidationResult({ isValid: false, errors: ['An unexpected error occurred'] });
         }
         setStep('edit'); // Go back to edit/view
     };
@@ -106,8 +121,19 @@ export const ReleaseManager: React.FC = () => {
 
                     {/* XML Preview Sidecar */}
                     {xmlOutput && (
-                        <div className="flex-1 bg-black/50 rounded-xl border border-white/10 p-4 font-mono text-xs overflow-auto h-[800px]">
-                            <pre className="text-blue-300">{xmlOutput}</pre>
+                        <div className="flex-1 flex flex-col gap-4 h-[800px]">
+                            {validationResult && (
+                                <div className={`p-4 rounded-lg flex items-center justify-between ${validationResult.isValid ? 'bg-emerald-500/10 border border-emerald-500/50 text-emerald-300' : 'bg-red-500/10 border border-red-500/50 text-red-300'}`}>
+                                    <span className="font-bold flex items-center gap-2">
+                                        {validationResult.isValid ? '✓ ERN VALID' : '⚠ ERN INVALID'}
+                                    </span>
+                                    {!validationResult.isValid && <span className="text-xs opacity-75">{validationResult.errors.join(', ')}</span>}
+                                </div>
+                            )}
+
+                            <div className="bg-black/50 rounded-xl border border-white/10 p-4 font-mono text-xs overflow-auto flex-1">
+                                <pre className="text-blue-300">{xmlOutput}</pre>
+                            </div>
                         </div>
                     )}
                 </div>

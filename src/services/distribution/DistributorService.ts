@@ -120,6 +120,26 @@ class DistributorServiceImpl {
   }
 
   /**
+   * Disconnect from a distributor
+   */
+  async disconnect(distributorId: DistributorId): Promise<void> {
+    const adapter = this.adapters.get(distributorId);
+    if (!adapter) {
+      throw new Error(`Unknown distributor: ${distributorId}`);
+    }
+
+    try {
+      await adapter.disconnect();
+      // Remove credentials from secure storage
+      await credentialService.deleteCredentials(distributorId);
+      console.info(`[DistributorService] Disconnected from ${adapter.name}`);
+    } catch (error) {
+      console.error(`[DistributorService] Disconnect failed for ${distributorId}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Get connection status for all distributors
    */
   async getConnectionStatus(): Promise<DistributorConnection[]> {
