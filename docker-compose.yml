@@ -12,6 +12,7 @@ services:
     volumes:
       - ./init_agent.sh:/exe/init_agent.sh
       - ./run_ui.py:/a0_indii/run_ui.py
+      - ./python/helpers/mcp_server.py:/a0_indii/mcp_server.py
       - ~/Documents/indii_Workspace:/a0/usr/projects
       - ./python/tools:/a0/python/tools/custom  # Map custom tools to a subdirectory or overlay
       - ./prompts:/a0/prompts/custom            # Map custom prompts
