@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useReleases } from './useReleases';
 import { onSnapshot } from 'firebase/firestore';
@@ -35,8 +35,13 @@ describe('useReleases', () => {
 
     it('updates releases when data is received', async () => {
         let snapshotCallback: (snapshot: any) => void;
-        vi.mocked(onSnapshot).mockImplementation(((q: any, cb: any) => {
-            snapshotCallback = cb;
+        vi.mocked(onSnapshot).mockImplementation(((q: any, arg2: any, arg3: any) => {
+            // Handle both signatures: (q, onNext) and (q, options, onNext)
+            if (typeof arg2 === 'function') {
+                snapshotCallback = arg2;
+            } else {
+                snapshotCallback = arg3;
+            }
             return vi.fn();
         }) as any);
 
@@ -45,17 +50,21 @@ describe('useReleases', () => {
         expect(result.current.loading).toBe(true);
 
         const mockSnapshot = {
+            metadata: { hasPendingWrites: false, fromCache: false },
             docs: [
                 {
                     id: 'doc-1',
-                    data: () => ({ metadata: { trackTitle: 'Song 1' } })
+                    data: () => ({ metadata: { trackTitle: 'Song 1' } }),
+                    metadata: { hasPendingWrites: false, fromCache: false }
                 }
             ]
         };
 
         // Ensure callback is assigned
         if (snapshotCallback!) {
-            snapshotCallback(mockSnapshot);
+            act(() => {
+                snapshotCallback(mockSnapshot);
+            });
         }
 
         await waitFor(() => {
@@ -68,15 +77,24 @@ describe('useReleases', () => {
 
     it('handles errors from Firestore', async () => {
         let errorCallback: (err: any) => void;
-        vi.mocked(onSnapshot).mockImplementation(((q: any, cb: any, errCb: any) => {
-            errorCallback = errCb;
+        vi.mocked(onSnapshot).mockImplementation(((q: any, arg2: any, arg3: any, arg4: any) => {
+            // Handle both signatures: (q, onNext, onError) and (q, options, onNext, onError)
+            if (typeof arg2 === 'function') {
+                errorCallback = arg3;
+            } else {
+                errorCallback = arg4;
+            }
             return vi.fn();
         }) as any);
 
         const { result } = renderHook(() => useReleases('test-org-id'));
 
         const mockError = new Error('Firestore Error');
-        errorCallback!(mockError);
+        if (errorCallback!) {
+            act(() => {
+                errorCallback(mockError);
+            });
+        }
 
         await waitFor(() => {
             expect(result.current.loading).toBe(false);
