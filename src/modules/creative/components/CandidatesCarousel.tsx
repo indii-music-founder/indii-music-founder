@@ -4,6 +4,7 @@ export interface Candidate {
     id: string;
     url: string;
     prompt: string;
+    thoughtSignature?: string;
 }
 
 interface CandidatesCarouselProps {

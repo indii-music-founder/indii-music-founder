@@ -145,23 +145,47 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
 
                 if (isHighFidelity) {
                     // DUAL-VIEW PIPELINE (PRO)
-                    // Use "Ghost Mask" (All annotations combined) for high-fidelity reasoning
-                    const ghostMask = canvasOps.extractGeminiMask();
+                    const activeKeys = Object.keys(finalDefinitions);
+                    const isMultiMask = activeKeys.length > 1;
 
-                    if (ghostMask) {
+                    let maskData: string | null = null;
+                    let promptPayload = combinedPrompt;
+                    let useSemanticMap = false;
+
+                    if (isMultiMask) {
+                        // SEMANTIC MASKING (Multi-Region)
+                        // Preserve colors and create a legend for the model
+                        maskData = canvasOps.extractSemanticMask();
+                        useSemanticMap = true;
+
+                        const legend = activeKeys.map(colorId => {
+                            const colorDef = STUDIO_COLORS.find(c => c.id === colorId);
+                            const label = colorDef ? colorDef.name.toUpperCase() : 'MARKED';
+                            return `- ${label} REGION: ${finalDefinitions[colorId]}`;
+                        }).join('\n');
+
+                        promptPayload = `Applying multiple edits defined by color mask:\n${legend}`;
+                    } else {
+                        // GHOST MASK (Single-Region)
+                        // Standard binary mask is sufficient
+                        maskData = canvasOps.extractGeminiMask();
+                    }
+
+                    if (maskData) {
                         const result = await Editing.editImage({
                             image: prepared.baseImage,
-                            mask: { mimeType: 'image/png', data: ghostMask },
-                            prompt: combinedPrompt,
+                            mask: { mimeType: 'image/png', data: maskData },
+                            prompt: promptPayload,
                             forceHighFidelity: true,
-                            model: 'pro'
+                            model: 'pro',
+                            useSemanticMap
                         });
 
                         if (result) {
                             setGeneratedCandidates([{
                                 id: crypto.randomUUID(),
                                 url: result.url,
-                                prompt: combinedPrompt,
+                                prompt: promptPayload,
                                 // thoughtSignature: result.thoughtSignature // TODO: Add to candidate type
                             } as any]);
                             toast.success(`High-Fidelity Edit Complete!`);

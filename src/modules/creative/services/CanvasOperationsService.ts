@@ -414,6 +414,65 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Extracts a Multi-Color "Semantic Mask" for Pro Editing.
+     * Preserves stroke colors (at 100% opacity) to distinguish regions.
+     * Black pixels = Context.
+     */
+    extractSemanticMask(): string | null {
+        if (!this.canvas) return null;
+
+        // 1. Save State
+        const originalBg = this.canvas.backgroundColor;
+        const originalObjects = this.canvas.getObjects();
+        const originalState = originalObjects.map(obj => ({
+            visible: obj.visible,
+            stroke: obj.stroke,
+            opacity: obj.opacity
+        }));
+
+        // 2. Transform to Semantic Mask Mode
+        this.canvas.backgroundColor = "#000000";
+
+        originalObjects.forEach(obj => {
+            if (obj.type === 'path') {
+                // Determine the "True Color" (Opaque) from the stroke
+                // Usually stroke is rgba(r,g,b,0.5). We want rgb(r,g,b) or hex.
+                // For now, we trust the stroke color but pump opacity to 1.0
+                obj.set({
+                    opacity: 1.0,
+                    visible: true
+                });
+            } else {
+                obj.visible = false;
+            }
+        });
+
+        this.canvas.renderAll();
+
+        // 3. Export
+        const dataUrl = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 1
+        });
+
+        // 4. Restore State
+        this.canvas.backgroundColor = originalBg;
+
+        originalObjects.forEach((obj, index) => {
+            const state = originalState[index];
+            obj.set({
+                visible: state.visible,
+                stroke: state.stroke,
+                opacity: state.opacity
+            });
+        });
+
+        this.canvas.renderAll();
+
+        return dataUrl.split(',')[1];
+    }
+
+    /**
      * Convert canvas to JSON
      */
     async toJSON(): Promise<string | null> {

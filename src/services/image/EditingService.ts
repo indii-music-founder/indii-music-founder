@@ -55,14 +55,21 @@ export class EditingService {
         forceHighFidelity?: boolean;
         model?: 'pro' | 'flash' | string;
         thoughtSignature?: string;
+        useSemanticMap?: boolean;
     }): Promise<{ id: string; url: string; prompt: string; thoughtSignature?: string } | null> {
         const editImageFn = httpsCallable(functions, 'editImage');
+
+        // Determine Task Label
+        let taskLabel = "Object Modification via Visual Prompt";
+        if (options.useSemanticMap) taskLabel = "Semantic Image Editing";
+        else if (options.mask) taskLabel = "Targeted Image Inpainting";
 
         // Generate structured prompt using PromptBuilder
         const structuredPrompt = PromptBuilder.build({
             userPrompt: options.prompt,
             useDualView: !!options.mask,
-            task: options.mask ? "Targeted Image Inpainting" : "Object Modification via Visual Prompt"
+            useSemanticMap: !!options.useSemanticMap,
+            task: taskLabel
         });
 
         // Selection Logic:

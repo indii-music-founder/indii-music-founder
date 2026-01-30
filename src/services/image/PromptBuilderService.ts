@@ -5,6 +5,7 @@ export interface PromptOptions {
     task?: string;
     constraints?: string[];
     useDualView?: boolean;
+    useSemanticMap?: boolean;
 }
 
 /**
@@ -39,6 +40,28 @@ ${constraints.map(c => `- ${c}`).join('\n')}`;
     }
 
     /**
+     * Builds a structured prompt for Semantic Map (Source + Color-Coded Mask)
+     */
+    static buildSemanticPrompt(options: PromptOptions): string {
+        const sanitized = InputSanitizer.sanitize(options.userPrompt);
+        const task = options.task || "Semantic Image Editing";
+        const constraints = [...this.DEFAULT_CONSTRAINTS, ...(options.constraints || [])];
+
+        return `TASK: ${task}.
+INPUTS:
+1. IMAGE_SOURCE: The original high-resolution photo.
+2. IMAGE_MASK: A color-coded semantic mask defining multiple edit regions.
+INSTRUCTION:
+- Analyze IMAGE_SOURCE for context.
+- Identify regions in IMAGE_MASK matching the colors described below.
+- Apply the corresponding edits:
+${sanitized}
+- Leave black regions of the mask unchanged (Context).
+CONSTRAINTS:
+${constraints.map(c => `- ${c}`).join('\n')}`;
+    }
+
+    /**
      * Builds a structured prompt for Visual Prompting (Red Overlay)
      */
     static buildVisualPrompt(options: PromptOptions): string {
@@ -61,6 +84,7 @@ ${constraints.map(c => `- ${c}`).join('\n')}`;
      * Helper to route to the correct builder
      */
     static build(options: PromptOptions): string {
+        if (options.useSemanticMap) return this.buildSemanticPrompt(options);
         return options.useDualView ? this.buildDualViewPrompt(options) : this.buildVisualPrompt(options);
     }
 }
