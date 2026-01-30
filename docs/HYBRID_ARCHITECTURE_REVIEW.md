@@ -92,7 +92,7 @@ suspicious_patterns = [
 | Session zeroization | `zeroize_session` action | `python/api/auth_broker.py` | ✅ Complete |
 | Intent verification | `verify_intent` action | `python/api/auth_broker.py` | ✅ Complete |
 | Agent tool integration | Auth tool | `python/tools/indii_auth_tool.py` | ✅ Complete |
-| Handle-to-secret mapping | In-memory store | `python/api/auth_broker.py` | ⚠️ TODO |
+| Handle-to-secret mapping | In-memory store with TTL | `python/api/auth_broker.py` | ✅ Complete |
 
 ### 1.5 Architect-Sentinel Dual Model
 
@@ -129,64 +129,67 @@ sentinel:
 
 ---
 
-## 2. Identified Gaps
+## 2. Identified Gaps (ALL RESOLVED ✅)
 
-### 2.1 Docker Container Exposure (CRITICAL)
+> **Note:** All gaps identified during the initial review have been resolved as of 2025-01-29.
 
-**Current state in `docker-compose.yml`:**
+### 2.1 Docker Container Exposure (CRITICAL) — ✅ FIXED
+
+**Previous state:**
 ```yaml
 ports:
-  - "50080:80"   # Exposed to ALL network interfaces
+  - "50080:80"   # Was exposed to ALL network interfaces
   - "8880:8080"
 environment:
-  - WEB_UI_HOST=0.0.0.0  # Binds to all interfaces
+  - WEB_UI_HOST=0.0.0.0  # Was binding to all interfaces
 ```
 
-**Risk:** Agent Zero container is discoverable via Shodan or local network scanning. An attacker on the same network could interact with the agent directly.
+**Resolution:** Ports now bound to `127.0.0.1:50080:80` and `127.0.0.1:8880:8080`. `WEB_UI_HOST` set to `127.0.0.1`.
 
-**Impact:** High - Potential for unauthorized agent commands, data exfiltration, or resource abuse.
+### 2.2 Missing .dockerignore — ✅ FIXED
 
-### 2.2 Missing .dockerignore
+**Resolution:** Created `.dockerignore` excluding:
 
-**Risk:** Docker build context may include sensitive files:
-- `.env` files with secrets
-- `node_modules` bloating image size
-- Development credentials
+- `.env`, `.env.*`, `.env.backup`
+- `*.pem`, `*.key`, `credentials.json`, `service-account*.json`
+- `node_modules`, `dist`, `build`, `.git`
 
-### 2.3 No Health Endpoint
+### 2.3 No Health Endpoint — ✅ FIXED
 
-**Risk:** Docker cannot perform health checks to restart unhealthy containers.
+**Resolution:** Created `python/api/healthz.py` with GET endpoint returning `{"status": "healthy", "service": "indii-agent", "version": "0.1.0"}`.
 
-### 2.4 AgentZeroService Security Issues
+### 2.4 AgentZeroService Security Issues — ✅ FIXED
 
-**Issue 1: Token logged to console**
-```typescript
-// src/services/agent/AgentZeroService.ts:100
-console.log('[AgentZeroService] Generated Token:', this.token);
-```
+**Issue 1: Token logged to console** — Removed. Now only logs debug message without exposing value.
 
-**Issue 2: No request timeout**
-Fetch calls can hang indefinitely, causing resource exhaustion.
+**Issue 2: No request timeout** — Added `fetchWithTimeout()` wrapper with configurable timeouts (30s default, 60s for LLM ops, 120s for task execution).
 
-### 2.5 Incomplete Secrets Broker Mapping
+### 2.5 Incomplete Secrets Broker Mapping — ✅ FIXED
 
-```python
-# python/api/auth_broker.py:28-29
-# TODO: Securely store the mapping for this session
-# For the prototype, we'll assume a session-based registry exists
-```
+**Resolution:** Complete implementation with:
 
-The handle-to-secret mapping is not actually stored, making zeroization a no-op.
+- In-memory `_handle_registry` with TTL (5 minutes)
+- `SECRET_MAP` mapping `secret_id` → environment variables
+- Automatic cleanup of expired handles
+- Full `resolve_handle` action returning actual secret value
 
-### 2.6 TypeScript-Python Broker Integration Gap
+### 2.6 TypeScript-Python Broker Integration Gap — ✅ FIXED
 
-The TypeScript frontend (`AgentZeroService.ts`) does not integrate with the Python `auth_broker`. Secrets are passed directly in Docker environment variables.
+**Resolution:** Created `src/services/agent/SecretsBroker.ts` with:
+
+- `getHandle(secretId)` - Request opaque handles
+- `zeroize(instruction?)` - Clear all handles
+- `verifyIntent(intent, proposedAction)` - R2A2 gatekeeper approval
+- `listActiveHandles()` - Debug/admin listing
+- `isAvailable()` - Health check
 
 ---
 
-## 3. Action Items
+## 3. Action Items (IMPLEMENTED ✅)
 
-### Phase 0: Critical Security Fixes (Immediate)
+> **All action items below have been implemented.** The code examples are preserved for reference.
+
+### Phase 0: Critical Security Fixes (Immediate) — ✅ DONE
 
 #### 3.1 Bind Docker Ports to Localhost
 
@@ -258,7 +261,7 @@ playwright-report
 Thumbs.db
 ```
 
-### Phase 1: Container Hardening
+### Phase 1: Container Hardening — ✅ DONE
 
 #### 3.4 Add Health Checks and Resource Limits
 
@@ -322,7 +325,7 @@ class Healthz(ApiHandler):
         }
 ```
 
-### Phase 2: Service Security Fixes
+### Phase 2: Service Security Fixes — ✅ DONE
 
 #### 3.6 Fix AgentZeroService Token Logging
 
@@ -365,7 +368,7 @@ const response = await this.fetchWithTimeout(
 );
 ```
 
-### Phase 3: Complete Secrets Broker
+### Phase 3: Complete Secrets Broker — ✅ DONE
 
 #### 3.8 Implement Handle-to-Secret Mapping
 
@@ -525,7 +528,7 @@ export class SecretsBroker {
 }
 ```
 
-### Phase 4: Sync InputSanitizer with Python R2A2
+### Phase 4: Sync InputSanitizer with Python R2A2 — ✅ DONE
 
 #### 3.10 Add Confidence Scoring
 
@@ -582,23 +585,23 @@ static analyzeInjectionRisk(input: string): {
 
 ---
 
-## 4. Implementation Priority
+## 4. Implementation Priority (ALL COMPLETE ✅)
 
-| Priority | Task | Effort | Impact | Risk if Skipped |
-|----------|------|--------|--------|-----------------|
-| **P0** | Bind ports to localhost | 5 min | Critical | Network exposure |
-| **P0** | Create .dockerignore | 5 min | High | Secret leakage |
-| **P0** | Update WEB_UI_HOST | 2 min | Critical | Network exposure |
-| **P1** | Add health checks | 10 min | High | No auto-recovery |
-| **P1** | Add resource limits | 5 min | Medium | Resource exhaustion |
-| **P1** | Create health endpoint | 15 min | Medium | Health checks fail |
-| **P1** | Remove token logging | 2 min | Medium | Token exposure |
-| **P1** | Add request timeout | 15 min | Medium | Hung requests |
-| **P2** | Complete auth_broker | 30 min | High | Zeroization broken |
-| **P2** | Create SecretsBroker.ts | 30 min | High | No frontend integration |
-| **P3** | Sync InputSanitizer | 20 min | Medium | Inconsistent scanning |
+| Priority | Task | Status |
+|----------|------|--------|
+| **P0** | Bind ports to localhost | ✅ Complete |
+| **P0** | Create .dockerignore | ✅ Complete |
+| **P0** | Update WEB_UI_HOST | ✅ Complete |
+| **P1** | Add health checks | ✅ Complete |
+| **P1** | Add resource limits | ✅ Complete |
+| **P1** | Create health endpoint | ✅ Complete |
+| **P1** | Remove token logging | ✅ Complete |
+| **P1** | Add request timeout | ✅ Complete |
+| **P2** | Complete auth_broker | ✅ Complete |
+| **P2** | Create SecretsBroker.ts | ✅ Complete |
+| **P3** | Sync InputSanitizer | ✅ Complete |
 
-**Total Estimated Effort:** ~2.5 hours
+**Implementation completed:** 2025-01-29
 
 ---
 
@@ -663,15 +666,15 @@ curl -X POST http://localhost:50080/auth_broker \
 - ✅ PII redaction (credit cards, passwords, API keys)
 - ✅ SSRF protection (localhost, metadata service)
 
-### What Needs Implementation
+### All Items Implemented ✅
 
-1. 🔴 **Docker port binding** - Exposed to network (CRITICAL)
-2. 🔴 **Create .dockerignore** - Missing entirely
-3. 🟡 **Health endpoint** - Needed for Docker health checks
-4. 🟡 **AgentZeroService fixes** - Token logging, no timeout
-5. 🟡 **Complete auth_broker** - Handle mapping not persisted
-6. 🟢 **TypeScript broker client** - Frontend not integrated
-7. 🟢 **Sync InputSanitizer** - TypeScript has fewer patterns than Python
+1. ✅ **Docker port binding** - Bound to `127.0.0.1` (no longer exposed)
+2. ✅ **Created .dockerignore** - Secrets and dev files excluded
+3. ✅ **Health endpoint** - `python/api/healthz.py` created
+4. ✅ **AgentZeroService fixes** - Token logging removed, timeouts added
+5. ✅ **Complete auth_broker** - Handle mapping with TTL implemented
+6. ✅ **TypeScript broker client** - `SecretsBroker.ts` created
+7. ✅ **Sync InputSanitizer** - 20+ patterns with confidence scoring
 
 ### Not Needed (Future Consideration)
 
@@ -685,10 +688,13 @@ curl -X POST http://localhost:50080/auth_broker \
 | Category | File Path |
 |----------|-----------|
 | Docker config | `docker-compose.yml` |
+| Docker ignore | `.dockerignore` |
 | Dockerfile | `Dockerfile.local` |
 | Agent Zero client | `src/services/agent/AgentZeroService.ts` |
+| Secrets broker (TS) | `src/services/agent/SecretsBroker.ts` |
 | R2A2 scanner | `python/api/indii_task.py` |
-| Secrets broker | `python/api/auth_broker.py` |
+| Secrets broker (Python) | `python/api/auth_broker.py` |
+| Health endpoint | `python/api/healthz.py` |
 | Auth tool | `python/tools/indii_auth_tool.py` |
 | Provider config | `agents/providers.yaml` |
 | Input sanitizer | `src/services/ai/utils/InputSanitizer.ts` |
