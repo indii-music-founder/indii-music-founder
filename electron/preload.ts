@@ -67,6 +67,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
         saveHistory: (id: string, data: any) => ipcRenderer.invoke('agent:save-history', id, data),
         getHistory: (id: string) => ipcRenderer.invoke('agent:get-history', id),
         deleteHistory: (id: string) => ipcRenderer.invoke('agent:delete-history', id),
+        proxyZero: (endpoint: string, payload: any, headers?: any) => ipcRenderer.invoke('agent:proxy-zero', endpoint, payload, headers),
     },
 
     // Video (Local Asset Management)
