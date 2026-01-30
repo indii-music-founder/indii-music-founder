@@ -39,7 +39,9 @@ import { PayoutHistory } from './components/PayoutHistory';
 import { DSRUploadModal } from './components/DSRUploadModal';
 import { ValidationRequirementsModal } from './components/ValidationRequirementsModal';
 import { PublishingErrorBoundary } from './components/PublishingErrorBoundary';
+import { OfflineBanner } from './components/OfflineBanner';
 import { LayoutGrid, BarChart2, CreditCard, Upload } from 'lucide-react';
+import type { ReleaseAssets, DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
 
 // Simple CSS-based Sparkline Component for Beta Visualization
 const Sparkline = ({ data, color = "text-green-500" }: { data: number[], color?: string }) => {
@@ -108,6 +110,11 @@ export default function PublishingDashboard() {
             fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
         }
     }, [currentOrganizationId, fetchDistributors, fetchEarnings, defaultDateRange]);
+
+    // Selected Release Memo
+    const selectedRelease = useMemo(() =>
+        releases.find(r => r.id === selectedReleaseId),
+        [releases, selectedReleaseId]);
 
     // Stats Calculation (Memoized)
     const stats = useMemo(() => {
@@ -179,6 +186,7 @@ export default function PublishingDashboard() {
     return (
         <ModuleErrorBoundary moduleName="Publishing Dashboard">
             <div className="min-h-screen bg-[#0A0A0A] text-white">
+                <OfflineBanner />
                 <div className="max-w-7xl mx-auto px-6 py-12">
                     {/* Header */}
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 gap-6">
@@ -258,7 +266,7 @@ export default function PublishingDashboard() {
 
                     {/* Main Content Viewport */}
                     <AnimatePresence mode="wait">
-                        {selectedReleaseId ? (
+                        {selectedReleaseId && selectedRelease ? (
                             <motion.div
                                 key="detail"
                                 initial={{ opacity: 0, x: 20 }}
@@ -267,22 +275,35 @@ export default function PublishingDashboard() {
                             >
                                 <ReleaseDetailPage
                                     releaseId={selectedReleaseId}
-                                    metadata={releases.find(r => r.id === selectedReleaseId)?.metadata as any}
-                                    assets={releases.find(r => r.id === selectedReleaseId)?.assets as any}
-                                    deployments={releases.find(r => r.id === selectedReleaseId)?.distributors?.map(d => ({
-                                        distributorId: d.distributorId as any,
-                                        status: d.status as any,
+                                    metadata={selectedRelease.metadata}
+                                    assets={{
+                                        audioFiles: [{
+                                            url: selectedRelease.assets.audioUrl,
+                                            format: selectedRelease.assets.audioFormat,
+                                            sampleRate: selectedRelease.assets.audioSampleRate,
+                                            bitDepth: selectedRelease.assets.audioBitDepth,
+                                            mimeType: `audio/${selectedRelease.assets.audioFormat}`,
+                                            sizeBytes: 0, // Placeholder as size is not in DDEX record yet
+                                        }],
+                                        coverArt: {
+                                            url: selectedRelease.assets.coverArtUrl,
+                                            width: selectedRelease.assets.coverArtWidth,
+                                            height: selectedRelease.assets.coverArtHeight,
+                                            mimeType: 'image/jpeg', // Default assumption
+                                            sizeBytes: 0
+                                        }
+                                    }}
+                                    deployments={selectedRelease.distributors?.map(d => ({
+                                        distributorId: d.distributorId as DistributorId,
+                                        status: d.status as ReleaseStatus,
                                         distributorReleaseId: d.releaseId,
                                     })) || []}
                                     onBack={() => setSelectedReleaseId(null)}
                                     onEdit={() => {
-                                        const release = releases.find(r => r.id === selectedReleaseId);
-                                        if (release) {
-                                            // Close detail view and open wizard with existing data
-                                            setSelectedReleaseId(null);
-                                            setIsWizardOpen(true);
-                                            toast.info('Release editing will open in wizard mode');
-                                        }
+                                        // Close detail view and open wizard with existing data
+                                        setSelectedReleaseId(null);
+                                        setIsWizardOpen(true);
+                                        toast.info('Release editing will open in wizard mode');
                                     }}
                                 />
                             </motion.div>

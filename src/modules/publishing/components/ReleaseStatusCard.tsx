@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Music, Edit2, Trash2, CheckSquare, ExternalLink, Globe, Clock, AlertCircle } from 'lucide-react';
+import { ClientReleaseRecord } from '@/modules/publishing/hooks/useReleases';
 import { DDEXReleaseRecord } from '@/services/metadata/types';
 
 interface ReleaseStatusCardProps {
-    release: DDEXReleaseRecord;
+    release: ClientReleaseRecord;
     isSelected: boolean;
     onToggleSelection: (id: string) => void;
     onDelete: (id: string) => void;
@@ -102,11 +103,27 @@ export const ReleaseStatusCard: React.FC<ReleaseStatusCardProps> = ({
 
             <div className="flex items-center gap-6">
                 <div className="text-right hidden sm:block">
-                    <div className="flex items-center justify-end gap-1.5 px-2.5 py-1 bg-gray-900 rounded border border-gray-800/80 group-hover:border-gray-700 transition-colors">
-                        <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.color} animate-pulse`} />
-                        <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
-                            {statusInfo.text}
-                        </span>
+                    <div className={`flex items-center justify-end gap-1.5 px-2.5 py-1 bg-gray-900 rounded border group-hover:border-gray-700 transition-colors ${release._hasPendingWrites ? 'border-blue-500/30' : 'border-gray-800/80'}`}>
+                        {release._hasPendingWrites ? (
+                            <>
+                                <motion.div
+                                    animate={{ rotate: 360 }}
+                                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                                >
+                                    <Clock size={10} className="text-blue-400" />
+                                </motion.div>
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-blue-400">
+                                    Syncing
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <div className={`w-1.5 h-1.5 rounded-full ${statusInfo.color} ${statusInfo.text === 'Live' ? '' : 'animate-pulse'}`} />
+                                <span className="text-[10px] uppercase tracking-wider font-bold text-gray-400">
+                                    {statusInfo.text}
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
 
