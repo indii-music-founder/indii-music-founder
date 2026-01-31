@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2 } from 'lucide-react';
+import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2, ExternalLink, Zap, Package } from 'lucide-react';
 import { MerchTheme } from '@/modules/merchandise/themes';
-import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
+import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
+import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { ProductType, CatalogProductSchema } from '../types';
@@ -11,8 +12,11 @@ interface ManufacturingPanelProps {
     theme: MerchTheme;
     productType: ProductType;
     productId?: string; // Optional: If missing, treated as draft
+    designUrl?: string; // Design image URL for POD orders
     onClose?: () => void;
 }
+
+type FulfillmentMode = 'internal' | 'pod';
 
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
 const COLORS = [
@@ -50,16 +54,27 @@ const DEFAULT_COSTS: Partial<Record<ProductType, number>> = {
     'Phone Screen': 2.00
 };
 
-export default function ManufacturingPanel({ theme, productType, productId, onClose }: ManufacturingPanelProps) {
+export default function ManufacturingPanel({ theme, productType, productId, designUrl, onClose }: ManufacturingPanelProps) {
     const [selectedSize, setSelectedSize] = React.useState('L');
     const [selectedColor, setSelectedColor] = React.useState(COLORS[0]);
     const [quantity, setQuantity] = React.useState(100);
     const toast = useToast();
     const { userProfile } = useStore();
 
+    // Fulfillment Mode - Internal (self-managed) or POD (Printful, etc.)
+    const [fulfillmentMode, setFulfillmentMode] = useState<FulfillmentMode>('internal');
+    const [selectedPODProvider, setSelectedPODProvider] = useState<PODProvider>('printful');
+    const [podConfigured, setPodConfigured] = useState(false);
+
     // Dynamic Cost Calculation
     const [baseCost, setBaseCost] = React.useState(DEFAULT_COSTS[productType] || 10.00);
     const [isLoadingPrices, setIsLoadingPrices] = React.useState(true);
+
+    // Check if POD is configured
+    useEffect(() => {
+        const isConfigured = PrintOnDemandService.isConfigured('printful');
+        setPodConfigured(isConfigured);
+    }, []);
 
     // ⚡ Bolt Optimization: Combined duplicate useEffect hooks to prevent double-fetching
     // the catalog and potential race conditions.
@@ -122,23 +137,58 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
 
     const handleSubmission = async () => {
         try {
-            toast.info("Initializing production line...");
-
             // Use provided ID or generate a draft ID
             const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
 
-            const result = await MerchandiseService.submitToProduction({
-                productId: effectiveProductId,
-                variantId: `${selectedSize}-${selectedColor.name}`,
-                quantity: quantity
-            });
+            if (fulfillmentMode === 'pod' && podConfigured && designUrl) {
+                // POD Mode - Use Print-on-Demand service
+                toast.info("Creating order with Printful...");
 
-            if (result.success) {
-                toast.success(`Production Started! Order ID: ${result.orderId}`);
-                if (!productId) {
-                    toast.info("Note: This order was created from a draft design.");
+                if (!userProfile?.shippingAddress) {
+                    toast.error("Please add a shipping address to your profile.");
+                    return;
+                }
+
+                const order = await PrintOnDemandService.createOrder(
+                    [{
+                        productId: effectiveProductId,
+                        variantId: `${selectedSize}-${selectedColor.name}`,
+                        quantity: quantity,
+                        designUrl: designUrl,
+                        printArea: 'front'
+                    }],
+                    {
+                        name: userProfile.displayName || userProfile.email || 'Customer',
+                        address1: userProfile.shippingAddress.street,
+                        city: userProfile.shippingAddress.city,
+                        stateCode: userProfile.shippingAddress.state,
+                        countryCode: userProfile.shippingAddress.country,
+                        postalCode: userProfile.shippingAddress.zip
+                    },
+                    'STANDARD',
+                    selectedPODProvider
+                );
+
+                toast.success(`POD Order Created! ID: ${order.id}`);
+                toast.info(`Estimated delivery: ${order.estimatedDelivery || '5-7 business days'}`);
+            } else {
+                // Internal Mode - Use existing merchandise service
+                toast.info("Initializing production line...");
+
+                const result = await MerchandiseService.submitToProduction({
+                    productId: effectiveProductId,
+                    variantId: `${selectedSize}-${selectedColor.name}`,
+                    quantity: quantity
+                });
+
+                if (result.success) {
+                    toast.success(`Production Started! Order ID: ${result.orderId}`);
+                    if (!productId) {
+                        toast.info("Note: This order was created from a draft design.");
+                    }
                 }
             }
+
             onClose?.();
         } catch (e: unknown) {
             console.error("Production submission failed:", e);
@@ -157,7 +207,79 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                 <h2 className={`text-xl font-bold tracking-tight ${theme.colors.text}`}>Production</h2>
             </div>
 
-            <div className="flex-1 overflow-y-auto pr-2 space-y-8 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto pr-2 space-y-6 custom-scrollbar">
+                {/* Fulfillment Mode Toggle */}
+                <section>
+                    <label className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}>
+                        <Package className="w-3 h-3" />
+                        Fulfillment
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                        <button
+                            onClick={() => setFulfillmentMode('internal')}
+                            className={`p-3 rounded-lg border text-left transition-all ${
+                                fulfillmentMode === 'internal'
+                                    ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400'
+                                    : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <ShoppingBag className="w-4 h-4" />
+                                <span className="text-xs font-bold">Self-Manage</span>
+                            </div>
+                            <p className="text-[10px] opacity-70">Handle production yourself</p>
+                        </button>
+                        <button
+                            onClick={() => setFulfillmentMode('pod')}
+                            className={`p-3 rounded-lg border text-left transition-all relative ${
+                                fulfillmentMode === 'pod'
+                                    ? 'bg-purple-500/20 border-purple-400 text-purple-400'
+                                    : 'bg-neutral-800 border-neutral-700 text-neutral-400 hover:border-neutral-500'
+                            }`}
+                        >
+                            <div className="flex items-center gap-2 mb-1">
+                                <Zap className="w-4 h-4" />
+                                <span className="text-xs font-bold">Print-on-Demand</span>
+                            </div>
+                            <p className="text-[10px] opacity-70">Auto-fulfill via Printful</p>
+                            {!podConfigured && (
+                                <span className="absolute top-1 right-1 px-1 py-0.5 bg-orange-500/20 text-orange-400 text-[8px] rounded">
+                                    Setup Required
+                                </span>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* POD Provider Selection (when POD mode is active) */}
+                    {fulfillmentMode === 'pod' && (
+                        <div className="mt-3 p-3 bg-purple-500/10 border border-purple-500/20 rounded-lg">
+                            {podConfigured ? (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                                    <span className="text-xs text-green-400">Connected to {selectedPODProvider}</span>
+                                    <a
+                                        href="https://www.printful.com/dashboard"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="ml-auto text-xs text-purple-400 hover:text-purple-300 flex items-center gap-1"
+                                    >
+                                        Dashboard <ExternalLink className="w-3 h-3" />
+                                    </a>
+                                </div>
+                            ) : (
+                                <div className="space-y-2">
+                                    <p className="text-xs text-purple-300">
+                                        Connect your Printful account to enable automatic order fulfillment.
+                                    </p>
+                                    <p className="text-[10px] text-neutral-500">
+                                        Add VITE_PRINTFUL_API_KEY to your environment variables.
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </section>
+
                 {/* Brand Selection */}
                 <section>
                     <label className={`text-xs font-medium uppercase tracking-wider mb-3 block flex items-center gap-2 ${theme.colors.textSecondary}`}>
@@ -172,7 +294,10 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                             </span>
                         </div>
                         <p className={`text-xs leading-relaxed ${theme.colors.textSecondary}`}>
-                            High-quality blank suited for DTG and screen printing. Preshrunk.
+                            {fulfillmentMode === 'pod'
+                                ? 'Fulfilled by Printful with worldwide shipping.'
+                                : 'High-quality blank suited for DTG and screen printing. Preshrunk.'
+                            }
                         </p>
                     </div>
                 </section>

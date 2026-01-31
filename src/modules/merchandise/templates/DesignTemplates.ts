@@ -90,7 +90,7 @@ export type DesignTemplate = z.infer<typeof DesignTemplateSchema>;
 // Built-in Templates for Indie Artists
 // ============================================================================
 
-export const INDIE_ARTIST_TEMPLATES: DesignTemplate[] = [
+export const INDIE_ARTIST_TEMPLATES: z.input<typeof DesignTemplateSchema>[] = [
     // =========================================================================
     // Album Art Templates
     // =========================================================================
@@ -785,7 +785,7 @@ export const INDIE_ARTIST_TEMPLATES: DesignTemplate[] = [
 // ============================================================================
 
 export class TemplateService {
-    private templates: DesignTemplate[] = [...INDIE_ARTIST_TEMPLATES];
+    private templates: DesignTemplate[] = INDIE_ARTIST_TEMPLATES.map(t => DesignTemplateSchema.parse(t));
 
     /**
      * Get all available templates

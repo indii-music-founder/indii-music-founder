@@ -62,6 +62,8 @@ export const PODOrderItemSchema = z.object({
 
 export type PODOrderItem = z.infer<typeof PODOrderItemSchema>;
 
+
+
 export const PODShippingAddressSchema = z.object({
     name: z.string(),
     company: z.string().optional(),
@@ -133,6 +135,8 @@ export interface IPODProvider {
     // Mockups
     generateMockup(productId: string, variantId: string, designUrl: string, printArea?: string): Promise<string>;
 }
+
+
 
 // ============================================================================
 // Printful Provider Implementation
@@ -648,7 +652,4 @@ class PrintOnDemandServiceClass {
 // Export singleton instance
 export const PrintOnDemandService = new PrintOnDemandServiceClass();
 
-// Export types and schemas
-export type {
-    IPODProvider
-};
+
