@@ -1,7 +1,27 @@
 import { z } from 'zod';
 import { Timestamp, FieldValue } from 'firebase/firestore';
 
-export type ProductType = 'T-Shirt' | 'Hoodie' | 'Mug' | 'Bottle' | 'Poster' | 'Phone Screen';
+// Core product types - expanded for indie music artists
+export type ProductType =
+    | 'T-Shirt'
+    | 'Hoodie'
+    | 'Mug'
+    | 'Bottle'
+    | 'Poster'
+    | 'Phone Screen'
+    // Indie Artist Essentials
+    | 'Vinyl Record'
+    | 'CD'
+    | 'Cassette'
+    | 'Sticker Sheet'
+    | 'Tote Bag'
+    | 'Cap'
+    | 'Beanie'
+    | 'Patch'
+    | 'Bandana'
+    | 'Flag'
+    | 'Enamel Pin'
+    | 'Keychain';
 
 export const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
     't-shirt': 'T-Shirt',
@@ -9,7 +29,28 @@ export const PRODUCT_TYPE_MAPPING: Record<string, ProductType> = {
     'mug': 'Mug',
     'bottle': 'Bottle',
     'poster': 'Poster',
-    'phone': 'Phone Screen'
+    'phone': 'Phone Screen',
+    // Indie Artist Essentials
+    'vinyl': 'Vinyl Record',
+    'cd': 'CD',
+    'cassette': 'Cassette',
+    'sticker': 'Sticker Sheet',
+    'tote': 'Tote Bag',
+    'cap': 'Cap',
+    'beanie': 'Beanie',
+    'patch': 'Patch',
+    'bandana': 'Bandana',
+    'flag': 'Flag',
+    'pin': 'Enamel Pin',
+    'keychain': 'Keychain'
+};
+
+// Product categories for organizing in UI
+export const PRODUCT_CATEGORIES = {
+    apparel: ['T-Shirt', 'Hoodie', 'Cap', 'Beanie', 'Bandana'] as ProductType[],
+    music: ['Vinyl Record', 'CD', 'Cassette'] as ProductType[],
+    accessories: ['Tote Bag', 'Sticker Sheet', 'Patch', 'Enamel Pin', 'Keychain'] as ProductType[],
+    home: ['Mug', 'Bottle', 'Poster', 'Flag', 'Phone Screen'] as ProductType[]
 };
 
 export interface MerchProduct {

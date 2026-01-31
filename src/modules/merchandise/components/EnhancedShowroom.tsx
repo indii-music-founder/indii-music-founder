@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles, Disc3, ShoppingBag, CircleDot, Sticker, Music2, Square, Flag, Pin, Key } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';
 import { Editing } from '@/services/image/EditingService';
@@ -39,6 +39,64 @@ const placementOptions: Record<string, { id: string; label: string; icon: React.
         { id: 'full-bleed', label: 'Full Bleed', icon: <Maximize size={14} /> },
         { id: 'centered', label: 'Centered', icon: <Target size={14} /> },
         { id: 'bordered', label: 'With Border', icon: <LayoutGrid size={14} /> },
+    ],
+    // Indie Artist Products
+    'vinyl': [
+        { id: 'center-label', label: 'Center Label', icon: <Target size={14} /> },
+        { id: 'full-sleeve', label: 'Full Sleeve', icon: <Maximize size={14} /> },
+        { id: 'gatefold', label: 'Gatefold Inside', icon: <LayoutGrid size={14} /> },
+        { id: 'inner-sleeve', label: 'Inner Sleeve', icon: <Square size={14} /> },
+    ],
+    'cd': [
+        { id: 'jewel-front', label: 'Jewel Case Front', icon: <Maximize size={14} /> },
+        { id: 'disc-art', label: 'Disc Art', icon: <Target size={14} /> },
+        { id: 'booklet', label: 'Booklet Pages', icon: <LayoutGrid size={14} /> },
+    ],
+    'cassette': [
+        { id: 'j-card', label: 'J-Card', icon: <Maximize size={14} /> },
+        { id: 'cassette-label', label: 'Cassette Label', icon: <Target size={14} /> },
+    ],
+    'sticker': [
+        { id: 'die-cut', label: 'Die Cut', icon: <Target size={14} /> },
+        { id: 'sheet-layout', label: 'Sheet Layout', icon: <LayoutGrid size={14} /> },
+        { id: 'kiss-cut', label: 'Kiss Cut Sheet', icon: <Maximize size={14} /> },
+    ],
+    'tote': [
+        { id: 'one-side', label: 'One Side', icon: <Target size={14} /> },
+        { id: 'both-sides', label: 'Both Sides', icon: <LayoutGrid size={14} /> },
+        { id: 'all-over', label: 'All Over Print', icon: <Maximize size={14} /> },
+    ],
+    'cap': [
+        { id: 'front-panel', label: 'Front Panel', icon: <Target size={14} /> },
+        { id: 'side-panel', label: 'Side Panel', icon: <Target size={14} /> },
+        { id: 'back-strap', label: 'Back Strap', icon: <LayoutGrid size={14} /> },
+    ],
+    'beanie': [
+        { id: 'front-cuff', label: 'Front Cuff', icon: <Target size={14} /> },
+        { id: 'side-patch', label: 'Side Patch', icon: <Target size={14} /> },
+    ],
+    'patch': [
+        { id: 'embroidered', label: 'Embroidered', icon: <Target size={14} /> },
+        { id: 'woven', label: 'Woven', icon: <LayoutGrid size={14} /> },
+        { id: 'printed', label: 'Printed', icon: <Maximize size={14} /> },
+    ],
+    'bandana': [
+        { id: 'full-print', label: 'Full Print', icon: <Maximize size={14} /> },
+        { id: 'center-design', label: 'Center Design', icon: <Target size={14} /> },
+        { id: 'border-pattern', label: 'Border Pattern', icon: <LayoutGrid size={14} /> },
+    ],
+    'flag': [
+        { id: 'full-flag', label: 'Full Flag', icon: <Maximize size={14} /> },
+        { id: 'centered-logo', label: 'Centered Logo', icon: <Target size={14} /> },
+    ],
+    'pin': [
+        { id: 'hard-enamel', label: 'Hard Enamel', icon: <Target size={14} /> },
+        { id: 'soft-enamel', label: 'Soft Enamel', icon: <Target size={14} /> },
+    ],
+    'keychain': [
+        { id: 'acrylic', label: 'Acrylic', icon: <Target size={14} /> },
+        { id: 'metal', label: 'Metal', icon: <Target size={14} /> },
+        { id: 'rubber', label: 'Rubber/PVC', icon: <Target size={14} /> },
     ],
 };
 
@@ -196,6 +254,64 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
                 'centered': 'centered with margins',
                 'bordered': 'with a decorative border frame',
             },
+            // Indie Artist Products
+            'vinyl': {
+                'center-label': 'on the center label of the vinyl record',
+                'full-sleeve': 'as the full album sleeve artwork',
+                'gatefold': 'on the inside panels of a gatefold sleeve',
+                'inner-sleeve': 'on the inner protective sleeve',
+            },
+            'cd': {
+                'jewel-front': 'on the front of the jewel case',
+                'disc-art': 'printed directly on the disc surface',
+                'booklet': 'across the booklet pages inside',
+            },
+            'cassette': {
+                'j-card': 'on the J-card insert',
+                'cassette-label': 'on the cassette shell label',
+            },
+            'sticker': {
+                'die-cut': 'as a die-cut sticker following the design shape',
+                'sheet-layout': 'arranged on a sticker sheet',
+                'kiss-cut': 'as kiss-cut stickers on a backing sheet',
+            },
+            'tote': {
+                'one-side': 'on one side of the tote bag',
+                'both-sides': 'on both sides of the tote bag',
+                'all-over': 'as an all-over print pattern on the entire bag',
+            },
+            'cap': {
+                'front-panel': 'embroidered on the front panel',
+                'side-panel': 'on the side panel',
+                'back-strap': 'on the back strap area',
+            },
+            'beanie': {
+                'front-cuff': 'on the folded front cuff',
+                'side-patch': 'as a sewn-on side patch',
+            },
+            'patch': {
+                'embroidered': 'as an embroidered patch with raised threads',
+                'woven': 'as a woven patch with fine detail',
+                'printed': 'as a printed fabric patch',
+            },
+            'bandana': {
+                'full-print': 'as a full all-over print pattern',
+                'center-design': 'centered in the middle of the bandana',
+                'border-pattern': 'as a decorative border pattern',
+            },
+            'flag': {
+                'full-flag': 'covering the entire flag surface',
+                'centered-logo': 'as a centered logo on the flag',
+            },
+            'pin': {
+                'hard-enamel': 'as a hard enamel pin with smooth polished finish',
+                'soft-enamel': 'as a soft enamel pin with textured recessed areas',
+            },
+            'keychain': {
+                'acrylic': 'on a clear acrylic keychain',
+                'metal': 'engraved on a metal keychain',
+                'rubber': 'molded as a 3D rubber/PVC keychain',
+            },
         };
         return descriptions[productType]?.[placement] || 'prominently displayed';
     };
@@ -331,14 +447,50 @@ Style: Premium brand commercial, 4K cinematic quality.`;
         setMotionPrompt(prev => prev ? `${prev} ${preset.prompt}` : preset.prompt);
     };
 
-    const productTypes = [
-        { id: 't-shirt', label: 'T-Shirt', icon: Shirt },
-        { id: 'hoodie', label: 'Hoodie', icon: Shirt },
-        { id: 'mug', label: 'Mug', icon: Coffee },
-        { id: 'bottle', label: 'Bottle', icon: Coffee },
-        { id: 'phone', label: 'Phone Case', icon: Smartphone },
-        { id: 'poster', label: 'Poster', icon: Framer },
+    // Product types organized by category for indie artists
+    const productCategories = [
+        {
+            name: 'Apparel',
+            items: [
+                { id: 't-shirt', label: 'T-Shirt', icon: Shirt },
+                { id: 'hoodie', label: 'Hoodie', icon: Shirt },
+                { id: 'cap', label: 'Cap', icon: CircleDot },
+                { id: 'beanie', label: 'Beanie', icon: CircleDot },
+                { id: 'bandana', label: 'Bandana', icon: Square },
+            ]
+        },
+        {
+            name: 'Music',
+            items: [
+                { id: 'vinyl', label: 'Vinyl Record', icon: Disc3 },
+                { id: 'cd', label: 'CD', icon: Disc3 },
+                { id: 'cassette', label: 'Cassette', icon: Music2 },
+            ]
+        },
+        {
+            name: 'Accessories',
+            items: [
+                { id: 'tote', label: 'Tote Bag', icon: ShoppingBag },
+                { id: 'sticker', label: 'Stickers', icon: Sticker },
+                { id: 'patch', label: 'Patch', icon: Square },
+                { id: 'pin', label: 'Enamel Pin', icon: Pin },
+                { id: 'keychain', label: 'Keychain', icon: Key },
+            ]
+        },
+        {
+            name: 'Home & Print',
+            items: [
+                { id: 'poster', label: 'Poster', icon: Framer },
+                { id: 'flag', label: 'Flag/Banner', icon: Flag },
+                { id: 'mug', label: 'Mug', icon: Coffee },
+                { id: 'bottle', label: 'Bottle', icon: Coffee },
+                { id: 'phone', label: 'Phone Case', icon: Smartphone },
+            ]
+        }
     ];
+
+    // Flatten for backward compatibility
+    const productTypes = productCategories.flatMap(cat => cat.items);
 
     return (
         <div className="flex-1 text-white overflow-hidden flex flex-col bg-black">
@@ -430,29 +582,38 @@ Style: Premium brand commercial, 4K cinematic quality.`;
                         )}
                     </div>
 
-                    {/* Product Type Selector */}
-                    <div className="space-y-3">
+                    {/* Product Type Selector - Organized by Category */}
+                    <div className="space-y-4">
                         <label className="text-xs font-bold text-neutral-500 uppercase">Product Type</label>
-                        <div className="grid grid-cols-2 gap-2">
-                            {productTypes.map(type => (
-                                <button
-                                    key={type.id}
-                                    onClick={() => {
-                                        setProductType(type.id);
-                                        // Reset placement to first option for new product type
-                                        const newPlacements = placementOptions[type.id];
-                                        if (newPlacements && newPlacements.length > 0) {
-                                            setPlacement(newPlacements[0].id);
-                                        }
-                                    }}
-                                    data-testid={`showroom-product-${type.id}`}
-                                    className={`p-3 rounded-lg border text-left transition-all flex items-center gap-3 ${productType === type.id ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
-                                >
-                                    <type.icon size={16} />
-                                    <span className="text-sm font-medium">{type.label}</span>
-                                </button>
-                            ))}
-                        </div>
+                        {productCategories.map(category => (
+                            <div key={category.name} className="space-y-2">
+                                <p className="text-[10px] font-bold text-neutral-600 uppercase tracking-wider flex items-center gap-2">
+                                    <span className="w-4 h-px bg-neutral-700" />
+                                    {category.name}
+                                    <span className="flex-1 h-px bg-neutral-700" />
+                                </p>
+                                <div className="grid grid-cols-2 gap-1.5">
+                                    {category.items.map(type => (
+                                        <button
+                                            key={type.id}
+                                            onClick={() => {
+                                                setProductType(type.id);
+                                                // Reset placement to first option for new product type
+                                                const newPlacements = placementOptions[type.id];
+                                                if (newPlacements && newPlacements.length > 0) {
+                                                    setPlacement(newPlacements[0].id);
+                                                }
+                                            }}
+                                            data-testid={`showroom-product-${type.id}`}
+                                            className={`p-2 rounded-lg border text-left transition-all flex items-center gap-2 ${productType === type.id ? 'bg-yellow-400/20 border-yellow-400 text-yellow-400' : 'bg-neutral-900 border-neutral-700 text-neutral-400 hover:border-neutral-500'}`}
+                                        >
+                                            <type.icon size={14} />
+                                            <span className="text-xs font-medium truncate">{type.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
                     {/* Placement Selector */}

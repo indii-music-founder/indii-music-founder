@@ -41,7 +41,8 @@
     "src/**/*.d.ts"
   ],
   "exclude": [
-    "src/_archive_legacy"
+    "src/_archive_legacy",
+    "src/service-worker.ts"
   ],
   "references": [
     {

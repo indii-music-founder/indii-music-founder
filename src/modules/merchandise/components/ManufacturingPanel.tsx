@@ -24,13 +24,29 @@ const COLORS = [
 
 const RETAIL_MULTIPLIER = 2.2;
 
-// Fallback pricing if catalog fetch fails
-const DEFAULT_COSTS: Record<ProductType, number> = {
+// Fallback pricing if catalog fetch fails - expanded for indie artists
+const DEFAULT_COSTS: Partial<Record<ProductType, number>> = {
+    // Apparel
     'T-Shirt': 12.50,
     'Hoodie': 24.00,
+    'Cap': 8.00,
+    'Beanie': 10.00,
+    'Bandana': 6.00,
+    // Music Products
+    'Vinyl Record': 18.00,
+    'CD': 3.50,
+    'Cassette': 4.00,
+    // Accessories
+    'Tote Bag': 8.00,
+    'Sticker Sheet': 2.50,
+    'Patch': 3.00,
+    'Enamel Pin': 4.50,
+    'Keychain': 3.50,
+    // Home & Print
     'Mug': 6.50,
     'Bottle': 8.00,
     'Poster': 4.00,
+    'Flag': 15.00,
     'Phone Screen': 2.00
 };
 
@@ -51,8 +67,8 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
         let mounted = true;
 
         const fetchPrices = async () => {
-             setIsLoadingPrices(true);
-             try {
+            setIsLoadingPrices(true);
+            try {
                 const catalog = await MerchandiseService.getCatalog();
                 if (!mounted) return;
 
@@ -82,12 +98,12 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                     // Fallback to default if not found
                     setBaseCost(DEFAULT_COSTS[productType] || 10.00);
                 }
-             } catch (err: unknown) {
+            } catch (err: unknown) {
                 console.warn("[ManufacturingPanel] Failed to fetch live pricing:", err);
                 if (mounted) setBaseCost(DEFAULT_COSTS[productType] || 10.00);
-             } finally {
+            } finally {
                 if (mounted) setIsLoadingPrices(false);
-             }
+            }
         };
 
         fetchPrices();
@@ -281,29 +297,29 @@ export default function ManufacturingPanel({ theme, productType, productId, onCl
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={async () => {
-                         try {
-                             if (!userProfile?.shippingAddress) {
-                                 toast.error("Please add a shipping address to your profile to order samples.");
-                                 return;
-                             }
+                        try {
+                            if (!userProfile?.shippingAddress) {
+                                toast.error("Please add a shipping address to your profile to order samples.");
+                                return;
+                            }
 
-                             toast.info("Requesting physical sample...");
-                             const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
+                            toast.info("Requesting physical sample...");
+                            const effectiveProductId = productId || `DRAFT-${crypto.randomUUID().split('-')[0].toUpperCase()}`;
 
-                             const result = await MerchandiseService.requestSample({
-                                 productId: effectiveProductId,
-                                 variantId: `${selectedSize}-${selectedColor.name}`,
-                                 shippingAddress: userProfile.shippingAddress
-                             });
+                            const result = await MerchandiseService.requestSample({
+                                productId: effectiveProductId,
+                                variantId: `${selectedSize}-${selectedColor.name}`,
+                                shippingAddress: userProfile.shippingAddress
+                            });
 
-                             if (result.success) {
-                                 toast.success(`Sample request sent! ID: ${result.requestId}`);
-                             }
-                             onClose?.();
-                         } catch (e) {
-                             console.error("Sample request failed:", e);
-                             toast.error("Failed to order sample.");
-                         }
+                            if (result.success) {
+                                toast.success(`Sample request sent! ID: ${result.requestId}`);
+                            }
+                            onClose?.();
+                        } catch (e) {
+                            console.error("Sample request failed:", e);
+                            toast.error("Failed to order sample.");
+                        }
                     }}
                     className={`w-full py-3 ${theme.name === 'pro' ? 'bg-white text-black' : 'bg-yellow-950 text-white'} rounded-xl font-bold text-sm tracking-wide shadow-lg shadow-white/10 hover:opacity-90 transition-all flex items-center justify-center gap-2`}
                 >
