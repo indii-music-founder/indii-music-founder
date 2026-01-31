@@ -9,6 +9,8 @@ import { AIGenerationDialog } from './components/AIGenerationDialog';
 import { ConfirmDialog } from './components/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
+import { TemplatePicker } from './components/TemplatePicker';
+import { DesignTemplate, templateService } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
 import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2 } from 'lucide-react';

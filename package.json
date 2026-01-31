@@ -180,6 +180,12 @@
     "vitest": "^4.0.18",
     "vitest-axe": "^0.1.0",
     "webpack-obfuscator": "^3.5.1",
+    "workbox-cacheable-response": "^7.4.0",
+    "workbox-core": "^7.4.0",
+    "workbox-expiration": "^7.4.0",
+    "workbox-precaching": "^7.4.0",
+    "workbox-routing": "^7.4.0",
+    "workbox-strategies": "^7.4.0",
     "ytdl-core": "^4.11.5"
   },
   "optionalDependencies": {

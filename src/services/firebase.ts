@@ -114,6 +114,17 @@ remoteConfig.defaultConfig = {
     vertex_location: 'global'
 };
 
+// Initialize Messaging (Client-side only)
+import { getMessaging } from 'firebase/messaging';
+export const messaging = typeof window !== 'undefined' ? (() => {
+    try {
+        return getMessaging(app);
+    } catch (e) {
+        console.warn('Firebase Messaging not supported:', e);
+        return null;
+    }
+})() : null;
+
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {

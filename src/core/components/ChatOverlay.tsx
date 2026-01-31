@@ -1,11 +1,12 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2, Database } from 'lucide-react';
+import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2, Database, Bell } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
+import { requestNotificationPermission } from '@/lib/mobile';
 import { MessageItem } from './chat/ChatMessage';
 import { useDragControls } from 'framer-motion';
 import { PromptArea } from './command-bar/PromptArea';
@@ -93,6 +94,20 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
     const { isListening, transcript } = useVoice();
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const [isAutoScrolling, setIsAutoScrolling] = useState(true);
+
+    // Notification Permission State
+    const [hasNotificationPermission, setHasNotificationPermission] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined' && 'Notification' in window) {
+            setHasNotificationPermission(Notification.permission === 'granted');
+        }
+    }, []);
+
+    const handleRequestPermission = async () => {
+        const granted = await requestNotificationPermission();
+        setHasNotificationPermission(granted);
+    };
 
 
     const activeAgent = specializedAgents.find(a => a.id === activeAgentId);
@@ -240,8 +255,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             <button
                                 onClick={() => setActiveAgentProvider('native')}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native'
-                                        ? 'bg-purple-600 text-white shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
                                 Native
@@ -249,8 +264,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                             <button
                                 onClick={() => setActiveAgentProvider('agent-zero')}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero'
-                                        ? 'bg-blue-600 text-white shadow-sm'
-                                        : 'text-gray-500 hover:text-gray-300'
+                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
                                 Zero
@@ -260,17 +275,28 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         {/* KB Toggle */}
                         <button
                             onClick={() => setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled)}
-                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all border relative z-10 pointer-events-auto ${
-                                isKnowledgeBaseEnabled
+                            className={`flex items-center justify-center w-9 h-9 rounded-lg transition-all border relative z-10 pointer-events-auto ${isKnowledgeBaseEnabled
                                     ? 'bg-teal-600/20 border-teal-500/50 text-teal-300'
                                     : 'bg-black/40 border-white/5 text-gray-500 hover:text-gray-300'
-                            }`}
+                                }`}
                             title={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}
                             aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
                             aria-pressed={isKnowledgeBaseEnabled}
                         >
                             <Database size={15} />
                         </button>
+
+                        {/* Notification Toggle */}
+                        {!hasNotificationPermission && (
+                            <button
+                                onClick={handleRequestPermission}
+                                className="flex items-center justify-center w-9 h-9 rounded-lg transition-all border relative z-10 pointer-events-auto bg-black/40 border-white/5 text-gray-500 hover:text-purple-400 hover:border-purple-500/50 ml-1"
+                                title="Enable Notifications"
+                                aria-label="Enable Notifications"
+                            >
+                                <Bell size={15} />
+                            </button>
+                        )}
 
                         {/* Right Actions */}
                         <div className="flex items-center gap-1 relative z-10">
