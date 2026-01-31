@@ -77,15 +77,15 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
                                     </div>
                                     <div>
                                         <span className="text-xs font-bold text-white tracking-wide">Reference Mixer</span>
-                                        {(whiskState.subjects.filter(i => i.checked).length +
-                                            whiskState.scenes.filter(i => i.checked).length +
-                                            whiskState.styles.filter(i => i.checked).length +
-                                            whiskState.motion.filter(i => i.checked).length) > 0 && (
+                                        {((whiskState.subjects?.filter(i => i.checked).length || 0) +
+                                            (whiskState.scenes?.filter(i => i.checked).length || 0) +
+                                            (whiskState.styles?.filter(i => i.checked).length || 0) +
+                                            (whiskState.motion?.filter(i => i.checked).length || 0)) > 0 && (
                                                 <p className="text-[9px] text-purple-400">
-                                                    {whiskState.subjects.filter(i => i.checked).length +
-                                                        whiskState.scenes.filter(i => i.checked).length +
-                                                        whiskState.styles.filter(i => i.checked).length +
-                                                        whiskState.motion.filter(i => i.checked).length} locked
+                                                    {(whiskState.subjects?.filter(i => i.checked).length || 0) +
+                                                        (whiskState.scenes?.filter(i => i.checked).length || 0) +
+                                                        (whiskState.styles?.filter(i => i.checked).length || 0) +
+                                                        (whiskState.motion?.filter(i => i.checked).length || 0)} locked
                                                 </p>
                                             )}
                                     </div>
