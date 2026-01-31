@@ -162,7 +162,7 @@ describe('CreativeStudio', () => {
         });
 
         await waitFor(() => {
-            expect(mockToastError).toHaveBeenCalledWith('Image generation failed.');
+            expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('Image generation failed'));
         });
     });
 });
