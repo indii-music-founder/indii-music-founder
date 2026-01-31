@@ -10,10 +10,12 @@ import { ConfirmDialog } from './components/ConfirmDialog';
 import { ExportDialog } from './components/ExportDialog';
 import EnhancedShowroom from './components/EnhancedShowroom';
 import { TemplatePicker } from './components/TemplatePicker';
+import { VersionHistory } from './components/VersionHistory';
+import { KeyboardShortcuts, useKeyboardShortcutsHint } from './components/KeyboardShortcuts';
 import { DesignTemplate, templateService } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2 } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2, FolderOpen, History, HelpCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { MerchCard } from './components/MerchCard';
@@ -71,9 +73,14 @@ export default function MerchDesigner() {
     // Dialog State
     const [showAIDialog, setShowAIDialog] = useState(false);
     const [showExportDialog, setShowExportDialog] = useState(false);
+    const [showTemplates, setShowTemplates] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
     const [deleteConfirm, setDeleteConfirm] = useState<CanvasObject[]>([]);
 
     const toast = useToast();
+
+    // Keyboard shortcuts hint
+    const { showShortcuts, setShowShortcuts } = useKeyboardShortcutsHint();
 
     // Canvas controls hook
     const {
@@ -254,6 +261,97 @@ export default function MerchDesigner() {
         toast.success('Draft saved successfully');
     }, [saveDesign, toast]);
 
+    // Apply template to canvas
+    const handleApplyTemplate = useCallback(async (template: DesignTemplate) => {
+        if (!fabricCanvasRef.current) return;
+
+        const canvas = fabricCanvasRef.current;
+
+        // Clear existing objects if user confirms (or canvas is empty)
+        if (canvas.getObjects().length > 0) {
+            // For now, just clear - could add confirmation dialog
+            clear();
+        }
+
+        // Set canvas background
+        setBackgroundColor(template.backgroundColor);
+
+        // Convert template elements to Fabric objects and add them
+        const fabricObjects = templateService.toFabricObjects(template);
+
+        for (const objData of fabricObjects) {
+            try {
+                if (objData.type === 'textbox') {
+                    const text = new fabric.Textbox(objData.text, {
+                        left: objData.left,
+                        top: objData.top,
+                        width: objData.width,
+                        fontFamily: objData.fontFamily,
+                        fontSize: objData.fontSize,
+                        fontWeight: objData.fontWeight,
+                        textAlign: objData.textAlign,
+                        fill: objData.fill,
+                        opacity: objData.opacity,
+                        selectable: objData.selectable,
+                        evented: objData.evented
+                    });
+                    (text as any).name = objData.name;
+                    canvas.add(text);
+                } else if (objData.type === 'rect') {
+                    const rect = new fabric.Rect({
+                        left: objData.left,
+                        top: objData.top,
+                        width: objData.width,
+                        height: objData.height,
+                        fill: objData.fill,
+                        stroke: objData.stroke,
+                        strokeWidth: objData.strokeWidth || 0,
+                        strokeDashArray: objData.strokeDashArray,
+                        rx: objData.rx || 0,
+                        ry: objData.ry || 0,
+                        opacity: objData.opacity,
+                        selectable: objData.selectable,
+                        evented: objData.evented
+                    });
+                    (rect as any).name = objData.name;
+                    (rect as any).isPlaceholder = objData.isPlaceholder;
+                    canvas.add(rect);
+                }
+            } catch (error) {
+                console.error('Failed to add template element:', error);
+            }
+        }
+
+        canvas.renderAll();
+        setDesignName(template.name);
+        toast.success(`Template "${template.name}" applied`);
+    }, [clear, setBackgroundColor, toast]);
+
+    // Restore version from history
+    const handleRestoreVersion = useCallback(async (version: { id: string; name: string; canvasJSON: string }) => {
+        if (!fabricCanvasRef.current) return;
+
+        const canvas = fabricCanvasRef.current;
+
+        try {
+            // Parse the saved canvas JSON
+            const canvasData = JSON.parse(version.canvasJSON);
+
+            // Clear current canvas
+            clear();
+
+            // Load the saved state
+            await canvas.loadFromJSON(canvasData);
+            canvas.renderAll();
+
+            setDesignName(version.name);
+            toast.success(`Restored "${version.name}"`);
+        } catch (error) {
+            console.error('Failed to restore version:', error);
+            toast.error('Failed to restore version');
+        }
+    }, [clear, toast]);
+
     // Background color change
     const handleBackgroundColorChange = useCallback((color: string) => {
         setBackgroundColor(color);
@@ -430,6 +528,18 @@ export default function MerchDesigner() {
 
                         {/* Actions */}
                         <div className="flex items-center gap-3">
+                            {/* Help Button */}
+                            <IconButton
+                                icon={<HelpCircle size={16} />}
+                                onClick={() => setShowShortcuts(true)}
+                                title="Keyboard Shortcuts (?)"
+                            />
+                            {/* History Button */}
+                            <IconButton
+                                icon={<History size={16} />}
+                                onClick={() => setShowHistory(true)}
+                                title="Version History"
+                            />
                             <div className="flex flex-col items-end">
                                 <button
                                     onClick={handleSaveDraft}
@@ -458,6 +568,11 @@ export default function MerchDesigner() {
                         <div className="flex flex-col overflow-hidden">
                             {/* Tool Buttons */}
                             <div className="flex gap-2 mb-4">
+                                <ToolButton
+                                    icon={<FolderOpen size={18} />}
+                                    label="Templates"
+                                    onClick={() => setShowTemplates(true)}
+                                />
                                 <ToolButton
                                     icon={<Type size={18} />}
                                     label="Text"
@@ -524,6 +639,27 @@ export default function MerchDesigner() {
                             isOpen={showAIDialog}
                             onClose={() => setShowAIDialog(false)}
                             onImageGenerated={handleAIImageGenerated}
+                        />
+
+                        {/* Template Picker Dialog */}
+                        <TemplatePicker
+                            isOpen={showTemplates}
+                            onClose={() => setShowTemplates(false)}
+                            onSelectTemplate={handleApplyTemplate}
+                        />
+
+                        {/* Version History Dialog */}
+                        <VersionHistory
+                            isOpen={showHistory}
+                            onClose={() => setShowHistory(false)}
+                            onRestoreVersion={handleRestoreVersion}
+                            currentDesignId={designId}
+                        />
+
+                        {/* Keyboard Shortcuts Dialog */}
+                        <KeyboardShortcuts
+                            isOpen={showShortcuts}
+                            onClose={() => setShowShortcuts(false)}
                         />
                     </div>
                 </div>
