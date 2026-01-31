@@ -5,6 +5,8 @@ import { registerRoute } from 'workbox-routing';
 import { CacheFirst, StaleWhileRevalidate } from 'workbox-strategies';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 import { ExpirationPlugin } from 'workbox-expiration';
+import { BackgroundSyncPlugin } from 'workbox-background-sync';
+import { NetworkOnly } from 'workbox-strategies';
 
 declare let self: ServiceWorkerGlobalScope;
 
@@ -62,4 +64,32 @@ registerRoute(
             }),
         ],
     })
+);
+// Background Sync for API mutations (POST, PUT, DELETE)
+const bgSyncPlugin = new BackgroundSyncPlugin('offline-queue', {
+    maxRetentionTime: 24 * 60, // Retry for ups to 24 Hours (in minutes)
+});
+
+registerRoute(
+    /\/api\/.*/,
+    new NetworkOnly({
+        plugins: [bgSyncPlugin],
+    }),
+    'POST'
+);
+
+registerRoute(
+    /\/api\/.*/,
+    new NetworkOnly({
+        plugins: [bgSyncPlugin],
+    }),
+    'PUT'
+);
+
+registerRoute(
+    /\/api\/.*/,
+    new NetworkOnly({
+        plugins: [bgSyncPlugin],
+    }),
+    'DELETE'
 );

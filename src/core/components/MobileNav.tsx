@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
+import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 
 interface NavItem {
     id: ModuleId;
@@ -87,6 +88,13 @@ export const MobileNav = () => {
         setIsOpen(false);
     };
 
+    const handleDragEnd = (event: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+        if (info.offset.y > 100 || info.velocity.y > 500) {
+            haptic('light');
+            setIsOpen(false);
+        }
+    };
+
     const MenuItem = ({ item }: { item: NavItem }) => {
         const isActive = currentModule === item.id;
         const colors = getColorForModule(item.id);
@@ -127,96 +135,109 @@ export const MobileNav = () => {
                 <Menu size={24} />
             </button>
 
-            {/* Full Screen Drawer */}
-            {isOpen && (
-                <div className="md:hidden fixed inset-0 z-[103] flex items-end justify-center animate-in fade-in duration-200">
-                    {/* Backdrop */}
-                    <div
-                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-                        onClick={() => {
-                            haptic('light');
-                            setIsOpen(false);
-                        }}
-                        aria-hidden="true"
-                    />
+            {/* Full Screen Drawer with Animations */}
+            <AnimatePresence>
+                {isOpen && (
+                    <div className="md:hidden fixed inset-0 z-[103] flex items-end justify-center pointer-events-none">
+                        {/* Backdrop */}
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm pointer-events-auto"
+                            onClick={() => {
+                                haptic('light');
+                                setIsOpen(false);
+                            }}
+                            aria-hidden="true"
+                        />
 
-                    {/* Menu Content */}
-                    <div
-                        id="mobile-nav-drawer"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-labelledby="mobile-nav-title"
-                        className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] animate-in slide-in-from-bottom duration-300 shadow-2xl"
-                    >
-                        {/* Drag Handle */}
-                        <div className="flex justify-center pt-3 pb-1">
-                            <div className="w-12 h-1 bg-white/20 rounded-full" />
-                        </div>
-
-                        {/* Header */}
-                        <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                            <h2 id="mobile-nav-title" className="text-lg font-semibold text-white">Navigation</h2>
-                            <button
-                                ref={closeButtonRef}
-                                onClick={() => {
-                                    haptic('light');
-                                    setIsOpen(false);
-                                }}
-                                className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-95 text-white/60 hover:text-white"
-                                aria-label="Close menu"
-                            >
-                                <X size={20} />
-                            </button>
-                        </div>
-
-                        {/* Scrollable List */}
-                        <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
-
-                            {/* Return to HQ */}
-                            <button
-                                onClick={() => handleItemClick('dashboard')}
-                                className={`
-                                    w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-4
-                                    ${currentModule === 'dashboard'
-                                        ? 'bg-white/10 text-white ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
-                                        : 'bg-white/5 text-gray-300 hover:bg-white/10'
-                                    }
-                                `}
-                            >
-                                <Layout size={20} />
-                                <span className="text-sm font-semibold">Return to HQ</span>
-                            </button>
-
-                            {/* Manager's Office */}
-                            <div className="space-y-1">
-                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manager's Office</h3>
-                                {managerItems.map(item => (
-                                    <MenuItem key={item.id} item={item} />
-                                ))}
+                        {/* Menu Content */}
+                        <motion.div
+                            id="mobile-nav-drawer"
+                            role="dialog"
+                            aria-modal="true"
+                            aria-labelledby="mobile-nav-title"
+                            initial={{ y: '100%' }}
+                            animate={{ y: 0 }}
+                            exit={{ y: '100%' }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                            drag="y"
+                            dragConstraints={{ top: 0, bottom: 0 }}
+                            dragElastic={{ top: 0.1, bottom: 0.8 }}
+                            onDragEnd={handleDragEnd}
+                            className="relative w-full max-w-lg bg-background border-t border-white/10 rounded-t-3xl mobile-safe-bottom flex flex-col max-h-[85vh] shadow-2xl pointer-events-auto"
+                        >
+                            {/* Drag Handle */}
+                            <div className="flex justify-center pt-3 pb-1 cursor-grab active:cursor-grabbing touch-none">
+                                <div className="w-12 h-1 bg-white/20 rounded-full" />
                             </div>
 
-                            {/* Departments */}
-                            <div className="space-y-1">
-                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Departments</h3>
-                                {departmentItems.map(item => (
-                                    <MenuItem key={item.id} item={item} />
-                                ))}
+                            {/* Header */}
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
+                                <h2 id="mobile-nav-title" className="text-lg font-semibold text-white">Navigation</h2>
+                                <button
+                                    ref={closeButtonRef}
+                                    onClick={() => {
+                                        haptic('light');
+                                        setIsOpen(false);
+                                    }}
+                                    className="p-2 hover:bg-white/10 rounded-full transition-colors active:scale-95 text-white/60 hover:text-white"
+                                    aria-label="Close menu"
+                                >
+                                    <X size={20} />
+                                </button>
                             </div>
 
-                            {/* Tools */}
-                            <div className="space-y-1">
-                                <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools</h3>
-                                {toolItems.map(item => (
-                                    <MenuItem key={item.id} item={item} />
-                                ))}
-                            </div>
+                            {/* Scrollable List */}
+                            <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-6">
 
-                            {/* Bottom Padding for scroll */}
-                            <div className="h-6" />
-                        </div>
+                                {/* Return to HQ */}
+                                <button
+                                    onClick={() => handleItemClick('dashboard')}
+                                    className={`
+                                        w-full flex items-center gap-3 p-3 rounded-xl transition-all mb-4
+                                        ${currentModule === 'dashboard'
+                                            ? 'bg-white/10 text-white ring-1 ring-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)]'
+                                            : 'bg-white/5 text-gray-300 hover:bg-white/10'
+                                        }
+                                    `}
+                                >
+                                    <Layout size={20} />
+                                    <span className="text-sm font-semibold">Return to HQ</span>
+                                </button>
+
+                                {/* Manager's Office */}
+                                <div className="space-y-1">
+                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Manager's Office</h3>
+                                    {managerItems.map(item => (
+                                        <MenuItem key={item.id} item={item} />
+                                    ))}
+                                </div>
+
+                                {/* Departments */}
+                                <div className="space-y-1">
+                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Departments</h3>
+                                    {departmentItems.map(item => (
+                                        <MenuItem key={item.id} item={item} />
+                                    ))}
+                                </div>
+
+                                {/* Tools */}
+                                <div className="space-y-1">
+                                    <h3 className="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Tools</h3>
+                                    {toolItems.map(item => (
+                                        <MenuItem key={item.id} item={item} />
+                                    ))}
+                                </div>
+
+                                {/* Bottom Padding for scroll */}
+                                <div className="h-6" />
+                            </div>
+                        </motion.div>
                     </div>
-                </div>
-            )}
+                )}
+            </AnimatePresence>
         </>
     );
 };
