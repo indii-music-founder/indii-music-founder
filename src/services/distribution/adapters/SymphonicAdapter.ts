@@ -71,8 +71,8 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
 
             if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
                 console.info('[Symphonic] Delivering via Electron SFTP IPC...');
-                // Here we would use the already connected SFTP session
-                // TODO: Implement actual SFTP put logic here when API is ready
+                // STUB: Awaiting Symphonic SFTP credentials for production delivery
+                // Integration point: window.electronAPI.sftp.put(folderReleaseId, packageBuffer)
             }
 
             // Bolt Hardening: Fail if no real delivery method is available

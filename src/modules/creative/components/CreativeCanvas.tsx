@@ -186,8 +186,8 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                                 id: crypto.randomUUID(),
                                 url: result.url,
                                 prompt: promptPayload,
-                                // thoughtSignature: result.thoughtSignature // TODO: Add to candidate type
-                            } as any]);
+                                thoughtSignature: result.thoughtSignature
+                            }]);
                             toast.success(`High-Fidelity Edit Complete!`);
                         }
                     }
