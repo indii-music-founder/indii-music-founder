@@ -9,3 +9,9 @@ sentinel:
   role: "The Sentinel"
   description: "Fast execution, tool operation, and safety checks."
   thinking: MEDIUM
+
+local_worker:
+  model: "llama3:8b" # Managed by Docker Model Runner (DMR)
+  api_base: "http://model-runner:11434/v1" # Internal Docker DNS
+  role: "The Local Hand"
+  description: "Fast, local processing for non-sensitive formatting or utility tasks."
