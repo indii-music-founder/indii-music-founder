@@ -448,6 +448,52 @@ Be specific and actionable. Avoid generic statements.
       Timestamp.fromMillis(0)
     );
 
+    // Calculate interaction patterns from memory data
+    const sessionIds = new Set(activeMemories.map(m => m.sourceSessionId).filter(Boolean));
+    const totalSessions = sessionIds.size || 1;
+
+    // Infer communication style from memory categories and lengths
+    const avgContentLength = activeMemories.length > 0
+      ? activeMemories.reduce((sum, m) => sum + m.content.length, 0) / activeMemories.length
+      : 0;
+    const preferredCommunicationStyle = avgContentLength > 150 ? 'detailed' : avgContentLength > 75 ? 'balanced' : 'concise';
+
+    // Estimate average session length from memory timestamps per session
+    let averageSessionLength = 0;
+    if (sessionIds.size > 0) {
+      const sessionDurations: number[] = [];
+      sessionIds.forEach(sessionId => {
+        const sessionMemories = activeMemories.filter(m => m.sourceSessionId === sessionId);
+        if (sessionMemories.length >= 2) {
+          const times = sessionMemories.map(m => m.createdAt.toMillis()).sort((a, b) => a - b);
+          sessionDurations.push(times[times.length - 1] - times[0]);
+        }
+      });
+      if (sessionDurations.length > 0) {
+        averageSessionLength = sessionDurations.reduce((a, b) => a + b, 0) / sessionDurations.length / 60000; // minutes
+      }
+    }
+
+    // Track most used features based on memory tags
+    const featureCounts = new Map<string, number>();
+    activeMemories.forEach(m => {
+      m.tags.forEach(tag => {
+        featureCounts.set(tag, (featureCounts.get(tag) || 0) + 1);
+      });
+    });
+    const mostUsedFeatures = Array.from(featureCounts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([feature]) => feature);
+
+    // Track time of day usage patterns
+    const timeOfDayUsage: Record<string, number> = {};
+    activeMemories.forEach(m => {
+      const hour = new Date(m.createdAt.toMillis()).getHours();
+      const period = hour < 6 ? 'night' : hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+      timeOfDayUsage[period] = (timeOfDayUsage[period] || 0) + 1;
+    });
+
     const context: UserContext = {
       userId,
       summary,
@@ -456,14 +502,14 @@ Be specific and actionable. Avoid generic statements.
       activeGoals,
       keyFacts,
       interactionPatterns: {
-        preferredCommunicationStyle: 'detailed', // TODO: Infer from interactions
-        averageSessionLength: 0, // TODO: Calculate from session data
-        mostUsedFeatures: [], // TODO: Track feature usage
-        timeOfDayUsage: {}, // TODO: Track usage patterns
+        preferredCommunicationStyle,
+        averageSessionLength,
+        mostUsedFeatures,
+        timeOfDayUsage,
       },
       stats: {
         totalMemories: activeMemories.length,
-        totalSessions: 0, // TODO: Calculate from session data
+        totalSessions,
         totalProjects: new Set(activeMemories.map((m) => m.sourceProjectId).filter(Boolean)).size,
         firstInteractionAt: firstMemory,
         lastInteractionAt: lastMemory,
