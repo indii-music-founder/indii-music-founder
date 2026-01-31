@@ -426,3 +426,46 @@ export const onMessageListener = (callback: (payload: any) => void) => {
         return () => { };
     }
 };
+
+// ============================================================================
+// Network Quality (Adaptive Loading)
+// ============================================================================
+
+export type NetworkEffectiveType = 'slow-2g' | '2g' | '3g' | '4g';
+
+interface NetworkInformation extends EventTarget {
+    readonly effectiveType: NetworkEffectiveType;
+    readonly saveData: boolean;
+    readonly downlink: number;
+    readonly rtt: number;
+    addEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | AddEventListenerOptions): void;
+    removeEventListener(type: string, listener: EventListenerOrEventListenerObject, options?: boolean | EventListenerOptions): void;
+}
+
+// Extend Navigator interface locally since it satisfies the global need for this file
+declare global {
+    interface Navigator {
+        readonly connection?: NetworkInformation;
+        readonly mozConnection?: NetworkInformation;
+        readonly webkitConnection?: NetworkInformation;
+    }
+}
+
+/**
+ * Get current network quality
+ * Returns '4g' (good) as default if API is unsupported (e.g. iOS)
+ */
+export const getNetworkQuality = (): NetworkEffectiveType => {
+    if (typeof navigator === 'undefined') return '4g';
+
+    const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return connection ? connection.effectiveType : '4g';
+};
+
+/**
+ * Get the connection object wrapper
+ */
+export const getNetworkConnection = (): NetworkInformation | null => {
+    if (typeof navigator === 'undefined') return null;
+    return navigator.connection || navigator.mozConnection || navigator.webkitConnection || null;
+};
