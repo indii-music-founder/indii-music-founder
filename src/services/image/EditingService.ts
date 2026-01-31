@@ -126,6 +126,7 @@ export class EditingService {
         image: { mimeType: string; data: string };
         masks: { mimeType: string; data: string; prompt: string; colorId: string; referenceImage?: { mimeType: string; data: string } }[];
         variationCount?: number;
+        model?: string;
     }): Promise<{ id: string; url: string; prompt: string }[]> {
         const results: { id: string; url: string; prompt: string }[] = [];
         const count = options.variationCount || 4;
@@ -145,7 +146,8 @@ export class EditingService {
                     image: currentImageData,
                     mask: { mimeType: mask.mimeType, data: mask.data },
                     referenceImage: mask.referenceImage,
-                    prompt: variedPrompt
+                    prompt: variedPrompt,
+                    model: options.model
                 });
 
                 if (result) {

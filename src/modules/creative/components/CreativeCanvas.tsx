@@ -210,12 +210,13 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                         toast.success(`Speedy Edit Complete!`);
                     }
                 } else {
-                    // MULTI-MASK CHAIN (FLASH ONLY)
-                    setProcessingStatus("Chaining Edits (Flash)...");
+                    // MULTI-MASK CHAIN
+                    setProcessingStatus(isHighFidelity ? "Chaining Edits (Pro)..." : "Chaining Edits (Flash)...");
                     const results = await Editing.multiMaskEdit({
                         image: prepared.baseImage,
                         masks: prepared.masks,
-                        variationCount: 1
+                        variationCount: 1,
+                        model: isHighFidelity ? 'pro' : 'flash'
                     });
 
                     if (results.length > 0) {
