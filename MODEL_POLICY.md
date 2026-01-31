@@ -167,18 +167,20 @@ model: AI_MODELS.TEXT.FAST  // gemini-3-flash-preview
 
 Before submitting any code that uses AI models, verify:
 
-- [ ] All model references use `AI_MODELS.*` constants
-- [ ] No hardcoded model ID strings exist
-- [ ] No `gemini-1.` patterns exist in the code
-- [ ] No `gemini-2.0` patterns exist in the code
-- [ ] The code imports from `@/core/config/ai-models`
+- [x] All model references use `AI_MODELS.*` constants
+- [x] No hardcoded model ID strings exist
+- [x] No `gemini-1.` patterns exist in the code
+- [x] No `gemini-2.0` patterns exist in the code
+- [x] The code imports from `@/core/config/ai-models`
+
+> ✅ **Last verified:** 2026-01-31 (Automated scan confirmed compliance)
 
 ---
 
 ## Incident History
 
-| Date       | Issue                                | Cause                                       | Resolution                               |
-| ---------- | ------------------------------------ | ------------------------------------------- | ---------------------------------------- |
+| Date       | Issue                                | Cause                                         | Resolution                           |
+| ---------- | ------------------------------------ | --------------------------------------------- | ------------------------------------ |
 | 2025-12-24 | `gemini-1.5-flash` in `ai-models.ts` | AI agent "downgraded" for debugging reasoning | Reverted to `gemini-3-flash-preview` |
 
 **Pattern:** AI agents often suggest using older models because their training data may be outdated. **ALWAYS REFUSE** such suggestions.

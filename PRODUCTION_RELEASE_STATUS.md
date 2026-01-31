@@ -59,7 +59,7 @@ indiiOS Alpha is **FULLY PRODUCTION READY** and has successfully passed all crit
 
 **Command:** `npm run build:studio`
 
-```
+```text
 ✓ built in 43.83s
 68 entries pre-cached (7478.89 KiB)
 PWA v1.2.0 - mode: generateSW
@@ -182,6 +182,7 @@ npm run electron:build
 1. Obtain Apple Developer ID
 2. Install signing certificate in Keychain
 3. Update `electron-builder.json`:
+
    ```json
    {
      "mac": {
@@ -204,7 +205,7 @@ npm run electron:build
 
 **Latest Commit:** `28cfb6a`
 
-```
+```text
 docs(release): Add production deployment guide and update README
 ```
 
@@ -337,9 +338,11 @@ npm run test
 firebase deploy --only hosting:indiios-studio --project staging
 ```
 
-### Step 4: Smoke Tests
+### Step 4: Smoke Tests (Deployment Verification Checklist)
 
-- [ ] Visit https://indiios-studio.web.app
+> **Note:** Complete these during each deployment, not as active development tasks.
+
+- [ ] Visit <https://indiios-studio.web.app>
 - [ ] Login works
 - [ ] Creative Studio loads
 - [ ] Agent system responds
@@ -351,7 +354,9 @@ firebase deploy --only hosting:indiios-studio --project staging
 firebase deploy --only hosting:indiios-studio
 ```
 
-### Step 6: Post-Deployment Verification
+### Step 6: Post-Deployment Verification (Checklist)
+
+> **Note:** Complete these after each deployment, not as active development tasks.
 
 - [ ] Check Firebase Console for errors
 - [ ] Verify PWA service worker active
@@ -364,8 +369,8 @@ firebase deploy --only hosting:indiios-studio
 
 ### Deployment Issues
 
-- **Firebase Console:** https://console.firebase.google.com
-- **GitHub Actions:** https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/actions
+- **Firebase Console:** <https://console.firebase.google.com>
+- **GitHub Actions:** <https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/actions>
 - **Docs:** See `PRODUCTION_DEPLOYMENT.md`
 
 ### Rollback Procedures
