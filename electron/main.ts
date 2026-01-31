@@ -11,6 +11,7 @@ import { setupDistributionHandlers as registerDistributionHandlers } from './han
 import { registerAgentHandlers } from './handlers/agent';
 import { registerVideoHandlers } from './handlers/video';
 import { configureSecurity } from './security';
+import { DockerService } from './services/DockerService';
 
 // Configure logging
 log.transports.file.level = 'info';
@@ -156,6 +157,11 @@ if (!gotTheLock) {
         registerAgentHandlers();
         registerVideoHandlers();
 
+        // Ensure AI Services are running
+        DockerService.ensureStarted().catch(err => {
+            log.error(`[Main] Initial Docker startup failed: ${err.message}`);
+        });
+
         createWindow();
     });
 }
@@ -166,8 +172,9 @@ app.on('window-all-closed', () => {
 
 let isQuitting = false;
 
-app.on('will-quit', () => {
+app.on('will-quit', async () => {
     isQuitting = true;
+    await DockerService.stopSystem();
 });
 
 // Crash Handling & Observability

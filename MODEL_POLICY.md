@@ -42,7 +42,8 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 | **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis          |
 | **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis           |
 | **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation              |
-| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only              |
+| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only               |
+| **Local Utility (DMR)**      | `llama3:8b` (or similar)         | Local processing via Docker Model Runner|
 
 ---
 

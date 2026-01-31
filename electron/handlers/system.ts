@@ -57,5 +57,11 @@ export function registerSystemHandlers() {
 
         return result.filePaths[0];
     });
+
+    ipcMain.handle('system:restart-ai', async (event) => {
+        validateSender(event);
+        const { DockerService } = await import('../services/DockerService');
+        return await DockerService.restartSystem();
+    });
 }
 

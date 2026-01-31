@@ -58,6 +58,8 @@ services:
       - GEMINI_API_KEY=${GOOGLE_API_KEY}
       - EMBEDDING_MODEL=models/embedding-001
       - PYTHONUNBUFFERED=1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80/healthz"]
       interval: 30s
@@ -72,6 +74,19 @@ services:
         reservations:
           cpus: '0.5'
           memory: 512M
+    networks:
+      - indii-internal
+    depends_on:
+      - model-runner
+    restart: unless-stopped
+
+  model-runner:
+    image: ollama/ollama:latest
+    container_name: indii-model-runner
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./models:/root/.ollama
     networks:
       - indii-internal
     restart: unless-stopped
