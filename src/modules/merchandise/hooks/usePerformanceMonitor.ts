@@ -18,7 +18,7 @@ export const usePerformanceMonitor = (canvas: fabric.Canvas | null): Performance
         let frameCount = 0;
         let lastTime = performance.now();
         let animationFrameId: number;
-        let renderStartTime = 0;
+        let renderStartTime = performance.now();
 
         // FPS calculation
         const calculateFps = () => {
