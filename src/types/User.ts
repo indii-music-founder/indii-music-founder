@@ -99,7 +99,8 @@ export interface KnowledgeDocument {
 // --- User Types ---
 
 export interface UserPreferences {
-    theme: 'dark' | 'light';
+    theme: 'dark' | 'light' | 'system';
+    biometricEnabled?: boolean;
     notifications: boolean;
     [key: string]: any; // Allow extensibility
 }
