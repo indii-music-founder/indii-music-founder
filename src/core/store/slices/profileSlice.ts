@@ -20,7 +20,8 @@ export interface ProfileSlice {
     updateBrandKit: (updates: Partial<BrandKit>) => void;
     loadUserProfile: (uid: string) => Promise<void>;
     logout: () => Promise<void>;
-    setTheme: (theme: 'dark' | 'light') => void;
+    setTheme: (theme: 'dark' | 'light' | 'system') => void;
+    updatePreferences: (updates: Partial<UserPreferences>) => void;
 }
 
 // Default Guest Profile
@@ -58,7 +59,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
 
     bio: 'Creative Director',
     preferences: {
-        theme: 'dark',
+        theme: 'system',
         notifications: true
     },
     brandKit: DEFAULT_BRAND_KIT,
@@ -172,13 +173,22 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     },
     setTheme: (theme) => set((state) => {
         // Assume preferences is object now
-        const preferences = state.userProfile.preferences || { notifications: true, theme: 'dark' };
+        const preferences = state.userProfile.preferences || { notifications: true, theme: 'system' };
 
         const newProfile = {
             ...state.userProfile,
             preferences: { ...preferences, theme }
         };
         saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save theme update:", err));
+        return { userProfile: newProfile };
+    }),
+    updatePreferences: (updates: Partial<UserPreferences>) => set((state) => {
+        const currentPrefs = state.userProfile.preferences || { theme: 'system', notifications: true };
+        const newProfile = {
+            ...state.userProfile,
+            preferences: { ...currentPrefs, ...updates }
+        };
+        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save preferences:", err));
         return { userProfile: newProfile };
     })
 });

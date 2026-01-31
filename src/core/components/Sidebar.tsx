@@ -3,12 +3,14 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Palette, Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
+import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 
 export default function Sidebar() {
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout, setTheme } = useStore(
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
@@ -16,7 +18,6 @@ export default function Sidebar() {
             toggleSidebar: state.toggleSidebar,
             userProfile: state.userProfile,
             logout: state.logout,
-            setTheme: state.setTheme,
         }))
     );
 
@@ -180,26 +181,27 @@ export default function Sidebar() {
 
                 {/* Theme Selector */}
                 {isSidebarOpen && (
-                    <div className="mt-4 flex items-center justify-around bg-black/20 p-2 rounded-lg border border-white/5">
-                        <button
-                            onClick={() => setTheme('dark')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.theme === 'dark' || !userProfile?.preferences?.theme ? 'text-dept-creative bg-white/5 shadow-[0_0_10px_rgba(156,39,176,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                            title="Dark Mode"
-                            aria-label="Toggle Dark Mode"
-                            data-testid="theme-btn-dark"
-                        >
-                            <Palette size={14} />
-                        </button>
+                    <div className="mt-4 flex flex-col gap-2 p-2 rounded-lg bg-black/20 border border-white/5">
+                        <div className="flex items-center justify-center">
+                            <ThemeToggle />
+                        </div>
+                        <div className="px-2 pt-2 border-t border-white/5">
+                            <BiometricToggle />
+                        </div>
 
-                        <button
-                            onClick={() => setModule('observability')}
-                            className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
-                            title="System Observability"
-                            aria-label="System Observability"
-                            data-testid="observability-footer-btn"
-                        >
-                            <Activity size={14} />
-                        </button>
+                        <div className="flex items-center justify-center pt-2 border-t border-white/5">
+                            <button
+                                onClick={() => setModule('observability')}
+                                className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                                title="System Observability"
+                                aria-label="System Observability"
+                                data-testid="observability-footer-btn"
+                            >
+                                <span className="flex items-center gap-2 text-[10px] font-medium uppercase tracking-wider">
+                                    <Activity size={14} /> Observability
+                                </span>
+                            </button>
+                        </div>
                     </div>
                 )}
 

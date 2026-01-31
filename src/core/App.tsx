@@ -6,11 +6,14 @@ import RightPanel from './components/RightPanel';
 import CommandBar from './components/CommandBar';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { MobileNav } from './components/MobileNav';
 import LoginForm from './components/auth/LoginForm';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
+import { BiometricGate } from './components/auth/BiometricGate';
+import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 import ChatOverlay from './components/ChatOverlay';
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
@@ -264,19 +267,6 @@ export default function App() {
 
     // Log module changes in dev
 
-    // Handle Theme Switching
-    const userProfile = useStore(useShallow(state => state.userProfile));
-    useEffect(() => {
-        const theme = userProfile?.preferences?.theme || 'dark';
-
-        // Remove all theme classes first
-        document.documentElement.classList.remove('dark');
-
-        // Apply current theme
-        if (theme === 'dark') {
-            document.documentElement.classList.add('dark');
-        }
-    }, [userProfile?.preferences?.theme]);
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -300,77 +290,80 @@ export default function App() {
 
     return (
         <VoiceProvider>
-            <ToastProvider>
-                {/* Skip to content link for keyboard accessibility */}
-                <a
-                    href="#main-content"
-                    className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
-                >
-                    Skip to content
-                </a>
-                <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
-                    {/* Left Sidebar - Hidden for standalone modules */}
-                    {showChrome && (
-                        <div className="hidden md:block h-full">
+            <ThemeProvider>
+                <ToastProvider>
+                    {/* Skip to content link for keyboard accessibility */}
+                    <a
+                        href="#main-content"
+                        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+                    >
+                        Skip to content
+                    </a>
+
+                    {/* AuthWrapper handles session persistence */}
+                    <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+                        <ShareTargetHandler />
+                        <BiometricGate>
+                            <div className="flex w-full h-full">
+                                {/* Left Sidebar - Hidden for standalone modules */}
+                                {showChrome && (
+                                    <div className="hidden md:block h-full">
+                                        <ErrorBoundary>
+                                            <Sidebar />
+                                        </ErrorBoundary>
+                                    </div>
+                                )}
+
+                                <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
+                                    <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                                        <ErrorBoundary>
+                                            <Suspense fallback={<LoadingFallback />}>
+                                                <ModuleRenderer moduleId={currentModule as ModuleId} />
+                                            </Suspense>
+                                        </ErrorBoundary>
+                                    </div>
+
+                                    {showChrome && <ChatOverlayWrapper />}
+                                </main>
+
+                                {/* Right Panel - Hidden for standalone modules and mobile */}
+                                {showChrome && isDesktop && (
+                                    <ErrorBoundary>
+                                        <RightPanel />
+                                    </ErrorBoundary>
+                                )}
+                            </div>
+                        </BiometricGate>
+
+                        {/* Mobile Navigation - Hidden for standalone modules */}
+                        {showChrome && (
                             <ErrorBoundary>
-                                <Sidebar />
+                                <MobileNav />
                             </ErrorBoundary>
-                        </div>
-                    )}
+                        )}
 
-                    <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
-                        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                        {/* DevTools HUD - Only in Development */}
+                        {import.meta.env.DEV && (
+                            <Suspense fallback={null}>
+                                <DevPortWarning />
+                            </Suspense>
+                        )}
+
+                        {/* Global Modals */}
+                        <ApprovalModal />
+                        <ApprovalManager />
+                        <PWAInstallPrompt />
+                        <TransmissionMonitor />
+
+                        {/* Global Command Bar */}
+                        {showChrome && (
                             <ErrorBoundary>
-                                <Suspense fallback={<LoadingFallback />}>
-                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                </Suspense>
+                                <CommandBar />
                             </ErrorBoundary>
-                        </div>
-
-                        {showChrome && <ChatOverlayWrapper />}
-                    </main>
-
-                    {/* Right Panel - Hidden for standalone modules and mobile */}
-                    {showChrome && isDesktop && (
-                        <ErrorBoundary>
-                            <RightPanel />
-                        </ErrorBoundary>
-                    )}
-
-                    {/* Mobile Navigation - Hidden for standalone modules */}
-                    {showChrome && (
-                        <ErrorBoundary>
-                            <MobileNav />
-                        </ErrorBoundary>
-                    )}
-
-                    {/* DevTools HUD - Only in Development */}
-                    {import.meta.env.DEV && (
-                        <Suspense fallback={null}>
-                            <DevPortWarning />
-                        </Suspense>
-                    )}
-
-                    {/* Agent Approval Modal - Shows when agent requests user approval */}
-                    <ApprovalModal />
-
-                    {/* Instrument Approval Manager - Shows for instrument execution approvals */}
-                    <ApprovalManager />
-
-                    {/* PWA Install Prompt - Shows when app can be installed */}
-                    <PWAInstallPrompt />
-
-                    {/* Industrial Transmission Monitor */}
-                    <TransmissionMonitor />
-
-                    {/* Global Command Bar (Floating Pill) */}
-                    {showChrome && (
-                        <ErrorBoundary>
-                            <CommandBar />
-                        </ErrorBoundary>
-                    )}
-                </div>
-            </ToastProvider>
-        </VoiceProvider>
+                        )}
+                    </div>
+                </ToastProvider>
+            </ThemeProvider>
+        </VoiceProvider >
     );
 }

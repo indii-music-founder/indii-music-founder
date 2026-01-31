@@ -93,3 +93,45 @@ registerRoute(
     }),
     'DELETE'
 );
+
+// Share Target Handler
+// Intercepts POST requests from other apps sharing content
+import { openDB } from 'idb';
+
+registerRoute(
+    '/_share-target',
+    async ({ request }) => {
+        try {
+            const formData = await request.formData();
+            const files = formData.getAll('files');
+            const title = formData.get('title');
+            const text = formData.get('text');
+            const url = formData.get('url');
+
+            // Store shared data in IndexedDB
+            const db = await openDB('indii-share-target', 1, {
+                upgrade(db) {
+                    if (!db.objectStoreNames.contains('shared-items')) {
+                        db.createObjectStore('shared-items', { autoIncrement: true });
+                    }
+                },
+            });
+
+            await db.add('shared-items', {
+                files,
+                title,
+                text,
+                url,
+                timestamp: Date.now(),
+            });
+
+            // Redirect back to the app with a query param indicating a share action
+            return Response.redirect('/?action=share-target', 303);
+        } catch (error) {
+            console.error('[ServiceWorker] Share target error:', error);
+            // Fallback redirect even on error
+            return Response.redirect('/?error=share_failed', 303);
+        }
+    },
+    'POST'
+);

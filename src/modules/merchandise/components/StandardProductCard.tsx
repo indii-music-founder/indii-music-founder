@@ -1,6 +1,7 @@
 import React from 'react';
 import { Star, ShoppingCart } from 'lucide-react';
 import { MerchProduct } from '../types';
+import { OptimizedImage } from '@/core/components/ui/OptimizedImage';
 
 interface StandardProductCardProps {
     product: MerchProduct;
@@ -13,13 +14,10 @@ export const StandardProductCard = React.memo(({ product }: StandardProductCardP
     return (
         <div className="bg-card/40 backdrop-blur-sm rounded-2xl overflow-hidden border border-border/50 hover:border-primary/50 transition-all duration-300 group hover:-translate-y-2">
             <div className="aspect-[4/5] bg-secondary/30 relative overflow-hidden">
-                <img
+                <OptimizedImage
                     src={product.image}
                     alt={product.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-                    loading="lazy"
-                    // ⚡ Bolt Optimization: Offload decoding from main thread
-                    decoding="async"
+                    className="w-full h-full group-hover:scale-105 transition-transform duration-700"
                 />
                 <div className="absolute top-4 left-4 flex flex-col gap-2">
                     <div className="bg-primary text-primary-foreground px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-tighter shadow-lg">

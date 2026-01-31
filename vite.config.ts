@@ -79,7 +79,23 @@ export default defineConfig({
             url: '/?module=creative',
             icons: [{ src: 'favicon.svg', sizes: 'any' }]
           }
-        ]
+        ],
+        share_target: {
+          action: '/_share-target',
+          method: 'POST',
+          enctype: 'multipart/form-data',
+          params: {
+            title: 'title',
+            text: 'text',
+            url: 'url',
+            files: [
+              {
+                name: 'files',
+                accept: ['image/*', 'audio/*', 'video/*', 'text/plain', 'application/pdf']
+              }
+            ]
+          }
+        }
       },
       injectManifest: {
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // 5MB for Essentia WASM
