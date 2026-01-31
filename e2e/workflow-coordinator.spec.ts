@@ -8,7 +8,8 @@ test.describe('Workflow Coordinator', () => {
         await page.waitForLoadState('domcontentloaded');
 
         // Robust Auth Bypass
-        await page.waitForFunction(() => !!(window as any).useStore);
+        // @ts-expect-error - Checking for window property
+        await page.waitForFunction(() => !!window.useStore);
         await page.evaluate(() => {
             const mockUser = {
                 uid: 'test-user-coordinator',
@@ -22,7 +23,7 @@ test.describe('Workflow Coordinator', () => {
                 tenantId: null,
                 delete: async () => { },
                 getIdToken: async () => 'mock-token',
-                getIdTokenResult: async () => ({ token: 'mock-token' } as any),
+                getIdTokenResult: async () => ({ token: 'mock-token' } as unknown as import('firebase/auth').IdTokenResult),
                 reload: async () => { },
                 toJSON: () => ({}),
                 phoneNumber: null,
