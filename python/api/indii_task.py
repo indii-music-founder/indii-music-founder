@@ -5,7 +5,7 @@ import asyncio
 import nest_asyncio
 
 # Apply nest_asyncio (though direct await is preferred, this keeps it safe)
-nest_asyncio.apply()
+# nest_asyncio.apply()
 
 class IndiiTask(ApiHandler):
     """
