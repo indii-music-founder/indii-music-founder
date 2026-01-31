@@ -1,7 +1,10 @@
 rules_version = '2';
 
 service firebase.storage {
+  match /b/{bucket}/o {
 
+    // ========================================
+    // HELPER FUNCTIONS
     // ========================================
 
     function isAuthenticated() {
@@ -13,13 +16,42 @@ service firebase.storage {
         request.auth.uid in firestore.get(/databases/(default)/documents/organizations/$(orgId)).data.members;
     }
 
+    // File size limits (in bytes)
+    function isUnderSizeLimit(maxMB) {
+      return request.resource.size < maxMB * 1024 * 1024;
+    }
+
+    // Content type validation
+    function isImageType() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function isVideoType() {
+      return request.resource.contentType.matches('video/.*');
+    }
+
+    function isAudioType() {
+      return request.resource.contentType.matches('audio/.*');
+    }
+
+    function isAllowedMediaType() {
+      return isImageType() || isVideoType() || isAudioType() ||
+             request.resource.contentType.matches('application/pdf') ||
+             request.resource.contentType.matches('application/json');
+    }
+
     // ========================================
     // USER-SPECIFIC STORAGE (Private)
     // ========================================
 
     // Users can only access their own storage
     match /users/{userId}/{allPaths=**} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Write: authenticated, owner, under 500MB, valid media type
+      allow write: if isAuthenticated() && 
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(500) &&
+                      isAllowedMediaType();
     }
 
     // ========================================
@@ -28,7 +60,11 @@ service firebase.storage {
 
     // Org members can access org storage
     match /orgs/{orgId}/{allPaths=**} {
-      allow read, write: if isOrgMember(orgId);
+      allow read: if isOrgMember(orgId);
+      // Write: org member, under 500MB, valid media type
+      allow write: if isOrgMember(orgId) &&
+                      isUnderSizeLimit(500) &&
+                      isAllowedMediaType();
     }
 
     // ========================================
@@ -37,19 +73,36 @@ service firebase.storage {
 
     // Allow users to upload to their own folder within a project
     match /projects/{projectId}/{userId}/{allPaths=**} {
-      allow read, write: if isAuthenticated() && request.auth.uid == userId
+      allow read: if isAuthenticated() && request.auth.uid == userId
         && firestore.exists(/databases/(default)/documents/projects/$(projectId))
         && isOrgMember(firestore.get(/databases/(default)/documents/projects/$(projectId)).data.orgId);
+      allow write: if isAuthenticated() && request.auth.uid == userId
+        && firestore.exists(/databases/(default)/documents/projects/$(projectId))
+        && isOrgMember(firestore.get(/databases/(default)/documents/projects/$(projectId)).data.orgId)
+        && isUnderSizeLimit(1024)
+        && isAllowedMediaType();
     }
 
     // ========================================
-    // PUBLIC ASSETS (if needed for CDN)
+    // VIDEO GENERATION OUTPUT (System-managed)
+    // ========================================
+
+    // Generated videos from Veo - read-only for users
+    match /generated/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Writes only allowed from Cloud Functions (no client writes)
+      allow write: if false;
+    }
+
+    // ========================================
+    // PUBLIC ASSETS (CDN)
     // ========================================
 
     // Public readable assets (e.g., thumbnails, shared media)
     match /public/{allPaths=**} {
       allow read: if true;
-      allow write: if false; // SECURITY: Restrict unauthorized writes to public assets
+      // SECURITY: Restrict unauthorized writes to public assets
+      allow write: if false;
     }
 
     // ========================================
