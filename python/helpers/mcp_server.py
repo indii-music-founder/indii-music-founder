@@ -397,26 +397,39 @@ class DynamicMcpProxy:
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         """Forward the ASGI calls to the appropriate app based on the URL path"""
-        with self._lock:
-            sse_app = self.sse_app
-            http_app = self.http_app
+        try:
+            with self._lock:
+                sse_app = self.sse_app
+                http_app = self.http_app
 
-        if not sse_app or not http_app:
-            raise RuntimeError("MCP apps not initialized")
+            if not sse_app or not http_app:
+                raise RuntimeError("MCP apps not initialized")
 
-        # Route based on path
-        path = scope.get("path", "")
+            # Route based on path
+            path = scope.get("path", "")
 
-        if f"/t-{self.token}/sse" in path or f"t-{self.token}/messages" in path:
-            # Route to SSE app
-            await sse_app(scope, receive, send)
-        elif f"/t-{self.token}/http" in path:
-            # Route to HTTP app
-            await http_app(scope, receive, send)
-        else:
-            raise StarletteHTTPException(
-                status_code=403, detail="MCP forbidden"
-            )
+            if f"/t-{self.token}/sse" in path or f"t-{self.token}/messages" in path:
+                # Route to SSE app
+                await sse_app(scope, receive, send)
+            elif f"/t-{self.token}/http" in path:
+                # Route to HTTP app
+                await http_app(scope, receive, send)
+            else:
+                # Raise 403 (Logged)
+                print(f"DEBUG: MCP Forbidden path: {path}. Expected token: {self.token}", flush=True)
+                await send({
+                    'type': 'http.response.start',
+                    'status': 403,
+                    'headers': [[b'content-type', b'text/plain']],
+                })
+                await send({
+                    'type': 'http.response.body',
+                    'body': b'MCP forbidden',
+                })
+        except Exception as e:
+            print(f"DEBUG: MCP __call__ crashed: {e}", flush=True)
+            import traceback; traceback.print_exc()
+            raise
 
 
 async def mcp_middleware(request: Request, call_next):

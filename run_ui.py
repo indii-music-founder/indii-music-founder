@@ -15,6 +15,8 @@ import nest_asyncio
 nest_asyncio.apply = lambda: None
 from flask import Flask, request, Response, session, redirect, url_for, render_template_string
 from werkzeug.wrappers.response import Response as BaseResponse
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+from a2wsgi import ASGIMiddleware
 import initialize
 from python.helpers import files, git, mcp_server, fasta2a_server
 from python.helpers.files import get_abs_path
@@ -279,9 +281,11 @@ def run():
     # Start init_a0 in a background thread when server starts
     threading.Thread(target=init_a0, daemon=True).start()
 
-    from werkzeug.serving import run_simple
-    print("DEBUG: Running run_simple...", flush=True)
-    run_simple(host, port, app, threaded=True, request_handler=NoRequestLoggingWSGIRequestHandler)
+    import uvicorn
+    from a2wsgi import WSGIMiddleware
+    print("DEBUG: Running uvicorn...", flush=True)
+    asgi_app = WSGIMiddleware(app)
+    uvicorn.run(asgi_app, host=str(host), port=int(port), log_level="debug")
 
 
 def init_a0():
