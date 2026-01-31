@@ -22,6 +22,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
 ### Implementation Complete
 
 #### 1. Core Canvas System
+
 - **DesignCanvas Component** (459 lines)
   - Fabric.js v6.9.0 integration
   - Full object manipulation (drag, resize, rotate, scale)
@@ -32,6 +33,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
   - Error boundaries with user-friendly error states
 
 #### 2. Keyboard Shortcuts (Industry Standard)
+
 - **Delete/Backspace:** Delete selected objects
 - **Cmd/Ctrl + C:** Copy to clipboard
 - **Cmd/Ctrl + V:** Paste with 10px offset (cascade pattern)
@@ -39,6 +41,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
 - **Input field detection:** Prevents conflicts when typing in text fields
 
 #### 3. Asset Management
+
 - **AssetLibrary Component** (180 lines)
   - Integration with Creative Studio history
   - Real-time search and filtering
@@ -47,6 +50,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
   - AI generation quick access
 
 #### 4. Layer Management
+
 - **LayersPanel Component** (290 lines)
   - Real-time layer list with type icons (Text, Image, Shape)
   - Visibility toggle (show/hide)
@@ -59,6 +63,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
     - Text-specific: font size, color picker
 
 #### 5. AI Integration
+
 - **AIGenerationDialog Component** (210 lines)
   - Prompt input with examples
   - Direct canvas integration
@@ -66,6 +71,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
   - Error handling and loading states
 
 #### 6. Agent/User Loop System
+
 - **Work Mode Toggle:**
   - **User Mode:** Full manual control (blue indicator)
   - **Agent Mode:** AI-assisted workflow (purple indicator)
@@ -73,6 +79,7 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
   - Toast notifications on mode switch
 
 #### 7. Production-Grade Fixes (Commit 62b216c)
+
 - **React Best Practices:**
   - Fixed useEffect dependency arrays (no stale closures)
   - Memoized all callbacks with useCallback
@@ -107,12 +114,14 @@ The Merchandise Design Canvas is a fully functional Fabric.js-based design tool 
   - requestRenderAll() optimization
 
 ### Branding Cleanup (Commit 9a879cf)
+
 - Removed all "banana" references from merchandise module
 - Renamed components (BananaButton → MerchButton, etc.)
 - Updated UI text and emojis
 - Professional branding throughout
 
 ### Lines of Code
+
 - **Total Implementation:** ~1,650 lines
 - **Production Code:** 100%
 - **Test Coverage:** E2E tests present
@@ -198,6 +207,7 @@ const useCanvasHistory = (canvas: fabric.Canvas | null) => {
 ```
 
 **Implementation Steps:**
+
 1. Create `useCanvasHistory` hook
 2. Add debounce utility (300ms delay)
 3. Hook into canvas `object:modified`, `object:added`, `object:removed` events
@@ -206,6 +216,7 @@ const useCanvasHistory = (canvas: fabric.Canvas | null) => {
 6. Add keyboard shortcuts (Cmd+Z, Cmd+Shift+Z)
 
 **Testing:**
+
 - Add object → Undo → Redo
 - Modify object → Undo → Verify state
 - Rapid changes → Verify debouncing works
@@ -218,6 +229,7 @@ const useCanvasHistory = (canvas: fabric.Canvas | null) => {
 **Problem:** Using `defaultValue` instead of `value` causes React warnings and stale UI
 
 **Current Code (WRONG):**
+
 ```typescript
 <input
   type="range"
@@ -227,6 +239,7 @@ const useCanvasHistory = (canvas: fabric.Canvas | null) => {
 ```
 
 **Fixed Code:**
+
 ```typescript
 // In LayersPanel
 const [localOpacity, setLocalOpacity] = useState(100);
@@ -272,6 +285,7 @@ return (
 ```
 
 **Implementation Steps:**
+
 1. Add local state for all controlled inputs
 2. Sync local state with selectedLayer on change (useEffect)
 3. Add debouncing (150ms) for slider inputs
@@ -280,6 +294,7 @@ return (
 6. Add `key={selectedLayer.id}` to force remount on layer change
 
 **Testing:**
+
 - Select layer → Verify properties match
 - Change opacity → Verify smooth updates
 - Rapid slider changes → Verify no lag
@@ -341,6 +356,7 @@ return (
 ```
 
 **Implementation Steps:**
+
 1. Add `draggable` to asset images in AssetLibrary
 2. Implement `onDragStart` with dataTransfer
 3. Add `onDragOver` and `onDrop` to DesignCanvas container
@@ -349,6 +365,7 @@ return (
 6. Add visual feedback (drag cursor, drop zone highlight)
 
 **Testing:**
+
 - Drag asset from library → Drop on canvas → Verify position
 - Drag outside canvas → Verify no action
 - Drag while canvas is zoomed → Verify correct positioning
@@ -712,69 +729,79 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 
 ## 📊 Quality Metrics Comparison
 
-| Feature | Figma | Canva | Our Canvas | Gap |
-|---------|-------|-------|------------|-----|
-| **Core Functionality** |
-| Object manipulation | ✅ | ✅ | ✅ | 0% |
-| Keyboard shortcuts | ✅ | ✅ | ✅ | 0% |
-| Copy/Paste | ✅ | ✅ | ✅ | 0% |
-| Multi-selection | ✅ | ✅ | ✅ | 0% |
-| Touch support | ✅ | ✅ | ✅ | 0% |
-| Error handling | ✅ | ✅ | ✅ | 0% |
-| **Missing Critical (P0)** |
-| Undo/Redo | ✅ | ✅ | ❌ | **100%** |
-| Drag-and-drop | ✅ | ✅ | ❌ | **100%** |
-| Layer thumbnails | ✅ | ✅ | ❌ | **100%** |
-| **Missing Polish (P1)** |
-| Snap to grid | ✅ | ✅ | ❌ | 100% |
-| Alignment tools | ✅ | ✅ | ❌ | 100% |
-| Guides | ✅ | ✅ | ❌ | 100% |
-| Delete confirmation | ✅ | ✅ | ❌ | 100% |
-| **Missing Advanced (P2)** |
-| Draft persistence | ✅ | ✅ | ❌ | 100% |
-| Export formats | ✅ | ✅ | ⚠️ (PNG only) | 75% |
-| Accessibility | ✅ | ✅ | ❌ | 100% |
-| Version history | ✅ | ✅ | ❌ | 100% |
-| Comments | ✅ | ✅ | ❌ | 100% |
-| Collaboration | ✅ | ✅ | ❌ | 100% |
+| Feature                   | Figma | Canva | Our Canvas     | Gap      |
+| ------------------------- | ----- | ----- | -------------- | -------- |
+| *Core Functionality*      |       |       |                |          |
+| Object manipulation       | ✅    | ✅    | ✅             | 0%       |
+| Keyboard shortcuts        | ✅    | ✅    | ✅             | 0%       |
+| Copy/Paste                | ✅    | ✅    | ✅             | 0%       |
+| Multi-selection           | ✅    | ✅    | ✅             | 0%       |
+| Touch support             | ✅    | ✅    | ✅             | 0%       |
+| Error handling            | ✅    | ✅    | ✅             | 0%       |
+| *Missing Critical (P0)*   |       |       |                |          |
+| Undo/Redo                 | ✅    | ✅    | ❌             | **100%** |
+| Drag-and-drop             | ✅    | ✅    | ❌             | **100%** |
+| Layer thumbnails          | ✅    | ✅    | ❌             | **100%** |
+| *Missing Polish (P1)*     |       |       |                |          |
+| Snap to grid              | ✅    | ✅    | ❌             | 100%     |
+| Alignment tools           | ✅    | ✅    | ❌             | 100%     |
+| Guides                    | ✅    | ✅    | ❌             | 100%     |
+| Delete confirmation       | ✅    | ✅    | ❌             | 100%     |
+| *Missing Advanced (P2)*   |       |       |                |          |
+| Draft persistence         | ✅    | ✅    | ❌             | 100%     |
+| Export formats            | ✅    | ✅    | ⚠️ (PNG only)  | 75%      |
+| Accessibility             | ✅    | ✅    | ❌             | 100%     |
+| Version history           | ✅    | ✅    | ❌             | 100%     |
+| Comments                  | ✅    | ✅    | ❌             | 100%     |
+| Collaboration             | ✅    | ✅    | ❌             | 100%     |
 
-**Overall Parity Score: 60%**
+**Overall Parity Score:** 60%
 
 ---
 
 ## 🎯 Implementation Priority
 
 ### Now (This Week)
+
 1. ✅ Phase 0 Complete - Core canvas working
 2. ⏳ Phase 1 (P0) - Undo/Redo, LayersPanel fixes, Drag-and-drop
 
 ### Next (Next Week)
-3. Phase 2 (P1) - Layer thumbnails, Snap-to-grid, Alignment, Confirmations
+
+1. Phase 2 (P1) - Layer thumbnails, Snap-to-grid, Alignment, Confirmations
 
 ### Later (Future Sprints)
-4. Phase 3 (P2) - Firestore persistence, Export formats, Accessibility
-5. Phase 4 (P3) - Collaboration, Comments, Version history
+
+1. Phase 3 (P2) - Firestore persistence, Export formats, Accessibility
+2. Phase 4 (P3) - Collaboration, Comments, Version history
 
 ---
 
-## 🐛 Known Issues
+## 🐛 Known Issues (Planned Features - Future Phases)
 
-### Critical
+> **Note:** These items represent planned enhancements for future development phases (P1-P3).
+> See Implementation Priority section above for timeline.
+
+### Critical (Phase 1 Target)
+
 - [ ] Undo/Redo not implemented (TODO comments)
 - [ ] LayersPanel using `defaultValue` (React warnings)
 
 ### High
+
 - [ ] No drag-and-drop from AssetLibrary
 - [ ] No layer thumbnails
 - [ ] No delete confirmation
 
 ### Medium
+
 - [ ] No snap-to-grid
 - [ ] No alignment tools
 - [ ] No accessibility features
 - [ ] Draft save doesn't persist to Firestore
 
 ### Low
+
 - [ ] Export limited to PNG only
 - [ ] No performance monitoring
 - [ ] No version history
@@ -784,18 +811,21 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 ## 📈 Success Metrics
 
 ### Phase 1 Target (80%)
+
 - ✅ Undo/Redo working (50+ state history)
 - ✅ No React warnings in console
 - ✅ Drag-and-drop from asset library
 - ✅ All controls use proper `value` prop
 
 ### Phase 2 Target (90%)
+
 - ✅ Layer thumbnails visible
 - ✅ Snap-to-grid with Cmd+; toggle
 - ✅ Alignment toolbar (6 buttons)
 - ✅ Delete confirmation dialog
 
 ### Phase 3 Target (100%)
+
 - ✅ Auto-save every 30 seconds
 - ✅ Export in 4 formats (PNG, JPG, SVG, WebP)
 - ✅ WCAG 2.1 AA compliance
@@ -806,12 +836,14 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 ## 🔧 Technical Debt
 
 ### Code Quality
+
 - **Type Safety:** 95% (some `as any` in LayersPanel)
 - **Test Coverage:** 40% (E2E only, no unit tests)
 - **Documentation:** 80% (missing JSDoc on some methods)
 - **Performance:** 90% (could add virtualization for 100+ layers)
 
 ### Architecture
+
 - **Separation of Concerns:** ✅ Good (Canvas/Controls/UI separate)
 - **State Management:** ✅ Good (proper hooks, memoization)
 - **Error Boundaries:** ✅ Good (try/catch everywhere)
@@ -821,11 +853,11 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 
 ## 📝 Commit History
 
-| Commit | Description | Lines Changed |
-|--------|-------------|---------------|
-| 9a879cf | Remove all banana branding | +350 -280 |
-| 1e00c10 | Implement functional design canvas | +1398 -115 |
-| 62b216c | Fix critical production issues | +265 -114 |
+| Commit  | Description                        | Lines Changed |
+| ------- | ---------------------------------- | ------------- |
+| 9a879cf | Remove all banana branding         | +350 -280     |
+| 1e00c10 | Implement functional design canvas | +1398 -115    |
+| 62b216c | Fix critical production issues     | +265 -114     |
 
 **Total Implementation:** 2,013 lines of production code
 
@@ -834,6 +866,7 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 ## 🎓 Learning & Best Practices Applied
 
 ### React Patterns
+
 - ✅ useCallback for memoization
 - ✅ useEffect dependency arrays
 - ✅ Custom hooks (useCanvasControls)
@@ -841,6 +874,7 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 - ✅ No stale closures
 
 ### Fabric.js Integration
+
 - ✅ Event-driven architecture
 - ✅ Proper disposal on unmount
 - ✅ Selection management
@@ -848,6 +882,7 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 - ✅ Touch device configuration
 
 ### Performance
+
 - ✅ ResizeObserver (modern API)
 - ✅ requestRenderAll() optimization
 - ✅ Debounced state updates
@@ -855,6 +890,7 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 - ✅ Image pre-loading
 
 ### Error Handling
+
 - ✅ Try/catch blocks
 - ✅ CORS detection
 - ✅ User-friendly error messages
@@ -866,18 +902,21 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 ## 🤝 Contribution Guidelines
 
 ### Adding New Features
+
 1. Create feature branch: `feature/canvas-[feature-name]`
 2. Implement with tests
 3. Update this roadmap
 4. Submit PR with demo video
 
 ### Code Standards
+
 - **TypeScript:** Strict mode, no `any` unless necessary
 - **React:** Functional components, hooks only
 - **Testing:** Unit tests for hooks, E2E for workflows
 - **Documentation:** JSDoc for public APIs
 
 ### Review Checklist
+
 - [ ] No console.error in production code
 - [ ] All useEffect have correct dependencies
 - [ ] All callbacks memoized with useCallback

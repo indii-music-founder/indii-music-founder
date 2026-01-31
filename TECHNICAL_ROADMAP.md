@@ -1,9 +1,11 @@
 
 # Technical Roadmap & Debt
 
+> **Note:** This document tracks technical debt and backlog items for future sprints, not active work.
+
 This document tracks technical debt, refactoring goals, and known issues.
 
-## Active Issues
+## Active Issues (Backlog)
 
 - [ ] **Fix ReferenceError: renderStartTime is not defined**
       *Context*: This error was reported but the specific file or code block causing it could not be located in the repository.
