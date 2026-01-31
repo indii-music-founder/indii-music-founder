@@ -12,7 +12,8 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
-  onSnapshot
+  onSnapshot,
+  limit
 } from 'firebase/firestore';
 import {
   DashboardEarningsSummarySchema,
@@ -137,7 +138,8 @@ export class FinanceService {
       const q = query(
         collection(db, this.EXPENSES_COLLECTION),
         where('userId', '==', userId),
-        orderBy('createdAt', 'desc')
+        orderBy('createdAt', 'desc'),
+        limit(100)
       );
 
       const snapshot = await getDocs(q);
@@ -168,7 +170,8 @@ export class FinanceService {
     const q = query(
       collection(db, this.EXPENSES_COLLECTION),
       where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      orderBy('createdAt', 'desc'),
+      limit(100)
     );
 
     return onSnapshot(q, (snapshot) => {
