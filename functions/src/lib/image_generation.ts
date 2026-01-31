@@ -3,9 +3,6 @@ import { GoogleGenAI } from "@google/genai";
 import { FUNCTION_AI_MODELS } from "../config/models";
 import { GenerateImageRequestSchema, EditImageRequestSchema } from "./image";
 import { geminiApiKey, getGeminiApiKey } from "../config/secrets";
-import * as crypto from "crypto";
-import * as fs from 'fs';
-import * as path from 'path';
 
 /**
  * GeminiImageService
@@ -32,9 +29,12 @@ class GeminiImageService {
 
         const message = error.message || "Unknown Gemini API error";
         const status = error.status || (error.response?.status);
+        const errorData = error.response?.data;
+
+        console.error(`[GeminiImageService:${context}] Full Error Payload:`, JSON.stringify(errorData, null, 2));
 
         if (status === 400 || message.includes("400")) {
-            throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}`);
+            throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}${errorData ? ` - Details: ${JSON.stringify(errorData)}` : ""}`);
         }
         if (status === 401 || status === 403 || message.includes("401") || message.includes("403")) {
             throw new functions.https.HttpsError("permission-denied", `Gemini API Authentication Error: ${message}`);
@@ -100,95 +100,64 @@ class GeminiImageService {
     async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string }> {
         const client = this.getClient();
         const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION; // Prefer Pro for editing fidelity
-        const tempFiles: string[] = [];
 
         try {
             console.log(`[GeminiImageService:edit] Model: ${modelId} | Instruction: "${data.prompt.substring(0, 50)}..."`);
 
-            const userParts: any[] = [{ text: data.prompt }];
-
-            // Helper to handle large images via File API
-            const processImage = async (base64: string, mime: string, label: string) => {
-                const buffer = Buffer.from(base64, 'base64');
-                // Use File API for efficiency if image is large (>10MB) or for high-fidelity PRO usage
-                if (buffer.length > 5 * 1024 * 1024) {
-                    const tmpName = `${crypto.randomUUID()}.${mime.split('/')[1] || 'png'}`;
-                    const tmpPath = path.join('/tmp', tmpName);
-                    fs.writeFileSync(tmpPath, buffer);
-                    tempFiles.push(tmpPath);
-
-                    const upload = await client.files.upload({
-                        file: tmpPath,
-                        config: { mimeType: mime, displayName: label }
-                    });
-                    return { fileData: { fileUri: upload.uri, mimeType: upload.mimeType } };
+            const referenceImages: any[] = [
+                {
+                    referenceId: 0,
+                    referenceType: "REFERENCE_TYPE_RAW",
+                    referenceImage: {
+                        imageBytes: data.image,
+                        mimeType: data.imageMimeType || "image/png"
+                    }
                 }
-                return { inlineData: { data: base64, mimeType: mime } };
-            };
-
-            // Add layers: 1. Base Image, 2. Ghost Mask, 3. Style Reference (Optional)
-            userParts.push(await processImage(data.image, data.imageMimeType || "image/png", "Base Source"));
+            ];
 
             if (data.mask) {
-                userParts.push(await processImage(data.mask, data.maskMimeType || "image/png", "Ghost Mask Overlay"));
-            }
-
-            if (data.referenceImage) {
-                userParts.push(await processImage(data.referenceImage, data.refMimeType || "image/png", "Style Reference"));
-            }
-
-            const contents: any[] = [];
-
-            // Restore previous logic state via Thought Signature (Multi-Turn)
-            if (data.thoughtSignature) {
-                contents.push({
-                    role: "model",
-                    parts: [{
-                        text: "Syncing context...",
-                        thoughtSignature: data.thoughtSignature
-                    } as any]
+                referenceImages.push({
+                    referenceId: 1,
+                    referenceType: "REFERENCE_TYPE_MASK",
+                    referenceImage: {
+                        imageBytes: data.mask,
+                        mimeType: "image/png"
+                    },
+                    config: {
+                        maskMode: "MASK_MODE_USER_PROVIDED"
+                    }
                 });
             }
 
-            contents.push({ role: "user", parts: userParts });
-
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents,
+            const result = await client.models.editImage({
+                model: modelId === 'gemini-3-pro-image-preview' ? 'imagen-3.0-capability-001' : modelId,
+                prompt: data.prompt,
+                referenceImages,
                 config: {
-                    responseModalities: ["IMAGE"],
-                    candidateCount: 1,
-                    temperature: 1.0
-                } as any
+                    editMode: (data.mask ? 'EDIT_MODE_INPAINT_INSERTION' : 'EDIT_MODE_CONTROLLED_EDITING') as any,
+                    numberOfImages: 1,
+                    aspectRatio: data.aspectRatio || "1:1"
+                }
             });
 
-            if (!result.candidates?.[0]) {
-                throw new Error("No candidates returned from Gemini API");
+            if (!result.generatedImages || result.generatedImages.length === 0) {
+                throw new Error("No images returned from Gemini Edit API");
             }
 
-            const candidate = result.candidates![0];
-            const imagePart = candidate.content!.parts!.find(p => !!p.inlineData);
+            const genImg = result.generatedImages[0];
 
-            // Extract new Thought Signature from ANY part in the response
-            const newSignature = candidate.content!.parts!.find(p => !!(p as any).thoughtSignature) as any;
-
-            if (!imagePart?.inlineData) {
-                throw new Error("Resulting candidate does not contain image data");
+            if (!genImg.image) {
+                throw new Error("Generated image object is missing from Gemini response");
             }
 
             return {
-                base64: imagePart.inlineData.data as string,
-                mimeType: imagePart.inlineData.mimeType || "image/png",
-                thoughtSignature: newSignature?.thoughtSignature
+                base64: genImg.image.imageBytes as string,
+                mimeType: genImg.image.mimeType || "image/png",
+                thoughtSignature: undefined // Not provided by editImage response
             };
 
         } catch (error) {
             this.handleApiError(error, "edit");
-        } finally {
-            // Cleanup temp files
-            tempFiles.forEach(f => {
-                try { if (fs.existsSync(f)) fs.unlinkSync(f); } catch (e) { /* ignore cleanup error */ }
-            });
         }
     }
 }
@@ -248,5 +217,23 @@ export const editImageFn = () => functions
         }
 
         // 3. Delegate to Service
-        return await service.edit(validation.data);
+        const result = await service.edit(validation.data);
+
+        // Map to candidates format for frontend compatibility
+        const candidates = [
+            {
+                content: {
+                    parts: [
+                        {
+                            inlineData: {
+                                mimeType: result.mimeType,
+                                data: result.base64
+                            }
+                        }
+                    ]
+                }
+            }
+        ];
+
+        return { candidates };
     });

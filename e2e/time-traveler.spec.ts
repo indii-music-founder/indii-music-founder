@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect, Route } from '@playwright/test';
 
 const STUDIO_URL = 'http://localhost:4242';
 
@@ -14,7 +14,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
                 auth: {
                     login: async () => { },
                     logout: async () => { },
-                    onUserUpdate: (cb) => {
+                    onUserUpdate: (cb: (user: any) => void) => {
                         cb({ idToken: 'mock-token', accessToken: 'mock-access' });
                         return () => { };
                     }
@@ -26,7 +26,7 @@ test.describe('The Time Traveler: Data Persistence Verification', () => {
         });
 
         // 2. Mock AI Network Responses
-        await page.route('**/*generateContentStream*', async (route: any) => {
+        await page.route('**/*generateContentStream*', async (route: Route) => {
             const mockResponseChunks = [
                 JSON.stringify({ text: `{ "final_response": "I created the project ` }),
                 JSON.stringify({ text: `TimeTraveler." }` })

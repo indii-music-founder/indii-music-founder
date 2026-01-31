@@ -1,6 +1,7 @@
+import sys
+import os
 import asyncio
 from datetime import timedelta
-import os
 import secrets
 import hashlib
 import time
@@ -8,6 +9,10 @@ import socket
 import struct
 from functools import wraps
 import threading
+
+# Monkeypatch nest_asyncio to disable it globally
+import nest_asyncio
+nest_asyncio.apply = lambda: None
 from flask import Flask, request, Response, session, redirect, url_for, render_template_string
 from werkzeug.wrappers.response import Response as BaseResponse
 import initialize
@@ -167,6 +172,10 @@ async def logout_handler():
     session.pop('authentication', None)
     return redirect(url_for('login_handler'))
 
+@webapp.route("/sanity")
+def sanity():
+    return "Sanity OK"
+
 # handle default address, load index
 @webapp.route("/", methods=["GET"])
 @requires_auth
@@ -193,10 +202,11 @@ def run():
     # Suppress only request logs but keep the startup messages
     from werkzeug.serving import WSGIRequestHandler
     from werkzeug.serving import make_server
-    from werkzeug.middleware.dispatcher import DispatcherMiddleware
-    from a2wsgi import ASGIMiddleware
+    # from werkzeug.middleware.dispatcher import DispatcherMiddleware # Removed as DispatcherMiddleware is no longer used
+    # from a2wsgi import ASGIMiddleware # Removed as ASGIMiddleware is no longer used
 
     PrintStyle().print("Starting server...")
+    print("DEBUG: Entered run()", flush=True)
 
     class NoRequestLoggingWSGIRequestHandler(WSGIRequestHandler):
         def log_request(self, code="-", size="-"):
@@ -214,7 +224,12 @@ def run():
         instance = handler(app, lock)
 
         async def handler_wrap() -> BaseResponse:
-            return await instance.handle_request(request=request)
+            print(f"DEBUG: handler_wrap called for {name}", flush=True)
+            try:
+                return await instance.handle_request(request=request)
+            except Exception as e:
+                print(f"DEBUG: handler_wrap crashed: {e}", flush=True)
+                raise
 
         if handler.requires_loopback():
             handler_wrap = requires_loopback(handler_wrap)
@@ -234,23 +249,38 @@ def run():
 
     # initialize and register API handlers
     handlers = load_classes_from_folder("python/api", "*.py", ApiHandler)
+    print(f"ANTIGRAVITY DEBUG: Found {len(handlers)} handlers", flush=True)
     for handler in handlers:
+        name = handler.__module__.split(".")[-1]
+        print(f"ANTIGRAVITY DEBUG: Registering handler: {name}", flush=True)
         register_api_handler(webapp, handler)
 
     # add the webapp, mcp, and a2a to the app
-    middleware_routes = {
-        "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
-        "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
-    }
+    print("DEBUG: Setting up middleware_routes", flush=True)
+    try:
+        middleware_routes = {
+            "/mcp": ASGIMiddleware(app=mcp_server.DynamicMcpProxy.get_instance()),  # type: ignore
+            "/a2a": ASGIMiddleware(app=fasta2a_server.DynamicA2AProxy.get_instance()),  # type: ignore
+        }
+        print("DEBUG: middleware_routes set up successfully", flush=True)
+    except Exception as e:
+        print(f"DEBUG: Error setting up middleware_routes: {e}", flush=True)
+        import traceback
+        traceback.print_exc()
+        raise
 
+    print("DEBUG: Creating DispatcherMiddleware", flush=True)
     app = DispatcherMiddleware(webapp, middleware_routes)  # type: ignore
+    print("DEBUG: DispatcherMiddleware created", flush=True)
 
     PrintStyle().debug(f"Starting server at http://{host}:{port} ...")
+    print(f"DEBUG: About to run run_simple on {host}:{port}", flush=True)
 
     # Start init_a0 in a background thread when server starts
     threading.Thread(target=init_a0, daemon=True).start()
 
     from werkzeug.serving import run_simple
+    print("DEBUG: Running run_simple...", flush=True)
     run_simple(host, port, app, threaded=True, request_handler=NoRequestLoggingWSGIRequestHandler)
 
 
