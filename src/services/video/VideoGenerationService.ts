@@ -21,24 +21,42 @@ type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
 export class VideoGenerationService {
 
-    private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
+    private async analyzeTemporalContext(firstFrame?: string, lastFrame?: string, basePrompt: string = ''): Promise<string> {
         try {
-            const direction = offset > 0 ? 'future' : 'past';
-            const duration = Math.abs(offset);
+            let analysisPrompt = "";
+            const images: string[] = [];
 
-            const analysisPrompt = `You are a master cinematographer and physics engine.
-            Analyze this image frame which represents the ${offset > 0 ? 'START' : 'END'} of a video sequence.
-            Context: "${basePrompt}"
+            if (firstFrame && lastFrame) {
+                analysisPrompt = `You are a master cinematographer and physics engine.
+                I am providing the START frame and the END frame of a video sequence.
+                Context: "${basePrompt}"
 
-            Task: Predict exactly what happens ${duration} seconds into the ${direction}.
-            Describe the motion, physics, lighting changes, and character actions that bridge this gap.
-            Focus on continuity and logical progression.
+                Task: Analyze both images and describe the logical, cinematic, and physical transition that bridges them.
+                How does the subject move? How does the lighting evolve? 
+                Describe the "Visual Physics" of this specific bridge.
+                Return a concise paragraph (max 60 words).`;
+                images.push(firstFrame, lastFrame);
+            } else if (firstFrame || lastFrame) {
+                const isStart = !!firstFrame;
+                analysisPrompt = `You are a master cinematographer and physics engine.
+                Analyze this image frame which represents the ${isStart ? 'START' : 'END'} of a video sequence.
+                Context: "${basePrompt}"
 
-            Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
+                Task: Predict the ${isStart ? 'future' : 'past'} of this scene. Describe the motion and logical progression.
+                Return a concise paragraph (max 40 words).`;
+                images.push(firstFrame || lastFrame!);
+            } else {
+                return "";
+            }
 
-            return await firebaseAI.analyzeImage(analysisPrompt, image);
+            // Enhanced multi-image analysis call
+            const parts = images.map(img => ({ 
+                inlineData: { mimeType: 'image/png', data: img.replace(/^data:.*;base64,/, '') } 
+            }));
+            parts.push({ text: analysisPrompt });
+
+            return await firebaseAI.analyzeImageParts(parts);
         } catch (e) {
-            // Temporal analysis failure should not block generation
             return "";
         }
     }
@@ -115,10 +133,7 @@ export class VideoGenerationService {
         // Temporal context analysis
         let temporalContext = "";
         if (options.firstFrame || options.lastFrame) {
-            const reference = options.firstFrame || options.lastFrame;
-            if (reference) {
-                temporalContext = await this.analyzeTemporalContext(reference, options.timeOffset || 4, options.prompt);
-            }
+            temporalContext = await this.analyzeTemporalContext(options.firstFrame, options.lastFrame, sanitizedPrompt);
         }
 
         // Map internal parameters to AI service expectations
