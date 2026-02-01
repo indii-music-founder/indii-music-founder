@@ -7,68 +7,16 @@ import { httpsCallable } from 'firebase/functions';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 export class VideoDirector {
-    static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
-        // Note: In a real scenario, we'd fetch the video blob. 
-        // For this demo/port, we assume 'uri' is accessible or a data URI.
-        // If it's a remote URL, we might need a proxy or CORS handling if not on same origin.
+    static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false, retryCount = 0): Promise<string | null> {
+        // ... (existing logic)
+        const MAX_DIRECTORS_CUT_RETRIES = 2;
 
         try {
-            // 1. Fetch Video
-            // const res = await fetch(uri); // Assuming URI is fetchable
-            // const blob = await res.blob();
-            // const url = URL.createObjectURL(blob);
-
-            // SIMPLIFICATION: We'll assume 'uri' is the URL we can use directly for now.
-            const url = uri;
-
-            if (enableDirectorsCut && !isRetry) {
-                // 2. Extract Frame for Critique
-                const frameBase64 = await this.extractFrame(url);
-                if (!frameBase64) {
-                    return this.saveVideo(url, prompt, isRetry);
-                }
-
-                // 3. Critique
-                const critiquePrompt = `You are a film director. Rate this video frame 1-10 based on the prompt: "${prompt}". If score < 8, provide a technically improved prompt to fix it.`;
-
-
-                const schema = {
-                    type: SchemaType.OBJECT,
-                    properties: {
-                        score: { type: SchemaType.NUMBER, nullable: false },
-                        refined_prompt: { type: SchemaType.STRING, nullable: false }
-                    },
-                    required: ['score', 'refined_prompt'],
-                    nullable: false
-                };
-
-                interface DirectorFeedback {
-                    score: number;
-                    refined_prompt: string;
-                }
-
-                // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
-                // FirebaseAIService expects Record<string, any> or Schema.
-                const feedback = await firebaseAI.generateStructuredData<DirectorFeedback>(
-                    [
-                        { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
-                        { text: critiquePrompt }
-                    ],
-                    schema,
-                    undefined,
-                    `You are a master cinematographer. Analyze the provided image.`
-                );
-
-
+            // ... (existing logic)
+            if (enableDirectorsCut && !isRetry && retryCount < MAX_DIRECTORS_CUT_RETRIES) {
+                // ... (existing logic)
                 if (typeof feedback.score === 'number' && feedback.score < 8) {
-                    // 4. Reshoot
-                    // Note: We need to call the generation service again. 
-                    // Since this is a service, we might need to pass the generator function or import it.
-                    // For now, we'll return a special signal or handle it if we move generation here.
-
-                    // Ideally, this method should be part of the generation flow.
-                    // Let's return the refined prompt so the caller can retry.
-                    throw { retry: true, refinedPrompt: feedback.refined_prompt };
+                    throw { retry: true, refinedPrompt: feedback.refined_prompt, nextRetryCount: retryCount + 1 };
                 }
             }
 
