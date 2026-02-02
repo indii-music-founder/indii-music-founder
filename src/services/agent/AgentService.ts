@@ -2,6 +2,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useStore, AgentMessage, AgentThought } from '@/core/store';
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
+import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
 import { AgentContext } from './types';
 import { agentRegistry } from './registry';
@@ -18,12 +19,14 @@ export class AgentService {
     private isWarmedUp = false;
     private contextPipeline: ContextPipeline;
     private orchestrator: AgentOrchestrator;
+    private hybridOrchestrator: HybridOrchestrator;
     private executor: AgentExecutor;
 
     constructor() {
         // Components initialized. Agents are auto-registered in AgentRegistry singleton.
         this.contextPipeline = new ContextPipeline();
         this.orchestrator = new AgentOrchestrator();
+        this.hybridOrchestrator = new HybridOrchestrator();
         this.executor = new AgentExecutor();
 
         // Pre-warm agents in the background (non-blocking)
@@ -180,11 +183,18 @@ export class AgentService {
         // 3. Fallback to Agent Orchestration (Executor)
         let agentId = forcedAgentId;
         if (!agentId) {
-            // If coordinator delegated, we determine the best agent
-            agentId = await this.orchestrator.determineAgent(context, text);
+            // HYBRID GRAFT: Use the new HybridOrchestrator for complex reasoning
+            console.info('[AgentService] Using Hybrid Orchestrator DNA...');
+            const hybridResponse = await this.hybridOrchestrator.execute(context, text);
+            
+            updateAgentMessage(responseId, { 
+                text: hybridResponse,
+                isStreaming: false 
+            });
+            return;
         }
 
-        // Update agent ID in the placeholder
+        // Update agent ID in the placeholder (Legacy path)
         updateAgentMessage(responseId, { agentId });
 
         let currentStreamedText = '';
