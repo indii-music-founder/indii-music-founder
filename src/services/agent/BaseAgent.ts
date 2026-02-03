@@ -649,7 +649,7 @@ ${task}
                 }
 
                 // LEDGER: Record Spend based on Token Usage
-                const usage = response.usage?.();
+                const usage = response.usage?.() as any;
                 if (usage && context?.userId) {
                     const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
                     // Ensure we are using a text model pricing schema (input/output)

@@ -91,6 +91,8 @@ export const AI_CONFIG = {
  * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
+    'gemini-3-pro-review-001': { input: 2.50, output: 7.50 }, // Estimated
+    'gemini-3-flash-review-001': { input: 0.10, output: 0.40 },
     'gemini-2.0-flash-thinking-exp': { input: 1.25, output: 3.75 },
     'gemini-1.5-flash': { input: 0.10, output: 0.40 },
     'imagen-3.0-generate-001': { output: 120.00, resolution: "4K", capacity: 14 },
