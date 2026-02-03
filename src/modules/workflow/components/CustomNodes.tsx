@@ -21,8 +21,20 @@ const NodeWrapper: React.FC<{ children: React.ReactNode, selected: boolean, clas
 );
 
 export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>) => {
-    const { nodes, setSelectedNodeId } = useStore();
-    const node = nodes.find(n => n.id === id);
+    const { nodes, setSelectedNodeId, setNodes } = useStore();
+
+    const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const newPrompt = e.target.value;
+        setNodes((nds) => nds.map((node) => {
+            if (node.id === id) {
+                return {
+                    ...node,
+                    data: { ...node.data, prompt: newPrompt }
+                };
+            }
+            return node;
+        }));
+    };
 
     return (
         <NodeWrapper selected={selected} className="w-64">
@@ -33,8 +45,8 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
                 id="output"
                 className="!bg-slate-400 !w-3 !h-3 !border-2 !border-[#1e293b]"
             />
-            <button
-                className="w-full h-full text-left cursor-pointer hover:bg-gray-700/30 rounded-lg relative group"
+            <div
+                className="w-full h-full text-left rounded-lg relative group bg-gray-900/50"
                 onClick={() => setSelectedNodeId(id)}
             >
                 <div className="p-3 border-b border-gray-700 flex justify-between items-center bg-gray-800/50 rounded-t-lg">
@@ -42,12 +54,16 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
                         <Play className="w-4 h-4 text-teal-400 fill-teal-400/20" />
                         <p className="font-bold text-xs text-gray-200 uppercase tracking-wider">Start Trigger</p>
                     </div>
-                    <Pencil className="w-3 h-3 text-gray-500 group-hover:text-teal-400 transition-colors" />
                 </div>
-                <div className="p-3 text-sm text-gray-300 min-h-[80px] italic">
-                    "{data.prompt}"
+                <div className="p-2">
+                    <textarea
+                        className="nodrag w-full min-h-[80px] bg-transparent text-sm text-gray-300 italic resize-none outline-none placeholder:text-gray-600 focus:bg-gray-800/50 rounded p-1 transition-colors"
+                        value={data.prompt}
+                        onChange={handleChange}
+                        placeholder="Enter your prompt here..."
+                    />
                 </div>
-            </button>
+            </div>
         </NodeWrapper>
     );
 });

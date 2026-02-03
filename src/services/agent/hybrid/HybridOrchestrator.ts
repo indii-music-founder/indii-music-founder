@@ -17,7 +17,7 @@ export class HybridOrchestrator {
     async execute(context: AgentContext, userQuery: string): Promise<string> {
         const userId = auth.currentUser?.uid || 'anonymous';
         const traceId = await TraceService.startTrace(userId, 'hybrid-orchestrator', userQuery);
-        
+
         let currentTurn = 0;
         let isTaskComplete = false;
         let lastAgentResponse = "";
@@ -78,16 +78,16 @@ export class HybridOrchestrator {
                 const res = await AI.generateContent({
                     model: AI_MODELS.TEXT.AGENT, // Uses the Thinking model
                     contents: { role: 'user', parts: [{ text: prompt }] },
-                    config: { 
-                        ...AI_CONFIG.THINKING.MEDIUM,
-                        responseMimeType: 'application/json' 
+                    config: {
+                        ...AI_CONFIG.THINKING.LOW,
+                        responseMimeType: 'application/json'
                     }
                 });
 
                 const decision = JSON.parse(res.text() || '{}');
                 lastAgentResponse = decision.answer || lastAgentResponse;
-                
-                await TraceService.addStep(traceId, `turn-${currentTurn}`, decision);
+
+                await TraceService.addStep(traceId, 'routing', { turn: `turn-${currentTurn}`, ...decision });
                 history.push({ turn: currentTurn, thought: decision.thought, action: decision.callAgentId || decision.useTool });
 
                 if (decision.complete) {
@@ -114,8 +114,8 @@ export class HybridOrchestrator {
                     try {
                         const { KnowledgeTools } = await import('../tools/KnowledgeTools');
                         const result = await KnowledgeTools.search_knowledge({ query: decision.args?.query || sanitizedQuery }, context);
-                        history.push({ turn: currentTurn, tool: 'knowledge_base', result: result.answer });
-                        lastAgentResponse = result.answer;
+                        history.push({ turn: currentTurn, tool: 'knowledge_base', result: result.data?.answer });
+                        lastAgentResponse = result.data?.answer;
                     } catch (toolErr) {
                         console.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'knowledge_base', error: String(toolErr) });
@@ -127,21 +127,21 @@ export class HybridOrchestrator {
                     try {
                         const { BrowserTools } = await import('../tools/BrowserTools');
                         let result;
-                        
+
                         if (decision.args?.url) {
                             result = await BrowserTools.browser_navigate({ url: decision.args.url }, context);
                         } else if (decision.args?.action) {
-                            result = await BrowserTools.browser_action({ 
-                                action: decision.args.action, 
-                                selector: decision.args.selector, 
-                                text: decision.args.text 
+                            result = await BrowserTools.browser_action({
+                                action: decision.args.action,
+                                selector: decision.args.selector,
+                                text: decision.args.text
                             }, context);
                         } else {
                             result = await BrowserTools.browser_snapshot({}, context);
                         }
 
                         history.push({ turn: currentTurn, tool: 'browser_control', result: result.data || result.message });
-                        lastAgentResponse = result.message;
+                        lastAgentResponse = result.message || '';
                     } catch (toolErr) {
                         console.error(`[indii:Hybrid] Tool browser_control failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'browser_control', error: String(toolErr) });
@@ -165,7 +165,7 @@ export class HybridOrchestrator {
                 if (!decision.callAgentId && !decision.useTool && !decision.complete) {
                     // LLM provided a thought but no action, force completion if it looks like an answer
                     if (decision.answer) isTaskComplete = true;
-                    else break; 
+                    else break;
                 }
 
             } catch (e) {
