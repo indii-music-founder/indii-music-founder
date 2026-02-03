@@ -276,14 +276,12 @@ export default function WorkflowLab() {
                         </button>
                     </div>
 
-                    <div className="flex-1 overflow-y-auto">
-                        <NodePanel />
-                    </div>
                 </div>
 
                 {/* Main Canvas Area */}
                 <div className="flex-1 relative">
                     <WorkflowEditor />
+                    <NodePanel />
                 </div>
 
                 {/* Generator Modal */}
