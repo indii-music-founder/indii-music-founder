@@ -11,8 +11,8 @@ import './index.css';
 initSentry();
 
 
-console.log("Indii OS Studio v1.2.4-bypass-storage");
-document.title = "indiiOS - Studio (v1.2.4)";
+console.log("Indii OS Studio v1.2.5-force-compression");
+document.title = "indiiOS - Studio (v1.2.5)";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

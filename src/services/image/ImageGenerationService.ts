@@ -160,6 +160,15 @@ export class ImageGenerationService {
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
                         const saved = await CloudStorageService.smartSave(dataUri, id, userId);
                         finalUrl = saved.url;
+                    } else {
+                        // Force compression if not uploading, to respect Firestore 1MB limit for local data
+                        const { CloudStorageService } = await import('@/services/CloudStorageService');
+                        const compressed = await CloudStorageService.compressImage(dataUri, {
+                            maxWidth: 512,
+                            maxHeight: 512,
+                            quality: 0.6
+                        });
+                        finalUrl = compressed.dataUri;
                     }
                 } catch (e) {
                     console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);

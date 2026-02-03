@@ -17,7 +17,7 @@
     },
     {
       "sizes": "any",
-      "src": "/vite.svg",
+      "src": "/favicon.svg",
       "type": "image/svg+xml"
     }
   ],

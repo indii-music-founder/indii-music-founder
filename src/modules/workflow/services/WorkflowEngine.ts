@@ -91,7 +91,8 @@ export class WorkflowEngine {
 
             // Store Result
             this.results.set(node.id, output);
-            this.updateNodeStatus(node.id, Status.DONE);
+            // Update Node Status to DONE and save result to node data for persistence/UI
+            this.updateNodeStatus(node.id, Status.DONE, output);
 
             // Find Next Nodes
             const outgoingEdges = this.edges.filter(edge => edge.source === node.id);
@@ -110,9 +111,9 @@ export class WorkflowEngine {
         } catch (error: unknown) {
             console.error(`Error executing node ${node.id}:`, error);
             if (error instanceof Error) {
-                this.updateNodeStatus(node.id, Status.ERROR);
+                this.updateNodeStatus(node.id, Status.ERROR, error.message);
             } else {
-                this.updateNodeStatus(node.id, Status.ERROR);
+                this.updateNodeStatus(node.id, Status.ERROR, 'Unknown error');
             }
         }
     }
@@ -215,7 +216,7 @@ export class WorkflowEngine {
         return null;
     }
 
-    private updateNodeStatus(nodeId: string, status: Status) {
+    private updateNodeStatus(nodeId: string, status: Status, result?: unknown) {
         // We need to update the store's state. 
         // Since we passed setNodes in constructor, we can use it.
         // However, we need the *latest* nodes to avoid overwriting.
@@ -224,7 +225,7 @@ export class WorkflowEngine {
 
         this.nodes = this.nodes.map(n =>
             n.id === nodeId
-                ? { ...n, data: { ...n.data, status } }
+                ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : n.data.result } }
                 : n
         );
         this.setNodes([...this.nodes]); // Trigger React update
