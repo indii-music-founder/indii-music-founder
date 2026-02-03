@@ -104,13 +104,42 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ### [ACTIVE] Antigravity
 
-1. **Strict Type Safety**: Audit `src/modules/workflow` for `any` types.
-2. **Graceful HMR**: Investigate `vite.config.ts` for HMR persistence settings.
+1. **Strict Type Safety Audit (COMPLETED)**
+    - **Findings:** The entire `src/modules/workflow` engine relies heavily on `any` types.
+    - **Action Plan:** Create `Job` and `NodeJob` interfaces in `types.ts` and propagate.
+
+2. **Graceful HMR & persistence (DISCOVERY)**
+    - **Status:** `src/core/store` uses standard Zustand without `persist` middleware.
+    - **Impact:** Full page reload (or strict HMR boundaries) wipes application state.
+    - **Fix:** Implement `zustand/middleware/persist` for `workflowSlice` and `authSlice`.
+
+3. **Universal Error Boundaries (DISCOVERY)**
+    - **Status:** Missing in `UniversalNode.tsx`.
+    - **Fix:** Wrap node rendering in `react-error-boundary`.
+
+4. **Security Audit (COMPLETED)**
+    - **Firestore/Storage:** Rules are robust for auth/owner checks.
+    - **Gap:** Social Discovery is blocked (no public profiles).
+    - **Gap:** `storage.rules` forbids client writes to `/generated`, blocking client-side AI output saving.
 
 ### [ACTIVE] OpenClaw
 
-1. **CDP Hardening**: Strengthen the `puppeteer` / `playwright` bridge.
-2. **Real-Time Sync**: Draft the Firestore `onSnapshot` architecture.
+1. **CDP Hardening & Rate Limiting (BLOCKED)**
+    - **Critical Finding:** `python/tools/browser.py` is MISSING.
+    - **Status:** Agent Zero cannot browse the web.
+    - **Action:** Implement `browser.py` using Puppeteer/CDP.
+
+2. **Agent Zero Core Location (FOUND)**
+    - **Location:** `src/services/agent/hybrid/agent_zero_logic.py`.
+    - **Prompts:** Located in `agents/agent0/prompts`.
+
+3. **Model & Path Configuration (RISK)**
+    - **Issue:** `python/config/ai_models.py` uses `imagen-4.0` (unverified ID).
+    - **Issue:** `indii_image_gen.py` writes to absolute root `/a0/usr/...` which may cause Permission Denied.
+    - **Fix:** Verify Model ID and switch paths to `~/Documents/indiiOS/a0` or similar.
+
+4. **CDP Hardening**: Strengthen the `puppeteer` / `playwright` bridge.
+5. **Real-Time Sync**: Draft the Firestore `onSnapshot` architecture.
 
 ---
 

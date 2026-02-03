@@ -179,6 +179,13 @@ vi.mock('firebase/remote-config', () => ({
     initializeRemoteConfig: vi.fn(() => ({}))
 }));
 
+// Mock Firebase Messaging
+vi.mock('firebase/messaging', () => ({
+    getMessaging: vi.fn(() => ({})),
+    getToken: vi.fn(() => Promise.resolve('mock-fcm-token')),
+    onMessage: vi.fn(() => () => { })
+}));
+
 // Mock Firebase App Check
 vi.mock('firebase/app-check', () => ({
     initializeAppCheck: vi.fn(() => ({})),
