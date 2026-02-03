@@ -70,7 +70,21 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         // Deep check for result structure
         let asset: AnyAsset | null = null;
         try {
-            asset = typeof data.result === 'string' ? JSON.parse(data.result) : (data.result as AnyAsset);
+            const rawResult = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
+            
+            // --- FIX: Map the new Image Generation Object to an Image Asset ---
+            if (rawResult && rawResult.images && Array.isArray(rawResult.images)) {
+                const firstImage = rawResult.images[0];
+                asset = {
+                    assetType: 'image',
+                    imageUrl: firstImage.imageUrl || `data:${firstImage.mimeType || 'image/png'};base64,${firstImage.bytesBase64Encoded || firstImage.base64}`,
+                    aiMetadata: rawResult.aiMetadata,
+                    aiGenerationInfo: rawResult.aiGenerationInfo,
+                    title: 'AI Generated Artwork'
+                } as any;
+            } else {
+                asset = rawResult as AnyAsset;
+            }
         } catch (e) {
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
         }
@@ -80,7 +94,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         if (asset.assetType === 'image') return (
             <div className="relative w-full h-full">
                 <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />
-                {asset.aiMetadata && (
+                {(asset as any).aiMetadata && (
                     <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
                         AI Provenance Locked
                     </div>
@@ -109,7 +123,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             return (
                 <div className="relative w-full h-full">
                     <img src={src} alt="AI Result" className="w-full h-full object-cover" />
-                    {asset.aiMetadata && (
+                    {(asset as any).aiMetadata && (
                         <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
                             <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
                             AI Provenance Locked
