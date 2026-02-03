@@ -100,13 +100,13 @@ const firebaseEnv = processEnv;
 
 export const firebaseConfig = {
     apiKey: firebaseEnv.firebaseApiKey || "",
-    authDomain: (firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1") + ".firebaseapp.com",
-    databaseURL: firebaseEnv.firebaseDatabaseURL || "https://indiios-v-1-1-default-rtdb.firebaseio.com",
-    projectId: firebaseEnv.firebaseProjectId || firebaseEnv.projectId || "indiios-v-1-1",
-    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
-    messagingSenderId: getEnv(import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID, process.env.VITE_FIREBASE_MESSAGING_SENDER_ID) || "223837784072",
-    appId: getEnv(import.meta.env.VITE_FIREBASE_APP_ID, process.env.VITE_FIREBASE_APP_ID) || "1:223837784072:web:3af738739465ea4095e9bd",
-    measurementId: getEnv(import.meta.env.VITE_FIREBASE_MEASUREMENT_ID, process.env.VITE_FIREBASE_MEASUREMENT_ID) || "G-7WW3HEHFTF"
+    authDomain: "indiios-v-1-1.firebaseapp.com",
+    databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
+    projectId: "indiios-v-1-1",
+    storageBucket: "indiios-alpha-electron",
+    messagingSenderId: "223837784072",
+    appId: "1:223837784072:web:3af738739465ea4095e9bd",
+    measurementId: "G-7WW3HEHFTF"
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {

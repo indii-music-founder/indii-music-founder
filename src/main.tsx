@@ -11,6 +11,9 @@ import './index.css';
 initSentry();
 
 
+console.log("Indii OS Studio v1.2.3-fix-bucket-name-raw");
+document.title = "indiiOS - Studio (v1.2.3)";
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
         <BrowserRouter>
