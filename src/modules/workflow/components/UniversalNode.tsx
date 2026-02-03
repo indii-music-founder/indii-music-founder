@@ -77,12 +77,47 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
         if (!asset) return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-600 text-[10px] italic">No Data</div>;
 
-        if (asset.assetType === 'image') return <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />;
+        if (asset.assetType === 'image') return (
+            <div className="relative w-full h-full">
+                <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />
+                {asset.aiMetadata && (
+                    <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
+                        AI Provenance Locked
+                    </div>
+                )}
+            </div>
+        );
         if (asset.assetType === 'imageConceptSet') {
-            const conceptSet = asset as unknown as { concepts: { imageUrl: string }[] };
-            return <img src={conceptSet.concepts[0]?.imageUrl} alt="Result" className="w-full h-full object-cover" />;
+            const conceptSet = asset as unknown as { concepts: { imageUrl: string; aiMetadata?: any }[] };
+            return (
+                <div className="relative w-full h-full">
+                    <img src={conceptSet.concepts[0]?.imageUrl} alt="Result" className="w-full h-full object-cover" />
+                    {conceptSet.concepts[0]?.aiMetadata && (
+                        <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm">
+                            AI Provenance Locked
+                        </div>
+                    )}
+                </div>
+            );
         }
         if (asset.assetType === 'video') return <video src={(asset as unknown as { videoUrl: string }).videoUrl} className="w-full h-full object-cover" />;
+
+        // --- ENHANCEMENT: Detect raw base64 data and render as image ---
+        const resultString = String(data.result);
+        if (resultString.startsWith('data:image/') || (asset as any).base64) {
+            const src = (asset as any).base64 ? `data:${(asset as any).mimeType || 'image/png'};base64,${(asset as any).base64}` : resultString;
+            return (
+                <div className="relative w-full h-full">
+                    <img src={src} alt="AI Result" className="w-full h-full object-cover" />
+                    {asset.aiMetadata && (
+                        <div className="absolute bottom-1 right-1 bg-black/80 px-1.5 py-0.5 rounded text-[8px] text-teal-400 border border-teal-500/50 backdrop-blur-sm flex items-center gap-1">
+                            <div className="w-1 h-1 bg-teal-500 rounded-full animate-pulse" />
+                            AI Provenance Locked
+                        </div>
+                    )}
+                </div>
+            );
+        }
 
         const displayLabel = asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received');
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
