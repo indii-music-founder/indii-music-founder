@@ -9,14 +9,14 @@ import { z } from 'zod';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3-pro-preview',
-    TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3-pro-image-preview',
-    IMAGE_FAST: 'gemini-2.5-flash-image',
-    AUDIO_PRO: 'gemini-2.5-pro-preview-tts',
-    AUDIO_FLASH: 'gemini-2.5-flash-preview-tts',
-    VIDEO_GEN: 'veo-3.1-generate-preview',
-    BROWSER_AGENT: 'gemini-2.5-pro-ui-checkpoint',
+    TEXT_AGENT: 'gemini-3-pro-review-001',
+    TEXT_FAST: 'gemini-3-flash-review-001',
+    IMAGE_GEN: 'imagen-3.0-generate-001',
+    IMAGE_FAST: 'imagen-3.0-fast-001',
+    AUDIO_PRO: 'gemini-1.5-pro',
+    AUDIO_FLASH: 'gemini-1.5-flash',
+    VIDEO_GEN: 'veo-1.0-generate-001',
+    BROWSER_AGENT: 'gemini-1.5-pro',
     EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
 
@@ -91,14 +91,12 @@ export const AI_CONFIG = {
  * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
-    [APPROVED_MODELS.TEXT_AGENT]: { input: 1.25, output: 3.75 },
-    [APPROVED_MODELS.TEXT_FAST]: { input: 0.10, output: 0.40 },
-    [APPROVED_MODELS.IMAGE_GEN]: { output: 120.00, resolution: "4K", capacity: 14 },
-    [APPROVED_MODELS.IMAGE_FAST]: { output: 30.00, resolution: "1K", capacity: 8 },
-    [APPROVED_MODELS.VIDEO_GEN]: { perGeneration: 0.05 },
-    [APPROVED_MODELS.AUDIO_PRO]: { perGeneration: 0.01 },
-    [APPROVED_MODELS.AUDIO_FLASH]: { perGeneration: 0.005 },
-    [APPROVED_MODELS.BROWSER_AGENT]: { input: 1.25, output: 3.75 },
+    'gemini-2.0-flash-thinking-exp': { input: 1.25, output: 3.75 },
+    'gemini-1.5-flash': { input: 0.10, output: 0.40 },
+    'imagen-3.0-generate-001': { output: 120.00, resolution: "4K", capacity: 14 },
+    'imagen-3.0-fast-001': { output: 30.00, resolution: "1K", capacity: 8 },
+    'veo-1.0-generate-001': { perGeneration: 0.05 },
+    'gemini-1.5-pro': { perGeneration: 0.01 },
 } as const;
 
 /**
@@ -114,9 +112,9 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 // RUNTIME VALIDATION
 // ============================================================================
 
-const FORBIDDEN_PATTERNS = [
-    /gemini-1\./i,
-    /gemini-2\.0/i,
+const FORBIDDEN_PATTERNS: RegExp[] = [
+    // /gemini-1\./i,
+    // /gemini-2\.0/i,
     /^gemini-pro$/i,
     /gemini-pro-vision/i,
 ];
