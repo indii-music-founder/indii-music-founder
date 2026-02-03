@@ -34,12 +34,15 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const nodeDefinition = getNodeDefinition(deptName);
     const jobDefinition = getJobDefinition(deptName, jobId);
 
+    // console.log("Node Result Data:", data.result);
+
     const status = statusConfig[data.status] || statusConfig[Status.PENDING];
     const StatusIcon = status.icon;
     const Icon = nodeDefinition?.icon || Settings;
 
-    // 2. Result Rendering Logic
     const renderResultPreview = () => {
+        // console.log("Rendering Node ID:", id, "Data:", data);
+        
         if (data.status === Status.ERROR) {
             return <p className="text-red-400 text-[10px] p-2 break-all leading-tight">{String(data.result).substring(0, 50)}...</p>;
         }
@@ -54,25 +57,35 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             }
         }
 
-        if (!data.result || data.status !== Status.DONE) {
+        // --- THE FIX: We were checking !data.result too strictly ---
+        // If status is DONE, we should try to render whatever is in result.
+        if (data.status !== Status.DONE) {
             return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-600 text-[10px] italic">Awaiting Output</div>;
         }
 
-        let asset: AnyAsset;
+        if (!data.result) {
+            return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-400 text-[10px] italic">Success: No Data Returned</div>;
+        }
+
+        // Deep check for result structure
+        let asset: AnyAsset | null = null;
         try {
             asset = typeof data.result === 'string' ? JSON.parse(data.result) : (data.result as AnyAsset);
         } catch (e) {
             return <p className="text-gray-400 text-[10px] p-1 truncate">{String(data.result).substring(0, 30)}</p>;
         }
 
-        if (asset?.assetType === 'image') return <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />;
-        if (asset?.assetType === 'imageConceptSet') {
+        if (!asset) return <div className="w-full h-full flex items-center justify-center bg-gray-900/50 text-gray-600 text-[10px] italic">No Data</div>;
+
+        if (asset.assetType === 'image') return <img src={(asset as unknown as { imageUrl: string }).imageUrl} alt="Result" className="w-full h-full object-cover" />;
+        if (asset.assetType === 'imageConceptSet') {
             const conceptSet = asset as unknown as { concepts: { imageUrl: string }[] };
             return <img src={conceptSet.concepts[0]?.imageUrl} alt="Result" className="w-full h-full object-cover" />;
         }
-        if (asset?.assetType === 'video') return <video src={(asset as unknown as { videoUrl: string }).videoUrl} className="w-full h-full object-cover" />;
+        if (asset.assetType === 'video') return <video src={(asset as unknown as { videoUrl: string }).videoUrl} className="w-full h-full object-cover" />;
 
-        return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{asset.title || asset.description || (typeof asset === 'string' ? asset : 'Output Received')}</div>;
+        const displayLabel = asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received');
+        return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 
     const handleEdit = (e: React.MouseEvent) => {

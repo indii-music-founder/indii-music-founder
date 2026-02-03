@@ -340,6 +340,20 @@
         }
       ],
       "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "distribution_tasks",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
     }
   ]
 }
