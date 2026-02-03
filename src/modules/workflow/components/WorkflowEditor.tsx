@@ -1,9 +1,13 @@
 import React, { useCallback, useRef } from 'react';
+import { Maximize, Eraser } from 'lucide-react';
 import ReactFlow, {
     ReactFlowProvider,
     addEdge,
     Controls,
     Background,
+    BackgroundVariant,
+    MiniMap,
+    Panel,
     applyNodeChanges,
     applyEdgeChanges,
     Connection,
@@ -96,16 +100,54 @@ const WorkflowEditorContent: React.FC<WorkflowEditorProps> = ({ readOnly = false
                 nodeTypes={nodeTypes}
                 isValidConnection={isValidConnection}
                 fitView
-                className="bg-transparent"
+                className="bg-[#0f0f0f]"
                 nodesDraggable={!readOnly}
                 nodesConnectable={!readOnly}
                 elementsSelectable={!readOnly}
                 panOnDrag={true}
                 zoomOnScroll={true}
                 zoomOnPinch={true}
+                minZoom={0.2}
+                maxZoom={2}
             >
-                <Controls className="react-flow-controls" showInteractive={!readOnly} />
-                <Background gap={16} color="#334155" />
+                <Controls
+                    className="!bg-gray-800/80 !border-gray-700 !text-gray-400 [&>button]:!border-b-gray-700 hover:[&>button]:!bg-gray-700/50"
+                    showInteractive={!readOnly}
+                />
+
+                <MiniMap
+                    nodeStrokeColor="#374151"
+                    nodeColor="#1f2937"
+                    maskColor="rgba(17, 24, 39, 0.8)"
+                    className="!bg-gray-900/50 !border !border-gray-800 !rounded-lg !overflow-hidden !bottom-4 !right-4"
+                />
+
+                <Panel position="top-right" className="flex gap-2">
+                    <button
+                        className="p-2 bg-gray-800/80 backdrop-blur border border-gray-700 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700 transition-colors shadow-lg"
+                        onClick={() => reactFlowInstance?.fitView()}
+                        title="Fit View"
+                    >
+                        <Maximize size={18} />
+                    </button>
+                    {!readOnly && (
+                        <button
+                            className="p-2 bg-red-900/20 backdrop-blur border border-red-900/50 rounded-lg text-red-500 hover:text-red-400 hover:bg-red-900/40 transition-colors shadow-lg"
+                            onClick={() => setNodes([])}
+                            title="Clear All"
+                        >
+                            <Eraser size={18} />
+                        </button>
+                    )}
+                </Panel>
+
+                <Background
+                    gap={20}
+                    size={2}
+                    color="#374151"
+                    variant={BackgroundVariant.Cross}
+                    className="opacity-50"
+                />
             </ReactFlow>
         </div>
     );

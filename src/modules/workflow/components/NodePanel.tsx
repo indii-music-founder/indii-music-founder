@@ -1,8 +1,11 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert } from 'lucide-react';
+import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert, GripHorizontal } from 'lucide-react';
+import { motion, useDragControls } from 'framer-motion';
 
 export default function NodePanel() {
+    const controls = useDragControls();
+
     const onDragStart = (event: React.DragEvent, nodeType: string, data?: any) => {
         event.dataTransfer.setData('application/reactflow', nodeType);
         event.dataTransfer.effectAllowed = 'move';
@@ -15,9 +18,21 @@ export default function NodePanel() {
     };
 
     return (
-        <div className="absolute left-4 top-4 w-64 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl shadow-xl overflow-hidden flex flex-col z-40">
-            <div className="p-3 border-b border-gray-800 bg-gray-800/50">
-                <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">Node Library</h3>
+        <motion.div
+            drag
+            dragListener={false}
+            dragControls={controls}
+            dragMomentum={false}
+            className="absolute left-4 top-4 w-64 bg-gray-900/90 backdrop-blur border border-gray-700 rounded-xl shadow-xl overflow-hidden flex flex-col z-40"
+        >
+            <div
+                className="p-3 border-b border-gray-800 bg-gray-800/50 cursor-move flex items-center justify-between"
+                onPointerDown={(e) => controls.start(e)}
+            >
+                <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider flex items-center gap-2">
+                    <GripHorizontal size={16} className="text-gray-500" />
+                    Node Library
+                </h3>
             </div>
 
             <div className="p-2 space-y-1 overflow-y-auto max-h-[70vh] custom-scrollbar">
@@ -90,6 +105,6 @@ export default function NodePanel() {
                     <span className="text-sm text-gray-300 group-hover:text-white">Gatekeeper</span>
                 </div>
             </div>
-        </div>
+        </motion.div>
     );
 }
