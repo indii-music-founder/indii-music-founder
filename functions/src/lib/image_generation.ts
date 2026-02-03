@@ -87,7 +87,22 @@ class GeminiImageService {
                 throw new Error("No image data found in candidates");
             }
 
-            return { images };
+            return { 
+                images,
+                aiMetadata: {
+                    toolName: modelId,
+                    generationType: 'text-to-image',
+                    isAIGenerated: true,
+                    timestamp: new Date().toISOString(),
+                    promptSnippet: data.prompt.substring(0, 100)
+                },
+                aiGenerationInfo: {
+                    isFullyAIGenerated: true,
+                    isPartiallyAIGenerated: false,
+                    aiToolsUsed: [modelId],
+                    humanContributionDescription: `Generated via indiiOS Concept Art Node using prompt: "${data.prompt.substring(0, 100)}..."`
+                }
+            };
 
         } catch (error) {
             this.handleApiError(error, "generate");
@@ -153,7 +168,20 @@ class GeminiImageService {
             return {
                 base64: genImg.image.imageBytes as string,
                 mimeType: genImg.image.mimeType || "image/png",
-                thoughtSignature: undefined // Not provided by editImage response
+                thoughtSignature: undefined, // Not provided by editImage response
+                aiMetadata: {
+                    toolName: modelId,
+                    generationType: 'image-to-image',
+                    isAIGenerated: true,
+                    timestamp: new Date().toISOString(),
+                    promptSnippet: data.prompt.substring(0, 100)
+                },
+                aiGenerationInfo: {
+                    isFullyAIGenerated: false,
+                    isPartiallyAIGenerated: true,
+                    aiToolsUsed: [modelId],
+                    humanContributionDescription: `Edited via indiiOS Concept Art Node. Original human-provided image modified using instruction: "${data.prompt.substring(0, 100)}..."`
+                }
             };
 
         } catch (error) {
@@ -235,5 +263,9 @@ export const editImageFn = () => functions
             }
         ];
 
-        return { candidates };
+        return { 
+            candidates,
+            aiMetadata: result.aiMetadata,
+            aiGenerationInfo: result.aiGenerationInfo
+        };
     });
