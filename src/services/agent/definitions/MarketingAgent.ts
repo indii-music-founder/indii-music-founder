@@ -160,6 +160,31 @@ export const MarketingAgent: AgentConfig = {
                     },
                     required: []
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Research market trends, competitor ads, or platform algorithms.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "indii_image_gen",
+                description: "Generate ad creative, moodboards, or mockups.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        prompt: { type: "STRING" },
+                        aspect_ratio: { type: "STRING" }
+                    },
+                    required: ["prompt"]
+                }
             }
         ]
     }]
