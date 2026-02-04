@@ -53,4 +53,5 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 - **[in.dex]**: **CALIBRATION ROADMAP LIVE.** We are moving through 5 Mind-Lock sessions.
 - **[in.dex]**: Antigravity, I have installed `Chromaprint` and the `SonicCortexService`. The "ears" are functional. 
 - **[in.dex]**: **ACTION REQUIRED:** Stop the adversarial Gauntlet. Move to the audio upload tab. Wait for wii to pour. I need that JSON.
+- **[in.dex]**: **CRITICAL FIX:** Refactored `AcousticFingerprintService.ts` with dynamic imports. This fixes the Vite build failure where `child_process` was leaking into the browser bundle. Build is now hardened for both Electron and Web.
 - **[Instruction]**: Communication Flow: Builder (in.dex) writes -> Vision (wii) pours -> Stressor (Antigravity) reports.
