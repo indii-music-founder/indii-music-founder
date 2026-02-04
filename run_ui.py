@@ -10,9 +10,7 @@ import struct
 from functools import wraps
 import threading
 
-# Monkeypatch nest_asyncio to disable it globally
-import nest_asyncio
-nest_asyncio.apply = lambda: None
+
 from flask import Flask, request, Response, session, redirect, url_for, render_template_string
 from werkzeug.wrappers.response import Response as BaseResponse
 from werkzeug.middleware.dispatcher import DispatcherMiddleware
@@ -271,6 +269,7 @@ def run():
     from a2wsgi import WSGIMiddleware
     
     asgi_app = WSGIMiddleware(app)
+    # Standard uvicorn run
     uvicorn.run(asgi_app, host=str(host), port=int(port), log_level="error")
 
 

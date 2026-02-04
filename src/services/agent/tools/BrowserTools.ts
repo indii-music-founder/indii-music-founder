@@ -11,17 +11,34 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
      */
     browser_navigate: wrapTool('browser_navigate', async (args: { url: string }) => {
         try {
-            // Use the Electron IPC handler to perform the navigation
-            // @ts-ignore - window.electron exists in the browser context
-            const result = await window.electron.invoke('agent:navigate-and-extract', args.url);
-            
-            if (result.success) {
-                return toolSuccess(result, `Successfully navigated to ${args.url}`);
-            } else {
-                return toolError(result.error || 'Navigation failed', 'BROWSER_NAV_ERROR');
+            // 1. Electron Desktop (Native IPC)
+            // @ts-ignore
+            if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
+                // @ts-ignore
+                const result = await window.electronAPI.agent.navigateAndExtract(args.url);
+                if (result.success) {
+                    return toolSuccess(result, `Successfully navigated to ${args.url}`);
+                } else {
+                    return toolError(result.error || 'Navigation failed', 'BROWSER_NAV_ERROR');
+                }
             }
+
+            // 2. Web / Fallback (Agent Zero Container)
+            console.warn('[BrowserTools] Native bridge missing. Delegating to Agent Zero Container...');
+            const { agentZeroService } = await import('../AgentZeroService');
+
+            // We ask Agent Zero to browse. It will use python/tools/browser.py
+            const response = await agentZeroService.sendMessage(`Action: Navigate to ${args.url} and summarize the content.`);
+
+            return toolSuccess({
+                title: 'Agent Zero Browse Result',
+                url: args.url,
+                text: response.message,
+                screenshotBase64: null
+            }, response.message);
+
         } catch (error) {
-            return toolError(`Failed to invoke browser navigation: ${String(error)}`, 'IPC_INVOKE_ERROR');
+            return toolError(`Failed to invoke browser navigation: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
     }),
 
@@ -30,16 +47,29 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
      */
     browser_action: wrapTool('browser_action', async (args: { action: 'click' | 'type' | 'hover', selector: string, text?: string }) => {
         try {
+            // 1. Electron Desktop (Native IPC)
             // @ts-ignore
-            const result = await window.electron.invoke('agent:perform-action', args.action, args.selector, args.text);
-            
-            if (result.success) {
-                return toolSuccess(result, `Successfully performed ${args.action} on ${args.selector}`);
-            } else {
-                return toolError(result.error || 'Action failed', 'BROWSER_ACTION_ERROR');
+            if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
+                // @ts-ignore
+                const result = await window.electronAPI.agent.performAction(args.action, args.selector, args.text);
+                if (result.success) {
+                    return toolSuccess(result, `Successfully performed ${args.action} on ${args.selector}`);
+                } else {
+                    return toolError(result.error || 'Action failed', 'BROWSER_ACTION_ERROR');
+                }
             }
+
+            // 2. Web Fallback
+            // Actions on web via Agent Zero are tricky because they are stateless requests.
+            // We'll try to describe the intent.
+            const { agentZeroService } = await import('../AgentZeroService');
+            const actionDesc = `${args.action} on '${args.selector}'${args.text ? ` with text '${args.text}'` : ''}`;
+            const response = await agentZeroService.sendMessage(`Action: Perform ${actionDesc} in the browser.`);
+
+            return toolSuccess({ success: true }, response.message);
+
         } catch (error) {
-            return toolError(`Failed to invoke browser action: ${String(error)}`, 'IPC_INVOKE_ERROR');
+            return toolError(`Failed to invoke browser action: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
     }),
 
@@ -48,16 +78,31 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
      */
     browser_snapshot: wrapTool('browser_snapshot', async () => {
         try {
+            // 1. Electron Desktop (Native IPC)
             // @ts-ignore
-            const result = await window.electron.invoke('agent:capture-state');
-            
-            if (result.success) {
-                return toolSuccess(result, "Snapshot captured successfully.");
-            } else {
-                return toolError(result.error || 'Snapshot failed', 'BROWSER_SNAPSHOT_ERROR');
+            if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
+                // @ts-ignore
+                const result = await window.electronAPI.agent.captureState();
+                if (result.success) {
+                    return toolSuccess(result, "Snapshot captured successfully.");
+                } else {
+                    return toolError(result.error || 'Snapshot failed', 'BROWSER_SNAPSHOT_ERROR');
+                }
             }
+
+            // 2. Web Fallback
+            const { agentZeroService } = await import('../AgentZeroService');
+            const response = await agentZeroService.sendMessage(`Action: What is currently visible in the browser?`);
+
+            return toolSuccess({
+                title: 'Agent Zero Snapshot',
+                url: 'unknown',
+                text: response.message,
+                screenshotBase64: null
+            }, response.message);
+
         } catch (error) {
-            return toolError(`Failed to invoke browser snapshot: ${String(error)}`, 'IPC_INVOKE_ERROR');
+            return toolError(`Failed to invoke browser snapshot: ${String(error)}`, 'BROWSER_INVOKE_ERROR');
         }
     })
 };

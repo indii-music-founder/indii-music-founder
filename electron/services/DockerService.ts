@@ -24,7 +24,8 @@ export class DockerService {
 
         try {
             // We use --remove-orphans to keep the environment clean
-            const { stdout, stderr } = await execPromise('docker-compose up -d --remove-orphans', { cwd });
+            // Using 'docker compose' (v2 path-safe) instead of 'docker-compose'
+            const { stdout, stderr } = await execPromise('docker compose up -d --remove-orphans', { cwd });
             log.info(`[DockerService] Startup Output: ${stdout}`);
             if (stderr) log.warn(`[DockerService] Startup Warnings: ${stderr}`);
 
@@ -44,7 +45,7 @@ export class DockerService {
         log.info(`[DockerService] Restarting AI system...`);
 
         try {
-            await execPromise('docker-compose down', { cwd });
+            await execPromise('docker compose down', { cwd });
             return await this.ensureStarted();
         } catch (error: any) {
             log.error(`[DockerService] Restart Failed: ${error.message}`);
@@ -61,7 +62,7 @@ export class DockerService {
         log.info(`[DockerService] Stopping AI containers...`);
         try {
             // We use 'stop' instead of 'down' to preserve container state but free up resources
-            await execPromise('docker-compose stop', { cwd });
+            await execPromise('docker compose stop', { cwd });
         } catch (error: any) {
             log.error(`[DockerService] Stop Failed: ${error.message}`);
         }
