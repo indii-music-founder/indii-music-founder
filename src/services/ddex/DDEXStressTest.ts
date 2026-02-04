@@ -66,7 +66,17 @@ export async function runDDEXStressTest() {
             console.error('   ❌ AI metadata audit failed.');
         }
 
-        // 3. AUDIT: Complete Set Semantics (Goal 5)
+        // 3. AUDIT: SONIC DNA (Soul Scan)
+        console.log('🧬 Audit: Acoustic Fingerprinting (Sonic ID)...');
+        // We simulate a path and trigger the service
+        const sonicId = await runFingerprintAudit(); 
+        if (sonicId && sonicId.startsWith('SONIC-')) {
+            console.log(`   ✅ Sonic DNA Verified: ${sonicId}`);
+        } else {
+            console.error('   ❌ Sonic DNA Generation Failed.');
+        }
+
+        // 4. AUDIT: Complete Set Semantics (Goal 5)
         console.log('🔄 Audit: Complete Set Semantics (Multi-Territory)...');
         // Check for specific territory codes in deals
         const hasJP = xml.includes('JP');
