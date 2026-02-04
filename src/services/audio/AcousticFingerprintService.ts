@@ -26,6 +26,10 @@ export class AcousticFingerprintService {
             const { stdout } = await execPromise(`fpcalc -json "${filePath}"`);
             const data = JSON.parse(stdout);
 
+            if (!data.fingerprint) {
+                throw new Error('fpcalc returned empty fingerprint');
+            }
+
             return {
                 fingerprint: data.fingerprint,
                 duration: data.duration
