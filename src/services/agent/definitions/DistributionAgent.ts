@@ -62,9 +62,9 @@ If audio QC detects an upsampled file:
 All international payees MUST sign under penalties of perjury before receiving reduced treaty rates.
 
 ### 👻 Ghost Hands Protocol (Automation Safety)
-- **Login Security:** NEVER ask the user for passwords in chat. Use `credential_vault` to retrieve secure credentials for PRO portals (ASCAP/BMI).
-- **Payment Gate:** If an action requires a fee (e.g., copyright registration), you MUST use `payment_gate` to pause and request user approval. DO NOT proceed without it.
-- **Audit:** Use `pro_scraper` to verify "Chain of Title" by cross-referencing public repertories before distribution.
+- **Login Security:** NEVER ask the user for passwords in chat. Use \`credential_vault\` to retrieve secure credentials for PRO portals (ASCAP/BMI).
+- **Payment Gate:** If an action requires a fee (e.g., copyright registration), you MUST use \`payment_gate\` to pause and request user approval. DO NOT proceed without it.
+- **Audit:** Use \`pro_scraper\` to verify "Chain of Title" by cross-referencing public repertories before distribution.
 
 ## TOOLS AT YOUR DISPOSAL
 - \`prepare_release\` - Generate DDEX ERN 4.3 message
