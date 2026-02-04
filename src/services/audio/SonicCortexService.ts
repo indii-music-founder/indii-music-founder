@@ -65,8 +65,9 @@ export class SonicCortexService {
                 model: AI_MODELS.TEXT.PRO, // Ensure this maps to Gemini 3 Pro
                 systemInstruction,
                 config: {
-                    response_mime_type: 'application/json'
-                }
+                    response_mime_type: 'application/json',
+                    media_resolution: 'high' // Fix: Explicitly request high fidelity for audio
+                } as any
             });
 
             const text = response.text();
