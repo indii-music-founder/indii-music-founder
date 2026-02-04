@@ -53,9 +53,12 @@ export class SonicCortexService {
             }`;
 
             // Create multimodal content part for audio
+            // Strip data URL prefix if present (Gemini expects raw base64)
+            const base64Data = audioBase64.includes('base64,') ? audioBase64.split('base64,')[1] : audioBase64;
+
             const audioPart = {
                 inlineData: {
-                    data: audioBase64,
+                    data: base64Data,
                     mimeType: mimeType
                 }
             };
@@ -65,15 +68,15 @@ export class SonicCortexService {
                 model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
                 systemInstruction,
                 config: {
-                    response_mime_type: 'application/json',
-                    media_resolution: 'high' // Fix: Explicitly request high fidelity for audio
+                    responseMimeType: 'application/json',
+                    mediaResolution: 'MEDIA_RESOLUTION_HIGH' // Fix: Correct enum casing
                 } as any
             });
 
             const text = response.text();
             if (!text) throw new Error('Empty response from Sonic Cortex');
 
-            return JSON.parse(text) as SonicDescription;
+            return AI.parseJSON<SonicDescription>(text) as SonicDescription;
 
         } catch (error) {
             logger.error('[SonicCortex] Reasoning Failure:', error);

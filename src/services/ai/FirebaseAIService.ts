@@ -30,6 +30,11 @@ import {
     GenerateImageRequest,
     GenerateImageResponse,
     GenerateSpeechResponse,
+    GenerateContentOptions,
+    GenerateStreamOptions,
+    GenerateVideoOptions,
+    GenerateImageOptions,
+    EmbedContentOptions,
     GenerationConfig,
     ContentPart,
     SafetySetting,
@@ -741,27 +746,46 @@ export class FirebaseAIService {
      * HIGH LEVEL: Generate structured data from a prompt/parts and schema.
      */
     async generateStructuredData<T>(
-        prompt: string | Part[],
-        schema: Schema,
+        promptOrOptions: string | Part[] | GenerateContentOptions,
+        schemaOrConfig?: Schema | Record<string, unknown>,
         thinkingBudget?: number,
         systemInstruction?: string,
         modelOverride?: string
     ): Promise<T> {
         await this.ensureInitialized();
-        const config: GenerationConfig = {
-            responseMimeType: 'application/json',
-            responseSchema: schema
-        };
-        if (thinkingBudget) {
-            config.thinkingConfig = {
-                thinkingBudget,
-                budgetTokenCount: thinkingBudget,
-                includeThoughts: true
+
+        let prompt: string | Content[];
+        let schema: Schema | undefined;
+        let config: GenerationConfig = {};
+        let finalSystemInstruction = systemInstruction;
+        let modelName = modelOverride || this.getModelName();
+
+        if (typeof promptOrOptions === 'object' && !Array.isArray(promptOrOptions) && 'contents' in promptOrOptions) {
+            // Options object pattern
+            const options = promptOrOptions as GenerateContentOptions;
+            prompt = options.contents as Content[];
+            config = options.config || {};
+            schema = config.responseSchema as Schema;
+            finalSystemInstruction = options.systemInstruction;
+            modelName = options.model || modelName;
+        } else {
+            // Positional arguments pattern
+            prompt = typeof promptOrOptions === 'string' ? promptOrOptions : [{ role: 'user', parts: promptOrOptions as Part[] }];
+            schema = schemaOrConfig as Schema;
+            config = {
+                responseMimeType: 'application/json',
+                responseSchema: schema
             };
+            if (thinkingBudget) {
+                config.thinkingConfig = {
+                    thinkingBudget,
+                    budgetTokenCount: thinkingBudget,
+                    includeThoughts: true
+                };
+            }
         }
 
-        const modelName = modelOverride || this.getModelName();
-        const cacheKeyString = (typeof prompt === 'string' ? prompt : JSON.stringify(prompt)) + JSON.stringify(schema) + modelName;
+        const cacheKeyString = JSON.stringify(prompt) + JSON.stringify(schema || {}) + modelName;
 
         const cached = await aiCache.get(cacheKeyString, modelName, config);
         if (cached) {
@@ -773,15 +797,18 @@ export class FirebaseAIService {
         }
 
         const result = await this.rawGenerateContent(
-            typeof prompt === 'string' ? prompt : [{ role: 'user', parts: prompt }],
+            prompt,
             modelName,
             config,
-            systemInstruction
+            finalSystemInstruction
         );
 
         const text = result.response.text();
         await aiCache.set(cacheKeyString, text, modelName, config);
-        return JSON.parse(text) as T;
+
+        // Use the robust parser
+        const cleaned = text.replace(/```json\n ?| ```/g, '').trim();
+        return JSON.parse(cleaned) as T;
     }
 
     /**

@@ -196,13 +196,24 @@ const AudioAnalyzer: React.FC = () => {
             }
 
             // Legacy/Heuristic Tags fallback
-            if (result.energy > 0.8) newTags.push('High Voltage');
-            else if (result.energy < 0.3) newTags.push('Chill');
+            if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
+            else if (result.energy > 0.6) newTags.push('High Energy');
+            else if (result.energy < 0.2) newTags.push('Ambient', 'Atmospheric');
+            else if (result.energy < 0.4) newTags.push('Chill');
 
-            if (result.bpm > 135) newTags.push('High Tempo');
-            else if (result.bpm < 90) newTags.push('Downtempo');
+            if (result.bpm > 150) newTags.push('Hypertempo');
+            else if (result.bpm > 135) newTags.push('High Tempo');
+            else if (result.bpm < 80) newTags.push('Very Slow');
+            else if (result.bpm < 95) newTags.push('Downtempo');
+            else newTags.push('Mid-tempo');
 
-            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready');
+            // Add Genre if available
+            if (result.genre) {
+                const topGenre = Object.keys(result.genre)[0];
+                if (topGenre) newTags.push(topGenre);
+            }
+
+            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
 
             setTags(Array.from(new Set(newTags)));
 
