@@ -29,7 +29,12 @@ class HybridOrchestrator:
             print("Orchestrator: Fast model response invalid. Escalating...")
             
         except Exception as e:
-            print(f"Orchestrator: Fast model failed ({e}). Escalating...")
+            # Task 4 FIX: Explicitly catch RateLimitError and provider errors
+            error_str = str(e).lower()
+            if "429" in error_str or "rate limit" in error_str:
+                print(f"Orchestrator: Rate Limit (429) hit on {model}. Switching to Pro...")
+            else:
+                print(f"Orchestrator: Fast model failed ({e}). Escalating...")
 
         # Phase 2: Sovereign Escalation (Self-Correction)
         try:
