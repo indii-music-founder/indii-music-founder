@@ -38,14 +38,8 @@ class IndiiImageGen(Tool):
                 return Response(message="Error: Image API returned no data.", break_loop=False)
 
             # 4. Persistence Rule (Physicality First)
-            # Standardizing to absolute project-based paths
-            try:
-                project_id = getattr(self.agent.context, 'id', 'default_project')
-            except:
-                project_id = "default_project"
-
-            # Blueprint Path: /a0/usr/projects/{project_id}/assets/image/
-            assets_dir = f"/a0/usr/projects/{project_id}/assets/image"
+            # Standardizing to relative assets path for portability
+            assets_dir = os.path.join(os.getcwd(), "assets", "image")
             if not os.path.exists(assets_dir):
                 os.makedirs(assets_dir, exist_ok=True)
 
