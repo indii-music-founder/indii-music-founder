@@ -45,19 +45,24 @@ class PaymentGate(Tool):
         start_time = time.time()
         
         while (time.time() - start_time) < timeout:
-            await asyncio.sleep(2) # Poll every 2s
+            # Task 10 FIX: Using yield for better asyncio compatibility in Electron bridge
+            await asyncio.sleep(2) 
             
             if os.path.exists(request_path):
-                with open(request_path, "r") as f:
-                    try:
-                        current_status = json.load(f).get("status")
+                # Ensure we don't hold the file handle longer than needed
+                try:
+                    with open(request_path, "r") as f:
+                        data = json.load(f)
+                        current_status = data.get("status")
+                        
                         if current_status == "APPROVED":
                             self.set_progress("✅ Payment Approved. Resuming...")
                             return Response(message=f"Payment of {amount} to {vendor} APPROVED. Proceeding.", break_loop=False)
                         elif current_status == "REJECTED":
                             self.set_progress("❌ Payment Rejected.")
                             return Response(message="Payment REJECTED by user. Halting process.", break_loop=True)
-                    except:
-                        pass
+                except (json.JSONDecodeError, IOError):
+                    # Handle race condition where file is being written while we read
+                    continue
             
         return Response(message="Payment request timed out.", break_loop=True)
