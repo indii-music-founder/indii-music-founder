@@ -23,6 +23,7 @@
 - [x] **Video Dept:** Equipped with `browser_tool` (Assets), `indii_image_gen` (Boards).
 - [x] **Legal Counsel:** Equipped with `browser_tool` (Case Law), `document_query`.
 - [x] **Social/Security/DevOps/Licensing:** All upgraded with Ghost Hands.
+- [x] **Gemini 2.5 Bridge:** Built `gemini_browser_tool.py` for visual reasoning support.
 
 ## Infrastructure Sync (COMPLETED)
 - [x] **Asyncio Fix:** `safe_run` patched.
