@@ -9,7 +9,7 @@ export class DDEXIdentity {
      * Get the sender DPID (indiiOS)
      */
     static getSenderDPID(): string {
-        return DDEX_CONFIG.DPID || 'PADPIDA0000000000'; // Placeholder if not set
+        return DDEX_CONFIG.PARTY_ID || 'PADPIDA0000000000'; // Placeholder if not set
     }
 
     /**

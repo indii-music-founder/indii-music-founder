@@ -270,16 +270,26 @@ export class AudioAnalysisService {
     async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
         try {
             const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db } = await import('@/services/firebase');
+            const { db, auth } = await import('@/services/firebase');
+
+            const user = auth.currentUser;
+            if (!user) {
+                console.warn("[AudioAnalysis] Cannot save analysis: User not authenticated");
+                throw new Error("User must be logged in to save analysis.");
+            }
 
             const docData = {
+                userId: user.uid,
                 filename,
-                ...analysis,
+                features: analysis, // Nest features to match schema expectation if needed, or spread if schema allows
+                ...analysis, // Spreading at top level for backward compat/flexibility
+                analyzedAt: serverTimestamp(), // Match schema 'analyzedAt'
                 createdAt: serverTimestamp(),
             };
 
-            await addDoc(collection(db, 'audio_analyses'), docData);
-            console.info(`[AudioAnalysis] Saved analysis for ${filename}`);
+            // Write to User-Scoped Collection
+            await addDoc(collection(db, `users/${user.uid}/analyzed_tracks`), docData);
+            console.info(`[AudioAnalysis] Saved analysis for ${filename} to users/${user.uid}/analyzed_tracks`);
         } catch (error) {
             console.error("[AudioAnalysis] Failed to save to Firestore", error);
             throw error;

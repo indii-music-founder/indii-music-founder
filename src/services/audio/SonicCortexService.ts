@@ -62,7 +62,7 @@ export class SonicCortexService {
 
             const response = await AI.generateContent({
                 contents: [{ role: 'user', parts: [audioPart, { text: prompt }] }],
-                model: AI_MODELS.TEXT.PRO, // Ensure this maps to Gemini 3 Pro
+                model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
                 systemInstruction,
                 config: {
                     response_mime_type: 'application/json',

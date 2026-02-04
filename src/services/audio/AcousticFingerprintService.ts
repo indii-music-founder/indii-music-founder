@@ -6,6 +6,11 @@
  * NOTE: This service uses Node.js 'child_process' and must only be executed
  * in the Electron Main process or via a Node-enabled environment.
  */
+export interface AcousticFingerprint {
+    fingerprint: string;
+    duration: number;
+}
+
 export class AcousticFingerprintService {
     /**
      * Generates an acoustic fingerprint for an audio file.
