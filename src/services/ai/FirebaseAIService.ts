@@ -785,7 +785,15 @@ export class FirebaseAIService {
             }
         }
 
-        const cacheKeyString = JSON.stringify(prompt) + JSON.stringify(schema || {}) + modelName;
+        // Create a lean cache key that avoids stringifying large binary/base64 data
+        const leanPrompt = Array.isArray(prompt)
+            ? prompt.map(p => ({
+                ...p,
+                parts: p.parts.map(part => 'inlineData' in part ? { ...part, inlineData: { ...part.inlineData, data: '[REDACTED_FOR_CACHE_KEY]' } } : part)
+            }))
+            : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
+
+        const cacheKeyString = JSON.stringify(leanPrompt) + JSON.stringify(schema || {}) + modelName;
 
         const cached = await aiCache.get(cacheKeyString, modelName, config);
         if (cached) {

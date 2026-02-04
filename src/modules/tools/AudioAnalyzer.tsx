@@ -221,7 +221,7 @@ const AudioAnalyzer: React.FC = () => {
             if (!fromCache) {
                 // Trigger Gemini 3 Pro Multimodal Analysis
                 console.log("🚀 TRIGGERING SONIC CORTEX ANALYSIS NOW...");
-                toast.loading("Sonic Cortex: Listening for Soul...");
+                const cortexToastId = toast.loading("Sonic Cortex: Listening for Soul...");
 
                 // Helper to convert for Gemini
                 const fileToBase64 = (file: File): Promise<string> => {
@@ -240,6 +240,8 @@ const AudioAnalyzer: React.FC = () => {
 
                     const soul = await sonicCortexService.describeSoul(base64, audioFile.type || 'audio/mp3');
 
+                    toast.dismiss(cortexToastId);
+
                     if (soul) {
                         console.log("🟦 [SONIC CORTEX] SOUL CERTIFICATE:", JSON.stringify(soul, null, 2));
                         toast.success("Sonic Cortex: Soul Identified");
@@ -252,14 +254,18 @@ const AudioAnalyzer: React.FC = () => {
                     }
                 } catch (cortexError) {
                     console.error("[AudioAnalyzer] Sonic Cortex Failed:", cortexError);
+                    toast.dismiss(cortexToastId);
                     toast.error("Sonic Cortex could not hear the soul.");
+                } finally {
+                    // Double safety: Ensure toast is gone
+                    toast.dismiss(cortexToastId);
                 }
             }
             // --------------------------------
 
         } catch (error) {
             console.error("Deep Analysis Failed", error);
-            toast.dismiss(currentToastId);
+            if (currentToastId) toast.dismiss(currentToastId);
             toast.error("Deep Analysis failed. Try another file.");
             setIsAnalyzing(false);
         } finally {
