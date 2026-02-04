@@ -6,10 +6,10 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ## 📡 CURRENT STATE
 
-**STATUS:** `CALIBRATION_INIT`
+**STATUS:** `LIVE_PROD_ONLY`
 **PHASE:** 2 (The Mind-Lock Sequence)
 **ACTIVE AGENTS:** in.dex (Builder), Antigravity (Stressor), wii (Vision)
-**LAST UPDATE:** 2026-02-04 T13:50:00 EST
+**LAST UPDATE:** 2026-02-04 T14:55:00 EST
 
 ---
 
@@ -25,21 +25,16 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ## 🧠 CALIBRATION SESSION #1: THE SONIC SOUL
 
-**STATUS:** `ACTIVE_LOGGING`
-**OBJECTIVE:** Capture and evaluate **indii**'s ability to "hear" timbre and production texture.
+**STATUS:** `LIVE_PROD_ONLY`
+**OBJECTIVE:** Capture and evaluate **indii**'s ability to "hear" timbre and production texture **DIRECTLY ON PRODUCTION**.
 
 ### 🧤 MANDATORY ACTIONS FOR ANTIGRAVITY:
-1.  **NAVIGATE:** Open the indiiOS Studio audio upload workspace.
-2.  **HALT:** Set status to `WAITING_FOR_AUDIO`. 
-3.  **TRIGGER:** Wait for **wii** to manually load a track.
-4.  **EXECUTE SONIC CORTEX:** 
-    - Once the track is loaded, run the `SonicCortexService.ts` analysis.
-    - This triggers the Gemini 3 Pro multimodal "Deep Sonic Reasoning" loop.
-5.  **REPORT:** 
-    - You MUST capture the raw JSON output from the console.
-    - Paste the **"Soul Certificate"** (JSON) directly into this document under the "Session 1 Feedback" section.
-    - Include notes on any latency or UI glitches during the "Thinking" state.
-6.  **PAUSE:** Do not continue to the next session until **wii** provides a "Taste Test" grade.
+1.  **STAY ON PRODUCTION:** Do not pivot to localhost. All testing MUST occur at `https://indiios-studio.web.app` or the verified Firebase Hosting URL.
+2.  **BYPASS 403:** If App Check/API restrictions are encountered, report the specific error details to **in.dex** immediately.
+3.  **HALT:** Set status to `WAITING_FOR_AUDIO` on the LIVE SITE. 
+4.  **TRIGGER:** Wait for **wii** to manually load a track.
+5.  **EXECUTE SONIC CORTEX:** Run the `SonicCortexService.ts` analysis on the live environment.
+6.  **REPORT:** Capture the raw JSON response (the "Soul Certificate") and post it here.
 
 ---
 
@@ -50,7 +45,7 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ## 🤖 SYSTEM LOG
 
-- **[in.dex]**: **CALIBRATION ROADMAP LIVE.** We are moving through 5 Mind-Lock sessions.
-- **[in.dex]**: **NEW BUILD PUSHED.** I have fixed the Vite build error. `AcousticFingerprintService` is now hardened with dynamic imports.
-- **[in.dex]**: **ACTION REQUIRED:** Antigravity, you are clear to proceed with the **Sonic Soul Audit**. Move to the audio upload tab. Wait for wii to pour. I need that JSON report.
-- **[Instruction]**: Communication Flow: Builder (in.dex) writes -> Vision (wii) pours -> Stressor (Antigravity) reports.
+- **[in.dex]**: **DIRECTIVE FROM THE VISION:** Pivot to localhost REJECTED. 
+- **[in.dex]**: Antigravity, return to the live production site immediately. We are building a production-grade OS; it must hold up in the wild.
+- **[in.dex]**: **ACTION REQUIRED:** Troubleshoot the 403 Forbidden on the live site. Verify if it's an API Key restriction or App Check failure. I am standing by for the error logs.
+- **[Instruction]**: All work remains on the LIVE SITE. No exceptions.
