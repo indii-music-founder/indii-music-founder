@@ -1,18 +1,10 @@
-import { exec } from 'child_process';
-import { promisify } from 'util';
-import path from 'path';
-
-const execPromise = promisify(exec);
-
-export interface AcousticFingerprint {
-    fingerprint: string;
-    duration: number;
-}
-
 /**
  * AcousticFingerprintService
  * Uses Chromaprint's fpcalc to generate a robust acoustic fingerprint.
  * This is the "Soul" of the song—it survives format changes and compression.
+ * 
+ * NOTE: This service uses Node.js 'child_process' and must only be executed
+ * in the Electron Main process or via a Node-enabled environment.
  */
 export class AcousticFingerprintService {
     /**
@@ -20,9 +12,18 @@ export class AcousticFingerprintService {
      * @param filePath Path to the audio file on disk
      */
     async generateAcousticFingerprint(filePath: string): Promise<AcousticFingerprint | null> {
+        // Prevent browser-side execution crashes
+        if (typeof window !== 'undefined' && !((window as any).process?.type)) {
+            console.error('[AcousticFingerprint] Cannot run fpcalc in a pure browser environment.');
+            return null;
+        }
+
         try {
-            // Use fpcalc to generate the fingerprint
-            // -json output for easy parsing
+            // Dynamically import Node.js modules to prevent Vite/Rollup from bundling them for the browser
+            const { exec } = await import('child_process');
+            const { promisify } = await import('util');
+            const execPromise = promisify(exec);
+
             const { stdout } = await execPromise(`fpcalc -json "${filePath}"`);
             const data = JSON.parse(stdout);
 
@@ -44,8 +45,6 @@ export class AcousticFingerprintService {
      * Compare two fingerprints (Placeholder for future fuzzy-matching logic)
      */
     compareFingerprints(fp1: string, fp2: string): number {
-        // In a real scenario, this would use a bitwise comparison or the AcoustID API
-        // For now, it's an exact match check
         return fp1 === fp2 ? 100 : 0;
     }
 }
