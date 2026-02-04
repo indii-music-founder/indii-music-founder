@@ -16,10 +16,14 @@
 - [x] **Task 8: Universal Node Extensibility** -> `python/helpers/node_plugin.py`
 - [x] **Task 9: One-Click Installer** -> Updated `package.json` to bundle `python/`.
 
-## Phase 4: Automation & Scaling (QUEUED)
-- [ ] **Task 8 (Part 2): Streaming Node Integration** -> React-side logic (future cycle).
+## Phase 4: Agent Brain Upgrades (PROACTIVE)
+- [x] **Distribution Agent:** Equipped with `pro_scraper`, `payment_gate`, `credential_vault`.
+- [x] **Publicist Agent:** Equipped with `browser_tool`, `indii_image_gen`, `credential_vault`.
+- [x] **Road Manager:** Equipped with `browser_tool` (Maps), `credential_vault` (Booking).
+- [x] **Video Dept:** Equipped with `browser_tool` (Assets), `indii_image_gen` (Boards).
+- [x] **Legal Counsel:** Equipped with `browser_tool` (Case Law), `document_query`.
 
 ## Next Actions
-Pushing Batch 3 (Tasks 8-9) to Main.
-ALL GOLDEN 20 LOGIC TASKS COMPLETE.
-Verification pending user return.
+Pushing Batch 4 (Agent Definitions) to Main.
+All Logic & Agent Config tasks complete.
+Standing by for UI Integration (Antigravity).

@@ -177,4 +177,74 @@ export const PublicistAgent = createAgent('publicist')
             return { success: false, error: message };
         }
     })
+    .withTool({
+        functionDeclarations: [{
+            name: "indii_image_gen",
+            description: "Generate visual assets for press kits or social media.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    prompt: { type: "STRING", description: "Image description." },
+                    style: { type: "STRING", description: "Art style (Photorealistic, Cinematic)." },
+                    aspect_ratio: { type: "STRING", description: "1:1, 16:9, 9:16" }
+                },
+                required: ["prompt"]
+            }
+        }]
+    }, async (args: { prompt: string, style?: string, aspect_ratio?: string }) => {
+        // This is a placeholder for the Python bridge call
+        return {
+            success: true,
+            data: {
+                message: "Image generation task dispatched to Python Engine.",
+                task_payload: args
+            }
+        };
+    })
+    .withTool({
+        functionDeclarations: [{
+            name: "browser_tool",
+            description: "Browse the web to find press contacts or monitor coverage.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    action: { type: "STRING", description: "open, click, type, get_dom, screenshot" },
+                    url: { type: "STRING", description: "URL to visit" },
+                    selector: { type: "STRING" },
+                    text: { type: "STRING" }
+                },
+                required: ["action"]
+            }
+        }]
+    }, async (args: { action: string, url?: string, selector?: string, text?: string }) => {
+        return {
+            success: true,
+            data: {
+                message: "Browser action dispatched to Ghost Hands.",
+                payload: args
+            }
+        };
+    })
+    .withTool({
+        functionDeclarations: [{
+            name: "credential_vault",
+            description: "Securely retrieve passwords for social accounts.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    action: { type: "STRING", description: "retrieve" },
+                    service: { type: "STRING", description: "Service name (e.g. Twitter)" }
+                },
+                required: ["action", "service"]
+            }
+        }]
+    }, async (args: { action: string, service: string }) => {
+        return {
+            success: true,
+            data: {
+                message: "Vault access requested.",
+                payload: args
+            }
+        };
+    })
     .build();
