@@ -10,6 +10,7 @@ import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioAnalysisService, DeepAudioFeatures } from '@/services/audio/AudioAnalysisService';
+import { dnaOrchestrator } from '@/services/audio/DNAOrchestrator';
 import { SonicRadar } from './components/SonicRadar';
 import { TagMatrix } from './components/TagMatrix';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -35,6 +36,7 @@ const AudioAnalyzer: React.FC = () => {
     const [currentTime, setCurrentTime] = useState(0);
     const [duration, setDuration] = useState(0);
     const [selectedRegion, setSelectedRegion] = useState<{ start: number, end: number } | null>(null);
+    const [sonicId, setSonicId] = useState<string>('');
 
     // Audio Features
     const [features, setFeatures] = useState({
@@ -50,6 +52,7 @@ const AudioAnalyzer: React.FC = () => {
 
     // Hold the full deep analysis result for saving
     const [fullAnalysis, setFullAnalysis] = useState<DeepAudioFeatures | null>(null);
+    const [sonicDescription, setSonicDescription] = useState<any>(null);
 
     const [regionFeatures, setRegionFeatures] = useState<typeof features | null>(null);
 
@@ -141,12 +144,22 @@ const AudioAnalyzer: React.FC = () => {
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
-        const toastId = toast.loading("Initializing Deep Analysis Models... (First run may take time)");
-        const currentToastId = toastId;
-
+        const toastId = toast.loading("Analyzing Sonic DNA... (Orchestrating Soul & Cortex)");
+        
         try {
-            // Run Analysis
-            // Explicitly type the result to ensure TS knows the shape
+            // 1. Run the Unified DNA Orchestrator (Fingerprint + Cortex)
+            // Note: filePath is optional, only works in Electron main
+            const dna = await dnaOrchestrator.extractDNA(audioFile);
+            
+            if (dna) {
+                setSonicId(dna.sonicId);
+                setSonicDescription(dna.description);
+                if (dna.tags.length > 0) {
+                    setTags(dna.tags);
+                }
+            }
+
+            // 2. Traditional Analysis (for Radar/Features)
             const analysisResult = await audioAnalysisService.analyze(audioFile);
             const result = analysisResult.features;
             const fromCache = analysisResult.fromCache;
@@ -155,10 +168,10 @@ const AudioAnalyzer: React.FC = () => {
             setIsFromCache(fromCache);
 
             if (!fromCache) {
-                toast.dismiss(currentToastId);
-                toast.success("Analysis Complete: Neural Network inference successful");
+                toast.dismiss(toastId);
+                toast.success("Analysis Complete: Sonic ID & Cortex analysis successful");
             } else {
-                toast.dismiss(currentToastId);
+                toast.dismiss(toastId);
             }
 
             setFeatures({
@@ -167,50 +180,15 @@ const AudioAnalyzer: React.FC = () => {
                 energy: result.energy,
                 danceability: result.danceability_ml || result.danceability || 0.5,
                 happiness: result.moods?.happy || result.valence || 0.5,
-                // Heuristic: Low energy usually implies higher acousticness if instrumental
                 acousticness: result.voice_instrumental ? (1 - result.voice_instrumental) * 0.5 : 0.3,
                 instrumentalness: result.voice_instrumental || 0.7,
                 duration: result.duration
             });
 
-            // Smart Auto-Tagging based on Sonic DNA
-            const newTags: string[] = [];
-
-            // Add top Genre
-            if (result.genre) {
-                const entries = Object.entries(result.genre);
-                if (entries.length > 0) {
-                    const topGenre = entries.sort((a, b) => b[1] - a[1])[0];
-                    if (topGenre && topGenre[1] > 0.3) {
-                        newTags.push(topGenre[0]);
-                    }
-                }
-            }
-
-            // Add top Moods
-            if (result.moods) {
-                if (result.moods.happy > 0.6) newTags.push('Happy');
-                if (result.moods.sad > 0.6) newTags.push('Sad');
-                if (result.moods.aggressive > 0.6) newTags.push('Aggressive');
-                if (result.moods.relaxed > 0.6) newTags.push('Relaxed');
-            }
-
-            // Legacy/Heuristic Tags fallback
-            if (result.energy > 0.8) newTags.push('High Voltage');
-            else if (result.energy < 0.3) newTags.push('Chill');
-
-            if (result.bpm > 135) newTags.push('High Tempo');
-            else if (result.bpm < 90) newTags.push('Downtempo');
-
-            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready');
-
-            setTags(Array.from(new Set(newTags)));
-
         } catch (error) {
-            console.error("Deep Analysis Failed", error);
-            toast.dismiss(currentToastId);
-            toast.error("Deep Analysis failed. Try another file.");
-            setIsAnalyzing(false);
+            console.error("Analysis Failed", error);
+            toast.dismiss(toastId);
+            toast.error("Sonic DNA extraction failed.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -435,14 +413,42 @@ const AudioAnalyzer: React.FC = () => {
                                 {isFromCache && <Badge variant="secondary" className="text-[8px] h-4 bg-purple-500/20 text-purple-300 pointer-events-none">CACHED</Badge>}
                             </div>
                             <div className="flex-1 overflow-y-auto">
-                                <p className="text-xs font-mono text-white/70 leading-relaxed">
-                                    {isAnalyzing ? (
-                                        <span className="flex items-center gap-2">
-                                            <Loader2 className="animate-spin" size={12} />
-                                            Running Neural Inference...
-                                        </span>
-                                    ) : aiContextDescription}
-                                </p>
+                                <div className="space-y-4">
+                                    {sonicId && (
+                                        <div className="space-y-1">
+                                            <div className="text-[9px] text-muted-foreground uppercase flex items-center gap-1">
+                                                <Fingerprint size={10} /> Sonic ID
+                                            </div>
+                                            <div className="text-[10px] font-mono text-purple-300 break-all bg-white/5 p-1.5 rounded border border-white/5">
+                                                {sonicId}
+                                            </div>
+                                        </div>
+                                    )}
+                                    
+                                    <p className="text-xs font-mono text-white/70 leading-relaxed">
+                                        {isAnalyzing ? (
+                                            <span className="flex items-center gap-2">
+                                                <Loader2 className="animate-spin" size={12} />
+                                                Running Neural Inference...
+                                            </span>
+                                        ) : (
+                                            sonicDescription?.suggestedMarketingCopy || aiContextDescription
+                                        )}
+                                    </p>
+
+                                    {sonicDescription && (
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <div className="bg-black/20 p-2 rounded border border-white/5">
+                                                <div className="text-[8px] text-muted-foreground uppercase mb-1">Timbre</div>
+                                                <div className="text-[10px] text-white/80 leading-tight">{sonicDescription.timbre}</div>
+                                            </div>
+                                            <div className="bg-black/20 p-2 rounded border border-white/5">
+                                                <div className="text-[8px] text-muted-foreground uppercase mb-1">Mood</div>
+                                                <div className="text-[10px] text-white/80 leading-tight">{sonicDescription.mood}</div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
                             </div>
                         </div>
 
