@@ -73,6 +73,31 @@ export const PublishingAgent: AgentConfig = {
                     },
                     required: ["releaseId", "assets"]
                 }
+            },
+            {
+                name: "pro_scraper",
+                description: "Audit public repertories (ASCAP/BMI) for catalog accuracy.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Song or Writer name." },
+                        society: { type: "STRING", description: "ASCAP or BMI." }
+                    },
+                    required: ["query", "society"]
+                }
+            },
+            {
+                name: "payment_gate",
+                description: "Authorize fees for song registration.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        amount: { type: "NUMBER" },
+                        vendor: { type: "STRING" },
+                        reason: { type: "STRING" }
+                    },
+                    required: ["amount", "vendor", "reason"]
+                }
             }
         ]
     }]

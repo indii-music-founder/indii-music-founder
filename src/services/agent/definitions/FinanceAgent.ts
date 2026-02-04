@@ -151,6 +151,44 @@ Example: "By handling this metadata yourself, you just saved $45 in admin fees a
                     },
                     required: ["trackTitle", "distributor"]
                 }
+            },
+            {
+                name: "credential_vault",
+                description: "Securely retrieve passwords for royalty portals or banks.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "retrieve" },
+                        service: { type: "STRING", description: "Service name (e.g. SoundExchange)" }
+                    },
+                    required: ["action", "service"]
+                }
+            },
+            {
+                name: "payment_gate",
+                description: "Authorize payments for invoices or fees.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        amount: { type: "NUMBER" },
+                        vendor: { type: "STRING" },
+                        reason: { type: "STRING" }
+                    },
+                    required: ["amount", "vendor", "reason"]
+                }
+            },
+            {
+                name: "browser_tool",
+                description: "Check exchange rates or tax information.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
             }
         ]
     }]
