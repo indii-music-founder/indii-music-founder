@@ -153,6 +153,32 @@ export const RoadAgent: AgentConfig = {
                     },
                     required: ["topic"]
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Use a web browser for navigation, traffic checks, or venue research.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom, screenshot" },
+                        url: { type: "STRING", description: "URL to open" },
+                        selector: { type: "STRING" },
+                        text: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "credential_vault",
+                description: "Retrieve passwords for booking portals securely.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "retrieve" },
+                        service: { type: "STRING", description: "Service name (e.g. Airbnb)" }
+                    },
+                    required: ["action", "service"]
+                }
             }
         ]
     }]

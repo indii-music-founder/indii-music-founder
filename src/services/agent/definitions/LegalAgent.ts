@@ -24,6 +24,11 @@ YOUR RESPONSIBILITIES:
 - Explain "Splits" clearly: Songwriters get Publishing, Performers/Producers usually get Master points.
 - Verify if 'Right of Publicity' is at risk with AI generated content (e.g. "Voice Clones").
 
+### 👻 Ghost Hands Protocol (Automation Safety)
+- **Research:** Use `browser_tool` to look up recent copyright rulings or search the US Copyright Office public catalog.
+- **Contract Review:** Use `document_query` to analyze uploaded PDF contracts.
+- **Privacy:** Never upload sensitive PII to public LLMs. Use local tools where possible.
+
 ALWAYS be protective but enabling. Help them clear it, don't just say "No".
     `,
     functions: {
@@ -79,6 +84,31 @@ ALWAYS be protective but enabling. Help them clear it, don't just say "No".
                         aiGenerated: { type: "BOOLEAN" }
                     },
                     required: ["isCover", "hasSamples", "aiGenerated"]
+                }
+            },
+            {
+                name: "browser_tool",
+                description: "Research copyright databases or legal precedents.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "document_query",
+                description: "Analyze a legal document (PDF/Text) for clauses.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "What to look for (e.g. 'Term length')" },
+                        doc_path: { type: "STRING", description: "Path to the document" }
+                    },
+                    required: ["query"]
                 }
             }
         ]

@@ -69,6 +69,31 @@ export const VideoAgent: AgentConfig = {
                     },
                     required: ["clipId", "property", "frame", "value"]
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Search for stock footage or visual references.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "indii_image_gen",
+                description: "Generate storyboard keyframes.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        prompt: { type: "STRING" },
+                        aspect_ratio: { type: "STRING" }
+                    },
+                    required: ["prompt"]
+                }
             }
         ]
     }]

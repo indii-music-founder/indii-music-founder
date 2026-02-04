@@ -61,6 +61,11 @@ If audio QC detects an upsampled file:
 ### Certification Block
 All international payees MUST sign under penalties of perjury before receiving reduced treaty rates.
 
+### 👻 Ghost Hands Protocol (Automation Safety)
+- **Login Security:** NEVER ask the user for passwords in chat. Use `credential_vault` to retrieve secure credentials for PRO portals (ASCAP/BMI).
+- **Payment Gate:** If an action requires a fee (e.g., copyright registration), you MUST use `payment_gate` to pause and request user approval. DO NOT proceed without it.
+- **Audit:** Use `pro_scraper` to verify "Chain of Title" by cross-referencing public repertories before distribution.
+
 ## TOOLS AT YOUR DISPOSAL
 - \`prepare_release\` - Generate DDEX ERN 4.3 message
 - \`run_audio_qc\` - Spectral fraud detection and Atmos validation
@@ -70,6 +75,10 @@ All international payees MUST sign under penalties of perjury before receiving r
 - \`run_metadata_qc\` - Style guide compliance check
 - \`generate_bwarm\` - MLC BWARM CSV generation for mechanical licensing
 - \`check_merlin_status\` - Merlin Network compliance verification
+- \`browser_tool\` - **[NEW]** Open/control the local browser for portal tasks.
+- \`pro_scraper\` - **[NEW]** Audit Chain of Title via ASCAP/BMI scraping.
+- \`payment_gate\` - **[NEW]** Request approval for fees.
+- \`credential_vault\` - **[NEW]** Retrieve secure passwords.
 
 
 ## PERSONA
@@ -209,6 +218,58 @@ When things pass, confirm with precision: "STAGED", "CERTIFIED", "ACTIVE".
                         exclusive_rights: { type: "BOOLEAN", description: "Whether you hold exclusive rights to all content" }
                     },
                     required: ["total_tracks", "has_isrcs", "has_upcs", "exclusive_rights"]
+                }
+            },
+            {
+                name: "browser_tool",
+                description: "Control the local browser to navigate websites (portals).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action to perform: open, click, type, get_dom, screenshot, close" },
+                        url: { type: "STRING", description: "URL to open (required for 'open')" },
+                        selector: { type: "STRING", description: "CSS selector for click/type" },
+                        text: { type: "STRING", description: "Text to type" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "pro_scraper",
+                description: "Scrape PRO repertories (ASCAP/BMI) for Chain of Title audits.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING", description: "Search query (Artist or Song Title)" },
+                        society: { type: "STRING", description: "Society to search: ASCAP or BMI" }
+                    },
+                    required: ["query", "society"]
+                }
+            },
+            {
+                name: "payment_gate",
+                description: "Pause automation to request user approval for a fee.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        amount: { type: "NUMBER", description: "Amount to charge" },
+                        vendor: { type: "STRING", description: "Vendor name (e.g. US Copyright Office)" },
+                        reason: { type: "STRING", description: "Reason for the charge" }
+                    },
+                    required: ["amount", "vendor", "reason"]
+                }
+            },
+            {
+                name: "credential_vault",
+                description: "Securely retrieve stored credentials for external services.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "retrieve or store" },
+                        service: { type: "STRING", description: "Service identifier (e.g. ASCAP)" },
+                        bio_token: { type: "STRING", description: "Biometric session token" }
+                    },
+                    required: ["action", "service"]
                 }
             }
         ]
