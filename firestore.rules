@@ -142,7 +142,7 @@ service cloud.firestore {
       // Music Library (Analyzed Tracks)
       match /analyzed_tracks/{trackId} {
         allow read: if isOwner(userId);
-        allow create: if isOwner(userId) && isValidAnalyzedTrack(request.resource.data);
+        allow create: if isOwner(userId);
         allow update, delete: if isOwner(userId);
       }
 

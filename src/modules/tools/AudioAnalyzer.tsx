@@ -206,6 +206,46 @@ const AudioAnalyzer: React.FC = () => {
 
             setTags(Array.from(new Set(newTags)));
 
+            // --- SONIC CORTEX INTEGRATION ---
+            if (!fromCache) {
+                // Trigger Gemini 3 Pro Multimodal Analysis
+                console.log("🚀 TRIGGERING SONIC CORTEX ANALYSIS NOW...");
+                toast.loading("Sonic Cortex: Listening for Soul...");
+
+                // Helper to convert for Gemini
+                const fileToBase64 = (file: File): Promise<string> => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = error => reject(error);
+                    });
+                };
+
+                try {
+                    const base64 = await fileToBase64(audioFile);
+                    // Dynamically import to avoid circular dep issues or load weight
+                    const { sonicCortexService } = await import('@/services/audio/SonicCortexService');
+
+                    const soul = await sonicCortexService.describeSoul(base64, audioFile.type || 'audio/mp3');
+
+                    if (soul) {
+                        console.log("🟦 [SONIC CORTEX] SOUL CERTIFICATE:", JSON.stringify(soul, null, 2));
+                        toast.success("Sonic Cortex: Soul Identified");
+
+                        // Optional: augment tags with cortex keywords
+                        if (soul.suggestedKeywords) {
+                            const aiTags = soul.suggestedKeywords.slice(0, 3);
+                            setTags(prev => Array.from(new Set([...prev, ...aiTags])));
+                        }
+                    }
+                } catch (cortexError) {
+                    console.error("[AudioAnalyzer] Sonic Cortex Failed:", cortexError);
+                    toast.error("Sonic Cortex could not hear the soul.");
+                }
+            }
+            // --------------------------------
+
         } catch (error) {
             console.error("Deep Analysis Failed", error);
             toast.dismiss(currentToastId);

@@ -223,7 +223,7 @@ export class FirebaseAIService {
      * Initialize fallback mode using direct Gemini SDK (no App Check required).
      * This is used in development or when App Check is not configured.
      */
-    private async initializeFallbackMode(): Promise<void> {
+    public async initializeFallbackMode(): Promise<void> {
         // Try multiple key locations: VITE_API_KEY, GOOGLE_API_KEY, or GEMINI_API_KEY
         // Explicitly check sources to log which one is used
         const keySources = {
