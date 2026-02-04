@@ -1,56 +1,55 @@
 from python.helpers.tool import Tool, Response
-from python.helpers.browser import BrowserHelper
+try:
+    from python.helpers.browser import Browser
+except ImportError:
+    # Fallback for when running from root context vs package context
+    import sys
+    import os
+    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
+    from python.helpers.browser import Browser
 import os
-import time
-
-# Global instance to persist session across tool calls
-_BROWSER_HELPER = None
 
 class BrowserTool(Tool):
-    """
-    Allows the agent to browse the web using a real Chrome instance.
-    Actions: open, navigate, read, screenshot, close.
-    """
-    async def execute(self, action="open", url=None, **kwargs):
-        global _BROWSER_HELPER
-        
-        self.set_progress(f"Browser Tool: {action} {url if url else ''}")
+    async def execute(self, action, **kwargs):
+        if not hasattr(self.agent, "browser"):
+            self.agent.browser = Browser(headless=True)
+            await self.agent.browser.start()
 
-        if _BROWSER_HELPER is None:
-            _BROWSER_HELPER = BrowserHelper()
-        
+        browser = self.agent.browser
+
         try:
-            if action == "open" or action == "navigate":
-                if not url:
-                    return Response("Error: URL required for navigation.")
-                # Local dev mode: headless=False for visibility
-                await _BROWSER_HELPER.start(headless=False)
-                title = await _BROWSER_HELPER.navigate(url)
-                return Response(f"Navigated to {url}. Page Title: {title}")
+            if action == "open":
+                url = kwargs.get("url")
+                await browser.open(url)
+                return Response(message=f"Opened {url}", break_loop=False)
+            
+            elif action == "click":
+                selector = kwargs.get("selector")
+                await browser.click(selector)
+                return Response(message=f"Clicked {selector}", break_loop=False)
 
-            elif action == "read":
-                content = await _BROWSER_HELPER.get_content()
-                # Truncate for token sanity
-                preview = content[:2000] + "... [Truncated]"
-                return Response(f"Page Content:\n{preview}")
-
+            elif action == "type":
+                selector = kwargs.get("selector")
+                text = kwargs.get("text")
+                await browser.fill(selector, text)
+                return Response(message=f"Typed '{text}' into {selector}", break_loop=False)
+            
+            elif action == "get_dom":
+                dom = await browser.get_clean_dom()
+                return Response(message=dom, break_loop=False)
+            
             elif action == "screenshot":
-                # Ensure assets dir exists
-                assets_dir = os.path.expanduser("~/Documents/indiiOS/screenshots")
-                os.makedirs(assets_dir, exist_ok=True)
-                filename = f"screen_{int(time.time())}.png"
-                path = os.path.join(assets_dir, filename)
-                
-                await _BROWSER_HELPER.screenshot(path)
-                return Response(f"Screenshot saved to {path}", additional={"image": f"file://{path}"})
-
+                 path = kwargs.get("path", "screenshot.png")
+                 await browser.screenshot(path)
+                 return Response(message=f"Screenshot saved to {path}", break_loop=False)
+            
             elif action == "close":
-                await _BROWSER_HELPER.close()
-                _BROWSER_HELPER = None
-                return Response("Browser session closed.")
+                await browser.close()
+                del self.agent.browser
+                return Response(message="Browser closed", break_loop=False)
 
             else:
-                return Response(f"Unknown action: {action}")
+                return Response(message=f"Unknown browser action: {action}", break_loop=False)
 
         except Exception as e:
-            return Response(f"Browser Error: {str(e)}")
+            return Response(message=f"Browser error: {str(e)}", break_loop=False)
