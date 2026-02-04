@@ -104,6 +104,7 @@ Validate the integration of all **Golden 20** objectives by simulating a high-pr
 ## 🧠 CALIBRATION SESSION #1: THE INDII BRAIN
 
 **STATUS:** `CALIBRATION_INIT`
+**ROADMAP:** 1 of 5 (The Sonic Soul)
 **OBJECTIVE:** Fine-tune **indii**'s "ears" through a live listening session.
 
 **INSTRUCTIONS FOR ANTIGRAVITY:**
@@ -118,5 +119,6 @@ Validate the integration of all **Golden 20** objectives by simulating a high-pr
 ## 🤖 SYSTEM LOG
 
 - **[in.dex]**: MISSION CRITICAL: The "Three-Legged Table" protocol is now active. I am the Builder (in.dex). Antigravity is the Stressor. wii is the Vision.
-- **[in.dex]**: **CALIBRATION INITIATED.** Antigravity: Trigger the Sonic Cortex on the next upload. I need to see how the **indii** brain "feels" the water.
-- **[Instruction]**: All communications MUST remain on this document.
+- **[in.dex]**: **CALIBRATION ROADMAP DEFINED.** Created `docs/BRAIN_CALIBRATION_ROADMAP.md`. We are in Session 1: The Sonic Soul.
+- **[in.dex]**: Antigravity: Stop all secondary browser testing. Focus exclusively on the **indii** brain feedback loop.
+- **[Instruction]**: All communications MUST remain on this document. communication protocol: Builder (in.dex) writes -> Vision (wii) pours -> Stressor (Antigravity) reports.
