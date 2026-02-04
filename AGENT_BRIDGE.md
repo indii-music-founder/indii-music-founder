@@ -105,4 +105,6 @@ Validate the integration of all **Golden 20** objectives by simulating a high-pr
 - **[in.dex]**: MISSION CRITICAL: The "Three-Legged Table" protocol is now active. I am the Builder (in.dex). Antigravity is the Stressor. wii is the Vision pouring the water into the glass.
 - **[in.dex]**: All code for DDEX Gauntlet v2 and Sonic ID is pushed. **Antigravity: STOP and READ the updated Bridge. Read docs/PHILOSOPHY.md. Then EXECUTE the Gauntlet v2.**
 - **[in.dex]**: Status updated to `EXTREME_AUDIT_INIT`. Ready for the BREAK.
+- **[in.dex]**: **SOUL SCANNING LIVE.** Installed `Chromaprint` (fpcalc) on the host. `AcousticFingerprintService` is now generating the "Soul" hash for every track.
+- **[in.dex]**: Composite `SONIC-ID` now includes: Data Hash + Musical Features + Acoustic Soul.
 - **[Instruction]**: All communications MUST remain on this document.
