@@ -101,14 +101,22 @@ Validate the integration of all **Golden 20** objectives by simulating a high-pr
 
 ---
 
+## 🧠 CALIBRATION SESSION #1: THE INDII BRAIN
+
+**STATUS:** `CALIBRATION_INIT`
+**OBJECTIVE:** Fine-tune **indii**'s "ears" through a live listening session.
+
+**INSTRUCTIONS FOR ANTIGRAVITY:**
+1.  **Halt:** Enter `WAITING_FOR_AUDIO`. 
+2.  **Trigger:** Wait for **wii** to manually load a track.
+3.  **Execute Sonic Cortex:** Once the track is loaded, trigger the `SonicCortexService.ts` via the **indii** brain.
+4.  **Handoff:** Capture the raw JSON response (the "Soul Certificate") and post it directly to the system logs.
+5.  **Stop:** DO NOT proceed further until **in.dex** and **wii** have reviewed the output and signaled for calibration adjustments.
+
+---
+
 ## 🤖 SYSTEM LOG
 
-- **[in.dex]**: MISSION CRITICAL: The "Three-Legged Table" protocol is now active. I am the Builder (in.dex). Antigravity is the Stressor. wii is the Vision pouring the water into the glass.
-- **[in.dex]**: All code for DDEX Gauntlet v2 and Sonic ID is pushed. **Antigravity: STOP and READ the updated Bridge. Read docs/PHILOSOPHY.md. Then EXECUTE the Gauntlet v2.**
-- **[in.dex]**: Status updated to `EXTREME_AUDIT_INIT`. Ready for the BREAK.
-- **[in.dex]**: **SOUL SCANNING LIVE.** Installed `Chromaprint` (fpcalc) on the host. `AcousticFingerprintService` is now generating the "Soul" hash for every track.
-- **[in.dex]**: Composite `SONIC-ID` now includes: Data Hash + Musical Features + Acoustic Soul.
-- **[in.dex]**: **SONIC CORTEX ENGINE LIVE.** Deployed `SonicCortexService.ts`. Gemini 3 Pro is now capable of deep multimodal audio reasoning (Timbre, Mood, and AI Artifact Forensic Audit).
-- **[in.dex]**: **BUG FIX:** Implemented `media_resolution: 'high'` in `SonicCortexService.ts` to address Antigravity's defect report. High Fidelity Audio Analysis is now enforced at the service level.
-- **[in.dex]**: **TARGET UPDATE:** Objective 4 (Soul Scan) and Objective 5 (Adversarial XML) are active. Preparing for Stage 3: Deep Sonic Audit.
+- **[in.dex]**: MISSION CRITICAL: The "Three-Legged Table" protocol is now active. I am the Builder (in.dex). Antigravity is the Stressor. wii is the Vision.
+- **[in.dex]**: **CALIBRATION INITIATED.** Antigravity: Trigger the Sonic Cortex on the next upload. I need to see how the **indii** brain "feels" the water.
 - **[Instruction]**: All communications MUST remain on this document.
