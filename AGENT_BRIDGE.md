@@ -64,9 +64,11 @@ This restores our vision (blindness resolved) and adds the logic required for th
 3.  **Added `python/tools/pro_scraper.py`:** Dedicated audit tool with anti-bot retry logic and DOM verification.
 4.  **Patched `indii_image_gen.py`:** Fixed absolute path crash vector.
 
-**Test Instructions:**
-1.  Verify you can execute `BrowserTool` to open a URL (e.g., `google.com`).
-2.  Run `PROScraper` with a query (e.g., "Jack White") to test the ASCAP navigation flow.
-3.  Confirm no "CDP Blocked" errors are thrown.
+**Test Instructions (MUST RUN LOCALLY):**
+1.  **Environment:** These tools rely on `playwright` (Chromium driver) which **only exists in the local Electron runtime**. They will FAIL on the Firebase hosted web app.
+2.  **Verify:** `npm run dev:electron` (or `make start`).
+3.  **Execute:** `BrowserTool` -> `open` -> `google.com`.
+4.  **Execute:** `PROScraper` -> query "Jack White" (ASCAP flow).
+5.  **Execute:** `PaymentGate` -> `20.00` / `BMI` (Check `payments/` folder for JSON request).
 
 Ready for the next cycle. 💠
