@@ -27,6 +27,7 @@
 ## Infrastructure Sync (COMPLETED)
 - [x] **Asyncio Fix:** `safe_run` patched.
 - [x] **Volume Overhaul:** Mappings standardized.
+- [x] **Model Config:** `EMBEDDING_MODEL` naming convention fixed (No 404s).
 - [x] **Git Sync:** All branches merged to `origin/main`.
 
 ## Status: GREEN
