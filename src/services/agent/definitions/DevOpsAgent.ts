@@ -104,6 +104,31 @@ export const DevOpsAgent: AgentConfig = {
                     },
                     required: ["service_name"]
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Access cloud consoles via browser if CLI fails.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "credential_vault",
+                description: "Manage API keys and cloud secrets.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "store or retrieve" },
+                        service: { type: "STRING" }
+                    },
+                    required: ["action", "service"]
+                }
             }
         ]
     }]

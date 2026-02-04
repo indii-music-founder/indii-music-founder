@@ -109,6 +109,33 @@ Behavior:
                     },
                     required: ['service_name']
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Scan URLs for threats or verify SSL certificates.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "credential_vault",
+                description: "Manage the secure vault (Store/Retrieve).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "store or retrieve" },
+                        service: { type: "STRING" },
+                        username: { type: "STRING" },
+                        password: { type: "STRING" }
+                    },
+                    required: ["action", "service"]
+                }
             }
         ]
     }]
