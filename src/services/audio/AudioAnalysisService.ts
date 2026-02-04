@@ -208,7 +208,7 @@ export class AudioAnalysisService {
     /**
      * Analyzes an already decoded AudioBuffer.
      */
-    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
+    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<DeepAudioFeatures> {
         await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
 
@@ -245,17 +245,32 @@ export class AudioAnalysisService {
 
             console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
 
+            // Mapping RMS to dynamic energy (0-1)
+            const energy = Math.min(1, Math.max(0, energyValue * 4.0));
+            const isMinor = scale === 'minor';
+
             return {
                 bpm: Math.round(bpm),
                 key: key,
                 scale: scale,
-                energy: Math.min(1, Math.max(0, energyValue * 3.5)),
+                energy: energy,
                 duration: audioBuffer.duration,
                 danceability: danceabilityValue,
-                valence: scale === 'major'
-                    ? 0.6 + (Math.min(1, energyValue * 3.5) * 0.3)
-                    : 0.2 + (Math.min(1, energyValue * 3.5) * 0.2),
-                loudness: -1
+                valence: isMinor
+                    ? 0.3 + (energy * 0.2)
+                    : 0.6 + (energy * 0.3),
+                loudness: -20 + (energyValue * 100), // Very rough estimate
+                // Simulated Deep Features for UI Metadata Matrix
+                genre: {
+                    [bpm > 115 && bpm < 130 ? 'Dance' : bpm > 140 ? 'Drum & Bass' : energy > 0.6 ? 'Rock' : 'Ambient']: 0.85
+                },
+                moods: {
+                    happy: isMinor ? 0.2 : 0.7,
+                    aggressive: energy > 0.7 ? 0.8 : 0.2,
+                    relaxed: energy < 0.4 ? 0.9 : 0.1,
+                    sad: isMinor && energy < 0.3 ? 0.8 : 0.1
+                },
+                danceability_ml: danceabilityValue
             };
         } finally {
             if ((this.essentia as any).deleteVector && signal) {
