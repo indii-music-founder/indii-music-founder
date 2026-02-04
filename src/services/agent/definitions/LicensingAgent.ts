@@ -191,6 +191,44 @@ export const LicensingAgent: AgentConfig = {
                     },
                     required: ["type", "parties", "terms"]
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Research Music Supervisors or Sync Libraries.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "document_query",
+                description: "Analyze license agreements for unfair terms.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        query: { type: "STRING" },
+                        doc_path: { type: "STRING" }
+                    },
+                    required: ["query"]
+                }
+            },
+            {
+                name: "payment_gate",
+                description: "Pay for clearance fees.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        amount: { type: "NUMBER" },
+                        vendor: { type: "STRING" },
+                        reason: { type: "STRING" }
+                    },
+                    required: ["amount", "vendor", "reason"]
+                }
             }
         ]
     }]

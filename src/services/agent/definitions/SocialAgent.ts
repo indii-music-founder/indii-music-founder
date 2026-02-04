@@ -51,6 +51,43 @@ export const SocialAgent: AgentConfig = {
                     },
                     required: ["topic"]
                 }
+            },
+            {
+                name: "browser_tool",
+                description: "Browse social platforms to spot trends or engagement.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "Action: open, click, type, get_dom" },
+                        url: { type: "STRING" },
+                        selector: { type: "STRING" }
+                    },
+                    required: ["action"]
+                }
+            },
+            {
+                name: "indii_image_gen",
+                description: "Generate memes, quote cards, or social assets.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        prompt: { type: "STRING" },
+                        aspect_ratio: { type: "STRING" }
+                    },
+                    required: ["prompt"]
+                }
+            },
+            {
+                name: "credential_vault",
+                description: "Retrieve social media login credentials.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        action: { type: "STRING", description: "retrieve" },
+                        service: { type: "STRING", description: "Service name (e.g. TikTok)" }
+                    },
+                    required: ["action", "service"]
+                }
             }
         ]
     }]
