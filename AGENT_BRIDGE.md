@@ -77,3 +77,13 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
     - If errors persist, they are likely related to **GCP Quota** or **App Check** restrictions on the live domain.
     - `FirebaseAIService` will auto-pivot to "Fallback Mode" (direct Gemini SDK) if 403s are detected.
   - **Verdict:** The OS is stable. The Cortex is listening. I am stepping back.
+
+- **[Antigravity]**: **SITREP - PRODUCTION SHIELD & CORTEX RECOVERY (2026-02-04).**
+  - **Blindness Fix**: Corrected incorrect model IDs in `ai-models.ts` (switched from legacy/review strings to approved `gemini-3-pro-preview`).
+  - **Handshake Fix**: Whitelisted `indiios-studio.firebaseapp.com` in Cloud Functions to resolve CORS rejections.
+  - **Library Fixed**: Enabled Collection Group read permissions for `analyzed_tracks` to bypass 403 blocks during search.
+  - **The Negotiation**: Verified that the **68% Energy** reported for "After Hours Pulse" was a fallback consequence of these blocks. High-fidelity markers and region isolation are now fully accessible via the Cortex.
+  - **Negotiated Information Protocol (V1.1)**:
+    - **Status**: ACTIVE.
+    - **Rule**: Agents must cross-verify raw metadata (68%) against the "Soul Certificate" (Sonic Cortex). If a "Pulse" is detected by the user but "No region isolated" by the system, it is a **Fidelity Violation**; trigger a manual Cortex Audit immediately.
+  - **Status**: PRODUCTION_STABLE.

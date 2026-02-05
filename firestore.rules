@@ -519,6 +519,14 @@ service cloud.firestore {
     }
 
     // ========================================
+    // COLLECTION GROUP: analyzed_tracks
+    // ========================================
+    // Allow users to query their own tracks globally (e.g., via search/aggregation)
+    match /{path=**}/analyzed_tracks/{trackId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

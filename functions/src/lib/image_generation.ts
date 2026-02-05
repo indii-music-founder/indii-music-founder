@@ -52,7 +52,7 @@ class GeminiImageService {
     /**
      * Core Text-to-Image Generation (Gemini 3 Pro Image)
      */
-    async generate(data: any): Promise<{ images: any[] }> {
+    async generate(data: any): Promise<{ images: any[]; aiMetadata: any; aiGenerationInfo: any }> {
         const client = this.getClient();
         const modelId = data.model === 'fast'
             ? FUNCTION_AI_MODELS.IMAGE.FAST
@@ -87,7 +87,7 @@ class GeminiImageService {
                 throw new Error("No image data found in candidates");
             }
 
-            return { 
+            return {
                 images,
                 aiMetadata: {
                     toolName: modelId,
@@ -112,7 +112,7 @@ class GeminiImageService {
     /**
      * Advanced Instruction-Based Editing (Dual-View / Ghost Mask)
      */
-    async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string }> {
+    async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string; aiMetadata: any; aiGenerationInfo: any }> {
         const client = this.getClient();
         const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION; // Prefer Pro for editing fidelity
 
@@ -263,7 +263,7 @@ export const editImageFn = () => functions
             }
         ];
 
-        return { 
+        return {
             candidates,
             aiMetadata: result.aiMetadata,
             aiGenerationInfo: result.aiGenerationInfo

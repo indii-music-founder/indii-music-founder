@@ -68,8 +68,7 @@ export class SonicCortexService {
                 model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
                 systemInstruction,
                 config: {
-                    responseMimeType: 'application/json',
-                    mediaResolution: 'MEDIA_RESOLUTION_HIGH' // Fix: Correct enum casing
+                    responseMimeType: 'application/json'
                 } as any
             });
 
