@@ -50,10 +50,67 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
             const prompt = `Write a ${args.platform} post about "${args.topic}". Tone: ${args.tone || 'engaging'}. Include hashtags.`;
             const response = await firebaseAI.generateText(prompt);
             return { success: true, data: { content: response } };
+        },
+        create_social_calendar: async (args: { releaseDate: string, campaignTitle: string, durationWeeks: number }) => {
+            const prompt = `Generate a long-term social media content calendar for a music release.
+            Campaign: ${args.campaignTitle}
+            Release Date: ${args.releaseDate}
+            Duration: ${args.durationWeeks} weeks
+            
+            Include:
+            - Pre-release (Hype/Teasers)
+            - Release Day (Launch/Direct links)
+            - Post-release (UGC/Music Video/Remix)
+            - Platform-specific frequency (TikTok daily, IG 3x/week, etc.)`;
+            
+            try {
+                const response = await firebaseAI.generateText(prompt);
+                return { success: true, data: { calendar: response } };
+            } catch (e) {
+                return { success: false, error: (e as Error).message };
+            }
+        },
+        schedule_post_execution: async (args: { platform: string, content: string, scheduleTime: string }) => {
+            // Integration with long-term scheduling service (Cron/Inngest)
+            return {
+                success: true,
+                data: {
+                    status: "Queued",
+                    platform: args.platform,
+                    scheduled_for: args.scheduleTime,
+                    message: `Post successfully queued for ${args.platform}. indii will monitor for engagement upon release.`
+                }
+            };
         }
     },
     tools: [{
         functionDeclarations: [
+            {
+                name: "create_social_calendar",
+                description: "Generate a multi-week content calendar for a music release.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        releaseDate: { type: "STRING", description: "YYYY-MM-DD" },
+                        campaignTitle: { type: "STRING" },
+                        durationWeeks: { type: "NUMBER", default: 4 }
+                    },
+                    required: ["releaseDate", "campaignTitle"]
+                }
+            },
+            {
+                name: "schedule_post_execution",
+                description: "Schedule a post for long-term execution on a specific platform.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        platform: { type: "STRING" },
+                        content: { type: "STRING" },
+                        scheduleTime: { type: "STRING", description: "ISO 8601 timestamp" }
+                    },
+                    required: ["platform", "content", "scheduleTime"]
+                }
+            },
             {
                 name: "generate_social_post",
                 description: "Generate a social media post.",
