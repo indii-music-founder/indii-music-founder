@@ -176,6 +176,46 @@ onAuthStateChanged(auth, (user) => {
 
 ---
 
+## CLOUDRUN-001 Firebase v2 Functions 401 Unauthorized
+
+**Pattern:** `The request was not authenticated. Either allow unauthenticated invocations or set the proper Authorization header`
+**Context:** Firebase v2 Callable Functions (using `firebase-functions/v2/https`)
+**Root Cause:** Firebase v2 functions use Cloud Run under the hood. Unlike v1 functions, they require explicit IAM invoker permissions. If no bindings are set, all requests fail with 401 even when Firebase Auth tokens are properly passed.
+**Symptoms in Agent:**
+
+- Agent tool execution hangs indefinitely
+- SubscriptionService quota checks never complete
+- generate_image tool times out after 300s despite Cloud Function succeeding
+**Fix:**
+
+```bash
+# Add allUsers as invoker for each v2 function
+gcloud run services add-iam-policy-binding [SERVICE_NAME] \
+  --region=us-central1 \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  --project=[PROJECT_ID]
+
+# Known v2 services requiring this fix:
+# getsubscription, getusagestats, trackusage, 
+# cancelsubscription, createcheckoutsession, 
+# getcustomerportal, resumesubscription
+```
+
+**Prevention:**
+When deploying new v2 callable functions, ensure invoker permissions:
+
+```typescript
+// In function definition, or deploy with:
+// firebase deploy --only functions:[NAME]
+// Then run the gcloud IAM command above
+```
+
+**Date Added:** 2026-02-05
+**Related Errors:** AUTH-001, FIRESTORE-001
+
+---
+
 ## REFF-001 ReferenceError Variable Name Mismatch
 
 **Pattern:** `ReferenceError: X is not defined`
