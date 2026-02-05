@@ -170,8 +170,25 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
     const displayAgent = chatChannel === 'indii' ? null : activeAgent;
     const agentName = displayAgent?.name || 'indii';
-    const agentRole = displayAgent?.description || 'Creative Orchestrator';
+    const agentRole = displayAgent?.description || 'Music Creative Orchestrator';
     const agentColor = displayAgent?.color || 'purple';
+
+    // Department color mapping for branding unification
+    const brandColorMap: Record<string, string> = {
+        'generalist': 'purple',
+        'marketing': 'orange',
+        'finance': 'emerald',
+        'legal': 'yellow',
+        'video': 'blue',
+        'merchandise': 'yellow',
+        'distribution': 'indigo',
+        'brand': 'rose',
+        'social': 'sky',
+        'publicist': 'pink',
+        'road': 'slate'
+    };
+
+    const activeBrandColor = brandColorMap[activeAgentId] || agentColor;
 
     return (
         <AnimatePresence mode="wait">
@@ -197,8 +214,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
                         inset: 0,
                         zIndex: 200
                     }}
-                    className="bg-[#0c0c0e]/80 backdrop-blur-xl rounded-none md:rounded-[2rem] border-0 md:border border-white/10 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-0 md:ring-1 ring-white/10"
+                    className={`bg-[#0c0c0e]/80 backdrop-blur-xl rounded-none md:rounded-[2rem] border-0 md:border border-${activeBrandColor}-500/20 shadow-2xl flex flex-col overflow-hidden pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] z-[200] isolate ring-1 ring-white/5`}
                 >
+                    {/* ... (rest of the component) */}
                     {/* Resize Handles */}
                     {isDesktop && (
                         <div className="absolute inset-0 pointer-events-none z-50">
@@ -229,46 +247,46 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, isMinimized = false,
 
                         <div className="flex items-center gap-4 relative z-10 pointer-events-none">
                             <div className="relative group pointer-events-auto">
-                                <div className={`absolute -inset-1 bg-${agentColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
+                                <div className={`absolute -inset-1 bg-${activeBrandColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
                                 {chatChannel === 'indii' ? (
                                     <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-600 to-indigo-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg">
                                         <Bot size={24} className="text-white" />
                                     </div>
                                 ) : (
-                                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-${agentColor}-600 to-${agentColor}-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg`}>
+                                    <div className={`w-12 h-12 rounded-full bg-gradient-to-br from-${activeBrandColor}-600 to-${activeBrandColor}-900 flex items-center justify-center border border-white/10 relative z-10 shadow-lg`}>
                                         <div className="text-white font-bold text-lg">{agentName.charAt(0)}</div>
                                     </div>
                                 )}
-                                <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-[#121212] rounded-full z-20 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
+                                <div className={`absolute bottom-0 right-0 w-3 h-3 bg-${activeBrandColor}-500 border-2 border-[#121212] rounded-full z-20 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse`} />
                             </div>
                             <div className="pointer-events-auto">
                                 <h3 className="text-lg font-bold text-white tracking-tight flex items-center gap-2">
-                                    {agentName}
-                                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-[#a8a8a8]">Beta</span>
+                                    {chatChannel === 'indii' ? 'indii' : agentName}
+                                    <span className="px-1.5 py-0.5 rounded-full bg-white/10 text-[10px] uppercase font-bold tracking-widest text-[#a8a8a8]">Studio</span>
                                 </h3>
-                                <p className={`text-xs text-${agentColor}-300 font-medium tracking-wide uppercase opacity-80`}>{agentRole}</p>
+                                <p className={`text-xs text-${activeBrandColor}-300 font-medium tracking-wide uppercase opacity-80`}>{agentRole}</p>
                             </div>
                         </div>
 
-                        {/* Middle Actions: Provider Toggle */}
+                        {/* Middle Actions: Identity Toggle */}
                         <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
                             <button
                                 onClick={() => setActiveAgentProvider('native')}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native'
-                                    ? 'bg-purple-600 text-white shadow-sm'
+                                    ? `bg-${activeBrandColor}-600 text-white shadow-sm`
                                     : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
-                                Native
+                                Manual
                             </button>
                             <button
                                 onClick={() => setActiveAgentProvider('agent-zero')}
                                 className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero'
-                                    ? 'bg-blue-600 text-white shadow-sm'
+                                    ? `bg-purple-600 text-white shadow-sm`
                                     : 'text-gray-500 hover:text-gray-300'
                                     }`}
                             >
-                                Zero
+                                indii
                             </button>
                         </div>
 
