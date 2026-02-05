@@ -80,6 +80,9 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         }
     }
 
+    /**
+     * Save item with automatic cloud upload for large images
+     */
     async saveItem(item: HistoryItem) {
         let imageUrl = item.url;
         let thumbnailUrl: string | undefined;
@@ -89,9 +92,11 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             const { auth } = await import('./firebase');
             const userId = auth.currentUser?.uid;
 
+            // Phase 1 Optimization: Always attempt upload if size > 500KB
+            const isLarge = item.url.length > 500000;
+
             if (userId) {
                 try {
-                    // Use smart save: uploads large images, keeps small ones as data URIs
                     const result = await CloudStorageService.smartSave(
                         item.url,
                         item.id,
@@ -99,21 +104,19 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     );
                     imageUrl = result.url;
                     thumbnailUrl = result.thumbnailUrl;
-
-                    console.log(`Image saved (${result.strategy}):`, item.id);
+                    console.log(`[StorageService] Image saved (${result.strategy}):`, item.id);
                 } catch (error) {
-                    console.error('Cloud upload failed, using data URI:', error);
-                    // Fallback: keep data URI if upload fails
-                    // Only in dev - show warning
-                    if (import.meta.env.DEV && item.url.length > 800000) {
-                        console.warn('Large data URI kept locally - may cause Firestore errors');
+                    console.error('[StorageService] Cloud upload failed:', error);
+                    // Critical protection: If it's large and upload failed, we CANNOT save it as-is
+                    if (isLarge) {
+                        imageUrl = 'placeholder:upload-failed-large-asset';
+                        console.error('[StorageService] Asset too large for Firestore, set to placeholder');
                     }
                 }
             } else if (import.meta.env.DEV) {
-                // Dev mode without auth: keep small data URIs, warn about large ones
-                if (item.url.length > 800000) {
-                    console.warn('No auth in dev - large image not uploaded. Use proper auth for full functionality.');
-                    imageUrl = 'placeholder:dev-data-uri-too-large';
+                if (isLarge) {
+                    console.warn('[StorageService] No auth in dev - large image blocked. Use proper auth.');
+                    imageUrl = 'placeholder:dev-unauthenticated-large-asset';
                 }
             }
         }
