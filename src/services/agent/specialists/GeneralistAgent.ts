@@ -535,9 +535,16 @@ CURRENT REQUEST: ${task}
                     onProgress?.({ type: 'thought', content: `Tool ${name} completed: ${outputText.substring(0, 200)}` });
                     accumulatedResponse += `\n[Tool: ${name}] ${outputText}`;
 
-                    // If tool succeeded with "successfully", we might be done
+                    // CRITICAL FIX: For generation tools that succeed, break immediately
+                    // Don't try to get another AI response which may fail due to permission issues
+                    const generationTools = ['generate_image', 'generate_video', 'edit_image', 'batch_edit_images'];
+                    if (generationTools.includes(name) && String(outputText).toLowerCase().includes('success')) {
+                        console.log(`[GeneralistAgent] ${name} succeeded, breaking loop immediately`);
+                        break; // Exit loop - we have completed the generation
+                    }
+
+                    // For other tools, continue loop to let AI provide final response
                     if (String(outputText).toLowerCase().includes('success')) {
-                        // Continue loop to let AI provide final response
                         continue;
                     }
                 } else {
