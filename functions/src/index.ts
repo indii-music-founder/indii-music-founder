@@ -106,7 +106,9 @@ const requireAdmin = (context: functions.https.CallableContext) => {
 const getAllowedOrigins = (): string[] => {
     const origins = [
         'https://indiios-studio.web.app',
+        'https://indiios-studio.firebaseapp.com',
         'https://indiios-v-1-1.web.app',
+        'https://indiios-v-1-1.firebaseapp.com',
         'https://studio.indiios.com',
         'https://indiios.com',
         'app://.',  // Electron app

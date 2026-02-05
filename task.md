@@ -9,6 +9,15 @@
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
 - [x] Final Verification: Full `npm run build` success.
 
+## Tasks - Sonic Cortex Recovery & Negotiation (2026-02-04)
+
+- [x] Infrastructure: Correct model IDs in `src/core/config/ai-models.ts` (Fix 404). <!-- id: 200 -->
+- [x] Infrastructure: Update `firestore.rules` for Collection Group queries (Fix 403). <!-- id: 201 -->
+- [x] Infrastructure: Whitelist `indiios-studio.firebaseapp.com` in `functions/src/index.ts` (Fix CORS). <!-- id: 202 -->
+- [x] Protocol: Update `AGENT_BRIDGE.md` with Negotiated Information Protocol V1.1. <!-- id: 203 -->
+- [ ] Verification: Confirm browser console is free of 404/403/CORS errors on live site. <!-- id: 204 -->
+- [ ] Verification: Verify "After Hours Pulse" metadata population after user re-analysis. <!-- id: 205 -->
+
 ## Tasks - Dual-Workflow Image Editing (Gemini 3 Pro + 2.5 Flash)
 
 - [x] UI: Add "High Fidelity" toggle in `CanvasHeader`. <!-- id: 101 -->
