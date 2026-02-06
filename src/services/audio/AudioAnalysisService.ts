@@ -3,6 +3,7 @@ type EssentiaModule = typeof import('essentia.js');
 // import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules
 import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
+import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
 export interface AudioFeatures {
     bpm: number;
@@ -156,16 +157,34 @@ export class AudioAnalysisService {
         // 2. Deep Learning Features (SKIPPED)
         console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
 
-        // 4. Save to Cache and Firestore
+        // 3. Save to Cache and Firestore with proper error handling
         const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
+        const filename = (file as File).name || 'audio';
+
+        // Save to local cache (IndexedDB)
         try {
-            await musicLibraryService.saveAnalysis(fileHash, (file as File).name || 'audio', features, fileHash);
-            // Also save to Firestore
-            if ((file as File).name) {
-                await this.saveAnalysisToFirestore(features, (file as File).name);
-            }
+            await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
         } catch (e) {
-            console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
+            console.warn("[AudioAnalysis] Failed to save to local cache", e);
+        }
+
+        // Save to Firestore with MetadataPersistenceService (includes retry + user feedback)
+        if (filename !== 'audio') {
+            const persistResult = await metadataPersistenceService.save('audio', {
+                filename,
+                fileHash,
+                features,
+                ...features, // Spread for backward compat
+                analyzedAt: new Date().toISOString(),
+            }, {
+                showToasts: true,
+                maxRetries: 2,
+                queueOnFailure: true,
+            });
+
+            if (!persistResult.success) {
+                console.error(`[AudioAnalysis] Failed to persist analysis for ${filename}:`, persistResult.error);
+            }
         }
 
         return { features, fromCache: false };
@@ -280,35 +299,27 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Saves analysis result to Firestore
+     * Saves analysis result to Firestore using the centralized persistence service.
+     * This method is now a thin wrapper around MetadataPersistenceService.
+     * @deprecated Use metadataPersistenceService.save('audio', ...) directly for new code
      */
     async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
-        try {
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db, auth } = await import('@/services/firebase');
+        const result = await metadataPersistenceService.save('audio', {
+            filename,
+            features: analysis,
+            ...analysis,
+            analyzedAt: new Date().toISOString(),
+        }, {
+            showToasts: true,
+            maxRetries: 2,
+            queueOnFailure: true,
+        });
 
-            const user = auth.currentUser;
-            if (!user) {
-                console.warn("[AudioAnalysis] Cannot save analysis: User not authenticated");
-                throw new Error("User must be logged in to save analysis.");
-            }
-
-            const docData = {
-                userId: user.uid,
-                filename,
-                features: analysis, // Nest features to match schema expectation if needed, or spread if schema allows
-                ...analysis, // Spreading at top level for backward compat/flexibility
-                analyzedAt: serverTimestamp(), // Match schema 'analyzedAt'
-                createdAt: serverTimestamp(),
-            };
-
-            // Write to User-Scoped Collection
-            await addDoc(collection(db, `users/${user.uid}/analyzed_tracks`), docData);
-            console.info(`[AudioAnalysis] Saved analysis for ${filename} to users/${user.uid}/analyzed_tracks`);
-        } catch (error) {
-            console.error("[AudioAnalysis] Failed to save to Firestore", error);
-            throw error;
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to save analysis');
         }
+
+        console.info(`[AudioAnalysis] Saved analysis for ${filename} via MetadataPersistenceService`);
     }
 }
 
