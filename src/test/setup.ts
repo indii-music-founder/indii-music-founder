@@ -258,7 +258,8 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
 }));
 
 // Mock lucide-react: auto-generate stub components for any icon export
-vi.mock('lucide-react', () => {
+vi.mock('lucide-react', async () => {
+    const React = await import('react');
     const cache: Record<string, unknown> = {};
     return new Proxy(cache, {
         get(_target, prop: string) {
@@ -267,8 +268,7 @@ vi.mock('lucide-react', () => {
             if (!cache[prop]) {
                 const MockIcon = Object.assign(
                     vi.fn((props: Record<string, unknown>) => {
-                        const { createElement } = require('react');
-                        return createElement('svg', { 'data-testid': `icon-${prop}`, ...props });
+                        return React.createElement('svg', { 'data-testid': `icon-${prop}`, ...props });
                     }),
                     { displayName: prop }
                 );
