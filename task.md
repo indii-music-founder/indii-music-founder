@@ -24,8 +24,8 @@
 - [x] Fix: Add IMMEDIATE EXECUTION rule to GeneralistAgent prompts. <!-- id: 207 -->
 - [x] Fix: Add Exception to Mode A for generation requests (skip Curriculum mode). <!-- id: 208 -->
 - [x] Fix: Strengthen loop break logic for generation tools that return success. <!-- id: 209 -->
-- [~] Verification: Test "generate an image of a cat" in browser. <!-- id: 210 --> **PARTIAL** (Image successfully generated "Feline Festival"; agent still reports 300s timeout due to total execution time including Cloud Function latency)
-- [ ] Optimization: Consider increasing timeout for generation-heavy tasks or implementing chunked progress updates. <!-- id: 211 -->
+- [x] Verification: Test "generate an image of a cat" in browser. <!-- id: 210 -->
+- [x] Optimization: Increase timeout for generation tasks (600s) and implement timeout grace logic. <!-- id: 211 -->
 
 ## Tasks - Dual-Workflow Image Editing (Gemini 3 Pro + 2.5 Flash)
 
