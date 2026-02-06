@@ -9,6 +9,15 @@
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
 - [x] Final Verification: Full `npm run build` success.
 
+## Tasks - AI Verification & Persistence Fix (2026-02-06)
+
+- [x] Persistence: Implement `MetadataPersistenceService` with retry logic & event bus integration.
+- [x] UX: Decouple services from `react-hot-toast`, use `EventBus` for system alerts.
+- [x] Fix: Resolve "AI Verification Failed (App Check/Auth)" on production (Missing Env Var fallback).
+- [x] Implementation: Add `VITE_API_KEY` fallback for `firebaseApiKey` in `env.ts`.
+- [x] Verification: Verify "Magic Fill" on live site (`https://indiios-studio.web.app`). **PASSED**
+- [x] Verification: Verify "Persistence Toast" on live site. **PASSED**
+
 ## Tasks - Sonic Cortex Recovery & Negotiation (2026-02-04)
 
 - [x] Infrastructure: Correct model IDs in `src/core/config/ai-models.ts` (Fix 404). <!-- id: 200 -->
