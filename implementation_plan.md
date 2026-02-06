@@ -23,4 +23,17 @@
 ## 4. Verification
 
 - **Manual**: Run `npm run typecheck` and `npm run build:studio`.
-- **Browser**: Verify Magic Fill with "High Fidelity" toggle ON and OFF.
+- [x] Browser: Verify Magic Fill with "High Fidelity" toggle ON and OFF.
+
+## 5. AI Verification & Persistence Hardening
+
+- **Goal**: Ensure production reliability for AI services and Metadata saving.
+- **Problem**: `AI Verification Failed` due to missing `VITE_FIREBASE_API_KEY` in prod env & `react-hot-toast` circular deps.
+- **Solution (AI)**:
+  - [x] Implement Fallback Mode in `FirebaseAIService.ts`.
+  - [x] Add env var fallback (`VITE_API_KEY`) in `env.ts`.
+  - [x] Improve error messaging for Fallback failures.
+- **Solution (Persistence)**:
+  - [x] Create `MetadataPersistenceService` (Lazy singleton).
+  - [x] Use `EventBus` ('SYSTEM_ALERT') for UI feedback.
+  - [x] Add Offline Queue support (indexedDB).
