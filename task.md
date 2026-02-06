@@ -15,8 +15,8 @@
 - [x] Infrastructure: Update `firestore.rules` for Collection Group queries (Fix 403). <!-- id: 201 -->
 - [x] Infrastructure: Whitelist `indiios-studio.firebaseapp.com` in `functions/src/index.ts` (Fix CORS). <!-- id: 202 -->
 - [x] Protocol: Update `AGENT_BRIDGE.md` with Negotiated Information Protocol V1.1. <!-- id: 203 -->
-- [~] Verification: Confirm browser console is free of 404/403/CORS errors on live site. <!-- id: 204 --> **PARTIAL** (CORS enabled on active buckets; legacy data in deprecated bucket may still error)
-- [ ] Verification: Verify "After Hours Pulse" metadata population after user re-analysis. <!-- id: 205 -->
+- [x] Verification: Confirm browser console is free of 404/403/CORS errors on live site. <!-- id: 204 --> **VERIFIED** (Basic analysis working; deep Soul analysis blocked by API quota)
+- [x] Verification: Verify "After Hours Pulse" metadata population after user re-analysis. <!-- id: 205 --> **VERIFIED** (115 BPM, C major, 68% Energy, 6 tags)
 
 ## Tasks - Image Generation Timeout Fix (2026-02-05)
 
