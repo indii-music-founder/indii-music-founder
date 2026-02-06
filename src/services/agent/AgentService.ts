@@ -122,24 +122,50 @@ export class AgentService {
                 const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
                 const newItemsGenerated = galleryCountAfter > galleryCountBefore;
 
-                if (err.message?.includes('Timeout') && newItemsGenerated) {
-                    // Generation succeeded but loop was slow - show success instead of error
-                    console.log('[AgentService] Timeout grace: Generation completed successfully despite slow loop');
-                    updateAgentMessage(responseId, {
-                        text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
-                        thoughts: [{
-                            id: uuidv4(),
-                            text: 'Generation completed',
-                            timestamp: Date.now(),
-                            type: 'logic'
-                        }]
-                    });
+                if (err.message?.includes('Timeout')) {
+                    if (newItemsGenerated) {
+                        // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
+                        console.log('[AgentService] Timeout grace: Generation detected in gallery');
+                        updateAgentMessage(responseId, {
+                            text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Synthesis successful',
+                                timestamp: Date.now(),
+                                type: 'logic'
+                            }]
+                        });
+                    } else if (isGenerationRequest) {
+                        // Case B: Generation request but no items yet - show "Taking longer" message
+                        console.log('[AgentService] Timeout nudge: Showing "taking longer" message');
+                        updateAgentMessage(responseId, {
+                            text: `⏳ **Still working on it...** The synthesis is taking a bit longer than expected, but I'm still processing your request in the background. Keep an eye on your Gallery - your assets will appear there shortly!`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Background processing continues',
+                                timestamp: Date.now(),
+                                type: 'logic'
+                            }]
+                        });
+                    } else {
+                        // Case C: Standard timeout
+                        updateAgentMessage(responseId, {
+                            text: `❌ **Timeout:** The request is taking longer than expected (${timeoutMs / 1000}s). If you're generating high-res assets, they may still appear in your Gallery soon.`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Request exceeded time limit',
+                                timestamp: Date.now(),
+                                type: 'error'
+                            }]
+                        });
+                    }
                 } else {
+                    // Non-timeout error (API failure, etc)
                     updateAgentMessage(responseId, {
-                        text: `❌ **Error:** ${err.message || 'The request timed out or failed.'}`,
+                        text: `❌ **Error:** ${err.message || 'The request failed.'}`,
                         thoughts: [{
                             id: uuidv4(),
-                            text: 'Execution aborted',
+                            text: 'Execution failed',
                             timestamp: Date.now(),
                             type: 'error'
                         }]
