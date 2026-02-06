@@ -16,6 +16,7 @@ import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
+import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
@@ -141,6 +142,29 @@ export class VideoGenerationService {
             aspectRatio: targetAspectRatio,
             prompt: enrichedPrompt,
             orgId
+        });
+
+        // Persist video metadata for future retrieval and agent context
+        metadataPersistenceService.save('video', {
+            jobId,
+            prompt: options.prompt,
+            enrichedPrompt,
+            aspectRatio: targetAspectRatio,
+            cameraMovement: options.cameraMovement,
+            motionStrength: options.motionStrength,
+            duration: options.duration || 4,
+            hasFirstFrame: !!options.firstFrame,
+            hasLastFrame: !!options.lastFrame,
+            generateAudio: options.generateAudio || false,
+            model: options.model,
+            status: 'pending',
+            generatedAt: new Date().toISOString(),
+        }, {
+            showToasts: false, // Don't spam toasts for background saves
+            maxRetries: 1,
+            queueOnFailure: true,
+        }).catch(err => {
+            console.warn('[VideoGeneration] Failed to persist video metadata:', err);
         });
 
         // Return a mock entry that the UI can subscribe to via Firebase
