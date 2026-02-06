@@ -62,7 +62,7 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
             - Release Day (Launch/Direct links)
             - Post-release (UGC/Music Video/Remix)
             - Platform-specific frequency (TikTok daily, IG 3x/week, etc.)`;
-            
+
             try {
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { calendar: response } };
@@ -93,7 +93,7 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
                     properties: {
                         releaseDate: { type: "STRING", description: "YYYY-MM-DD" },
                         campaignTitle: { type: "STRING" },
-                        durationWeeks: { type: "NUMBER", default: 4 }
+                        durationWeeks: { type: "NUMBER" }
                     },
                     required: ["releaseDate", "campaignTitle"]
                 }
