@@ -14,7 +14,8 @@ vi.mock('../store/videoEditorStore', () => ({
 }));
 
 // Mock lucide-react
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Film: () => <svg data-testid="icon-film" />,
     Clapperboard: () => <svg data-testid="icon-clapperboard" />,
     Scissors: () => <svg data-testid="icon-scissors" />,

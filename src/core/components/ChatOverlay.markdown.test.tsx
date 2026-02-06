@@ -53,7 +53,8 @@ vi.mock('@/components/motion-primitives/text-effect', () => ({
 }));
 
 // Mock Lucide Icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Volume2: () => <span data-testid="icon-volume-2" />,
     VolumeX: () => <span data-testid="icon-volume-x" />,
     ChevronDown: () => <span data-testid="icon-chevron-down" />,

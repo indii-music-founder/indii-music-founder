@@ -4,7 +4,8 @@ import { AttachmentList } from './AttachmentList';
 import { vi } from 'vitest';
 
 // Mock Lucide icons to avoid rendering issues
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Image: () => <span data-testid="icon-image" />,
   Paperclip: () => <span data-testid="icon-paperclip" />,
   X: () => <span data-testid="icon-x" />,

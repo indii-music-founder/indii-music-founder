@@ -49,6 +49,17 @@ if (typeof window !== 'undefined') {
 
     HTMLCanvasElement.prototype.toDataURL = vi.fn(() => 'data:image/png;base64,mock');
 
+    // Mock getComputedStyle (jsdom limitation)
+    if (!window.getComputedStyle || window.getComputedStyle.toString().includes('Not implemented')) {
+        window.getComputedStyle = vi.fn().mockImplementation(() => ({
+            getPropertyValue: vi.fn().mockReturnValue(''),
+            removeProperty: vi.fn(),
+            setProperty: vi.fn(),
+            length: 0,
+            item: vi.fn().mockReturnValue(''),
+        }));
+    }
+
     // Mock matchMedia
     Object.defineProperty(window, 'matchMedia', {
         writable: true,
@@ -245,3 +256,24 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
         getHistory: vi.fn().mockResolvedValue([])
     }
 }));
+
+// Mock lucide-react: auto-generate stub components for any icon export
+vi.mock('lucide-react', () => {
+    const cache: Record<string, unknown> = {};
+    return new Proxy(cache, {
+        get(_target, prop: string) {
+            if (prop === '__esModule') return true;
+            if (prop === 'default') return {};
+            if (!cache[prop]) {
+                const MockIcon = vi.fn((props: Record<string, unknown>) => {
+                    const { createElement } = require('react');
+                    return createElement('svg', { 'data-testid': `icon-${prop}`, ...props });
+                });
+                MockIcon.displayName = prop;
+                cache[prop] = MockIcon;
+            }
+            return cache[prop];
+        },
+        has() { return true; }
+    });
+});

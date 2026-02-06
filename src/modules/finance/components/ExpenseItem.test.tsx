@@ -5,7 +5,8 @@ import { describe, it, expect } from 'vitest';
 import React from 'react';
 
 // Mock Lucide icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   CheckCircle: () => <div data-testid="check-circle-icon" />,
   Receipt: () => <div data-testid="receipt-icon" />,
 }));

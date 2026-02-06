@@ -7,7 +7,8 @@ import { useStore } from '@/core/store';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Home: () => <div data-testid="icon-home" />,
     Layout: () => <div data-testid="icon-layout" />,
     MessageSquare: () => <div data-testid="icon-messages" />,
