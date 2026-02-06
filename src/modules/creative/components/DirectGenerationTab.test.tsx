@@ -40,7 +40,8 @@ vi.mock('@/services/WhiskService', () => ({
 }));
 
 // Mock Lucide icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Loader2: ({ className }: { className: string }) => <div data-testid="loader" className={className}>Loading...</div>,
     Image: () => <div data-testid="icon-image">Image</div>,
     Video: () => <div data-testid="icon-video">Video</div>,

@@ -4,7 +4,8 @@ import { vi, describe, it, expect } from 'vitest';
 import AI_Input_Search from './ai-input-search';
 
 // Mock Lucide icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Globe: () => <div data-testid="icon-globe">Globe</div>,
   Paperclip: ({ className }: { className?: string }) => (
     <div data-testid="icon-paperclip" className={className}>

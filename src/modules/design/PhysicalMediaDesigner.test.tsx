@@ -40,27 +40,24 @@ vi.mock('./components/PhysicalMediaLayout', () => ({
 }));
 
 // Mock Lucide icons
-vi.mock('lucide-react', async () => {
-    const actual = await vi.importActual('lucide-react');
-    return {
-        ...actual,
-        Sparkles: (props: any) => <div data-testid="icon-sparkles" {...props} />,
-        Send: (props: any) => <div data-testid="icon-send" {...props} />,
-        ZoomIn: (props: any) => <div data-testid="icon-zoom-in" {...props} />,
-        ZoomOut: (props: any) => <div data-testid="icon-zoom-out" {...props} />,
-        Maximize: (props: any) => <div data-testid="icon-maximize" {...props} />,
-        ArrowLeft: (props: any) => <div data-testid="icon-arrow-left" {...props} />,
-        Layers: (props: any) => <div data-testid="icon-layers" {...props} />,
-        Palette: (props: any) => <div data-testid="icon-palette" {...props} />,
-        Disc: (props: any) => <div data-testid="icon-disc" {...props} />,
-        GripVertical: (props: any) => <div data-testid="icon-grip" {...props} />,
-        Eye: (props: any) => <div data-testid="icon-eye" {...props} />,
-        EyeOff: (props: any) => <div data-testid="icon-eye-off" {...props} />,
-        Lock: (props: any) => <div data-testid="icon-lock" {...props} />,
-        Unlock: (props: any) => <div data-testid="icon-unlock" {...props} />,
-        Zap: (props: any) => <div data-testid="icon-zap" {...props} />,
-    };
-});
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
+    Sparkles: (props: any) => <div data-testid="icon-sparkles" {...props} />,
+    Send: (props: any) => <div data-testid="icon-send" {...props} />,
+    ZoomIn: (props: any) => <div data-testid="icon-zoom-in" {...props} />,
+    ZoomOut: (props: any) => <div data-testid="icon-zoom-out" {...props} />,
+    Maximize: (props: any) => <div data-testid="icon-maximize" {...props} />,
+    ArrowLeft: (props: any) => <div data-testid="icon-arrow-left" {...props} />,
+    Layers: (props: any) => <div data-testid="icon-layers" {...props} />,
+    Palette: (props: any) => <div data-testid="icon-palette" {...props} />,
+    Disc: (props: any) => <div data-testid="icon-disc" {...props} />,
+    GripVertical: (props: any) => <div data-testid="icon-grip" {...props} />,
+    Eye: (props: any) => <div data-testid="icon-eye" {...props} />,
+    EyeOff: (props: any) => <div data-testid="icon-eye-off" {...props} />,
+    Lock: (props: any) => <div data-testid="icon-lock" {...props} />,
+    Unlock: (props: any) => <div data-testid="icon-unlock" {...props} />,
+    Zap: (props: any) => <div data-testid="icon-zap" {...props} />,
+}));
 
 // Mock motion to filter out framer-motion specific props like layoutId
 vi.mock('framer-motion', async () => {
