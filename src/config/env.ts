@@ -45,7 +45,7 @@ const processEnv = {
     DEV: import.meta.env.DEV,
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv(import.meta.env.VITE_FIREBASE_API_KEY, process.env.VITE_FIREBASE_API_KEY),
+    firebaseApiKey: getEnv(import.meta.env.VITE_FIREBASE_API_KEY, process.env.VITE_FIREBASE_API_KEY) || getEnv(import.meta.env.VITE_API_KEY, process.env.VITE_API_KEY),
     firebaseProjectId: getEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID, process.env.VITE_FIREBASE_PROJECT_ID),
     firebaseStorageBucket: getEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, process.env.VITE_FIREBASE_STORAGE_BUCKET),
     firebaseDatabaseURL: getEnv(import.meta.env.VITE_FIREBASE_DATABASE_URL, process.env.VITE_FIREBASE_DATABASE_URL),
