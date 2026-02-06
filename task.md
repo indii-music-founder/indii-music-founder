@@ -18,6 +18,15 @@
 - [~] Verification: Confirm browser console is free of 404/403/CORS errors on live site. <!-- id: 204 --> **PARTIAL** (CORS enabled on active buckets; legacy data in deprecated bucket may still error)
 - [ ] Verification: Verify "After Hours Pulse" metadata population after user re-analysis. <!-- id: 205 -->
 
+## Tasks - Image Generation Timeout Fix (2026-02-05)
+
+- [x] Investigation: Trace 300s timeout to agent loop execution flow. <!-- id: 206 -->
+- [x] Fix: Add IMMEDIATE EXECUTION rule to GeneralistAgent prompts. <!-- id: 207 -->
+- [x] Fix: Add Exception to Mode A for generation requests (skip Curriculum mode). <!-- id: 208 -->
+- [x] Fix: Strengthen loop break logic for generation tools that return success. <!-- id: 209 -->
+- [~] Verification: Test "generate an image of a cat" in browser. <!-- id: 210 --> **PARTIAL** (Image successfully generated "Feline Festival"; agent still reports 300s timeout due to total execution time including Cloud Function latency)
+- [ ] Optimization: Consider increasing timeout for generation-heavy tasks or implementing chunked progress updates. <!-- id: 211 -->
+
 ## Tasks - Dual-Workflow Image Editing (Gemini 3 Pro + 2.5 Flash)
 
 - [x] UI: Add "High Fidelity" toggle in `CanvasHeader`. <!-- id: 101 -->
