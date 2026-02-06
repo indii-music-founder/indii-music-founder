@@ -1326,6 +1326,13 @@ export class FirebaseAIService {
             lowerMsg.includes('app-check-token') ||
             lowerMsg.includes('unauthorized')
         ) {
+            if (this.useFallbackMode) {
+                return new AppException(
+                    AppErrorCode.UNAUTHORIZED,
+                    'AI Verification Failed (Fallback API Key Invalid/Restricted). Check VITE_API_KEY permissions.',
+                    { retryable: false }
+                );
+            }
             return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
         }
         if (msg.includes('Recaptcha')) {
