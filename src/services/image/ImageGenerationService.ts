@@ -157,6 +157,7 @@ export class ImageGenerationService {
                     const { useStore } = await import('@/core/store');
                     const userId = useStore.getState().userProfile?.id;
 
+                    // eslint-disable-next-line no-constant-condition
                     if (userId && false) { // TEMPORARY: Disable Cloud Storage to bypass CORS/Bucket issues
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
                         const saved = await CloudStorageService.smartSave(dataUri, id, userId);

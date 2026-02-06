@@ -4,7 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { LayersPanel } from '../LayersPanel';
 
 // Mock Lucide icons to avoid rendering issues and keep DOM clean
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Layers: () => <span data-testid="icon-layers" />,
     Eye: () => <span data-testid="icon-eye" />,
     EyeOff: () => <span data-testid="icon-eye-off" />,
