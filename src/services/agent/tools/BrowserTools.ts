@@ -12,9 +12,9 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
     browser_navigate: wrapTool('browser_navigate', async (args: { url: string }) => {
         try {
             // 1. Electron Desktop (Native IPC)
-            // @ts-ignore
+            // @ts-expect-error - electronAPI injected by Electron preload
             if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
-                // @ts-ignore
+                // @ts-expect-error - electronAPI injected by Electron preload
                 const result = await window.electronAPI.agent.navigateAndExtract(args.url);
                 if (result.success) {
                     return toolSuccess(result, `Successfully navigated to ${args.url}`);
@@ -48,9 +48,9 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
     browser_action: wrapTool('browser_action', async (args: { action: 'click' | 'type' | 'hover', selector: string, text?: string }) => {
         try {
             // 1. Electron Desktop (Native IPC)
-            // @ts-ignore
+            // @ts-expect-error - electronAPI injected by Electron preload
             if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
-                // @ts-ignore
+                // @ts-expect-error - electronAPI injected by Electron preload
                 const result = await window.electronAPI.agent.performAction(args.action, args.selector, args.text);
                 if (result.success) {
                     return toolSuccess(result, `Successfully performed ${args.action} on ${args.selector}`);
@@ -79,9 +79,9 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
     browser_snapshot: wrapTool('browser_snapshot', async () => {
         try {
             // 1. Electron Desktop (Native IPC)
-            // @ts-ignore
+            // @ts-expect-error - electronAPI injected by Electron preload
             if (typeof window !== 'undefined' && window.electronAPI && window.electronAPI.agent) {
-                // @ts-ignore
+                // @ts-expect-error - electronAPI injected by Electron preload
                 const result = await window.electronAPI.agent.captureState();
                 if (result.success) {
                     return toolSuccess(result, "Snapshot captured successfully.");
