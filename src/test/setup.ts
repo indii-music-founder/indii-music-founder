@@ -265,11 +265,13 @@ vi.mock('lucide-react', () => {
             if (prop === '__esModule') return true;
             if (prop === 'default') return {};
             if (!cache[prop]) {
-                const MockIcon = vi.fn((props: Record<string, unknown>) => {
-                    const { createElement } = require('react');
-                    return createElement('svg', { 'data-testid': `icon-${prop}`, ...props });
-                });
-                MockIcon.displayName = prop;
+                const MockIcon = Object.assign(
+                    vi.fn((props: Record<string, unknown>) => {
+                        const { createElement } = require('react');
+                        return createElement('svg', { 'data-testid': `icon-${prop}`, ...props });
+                    }),
+                    { displayName: prop }
+                );
                 cache[prop] = MockIcon;
             }
             return cache[prop];
