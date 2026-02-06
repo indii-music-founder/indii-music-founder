@@ -12,7 +12,8 @@ vi.mock('@/core/store');
 vi.mock('@/services/marketplace/MarketplaceService');
 
 // Mock Lucide icons to avoid rendering issues
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Heart: () => <div data-testid="icon-heart" />,
     MessageCircle: () => <div data-testid="icon-message-circle" />,
     Share2: () => <div data-testid="icon-share-2" />,

@@ -231,7 +231,7 @@ export class AgentService {
         }
 
         // 3. Fallback to Agent Orchestration (Executor)
-        let agentId = forcedAgentId;
+        const agentId = forcedAgentId;
         if (!agentId) {
             // HYBRID GRAFT: Use the new HybridOrchestrator for complex reasoning
             console.info('[AgentService] Using Hybrid Orchestrator DNA...');

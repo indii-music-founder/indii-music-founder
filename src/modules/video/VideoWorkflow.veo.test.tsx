@@ -33,7 +33,8 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock Lucide React
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Loader2: () => <div />,
     Layout: () => <div />,
     Maximize2: () => <div />,

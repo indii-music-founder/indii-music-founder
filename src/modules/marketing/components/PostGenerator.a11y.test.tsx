@@ -12,7 +12,8 @@ expect.extend(toHaveNoViolations);
 // --- Mocks ---
 
 // Mock Lucide icons with aria-hidden="true" to prevent false positives in axe
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Megaphone: () => <span data-testid="icon-megaphone" aria-hidden="true" />,
   Copy: () => <span data-testid="icon-copy" aria-hidden="true" />,
   Image: () => <span data-testid="icon-image" aria-hidden="true" />,
