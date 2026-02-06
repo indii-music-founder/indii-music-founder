@@ -1,53 +1,222 @@
 ---
 name: asshole
 description: Enforces reading project documentation before modifying core configurations or APIs. Derived from the 'Im An Asshole' report to prevent AI arrogance.
+version: 2.0.0
+last_updated: 2026-02-06
 ---
 
-# Documentation Adherence Protocol ("The Asshole Check")
+# Asshole Check Protocol (Platinum Level)
 
-## Purpose
+**Humility protocol. Always prioritize project documentation over model training data.**
 
-To prevent the AI from "doing whatever the fuck it wants" by ignoring user documentation and imposing internal training data (hallucinations) onto the project. This skill mandates that **Project Documentation > Model Training Data**.
+---
 
-## The Golden Rule
+## 1. Origin Story
 
-**NEVER** change an API key, Model ID, URL, or Core Configuration value without first verifying it against the project's documentation files.
+This skill exists because of past AI failures where agents:
 
-## Required Reading List
+- Assumed they knew better than project documentation
+- Made changes to core systems without reading existing patterns
+- Broke production code by ignoring established conventions
+- Wasted user time with confident but incorrect suggestions
 
-Before modifying `functions/src/config/*.ts`, `src/core/config/*.ts`, or any `.env` related files, you MUST read:
+**The name is a reminder: Don't be an asshole. Read the docs first.**
 
-1. `MODEL_POLICY.md` (if present)
-2. `functions/src/config/models.ts` (Read the *comments* primarily, not just the code)
-3. `.agent/skills/jules_system_architect/SKILL.md` (Architectural laws)
-4. `/docs/API_CREDENTIALS_POLICY.md` (If touching auth/keys)
+---
 
-## Execution Protocol
+## 2. Core Protocol (MANDATORY)
 
-### 1. Verification Phase
+> **Before modifying any core configuration or API, you MUST read the relevant documentation.**
 
-Before proposing a change to a configuration value (e.g., changing a model ID from `X` to `Y`):
+### 2.1 The Asshole Check
 
-- **Search**: Grep for `X` in the codebase to see where it is defined and used.
-- **Context**: Check if `X` is mentioned in any `*.md` files.
-- **Ask**: If `X` looks "wrong" (e.g., outdated model ID), ASK the user: "Documentation references `X`, but `Y` is the modern standard. Should I update this, or is `X` required for your specific infrastructure?"
+```mermaid
+graph TD
+    A[Task Involves Core System] --> B{Did I read project docs?}
+    B -->|No| C[STOP - Read docs NOW]
+    C --> D[Understand existing patterns]
+    D --> E{Docs conflict with training?}
+    E -->|Yes| F[FOLLOW PROJECT DOCS]
+    E -->|No| G[Proceed with change]
+    B -->|Yes| E
+    F --> G
+```
 
-### 2. The "Asshole" Test
+### 2.2 When This Applies
 
-Ask yourself: "Am I changing this because I *know* it's better, or because I *read* that I should?"
+| Area | Documentation to Read |
+|------|----------------------|
+| **Firebase Config** | `docs/API_CREDENTIALS_POLICY.md`, `firebase.json` |
+| **AI Models** | `MODEL_POLICY.md`, `AI_MODELS.ts` |
+| **Auth** | `docs/AUTH.md`, security rules |
+| **IPC/Electron** | `docs/IPC_PROTOCOL.md` |
+| **Styling** | `docs/DESIGN_SYSTEM.md`, `index.css` |
+| **Testing** | `TEST_PLAYBOOK.md`, `vitest.config.ts` |
+| **Deployment** | `docs/DEPLOYMENT.md`, CI workflows |
 
-- If the answer is "I know it's better" -> **STOP**. You are failing the protocol.
-- If the answer is "The docs say to update it" -> **PROCEED**.
+---
 
-## Corrective Actions
+## 3. Documentation Hierarchy
 
-If you find yourself having made a change that breaks this protocol (like the `imagen-3.0` incident):
+When sources conflict, follow this priority:
 
-1. **Revert Immediately**.
-2. **Apologize**.
-3. **Read the Docs**.
+```
+1. Project documentation (docs/)  ← HIGHEST PRIORITY
+2. Inline code comments
+3. Existing code patterns
+4. External library docs
+5. AI training data               ← LOWEST PRIORITY
+```
 
-## Capability Mapping
+---
 
-- **Context Awareness**: You do NOT have "ALL the current knowledge of yourself." The doc set *is* your current knowledge.
-- **Constraint**: You are an engine, not the driver. The docs are the map. Follow the map.
+## 4. Verification Protocol
+
+Before making a change to a core system:
+
+### Step 1: Identify Relevant Docs
+
+```bash
+# Search for documentation
+find . -name "*.md" | xargs grep -l "<topic>"
+```
+
+### Step 2: Read and Understand
+
+- Read the ENTIRE relevant section
+- Note any specific requirements or constraints
+- Identify existing patterns to follow
+
+### Step 3: Verify Understanding
+
+Ask yourself:
+
+- Does my proposed change align with documented patterns?
+- Am I following the project's conventions, not generic "best practices"?
+- Would the original author approve of this change?
+
+### Step 4: Ask If Unsure
+
+If documentation is:
+
+- Missing
+- Outdated
+- Contradictory
+- Unclear
+
+**ASK THE USER. Do not assume.**
+
+```
+"I'm about to modify [system]. The documentation says [X], 
+but my training suggests [Y]. Which approach should I use?"
+```
+
+---
+
+## 5. Core Systems (Protected)
+
+These systems require the Asshole Check before ANY modification:
+
+### 5.1 Configuration Files
+
+- `firebase.json`
+- `vite.config.ts`
+- `tsconfig.json`
+- `package.json` (scripts, dependencies)
+- `electron-builder.json`
+- `.env.*` files
+
+### 5.2 Core Services
+
+- `src/core/config/*`
+- `src/services/auth/*`
+- `src/services/ai/*`
+- `functions/src/lib/*`
+
+### 5.3 Security-Critical
+
+- `firestore.rules`
+- `storage.rules`
+- Any file with "auth", "security", or "credential" in name/path
+
+### 5.4 Build/Deploy
+
+- `.github/workflows/*`
+- `Dockerfile`
+- `scripts/deploy*`
+
+---
+
+## 6. Red Flags (STOP Immediately)
+
+If you find yourself thinking:
+
+| Thought | Reality Check |
+|---------|---------------|
+| "I know a better way" | Did you read why it's done this way? |
+| "This is outdated" | Did you verify it's actually obsolete? |
+| "Nobody does it like this" | This project might have specific reasons |
+| "The docs are wrong" | The docs are the source of truth |
+| "I'll just quickly..." | Quick changes to core systems = bugs |
+
+---
+
+## 7. Documentation Updates
+
+If documentation IS genuinely outdated:
+
+1. **Do not silently ignore it**
+2. **Propose the documentation update**
+3. **Get user approval before changing**
+4. **Update docs AND code together**
+
+```markdown
+"I noticed `MODEL_POLICY.md` references Gemini 2.5, but we're using Gemini 3 now.
+Should I update the documentation to reflect current usage?"
+```
+
+---
+
+## 8. The Humility Reminder
+
+> **Your training data is frozen. Project documentation is updated.**
+
+| Your Training Says | Project Reality |
+|--------------------|-----------------|
+| "Use Firebase 9 syntax" | Project uses Firebase 10 modular |
+| "Use `thinking_budget`" | Project uses `thinking_level` |
+| "Configure ESLint this way" | Project has specific ESLint config |
+| "Import like this" | Project uses `@/` path aliases |
+
+---
+
+## 9. Self-Audit Checklist
+
+Before modifying core systems:
+
+- [ ] I located and read relevant project documentation
+- [ ] I understand WHY the current approach was chosen
+- [ ] My change follows existing project patterns
+- [ ] I'm not assuming my training > project docs
+- [ ] I asked the user if documentation was unclear
+- [ ] I will update docs if my change affects them
+
+---
+
+## 10. Post-Mortem Reference
+
+**2025-01-17 Incident:**
+A hardcoded Firebase config was found in `scripts/send-reset.js` because an agent assumed it knew the correct approach without reading `API_CREDENTIALS_POLICY.md`.
+
+**Lesson:** This policy exists to prevent such incidents. Follow it without exception.
+
+---
+
+## 11. The Final Rule
+
+> **When in doubt, ask. It's better to seem uncertain than to be confidently wrong.**
+
+Being humble about limitations builds trust.
+Being arrogant about capabilities destroys systems.
+
+**Don't be an asshole. Read the docs.**

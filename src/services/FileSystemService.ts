@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
+import { events } from '@/core/events';
 
 export interface FileNode {
     id: string;
@@ -63,6 +64,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 } as FileNode)).sort((a, b) => a.createdAt - b.createdAt);
             }
             console.error('Error fetching project nodes:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to load project files' });
             throw error;
         }
     }
@@ -82,6 +84,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             } as FileNode;
         } catch (error) {
             console.error('Error creating node:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to create file/folder' });
             throw error;
         }
     }
@@ -95,6 +98,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             });
         } catch (error) {
             console.error('Error updating node:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to update file/folder' });
             throw error;
         }
     }
@@ -105,6 +109,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             await deleteDoc(docRef);
         } catch (error) {
             console.error('Error deleting node:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete item' });
             throw error;
         }
     }
@@ -161,8 +166,10 @@ export class FileSystemService extends FirestoreService<FileNode> {
 
         try {
             await this.batchDelete(Array.from(idsToDelete));
+            events.emit('SYSTEM_ALERT', { level: 'success', message: `Deleted ${idsToDelete.size} items` });
         } catch (error) {
             console.error('Error batch deleting nodes:', error);
+            events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete folder contents' });
             throw error;
         }
     }

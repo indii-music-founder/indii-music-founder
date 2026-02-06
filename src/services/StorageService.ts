@@ -7,6 +7,7 @@ import { OrganizationService } from './OrganizationService';
 import { FirestoreService } from './FirestoreService';
 import { CloudStorageService } from './CloudStorageService';
 import { Logger } from '@/core/logger/Logger';
+import { events } from '@/core/events';
 
 interface HistoryDocument extends Omit<HistoryItem, 'timestamp'> {
     timestamp: Timestamp;
@@ -55,6 +56,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                 },
                 (error) => {
                     Logger.error('StorageService', 'Upload failed:', error);
+                    events.emit('SYSTEM_ALERT', { level: 'error', message: 'File upload failed' });
                     reject(error);
                 },
                 async () => {
@@ -64,6 +66,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                         resolve(downloadURL);
                     } catch (e) {
                         Logger.error('StorageService', 'Failed to get download URL', e);
+                        events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to retrieve file URL' });
                         reject(e);
                     }
                 }
@@ -111,6 +114,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     if (isLarge) {
                         imageUrl = 'placeholder:upload-failed-large-asset';
                         console.error('[StorageService] Asset too large for Firestore, set to placeholder');
+                        events.emit('SYSTEM_ALERT', { level: 'warning', message: 'Large image upload failed. Saved as placeholder.' });
                     }
                 }
             } else if (import.meta.env.DEV) {
