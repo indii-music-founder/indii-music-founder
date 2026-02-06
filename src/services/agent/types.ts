@@ -11,6 +11,7 @@ export interface ToolParameterSchema {
     type: SchemaType;
     description?: string;
     enum?: string[];
+    default?: string | number | boolean;
     items?: ToolParameterSchema;
     properties?: Record<string, ToolParameterSchema>;
     required?: string[];
