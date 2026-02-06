@@ -98,8 +98,13 @@ export class AgentService {
                 agentId: 'generalist' // Default initially
             });
 
-            // Create a timeout controller
-            const timeoutMs = 300000; // 300s Safety Timeout (Increased for Agent Zero)
+            // Create a timeout controller - detect generation requests for longer timeout
+            const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
+            const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
+
+            // Track gallery state before execution for timeout grace check
+            const galleryCountBefore = useStore.getState().generatedHistory?.length || 0;
+
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
@@ -112,15 +117,34 @@ export class AgentService {
                 ]);
             } catch (err: any) {
                 console.error('[AgentService] Message Flow Failed:', err);
-                updateAgentMessage(responseId, {
-                    text: `❌ **Error:** ${err.message || 'The request timed out or failed.'}`,
-                    thoughts: [{
-                        id: uuidv4(),
-                        text: 'Execution aborted',
-                        timestamp: Date.now(),
-                        type: 'error'
-                    }]
-                });
+
+                // TIMEOUT GRACE: Check if images were added to gallery during execution
+                const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
+                const newItemsGenerated = galleryCountAfter > galleryCountBefore;
+
+                if (err.message?.includes('Timeout') && newItemsGenerated) {
+                    // Generation succeeded but loop was slow - show success instead of error
+                    console.log('[AgentService] Timeout grace: Generation completed successfully despite slow loop');
+                    updateAgentMessage(responseId, {
+                        text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Generation completed',
+                            timestamp: Date.now(),
+                            type: 'logic'
+                        }]
+                    });
+                } else {
+                    updateAgentMessage(responseId, {
+                        text: `❌ **Error:** ${err.message || 'The request timed out or failed.'}`,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Execution aborted',
+                            timestamp: Date.now(),
+                            type: 'error'
+                        }]
+                    });
+                }
             } finally {
                 // CRITICAL: Always clear streaming state to avoid stuck "..." loading
                 updateAgentMessage(responseId, { isStreaming: false });
@@ -186,10 +210,10 @@ export class AgentService {
             // HYBRID GRAFT: Use the new HybridOrchestrator for complex reasoning
             console.info('[AgentService] Using Hybrid Orchestrator DNA...');
             const hybridResponse = await this.hybridOrchestrator.execute(context, text);
-            
-            updateAgentMessage(responseId, { 
+
+            updateAgentMessage(responseId, {
                 text: hybridResponse,
-                isStreaming: false 
+                isStreaming: false
             });
             return;
         }
