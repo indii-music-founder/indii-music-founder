@@ -21,6 +21,10 @@ export class ProactiveService {
 
     constructor() {
         this.initializeEventListeners();
+        // Polling must be started manually to prevent side-effects in tests
+    }
+
+    start() {
         this.startPolling();
     }
 
