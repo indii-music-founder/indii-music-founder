@@ -43,6 +43,10 @@ describe('ProactiveService', () => {
         vi.clearAllMocks();
         vi.useFakeTimers();
 
+        // Re-initialize listeners since they are disposed in afterEach
+        // @ts-expect-error - Accessing private method for testing
+        proactiveService.initializeEventListeners();
+
         // Default: no tasks
         mockGetDocs.mockResolvedValue({ docs: [] });
     });
