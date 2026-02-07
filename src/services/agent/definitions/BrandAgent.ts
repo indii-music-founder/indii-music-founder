@@ -3,7 +3,7 @@ import { AgentConfig } from "../types";
 import systemPrompt from '@agents/brand/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
-import { useStore } from '@/core/store';
+
 
 export const BrandAgent: AgentConfig = {
     id: 'brand',
@@ -101,6 +101,7 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
             };
         },
         analyze_audio: async (args: { uploadedAudioIndex: number }) => {
+            const { useStore } = await import('@/core/store');
             const { uploadedAudio } = useStore.getState();
             const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
 

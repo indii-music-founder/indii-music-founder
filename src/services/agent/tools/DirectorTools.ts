@@ -1,4 +1,4 @@
-import { useStore, type HistoryItem } from '@/core/store';
+import type { HistoryItem } from '@/core/store';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { Editing } from '@/services/image/EditingService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
@@ -96,6 +96,7 @@ interface SetEntityAnchorArgs extends ToolFunctionArgs {
 
 export const DirectorTools: Record<string, AnyToolFunction> = {
     generate_image: wrapTool('generate_image', async (args: GenerateImageArgs) => {
+        const { useStore } = await import('@/core/store');
         const { studioControls, addToHistory, currentProjectId, userProfile, whiskState } = useStore.getState();
 
         let sourceImages: { mimeType: string; data: string }[] | undefined;
@@ -212,6 +213,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     batch_edit_images: wrapTool('batch_edit_images', async (args: { prompt: string, imageIndices?: number[] }) => {
+        const { useStore } = await import('@/core/store');
         const { uploadedImages, addToHistory, currentProjectId, addAgentMessage } = useStore.getState();
 
         if (uploadedImages.length === 0) {
@@ -290,6 +292,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
      * Unified High-Res Asset Tool
      */
     generate_high_res_asset: wrapTool('generate_high_res_asset', async (args: GenerateHighResAssetArgs) => {
+        const { useStore } = await import('@/core/store');
         const { userProfile, currentProjectId, addToHistory } = useStore.getState();
 
         const fullPrompt = `${args.templateType} design: ${args.prompt}. ${args.style || ''} --quality high --v 6.0`;
@@ -323,6 +326,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }) => {
+        const { useStore } = await import('@/core/store');
         const { entityAnchor, addToHistory, currentProjectId } = useStore.getState();
 
         let fullPrompt = `Create a cinematic grid of shots (Wide, Medium, Close-up, Low Angle) for: ${args.prompt}.`;
@@ -363,6 +367,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     extract_grid_frame: wrapTool('extract_grid_frame', async (args: ExtractGridFrameArgs) => {
+        const { useStore } = await import('@/core/store');
         const { generatedHistory, addToHistory, currentProjectId } = useStore.getState();
 
         let sourceImage;
@@ -408,6 +413,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
+        const { useStore } = await import('@/core/store');
         const { setEntityAnchor, addToHistory, currentProjectId } = useStore.getState();
 
         const match = args.image.match(/^data:(.+);base64,(.+)$/);
@@ -434,6 +440,7 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
     }),
 
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {
+        const { useStore } = await import('@/core/store');
         const { uploadedAudio } = useStore.getState();
 
         const audioItem = uploadedAudio[args.uploadedAudioIndex];

@@ -1,7 +1,8 @@
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
-import { useStore } from '@/core/store';
+// useStore removed
+
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 // duplicate removed
@@ -138,6 +139,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
     }),
 
     generate_campaign_from_audio: wrapTool('generate_campaign_from_audio', async ({ uploadedAudioIndex }: { uploadedAudioIndex: number }) => {
+        const { useStore } = await import('@/core/store');
         const { uploadedAudio } = useStore.getState();
         const audioItem = uploadedAudio[uploadedAudioIndex];
 
