@@ -98,21 +98,45 @@ function LoadingFallback() {
     const [show, setShow] = useState(false);
 
     useEffect(() => {
-        // Delay showing the loader to prevent flash for fast module loads
-        const timer = setTimeout(() => setShow(true), 200);
+        // Delay showing the skeleton to prevent flash for fast module loads
+        const timer = setTimeout(() => setShow(true), 150);
         return () => clearTimeout(timer);
     }, []);
 
-    // Don't show anything for the first 200ms (prevents flash)
     if (!show) {
         return null;
     }
 
     return (
-        <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-            <div className="flex flex-col items-center gap-3 px-6 py-4 bg-surface/90 rounded-lg border border-white/10 shadow-lg">
-                <div className="w-8 h-8 border-2 border-white/20 border-t-white/80 rounded-full animate-spin" />
-                <span className="text-sm text-muted-foreground">Loading...</span>
+        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="h-full flex flex-col p-6 gap-4">
+                {/* Header skeleton */}
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-lg bg-white/5 animate-pulse" />
+                        <div className="h-5 w-40 rounded bg-white/5 animate-pulse" />
+                    </div>
+                    <div className="flex gap-2">
+                        <div className="h-8 w-20 rounded-lg bg-white/5 animate-pulse" />
+                        <div className="h-8 w-20 rounded-lg bg-white/5 animate-pulse" />
+                    </div>
+                </div>
+
+                {/* Content skeleton */}
+                <div className="flex-1 grid grid-cols-3 gap-4">
+                    <div className="col-span-2 space-y-4">
+                        <div className="h-48 rounded-xl bg-white/5 animate-pulse" />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="h-32 rounded-xl bg-white/5 animate-pulse" />
+                            <div className="h-32 rounded-xl bg-white/5 animate-pulse" />
+                        </div>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
+                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
+                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
+                    </div>
+                </div>
             </div>
         </div>
     );

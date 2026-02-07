@@ -1002,3 +1002,36 @@ import { getUsageStats } from './subscription/getUsageStats';
 import { trackUsage } from './subscription/trackUsage';
 
 export { getSubscription, createCheckoutSession, getCustomerPortal, cancelSubscription, resumeSubscription, getUsageStats, trackUsage };
+
+// ----------------------------------------------------------------------------
+// Health Check Endpoint
+// ----------------------------------------------------------------------------
+
+/**
+ * Health check endpoint for uptime monitoring.
+ * Returns service status and basic diagnostics.
+ */
+export const healthCheck = functions
+    .runWith({ timeoutSeconds: 10, memory: "128MB" })
+    .https.onRequest(async (_req, res) => {
+        const status: Record<string, unknown> = {
+            status: "ok",
+            timestamp: new Date().toISOString(),
+            version: "0.1.0-beta.2",
+            region: process.env.FUNCTION_REGION || "us-central1",
+        };
+
+        // Check Firestore connectivity
+        try {
+            await admin.firestore().collection("_health").doc("ping").set({
+                lastCheck: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            status.firestore = "connected";
+        } catch {
+            status.firestore = "error";
+            status.status = "degraded";
+        }
+
+        const httpStatus = status.status === "ok" ? 200 : 503;
+        res.status(httpStatus).json(status);
+    });
