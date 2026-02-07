@@ -24,6 +24,9 @@ import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream 
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
+const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
+
 /**
  * Security Helper: Validate Organization Access
  *
@@ -196,7 +199,8 @@ export const triggerVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
@@ -282,7 +286,8 @@ export const triggerLongFormVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
@@ -434,7 +439,8 @@ export const renderVideo = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
