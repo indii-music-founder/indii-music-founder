@@ -66,7 +66,7 @@
 | 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | DONE - AIService already has AIResponseCache + request coalescing |
 | 35 | **Add health check endpoint** for monitoring | `functions/src/` | DONE - healthCheck HTTP function with Firestore ping |
 | 36 | **Add structured logging** (JSON format for production log aggregation) | `src/core/logger/` | DONE - JSON structured logs in prod, human-readable in dev |
-| 37 | **Add user session timeout/refresh** for long-running sessions | `src/core/store/slices/authSlice.ts` | TODO |
+| 37 | **Add user session timeout/refresh** for long-running sessions | `src/hooks/useSessionTimeout.ts` | DONE - Proactive token refresh, idle warning at 55min, timeout at 60min |
 | 38 | **Add database migration strategy** for Firestore schema changes | `docs/` | TODO |
 | 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | TODO |
 | 40 | **Add privacy policy and terms of service** pages | `landing-page/` | TODO |
@@ -90,7 +90,7 @@
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
 | P2 Medium | 15 | 6 | 9 |
-| P3 Standard | 20 | 4 | 16 |
-| **Total** | **50** | **24** | **26** |
+| P3 Standard | 20 | 5 | 15 |
+| **Total** | **50** | **25** | **25** |
 
-**Current Grade: A-** (all blockers resolved, security hardened, structured logging, feature flags, build passes)
+**Current Grade: A-** (all blockers resolved, security hardened, structured logging, feature flags, session management, build passes)
