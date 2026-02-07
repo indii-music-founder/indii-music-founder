@@ -338,3 +338,31 @@ vi.mock('google-auth-library', () => ({
 **Related Errors:** TEST-001
 
 ---
+
+## DEP-001 Circular Dependency Store Initialization
+
+**Pattern:** `TypeError: Cannot read properties of undefined (reading 'id')` in `AgentRegistry` / CI hangs on tests
+**Context:** Agent initialization, particularly when `useStore` is imported at the top level of tools.
+**Root Cause:** Circular dependency: `Store` -> `AgentSlice` -> `AgentRegistry` -> `AgentConfig` -> `AgentDefinitions` -> `Tools` -> `useStore`. This causes `useStore` (and `AgentRegistry`) to be accessed before full initialization.
+**Fix:**
+
+1. Use `import type` in `types.ts` to break type-only cycles.
+2. Move `useStore` imports inside functions (dynamic import) in tools/services.
+3. Harden `AgentRegistry` logging to handle undefined configs gracefully.
+
+```typescript
+// ❌ Wrong - top-level static import
+import { useStore } from '@/core/store';
+export const myTool = () => {
+    const state = useStore.getState();
+};
+
+// ✅ Correct - dynamic import within function
+export const myTool = async () => {
+    const { useStore } = await import('@/core/store');
+    const state = useStore.getState();
+};
+```
+
+**Date Added:** 2026-02-06
+**Related Errors:** None

@@ -1,10 +1,12 @@
 import { runAgenticWorkflow } from '@/services/rag/ragService';
-import { useStore } from '@/core/store';
+// useStore removed
+
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 export const KnowledgeTools: Record<string, AnyToolFunction> = {
     search_knowledge: wrapTool('search_knowledge', async (args: { query: string }) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
         const userProfile = store.userProfile;
 

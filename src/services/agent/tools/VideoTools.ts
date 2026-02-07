@@ -1,4 +1,4 @@
-import { useStore } from '@/core/store';
+
 import { Editing } from '@/services/image/EditingService';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoGenerationOptions } from '@/modules/video/schemas';
@@ -79,6 +79,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             return toolError(resolutionError, 'INVALID_INPUT');
         }
 
+        const { useStore } = await import('@/core/store');
         const { userProfile, whiskState } = useStore.getState();
 
         // =====================================================================
@@ -164,6 +165,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
         const uri = await Video.generateMotionBrush(image, mask);
 
         if (uri) {
+            const { useStore } = await import('@/core/store');
             const { addToHistory, currentProjectId } = useStore.getState();
             addToHistory({
                 id: crypto.randomUUID(),
@@ -181,6 +183,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
     }),
 
     batch_edit_videos: wrapTool('batch_edit_videos', async (args: { prompt: string, videoIndices?: number[] }) => {
+        const { useStore } = await import('@/core/store');
         const { uploadedImages, addToHistory, currentProjectId } = useStore.getState();
         const allVideos = uploadedImages.filter(img => img.type === 'video');
 
@@ -258,6 +261,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             options.firstFrame = frameData;
         }
 
+        const { useStore } = await import('@/core/store');
         const { userProfile } = useStore.getState();
         options.userProfile = userProfile;
 
@@ -339,6 +343,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             return toolError("Invalid startImage data. Must be a base64 data URI.", 'INVALID_INPUT');
         }
 
+        const { useStore } = await import('@/core/store');
         useStore.getState().addAgentMessage({
             id: crypto.randomUUID(),
             role: 'system',
@@ -365,6 +370,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
     }),
 
     interpolate_sequence: wrapTool('interpolate_sequence', async (args: { firstFrame: string, lastFrame: string, prompt?: string }) => {
+        const { useStore } = await import('@/core/store');
         const { userProfile } = useStore.getState();
         const results = await VideoGeneration.generateVideo({
             prompt: args.prompt || "Smooth transition between frames",

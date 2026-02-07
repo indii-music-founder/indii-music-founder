@@ -1,10 +1,12 @@
-import { useStore, type AppSlice } from '@/core/store';
+// useStore removed
+import type { AppSlice } from '@/core/store';
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 export const ProjectTools: Record<string, AnyToolFunction> = {
     create_project: wrapTool('create_project', async (args: { name: string, type: AppSlice['currentModule'], orgId?: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -29,6 +31,7 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
     }),
 
     list_projects: wrapTool('list_projects', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -42,7 +45,7 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
             // Re-read after loading
             const loadedProjects = (toolContext
                 ? toolContext.get('projects')
-                : useStore.getState().projects) || [];
+                : store.projects) || [];
 
             if (loadedProjects.length === 0) {
                 return toolSuccess({ projects: [] }, "No projects found.");
@@ -55,6 +58,7 @@ export const ProjectTools: Record<string, AnyToolFunction> = {
     }),
 
     open_project: wrapTool('open_project', async (args: { projectId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available

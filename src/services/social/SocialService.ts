@@ -23,13 +23,14 @@ import {
   CampaignStatus,
 } from "./types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
-import { useStore } from "@/core/store";
+
 
 export class SocialService {
   /**
    * Follow a user
    */
   static async followUser(targetUserId: string): Promise<void> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
     const currentUserId = userProfile.id;
@@ -77,6 +78,7 @@ export class SocialService {
    * Get Social Dashboard Stats
    */
   static async getDashboardStats(): Promise<SocialStats> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id)
       return { followers: 0, following: 0, posts: 0, drops: 0 };
@@ -116,6 +118,7 @@ export class SocialService {
   static async schedulePost(
     post: Omit<ScheduledPost, "id" | "status" | "authorId">,
   ): Promise<string> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
@@ -144,6 +147,7 @@ export class SocialService {
    * Get Scheduled Posts
    */
   static async getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     const targetUserId = userId || userProfile?.id;
 
@@ -168,6 +172,7 @@ export class SocialService {
      * Unfollow a user
      */
   static async unfollowUser(targetUserId: string): Promise<void> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
     const currentUserId = userProfile.id;
@@ -216,6 +221,7 @@ export class SocialService {
     mediaUrls: string[] = [],
     productId?: string,
   ): Promise<string> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
@@ -293,6 +299,7 @@ export class SocialService {
    * Check if currently following a user
    */
   static async isFollowing(targetUserId: string): Promise<boolean> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) return false;
     const currentUserId = userProfile.id;

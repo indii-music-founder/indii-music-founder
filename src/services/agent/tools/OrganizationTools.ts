@@ -1,4 +1,5 @@
-import { useStore } from '@/core/store';
+// useStore removed
+
 import { OrganizationService } from '@/services/OrganizationService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
@@ -6,6 +7,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 export const OrganizationTools: Record<string, AnyToolFunction> = {
     list_organizations: wrapTool('list_organizations', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         // Phase 3.6: Read state through execution context when available
         const orgs = toolContext
             ? toolContext.get('organizations') || []
@@ -25,6 +27,7 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
     }),
 
     switch_organization: wrapTool('switch_organization', async (args: { orgId: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -62,6 +65,7 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
     }),
 
     create_organization: wrapTool('create_organization', async (args: { name: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const store = useStore.getState();
 
         // Phase 3.6: Read state through execution context when available
@@ -94,6 +98,7 @@ export const OrganizationTools: Record<string, AnyToolFunction> = {
     }),
 
     get_organization_details: wrapTool('get_organization_details', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         const organizations = (toolContext
             ? toolContext.get('organizations')
             : useStore.getState().organizations) || [];
