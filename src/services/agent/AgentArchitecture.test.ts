@@ -134,10 +134,11 @@ describe('Multi-Agent Architecture Tests', () => {
             const functions = (agent as any).functions;
             expect(functions).toHaveProperty('get_project_details');
 
-            // Test the tool execution
+            // Test the tool execution - returns { success, data } structure
             const result = await functions.get_project_details({ projectId: 'p1' });
-            expect(result).toHaveProperty('id', 'p1');
-            expect(result).toHaveProperty('name', 'Test Project');
+            expect(result).toHaveProperty('success', true);
+            expect(result.data).toHaveProperty('id', 'p1');
+            expect(result.data).toHaveProperty('name', 'Test Project');
         });
     });
 
@@ -252,17 +253,19 @@ describe('Multi-Agent Architecture Tests', () => {
             // Mock runAgent on the singleton
             const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue('Delegation Success');
 
+            // Use 'legal' agent delegating to 'generalist' (hub) - this is valid per hub-and-spoke architecture
+            // Specialist → Specialist is blocked, only Specialist → Hub or Hub → Specialist is allowed
             const agent = agentRegistry.get('legal'); // Any BaseAgent
             const delegateFunc = (agent as any).functions['delegate_task'];
 
             expect(delegateFunc).toBeDefined();
 
             const result = await delegateFunc({
-                targetAgentId: 'video',
+                targetAgentId: 'generalist',  // Changed from 'video' to 'generalist' (hub)
                 task: 'Create strict delegation test'
             }, { someContext: true });
 
-            expect(spy).toHaveBeenCalledWith('video', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
+            expect(spy).toHaveBeenCalledWith('generalist', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
             expect(result.data).toBe('Delegation Success');
 
             spy.mockRestore();
