@@ -12,6 +12,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Check if user has admin custom claim (set via Firebase Admin SDK server-side only)
+    function isAdmin() {
+      return isAuthenticated() && isAdmin();
+    }
+
     // Check if user is the owner of the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -136,7 +141,7 @@ service cloud.firestore {
                     request.resource.data.role in ['user', 'artist'];
       allow update: if isOwner(userId) && (
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-        request.auth.token.admin == true
+        isAdmin()
       );
 
       // Music Library (Analyzed Tracks)
@@ -214,7 +219,7 @@ service cloud.firestore {
       allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
       allow update: if isResourceOrgMember() && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
-          request.auth.token.admin == true
+          isAdmin()
       );
       allow delete: if isResourceOrgMember();
     }
@@ -382,7 +387,7 @@ service cloud.firestore {
       // Anyone authenticated can read the catalog
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -393,7 +398,7 @@ service cloud.firestore {
       // Anyone authenticated can read platform info
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -404,7 +409,7 @@ service cloud.firestore {
       // Authenticated users can read API status
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -415,7 +420,7 @@ service cloud.firestore {
       // Anyone authenticated can read templates
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================

@@ -14,6 +14,7 @@ import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
+import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
@@ -206,6 +207,10 @@ export const triggerVideoJob = functions
         }
 
         const userId = context.auth.uid;
+
+        // Rate limit: 10 video generation requests per minute
+        await enforceRateLimit(userId, "triggerVideoJob", RATE_LIMITS.generation);
+
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
         const inputData: any = { ...safeData, userId };
@@ -287,6 +292,9 @@ export const triggerLongFormVideoJob = functions
             );
         }
         const userId = context.auth.uid;
+
+        // Rate limit: 10 long-form video requests per minute
+        await enforceRateLimit(userId, "triggerLongFormVideoJob", RATE_LIMITS.generation);
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -562,6 +570,9 @@ export const generateSpeech = functions
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
+
+        // Rate limit: 10 speech generation requests per minute
+        await enforceRateLimit(context.auth.uid, "generateSpeech", RATE_LIMITS.generation);
 
         const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
