@@ -28,7 +28,7 @@ jobs:
 
       - name: Run unit tests
         timeout-minutes: 15
-        run: npm test -- --run --reporter=verbose
+        run: npm test -- --run --reporter=verbose --pool=forks
 
       - name: Run E2E tests (critical paths only)
         run: npm run test:e2e
