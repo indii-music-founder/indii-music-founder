@@ -1,7 +1,7 @@
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI } from '../ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import { useStore, ShotItem } from '@/core/store';
+import type { ShotItem } from '@/core/store';
 import { v4 as uuidv4 } from 'uuid';
 import { extractVideoFrame } from '@/utils/video';
 import { functionsWest1 as functions, db, auth } from '@/services/firebase';
@@ -135,6 +135,7 @@ export class VideoGenerationService {
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
+        const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
 
         const { jobId } = await this.triggerVideoGeneration({
@@ -309,6 +310,7 @@ export class VideoGenerationService {
         }
 
         const jobId = `long_${uuidv4()}`;
+        const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 

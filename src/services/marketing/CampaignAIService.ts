@@ -1,6 +1,6 @@
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { useStore } from '@/core/store';
+// useStore removed
 import {
     CampaignBrief,
     GeneratedCampaignPlan,
@@ -39,7 +39,7 @@ export class CampaignAIService {
      * Uses gemini-3-pro-preview for complex reasoning
      */
     async generateCampaign(brief: CampaignBrief): Promise<GeneratedCampaignPlan> {
-        const brandContext = this.getBrandContext();
+        const brandContext = await this.getBrandContext();
 
         const prompt = `
 You are an expert social media campaign strategist for music artists and creative brands.
@@ -153,7 +153,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         post: ScheduledPost,
         enhancementType: EnhancementType
     ): Promise<PostEnhancement> {
-        const brandContext = this.getBrandContext();
+        const brandContext = await this.getBrandContext();
 
         const instructions: Record<EnhancementType, string> = {
             improve: 'Make this copy more engaging, impactful, and likely to drive engagement while preserving the core message.',
@@ -267,7 +267,7 @@ Ensure all versions respect the platform's character limit.
             try {
                 // Use image prompt from caption or generate one
                 const imagePrompt = post.imageAsset.caption
-                    ? this.enhanceImagePrompt(post.imageAsset.caption)
+                    ? await this.enhanceImagePrompt(post.imageAsset.caption)
                     : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
                 const base64 = await AI.generateImage({
@@ -312,7 +312,7 @@ Ensure all versions respect the platform's character limit.
 
         try {
             const imagePrompt = post.imageAsset.caption
-                ? this.enhanceImagePrompt(post.imageAsset.caption)
+                ? await this.enhanceImagePrompt(post.imageAsset.caption)
                 : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
             const base64 = await AI.generateImage({
@@ -330,7 +330,7 @@ Ensure all versions respect the platform's character limit.
      * Generate an image prompt from post copy
      */
     private async generateImagePromptFromCopy(copy: string, platform: Platform): Promise<string> {
-        const brandContext = this.getBrandContext();
+        const brandContext = await this.getBrandContext();
 
         const prompt = `
 Generate a detailed image prompt for a ${platform} post visual.
@@ -358,7 +358,8 @@ Return ONLY the image prompt, no explanation or formatting.
     /**
      * Enhance image prompt with brand context
      */
-    private enhanceImagePrompt(prompt: string): string {
+    private async enhanceImagePrompt(prompt: string): Promise<string> {
+        const { useStore } = await import('@/core/store');
         const userProfile = useStore.getState().userProfile;
         const brandKit = userProfile?.brandKit;
 
@@ -385,7 +386,7 @@ Return ONLY the image prompt, no explanation or formatting.
      * Predict engagement metrics for a campaign
      */
     async predictEngagement(campaign: CampaignAsset): Promise<EngagementPrediction> {
-        const brandContext = this.getBrandContext();
+        const brandContext = await this.getBrandContext();
 
         const postsAnalysis = campaign.posts.slice(0, 10).map(p => ({
             platform: p.platform,
@@ -502,7 +503,8 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
      * Build brand context string from user profile
      * (Following PostGenerator.tsx pattern)
      */
-    private getBrandContext(): string {
+    private async getBrandContext(): Promise<string> {
+        const { useStore } = await import('@/core/store');
         const userProfile = useStore.getState().userProfile;
         const brand = userProfile?.brandKit;
 
