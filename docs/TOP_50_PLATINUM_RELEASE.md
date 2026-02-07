@@ -42,7 +42,7 @@
 | 17 | **Create READMEs for 17 missing modules** (agent, distribution, finance, licensing, etc.) | `src/modules/*/` | TODO |
 | 18 | **Reduce 737 `any` type declarations** - focus on public API surfaces first | Codebase-wide | TODO |
 | 19 | **Add Node.js version runtime check** (enforce >= 22.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
-| 20 | **Add Sentry error tracking configuration for production** (imported but verify DSN) | `src/services/` | TODO |
+| 20 | **Add Sentry error tracking configuration for production** (imported but verify DSN) | `src/lib/sentry.ts` | DONE - Full config with replays, perf monitoring, sensitive data scrubbing; DSN via VITE_SENTRY_DSN env var |
 | 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | TODO |
 | 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | TODO |
 | 23 | **Set up Storybook** for shared UI component documentation | `src/components/ui/` | TODO |
@@ -66,19 +66,19 @@
 | 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | DONE - AIService already has AIResponseCache + request coalescing |
 | 35 | **Add health check endpoint** for monitoring | `functions/src/` | DONE - healthCheck HTTP function with Firestore ping |
 | 36 | **Add structured logging** (JSON format for production log aggregation) | `src/core/logger/` | DONE - JSON structured logs in prod, human-readable in dev |
-| 37 | **Add user session timeout/refresh** for long-running sessions | `src/core/store/slices/authSlice.ts` | TODO |
-| 38 | **Add database migration strategy** for Firestore schema changes | `docs/` | TODO |
+| 37 | **Add user session timeout/refresh** for long-running sessions | `src/hooks/useSessionTimeout.ts` | DONE - Proactive token refresh, idle warning at 55min, timeout at 60min |
+| 38 | **Add database migration strategy** for Firestore schema changes | `docs/FIRESTORE_MIGRATION_STRATEGY.md` | DONE - Additive/rename/destructive patterns, script template, rollback procedures |
 | 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | TODO |
 | 40 | **Add privacy policy and terms of service** pages | `landing-page/` | TODO |
 | 41 | **Add GDPR/data export** capability for user data | `functions/src/` | TODO |
-| 42 | **Add deployment rollback strategy** (Firebase hosting rollback, Functions versioning) | `docs/` | TODO |
+| 42 | **Add deployment rollback strategy** (Firebase hosting rollback, Functions versioning) | `docs/DEPLOYMENT_ROLLBACK_STRATEGY.md` | DONE - Hosting rollback, Cloud Run traffic shift, emergency procedures, runbook |
 | 43 | **Add end-to-end encryption** for sensitive agent-to-agent communication | `python/tools/` | TODO |
 | 44 | **Add load testing** validation (k6/Artillery scripts exist in `load-tests/`) | `load-tests/` | TODO |
-| 45 | **Add changelog automation** (conventional commits -> CHANGELOG.md generation) | CI/CD | TODO |
+| 45 | **Add changelog automation** (conventional commits -> CHANGELOG.md generation) | `scripts/generate-changelog.sh` | DONE - Parses conventional commits, groups by type, npm run changelog/changelog:update |
 | 46 | **Add code signing** for Electron desktop builds (macOS notarization, Windows signing) | `electron-builder.json` | TODO |
 | 47 | **Add auto-update mechanism** for Electron desktop app | `electron/main.ts` | TODO |
 | 48 | **Add internationalization (i18n)** framework for multi-language support | `src/` | TODO |
-| 49 | **Add comprehensive keyboard shortcuts** documentation | `src/core/components/CommandBar.tsx` | TODO |
+| 49 | **Add comprehensive keyboard shortcuts** documentation | `src/components/shared/GlobalKeyboardShortcuts.tsx` | DONE - Global shortcuts modal (press ?), wired into App shell, covers all modules |
 | 50 | **Add onboarding analytics** (track funnel drop-off, completion rates) | `src/modules/onboarding/` | TODO |
 
 ---
@@ -89,8 +89,8 @@
 |----------|-------|------|-----------|
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
-| P2 Medium | 15 | 6 | 9 |
-| P3 Standard | 20 | 4 | 16 |
-| **Total** | **50** | **24** | **26** |
+| P2 Medium | 15 | 7 | 8 |
+| P3 Standard | 20 | 9 | 11 |
+| **Total** | **50** | **30** | **20** |
 
-**Current Grade: A-** (all blockers resolved, security hardened, structured logging, feature flags, build passes)
+**Current Grade: A** (60% complete, all blockers resolved, security hardened, monitoring ready, rollback strategy, changelog automation, build passes)
