@@ -12,6 +12,7 @@ import { registerAgentHandlers } from './handlers/agent';
 import { registerVideoHandlers } from './handlers/video';
 import { configureSecurity } from './security';
 import { DockerService } from './services/DockerService';
+import { setupAutoUpdater } from './updater';
 
 // Configure logging
 log.transports.file.level = 'info';
@@ -163,6 +164,11 @@ if (!gotTheLock) {
         });
 
         createWindow();
+
+        // Auto-updater (production only)
+        if (app.isPackaged) {
+            setupAutoUpdater();
+        }
     });
 }
 
