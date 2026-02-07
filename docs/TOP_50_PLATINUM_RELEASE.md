@@ -38,7 +38,7 @@
 
 | # | Item | File/Area | Status |
 |---|------|-----------|--------|
-| 16 | **Add automated axe-core a11y scans to CI pipeline** | `.github/workflows/deploy.yml` | TODO |
+| 16 | **Add automated axe-core a11y scans to CI pipeline** | `.github/workflows/deploy.yml` | DONE - axe-core CLI runs against built app in CI |
 | 17 | **Create READMEs for 17 missing modules** (agent, distribution, finance, licensing, etc.) | `src/modules/*/` | TODO |
 | 18 | **Reduce 737 `any` type declarations** - focus on public API surfaces first | Codebase-wide | TODO |
 | 19 | **Add Node.js version runtime check** (enforce >= 22.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
@@ -46,7 +46,7 @@
 | 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | TODO |
 | 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | TODO |
 | 23 | **Set up Storybook** for shared UI component documentation | `src/components/ui/` | TODO |
-| 24 | **Add bundle size monitoring** (track regressions with size-limit or bundlesize) | CI/CD | TODO |
+| 24 | **Add bundle size monitoring** (track regressions with size-limit or bundlesize) | `.github/workflows/deploy.yml` | DONE - Bundle size report + 15MB JS threshold in CI |
 | 25 | **Add Firebase App Check enforcement** for production (currently optional) | `src/config/firebase.ts` | DONE - enforceAppCheck flag on all callable functions |
 | 26 | **Add HTTP caching headers** for static assets beyond JS/CSS (images, fonts, WASM) | `firebase.json` | DONE - Added with CSP headers |
 | 27 | **Add loading skeleton screens** instead of generic spinner for modules | `src/core/App.tsx` | DONE - Dashboard-style skeleton with pulse animation |
@@ -60,7 +60,7 @@
 
 | # | Item | File/Area | Status |
 |---|------|-----------|--------|
-| 31 | **Add Lighthouse CI** to deployment pipeline (performance regression alerts) | `.github/workflows/deploy.yml` | TODO |
+| 31 | **Add Lighthouse CI** to deployment pipeline (performance regression alerts) | `.github/workflows/deploy.yml` | DONE - LHCI autorun post-deploy with perf/a11y/best-practices thresholds |
 | 32 | **Add source maps upload to Sentry** for production error debugging | Build pipeline | TODO |
 | 33 | **Add feature flag system** for gradual rollouts (LaunchDarkly, Firebase Remote Config) | `src/config/` | DONE - FeatureFlagService wrapping Firebase Remote Config |
 | 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | DONE - AIService already has AIResponseCache + request coalescing |
@@ -89,8 +89,8 @@
 |----------|-------|------|-----------|
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
-| P2 Medium | 15 | 7 | 8 |
-| P3 Standard | 20 | 12 | 8 |
-| **Total** | **50** | **33** | **17** |
+| P2 Medium | 15 | 9 | 6 |
+| P3 Standard | 20 | 13 | 7 |
+| **Total** | **50** | **36** | **14** |
 
-**Current Grade: A** (66% complete, all blockers resolved, GDPR compliance, auto-updates, onboarding analytics, build passes)
+**Current Grade: A+** (72% complete, CI/CD fully instrumented with Lighthouse + a11y + bundle size, GDPR, auto-updates, build passes)
