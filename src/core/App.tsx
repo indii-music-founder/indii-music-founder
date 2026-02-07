@@ -210,7 +210,18 @@ function useAppInitialization() {
     useEffect(() => {
         // Log removed (Platinum Polish)
         const unsubscribe = initializeAuthListener();
-        return () => unsubscribe();
+
+        // Initialize Proactive Service (Start Polling)
+        import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
+            proactiveService.start();
+        });
+
+        return () => {
+            unsubscribe();
+            import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
+                proactiveService.dispose();
+            });
+        };
     }, [initializeAuthListener]);
 
     // 2. Load User Profile when User is Authenticated

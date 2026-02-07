@@ -32,7 +32,12 @@ describe('DistributionAgent Integration', () => {
         expect(toolNames).toContain('generate_bwarm');
         expect(toolNames).toContain('check_merlin_status');
 
-        expect(toolNames.length).toBe(8);
+        expect(toolNames).toContain('browser_tool');
+        expect(toolNames).toContain('pro_scraper');
+        expect(toolNames).toContain('payment_gate');
+        expect(toolNames).toContain('credential_vault');
+
+        expect(toolNames.length).toBe(12);
     });
 
     it('should have proper tool schemas for new tools', () => {
