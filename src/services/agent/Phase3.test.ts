@@ -95,26 +95,7 @@ describe('Phase 3: Architectural Improvements', () => {
     });
 
     describe('AgentExecutionContext', () => {
-<<<<<<< HEAD
-        it('should manage transaction lifecycle', async () => {
-            const contextMock = { id: 'ctx-1' } as any;
-            // @ts-expect-error - accessing private constructor for test
-            const executionContext = new AgentExecutionContext(contextMock);
 
-            // Start
-            await executionContext.start();
-            expect((executionContext as any).activeTransactionId).toBeDefined();
-
-            // Commit
-            await executionContext.commit();
-            expect((executionContext as any).activeTransactionId).toBeNull();
-        });
-
-        it('should rollback on failure', async () => {
-            const contextMock = { id: 'ctx-2' } as any;
-            // @ts-expect-error - accessing private constructor for test
-            const executionContext = new AgentExecutionContext(contextMock);
-=======
         beforeEach(() => {
             vi.clearAllMocks();
         });
@@ -126,7 +107,7 @@ describe('Phase 3: Architectural Improvements', () => {
                 userId: 'user-1',
                 projectId: 'proj-1'
             });
->>>>>>> fb5fb224 (fix(ci): update Phase3.test.ts to use ExecutionContextFactory and public API)
+
 
             // Set state in context
             executionContext.setState('currentProjectId', 'new-project-id');
