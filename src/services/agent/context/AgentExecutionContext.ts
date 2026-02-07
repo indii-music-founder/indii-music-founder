@@ -10,7 +10,6 @@
  * This prevents agents from interfering with each other's state during execution.
  */
 
-import { useStore } from '@/core/store';
 import type { StoreState } from '@/core/store';
 
 export interface ExecutionContextOptions {
@@ -39,12 +38,11 @@ export class AgentExecutionContext {
     private isCommitted = false;
     private isRolledBack = false;
 
-    constructor(options: ExecutionContextOptions) {
+    private constructor(options: ExecutionContextOptions, initialState: StoreState) {
         this.options = options;
 
         // Create immutable snapshot of current state
-        const currentState = useStore.getState();
-        this.snapshot = this.createSnapshot(currentState);
+        this.snapshot = this.createSnapshot(initialState);
     }
 
     /**
@@ -163,7 +161,7 @@ export class AgentExecutionContext {
     /**
      * Commit all modifications to global state atomically
      */
-    commit(): void {
+    async commit(): Promise<void> {
         if (this.isCommitted) {
             console.warn('[ExecutionContext] Already committed');
             return;
@@ -172,6 +170,7 @@ export class AgentExecutionContext {
             throw new Error('Cannot commit rolled-back execution context');
         }
 
+        const { useStore } = await import('@/core/store');
         const globalState = useStore.getState();
 
         // Check for conflicts (state changed since snapshot)
@@ -189,6 +188,7 @@ export class AgentExecutionContext {
         });
 
         if (Object.keys(updates).length > 0) {
+            const { useStore } = await import('@/core/store');
             useStore.setState(updates);
             console.log(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications for agent ${this.options.agentId}`);
         }
@@ -299,23 +299,27 @@ export class AgentExecutionContext {
  * Factory for creating execution contexts
  */
 export class ExecutionContextFactory {
-    static create(options: ExecutionContextOptions): AgentExecutionContext {
-        return new AgentExecutionContext(options);
+    static async create(options: ExecutionContextOptions): Promise<AgentExecutionContext> {
+        const { useStore } = await import('@/core/store');
+        // @ts-expect-error - accessing private constructor for internal factory
+        return new AgentExecutionContext(options, useStore.getState());
     }
 
     /**
      * Create context from existing AgentContext
      */
-    static fromAgentContext(agentContext: {
+    static async fromAgentContext(agentContext: {
         userId?: string;
         projectId?: string;
         traceId?: string;
-    }, agentId: string): AgentExecutionContext {
+    }, agentId: string): Promise<AgentExecutionContext> {
+        const { useStore } = await import('@/core/store');
+        // @ts-expect-error - accessing private constructor for internal factory
         return new AgentExecutionContext({
             userId: agentContext.userId,
             projectId: agentContext.projectId,
             agentId,
             traceId: agentContext.traceId || `trace-${Date.now()}`
-        });
+        }, useStore.getState());
     }
 }

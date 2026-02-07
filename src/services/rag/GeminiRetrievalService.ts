@@ -51,6 +51,18 @@ export class GeminiRetrievalService {
             headers['Content-Type'] = 'application/json';
         }
 
+        // Add Firebase Auth token for ragProxy authentication
+        try {
+            const { auth } = await import('@/services/firebase');
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const idToken = await currentUser.getIdToken();
+                headers['Authorization'] = `Bearer ${idToken}`;
+            }
+        } catch (e) {
+            console.warn('[GeminiRetrieval] Could not get auth token:', e);
+        }
+
         while (attempt < maxRetries) {
             try {
                 const response = await fetch(url, {

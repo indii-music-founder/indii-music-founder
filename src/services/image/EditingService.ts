@@ -305,7 +305,6 @@ export class EditingService {
             required: ['scenes']
         };
 
-        // @ts-expect-error - Schema typing mismatch
         const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${sanitizedPrompt} (${options.timeDeltaLabel} Sequence)`);

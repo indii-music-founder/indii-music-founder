@@ -4,15 +4,16 @@ import { EarningsBreakdown } from './EarningsBreakdown';
 import { Loader2, DollarSign, Globe, TrendingUp, Download, PieChart } from 'lucide-react';
 import { motion } from 'framer-motion';
 
+// Compute default period outside component to satisfy react-compiler purity rules
+const DEFAULT_PERIOD = (() => {
+    const now = Date.now();
+    const endDate = new Date(now).toISOString().split('T')[0];
+    const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    return { startDate, endDate };
+})();
+
 export const EarningsDashboard: React.FC = () => {
-    // Last 30 days period
-    const period = useMemo(() => {
-        const now = Date.now();
-        const endDate = new Date(now).toISOString().split('T')[0];
-        const startDate = new Date(now - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-        return { startDate, endDate };
-    }, []);
+    const period = DEFAULT_PERIOD;
 
     const { earnings, loading } = useEarnings(period);
 

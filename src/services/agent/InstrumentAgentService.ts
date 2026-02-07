@@ -6,7 +6,7 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage } from '@/core/store';
+import type { AgentMessage } from '@/core/store';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
@@ -55,6 +55,7 @@ export class InstrumentAgentService {
       timestamp: Date.now(),
       attachments
     };
+    const { useStore } = await import('@/core/store');
     useStore.getState().addAgentMessage(userMsg);
 
     try {
@@ -82,6 +83,7 @@ The format is: use_instrument_INSTRUMENT_ID(instrument_id, { parameters })
 
       // 4. Execute Agent
       const responseId = uuidv4();
+      const { useStore } = await import('@/core/store');
       const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
       // Create placeholder for the response
@@ -155,6 +157,7 @@ The format is: use_instrument_INSTRUMENT_ID(instrument_id, { parameters })
    * Handle instrument execution events
    */
   private async handleInstrumentExecution(messageId: string, event: any): Promise<void> {
+    const { useStore } = await import('@/core/store');
     const { updateAgentMessage } = useStore.getState();
     const currentMsg = useStore.getState().agentHistory.find(m => m.id === messageId);
 
@@ -277,7 +280,8 @@ When you need to perform actions, use the available instrument functions.
   /**
    * Add a system message to the chat
    */
-  private addSystemMessage(text: string): void {
+  private async addSystemMessage(text: string): Promise<void> {
+    const { useStore } = await import('@/core/store');
     useStore.getState().addAgentMessage({
       id: uuidv4(),
       role: 'system',

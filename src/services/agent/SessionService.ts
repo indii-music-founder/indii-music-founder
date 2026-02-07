@@ -1,6 +1,6 @@
 
 import { FirestoreService } from '../FirestoreService';
-import { ConversationSession } from '@/core/store/slices/agentSlice'; // Direct import to avoid circular dep risks? Or from index?
+import type { ConversationSession } from '@/core/store/slices/agentSlice'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
 import { where, orderBy, limit, Timestamp } from 'firebase/firestore';

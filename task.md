@@ -9,6 +9,33 @@
 - [x] Verification: Run `Create Last Frame` success test (UI Reachable, Gallery Empty). <!-- id: 2 -->
 - [x] Final Verification: Full `npm run build` success.
 
+## Tasks - AI Verification & Persistence Fix (2026-02-06)
+
+- [x] Persistence: Implement `MetadataPersistenceService` with retry logic & event bus integration.
+- [x] UX: Decouple services from `react-hot-toast`, use `EventBus` for system alerts.
+- [x] Fix: Resolve "AI Verification Failed (App Check/Auth)" on production (Missing Env Var fallback).
+- [x] Implementation: Add `VITE_API_KEY` fallback for `firebaseApiKey` in `env.ts`.
+- [x] Verification: Verify "Magic Fill" on live site (`https://indiios-studio.web.app`). **PASSED**
+- [x] Verification: Verify "Persistence Toast" on live site. **PASSED**
+
+## Tasks - Sonic Cortex Recovery & Negotiation (2026-02-04)
+
+- [x] Infrastructure: Correct model IDs in `src/core/config/ai-models.ts` (Fix 404). <!-- id: 200 -->
+- [x] Infrastructure: Update `firestore.rules` for Collection Group queries (Fix 403). <!-- id: 201 -->
+- [x] Infrastructure: Whitelist `indiios-studio.firebaseapp.com` in `functions/src/index.ts` (Fix CORS). <!-- id: 202 -->
+- [x] Protocol: Update `AGENT_BRIDGE.md` with Negotiated Information Protocol V1.1. <!-- id: 203 -->
+- [x] Verification: Confirm browser console is free of 404/403/CORS errors on live site. <!-- id: 204 --> **VERIFIED** (Basic analysis working; deep Soul analysis blocked by API quota)
+- [x] Verification: Verify "After Hours Pulse" metadata population after user re-analysis. <!-- id: 205 --> **VERIFIED** (115 BPM, C major, 68% Energy, 6 tags)
+
+## Tasks - Image Generation Timeout Fix (2026-02-05)
+
+- [x] Investigation: Trace 300s timeout to agent loop execution flow. <!-- id: 206 -->
+- [x] Fix: Add IMMEDIATE EXECUTION rule to GeneralistAgent prompts. <!-- id: 207 -->
+- [x] Fix: Add Exception to Mode A for generation requests (skip Curriculum mode). <!-- id: 208 -->
+- [x] Fix: Strengthen loop break logic for generation tools that return success. <!-- id: 209 -->
+- [x] Verification: Test "generate an image of a cat" in browser. <!-- id: 210 -->
+- [x] Optimization: Increase timeout for generation tasks (600s) and implement timeout grace logic. <!-- id: 211 -->
+
 ## Tasks - Dual-Workflow Image Editing (Gemini 3 Pro + 2.5 Flash)
 
 - [x] UI: Add "High Fidelity" toggle in `CanvasHeader`. <!-- id: 101 -->
@@ -78,3 +105,11 @@
 - [x] UI: Add tool execution progress feedback in ChatOverlay. **COMPLETED** (2026-01-30 - Intelligent response parsing + visual badges)
 - [x] Testing: Run full regression test suite with Electron app. **COMPLETED** (2026-01-30 - 2002/2164 tests passing, 93% pass rate)
 - [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**
+108:
+109: ## Tasks - Image Upload & Compression Reliability (2026-02-07)
+110:
+111: - [x] Fix: Implement 30s timeout and CORS robustness in `CloudStorageService.compressImage`. <!-- id: 300 -->
+112: - [x] Fix: Re-enable Cloud Storage `smartSave` in `ImageGenerationService` with automatic local compression fallback. <!-- id: 301 -->
+113: - [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
+114: - [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
+115: - [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->

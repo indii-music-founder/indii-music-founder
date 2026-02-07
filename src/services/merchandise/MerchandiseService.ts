@@ -2,7 +2,7 @@ import { collection, query, where, getDocs, addDoc, onSnapshot, serverTimestamp,
 import { db, functions } from '@/services/firebase';
 import { MerchProduct, CatalogProductSchema, CatalogProduct, ManufactureRequestSchema, ManufactureRequest, SampleRequestSchema, SampleRequest } from '@/modules/merchandise/types';
 import { AppException, AppErrorCode } from '@/shared/types/errors';
-import { useStore } from '@/core/store';
+// useStore removed
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { httpsCallable } from 'firebase/functions';
 import { v4 as uuidv4 } from 'uuid';
@@ -115,6 +115,7 @@ export const MerchandiseService = {
 
         let userId = validatedRequest.userId;
         if (!userId) {
+            const { useStore } = await import('@/core/store');
             userId = useStore.getState().userProfile?.id;
         }
 
@@ -153,6 +154,7 @@ export const MerchandiseService = {
 
         let userId = validatedRequest.userId;
         if (!userId) {
+            const { useStore } = await import('@/core/store');
             userId = useStore.getState().userProfile?.id;
         }
 
@@ -184,6 +186,7 @@ export const MerchandiseService = {
      * Uses persistent AI generation of photorealistic mockups via ImageGenerationService.
      */
     generateMockup: async (asset: string, type: string, scene: string): Promise<string> => {
+        const { useStore } = await import('@/core/store');
         const userId = useStore.getState().userProfile?.id;
 
         if (!userId) {
@@ -241,6 +244,7 @@ export const MerchandiseService = {
      * Returns the Job ID for subscription.
      */
     generateVideo: async (mockupUrl: string, motion: string): Promise<string> => {
+        const { useStore } = await import('@/core/store');
         const userId = useStore.getState().userProfile?.id;
         const orgId = useStore.getState().currentOrganizationId;
 

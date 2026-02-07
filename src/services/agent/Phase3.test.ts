@@ -97,6 +97,7 @@ describe('Phase 3: Architectural Improvements', () => {
     describe('AgentExecutionContext', () => {
         it('should manage transaction lifecycle', async () => {
             const contextMock = { id: 'ctx-1' } as any;
+            // @ts-expect-error - accessing private constructor for test
             const executionContext = new AgentExecutionContext(contextMock);
 
             // Start
@@ -110,6 +111,7 @@ describe('Phase 3: Architectural Improvements', () => {
 
         it('should rollback on failure', async () => {
             const contextMock = { id: 'ctx-2' } as any;
+            // @ts-expect-error - accessing private constructor for test
             const executionContext = new AgentExecutionContext(contextMock);
 
             await executionContext.start();

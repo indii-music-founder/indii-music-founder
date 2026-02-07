@@ -78,10 +78,12 @@ vi.mock('firebase-admin', () => {
 
 // Mock google-auth-library
 vi.mock('google-auth-library', () => ({
-    GoogleAuth: vi.fn(() => ({
-        getClient: vi.fn().mockResolvedValue({ getAccessToken: mocks.googleAuth.getAccessToken }),
-        getProjectId: mocks.googleAuth.getProjectId
-    }))
+    GoogleAuth: class {
+        async getClient() {
+            return { getAccessToken: mocks.googleAuth.getAccessToken };
+        }
+        getProjectId = mocks.googleAuth.getProjectId;
+    }
 }));
 
 // Mock inngest

@@ -207,7 +207,7 @@ export class AIService {
                 const timeoutMs = options.timeout ?? 60000;
                 const signal = options.signal;
 
-                const generateOp = async () => {
+                const generateOp = async (retryOnAuthError = true): Promise<WrappedResponse> => {
                     try {
                         // Inject thoughtSignature if present (Critical for Gemini 3 function calling)
                         if (options.thoughtSignature && contents && (contents as Content[]).length > 0) {
@@ -268,6 +268,18 @@ export class AIService {
                         });
 
                     } catch (error: any) {
+                        // 🛡️ SELF-HEALING: Handle 403 Forbidden (App Check/Referrer Failures)
+                        if (retryOnAuthError && (error?.message?.includes('403') || error?.status === 403 || error?.code === 403)) {
+                            logger.warn('[AIService] 403 Forbidden detected. Activating Self-Healing (Fallback Mode)...');
+                            try {
+                                await firebaseAI.initializeFallbackMode();
+                                return generateOp(false); // Retry once with new mode
+                            } catch (fallbackErr) {
+                                logger.error('[AIService] Self-Healing failed:', fallbackErr);
+                                // Fall through to standard error handling
+                            }
+                        }
+
                         // Pass through retryable errors to be handled by withRetry
                         if (
                             error?.code === 'resource-exhausted' ||

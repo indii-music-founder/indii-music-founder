@@ -29,12 +29,27 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // 1. Mock AI Service
-const mockGenerateContent = vi.fn().mockResolvedValue({
-    text: () => 'Response',
+// 1. Mock AI Service
+const mockResponseHelper = (text: string) => ({
+    text: () => text,
     usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
     functionCalls: () => [],
     thoughtSignature: 'test-signature'
 });
+
+const mockGenerateContent = vi.fn()
+    .mockResolvedValueOnce(mockResponseHelper(JSON.stringify({
+        thought: "Delegating to test agent",
+        callAgentId: "generalist",
+        task: "Say hello",
+        complete: false
+    })))
+    .mockResolvedValueOnce(mockResponseHelper("Hello from Agent!"))
+    .mockResolvedValueOnce(mockResponseHelper(JSON.stringify({
+        thought: "Task completed",
+        answer: "Hello from Agent!",
+        complete: true
+    })));
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
@@ -115,6 +130,10 @@ vi.mock('../registry', () => ({
             });
         }),
         get: vi.fn(), // Legacy
+        getAll: vi.fn().mockReturnValue([
+            { id: 'generalist', name: 'Agent Zero', description: 'Generalist' },
+            { id: 'marketing', name: 'Marketing', description: 'Marketing Specialist' }
+        ])
     }
 }));
 
@@ -159,8 +178,8 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         expect(truncateArgs[1]).toBe(15000);
 
         // Assert AI received the truncated context
-        // mockGenerateContent was called by BaseAgent
-        const aiCall = mockGenerateContent.mock.calls[0][0];
+        // mockGenerateContent was called by BaseAgent (2nd call, after Orchestrator routing)
+        const aiCall = mockGenerateContent.mock.calls[1][0];
         const sentText = aiCall.contents[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');
 

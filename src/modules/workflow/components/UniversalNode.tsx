@@ -42,7 +42,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
 
     const renderResultPreview = () => {
         // console.log("Rendering Node ID:", id, "Data:", data);
-        
+
         if (data.status === Status.ERROR) {
             return <p className="text-red-400 text-[10px] p-2 break-all leading-tight">{String(data.result).substring(0, 50)}...</p>;
         }
@@ -71,7 +71,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
         let asset: AnyAsset | null = null;
         try {
             const rawResult = typeof data.result === 'string' ? JSON.parse(data.result) : data.result;
-            
+
             // --- FIX: Map the new Image Generation Object to an Image Asset ---
             if (rawResult && rawResult.images && Array.isArray(rawResult.images)) {
                 const firstImage = rawResult.images[0];
@@ -133,7 +133,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             );
         }
 
-        const displayLabel = asset.title || asset.label || asset.description || (typeof asset === 'string' ? asset : 'Output Received');
+        const displayLabel = (asset as any).title || (asset as any).label || (asset as any).description || (typeof asset === 'string' ? asset : 'Output Received');
         return <div className="p-2 text-[10px] text-gray-300 overflow-hidden leading-tight">{displayLabel}</div>;
     };
 
