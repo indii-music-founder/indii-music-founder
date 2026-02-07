@@ -37,6 +37,7 @@ const mockBuilder = {
 };
 
 vi.mock('firebase-functions/v1', () => ({
+    region: vi.fn(() => mockBuilder),
     runWith: vi.fn(() => mockBuilder),
     https: {
         onCall: vi.fn((handler) => handler),
@@ -67,7 +68,14 @@ vi.mock('inngest', () => ({
 
 // Mock GoogleAuth to prevent actual credential lookups
 vi.mock('google-auth-library', () => ({
-    GoogleAuth: vi.fn()
+    GoogleAuth: class {
+        async getClient() {
+            return { getAccessToken: async () => ({ token: 'mock-access-token' }) };
+        }
+        async getProjectId() {
+            return 'mock-project-id';
+        }
+    }
 }));
 
 // Mock params to prevent secret lookup failure
