@@ -14,7 +14,7 @@ service cloud.firestore {
 
     // Check if user has admin custom claim (set via Firebase Admin SDK server-side only)
     function isAdmin() {
-      return isAuthenticated() && isAdmin();
+      return isAuthenticated() && request.auth.token.admin == true;
     }
 
     // Check if user is the owner of the document
