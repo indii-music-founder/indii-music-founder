@@ -7,7 +7,16 @@ import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 // Mock the entire AI service
 vi.mock('../../ai/AIService', () => ({
     AI: {
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
+    }
+}));
+
+// Mock MembershipService for budget checks
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
+        recordSpend: vi.fn().mockResolvedValue(undefined)
     }
 }));
 
