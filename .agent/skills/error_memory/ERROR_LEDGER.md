@@ -298,3 +298,43 @@ expect(result.data).toHaveProperty('name', 'Test Project');
 **Related Errors:** None
 
 ---
+
+## MOCK-001 GoogleAuth Constructor Mock Pattern
+
+**Pattern:** `TypeError: GoogleAuth is not a constructor` / CI hangs on OAuth network calls
+**Context:** Unit tests for video generation or any code using `google-auth-library`
+**Root Cause:** The `GoogleAuth` class from `google-auth-library` attempts real OAuth network calls at construction time. In CI without credentials, these calls hang indefinitely. Using `vi.fn()` as the mock doesn't properly work as a constructor in all cases.
+**Fix:**
+
+```typescript
+// ❌ Wrong - vi.fn() may not work as constructor
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: vi.fn()
+}));
+
+// ❌ Also wrong - vi.fn() returning object
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: vi.fn(() => ({
+        getClient: vi.fn().mockResolvedValue({...})
+    }))
+}));
+
+// ✅ Correct - use class syntax
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: class {
+        async getClient() {
+            return { getAccessToken: async () => ({ token: 'mock-token' }) };
+        }
+        async getProjectId() {
+            return 'mock-project-id';
+        }
+    }
+}));
+```
+
+**Prevention:** Always use class syntax for mocking classes that will be instantiated with `new`. Add this mock BEFORE any imports that might trigger GoogleAuth initialization.
+
+**Date Added:** 2026-02-06
+**Related Errors:** TEST-001
+
+---
