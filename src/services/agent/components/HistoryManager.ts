@@ -1,4 +1,5 @@
-import { useStore, AgentMessage } from '@/core/store';
+import type { AgentMessage } from '@/core/store';
+// useStore removed
 
 export class HistoryManager {
     private readonly MAX_HISTORY_LENGTH = 10;
@@ -7,7 +8,8 @@ export class HistoryManager {
      * Retrieves the recent conversation history from the store.
      * Filters out system messages that are purely internal logs if necessary.
      */
-    getRecentHistory(): AgentMessage[] {
+    async getRecentHistory(): Promise<AgentMessage[]> {
+        const { useStore } = await import('@/core/store');
         const { agentHistory } = useStore.getState();
         // Get the last N messages
         return agentHistory.slice(-this.MAX_HISTORY_LENGTH);
@@ -30,8 +32,8 @@ export class HistoryManager {
      * Creates a "Compiled View" of the history, potentially summarizing older turns
      * (Placeholder for future optimization)
      */
-    getCompiledView(): string {
-        const history = this.getRecentHistory();
+    async getCompiledView(): Promise<string> {
+        const history = await this.getRecentHistory();
         return this.formatHistory(history);
     }
 }

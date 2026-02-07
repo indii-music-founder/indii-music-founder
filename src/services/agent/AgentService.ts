@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage, AgentThought } from '@/core/store';
+import type { AgentMessage, AgentThought } from '@/core/store';
+// useStore removed
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
@@ -77,6 +78,7 @@ export class AgentService {
             timestamp: Date.now(),
             attachments
         };
+        const { useStore } = await import('@/core/store');
         useStore.getState().addAgentMessage(userMsg);
 
         try {
@@ -85,6 +87,7 @@ export class AgentService {
 
             // 2. Workflow Coordination (The Brain)
             const responseId = uuidv4();
+            const { useStore } = await import('@/core/store');
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
             // Create placeholder for the response
@@ -98,8 +101,13 @@ export class AgentService {
                 agentId: 'generalist' // Default initially
             });
 
-            // Create a timeout controller
-            const timeoutMs = 300000; // 300s Safety Timeout (Increased for Agent Zero)
+            // Create a timeout controller - detect generation requests for longer timeout
+            const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
+            const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
+
+            // Track gallery state before execution for timeout grace check
+            const galleryCountBefore = useStore.getState().generatedHistory?.length || 0;
+
             const timeoutPromise = new Promise((_, reject) => {
                 setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
@@ -112,15 +120,60 @@ export class AgentService {
                 ]);
             } catch (err: any) {
                 console.error('[AgentService] Message Flow Failed:', err);
-                updateAgentMessage(responseId, {
-                    text: `❌ **Error:** ${err.message || 'The request timed out or failed.'}`,
-                    thoughts: [{
-                        id: uuidv4(),
-                        text: 'Execution aborted',
-                        timestamp: Date.now(),
-                        type: 'error'
-                    }]
-                });
+
+                // TIMEOUT GRACE: Check if images were added to gallery during execution
+                const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
+                const newItemsGenerated = galleryCountAfter > galleryCountBefore;
+
+                if (err.message?.includes('Timeout')) {
+                    if (newItemsGenerated) {
+                        // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
+                        console.log('[AgentService] Timeout grace: Generation detected in gallery');
+                        updateAgentMessage(responseId, {
+                            text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Synthesis successful',
+                                timestamp: Date.now(),
+                                type: 'logic'
+                            }]
+                        });
+                    } else if (isGenerationRequest) {
+                        // Case B: Generation request but no items yet - show "Taking longer" message
+                        console.log('[AgentService] Timeout nudge: Showing "taking longer" message');
+                        updateAgentMessage(responseId, {
+                            text: `⏳ **Still working on it...** The synthesis is taking a bit longer than expected, but I'm still processing your request in the background. Keep an eye on your Gallery - your assets will appear there shortly!`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Background processing continues',
+                                timestamp: Date.now(),
+                                type: 'logic'
+                            }]
+                        });
+                    } else {
+                        // Case C: Standard timeout
+                        updateAgentMessage(responseId, {
+                            text: `❌ **Timeout:** The request is taking longer than expected (${timeoutMs / 1000}s). If you're generating high-res assets, they may still appear in your Gallery soon.`,
+                            thoughts: [{
+                                id: uuidv4(),
+                                text: 'Request exceeded time limit',
+                                timestamp: Date.now(),
+                                type: 'error'
+                            }]
+                        });
+                    }
+                } else {
+                    // Non-timeout error (API failure, etc)
+                    updateAgentMessage(responseId, {
+                        text: `❌ **Error:** ${err.message || 'The request failed.'}`,
+                        thoughts: [{
+                            id: uuidv4(),
+                            text: 'Execution failed',
+                            timestamp: Date.now(),
+                            type: 'error'
+                        }]
+                    });
+                }
             } finally {
                 // CRITICAL: Always clear streaming state to avoid stuck "..." loading
                 updateAgentMessage(responseId, { isStreaming: false });
@@ -144,6 +197,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
+        const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
         const { activeAgentProvider } = useStore.getState();
 
@@ -181,15 +235,15 @@ export class AgentService {
         }
 
         // 3. Fallback to Agent Orchestration (Executor)
-        let agentId = forcedAgentId;
+        const agentId = forcedAgentId;
         if (!agentId) {
             // HYBRID GRAFT: Use the new HybridOrchestrator for complex reasoning
             console.info('[AgentService] Using Hybrid Orchestrator DNA...');
             const hybridResponse = await this.hybridOrchestrator.execute(context, text);
-            
-            updateAgentMessage(responseId, { 
+
+            updateAgentMessage(responseId, {
                 text: hybridResponse,
-                isStreaming: false 
+                isStreaming: false
             });
             return;
         }
@@ -248,6 +302,7 @@ export class AgentService {
     }
 
     private async handleAgentZeroFlow(text: string, attachments: any[] | undefined, responseId: string): Promise<void> {
+        const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
 
         // Adapt attachments for Agent Zero (files base64 with filenames)
@@ -433,7 +488,8 @@ export class AgentService {
         );
     }
 
-    private addSystemMessage(text: string): void {
+    private async addSystemMessage(text: string): Promise<void> {
+        const { useStore } = await import('@/core/store');
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
     }
 

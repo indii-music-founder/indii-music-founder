@@ -597,7 +597,7 @@ ${task}
         this.loopDetector.clear();
 
         // Phase 3: Create isolated execution context for this agent run
-        const executionContext = ExecutionContextFactory.fromAgentContext(
+        const executionContext = await ExecutionContextFactory.fromAgentContext(
             {
                 userId: context?.userId,
                 projectId: context?.projectId,
@@ -616,7 +616,8 @@ ${task}
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
-                    await executionContext.rollback();
+                    // executionContext.rollback() is already synchronous, but for consistency if we ever make it async:
+                    executionContext.rollback();
                     return {
                         text: 'Task halted: Budget exceeded.',
                         error: 'Budget exceeded',
@@ -743,7 +744,7 @@ ${task}
                     // Phase 3: Commit execution context changes on successful completion
                     if (executionContext.hasUncommittedChanges()) {
                         console.log(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
-                        executionContext.commit();
+                        await executionContext.commit();
                     }
 
                     return {

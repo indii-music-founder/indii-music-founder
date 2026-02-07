@@ -354,6 +354,34 @@
         }
       ],
       "queryScope": "COLLECTION"
+    },
+    {
+      "collectionGroup": "analyzed_tracks",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "analyzedAt",
+          "order": "DESCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "analyzed_tracks",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "filename",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION_GROUP"
     }
   ]
 }

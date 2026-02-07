@@ -9,7 +9,8 @@ import { AI } from '@/services/ai/AIService';
 // --- Mocks ---
 
 // Mock Lucide icons to avoid rendering issues and keep DOM clean
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Megaphone: () => <span data-testid="icon-megaphone" />,
   Copy: () => <span data-testid="icon-copy" />,
   Image: () => <span data-testid="icon-image" />,

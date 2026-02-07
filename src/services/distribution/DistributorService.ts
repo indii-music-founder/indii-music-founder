@@ -30,7 +30,7 @@ import { distributionStore } from './DistributionPersistenceService';
 import { credentialService } from '@/services/security/CredentialService';
 import { deliveryService, DeliveryResult } from './DeliveryService';
 import { currencyConversionService } from './CurrencyConversionService';
-import { useStore } from '@/core/store';
+// useStore removed
 import { retryWithBackoff, CircuitBreaker, withTimeout } from '@/core/utils/resilience';
 import {
   ExtendedGoldenMetadataSchema,
@@ -289,6 +289,7 @@ class DistributorServiceImpl {
     const internalId = metadata.id || 'unknown-release-id';
 
     // Get userId and orgId from store
+    const { useStore } = await import('@/core/store');
     const { userProfile, currentOrganizationId } = useStore.getState();
 
     if (!userProfile?.id || !currentOrganizationId) {
@@ -628,6 +629,7 @@ class DistributorServiceImpl {
    */
   async getAllReleases(): Promise<DashboardRelease[]> {
     // Get userId and orgId from store to filter deployments
+    const { useStore } = await import('@/core/store');
     const { userProfile, currentOrganizationId } = useStore.getState();
     if (!userProfile?.id || !currentOrganizationId) {
       console.warn('[DistributorService] No user/org context for getAllReleases');

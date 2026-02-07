@@ -20,7 +20,7 @@ export interface DepartmentRequestEvent {
 }
 
 export interface SystemAlertEvent {
-    level: 'info' | 'warning' | 'error';
+    level: 'info' | 'warning' | 'error' | 'success';
     message: string;
 }
 

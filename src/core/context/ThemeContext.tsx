@@ -35,46 +35,30 @@ export function ThemeProvider({
         updateTheme: state.setTheme // Alias for clarity
     })));
 
-    // Local state for resolved theme (what is actually shown)
-    const [resolvedTheme, setResolvedTheme] = useState<"dark" | "light">("dark");
+    // Track system theme preference via media query
+    const [systemTheme, setSystemTheme] = useState<"dark" | "light">(() =>
+        typeof window !== 'undefined' && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
+    );
 
     // Get current preference from profile or default
     const theme = (userProfile?.preferences?.theme as Theme) || defaultTheme;
 
+    // Derive resolved theme without setState in effects
+    const resolvedTheme: "dark" | "light" = theme === "system" ? systemTheme : theme;
+
+    // Apply resolved theme to DOM
     useEffect(() => {
         const root = window.document.documentElement;
-
-        // Remove old classes
         root.classList.remove("light", "dark");
-
-        if (theme === "system") {
-            const systemTheme = window.matchMedia("(prefers-color-scheme: dark)")
-                .matches
-                ? "dark"
-                : "light";
-
-            root.classList.add(systemTheme);
-            setResolvedTheme(systemTheme);
-            return;
-        }
-
-        root.classList.add(theme);
-        setResolvedTheme(theme);
-    }, [theme]);
+        root.classList.add(resolvedTheme);
+    }, [resolvedTheme]);
 
     // Listener for system changes when in 'system' mode
     useEffect(() => {
         if (theme !== 'system') return;
 
         const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-
-        const handleChange = () => {
-            const newSystemTheme = mediaQuery.matches ? "dark" : "light";
-            const root = window.document.documentElement;
-            root.classList.remove("light", "dark");
-            root.classList.add(newSystemTheme);
-            setResolvedTheme(newSystemTheme);
-        };
+        const handleChange = () => setSystemTheme(mediaQuery.matches ? "dark" : "light");
 
         mediaQuery.addEventListener("change", handleChange);
         return () => mediaQuery.removeEventListener("change", handleChange);

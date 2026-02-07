@@ -11,7 +11,7 @@ export class InputSanitizer {
     private static readonly DANGEROUS_TAGS_REGEX = /<(script|style|iframe|object|embed|form)[^>]*>[\s\S]*?<\/\1>|<(script|style|iframe|object|embed|form)[^>]*\/?>/gi;
 
     // PII & Secret Regexes
-    // eslint-disable-next-line no-useless-escape
+     
     private static readonly CREDIT_CARD_REGEX = /\b(?:\d[ -]*?){13,19}\b/g;
     private static readonly KEY_VALUE_SECRET_REGEX = /\b(password|passwd|api_key|access_token|secret_key|private_key)(\s*[:=]\s*)([^\s]+)/gi;
     private static readonly STRIPE_KEY_REGEX = /\b(sk_live_[0-9a-zA-Z]+)\b/g;

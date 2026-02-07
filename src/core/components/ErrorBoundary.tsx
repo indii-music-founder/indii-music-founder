@@ -80,20 +80,46 @@ export class ErrorBoundary extends Component<Props, State> {
             // Standard Error Fallback
             return this.props.fallback || (
                 <div className="fixed inset-0 z-[999999] p-6 bg-[rgba(50,0,0,0.9)] text-white overflow-auto flex items-center justify-center">
-                    <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 max-w-2xl w-full">
-                        <h2 className="text-xl font-bold mb-2">Something went wrong.</h2>
-                        <p className="font-mono text-sm text-red-200 mb-4">
-                            {this.state.error?.message}
+                    <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 max-w-2xl w-full text-center">
+                        <div className="bg-red-900/30 p-4 rounded-full inline-block mb-4">
+                            <RefreshCw className="w-10 h-10 text-red-400" />
+                        </div>
+                        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
+                        <p className="text-gray-300 mb-6">
+                            An unexpected error occurred. You can try reloading, or go back to the dashboard.
                         </p>
-                        <pre className="text-xs mb-4 overflow-auto max-h-96 bg-black/50 p-4 rounded border border-red-500/30">
-                            {this.state.error?.stack}
-                        </pre>
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-md text-sm font-bold text-white transition-colors cursor-pointer shadow-lg hover:shadow-red-500/20"
-                        >
-                            Reload Application
-                        </button>
+                        {import.meta.env.DEV && this.state.error && (
+                            <>
+                                <p className="font-mono text-sm text-red-200 mb-2 text-left">
+                                    {this.state.error.message}
+                                </p>
+                                <pre className="text-xs mb-4 overflow-auto max-h-64 bg-black/50 p-4 rounded border border-red-500/30 text-left">
+                                    {this.state.error.stack}
+                                </pre>
+                            </>
+                        )}
+                        <div className="flex gap-3 justify-center">
+                            <button
+                                onClick={() => {
+                                    this.setState({ hasError: false, error: null });
+                                    window.location.hash = '';
+                                    window.location.reload();
+                                }}
+                                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-md text-sm font-bold text-white transition-colors cursor-pointer shadow-lg hover:shadow-red-500/20 inline-flex items-center gap-2"
+                            >
+                                <RefreshCw size={16} />
+                                Reload Application
+                            </button>
+                            <button
+                                onClick={() => {
+                                    this.setState({ hasError: false, error: null });
+                                    window.location.href = '/';
+                                }}
+                                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md text-sm font-bold text-white transition-colors cursor-pointer"
+                            >
+                                Go to Dashboard
+                            </button>
+                        </div>
                     </div>
                 </div>
             );

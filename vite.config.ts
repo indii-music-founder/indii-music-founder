@@ -5,6 +5,12 @@ import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
 
+// Enforce minimum Node.js version at build time
+const [major] = process.versions.node.split('.').map(Number);
+if (major < 22) {
+  throw new Error(`Node.js >= 22.0.0 required (found ${process.versions.node}). See package.json engines field.`);
+}
+
 export default defineConfig({
   base: './',
   define: {

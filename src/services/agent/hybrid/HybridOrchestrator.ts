@@ -168,8 +168,10 @@ export class HybridOrchestrator {
                     else break;
                 }
 
-            } catch (e) {
-                console.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e);
+            } catch (e: any) {
+                console.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e?.message || e);
+                console.error(`[indii:Hybrid] Error details:`, e?.stack || 'No stack');
+                lastAgentResponse = `I encountered an issue: ${e?.message?.slice?.(0, 100) || 'Unknown error'}`;
                 break;
             }
         }
