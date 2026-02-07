@@ -13,5 +13,11 @@ export default defineConfig({
     setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
     watch: false,
     reporters: ['default', 'github-actions'],
+    poolOptions: {
+      threads: {
+        singleThread: true,
+      },
+    },
+    teardownTimeout: 1000,
   },
 });
