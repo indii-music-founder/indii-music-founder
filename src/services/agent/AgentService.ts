@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { useStore, AgentMessage, AgentThought } from '@/core/store';
+import type { AgentMessage, AgentThought } from '@/core/store';
+// useStore removed
 import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
@@ -77,6 +78,7 @@ export class AgentService {
             timestamp: Date.now(),
             attachments
         };
+        const { useStore } = await import('@/core/store');
         useStore.getState().addAgentMessage(userMsg);
 
         try {
@@ -85,6 +87,7 @@ export class AgentService {
 
             // 2. Workflow Coordination (The Brain)
             const responseId = uuidv4();
+            const { useStore } = await import('@/core/store');
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
             // Create placeholder for the response
@@ -194,6 +197,7 @@ export class AgentService {
         responseId: string,
         forcedAgentId?: string
     ): Promise<void> {
+        const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
         const { activeAgentProvider } = useStore.getState();
 
@@ -298,6 +302,7 @@ export class AgentService {
     }
 
     private async handleAgentZeroFlow(text: string, attachments: any[] | undefined, responseId: string): Promise<void> {
+        const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
 
         // Adapt attachments for Agent Zero (files base64 with filenames)
@@ -483,7 +488,8 @@ export class AgentService {
         );
     }
 
-    private addSystemMessage(text: string): void {
+    private async addSystemMessage(text: string): Promise<void> {
+        const { useStore } = await import('@/core/store');
         useStore.getState().addAgentMessage({ id: uuidv4(), role: 'system', text, timestamp: Date.now() });
     }
 

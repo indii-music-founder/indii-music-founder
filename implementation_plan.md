@@ -37,3 +37,17 @@
   - [x] Create `MetadataPersistenceService` (Lazy singleton).
   - [x] Use `EventBus` ('SYSTEM_ALERT') for UI feedback.
   - [x] Add Offline Queue support (indexedDB).
+40:
+41: ## 6. Image Upload Stability & Tracing Resolution
+42:
+43: - **Goal**: Resolve background hangs during image compression and prevent "Permission Denied" errors during trace persistence.
+44: - **Fix (Compression)**:
+45:   - [x] Add 30s timeout safety to `CloudStorageService.compressImage`.
+46:   - [x] Enforce `crossOrigin = 'anonymous'` for all image loads to prevent tainted canvas SecurityErrors.
+47: - **Fix (Persistence)**:
+48:   - [x] Re-enable `smartSave` in `ImageGenerationService` with robust try/catch fallback.
+49:   - [x] Fallback to local high-compression if Cloud Storage fails (avoids 1MB Firestore limit).
+50: - **Fix (Tracing)**:
+51:   - [x] Resolve UID asynchronously from `useStore` in `AgentExecutor` if `auth.currentUser` is null.
+52: - **Infra**:
+53:   - [x] Applied CORS policy to `gs://indiios-alpha-electron/` bucket.

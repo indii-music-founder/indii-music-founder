@@ -5,7 +5,7 @@ import { BaseAgent } from '../BaseAgent';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
-import { WhiskState } from '@/core/store/slices/creativeSlice';
+import type { WhiskState } from '@/core/store/slices/creativeSlice';
 
 /**
  * GeneralistAgent (Agent Zero) - The primary orchestrator and fallback agent.
