@@ -62,10 +62,10 @@
 |---|------|-----------|--------|
 | 31 | **Add Lighthouse CI** to deployment pipeline (performance regression alerts) | `.github/workflows/deploy.yml` | TODO |
 | 32 | **Add source maps upload to Sentry** for production error debugging | Build pipeline | TODO |
-| 33 | **Add feature flag system** for gradual rollouts (LaunchDarkly, Firebase Remote Config) | `src/config/` | TODO |
-| 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | TODO |
+| 33 | **Add feature flag system** for gradual rollouts (LaunchDarkly, Firebase Remote Config) | `src/config/` | DONE - FeatureFlagService wrapping Firebase Remote Config |
+| 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | DONE - AIService already has AIResponseCache + request coalescing |
 | 35 | **Add health check endpoint** for monitoring | `functions/src/` | DONE - healthCheck HTTP function with Firestore ping |
-| 36 | **Add structured logging** (JSON format for production log aggregation) | `src/core/logger/` | TODO |
+| 36 | **Add structured logging** (JSON format for production log aggregation) | `src/core/logger/` | DONE - JSON structured logs in prod, human-readable in dev |
 | 37 | **Add user session timeout/refresh** for long-running sessions | `src/core/store/slices/authSlice.ts` | TODO |
 | 38 | **Add database migration strategy** for Firestore schema changes | `docs/` | TODO |
 | 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | TODO |
@@ -90,7 +90,7 @@
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
 | P2 Medium | 15 | 6 | 9 |
-| P3 Standard | 20 | 1 | 19 |
-| **Total** | **50** | **21** | **29** |
+| P3 Standard | 20 | 4 | 16 |
+| **Total** | **50** | **24** | **26** |
 
-**Current Grade: B+** (all blockers resolved, security hardened, build passes)
+**Current Grade: A-** (all blockers resolved, security hardened, structured logging, feature flags, build passes)
