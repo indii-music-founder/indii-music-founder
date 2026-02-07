@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentExecutionContext } from './context/AgentExecutionContext';
+import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { TransactionManager } from './context/TransactionManager';
 import { StateManager } from './context/StateManager';
 import { LoopDetector } from './LoopDetector';
@@ -95,33 +95,65 @@ describe('Phase 3: Architectural Improvements', () => {
     });
 
     describe('AgentExecutionContext', () => {
-        it('should manage transaction lifecycle', async () => {
-            const contextMock = { id: 'ctx-1' } as any;
-            // @ts-expect-error - accessing private constructor for test
-            const executionContext = new AgentExecutionContext(contextMock);
 
-            // Start
-            await executionContext.start();
-            expect((executionContext as any).activeTransactionId).toBeDefined();
-
-            // Commit
-            await executionContext.commit();
-            expect((executionContext as any).activeTransactionId).toBeNull();
+        beforeEach(() => {
+            vi.clearAllMocks();
         });
 
-        it('should rollback on failure', async () => {
-            const contextMock = { id: 'ctx-2' } as any;
-            // @ts-expect-error - accessing private constructor for test
-            const executionContext = new AgentExecutionContext(contextMock);
+        it('should track state changes without committing them immediately', async () => {
+            const executionContext = await ExecutionContextFactory.create({
+                agentId: 'test-agent',
+                traceId: 'test-trace',
+                userId: 'user-1',
+                projectId: 'proj-1'
+            });
 
-            await executionContext.start();
-            const txId = (executionContext as any).activeTransactionId;
 
-            await executionContext.rollback();
-            expect((executionContext as any).activeTransactionId).toBeNull();
-            // Need reference to the internal TM to verify snapshot was cleared
-            const tm = (executionContext as any).transactionManager;
-            expect(tm.stateManager.hasSnapshot(txId)).toBe(false);
+            // Set state in context
+            executionContext.setState('currentProjectId', 'new-project-id');
+
+            // Verify context has change
+            expect(executionContext.getState('currentProjectId')).toBe('new-project-id');
+            expect(executionContext.hasUncommittedChanges()).toBe(true);
+
+            // Verify store NOT changed yet (mock check)
+            expect(useStore.setState).not.toHaveBeenCalled();
+        });
+
+        it('should commit changes to the store', async () => {
+            const executionContext = await ExecutionContextFactory.create({
+                agentId: 'test-agent',
+                traceId: 'test-trace',
+                userId: 'user-1',
+                projectId: 'proj-1'
+            });
+
+            executionContext.setState('currentProjectId', 'committed-project-id');
+            await executionContext.commit();
+
+            expect(executionContext.hasUncommittedChanges()).toBe(false);
+            expect(useStore.setState).toHaveBeenCalledWith(
+                expect.objectContaining({ currentProjectId: 'committed-project-id' })
+            );
+        });
+
+        it('should rollback changes and discard them', async () => {
+            const executionContext = await ExecutionContextFactory.create({
+                agentId: 'test-agent',
+                traceId: 'test-trace',
+                userId: 'user-1',
+                projectId: 'proj-1'
+            });
+
+            executionContext.setState('currentProjectId', 'rolled-back-project-id');
+            executionContext.rollback();
+
+            expect(executionContext.hasUncommittedChanges()).toBe(false);
+            // Should NOT have called store setState
+            expect(useStore.setState).not.toHaveBeenCalled();
+
+            // Internal state should be reset (or at least modifications usage cleared)
+            // We can't easily check internal map without casting to any, but hasUncommittedChanges is the public verified way
         });
     });
 });
