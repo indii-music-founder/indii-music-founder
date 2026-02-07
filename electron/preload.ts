@@ -95,6 +95,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         transmit: (config: any) => ipcRenderer.invoke('distribution:transmit', config),
     },
 
+    // Auto-Updater
+    updater: {
+        check: () => ipcRenderer.invoke('updater:check'),
+        install: () => ipcRenderer.invoke('updater:install'),
+    },
+
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),
     on: (channel: string, callback: (...args: any[]) => void) => {
         const subscription = (_event: any, ...args: any[]) => callback(...args);
