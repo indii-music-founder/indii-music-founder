@@ -46,6 +46,20 @@ vi.mock('firebase-admin', () => {
     };
 });
 
+// Mock google-auth-library to prevent real OAuth network calls that hang in CI
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: class {
+        async getClient() {
+            return {
+                getAccessToken: async () => ({ token: 'mock-access-token' })
+            };
+        }
+        async getProjectId() {
+            return 'mock-project-id';
+        }
+    }
+}));
+
 global.fetch = vi.fn();
 
 describe('Video Generation Metadata', () => {
