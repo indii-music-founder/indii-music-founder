@@ -108,14 +108,18 @@ export class AgentService {
             // Track gallery state before execution for timeout grace check
             const galleryCountBefore = useStore.getState().generatedHistory?.length || 0;
 
+            let timeoutHandle: NodeJS.Timeout;
             const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
+                timeoutHandle = setTimeout(() => reject(new Error(`Indii Timeout: No response received after ${timeoutMs / 1000}s.`)), timeoutMs);
             });
 
             try {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
-                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId),
+                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).finally(() => {
+                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                        if (timeoutHandle) clearTimeout(timeoutHandle);
+                    }),
                     timeoutPromise
                 ]);
             } catch (err: any) {
