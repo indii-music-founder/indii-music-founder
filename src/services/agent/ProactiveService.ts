@@ -43,8 +43,12 @@ export class ProactiveService {
         ];
 
         allEvents.forEach(eventType => {
-            events.on(eventType, async (data) => {
+            const handler = async (data: any) => {
                 await this.handleSystemEvent(eventType, data);
+            };
+            events.on(eventType, handler);
+            this.unsubscribers.push(() => {
+                events.off(eventType, handler);
             });
         });
     }
