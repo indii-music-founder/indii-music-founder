@@ -10,6 +10,7 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
+    setupFiles: [path.join(__dirname, 'src/test/setup.ts')],
     setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
   },
 });
