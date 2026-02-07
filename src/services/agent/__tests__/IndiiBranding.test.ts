@@ -16,8 +16,8 @@ describe('indii Branding Constants', () => {
             expect(AGENT_SYSTEM_BRANDING.fullName).toContain('AI Agent System');
         });
 
-        it('identifies hub as Agent Zero', () => {
-            expect(AGENT_SYSTEM_BRANDING.hubName).toBe('Agent Zero');
+        it('identifies hub as indii', () => {
+            expect(AGENT_SYSTEM_BRANDING.hubName).toBe('indii');
         });
 
         it('includes descriptive tagline for independent artists', () => {
@@ -203,11 +203,12 @@ describe('indii Branding Constants', () => {
             expect(AGENT_SYSTEM_BRANDING.name).toBe('indii');
         });
 
-        it('uses "Agent Zero" as official hub name', () => {
-            expect(AGENT_SYSTEM_BRANDING.hubName).toBe('Agent Zero');
+        it('uses "indii" for hub branding', () => {
+            expect(AGENT_SYSTEM_BRANDING.hubName).toBe('indii');
 
             const violationMsg = INDII_MESSAGES.hubSpokeViolation('marketing', 'legal');
-            expect(violationMsg).toContain('Agent Zero');
+            // The violation message should contain indii architecture reference
+            expect(violationMsg).toContain('indii');
         });
 
         it('maintains consistent "indii AI Agent System" nomenclature', () => {

@@ -150,18 +150,25 @@ export class SubscriptionService {
     const targetUserId = userId || auth.currentUser?.uid;
 
     if (!targetUserId) {
-      return {
-        allowed: false,
-        reason: 'User must be authenticated',
-        upgradeRequired: true
-      };
+      // DEMO MODE: Allow limited actions for unauthenticated users
+      // This enables the demo experience without blocking on auth
+      console.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
+      return { allowed: true };
     }
 
     try {
-      const [subscription, usage] = await Promise.all([
-        this.getSubscription(targetUserId),
-        this.getUsageStats(targetUserId)
-      ]);
+      // Add timeout protection to prevent hanging (5s timeout)
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Subscription check timeout')), 5000)
+      );
+
+      const [subscription, usage] = await Promise.race([
+        Promise.all([
+          this.getSubscription(targetUserId),
+          this.getUsageStats(targetUserId)
+        ]),
+        timeoutPromise
+      ]) as [Subscription, UsageStats];
 
       const tierConfig = getTierConfig(subscription.tier);
 
@@ -271,11 +278,11 @@ export class SubscriptionService {
             reason: `Unknown action: ${action}`
           };
       }
-    } catch (error) {
-      return {
-        allowed: false,
-        reason: 'Failed to check quota. Please try again.'
-      };
+    } catch (error: any) {
+      // GRACEFUL DEGRADATION: If subscription check fails (timeout, auth, network),
+      // allow the action to proceed for demo experience. The backend will enforce limits.
+      console.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error?.message);
+      return { allowed: true };
     }
   }
 

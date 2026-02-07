@@ -17,7 +17,8 @@ vi.mock('@/lib/mobile', () => ({
 }));
 
 // Mock lucide icons to avoid rendering issues and keep DOM clean
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     Briefcase: () => <svg role="img" aria-hidden="true" data-testid="icon-briefcase" />,
     Users: () => <svg role="img" aria-hidden="true" data-testid="icon-users" />,
     Megaphone: () => <svg role="img" aria-hidden="true" data-testid="icon-megaphone" />,

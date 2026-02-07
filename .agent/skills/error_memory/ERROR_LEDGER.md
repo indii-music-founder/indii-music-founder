@@ -176,6 +176,46 @@ onAuthStateChanged(auth, (user) => {
 
 ---
 
+## CLOUDRUN-001 Firebase v2 Functions 401 Unauthorized
+
+**Pattern:** `The request was not authenticated. Either allow unauthenticated invocations or set the proper Authorization header`
+**Context:** Firebase v2 Callable Functions (using `firebase-functions/v2/https`)
+**Root Cause:** Firebase v2 functions use Cloud Run under the hood. Unlike v1 functions, they require explicit IAM invoker permissions. If no bindings are set, all requests fail with 401 even when Firebase Auth tokens are properly passed.
+**Symptoms in Agent:**
+
+- Agent tool execution hangs indefinitely
+- SubscriptionService quota checks never complete
+- generate_image tool times out after 300s despite Cloud Function succeeding
+**Fix:**
+
+```bash
+# Add allUsers as invoker for each v2 function
+gcloud run services add-iam-policy-binding [SERVICE_NAME] \
+  --region=us-central1 \
+  --member="allUsers" \
+  --role="roles/run.invoker" \
+  --project=[PROJECT_ID]
+
+# Known v2 services requiring this fix:
+# getsubscription, getusagestats, trackusage, 
+# cancelsubscription, createcheckoutsession, 
+# getcustomerportal, resumesubscription
+```
+
+**Prevention:**
+When deploying new v2 callable functions, ensure invoker permissions:
+
+```typescript
+// In function definition, or deploy with:
+// firebase deploy --only functions:[NAME]
+// Then run the gcloud IAM command above
+```
+
+**Date Added:** 2026-02-05
+**Related Errors:** AUTH-001, FIRESTORE-001
+
+---
+
 ## REFF-001 ReferenceError Variable Name Mismatch
 
 **Pattern:** `ReferenceError: X is not defined`
@@ -191,3 +231,138 @@ onAuthStateChanged(auth, (user) => {
 **Related Errors:** BUILD-001
 
 ---
+
+## HUB_SPOKE-001 Invalid Agent Delegation Pattern
+
+**Pattern:** `Hub-and-spoke violation: X -> Y` / Test fails on `delegate_task` call
+**Context:** Agent delegation tests in `AgentArchitecture.test.ts` or any BaseAgent delegation
+**Root Cause:** The hub-and-spoke architecture ONLY allows:
+
+- **Hub (generalist) → Any Specialist**: ✅ Valid
+- **Specialist → Hub (generalist)**: ✅ Valid  
+- **Specialist → Specialist**: ❌ BLOCKED
+
+Tests that attempt specialist-to-specialist delegation (e.g., `legal → video`) will fail with hub-and-spoke violation.
+**Fix:**
+
+```typescript
+// ❌ Wrong - specialist to specialist (BLOCKED)
+const result = await delegateFunc({
+    targetAgentId: 'video',  // Another specialist
+    task: '...'
+});
+
+// ✅ Correct - specialist to hub
+const result = await delegateFunc({
+    targetAgentId: 'generalist',  // Hub agent
+    task: '...'
+});
+
+// ✅ Correct - hub to specialist
+const result = await delegateFunc({
+    targetAgentId: 'legal',  // Any specialist is fine from hub
+    task: '...'
+});
+```
+
+**Prevention:** When writing delegation tests, always use hub-compliant patterns. Check `validateHubAndSpoke()` in `types.ts` for validation logic.
+
+**Date Added:** 2026-02-06
+**Related Errors:** None
+
+---
+
+## TEST-001 API Response Structure Mismatch
+
+**Pattern:** `expect(result).toHaveProperty('id', 'p1')` fails when API returns `{success: true, data: {...}}`
+**Context:** Unit tests for agent tools (`BaseAgent` functions like `get_project_details`)
+**Root Cause:** BaseAgent tool functions return a standardized response structure `{success: boolean, data?: any, error?: string}`, not the raw data. Tests that expect raw properties directly on the result will fail.
+**Fix:**
+
+```typescript
+// ❌ Wrong - expecting raw data on result
+const result = await functions.get_project_details({ projectId: 'p1' });
+expect(result).toHaveProperty('id', 'p1');
+expect(result).toHaveProperty('name', 'Test Project');
+
+// ✅ Correct - expecting wrapped response structure
+const result = await functions.get_project_details({ projectId: 'p1' });
+expect(result).toHaveProperty('success', true);
+expect(result.data).toHaveProperty('id', 'p1');
+expect(result.data).toHaveProperty('name', 'Test Project');
+```
+
+**Prevention:** All BaseAgent tool functions wrap their results. When testing, always check for `success`, then access `result.data` for the actual payload.
+
+**Date Added:** 2026-02-06
+**Related Errors:** None
+
+---
+
+## MOCK-001 GoogleAuth Constructor Mock Pattern
+
+**Pattern:** `TypeError: GoogleAuth is not a constructor` / CI hangs on OAuth network calls
+**Context:** Unit tests for video generation or any code using `google-auth-library`
+**Root Cause:** The `GoogleAuth` class from `google-auth-library` attempts real OAuth network calls at construction time. In CI without credentials, these calls hang indefinitely. Using `vi.fn()` as the mock doesn't properly work as a constructor in all cases.
+**Fix:**
+
+```typescript
+// ❌ Wrong - vi.fn() may not work as constructor
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: vi.fn()
+}));
+
+// ❌ Also wrong - vi.fn() returning object
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: vi.fn(() => ({
+        getClient: vi.fn().mockResolvedValue({...})
+    }))
+}));
+
+// ✅ Correct - use class syntax
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: class {
+        async getClient() {
+            return { getAccessToken: async () => ({ token: 'mock-token' }) };
+        }
+        async getProjectId() {
+            return 'mock-project-id';
+        }
+    }
+}));
+```
+
+**Prevention:** Always use class syntax for mocking classes that will be instantiated with `new`. Add this mock BEFORE any imports that might trigger GoogleAuth initialization.
+
+**Date Added:** 2026-02-06
+**Related Errors:** TEST-001
+
+---
+
+## DEP-001 Circular Dependency Store Initialization
+
+**Pattern:** `TypeError: Cannot read properties of undefined (reading 'id')` in `AgentRegistry` / CI hangs on tests
+**Context:** Agent initialization, particularly when `useStore` is imported at the top level of tools.
+**Root Cause:** Circular dependency: `Store` -> `AgentSlice` -> `AgentRegistry` -> `AgentConfig` -> `AgentDefinitions` -> `Tools` -> `useStore`. This causes `useStore` (and `AgentRegistry`) to be accessed before full initialization.
+**Fix:**
+
+1. Use `import type` in `types.ts` to break type-only cycles.
+2. Move `useStore` imports inside functions (dynamic import) in tools/services.
+3. Harden `AgentRegistry` logging to handle undefined configs gracefully.
+
+```typescript
+// ❌ Wrong - top-level static import
+import { useStore } from '@/core/store';
+export const myTool = () => {
+    const state = useStore.getState();
+};
+
+// ✅ Correct - dynamic import within function
+export const myTool = async () => {
+    const { useStore } = await import('@/core/store');
+    const state = useStore.getState();
+};
+```
+
+**Date Added:** 2026-02-06
+**Related Errors:** None

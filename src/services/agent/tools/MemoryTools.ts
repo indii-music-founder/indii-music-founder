@@ -1,4 +1,5 @@
-import { useStore } from '@/core/store';
+// useStore removed
+
 import { memoryService } from '@/services/agent/MemoryService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
@@ -10,6 +11,7 @@ import type { ToolExecutionContext } from '../ToolExecutionContext';
 
 export const MemoryTools: Record<string, AnyToolFunction> = {
     save_memory: wrapTool('save_memory', async (args: { content: string; type?: 'fact' | 'summary' | 'rule' }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         // Phase 3.6: Use execution context when available, fallback to direct store
         const currentProjectId = toolContext
             ? toolContext.get('currentProjectId')
@@ -33,6 +35,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
     }),
 
     recall_memories: wrapTool('recall_memories', async (args: { query: string }, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         // Phase 3.6: Use execution context when available, fallback to direct store
         const currentProjectId = toolContext
             ? toolContext.get('currentProjectId')
@@ -75,6 +78,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
     }),
 
     read_history: wrapTool('read_history', async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+        const { useStore } = await import('@/core/store');
         // Phase 3.6: Use execution context when available, fallback to direct store
         const history = (toolContext
             ? toolContext.get('agentHistory')

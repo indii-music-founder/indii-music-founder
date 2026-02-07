@@ -23,6 +23,7 @@ from typing import Callable
 from python.helpers.localization import Localization
 from python.helpers.extension import call_extensions
 from python.helpers.errors import RepairableException
+from python.helpers.orchestrator import HybridOrchestrator
 
 def safe_run(coro):
     try:
@@ -358,6 +359,9 @@ class Agent:
         self.data: dict[str, Any] = {}  # free data object all the tools can use
 
         safe_run(self.call_extensions("agent_init"))
+        
+        # Initialize Orchestrator
+        self.orchestrator = HybridOrchestrator(self)
 
     async def monologue(self):
         while True:
@@ -738,20 +742,12 @@ class Agent:
         reasoning_callback: Callable[[str, str], Awaitable[None]] | None = None,
         background: bool = False,
     ):
-        response = ""
-
-        # model class
-        model = self.get_chat_model()
-
-        # call model
-        response, reasoning = await model.unified_call(
+        return await self.orchestrator.call_chat_model_with_failover(
             messages=messages,
-            reasoning_callback=reasoning_callback,
             response_callback=response_callback,
-            rate_limiter_callback=self.rate_limiter_callback if not background else None,
+            reasoning_callback=reasoning_callback,
+            background=background
         )
-
-        return response, reasoning
 
     async def rate_limiter_callback(
         self, message: str, key: str, total: int, limit: int

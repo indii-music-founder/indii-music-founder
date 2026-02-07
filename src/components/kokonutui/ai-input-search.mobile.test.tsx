@@ -3,7 +3,8 @@ import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import AI_Input_Search from './ai-input-search';
 
 // Mock Lucide icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Globe: () => <div data-testid="icon-globe">Globe</div>,
   Paperclip: () => <div data-testid="icon-paperclip">Paperclip</div>,
   Send: () => <div data-testid="icon-send">Send</div>,
