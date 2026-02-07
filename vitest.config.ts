@@ -11,5 +11,7 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: [path.join(__dirname, 'src/test/setup.ts')],
+    watch: false,
+    reporters: ['default', 'github-actions'],
   },
 });
