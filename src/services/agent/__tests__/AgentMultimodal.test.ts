@@ -20,9 +20,16 @@ vi.mock('../registry', () => ({
 // Mock Firebase Auth
 vi.mock('@/services/firebase', () => ({
     auth: {
-        currentUser: { uid: 'test-user' }
+        currentUser: { uid: 'test-user' },
+        onAuthStateChanged: vi.fn(() => () => { })
     },
-    db: {}
+    db: {},
+    remoteConfig: {
+        fetchAndActivate: vi.fn().mockResolvedValue(true),
+        getAll: vi.fn().mockReturnValue({}),
+        getValue: vi.fn(),
+        settings: {}
+    }
 }));
 
 class VisionAgent extends BaseAgent {
