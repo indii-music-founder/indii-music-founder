@@ -13,6 +13,5 @@ export default defineConfig({
     setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
     watch: false,
     reporters: ['default', 'github-actions'],
-    setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
   },
 });
