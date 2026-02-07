@@ -11,6 +11,27 @@ if (major < 22) {
   throw new Error(`Node.js >= 22.0.0 required (found ${process.versions.node}). See package.json engines field.`);
 }
 
+// Sentry source maps upload - only in production builds with auth token
+async function loadSentryPlugin() {
+  if (process.env.SENTRY_AUTH_TOKEN && process.env.NODE_ENV === 'production') {
+    try {
+      const { sentryVitePlugin } = await import('@sentry/vite-plugin');
+      return sentryVitePlugin({
+        org: process.env.SENTRY_ORG || 'indiios',
+        project: process.env.SENTRY_PROJECT || 'indii-os',
+        authToken: process.env.SENTRY_AUTH_TOKEN,
+        release: { name: `indii-os@${process.env.npm_package_version || '0.0.0'}` },
+        sourcemaps: { filesToDeleteAfterUpload: ['./dist/**/*.map'] },
+      });
+    } catch {
+      console.log('[Build] @sentry/vite-plugin not installed - skipping source map upload');
+    }
+  }
+  return null;
+}
+
+const sentryPlugin = await loadSentryPlugin();
+
 export default defineConfig({
   base: './',
   define: {
@@ -40,6 +61,8 @@ export default defineConfig({
     //   debugProtection: true,
     //   controlFlowFlattening: true
     // }, ['node_modules/**']),
+    // Sentry source map upload (production only, when SENTRY_AUTH_TOKEN is set)
+    ...(sentryPlugin ? [sentryPlugin] : []),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: path.resolve(__dirname, 'src'),
@@ -130,6 +153,7 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 3000,
+    sourcemap: !!process.env.SENTRY_AUTH_TOKEN, // Generate source maps when Sentry upload is configured
     // Use terser for more aggressive console stripping
     minify: 'terser',
     terserOptions: {

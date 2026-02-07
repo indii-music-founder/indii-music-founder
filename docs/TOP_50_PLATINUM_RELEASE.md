@@ -61,7 +61,7 @@
 | # | Item | File/Area | Status |
 |---|------|-----------|--------|
 | 31 | **Add Lighthouse CI** to deployment pipeline (performance regression alerts) | `.github/workflows/deploy.yml` | DONE - LHCI autorun post-deploy with perf/a11y/best-practices thresholds |
-| 32 | **Add source maps upload to Sentry** for production error debugging | Build pipeline | TODO |
+| 32 | **Add source maps upload to Sentry** for production error debugging | `vite.config.ts` | DONE - @sentry/vite-plugin conditional on SENTRY_AUTH_TOKEN, auto-deletes maps after upload |
 | 33 | **Add feature flag system** for gradual rollouts (LaunchDarkly, Firebase Remote Config) | `src/config/` | DONE - FeatureFlagService wrapping Firebase Remote Config |
 | 34 | **Add API response caching layer** (reduce Gemini API token consumption) | `src/services/cache/` | DONE - AIService already has AIResponseCache + request coalescing |
 | 35 | **Add health check endpoint** for monitoring | `functions/src/` | DONE - healthCheck HTTP function with Firestore ping |
@@ -73,7 +73,7 @@
 | 41 | **Add GDPR/data export** capability for user data | `functions/src/index.ts` | DONE - exportUserData + requestAccountDeletion callable functions |
 | 42 | **Add deployment rollback strategy** (Firebase hosting rollback, Functions versioning) | `docs/DEPLOYMENT_ROLLBACK_STRATEGY.md` | DONE - Hosting rollback, Cloud Run traffic shift, emergency procedures, runbook |
 | 43 | **Add end-to-end encryption** for sensitive agent-to-agent communication | `python/tools/` | TODO |
-| 44 | **Add load testing** validation (k6/Artillery scripts exist in `load-tests/`) | `load-tests/` | TODO |
+| 44 | **Add load testing** validation (k6/Artillery scripts exist in `load-tests/`) | `load-tests/` | DONE - k6 scripts for health check, agent service, video gen with thresholds |
 | 45 | **Add changelog automation** (conventional commits -> CHANGELOG.md generation) | `scripts/generate-changelog.sh` | DONE - Parses conventional commits, groups by type, npm run changelog/changelog:update |
 | 46 | **Add code signing** for Electron desktop builds (macOS notarization, Windows signing) | `electron-builder.json` | TODO |
 | 47 | **Add auto-update mechanism** for Electron desktop app | `electron/updater.ts` | DONE - electron-updater integration, IPC bridge, auto-check every 4h, install on quit |
@@ -90,7 +90,7 @@
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
 | P2 Medium | 15 | 9 | 6 |
-| P3 Standard | 20 | 13 | 7 |
-| **Total** | **50** | **36** | **14** |
+| P3 Standard | 20 | 15 | 5 |
+| **Total** | **50** | **38** | **12** |
 
-**Current Grade: A+** (72% complete, CI/CD fully instrumented with Lighthouse + a11y + bundle size, GDPR, auto-updates, build passes)
+**Current Grade: A+** (76% complete, full CI/CD instrumentation, Sentry source maps, load testing, GDPR, build passes)
