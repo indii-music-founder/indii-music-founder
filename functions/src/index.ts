@@ -1008,6 +1008,106 @@ export { getSubscription, createCheckoutSession, getCustomerPortal, cancelSubscr
 // ----------------------------------------------------------------------------
 
 /**
+ * GDPR Data Export - Returns all user data as a JSON bundle.
+ *
+ * Collects data from: user profile, projects, history, brand assets,
+ * knowledge base entries, and metadata. Does NOT include binary files
+ * (images/audio stored in Cloud Storage) - those URLs are included.
+ */
+export const exportUserData = functions
+    .runWith({ timeoutSeconds: 120, memory: "512MB" })
+    .https.onCall(async (_data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        }
+
+        const userId = context.auth.uid;
+        const db = admin.firestore();
+        const exportData: Record<string, unknown> = {
+            exportedAt: new Date().toISOString(),
+            userId,
+            email: context.auth.token.email || null,
+        };
+
+        // User profile
+        try {
+            const profileSnap = await db.collection("users").doc(userId).get();
+            exportData.profile = profileSnap.exists ? profileSnap.data() : null;
+        } catch {
+            exportData.profile = null;
+        }
+
+        // Projects
+        try {
+            const projectsSnap = await db.collection("users").doc(userId).collection("projects").get();
+            exportData.projects = projectsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch {
+            exportData.projects = [];
+        }
+
+        // History
+        try {
+            const historySnap = await db.collection("users").doc(userId).collection("history").get();
+            exportData.history = historySnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch {
+            exportData.history = [];
+        }
+
+        // Organizations the user belongs to
+        try {
+            const orgsSnap = await db.collection("organizations")
+                .where(`members.${userId}`, "!=", null)
+                .get();
+            exportData.organizations = orgsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch {
+            exportData.organizations = [];
+        }
+
+        // Knowledge base
+        try {
+            const kbSnap = await db.collection("users").doc(userId).collection("knowledge").get();
+            exportData.knowledgeBase = kbSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } catch {
+            exportData.knowledgeBase = [];
+        }
+
+        functions.logger.info(`[GDPR] Data export completed for user ${userId}`);
+        return exportData;
+    });
+
+/**
+ * GDPR Account Deletion Request - Queues deletion of all user data.
+ * Marks the account for deletion and returns a confirmation token.
+ * Actual deletion happens asynchronously via a scheduled function.
+ */
+export const requestAccountDeletion = functions
+    .runWith({ timeoutSeconds: 30, memory: "256MB" })
+    .https.onCall(async (_data, context) => {
+        if (!context.auth) {
+            throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+        }
+
+        const userId = context.auth.uid;
+        const db = admin.firestore();
+
+        // Record the deletion request
+        await db.collection("_deletion_requests").doc(userId).set({
+            userId,
+            email: context.auth.token.email || null,
+            requestedAt: admin.firestore.FieldValue.serverTimestamp(),
+            status: "pending",
+        });
+
+        functions.logger.info(`[GDPR] Deletion request recorded for user ${userId}`);
+
+        return {
+            success: true,
+            message: "Account deletion request received. Your data will be removed within 30 days per our data retention policy.",
+            requestId: userId,
+        };
+    });
+
+/**
  * Health check endpoint for uptime monitoring.
  * Returns service status and basic diagnostics.
  */

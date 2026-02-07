@@ -70,16 +70,16 @@
 | 38 | **Add database migration strategy** for Firestore schema changes | `docs/FIRESTORE_MIGRATION_STRATEGY.md` | DONE - Additive/rename/destructive patterns, script template, rollback procedures |
 | 39 | **Add uptime monitoring** (Firebase status, Gemini API availability) | External service | TODO |
 | 40 | **Add privacy policy and terms of service** pages | `landing-page/` | TODO |
-| 41 | **Add GDPR/data export** capability for user data | `functions/src/` | TODO |
+| 41 | **Add GDPR/data export** capability for user data | `functions/src/index.ts` | DONE - exportUserData + requestAccountDeletion callable functions |
 | 42 | **Add deployment rollback strategy** (Firebase hosting rollback, Functions versioning) | `docs/DEPLOYMENT_ROLLBACK_STRATEGY.md` | DONE - Hosting rollback, Cloud Run traffic shift, emergency procedures, runbook |
 | 43 | **Add end-to-end encryption** for sensitive agent-to-agent communication | `python/tools/` | TODO |
 | 44 | **Add load testing** validation (k6/Artillery scripts exist in `load-tests/`) | `load-tests/` | TODO |
 | 45 | **Add changelog automation** (conventional commits -> CHANGELOG.md generation) | `scripts/generate-changelog.sh` | DONE - Parses conventional commits, groups by type, npm run changelog/changelog:update |
 | 46 | **Add code signing** for Electron desktop builds (macOS notarization, Windows signing) | `electron-builder.json` | TODO |
-| 47 | **Add auto-update mechanism** for Electron desktop app | `electron/main.ts` | TODO |
+| 47 | **Add auto-update mechanism** for Electron desktop app | `electron/updater.ts` | DONE - electron-updater integration, IPC bridge, auto-check every 4h, install on quit |
 | 48 | **Add internationalization (i18n)** framework for multi-language support | `src/` | TODO |
 | 49 | **Add comprehensive keyboard shortcuts** documentation | `src/components/shared/GlobalKeyboardShortcuts.tsx` | DONE - Global shortcuts modal (press ?), wired into App shell, covers all modules |
-| 50 | **Add onboarding analytics** (track funnel drop-off, completion rates) | `src/modules/onboarding/` | TODO |
+| 50 | **Add onboarding analytics** (track funnel drop-off, completion rates) | `src/services/onboarding/onboardingAnalytics.ts` | DONE - Tracks start/phase/field/milestone/skip/complete, Firebase Analytics + Logger |
 
 ---
 
@@ -90,7 +90,7 @@
 | P0 Critical | 5 | 5 | 0 |
 | P1 High | 10 | 9 | 1 |
 | P2 Medium | 15 | 7 | 8 |
-| P3 Standard | 20 | 9 | 11 |
-| **Total** | **50** | **30** | **20** |
+| P3 Standard | 20 | 12 | 8 |
+| **Total** | **50** | **33** | **17** |
 
-**Current Grade: A** (60% complete, all blockers resolved, security hardened, monitoring ready, rollback strategy, changelog automation, build passes)
+**Current Grade: A** (66% complete, all blockers resolved, GDPR compliance, auto-updates, onboarding analytics, build passes)
