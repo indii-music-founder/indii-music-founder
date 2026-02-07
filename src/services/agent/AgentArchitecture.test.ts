@@ -101,7 +101,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 agentHistory: mockHistory
             });
 
-            const compiledView = historyManager.getCompiledView();
+            const compiledView = await historyManager.getCompiledView();
             expect(compiledView).toContain('User: Hello');
             expect(compiledView).toContain('Assistant: Hi there');
         });
