@@ -231,3 +231,70 @@ When deploying new v2 callable functions, ensure invoker permissions:
 **Related Errors:** BUILD-001
 
 ---
+
+## HUB_SPOKE-001 Invalid Agent Delegation Pattern
+
+**Pattern:** `Hub-and-spoke violation: X -> Y` / Test fails on `delegate_task` call
+**Context:** Agent delegation tests in `AgentArchitecture.test.ts` or any BaseAgent delegation
+**Root Cause:** The hub-and-spoke architecture ONLY allows:
+
+- **Hub (generalist) → Any Specialist**: ✅ Valid
+- **Specialist → Hub (generalist)**: ✅ Valid  
+- **Specialist → Specialist**: ❌ BLOCKED
+
+Tests that attempt specialist-to-specialist delegation (e.g., `legal → video`) will fail with hub-and-spoke violation.
+**Fix:**
+
+```typescript
+// ❌ Wrong - specialist to specialist (BLOCKED)
+const result = await delegateFunc({
+    targetAgentId: 'video',  // Another specialist
+    task: '...'
+});
+
+// ✅ Correct - specialist to hub
+const result = await delegateFunc({
+    targetAgentId: 'generalist',  // Hub agent
+    task: '...'
+});
+
+// ✅ Correct - hub to specialist
+const result = await delegateFunc({
+    targetAgentId: 'legal',  // Any specialist is fine from hub
+    task: '...'
+});
+```
+
+**Prevention:** When writing delegation tests, always use hub-compliant patterns. Check `validateHubAndSpoke()` in `types.ts` for validation logic.
+
+**Date Added:** 2026-02-06
+**Related Errors:** None
+
+---
+
+## TEST-001 API Response Structure Mismatch
+
+**Pattern:** `expect(result).toHaveProperty('id', 'p1')` fails when API returns `{success: true, data: {...}}`
+**Context:** Unit tests for agent tools (`BaseAgent` functions like `get_project_details`)
+**Root Cause:** BaseAgent tool functions return a standardized response structure `{success: boolean, data?: any, error?: string}`, not the raw data. Tests that expect raw properties directly on the result will fail.
+**Fix:**
+
+```typescript
+// ❌ Wrong - expecting raw data on result
+const result = await functions.get_project_details({ projectId: 'p1' });
+expect(result).toHaveProperty('id', 'p1');
+expect(result).toHaveProperty('name', 'Test Project');
+
+// ✅ Correct - expecting wrapped response structure
+const result = await functions.get_project_details({ projectId: 'p1' });
+expect(result).toHaveProperty('success', true);
+expect(result.data).toHaveProperty('id', 'p1');
+expect(result.data).toHaveProperty('name', 'Test Project');
+```
+
+**Prevention:** All BaseAgent tool functions wrap their results. When testing, always check for `success`, then access `result.data` for the actual payload.
+
+**Date Added:** 2026-02-06
+**Related Errors:** None
+
+---
