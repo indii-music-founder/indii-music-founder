@@ -20,7 +20,11 @@ export function useSessionTimeout(options?: {
     onWarning?: () => void;
     onTimeout?: () => void;
 }) {
-    const lastActivity = useRef(Date.now());
+    const lastActivity = useRef(0);
+
+    useEffect(() => {
+        lastActivity.current = Date.now();
+    }, []);
     const warningFired = useRef(false);
 
     const resetActivity = useCallback(() => {
