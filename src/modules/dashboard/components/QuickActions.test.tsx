@@ -19,17 +19,14 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock icons
-vi.mock('lucide-react', async () => {
-    const actual = await vi.importActual('lucide-react');
-    return {
-        ...actual,
-        Sparkles: () => <div data-testid="icon-sparkles" />,
-        Film: () => <div data-testid="icon-film" />,
-        Megaphone: () => <div data-testid="icon-megaphone" />,
-        Book: () => <div data-testid="icon-book" />,
-        GitBranch: () => <div data-testid="icon-gitbranch" />,
-    };
-});
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
+    Sparkles: () => <div data-testid="icon-sparkles" />,
+    Film: () => <div data-testid="icon-film" />,
+    Megaphone: () => <div data-testid="icon-megaphone" />,
+    Book: () => <div data-testid="icon-book" />,
+    GitBranch: () => <div data-testid="icon-gitbranch" />,
+}));
 
 describe('QuickActions', () => {
     beforeEach(() => {

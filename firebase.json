@@ -20,6 +20,7 @@
       "cleanUrls": true,
       "headers": [
         {
+          "source": "**",
           "headers": [
             {
               "key": "Cross-Origin-Opener-Policy",
@@ -28,9 +29,28 @@
             {
               "key": "Cross-Origin-Embedder-Policy",
               "value": "unsafe-none"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Permissions-Policy",
+              "value": "camera=(), microphone=(), geolocation=(), payment=()"
             }
-          ],
-          "source": "**"
+          ]
         }
       ],
       "ignore": [
@@ -59,11 +79,52 @@
           ]
         },
         {
+          "source": "**/*.@(png|jpg|jpeg|gif|svg|webp|ico|woff|woff2|ttf|eot|wasm)",
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "max-age=2592000, immutable"
+            }
+          ]
+        },
+        {
           "source": "index.html",
           "headers": [
             {
               "key": "Cache-Control",
               "value": "no-cache, no-store, must-revalidate"
+            }
+          ]
+        },
+        {
+          "source": "**",
+          "headers": [
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            },
+            {
+              "key": "X-XSS-Protection",
+              "value": "1; mode=block"
+            },
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Permissions-Policy",
+              "value": "camera=(), microphone=(self), geolocation=(), payment=()"
+            },
+            {
+              "key": "Cross-Origin-Opener-Policy",
+              "value": "same-origin-allow-popups"
+            },
+            {
+              "value": "default-src 'self'; script-src 'self' https://maps.googleapis.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com https://fonts.googleapis.com; img-src 'self' data: blob: https://firebasestorage.googleapis.com https://images.unsplash.com https://storage.googleapis.com http://commondatastorage.googleapis.com; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com https://firebasestorage.googleapis.com https://storage.googleapis.com https://*.cloudfunctions.net https://maps.googleapis.com https://cdn.jsdelivr.net https://api.printful.com https://generativelanguage.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://developerknowledge.googleapis.com; media-src 'self' blob: https://storage.googleapis.com http://commondatastorage.googleapis.com; worker-src 'self' blob:; manifest-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'"
             }
           ]
         }

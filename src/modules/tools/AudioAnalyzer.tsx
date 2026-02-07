@@ -196,19 +196,76 @@ const AudioAnalyzer: React.FC = () => {
             }
 
             // Legacy/Heuristic Tags fallback
-            if (result.energy > 0.8) newTags.push('High Voltage');
-            else if (result.energy < 0.3) newTags.push('Chill');
+            if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
+            else if (result.energy > 0.6) newTags.push('High Energy');
+            else if (result.energy < 0.2) newTags.push('Ambient', 'Atmospheric');
+            else if (result.energy < 0.4) newTags.push('Chill');
 
-            if (result.bpm > 135) newTags.push('High Tempo');
-            else if (result.bpm < 90) newTags.push('Downtempo');
+            if (result.bpm > 150) newTags.push('Hypertempo');
+            else if (result.bpm > 135) newTags.push('High Tempo');
+            else if (result.bpm < 80) newTags.push('Very Slow');
+            else if (result.bpm < 95) newTags.push('Downtempo');
+            else newTags.push('Mid-tempo');
 
-            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready');
+            // Add Genre if available
+            if (result.genre) {
+                const topGenre = Object.keys(result.genre)[0];
+                if (topGenre) newTags.push(topGenre);
+            }
+
+            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
 
             setTags(Array.from(new Set(newTags)));
 
+            // --- SONIC CORTEX INTEGRATION ---
+            if (!fromCache) {
+                // Trigger Gemini 3 Pro Multimodal Analysis
+                console.log("🚀 TRIGGERING SONIC CORTEX ANALYSIS NOW...");
+                const cortexToastId = toast.loading("Sonic Cortex: Listening for Soul...");
+
+                // Helper to convert for Gemini
+                const fileToBase64 = (file: File): Promise<string> => {
+                    return new Promise((resolve, reject) => {
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onload = () => resolve(reader.result as string);
+                        reader.onerror = error => reject(error);
+                    });
+                };
+
+                try {
+                    const base64 = await fileToBase64(audioFile);
+                    // Dynamically import to avoid circular dep issues or load weight
+                    const { sonicCortexService } = await import('@/services/audio/SonicCortexService');
+
+                    const soul = await sonicCortexService.describeSoul(base64, audioFile.type || 'audio/mp3');
+
+                    toast.dismiss(cortexToastId);
+
+                    if (soul) {
+                        console.log("🟦 [SONIC CORTEX] SOUL CERTIFICATE:", JSON.stringify(soul, null, 2));
+                        toast.success("Sonic Cortex: Soul Identified");
+
+                        // Optional: augment tags with cortex keywords
+                        if (soul.suggestedKeywords) {
+                            const aiTags = soul.suggestedKeywords.slice(0, 3);
+                            setTags(prev => Array.from(new Set([...prev, ...aiTags])));
+                        }
+                    }
+                } catch (cortexError) {
+                    console.error("[AudioAnalyzer] Sonic Cortex Failed:", cortexError);
+                    toast.dismiss(cortexToastId);
+                    toast.error("Sonic Cortex could not hear the soul.");
+                } finally {
+                    // Double safety: Ensure toast is gone
+                    toast.dismiss(cortexToastId);
+                }
+            }
+            // --------------------------------
+
         } catch (error) {
             console.error("Deep Analysis Failed", error);
-            toast.dismiss(currentToastId);
+            if (currentToastId) toast.dismiss(currentToastId);
             toast.error("Deep Analysis failed. Try another file.");
             setIsAnalyzing(false);
         } finally {

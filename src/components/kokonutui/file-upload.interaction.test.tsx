@@ -11,7 +11,8 @@ vi.mock('motion/react', () => ({
 }));
 
 // Mock Lucide icons
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   UploadCloud: () => <div data-testid="icon-upload-cloud" />,
   Camera: () => <div data-testid="icon-camera" />,
 }));

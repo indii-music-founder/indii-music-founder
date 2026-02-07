@@ -9,14 +9,14 @@ import { z } from 'zod';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3-pro-review-001',
-    TEXT_FAST: 'gemini-3-flash-review-001',
-    IMAGE_GEN: 'imagen-3.0-generate-001',
-    IMAGE_FAST: 'imagen-3.0-fast-001',
-    AUDIO_PRO: 'gemini-1.5-pro',
-    AUDIO_FLASH: 'gemini-1.5-flash',
-    VIDEO_GEN: 'veo-1.0-generate-001',
-    BROWSER_AGENT: 'gemini-1.5-pro',
+    TEXT_AGENT: 'gemini-3-pro-preview',
+    TEXT_FAST: 'gemini-3-flash-preview',
+    IMAGE_GEN: 'gemini-3-pro-image-preview',
+    IMAGE_FAST: 'gemini-3-pro-image-preview',
+    AUDIO_PRO: 'gemini-3-pro-preview',
+    AUDIO_FLASH: 'gemini-3-flash-preview',
+    VIDEO_GEN: 'veo-3.1-generate-preview',
+    BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
 
@@ -91,14 +91,10 @@ export const AI_CONFIG = {
  * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
-    'gemini-3-pro-review-001': { input: 2.50, output: 7.50 }, // Estimated
-    'gemini-3-flash-review-001': { input: 0.10, output: 0.40 },
-    'gemini-2.0-flash-thinking-exp': { input: 1.25, output: 3.75 },
-    'gemini-1.5-flash': { input: 0.10, output: 0.40 },
-    'imagen-3.0-generate-001': { output: 120.00, resolution: "4K", capacity: 14 },
-    'imagen-3.0-fast-001': { output: 30.00, resolution: "1K", capacity: 8 },
-    'veo-1.0-generate-001': { perGeneration: 0.05 },
-    'gemini-1.5-pro': { perGeneration: 0.01 },
+    'gemini-3-pro-preview': { input: 2.50, output: 7.50 },
+    'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
+    'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
+    'veo-3.1-generate-preview': { perGeneration: 0.05 },
 } as const;
 
 /**
@@ -115,10 +111,9 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 // ============================================================================
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
-    // /gemini-1\./i,
-    // /gemini-2\.0/i,
-    /^gemini-pro$/i,
-    /gemini-pro-vision/i,
+    /gemini-1\./i,
+    /gemini-2\./i,
+    /imagen-3/i,
 ];
 
 function validateModels(): void {

@@ -18,7 +18,8 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock Lucide icons to avoid rendering issues in tests
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
     ShoppingBag: () => <div data-testid="icon-shopping-bag" />,
     Loader2: () => <div data-testid="icon-loader" />,
     Check: () => <div data-testid="icon-check" />,

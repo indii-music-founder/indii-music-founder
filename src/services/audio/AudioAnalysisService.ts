@@ -3,6 +3,7 @@ type EssentiaModule = typeof import('essentia.js');
 // import * as tf from '@tensorflow/tfjs'; // Removed per memory/architecture rules
 import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
+import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
 export interface AudioFeatures {
     bpm: number;
@@ -156,16 +157,34 @@ export class AudioAnalysisService {
         // 2. Deep Learning Features (SKIPPED)
         console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
 
-        // 4. Save to Cache and Firestore
+        // 3. Save to Cache and Firestore with proper error handling
         const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
+        const filename = (file as File).name || 'audio';
+
+        // Save to local cache (IndexedDB)
         try {
-            await musicLibraryService.saveAnalysis(fileHash, (file as File).name || 'audio', features, fileHash);
-            // Also save to Firestore
-            if ((file as File).name) {
-                await this.saveAnalysisToFirestore(features, (file as File).name);
-            }
+            await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
         } catch (e) {
-            console.warn("[AudioAnalysis] Failed to save analysis to cache", e);
+            console.warn("[AudioAnalysis] Failed to save to local cache", e);
+        }
+
+        // Save to Firestore with MetadataPersistenceService (includes retry + user feedback)
+        if (filename !== 'audio') {
+            const persistResult = await metadataPersistenceService.save('audio', {
+                filename,
+                fileHash,
+                features,
+                ...features, // Spread for backward compat
+                analyzedAt: new Date().toISOString(),
+            }, {
+                showToasts: true,
+                maxRetries: 2,
+                queueOnFailure: true,
+            });
+
+            if (!persistResult.success) {
+                console.error(`[AudioAnalysis] Failed to persist analysis for ${filename}:`, persistResult.error);
+            }
         }
 
         return { features, fromCache: false };
@@ -208,7 +227,7 @@ export class AudioAnalysisService {
     /**
      * Analyzes an already decoded AudioBuffer.
      */
-    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<AudioFeatures> {
+    async analyzeBuffer(audioBuffer: AudioBuffer): Promise<DeepAudioFeatures> {
         await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
 
@@ -245,17 +264,32 @@ export class AudioAnalysisService {
 
             console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
 
+            // Mapping RMS to dynamic energy (0-1)
+            const energy = Math.min(1, Math.max(0, energyValue * 4.0));
+            const isMinor = scale === 'minor';
+
             return {
                 bpm: Math.round(bpm),
                 key: key,
                 scale: scale,
-                energy: Math.min(1, Math.max(0, energyValue * 3.5)),
+                energy: energy,
                 duration: audioBuffer.duration,
                 danceability: danceabilityValue,
-                valence: scale === 'major'
-                    ? 0.6 + (Math.min(1, energyValue * 3.5) * 0.3)
-                    : 0.2 + (Math.min(1, energyValue * 3.5) * 0.2),
-                loudness: -1
+                valence: isMinor
+                    ? 0.3 + (energy * 0.2)
+                    : 0.6 + (energy * 0.3),
+                loudness: -20 + (energyValue * 100), // Very rough estimate
+                // Simulated Deep Features for UI Metadata Matrix
+                genre: {
+                    [bpm > 115 && bpm < 130 ? 'Dance' : bpm > 140 ? 'Drum & Bass' : energy > 0.6 ? 'Rock' : 'Ambient']: 0.85
+                },
+                moods: {
+                    happy: isMinor ? 0.2 : 0.7,
+                    aggressive: energy > 0.7 ? 0.8 : 0.2,
+                    relaxed: energy < 0.4 ? 0.9 : 0.1,
+                    sad: isMinor && energy < 0.3 ? 0.8 : 0.1
+                },
+                danceability_ml: danceabilityValue
             };
         } finally {
             if ((this.essentia as any).deleteVector && signal) {
@@ -265,25 +299,27 @@ export class AudioAnalysisService {
     }
 
     /**
-     * Saves analysis result to Firestore
+     * Saves analysis result to Firestore using the centralized persistence service.
+     * This method is now a thin wrapper around MetadataPersistenceService.
+     * @deprecated Use metadataPersistenceService.save('audio', ...) directly for new code
      */
     async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
-        try {
-            const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
-            const { db } = await import('@/services/firebase');
+        const result = await metadataPersistenceService.save('audio', {
+            filename,
+            features: analysis,
+            ...analysis,
+            analyzedAt: new Date().toISOString(),
+        }, {
+            showToasts: true,
+            maxRetries: 2,
+            queueOnFailure: true,
+        });
 
-            const docData = {
-                filename,
-                ...analysis,
-                createdAt: serverTimestamp(),
-            };
-
-            await addDoc(collection(db, 'audio_analyses'), docData);
-            console.info(`[AudioAnalysis] Saved analysis for ${filename}`);
-        } catch (error) {
-            console.error("[AudioAnalysis] Failed to save to Firestore", error);
-            throw error;
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to save analysis');
         }
+
+        console.info(`[AudioAnalysis] Saved analysis for ${filename} via MetadataPersistenceService`);
     }
 }
 

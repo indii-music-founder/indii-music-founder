@@ -1,5 +1,4 @@
-import { useStore } from '@/core/store';
-import { StoreState } from '@/core/store';
+import type { StoreState } from '@/core/store';
 
 /**
  * Manages state snapshots for rollback capabilities.
@@ -13,7 +12,8 @@ export class StateManager {
      * @param transactionId Unique ID for the transaction
      * @param slices Optional list of specific slices to capture (defaults to all safe slices)
      */
-    captureSnapshot(transactionId: string, slices: (keyof StoreState)[] = []) {
+    async captureSnapshot(transactionId: string, slices: (keyof StoreState)[] = []) {
+        const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const snapshot: Partial<StoreState> = {};
 
@@ -54,10 +54,11 @@ export class StateManager {
     /**
      * Restores state from a snapshot.
      */
-    restoreSnapshot(transactionId: string) {
+    async restoreSnapshot(transactionId: string) {
         const snapshot = this.snapshots.get(transactionId);
         if (snapshot) {
             console.warn(`[StateManager] Restoring snapshot for ${transactionId}`);
+            const { useStore } = await import('@/core/store');
             useStore.setState(snapshot);
             this.snapshots.delete(transactionId);
         } else {

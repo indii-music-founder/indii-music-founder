@@ -225,7 +225,7 @@ export class WorkflowEngine {
 
         this.nodes = this.nodes.map(n =>
             n.id === nodeId
-                ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : n.data.result } }
+                ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : (n.data as any).result } }
                 : n
         );
         this.setNodes([...this.nodes]); // Trigger React update

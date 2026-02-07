@@ -41,6 +41,20 @@ vi.mock('firebase-admin', () => ({
     }))
 }));
 
+// Mock google-auth-library to prevent real OAuth network calls that hang in CI
+vi.mock('google-auth-library', () => ({
+    GoogleAuth: class {
+        async getClient() {
+            return {
+                getAccessToken: async () => ({ token: 'mock-access-token' })
+            };
+        }
+        async getProjectId() {
+            return 'mock-project-id';
+        }
+    }
+}));
+
 // Mock global fetch
 global.fetch = mocks.fetch;
 
@@ -212,7 +226,7 @@ describe('Video Generation Pipeline (Lens)', () => {
             text: async () => 'Internal Server Error'
         });
 
-        await expect(handler({ event: mockEvent, step: mockStep })).rejects.toThrow('Google AI Trigger Error: 500 Internal Server Error');
+        await expect(handler({ event: mockEvent, step: mockStep })).rejects.toThrow('Vertex AI Trigger Error: 500 Internal Server Error');
 
         // Verify status updated to failed
         expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
@@ -245,7 +259,7 @@ describe('Video Generation Pipeline (Lens)', () => {
         await expect(handler({ event: mockEvent, step: mockStep })).rejects.toThrow('No video data or URI/generatedSamples found');
 
         // The code logs error and updates status to failed
-         expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mocks.firestore.set).toHaveBeenCalledWith(expect.objectContaining({
             status: 'failed'
         }), { merge: true });
     });

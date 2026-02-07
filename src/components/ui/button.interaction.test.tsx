@@ -4,7 +4,8 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import React, { useState } from 'react'
 
 // Mock Lucide icons to ensure stable selectors and avoid SVG complexity
-vi.mock('lucide-react', () => ({
+vi.mock('lucide-react', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lucide-react')>()),
   Loader2: ({ className }: { className?: string }) => (
     <div data-testid="loader-icon" className={className}>
       Loading...
