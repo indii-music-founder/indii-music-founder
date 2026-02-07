@@ -22,6 +22,7 @@ import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -288,6 +289,7 @@ export default function App() {
     // Initialize app
     useAppInitialization();
     useOnboardingRedirect();
+    const shortcutsModal = useGlobalShortcutsModal();
 
     // Log module changes in dev
 
@@ -385,6 +387,9 @@ export default function App() {
                                 <CommandBar />
                             </ErrorBoundary>
                         )}
+
+                        {/* Global Keyboard Shortcuts Help (press ?) */}
+                        <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
                     </div>
                 </ToastProvider>
             </ThemeProvider>

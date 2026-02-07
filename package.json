@@ -34,6 +34,8 @@
     "preview": "vite preview",
     "rebuild": "npx @electron/rebuild",
     "start": "electron-forge start",
+    "changelog": "bash scripts/generate-changelog.sh",
+    "changelog:update": "bash scripts/generate-changelog.sh --prepend",
     "test": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit"
