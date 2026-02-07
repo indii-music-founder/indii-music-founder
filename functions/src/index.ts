@@ -14,6 +14,7 @@ import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
+import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { generateThumbnail } from "./lib/image_resizing";
 
 // Vertex AI SDK
@@ -22,6 +23,9 @@ import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream 
 
 // Initialize Firebase Admin
 admin.initializeApp();
+
+// App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
+const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
 
 /**
  * Security Helper: Validate Organization Access
@@ -195,7 +199,8 @@ export const triggerVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
@@ -206,6 +211,10 @@ export const triggerVideoJob = functions
         }
 
         const userId = context.auth.uid;
+
+        // Rate limit: 10 video generation requests per minute
+        await enforceRateLimit(userId, "triggerVideoJob", RATE_LIMITS.generation);
+
         // Construct input matching the schema
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
         const inputData: any = { ...safeData, userId };
@@ -277,7 +286,8 @@ export const triggerLongFormVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
@@ -287,6 +297,9 @@ export const triggerLongFormVideoJob = functions
             );
         }
         const userId = context.auth.uid;
+
+        // Rate limit: 10 long-form video requests per minute
+        await enforceRateLimit(userId, "triggerLongFormVideoJob", RATE_LIMITS.generation);
 
         // Zod Validation
         const safeData = (typeof data === 'object' && data !== null) ? data : {};
@@ -426,7 +439,8 @@ export const renderVideo = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB"
+        memory: "256MB",
+        enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
         if (!context.auth) {
@@ -562,6 +576,9 @@ export const generateSpeech = functions
         if (!context.auth) {
             throw new functions.https.HttpsError("unauthenticated", "User must be authenticated.");
         }
+
+        // Rate limit: 10 speech generation requests per minute
+        await enforceRateLimit(context.auth.uid, "generateSpeech", RATE_LIMITS.generation);
 
         const validation = GenerateSpeechRequestSchema.safeParse(data);
         if (!validation.success) {
@@ -985,3 +1002,36 @@ import { getUsageStats } from './subscription/getUsageStats';
 import { trackUsage } from './subscription/trackUsage';
 
 export { getSubscription, createCheckoutSession, getCustomerPortal, cancelSubscription, resumeSubscription, getUsageStats, trackUsage };
+
+// ----------------------------------------------------------------------------
+// Health Check Endpoint
+// ----------------------------------------------------------------------------
+
+/**
+ * Health check endpoint for uptime monitoring.
+ * Returns service status and basic diagnostics.
+ */
+export const healthCheck = functions
+    .runWith({ timeoutSeconds: 10, memory: "128MB" })
+    .https.onRequest(async (_req, res) => {
+        const status: Record<string, unknown> = {
+            status: "ok",
+            timestamp: new Date().toISOString(),
+            version: "0.1.0-beta.2",
+            region: process.env.FUNCTION_REGION || "us-central1",
+        };
+
+        // Check Firestore connectivity
+        try {
+            await admin.firestore().collection("_health").doc("ping").set({
+                lastCheck: admin.firestore.FieldValue.serverTimestamp()
+            }, { merge: true });
+            status.firestore = "connected";
+        } catch {
+            status.firestore = "error";
+            status.status = "degraded";
+        }
+
+        const httpStatus = status.status === "ok" ? 200 : 503;
+        res.status(httpStatus).json(status);
+    });

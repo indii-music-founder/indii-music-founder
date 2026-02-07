@@ -67,7 +67,15 @@ if (!parsed.success) {
     if (!processEnv.firebaseApiKey) missingKeys.push('VITE_FIREBASE_API_KEY');
 
     if (missingKeys.length > 0) {
-        Logger.warn('Env', "WARNING: The following environment variables are missing:", missingKeys.join(', '));
+        const msg = `Missing required environment variables: ${missingKeys.join(', ')}. Copy .env.example to .env and fill in values.`;
+        Logger.error('Env', msg);
+
+        // In production, throw to prevent running with broken config
+        if (import.meta.env.PROD) {
+            throw new Error(msg);
+        }
+
+        // In dev, warn but continue with degraded functionality
         Logger.warn('Env', "App will attempt to run with defaults, but some features may be disabled.");
     }
 }
@@ -110,5 +118,10 @@ export const firebaseConfig = {
 };
 
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId) {
-    Logger.warn('Env', "⚠️ Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID");
+    const msg = "Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID";
+    Logger.error('Env', msg);
+
+    if (import.meta.env.PROD) {
+        throw new Error(msg);
+    }
 }
