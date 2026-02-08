@@ -27,8 +27,8 @@ jobs:
         run: npm run lint
 
       - name: Run unit tests
-        timeout-minutes: 30
-        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
+        timeout-minutes: 15
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=15000
 
       - name: Run E2E tests (critical paths only)
         run: npm run test:e2e
