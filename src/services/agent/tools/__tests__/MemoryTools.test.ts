@@ -79,6 +79,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle save errors gracefully (non-blocking)', async () => {
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
             (memoryService.saveMemory as any).mockRejectedValue(new Error('Storage full'));
 
             const result = await MemoryTools.save_memory({
@@ -88,6 +89,11 @@ describe('MemoryTools', () => {
             // save_memory catches errors non-blocking and still returns success
             expect(result.success).toBe(true);
             expect(result.data.content).toBe('Test memory');
+            expect(consoleSpy).toHaveBeenCalledWith(
+                expect.stringContaining('[MemoryTools]'),
+                expect.any(Error)
+            );
+            consoleSpy.mockRestore();
         });
 
         it('should default to fact type', async () => {
