@@ -76,15 +76,19 @@ describe('📚 Keeper: Context Integrity', () => {
         vi.clearAllMocks();
         mockSaveHistory = vi.fn().mockResolvedValue({ success: true });
 
-        // 2. Mock Electron API (Persistence) - Satisfaction of "Always do"
-        vi.stubGlobal('window', {
-            electronAPI: {
+        // 2. Mock Electron API (Persistence) - Add to existing window instead of replacing it
+        // This preserves window.location which is needed by appSlice
+        Object.defineProperty(window, 'electronAPI', {
+            value: {
                 agent: {
                     saveHistory: mockSaveHistory,
                     deleteHistory: vi.fn().mockResolvedValue({ success: true })
                 }
-            }
+            },
+            writable: true,
+            configurable: true
         });
+
 
         agent = new BaseAgent({
             id: 'keeper',
@@ -99,8 +103,11 @@ describe('📚 Keeper: Context Integrity', () => {
     });
 
     afterEach(() => {
-        vi.unstubAllGlobals();
+        // Clean up the electronAPI we added
+        // @ts-expect-error - we're cleaning up our mock
+        delete window.electronAPI;
     });
+
 
     it('should use ContextManager to truncate history and PERSIST it to disk', async () => {
         // 1. Setup: Create a massive chat history
