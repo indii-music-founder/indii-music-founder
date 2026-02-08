@@ -1,16 +1,15 @@
 import React from 'react';
 import { onSnapshot } from 'firebase/firestore';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
+// import ChatOverlay from '@/core/components/ChatOverlay';
 import { TraceService } from '@/services/agent/observability/TraceService';
 import { useStore } from '@/core/store';
 import { ReactFlowProvider } from 'reactflow';
 
 // Mock dependencies
-// Mock dependencies
 // Rely on global setup.ts for firebase/firestore mocks
-
 
 vi.mock('@/services/agent/observability/TraceService', () => ({
     TraceService: {
@@ -27,15 +26,16 @@ vi.mock('@/services/firebase', () => ({
     ai: {}
 }));
 
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn(),
-}));
+// vi.mock('@/core/store', () => ({
+//     useStore: vi.fn(),
+//     useVoice: () => ({ isMuted: true }), // Mock useVoice from store/context if needed
+// }));
 
-vi.mock('@/core/context/VoiceContext', () => ({
-    useVoice: () => ({ isMuted: true }),
-}));
+// vi.mock('@/core/context/VoiceContext', () => ({
+//     useVoice: () => ({ isMuted: true }),
+// }));
 
-// Mock ReactFlow to avoid canvas rendering issues
+// Mock ReactFlow (Synchronous)
 vi.mock('reactflow', () => ({
     __esModule: true,
     default: ({ nodes, edges }: any) => (
@@ -44,8 +44,8 @@ vi.mock('reactflow', () => ({
             <div data-testid="edges-count">{edges?.length || 0}</div>
         </div>
     ),
-    useNodesState: (initial: any) => [initial, vi.fn(), vi.fn()],
-    useEdgesState: (initial: any) => [initial, vi.fn(), vi.fn()],
+    useNodesState: (initial: any) => React.useState(initial),
+    useEdgesState: (initial: any) => React.useState(initial),
     Background: () => null,
     Controls: () => null,
     MarkerType: { ArrowClosed: 'arrowclosed' },
@@ -64,12 +64,70 @@ vi.mock('react-virtuoso', () => ({
     ),
 }));
 
-// import { SwarmGraph } from '@/components/studio/observability/SwarmGraph';
-/*
 describe('Visual Regression & Performance Verification', () => {
-    it('dummy', () => { expect(true).toBe(true); });
-});
-*/
-describe('Debug', () => {
-    it('dummy', () => { expect(true).toBe(true); });
+
+    describe('SwarmGraph Performance', () => {
+        beforeEach(() => {
+            vi.clearAllMocks();
+            global.ResizeObserver = class ResizeObserver {
+                observe() { }
+                unobserve() { }
+                disconnect() { }
+            };
+        });
+
+        it('should handle rendering 50+ nodes without crashing', async () => {
+            // 1. Generate 50 mock traces
+            const mockTraces = Array.from({ length: 50 }, (_, i) => ({
+                id: `trace-${i}`,
+                agentId: i % 2 === 0 ? 'orchestrator' : 'generalist',
+                sessionId: 'session-1',
+                swarmId: 'swarm-1',
+                input: { goal: 'test' },
+                startTime: Date.now(),
+                status: 'completed',
+                metadata: {
+                    type: 'task',
+                    parentTraceId: i > 0 ? `trace-${i - 1}` : undefined
+                }
+            }));
+
+            // 2. Mock onSnapshot to return these traces
+            const mockUnsubscribe = vi.fn();
+            const mockOnSnapshot = vi.mocked(onSnapshot);
+
+            // Note: We avoid running the callback synchronously to prevent loops if any
+            mockOnSnapshot.mockImplementation((query: any, callback: any) => {
+                const snapshot = {
+                    docs: mockTraces.map(t => ({
+                        id: t.id,
+                        data: () => t
+                    }))
+                };
+                // Simulate async callback to avoid render loops in tests
+                setTimeout(() => callback(snapshot), 0);
+                return mockUnsubscribe;
+            });
+
+            render(
+                <ReactFlowProvider>
+                    <SwarmGraph swarmId="swarm-1" />
+                </ReactFlowProvider>
+            );
+
+            // Wait for nodes to update (async snapshot)
+            await waitFor(() => {
+                const nodesCount = screen.getByTestId('nodes-count');
+                expect(nodesCount.textContent).toBe('50');
+            });
+
+            // 5. Verify Edge Count
+            await waitFor(() => {
+                const edgesCount = screen.getByTestId('edges-count');
+                expect(edgesCount.textContent).toBe('49');
+            });
+        });
+    });
+
+
 });

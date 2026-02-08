@@ -80,6 +80,33 @@ if (typeof window !== 'undefined') {
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
 
+// Mock the @/services/firebase module FIRST to prevent module-level initialization
+// This is critical because firebase.ts has side effects that call real Firebase APIs at import time
+vi.mock('@/services/firebase', () => ({
+    app: { name: 'mock-app', options: {} },
+    db: {},
+    storage: {},
+    auth: {
+        currentUser: { uid: 'test-uid', email: 'test@test.com' },
+        onAuthStateChanged: vi.fn((callback) => {
+            // Simulate immediate callback with authenticated user
+            if (typeof callback === 'function') {
+                setTimeout(() => callback({ uid: 'test-uid', email: 'test@test.com' }), 0);
+            }
+            return () => { }; // Return unsubscribe function
+        }),
+        signInWithEmailAndPassword: vi.fn(),
+        signOut: vi.fn()
+    },
+    functions: {},
+    functionsWest1: {},
+    remoteConfig: { defaultConfig: {} },
+    messaging: null,
+    appCheck: null,
+    ai: { instance: null },
+    getFirebaseAI: vi.fn(() => null)
+}));
+
 // Mock Firebase App
 vi.mock('firebase/app', () => ({
     initializeApp: vi.fn(() => ({
