@@ -5,6 +5,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // Mocks - MUST BE HOISTED
 // ----------------------------------------------------------------------------
 
+// Mock @/services/firebase to prevent real Firebase initialization
+vi.mock('@/services/firebase', () => ({
+    auth: {
+        currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
+        onAuthStateChanged: vi.fn(() => () => {})
+    },
+    db: {},
+    storage: {},
+    remoteConfig: { defaultConfig: {} }
+}));
+
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({
     initializeApp: vi.fn(() => ({})),
@@ -15,9 +26,13 @@ vi.mock('firebase/app', () => ({
 vi.mock('firebase/auth', async (importOriginal) => {
     return {
         getAuth: vi.fn(() => ({
-            currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') }
+            currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
+            onAuthStateChanged: vi.fn(() => () => {})
         })),
-        initializeAuth: vi.fn(() => ({})),
+        initializeAuth: vi.fn(() => ({
+            currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
+            onAuthStateChanged: vi.fn(() => () => {})
+        })),
         onAuthStateChanged: vi.fn(),
         browserLocalPersistence: {},
         browserSessionPersistence: {},
@@ -75,6 +90,17 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('firebase/ai', () => ({
     getAI: vi.fn(),
     VertexAIBackend: vi.fn()
+}));
+
+// Mock store to prevent window.location access during initialization
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: () => ({
+            currentOrganizationId: 'keeper-org',
+            uploadedImages: [],
+            currentModule: 'dashboard'
+        })
+    }
 }));
 
 // Mock OrganizationService
