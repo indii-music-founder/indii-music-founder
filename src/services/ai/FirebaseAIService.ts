@@ -600,7 +600,11 @@ export class FirebaseAIService {
                 try {
                     for await (const chunk of result) {
                         chunks.push(chunk);
-                        const chunkText = chunk.text || '';
+                        let chunkText = '';
+                        try {
+                            const c = chunk as any;
+                            chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
+                        } catch (e) { console.log('CAUGHT CHUNK ERROR', e); }
                         finalText += chunkText;
                         const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
                         const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;

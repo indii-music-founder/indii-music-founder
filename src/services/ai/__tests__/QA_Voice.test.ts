@@ -71,18 +71,16 @@ describe('Voice Interface QA', () => {
 
     it('should sanitize special characters', async () => {
         mockGenerateContent.mockResolvedValue({
-            response: {
-                candidates: [{
-                    content: {
-                        parts: [{
-                            inlineData: {
-                                mimeType: 'audio/mp3',
-                                data: 'base64audio'
-                            }
-                        }]
-                    }
-                }]
-            }
+            candidates: [{
+                content: {
+                    parts: [{
+                        inlineData: {
+                            mimeType: 'audio/mp3',
+                            data: 'base64audio'
+                        }
+                    }]
+                }
+            }]
         });
 
         const result = await service.generateSpeech('Hello 🌍! @#$%^&*()', 'Kore');
