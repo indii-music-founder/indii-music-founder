@@ -12,6 +12,12 @@
         "-y",
         "notebooklm-mcp@latest"
       ]
+    },
+    "google-developer-knowledge": {
+      "serverUrl": "https://developerknowledge.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "AIzaSyD4637xW1EmNoEfi0tPhQBYtUAeINSVcS0"
+      }
     }
   }
 }

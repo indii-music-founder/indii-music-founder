@@ -38,6 +38,10 @@ vi.mock('../tools/LegalTools', () => ({
 }));
 
 vi.mock('@/core/config/ai-models', () => ({
+    APPROVED_MODELS: {
+        TEXT_AGENT: 'mock-model-agent',
+        TEXT_FAST: 'mock-model-fast'
+    },
     AI_MODELS: {
         TEXT: {
             FAST: 'mock-model-fast',
