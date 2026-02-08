@@ -36,18 +36,13 @@ vi.mock('@/core/config/ai-models', () => ({
     AI_CONFIG: {
         THINKING: { HIGH: { thinkingConfig: { thinkingLevel: 'HIGH' } } }
     },
-    APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-3-pro-preview',
-        TEXT_FAST: 'gemini-3-pro-preview',
-        IMAGE_GEN: 'gemini-3-pro-image-preview',
-        IMAGE_FAST: 'gemini-3-pro-image-preview',
-        AUDIO_PRO: 'gemini-3-pro-preview',
-        AUDIO_FLASH: 'gemini-3-pro-preview',
-        VIDEO_GEN: 'veo-3.1-generate-preview',
-        BROWSER_AGENT: 'gemini-3-pro-preview',
-        EMBEDDING_DEFAULT: 'models/embedding-001'
-    },
-    validateModels: () => {},
+    IMAGE_FAST: 'gemini-3-pro-image-preview',
+    AUDIO_PRO: 'gemini-3-pro-preview',
+    AUDIO_FLASH: 'gemini-3-pro-preview',
+    VIDEO_GEN: 'veo-3.1-generate-preview',
+    BROWSER_AGENT: 'gemini-3-pro-preview',
+    EMBEDDING_DEFAULT: 'models/embedding-001',
+    validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }
 }));
 
@@ -62,6 +57,16 @@ vi.mock('@/services/MembershipService', () => ({
         incrementUsage: vi.fn()
     },
     TIER_LIMITS: { free: {}, pro: {}, enterprise: {} }
+}));
+
+// Mock store to prevent side effects from dynamic imports
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(() => ({
+            currentOrganizationId: 'test-org-id',
+            userProfile: { id: 'test-user-id' }
+        }))
+    }
 }));
 
 import { Video, VideoService } from './VideoService';
