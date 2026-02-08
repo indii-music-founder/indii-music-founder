@@ -226,8 +226,9 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         });
 
         // Use subscribeToJob directly to verify stream of updates
+        let unsub: (() => void) | undefined;
         const jobPromise = new Promise<void>((resolve) => {
-            service.subscribeToJob('job-id-upgrade', (job) => {
+            unsub = service.subscribeToJob('job-id-upgrade', (job) => {
                 if (job && job.status === 'completed') {
                     updates.push(job);
                     if (job.output.metadata.quality === 'pro') {
@@ -239,6 +240,7 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
 
         vi.advanceTimersByTime(3000);
         await jobPromise;
+        if (unsub) unsub();
 
         expect(updates).toHaveLength(2);
         expect(updates[0].output.url).toBe('http://flash.mp4');
