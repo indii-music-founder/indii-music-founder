@@ -1,4 +1,4 @@
-import { defineConfig } from 'vitest/config';
+import { defineConfig, configDefaults } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
@@ -13,11 +13,12 @@ export default defineConfig({
     setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
     watch: false,
     reporters: ['default', 'github-actions'],
-    poolOptions: {
-      threads: {
-        singleThread: true,
-      },
-    },
     teardownTimeout: 1000,
+    pool: 'forks',
+    exclude: [
+      ...configDefaults.exclude,
+      '**/e2e/**',
+      '**/functions/**',
+    ]
   },
 });
