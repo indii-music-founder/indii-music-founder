@@ -198,6 +198,7 @@ describe('DashboardService', () => {
             expect(projects[0]).toEqual({
                 id: '1',
                 name: 'Test Project',
+                type: 'creative',
                 lastModified: 1000,
                 assetCount: 5,
                 thumbnail: 'thumb.jpg'
