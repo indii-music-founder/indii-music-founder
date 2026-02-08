@@ -48,7 +48,20 @@ vi.mock('@/core/config/ai-models', () => ({
         THINKING: {
             HIGH: { thinkingConfig: { thinkingLevel: "HIGH" } }
         }
-    }
+    },
+    APPROVED_MODELS: {
+        TEXT_AGENT: 'mock-model-agent',
+        TEXT_FAST: 'mock-model-fast',
+        IMAGE_GEN: 'mock-image-model',
+        IMAGE_FAST: 'mock-image-model',
+        AUDIO_PRO: 'mock-model-agent',
+        AUDIO_FLASH: 'mock-model-fast',
+        VIDEO_GEN: 'mock-video-model',
+        BROWSER_AGENT: 'mock-model-agent',
+        EMBEDDING_DEFAULT: 'models/embedding-001'
+    },
+    validateModels: () => {},
+    ModelIdSchema: { parse: (v: string) => v }
 }));
 
 describe('LicensingAgent', () => {
