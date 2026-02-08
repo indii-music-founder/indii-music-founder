@@ -55,9 +55,10 @@ const processEnv = {
     skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || process.env.VITE_SKIP_ONBOARDING),
 };
 
+const isTest = import.meta.env.MODE === 'test' || !!process.env.VITEST;
 const parsed = FrontendEnvSchema.safeParse(processEnv);
 
-if (!parsed.success) {
+if (!parsed.success && !isTest) {
     Logger.error('Env', "Invalid environment configuration:", parsed.error.format());
 
     // Explicitly log missing keys for easier debugging
