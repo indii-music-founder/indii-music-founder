@@ -35,7 +35,20 @@ vi.mock('@/core/config/ai-models', () => ({
     },
     AI_CONFIG: {
         THINKING: { HIGH: { thinkingConfig: { thinkingLevel: 'HIGH' } } }
-    }
+    },
+    APPROVED_MODELS: {
+        TEXT_AGENT: 'gemini-3-pro-preview',
+        TEXT_FAST: 'gemini-3-pro-preview',
+        IMAGE_GEN: 'gemini-3-pro-image-preview',
+        IMAGE_FAST: 'gemini-3-pro-image-preview',
+        AUDIO_PRO: 'gemini-3-pro-preview',
+        AUDIO_FLASH: 'gemini-3-pro-preview',
+        VIDEO_GEN: 'veo-3.1-generate-preview',
+        BROWSER_AGENT: 'gemini-3-pro-preview',
+        EMBEDDING_DEFAULT: 'models/embedding-001'
+    },
+    validateModels: () => {},
+    ModelIdSchema: { parse: (v: string) => v }
 }));
 
 // Mock MembershipService to avoid Firebase initialization
