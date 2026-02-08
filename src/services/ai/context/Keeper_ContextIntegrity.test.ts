@@ -7,7 +7,18 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 // Mocks
 // ----------------------------------------------------------------------------
 
-// Mock Firebase
+// Mock @/services/firebase to prevent real Firebase initialization
+vi.mock('@/services/firebase', () => ({
+    auth: {
+        currentUser: { uid: 'keeper-test-user' },
+        onAuthStateChanged: vi.fn(() => () => {})
+    },
+    db: {},
+    storage: {},
+    remoteConfig: { defaultConfig: {} }
+}));
+
+// Mock Firebase modules
 vi.mock('firebase/app', () => ({
     initializeApp: vi.fn(),
     getApp: vi.fn(),
@@ -15,10 +26,12 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' } })),
-    initializeAuth: vi.fn(),
+    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => {}) })),
+    initializeAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => {}) })),
+    onAuthStateChanged: vi.fn(),
     browserLocalPersistence: {},
-    browserSessionPersistence: {}
+    browserSessionPersistence: {},
+    indexedDBLocalPersistence: {}
 }));
 
 vi.mock('firebase/firestore', () => ({
