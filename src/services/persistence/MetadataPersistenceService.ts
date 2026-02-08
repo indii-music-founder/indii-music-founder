@@ -364,7 +364,7 @@ class MetadataPersistenceService {
 export const metadataPersistenceService = new MetadataPersistenceService();
 
 // Auto-process queue when user becomes authenticated
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && auth?.onAuthStateChanged) {
     auth.onAuthStateChanged((user) => {
         if (user) {
             // User just signed in, try to sync pending items
@@ -374,3 +374,4 @@ if (typeof window !== 'undefined') {
         }
     });
 }
+
