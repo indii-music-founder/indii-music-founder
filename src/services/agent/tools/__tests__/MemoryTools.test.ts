@@ -54,7 +54,7 @@ describe('MemoryTools', () => {
             });
 
             expect(result.success).toBe(true);
-            expect(result.data.message).toContain('Memory saved');
+            expect(result.data.message).toContain('Memory processed');
             expect(result.data.content).toBe('User prefers dark themes');
             expect(memoryService.saveMemory).toHaveBeenCalledWith(
                 'project-123',
@@ -78,15 +78,16 @@ describe('MemoryTools', () => {
             );
         });
 
-        it('should handle save errors', async () => {
+        it('should handle save errors gracefully (non-blocking)', async () => {
             (memoryService.saveMemory as any).mockRejectedValue(new Error('Storage full'));
 
             const result = await MemoryTools.save_memory({
                 content: 'Test memory'
             });
 
-            expect(result.success).toBe(false);
-            expect(result.error).toContain('Storage full');
+            // save_memory catches errors non-blocking and still returns success
+            expect(result.success).toBe(true);
+            expect(result.data.content).toBe('Test memory');
         });
 
         it('should default to fact type', async () => {
