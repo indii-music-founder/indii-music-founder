@@ -23,6 +23,12 @@ vi.mock('@/config/env', () => ({
 
 // Mock AI models config
 vi.mock('@/core/config/ai-models', () => ({
+    APPROVED_MODELS: {
+        TEXT_AGENT: 'gemini-3-pro-preview',
+        TEXT_FAST: 'gemini-3-pro-preview',
+        IMAGE_GEN: 'gemini-3-pro-image-preview',
+        VIDEO_GEN: 'veo-3.1-generate-preview'
+    },
     AI_MODELS: {
         TEXT: { AGENT: 'gemini-3-pro-preview', FAST: 'gemini-3-pro-preview' },
         VIDEO: { GENERATION: 'veo-3.1-generate-preview', EDIT: 'veo-3.1-generate-preview' }

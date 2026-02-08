@@ -17,6 +17,9 @@ vi.mock('@/services/social/SocialService', () => ({
 }));
 
 vi.mock('@/core/config/ai-models', () => ({
+  APPROVED_MODELS: {
+    TEXT_AGENT: 'mock-model'
+  },
   AI_MODELS: {
     TEXT: {
       AGENT: 'mock-model',
@@ -93,7 +96,7 @@ describe('SocialTools', () => {
 
       // Simulate DB Failure
       vi.mocked(SocialService.createPost).mockRejectedValue(new Error('Firestore unavailable'));
-      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
       // Execute Tool
       const result = await generate_social_post({
