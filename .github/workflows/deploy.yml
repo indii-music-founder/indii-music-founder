@@ -36,6 +36,8 @@ jobs:
           VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
           VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
           VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
+        timeout-minutes: 15
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=15000
 
       - name: Run E2E tests (critical paths only)
         run: npm run test:e2e
