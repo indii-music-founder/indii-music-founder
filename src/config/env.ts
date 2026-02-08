@@ -55,7 +55,13 @@ const processEnv = {
     skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || process.env.VITE_SKIP_ONBOARDING),
 };
 
-const isTest = import.meta.env.MODE === 'test' || !!process.env.VITEST;
+// Robust test environment detection
+const isTest =
+    import.meta.env.MODE === 'test' ||
+    !!process.env.VITEST ||
+    !!process.env.NODE_ENV?.includes('test') ||
+    process.env.VITEST_WORKER_ID !== undefined;
+
 const parsed = FrontendEnvSchema.safeParse(processEnv);
 
 if (!parsed.success && !isTest) {
