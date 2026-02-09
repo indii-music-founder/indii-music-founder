@@ -25,7 +25,8 @@ const mocks = vi.hoisted(() => ({
 
 // Mock 'electron'
 vi.mock('electron', () => ({
-    ipcMain: mocks.ipcMain
+    ipcMain: mocks.ipcMain,
+    app: { getAppPath: () => '/app', getPath: () => '/tmp', isPackaged: false }
 }));
 
 // Mock 'fluent-ffmpeg'

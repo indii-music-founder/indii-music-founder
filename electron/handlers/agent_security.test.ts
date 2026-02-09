@@ -8,7 +8,8 @@ const mocks = vi.hoisted(() => ({
     },
     app: {
         isPackaged: false,
-        getPath: vi.fn(() => '/mock/user-data')
+        getPath: vi.fn(() => '/mock/user-data'),
+        getAppPath: vi.fn(() => '/app')
     },
     browserAgentService: {
         startSession: vi.fn(),

@@ -77,6 +77,22 @@ if (typeof window !== 'undefined') {
 }
 
 // ============================================================================
+// LOCALSTORAGE MOCK - Ensure localStorage is always available in tests
+// ============================================================================
+if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?.getItem)) {
+    const store: Record<string, string> = {};
+    const localStorageMock = {
+        getItem: vi.fn((key: string) => store[key] ?? null),
+        setItem: vi.fn((key: string, value: string) => { store[key] = String(value); }),
+        removeItem: vi.fn((key: string) => { delete store[key]; }),
+        clear: vi.fn(() => { Object.keys(store).forEach(k => delete store[k]); }),
+        get length() { return Object.keys(store).length; },
+        key: vi.fn((index: number) => Object.keys(store)[index] ?? null),
+    };
+    Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true, configurable: true });
+}
+
+// ============================================================================
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
 
@@ -87,7 +103,7 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     storage: {},
     auth: {
-        currentUser: { uid: 'test-uid', email: 'test@test.com' },
+        currentUser: { uid: 'test-uid', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('test-token') },
         onAuthStateChanged: vi.fn((callback) => {
             // Simulate immediate callback with authenticated user
             if (typeof callback === 'function') {
