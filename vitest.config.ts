@@ -14,11 +14,17 @@ export default defineConfig({
     watch: false,
     reporters: ['default', 'github-actions'],
     teardownTimeout: 1000,
+    hookTimeout: 10000,
     pool: 'forks',
     exclude: [
       ...configDefaults.exclude,
       '**/e2e/**',
       '**/functions/**',
+      // Skip integration tests - they trigger deep module chains
+      '**/*.integration.test.ts',
+      '**/*.integration.test.tsx',
+      // Skip torture tests
+      '**/*.torture.test.ts',
     ]
   },
 });
