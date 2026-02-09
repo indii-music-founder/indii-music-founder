@@ -21,7 +21,7 @@ const mocks = vi.hoisted(() => ({
 // Mock modules
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
-    app: { isPackaged: false }
+    app: { isPackaged: false, getAppPath: () => '/app', getPath: () => '/tmp' }
 }));
 
 vi.mock('fs', () => ({
