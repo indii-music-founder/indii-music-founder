@@ -317,7 +317,9 @@ vi.mock('lucide-react', async () => {
         ChevronLeft: createMockIcon('ChevronLeft'),
         ChevronRight: createMockIcon('ChevronRight'),
         ArrowLeft: createMockIcon('ArrowLeft'),
+        ArrowLeftToLine: createMockIcon('ArrowLeftToLine'),
         ArrowRight: createMockIcon('ArrowRight'),
+        ArrowRightToLine: createMockIcon('ArrowRightToLine'),
         Home: createMockIcon('Home'),
         Settings: createMockIcon('Settings'),
         // Actions
@@ -432,7 +434,6 @@ vi.mock('lucide-react', async () => {
         Tablet: createMockIcon('Tablet'),
         Laptop: createMockIcon('Laptop'),
         Server: createMockIcon('Server'),
-        Database: createMockIcon('Database'),
         Cloud: createMockIcon('Cloud'),
         CloudUpload: createMockIcon('CloudUpload'),
         CloudDownload: createMockIcon('CloudDownload'),
