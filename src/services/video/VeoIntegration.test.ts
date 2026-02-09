@@ -31,14 +31,20 @@ vi.mock('firebase/functions', () => ({
 vi.mock('firebase/firestore', () => ({
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
-    getFirestore: vi.fn()
+    getFirestore: vi.fn(),
+    serverTimestamp: vi.fn(() => ({ seconds: 1629824800, nanoseconds: 0 })),
+    Timestamp: { now: () => ({ seconds: 1629824800, nanoseconds: 0 }) },
+    collection: vi.fn(),
+    addDoc: vi.fn().mockResolvedValue({ id: 'doc-id' }),
+    setDoc: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
     functions: {},
-    functionsWest1: {}
+    functionsWest1: {},
+    getFirebaseAI: vi.fn()
 }));
 
 vi.mock('../firebase', () => ({ // Handle relative import in service
@@ -125,7 +131,7 @@ describe('Veo 3.1 Integration Pipeline', () => {
                     })
                 });
             }, 10);
-            return () => {};
+            return () => { };
         });
 
         // Act

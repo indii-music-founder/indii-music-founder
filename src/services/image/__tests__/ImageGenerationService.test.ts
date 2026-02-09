@@ -49,6 +49,14 @@ vi.mock("@/core/store", () => ({
   },
 }));
 
+// Mock CloudStorageService to prevent dynamic import hangs
+vi.mock("@/services/CloudStorageService", () => ({
+  CloudStorageService: {
+    smartSave: vi.fn().mockResolvedValue({ url: "mock-storage-url" }),
+    compressImage: vi.fn().mockResolvedValue({ dataUri: "data:image/png;base64,mock-compressed" }),
+  },
+}));
+
 describe("ImageGenerationService", () => {
   const mockGenerateImage = vi.fn() as any;
 
@@ -147,7 +155,7 @@ describe("ImageGenerationService", () => {
       expect(results).toHaveLength(1);
       expect(mockGenerateImage).toHaveBeenCalledWith(
         expect.objectContaining({
-          images: [],
+          prompt: expect.stringContaining("Edit this image"),
         }),
       );
     });
