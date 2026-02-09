@@ -104,7 +104,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
     afterEach(() => {
         // Clean up the electronAPI we added
-        // @ts-expect-error - we're cleaning up our mock
+
         delete window.electronAPI;
     });
 
