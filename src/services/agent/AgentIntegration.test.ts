@@ -166,22 +166,22 @@ describe('Agent Architecture Integration (Hardened)', () => {
     describe('End-to-End Execution Pipeline', () => {
         it('should correctly orchestrate, execute, and return response for a specialist', async () => {
             // 1. Mock Orchestrator Decision (JSON)
+            // 1. Mock Orchestrator Decision (JSON)
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
                 text: () => JSON.stringify({
-                    targetAgentId: 'marketing',
-                    confidence: 1.0,
-                    reasoning: 'Marketing task detected'
+                    thought: 'Marketing task detected',
+                    callAgentId: 'marketing',
+                    task: 'Analyze market trends',
+                    complete: true
                 })
             } as any);
 
             // 2. Mock Specialist Execution
-            vi.mocked(AI.generateContent).mockImplementationOnce(() => {
-                return Promise.resolve({
-                    text: () => 'I have analyzed the market data.',
-                    functionCalls: () => [],
-                    usage: () => ({ totalTokenCount: 100 })
-                }) as any;
-            });
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'I have analyzed the market data.',
+                functionCalls: () => [],
+                usage: () => ({ totalTokenCount: 100 })
+            } as any);
 
             await service.sendMessage('Analyze market trends');
 
@@ -198,9 +198,10 @@ describe('Agent Architecture Integration (Hardened)', () => {
             // 1. Router Call (JSON)
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
                 text: () => JSON.stringify({
-                    targetAgentId: 'finance',
-                    confidence: 1.0,
-                    reasoning: 'Finance task'
+                    thought: 'Finance task',
+                    callAgentId: 'finance',
+                    task: 'Check this budget',
+                    complete: true
                 })
             } as any);
 
@@ -250,12 +251,19 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
     describe('Robustness & Error Handling', () => {
         it('should route to Generalist if Orchestrator hallucinations an invalid ID', async () => {
-            vi.mocked(AI.generateContent).mockResolvedValue({
+            // 1. Orchestrator hallucination
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
                 text: () => JSON.stringify({
-                    targetAgentId: 'super-mega-agent-9000',
-                    confidence: 1.0,
-                    reasoning: 'Hallucination'
+                    thought: 'Hallucination',
+                    callAgentId: 'super-mega-agent-9000',
+                    task: 'Do something crazy',
+                    complete: true
                 })
+            } as any);
+
+            // 2. Generalist Fallback
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'I am generalist.'
             } as any);
 
             const generalistSpy = vi.spyOn(agentRegistry, 'getAsync');
@@ -267,16 +275,7 @@ describe('Agent Architecture Integration (Hardened)', () => {
         });
 
         it('should gracefully handle agent execution failure', async () => {
-            // 1. Orchestrator routes to brand
-            vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => JSON.stringify({
-                    targetAgentId: 'brand',
-                    confidence: 1.0,
-                    reasoning: 'Brand task'
-                })
-            } as any);
-
-            // 2. Execution fails
+            // 1. Error simulation
             vi.mocked(AI.generateContent).mockRejectedValueOnce(new Error('Simulated API Outage'));
 
             const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
@@ -285,9 +284,11 @@ describe('Agent Architecture Integration (Hardened)', () => {
 
             const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
             expect(lastMsg.role).toBe('model');
-            expect(lastMsg.text).toContain('Error: Simulated API Outage');
+            expect(lastMsg.text).toContain('encountered an issue');
 
             consoleSpy.mockRestore();
+
+
         });
     });
 });

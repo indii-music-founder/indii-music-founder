@@ -5,7 +5,7 @@ import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
 import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
-import { agentService } from '../AgentService';
+import type { AgentService } from '../AgentService';
 
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
@@ -14,7 +14,7 @@ import { agentService } from '../AgentService';
 export class HybridOrchestrator {
     private MAX_TURNS = 10;
 
-    async execute(context: AgentContext, userQuery: string): Promise<string> {
+    async execute(context: AgentContext, userQuery: string, service?: AgentService): Promise<string> {
         const userId = auth.currentUser?.uid || 'anonymous';
         const traceId = await TraceService.startTrace(userId, 'hybrid-orchestrator', userQuery);
 
@@ -90,19 +90,17 @@ export class HybridOrchestrator {
                 await TraceService.addStep(traceId, 'routing', { turn: `turn-${currentTurn}`, ...decision });
                 history.push({ turn: currentTurn, thought: decision.thought, action: decision.callAgentId || decision.useTool });
 
-                if (decision.complete) {
-                    isTaskComplete = true;
-                    break;
-                }
+
 
                 // Specialists Invocation
                 if (decision.callAgentId && decision.task) {
                     console.info(`[indii:Hybrid] Delegating to specialist: ${decision.callAgentId}`);
                     try {
-                        const result = await agentService.runAgent(decision.callAgentId, decision.task, context, traceId);
+                        if (!service) throw new Error('AgentService instance not provided for delegation');
+                        const result = await service.runAgent(decision.callAgentId, decision.task, context, traceId);
                         history.push({ turn: currentTurn, agent: decision.callAgentId, result: result.text });
                         lastAgentResponse = result.text;
-                    } catch (agentErr) {
+                    } catch (agentErr: any) {
                         console.error(`[indii:Hybrid] Specialist ${decision.callAgentId} failed:`, agentErr);
                         history.push({ turn: currentTurn, agent: decision.callAgentId, error: String(agentErr) });
                     }
