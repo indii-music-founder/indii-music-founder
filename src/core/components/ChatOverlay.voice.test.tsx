@@ -137,7 +137,7 @@ describe('👁️ Pixel: Voice Interaction States', () => {
         rerender(<ChatOverlay onClose={vi.fn()} />);
 
         // Assert: Transcript appears
-        expect(screen.getByText(/"Hello world"/)).toBeInTheDocument();
+        expect(screen.getByText((content) => content.includes('"Hello world"'))).toBeInTheDocument();
     });
 
     it('Scenario 3: Transition from Listening to Processing', () => {

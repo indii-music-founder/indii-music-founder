@@ -86,7 +86,7 @@ describe('🖱️ Click: ChatOverlay Interactions', () => {
         // Assert: Button state
         const detachBtn = screen.getByTestId('detach-input-btn');
         expect(detachBtn).toBeInTheDocument();
-        expect(detachBtn).toHaveAttribute('aria-label', 'Detach Input');
+        expect(detachBtn).toHaveAttribute('title', 'Detach Input');
 
         // 2. Interaction: Click Detach
         fireEvent.click(detachBtn);
@@ -112,7 +112,7 @@ describe('🖱️ Click: ChatOverlay Interactions', () => {
 
         // Assert: Button state updated
         const dockedBtn = screen.getByTestId('detach-input-btn');
-        expect(dockedBtn).toHaveAttribute('aria-label', 'Dock Input');
+        expect(dockedBtn).toHaveAttribute('title', 'Dock Input');
     });
 
     it('Scenario 2: Minimize Interaction', () => {
