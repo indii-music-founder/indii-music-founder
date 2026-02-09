@@ -116,7 +116,18 @@ const INITIAL_STATE = {
     setAgentWindowSize: vi.fn(),
     isCommandBarDetached: false,
     setCommandBarDetached: vi.fn(),
-    setChatChannel: vi.fn()
+    setChatChannel: vi.fn(),
+    // Added missing state properties for PromptArea
+    commandBarAttachments: [],
+    setCommandBarAttachments: vi.fn(),
+    commandBarInput: '',
+    setCommandBarInput: vi.fn(),
+    currentModule: 'dashboard',
+    setModule: vi.fn(),
+    activeAgentProvider: 'native',
+    setActiveAgentProvider: vi.fn(),
+    isKnowledgeBaseEnabled: false,
+    setKnowledgeBaseEnabled: vi.fn()
 };
 
 describe('👁️ Pixel: Chat Stream Verification', () => {
