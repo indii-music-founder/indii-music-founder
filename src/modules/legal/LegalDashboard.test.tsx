@@ -32,10 +32,7 @@ vi.mock('@/services/agent/tools/LegalTools', () => ({
 }));
 
 vi.mock('@/core/config/ai-models', () => ({
-    APPROVED_MODELS: {
-        TEXT_FAST: 'fast-model',
-        TEXT_AGENT: 'agent-model',
-    },
+
     AI_MODELS: {
         TEXT: {
             FAST: 'fast-model',
@@ -53,7 +50,7 @@ vi.mock('@/core/config/ai-models', () => ({
         BROWSER_AGENT: 'agent-model',
         EMBEDDING_DEFAULT: 'models/embedding-001'
     },
-    validateModels: () => {},
+    validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v },
 }));
 

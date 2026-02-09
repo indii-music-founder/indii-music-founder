@@ -14,10 +14,7 @@ vi.mock('@/services/ai/FirebaseAIService', () => ({
 
 // Mock AI Models
 vi.mock('@/core/config/ai-models', () => ({
-    APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-pro',
-        TEXT_FAST: 'gemini-flash'
-    },
+
     AI_MODELS: {
         TEXT: {
             AGENT: 'gemini-pro',
@@ -35,7 +32,7 @@ vi.mock('@/core/config/ai-models', () => ({
         BROWSER_AGENT: 'gemini-pro',
         EMBEDDING_DEFAULT: 'models/embedding-001'
     },
-    validateModels: () => {},
+    validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }
 }));
 

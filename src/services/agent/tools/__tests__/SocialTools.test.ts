@@ -17,9 +17,7 @@ vi.mock('@/services/social/SocialService', () => ({
 }));
 
 vi.mock('@/core/config/ai-models', () => ({
-  APPROVED_MODELS: {
-    TEXT_AGENT: 'mock-model'
-  },
+
   AI_MODELS: {
     TEXT: {
       AGENT: 'mock-model',
@@ -36,7 +34,7 @@ vi.mock('@/core/config/ai-models', () => ({
     BROWSER_AGENT: 'mock-model',
     EMBEDDING_DEFAULT: 'models/embedding-001'
   },
-  validateModels: () => {},
+  validateModels: () => { },
   ModelIdSchema: { parse: (v: string) => v },
 }));
 

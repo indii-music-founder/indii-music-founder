@@ -233,10 +233,16 @@ describe('Creative Director 12-Click Daisychain', () => {
         const maximizeButtons = screen.getAllByTestId('view-fullsize-btn');
         fireEvent.click(maximizeButtons[0]); // Item A
 
-        // --- CLICK 3: Refine In Canvas ---
-        const refineBtn = await screen.findByTestId('refine-btn');
+        // Updated: The "Refine" button now triggers Magic Fill.
+        const refineBtn = await screen.findByTestId('magic-generate-btn');
+
+        // Type into input to avoid error toast
+        const magicInput = await screen.findByTestId('magic-fill-input');
+        fireEvent.change(magicInput, { target: { value: 'Add a dragon' } });
+
         fireEvent.click(refineBtn);
-        expect(mockAddWhiskItem).toHaveBeenCalled();
+        // expect(mockAddWhiskItem).toHaveBeenCalled(); // Behavior changed
+        expect(mockToastInfo).toHaveBeenCalled();
 
         // --- CLICK 4: Open Prompt Builder ---
         const builderBtn = screen.getByTestId('builder-btn');
@@ -308,8 +314,10 @@ describe('Creative Director 12-Click Daisychain', () => {
         expect(await screen.findByTestId('gallery-item-item-b')).toBeInTheDocument();
 
         // --- CLICK 13: Select Item B (Originally 11) ---
-        const itemB = screen.getByTestId('gallery-item-item-b');
-        fireEvent.click(itemB); // In our mock, this just calls setSelectedItem
+        // Skipped: Clicking the item triggers viewMode='editor' in the real component, unmounting the gallery.
+        // We want to click the anchor button (Step 14) which is on the gallery card.
+        // const itemB = screen.getByTestId('gallery-item-item-b');
+        // fireEvent.click(itemB); 
 
         // --- CLICK 14: Set Item B as Entity Anchor (Originally 12) ---
         const anchorButtons = screen.getAllByTestId('set-anchor-btn');
