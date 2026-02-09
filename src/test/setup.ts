@@ -285,11 +285,15 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
 }));
 
 // Mock lucide-react with simple stub factory
-vi.mock('lucide-react', () => {
+vi.mock('lucide-react', async () => {
+    const React = await import('react');
+
     const createMockIcon = (name: string) => {
         const MockIcon = (props: Record<string, unknown>) => {
-            // Return null - we don't need actual SVG elements in tests
-            return null;
+            return React.createElement('svg', {
+                'data-testid': `icon-${name}`,
+                ...props
+            });
         };
         MockIcon.displayName = name;
         return MockIcon;
@@ -298,9 +302,16 @@ vi.mock('lucide-react', () => {
     // Pre-define commonly used icons to avoid dynamic property access issues
     return {
         __esModule: true,
-        // Layout & Navigation
+        // UI Layout
         Menu: createMockIcon('Menu'),
         X: createMockIcon('X'),
+        Maximize2: createMockIcon('Maximize2'),
+        PanelTopClose: createMockIcon('PanelTopClose'),
+        PanelTopOpen: createMockIcon('PanelTopOpen'),
+        MonitorPlay: createMockIcon('MonitorPlay'),
+        Database: createMockIcon('Database'),
+
+        // Navigation
         ChevronDown: createMockIcon('ChevronDown'),
         ChevronUp: createMockIcon('ChevronUp'),
         ChevronLeft: createMockIcon('ChevronLeft'),
@@ -314,12 +325,15 @@ vi.mock('lucide-react', () => {
         Minus: createMockIcon('Minus'),
         Edit: createMockIcon('Edit'),
         Trash: createMockIcon('Trash'),
+        Trash2: createMockIcon('Trash2'),
         Save: createMockIcon('Save'),
         Copy: createMockIcon('Copy'),
         Check: createMockIcon('Check'),
         Search: createMockIcon('Search'),
         Filter: createMockIcon('Filter'),
         Download: createMockIcon('Download'),
+        Share: createMockIcon('Share'),
+        Share2: createMockIcon('Share2'),
         Upload: createMockIcon('Upload'),
         Send: createMockIcon('Send'),
         Play: createMockIcon('Play'),
@@ -355,7 +369,6 @@ vi.mock('lucide-react', () => {
         // Other common
         Star: createMockIcon('Star'),
         Heart: createMockIcon('Heart'),
-        Share: createMockIcon('Share'),
         Link: createMockIcon('Link'),
         ExternalLink: createMockIcon('ExternalLink'),
         Eye: createMockIcon('Eye'),
