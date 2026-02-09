@@ -32,7 +32,7 @@ const mocks = vi.hoisted(() => ({
 // Mock Modules
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
-    app: mocks.app
+    app: { ...mocks.app, getAppPath: () => '/app' }
 }));
 
 vi.mock('fs/promises', () => mocks.fs);
