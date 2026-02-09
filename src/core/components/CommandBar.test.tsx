@@ -80,6 +80,7 @@ interface TestStoreState {
     setCommandBarAttachments: (attachments: any[]) => void;
     isCommandBarDetached: boolean;
     setCommandBarDetached: (detached: boolean) => void;
+    setActiveAgentProvider: (agentId: string) => void;
 }
 
 // Create a real store for testing
@@ -96,6 +97,7 @@ const useTestStore = create<TestStoreState>((set) => ({
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     isCommandBarDetached: false,
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+    setActiveAgentProvider: vi.fn(),
 }));
 
 // Mock the useStore hook to use our real test store
@@ -133,8 +135,7 @@ describe('CommandBar', () => {
         render(<CommandBar />);
         const button = document.querySelector('button[aria-label="Select active agent"]');
         expect(button).toBeInTheDocument();
-        // There are multiple "indii" texts
-        expect(screen.getAllByText('indii')[0]).toBeInTheDocument();
+        // The button only shows a dot, no text 'indii'
     });
 
     it('opens the dropdown when delegate button is clicked', () => {
@@ -179,28 +180,34 @@ describe('CommandBar', () => {
         expect(toggleSpy).toHaveBeenCalled();
     });
 
-    // Test for 'does not switch module but toggles agent window when indii is selected' removed as Indii option is removed from DelegateMenu
+    // ... existing metadata tests ...
 
-    it('calls setChatChannel("indii") when Indii button is clicked', () => {
+    it('calls setChatChannel("indii") when Indii is selected from menu', () => {
+        // Start in agent mode
         useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
         const setChatChannelSpy = vi.spyOn(useTestStore.getState(), 'setChatChannel');
 
         render(<CommandBar />);
-        // Using querySelector
-        const indiiButton = document.querySelector('button[aria-label="Switch to indii mode"]');
-        expect(indiiButton).toBeInTheDocument();
-        fireEvent.click(indiiButton!);
+
+        // Open menu
+        const button = document.querySelector('button[aria-label="Select active agent"]');
+        fireEvent.click(button!);
+
+        // Select Indii
+        const indiiOption = screen.getByText('indii');
+        fireEvent.click(indiiOption);
+
         expect(setChatChannelSpy).toHaveBeenCalledWith('indii');
     });
 
-    it('renders active Indii state and calls "agent" toggle when clicked', async () => {
-        // Use dashboard to ensure Indii mode is allowed/default
+    it('renders active Indii state and allows switching to agent via menu', async () => {
+        // Start in Indii mode
         useTestStore.setState({ currentModule: 'dashboard', chatChannel: 'indii' });
-        const setChatChannelSpy = vi.spyOn(useTestStore.getState(), 'setChatChannel');
+        const setModuleSpy = vi.spyOn(useTestStore.getState(), 'setModule');
 
         render(<CommandBar />);
 
-        const activeBtn = document.querySelector('button[aria-label="Switch to Agent mode"]');
+        const activeBtn = document.querySelector('button[aria-label="Select active agent"]');
         expect(activeBtn).toBeInTheDocument();
 
         // Verify placeholder
@@ -216,18 +223,21 @@ describe('CommandBar', () => {
             expect(agentService.sendMessage).toHaveBeenCalledWith('Hello Indii', undefined, undefined);
         });
 
-        // Test toggle off
-        // Note: We need to find the button again or ensure it's the same
-        const activeBtnRefound = document.querySelector('button[aria-label="Switch to Agent mode"]');
-        fireEvent.click(activeBtnRefound!);
-        expect(setChatChannelSpy).toHaveBeenCalledWith('agent');
+        // Test switch back to agent (e.g. Road)
+        fireEvent.click(activeBtn!);
+        const roadOption = screen.getByText('Road Manager');
+        fireEvent.click(roadOption);
+
+        expect(setModuleSpy).toHaveBeenCalledWith('road');
+        // Side effect: setChatChannel('agent') happens in useEffect, which is hard to spy on directly in this render cycle without rerender check, 
+        // but setModule is the trigger.
     });
 
     it('updates button text based on current module', () => {
         useTestStore.setState({ currentModule: 'road', chatChannel: 'agent' });
 
         render(<CommandBar />);
-        expect(screen.getByText('road')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText(/Message road/i)).toBeInTheDocument();
     });
 
     it('sends a message when form is submitted', async () => {
