@@ -43,7 +43,7 @@ vi.mock('fs', () => ({
 // Mock 'electron'
 vi.mock('electron', () => ({
     ipcMain: mocks.ipcMain,
-    app: mocks.app,
+    app: { ...mocks.app, getAppPath: () => '/app' },
     BrowserWindow: mocks.BrowserWindow
 }));
 
