@@ -243,7 +243,7 @@ export class AgentService {
         if (!agentId) {
             // HYBRID GRAFT: Use the new HybridOrchestrator for complex reasoning
             console.info('[AgentService] Using Hybrid Orchestrator DNA...');
-            const hybridResponse = await this.hybridOrchestrator.execute(context, text);
+            const hybridResponse = await this.hybridOrchestrator.execute(context, text, this);
 
             updateAgentMessage(responseId, {
                 text: hybridResponse,
@@ -463,7 +463,12 @@ export class AgentService {
 
         if (parentContext) {
             // Deep clone to isolate execution contexts
-            context = JSON.parse(JSON.stringify(parentContext));
+            try {
+                context = structuredClone(parentContext);
+            } catch (e) {
+                console.warn('[AgentService] Context clone failed, using shallow copy:', e);
+                context = { ...parentContext };
+            }
 
             // Restore non-serializable properties after cloning
             // (chatHistory and attachments contain references we want to preserve)
