@@ -26,10 +26,7 @@ vi.mock('./GeminiRetrievalService', () => ({
 
 // Mock AI models config
 vi.mock('@/core/config/ai-models', () => ({
-    APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-3-pro-preview',
-        TEXT_FAST: 'gemini-3-pro-preview'
-    },
+
     AI_MODELS: {
         TEXT: { AGENT: 'gemini-3-pro-preview', FAST: 'gemini-3-pro-preview' }
     },
@@ -47,7 +44,7 @@ vi.mock('@/core/config/ai-models', () => ({
         BROWSER_AGENT: 'gemini-3-pro-preview',
         EMBEDDING_DEFAULT: 'models/embedding-001'
     },
-    validateModels: () => {},
+    validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }
 }));
 
