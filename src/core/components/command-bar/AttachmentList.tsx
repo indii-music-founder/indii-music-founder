@@ -1,28 +1,29 @@
-// Updated to safely handle undefined attachments
+import React, { memo } from 'react';
+import { Image, Paperclip, X } from 'lucide-react';
 
-import React from 'react';
-
-interface Attachment {
-  id: string;
-  name: string;
+interface AttachmentListProps {
+    attachments: File[];
+    onRemove: (index: number) => void;
 }
 
-interface Props {
-  attachments?: Attachment[];
-}
-
-const AttachmentList: React.FC<Props> = ({ attachments }) => {
-  if (!attachments || attachments.length === 0) {
-    return <div>No attachments available</div>;
-  }
-
-  return (
-    <ul>
-      {attachments.map((attachment) => (
-        <li key={attachment.id}>{attachment.name}</li>
-      ))}
-    </ul>
-  );
-};
-
-export default AttachmentList;
+export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListProps) => {
+    if (attachments.length === 0) return null;
+    return (
+        <ul className="px-4 pb-2 flex gap-2 flex-wrap m-0 list-none" aria-label="Attached files">
+            {attachments.map((file, index) => (
+                <li key={index} className="flex items-center gap-2 bg-white/5 px-2 py-1 rounded text-xs text-gray-300 border border-white/10">
+                    {file.type.startsWith('image/') ? <Image size={12} /> : <Paperclip size={12} />}
+                    <span className="max-w-[150px] truncate">{file.name}</span>
+                    <button
+                        type="button"
+                        onClick={() => onRemove(index)}
+                        className="hover:text-white p-1 hover:bg-white/10 rounded-full transition-colors"
+                        aria-label={`Remove ${file.name}`}
+                    >
+                        <X size={12} />
+                    </button>
+                </li>
+            ))}
+        </ul>
+    );
+});
