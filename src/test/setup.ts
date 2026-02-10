@@ -305,8 +305,8 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
 }));
 
 // Mock lucide-react with simple stub factory
-vi.mock('lucide-react', () => {
-    const React = require('react');
+vi.mock('lucide-react', async (importOriginal) => {
+    const React = await import('react');
 
     const createMockIcon = (name: string) => {
         const MockIcon = (props: any) => {
@@ -316,15 +316,20 @@ vi.mock('lucide-react', () => {
                 width: size || 24,
                 height: size || 24,
                 stroke: color || 'currentColor',
+                fill: 'none',
+                strokeWidth: 2,
+                strokeLinecap: 'round',
+                strokeLinejoin: 'round',
                 ...rest
             });
         };
-        MockIcon.displayName = name;
+        MockIcon.displayName = `Icon.${name}`;
         return MockIcon;
     };
 
+    const actual = await importOriginal<typeof import('lucide-react')>();
     return {
-        __esModule: true,
+        ...actual,
         // UI Layout
         Menu: createMockIcon('Menu'),
         X: createMockIcon('X'),
@@ -606,8 +611,8 @@ vi.mock('@/services/CloudStorageService', () => ({
 }));
 
 // Mock framer-motion to avoid React warnings about unrecognized props
-vi.mock('framer-motion', () => {
-    const React = require('react');
+vi.mock('framer-motion', async () => {
+    const React = await import('react');
 
     // Simple component factory for motion elements
     const createMotionComponent = (tag: string) => {

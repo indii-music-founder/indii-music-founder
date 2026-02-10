@@ -135,7 +135,7 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
 
         // Note: The structure is AnimatePresence -> div.fixed -> motion.div(backdrop) -> motion.div(menu)
         // We can look for the element with the backdrop classes
-        // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const backdrop = container.querySelector('.bg-black\\/60');
         expect(backdrop).toBeInTheDocument();
 
