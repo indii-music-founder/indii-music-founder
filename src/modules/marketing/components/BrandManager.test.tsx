@@ -27,6 +27,7 @@ vi.mock('@/core/store', () => ({
         },
         updateBrandKit: vi.fn(),
         setUserProfile: vi.fn(),
+        setSelectedItem: vi.fn(),
     }),
 }));
 

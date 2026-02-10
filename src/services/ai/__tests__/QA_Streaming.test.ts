@@ -75,7 +75,7 @@ describe('Streaming QA', () => {
         service = new FirebaseAIService();
     });
 
-    it.skip('should pass AbortSignal to SDK', async () => {
+    it('should pass AbortSignal to SDK', async () => {
         const mockStream = {
             [Symbol.asyncIterator]: async function* () {
                 yield {
@@ -93,12 +93,13 @@ describe('Streaming QA', () => {
         await service.generateContentStream('prompt', undefined, {}, undefined, undefined, { signal });
 
         expect(mockGenerateContentStream).toHaveBeenCalledWith(
-            expect.anything(),
-            expect.objectContaining({ signal })
+            expect.objectContaining({
+                config: expect.objectContaining({ abortSignal: signal })
+            })
         );
     });
 
-    it.skip('should tolerate chunk errors', async () => {
+    it('should tolerate chunk errors', async () => {
         const mockStream = {
             [Symbol.asyncIterator]: async function* () {
                 yield {

@@ -5,16 +5,7 @@ import { currencyConversionService } from './CurrencyConversionService';
 import { useStore } from '@/core/store';
 import { IDistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
 
-// Mock Zod schema validation to prevent parse errors with mock data
-vi.mock('@/services/ddex/validation', async (importOriginal) => {
-  const actual = await importOriginal<any>();
-  return {
-    ...actual,
-    DistributorEarningsSchema: {
-      parse: (data: any) => data // Pass-through validation for tests
-    }
-  };
-});
+// Mock Zod schema validation removed to enforce real schema validation per PR review
 
 // Mock CurrencyConversionService
 vi.mock('./CurrencyConversionService', () => ({

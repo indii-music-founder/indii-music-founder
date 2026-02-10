@@ -314,7 +314,7 @@ export class FirebaseAIService {
                 // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                 // ============================================================
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig);
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
                 }
 
                 // ============================================================
@@ -389,7 +389,8 @@ export class FirebaseAIService {
         systemInstruction?: string,
         tools?: Tool[],
         safetySettings?: any[],
-        toolConfig?: any
+        toolConfig?: any,
+        options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
@@ -410,6 +411,7 @@ export class FirebaseAIService {
                     tools: tools as any,
                     toolConfig,
                     safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                    abortSignal: options?.signal
                 } as any,
             });
 
@@ -588,6 +590,7 @@ export class FirebaseAIService {
                 tools: tools as any,
                 toolConfig: options?.toolConfig,
                 safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                abortSignal: options?.signal
             } as any,
         });
 

@@ -80,18 +80,13 @@ describe('PromptInput Interaction', () => {
       <PromptInput>
         <PromptInputTextarea />
         <PromptInputActions>
-            <PromptInputAction tooltip={tooltipText}>
-                <button aria-label={existingLabel} data-testid="send-btn-explicit">
-                    Icon
-                </button>
-            </PromptInputAction>
           <PromptInputAction tooltip={tooltipText}>
             <button aria-label={existingLabel} data-testid="send-btn-explicit">
               Icon
             </button>
           </PromptInputAction>
         </PromptInputActions>
-      </PromptInput>
+      </PromptInput >
     )
 
     const sendBtn = screen.getByTestId('send-btn-explicit')
