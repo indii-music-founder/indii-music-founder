@@ -45,8 +45,16 @@ vi.mock('fs', () => ({
     existsSync: mocks.fsSync.existsSync
 }));
 
-vi.mock('os', () => mocks.os);
+vi.mock('os', () => ({
+    default: mocks.os,
+    ...mocks.os
+}));
 vi.mock('../utils/python-bridge', () => ({ PythonBridge: mocks.pythonBridge }));
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: {
+        verifyAccess: vi.fn(() => true) // Bypass auth check to test sandbox constraints (LFI, etc.)
+    }
+}));
 
 // Import the handler setup function
 import { setupDistributionHandlers } from './distribution';
@@ -208,7 +216,9 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
         }];
 
         const result = await invoke('distribution:stage-release', validUUID, validFiles);
-
+        if (!result.success) {
+            // Check if specific error
+        }
         expect(result.success).toBe(true);
         expect(mocks.fs.copyFile).toHaveBeenCalled();
     });
