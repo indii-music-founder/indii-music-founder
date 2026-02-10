@@ -256,22 +256,24 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     </button>
                                 </PromptInputAction>
 
-                                <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
-                                    <button
-                                        onClick={handleMicClick}
-                                        className={cn(
-                                            "flex items-center justify-center p-2 rounded-xl transition-all",
-                                            isListening
-                                                ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
-                                                : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                                        )}
-                                        aria-label={isListening ? "Stop listening" : "Voice Input"}
-                                    >
-                                        <Mic size={20} className={isListening ? "animate-pulse" : ""} />
-                                    </button>
-                                </PromptInputAction>
                             </>
                         )}
+
+                        <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
+                            <button
+                                onClick={handleMicClick}
+                                className={cn(
+                                    "flex items-center justify-center p-2 rounded-xl transition-all",
+                                    isListening
+                                        ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                        : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                                )}
+                                aria-label={isListening ? "Stop listening" : "Voice Input"}
+                            >
+                                <Mic size={20} className={isListening ? "animate-pulse" : ""} />
+                            </button>
+                        </PromptInputAction>
+
                         {!isMobile && (
                             <div className="relative">
                                 <button
