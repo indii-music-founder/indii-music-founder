@@ -42,12 +42,7 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
-vi.mock('framer-motion', () => ({
-    motion: {
-        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>
-}));
+
 
 describe('📱 Viewport: CommandBar Responsiveness', () => {
     const mockSetModule = vi.fn();
@@ -58,11 +53,15 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         vi.clearAllMocks();
 
         // Mock useStore
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector) => {
+            const state = {
+                currentModule: 'dashboard',
+                setModule: mockSetModule,
+                toggleAgentWindow: mockToggleAgentWindow,
+                isAgentOpen: false,
+                setChatChannel: vi.fn(),
+            };
+            return selector ? selector(state) : state;
         });
 
         // Mock useToast
@@ -77,11 +76,11 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         render(<CommandBar />);
 
         // 1. Verify Input Field is visible (Core Feature)
-        const input = screen.getByPlaceholderText(/describe your task/i);
+        const input = screen.getByPlaceholderText(/Message dashboard/i);
         expect(input).toBeInTheDocument();
 
         // 2. Verify "Send" (Run) button is visible
-        const runButton = screen.getByText('Run').closest('button');
+        const runButton = screen.getByLabelText(/Run command/i);
         expect(runButton).toBeVisible();
 
         // 3. Verify Desktop-only features are hidden via JS logic
@@ -102,7 +101,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         render(<CommandBar />);
 
         // Find the voice button by the aria-label we just added
-        const voiceButton = screen.getByLabelText('Voice input');
+        const voiceButton = screen.getByLabelText(/Voice input/i);
         expect(voiceButton).toBeInTheDocument();
         expect(voiceButton).toBeVisible();
 

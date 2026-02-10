@@ -13,7 +13,7 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
   const config: EvolutionConfig = {
     populationSize: 4,
     mutationRate: 0.5,
-    eliteCount: 1,
+    eliteCount: 2, // Increased to ensure 'Doomed' and 'Broken' survive for sanitization checks
     maxGenerations: 5
   };
 

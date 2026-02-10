@@ -39,6 +39,13 @@ vi.mock('lucide-react', async (importOriginal) => ({
     Layout: () => <svg role="img" aria-hidden="true" data-testid="icon-layout" />,
 }));
 
+vi.mock('framer-motion', () => ({
+    motion: {
+        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>
+}));
+
 describe('♿ MobileNav Accessibility', () => {
     let mockSetModule: any;
     let mockStoreState: any;

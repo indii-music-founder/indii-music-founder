@@ -365,6 +365,7 @@ vi.mock('lucide-react', () => {
         Upload: createMockIcon('Upload'),
         Send: createMockIcon('Send'),
         Play: createMockIcon('Play'),
+        PlayCircle: createMockIcon('PlayCircle'),
         Pause: createMockIcon('Pause'),
         Stop: createMockIcon('Stop'),
         // Media
@@ -603,4 +604,53 @@ vi.mock('@/services/CloudStorageService', () => ({
         compressImage: vi.fn().mockResolvedValue({ dataUri: 'data:image/png;base64,mock-compressed' }),
     },
 }));
+
+// Mock framer-motion to avoid React warnings about unrecognized props
+vi.mock('framer-motion', () => {
+    const React = require('react');
+
+    // Simple component factory for motion elements
+    const createMotionComponent = (tag: string) => {
+        const Component = React.forwardRef(({ children, ...props }: any, ref: any) => {
+            // Filter out motion props manually or just render
+            // We can use helper to strip props, but for now just pass through
+            // because React warns, we MUST strip them.
+            const {
+                initial, animate, exit, variants, transition,
+                drag, dragMomentum, dragElastic, dragConstraints,
+                whileHover, whileTap, onDragEnd, onDragStart,
+                layout, layoutId, viewport,
+                ...validProps
+            } = props;
+            return React.createElement(tag, { ...validProps, ref }, children);
+        });
+        Component.displayName = `motion.${tag}`;
+        return Component;
+    };
+
+    return {
+        __esModule: true,
+        AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+        motion: { // Define commonly used motion components
+            div: createMotionComponent('div'),
+            span: createMotionComponent('span'),
+            section: createMotionComponent('section'),
+            p: createMotionComponent('p'),
+            img: createMotionComponent('img'),
+            button: createMotionComponent('button'),
+            li: createMotionComponent('li'),
+            ul: createMotionComponent('ul'),
+            a: createMotionComponent('a'),
+            svg: createMotionComponent('svg'),
+            path: createMotionComponent('path'),
+            // Fallback proxy for others if needed? No, explicit list is safer for type errors.
+        },
+        // Mock hooks if needed in future
+        useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() }),
+        useMotionValue: (v: any) => ({ get: () => v, set: vi.fn() }),
+        useTransform: () => ({ get: () => 0 }),
+    };
+});
+
+// Mock framer-motion to avoid React warnings about unrecognized props
 
