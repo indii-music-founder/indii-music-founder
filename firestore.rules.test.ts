@@ -8,10 +8,29 @@ import { setDoc, doc, getDoc, collection, deleteDoc } from 'firebase/firestore';
 const PROJECT_ID = 'demo-test-123';
 const FIRESTORE_RULES_PATH = path.resolve(__dirname, 'firestore.rules');
 
-describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
+// Check if emulator is available
+async function isEmulatorRunning(): Promise<boolean> {
+    try {
+        const response = await fetch('http://127.0.0.1:8080/', { method: 'HEAD' });
+        return response.ok || response.status === 400;
+    } catch {
+        return false;
+    }
+}
+
+// TODO: Resolve Firestore emulator CI connectivity (Tracking: PR #1128)
+describe('Firestore Security Rules: Deployments & Organizations', () => {
     let testEnv: RulesTestEnvironment;
 
+    let emulatorAvailable = false;
+
     beforeAll(async () => {
+        emulatorAvailable = await isEmulatorRunning();
+        if (!emulatorAvailable) {
+            console.log('⚠️  Firestore Emulator not running - skipping rules tests');
+            return;
+        }
+
         const rules = fs.readFileSync(FIRESTORE_RULES_PATH, 'utf8');
         testEnv = await initializeTestEnvironment({
             projectId: PROJECT_ID,
@@ -44,7 +63,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
     }
 
     describe('Organization Access Control', () => {
-        it('should allow member to update organization', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow member to update organization', async () => {
             const orgId = 'org-update';
             const memberId = 'member-1';
             await setupOrg(orgId, [memberId]);
@@ -57,7 +76,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             }, { merge: true }));
         });
 
-        it('should deny member from deleting organization (CRITICAL FIX)', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny member from deleting organization (CRITICAL FIX)', async () => {
             const orgId = 'org-delete';
             const memberId = 'member-1';
             await setupOrg(orgId, [memberId]);
@@ -82,7 +101,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             updatedAt: new Date()
         };
 
-        it('should allow owner to read their own deployment', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow owner to read their own deployment', async () => {
             const deploymentId = 'dep-1';
             await testEnv.withSecurityRulesDisabled(async (context) => {
                 await setDoc(doc(context.firestore(), `deployments/${deploymentId}`), validDeployment);
@@ -92,7 +111,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             await assertSucceeds(getDoc(doc(aliceContext.firestore(), `deployments/${deploymentId}`)));
         });
 
-        it('should allow owner to create deployment with valid schema', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow owner to create deployment with valid schema', async () => {
             const context = testEnv.authenticatedContext(aliceId);
             await assertSucceeds(setDoc(doc(context.firestore(), 'deployments/new-dep'), {
                 ...validDeployment,
@@ -100,7 +119,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             }));
         });
 
-        it('should deny creating deployment with missing fields', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny creating deployment with missing fields', async () => {
             const context = testEnv.authenticatedContext(aliceId);
             await assertFails(setDoc(doc(context.firestore(), 'deployments/invalid-dep'), {
                 userId: aliceId,
@@ -121,17 +140,17 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             updatedAt: new Date()
         };
 
-        it('should allow owner to create task', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow owner to create task', async () => {
             const context = testEnv.authenticatedContext(bobId);
             await assertSucceeds(setDoc(doc(context.firestore(), 'distribution_tasks/task-1'), validTask));
         });
 
-        it('should deny creating task for others', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny creating task for others', async () => {
             const context = testEnv.authenticatedContext('mallory');
             await assertFails(setDoc(doc(context.firestore(), 'distribution_tasks/task-stolen'), validTask));
         });
 
-        it('should deny creating task with invalid type', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny creating task with invalid type', async () => {
             const context = testEnv.authenticatedContext(bobId);
             await assertFails(setDoc(doc(context.firestore(), 'distribution_tasks/task-invalid'), {
                 ...validTask,
@@ -153,12 +172,12 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             updatedAt: new Date()
         };
 
-        it('should allow owner to create ISRC with valid format', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow owner to create ISRC with valid format', async () => {
             const context = testEnv.authenticatedContext(charlieId);
             await assertSucceeds(setDoc(doc(context.firestore(), 'isrc_registry/isrc-1'), validIsrc));
         });
 
-        it('should deny creating ISRC with invalid format', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny creating ISRC with invalid format', async () => {
             const context = testEnv.authenticatedContext(charlieId);
             await assertFails(setDoc(doc(context.firestore(), 'isrc_registry/isrc-bad'), {
                 ...validIsrc,
@@ -166,7 +185,7 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             }));
         });
 
-        it('should deny owner from updating ISRC (IMMUTABILITY)', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny owner from updating ISRC (IMMUTABILITY)', async () => {
             const docId = 'isrc-immutable';
             await testEnv.withSecurityRulesDisabled(async (context) => {
                 await setDoc(doc(context.firestore(), `isrc_registry/${docId}`), validIsrc);
@@ -195,17 +214,17 @@ describe.skip('Firestore Security Rules: Deployments & Organizations', () => {
             updatedAt: new Date()
         };
 
-        it('should allow owner to create tax profile', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should allow owner to create tax profile', async () => {
             const context = testEnv.authenticatedContext(davidId);
             await assertSucceeds(setDoc(doc(context.firestore(), `tax_profiles/${davidId}`), validProfile));
         });
 
-        it('should deny creating profile for others', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny creating profile for others', async () => {
             const context = testEnv.authenticatedContext('mallory');
             await assertFails(setDoc(doc(context.firestore(), 'tax_profiles/stolen-profile'), validProfile));
         });
 
-        it('should deny deleting tax profile (COMPLIANCE)', async () => {
+        it.skipIf(!process.env.FIREBASE_EMULATOR)('should deny deleting tax profile (COMPLIANCE)', async () => {
             const docId = 'tax-doc';
             await testEnv.withSecurityRulesDisabled(async (context) => {
                 await setDoc(doc(context.firestore(), `tax_profiles/${docId}`), validProfile);

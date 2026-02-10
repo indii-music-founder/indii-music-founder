@@ -25,7 +25,14 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    functions: {}
+    functions: {},
+    remoteConfig: {
+        defaultConfig: {}
+    },
+    auth: {
+        currentUser: { uid: 'test-uid' },
+        onAuthStateChanged: vi.fn(() => () => { })
+    }
 }));
 
 vi.mock('@/services/ai/AIService', () => ({

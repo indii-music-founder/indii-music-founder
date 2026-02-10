@@ -7,21 +7,60 @@ import { ToastProvider } from '@/core/context/ToastContext';
 
 // Mock fabric to avoid canvas issues
 vi.mock('fabric', () => {
+  const mockObject = {
+    set: vi.fn(),
+    on: vi.fn(),
+    get: vi.fn(),
+    visible: true,
+    selectable: true,
+    evented: true,
+    toDataURL: vi.fn(),
+    clone: vi.fn().mockResolvedValue({}),
+    setCoords: vi.fn(),
+  };
+
   return {
     Canvas: class {
       add = vi.fn();
+      remove = vi.fn();
       sendObjectToBack = vi.fn();
+      bringObjectToFront = vi.fn();
       renderAll = vi.fn();
       on = vi.fn();
+      off = vi.fn();
       dispose = vi.fn();
       getObjects = vi.fn().mockReturnValue([]);
       toJSON = vi.fn();
+      toObject = vi.fn().mockReturnValue({});
       setActiveObject = vi.fn();
+      getActiveObject = vi.fn();
+      getActiveObjects = vi.fn().mockReturnValue([]);
+      discardActiveObject = vi.fn();
       loadFromJSON = vi.fn().mockResolvedValue(undefined);
+      clear = vi.fn();
+      toSVG = vi.fn();
+      toDataURL = vi.fn();
+      setZoom = vi.fn();
+      setDimensions = vi.fn();
+      getZoom = vi.fn().mockReturnValue(1);
+      viewportTransform = [1, 0, 0, 1, 0, 0];
     },
-    Rect: vi.fn(),
-    IText: vi.fn(),
-    Image: { fromURL: vi.fn().mockResolvedValue({ scaleToWidth: vi.fn(), set: vi.fn() }) },
+    Object: { prototype: { set: vi.fn() } },
+    Rect: vi.fn().mockImplementation(() => ({ ...mockObject, type: 'rect' })),
+    IText: vi.fn().mockImplementation(() => ({ ...mockObject, type: 'i-text' })),
+    Textbox: vi.fn().mockImplementation(() => ({ ...mockObject, type: 'textbox' })),
+    ActiveSelection: vi.fn().mockImplementation(() => ({ ...mockObject, type: 'activeSelection', forEachObject: vi.fn() })),
+    FabricImage: {
+      fromURL: vi.fn().mockResolvedValue({
+        ...mockObject,
+        type: 'image',
+        scaleToWidth: vi.fn(),
+        set: vi.fn(),
+        width: 100,
+        height: 100
+      })
+    },
+    Image: { fromURL: vi.fn().mockResolvedValue({ ...mockObject, type: 'image', scaleToWidth: vi.fn(), set: vi.fn() }) },
   };
 });
 

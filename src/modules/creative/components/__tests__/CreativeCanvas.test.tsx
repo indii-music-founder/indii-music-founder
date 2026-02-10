@@ -84,34 +84,31 @@ describe('CreativeCanvas', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('should render image preview initially', () => {
+    it('should render canvas element', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-        expect(screen.getByAltText('test prompt')).toBeInTheDocument();
-        expect(screen.getByText('Preview')).toBeInTheDocument();
+        expect(screen.getByTestId('creative-canvas-element')).toBeInTheDocument();
     });
 
-    it('should switch to edit mode when "Edit in Canvas" is clicked', () => {
+    it('should show Magic Fill input in the header', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-
-        const editButton = screen.getByText('Edit in Canvas');
-        fireEvent.click(editButton);
-
-        expect(screen.getByText('Fabric.js Editor')).toBeInTheDocument();
-        expect(screen.getByTitle('Magic Fill')).toBeInTheDocument();
+        expect(screen.getByTestId('magic-fill-input')).toBeInTheDocument();
     });
 
-    it('should show Magic Fill UI when toggled', () => {
+    it('should enter Magic Edit mode when tool is toggled', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
 
-        // Enter edit mode
-        fireEvent.click(screen.getByText('Edit in Canvas'));
-
-        // Toggle Magic Fill
+        // Toggle Magic Fill via sidebar toolbar
         const magicFillButton = screen.getByTitle('Magic Fill');
         fireEvent.click(magicFillButton);
 
-        expect(screen.getByPlaceholderText('Describe changes...')).toBeInTheDocument();
-        expect(screen.getByText('Generate')).toBeInTheDocument();
+        // Should show floating status (it's in the document)
+        expect(screen.getByText(/Magic Edit Mode:/i)).toBeInTheDocument();
+    });
+
+    it('should show Magic Fill input and Refine button', () => {
+        render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
+        expect(screen.getByPlaceholderText(/Magic Edit/i)).toBeInTheDocument();
+        expect(screen.getByText('Refine')).toBeInTheDocument();
     });
 
     it('should show Animate button for images in preview mode', () => {
