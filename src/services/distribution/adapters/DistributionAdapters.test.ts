@@ -32,7 +32,7 @@ vi.mock('../EarningsService', () => {
 // Mock Electron Bridge for SFTP and Distribution
 vi.stubGlobal('electronAPI', {
     sftp: {
-        connect: vi.fn().mockResolvedValue(true),
+        connect: vi.fn().mockResolvedValue({ success: true }),
         uploadDirectory: vi.fn().mockResolvedValue({ success: true, files: ['Metadata.xml', '01_Track.wav'] }),
         isConnected: vi.fn().mockResolvedValue(true),
         disconnect: vi.fn().mockResolvedValue(true)
@@ -160,14 +160,19 @@ describe('Distribution Adapters', () => {
                 .rejects.toThrow('Not connected');
         });
 
-        it('should successfully generate CSV package when connected', async () => {
+        it('should successfully build package and simulate delivery when connected', async () => {
             const adapter = new DistroKidAdapter();
-            await adapter.connect({ apiKey: 'test-key' });
+            await adapter.connect({
+                apiKey: 'test-key',
+                sftpHost: 'sftp.distrokid.com',
+                username: 'user',
+                password: 'password'
+            });
 
             const result = await adapter.createRelease(mockMetadata, mockAssets);
 
             expect(result.success).toBe(true);
-            expect(result.status).toMatch(/delivered|processing/);
+            expect(result.status).toMatch(/delivered|processing|in_review/);
             expect(result.distributorReleaseId).toBeDefined();
         });
     });
