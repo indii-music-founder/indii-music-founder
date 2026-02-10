@@ -20,6 +20,7 @@ import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
 import { DistributionTools } from './tools/DistributionTools';
+import { SuperpowerTools } from './tools/SuperpowerTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -44,6 +45,7 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...DevOpsTools,
     ...PUBLICIST_TOOLS,
     ...FinanceTools,
+    ...SuperpowerTools,
     ...DistributionTools
 };
 
