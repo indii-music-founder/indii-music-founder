@@ -10,20 +10,7 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
 // Mock Electron API for tests
-vi.stubGlobal('electronAPI', {
-    sftp: {
-        isConnected: vi.fn().mockResolvedValue(true),
-        connect: vi.fn().mockResolvedValue({ success: true }),
-        disconnect: vi.fn().mockResolvedValue(undefined),
-        uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
-    },
-    distribution: {
-        stageRelease: vi.fn().mockResolvedValue({
-            success: true,
-            packagePath: '/mock/package/path'
-        }),
-    }
-});
+// Moved to beforeEach/afterEach to prevent global pollution
 
 // Mock dependencies
 vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
@@ -114,6 +101,27 @@ describe('Distribution System Verification', () => {
         DistributorService.registerAdapter(tunecore);
         DistributorService.registerAdapter(cdbaby);
         DistributorService.registerAdapter(symphonic);
+    });
+
+    beforeEach(() => {
+        vi.stubGlobal('electronAPI', {
+            sftp: {
+                isConnected: vi.fn().mockResolvedValue(true),
+                connect: vi.fn().mockResolvedValue({ success: true }),
+                disconnect: vi.fn().mockResolvedValue(undefined),
+                uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
+            },
+            distribution: {
+                stageRelease: vi.fn().mockResolvedValue({
+                    success: true,
+                    packagePath: '/mock/package/path'
+                }),
+            }
+        });
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
     });
 
     describe('Adapter Registration', () => {

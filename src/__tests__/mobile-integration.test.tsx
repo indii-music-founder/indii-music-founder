@@ -89,7 +89,7 @@ describe('Mobile Experience Integration', () => {
             fireEvent.click(closeButton);
 
             // waitFor removal
-             await waitFor(() => {
+            await waitFor(() => {
                 expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
             });
 
@@ -101,14 +101,14 @@ describe('Mobile Experience Integration', () => {
             fireEvent.click(screen.getByLabelText('Open Navigation'));
 
             await waitFor(() => {
-                 expect(screen.getByText("Brand Manager")).toBeInTheDocument();
+                expect(screen.getByText("Brand Manager")).toBeInTheDocument();
             });
 
             fireEvent.click(screen.getByText("Brand Manager"));
 
             expect(mockSetModule).toHaveBeenCalledWith('brand');
             expect(mobileUtils.haptic).toHaveBeenCalledWith('light');
-             await waitFor(() => {
+            await waitFor(() => {
                 expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
             });
         });
@@ -120,7 +120,7 @@ describe('Mobile Experience Integration', () => {
             const fab = screen.getByLabelText('Open Navigation');
             // Check styling roughly
             expect(fab.className).toContain('fixed');
-            expect(fab.className).toContain('bottom-6');
+            expect(fab.className).toContain('bottom-32');
         });
     });
 

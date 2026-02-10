@@ -7,6 +7,21 @@ vi.mock('@/services/ai/AIService');
 vi.mock('../../observability/TraceService');
 vi.mock('../../AgentService');
 
+// Mock dynamic tool imports
+vi.mock('../tools/BrowserTools', () => ({
+    BrowserTools: {
+        browser_navigate: vi.fn().mockResolvedValue({ message: 'Navigation successful' }),
+        browser_action: vi.fn().mockResolvedValue({ message: 'Action successful' }),
+        browser_snapshot: vi.fn().mockResolvedValue({ message: 'Snapshot taken' })
+    }
+}));
+
+vi.mock('../tools/KnowledgeTools', () => ({
+    KnowledgeTools: {
+        search_knowledge: vi.fn().mockResolvedValue({ data: { answer: 'Knowledge found' } })
+    }
+}));
+
 describe('HybridOrchestrator Integration', () => {
     let orchestrator: HybridOrchestrator;
     const mockContext: AgentContext = {
@@ -45,7 +60,7 @@ describe('HybridOrchestrator Integration', () => {
             .mockResolvedValueOnce(mockResponses[1]);
 
         const result = await orchestrator.execute(mockContext, "Check copyright for my new song 'Detroit Ghost'");
-        
+
         expect(result).toContain("clear to proceed");
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
     });

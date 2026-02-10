@@ -13,7 +13,10 @@ const mockGenerateContentStream = vi.fn();
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContentStream: (...args: any[]) => mockGenerateContentStream(...args),
-        generateContent: (...args: any[]) => mockGenerateContentStream(...args), // Use same mock for simplicity as BaseAgent uses this
+        generateContent: async (...args: any[]) => {
+            const result = await mockGenerateContentStream(...args);
+            return await result.response;
+        }, // BaseAgent expects the WrappedResponse directly
         // Add other methods if needed by BaseAgent
         generateSpeech: vi.fn(),
     }
@@ -98,7 +101,12 @@ vi.mock('firebase/functions', () => ({
 }));
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
-    getValue: vi.fn().mockReturnValue({ asString: () => 'mock-model' })
+    getValue: vi.fn((_config, key) => {
+        if (key === 'ai_system_config') {
+            return { asString: () => JSON.stringify({ overrides: {}, pricing: {}, config: {} }) };
+        }
+        return { asString: () => 'mock-model' };
+    })
 }));
 
 // Import FirebaseAIService directly to test logic.
