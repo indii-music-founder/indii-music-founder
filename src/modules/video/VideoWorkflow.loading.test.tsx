@@ -71,7 +71,7 @@ vi.mock('firebase/firestore', () => ({
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
-vi.mock('@/services/firebase', () => ({ db: {} }));
+
 
 // Helper to set store state for a test
 const mockStoreState = (overrides: any) => {

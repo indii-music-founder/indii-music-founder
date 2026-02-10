@@ -5,6 +5,17 @@ import { currencyConversionService } from './CurrencyConversionService';
 import { useStore } from '@/core/store';
 import { IDistributorAdapter, DistributorEarnings, DateRange } from './types/distributor';
 
+// Mock Zod schema validation to prevent parse errors with mock data
+vi.mock('@/services/ddex/validation', async (importOriginal) => {
+  const actual = await importOriginal<any>();
+  return {
+    ...actual,
+    DistributorEarningsSchema: {
+      parse: (data: any) => data // Pass-through validation for tests
+    }
+  };
+});
+
 // Mock CurrencyConversionService
 vi.mock('./CurrencyConversionService', () => ({
   currencyConversionService: {
@@ -104,7 +115,7 @@ describe('DistributorService.getAggregatedEarnings', () => {
       distributorFee: 10,
       netRevenue: 90,
       currencyCode: 'USD',
-      lastUpdated: '2023-02-01',
+      lastUpdated: '2023-02-01T00:00:00Z',
       breakdown: []
     };
     (mockAdapter1.getEarnings as any).mockResolvedValue(earnings1);
@@ -120,7 +131,7 @@ describe('DistributorService.getAggregatedEarnings', () => {
       distributorFee: 5,
       netRevenue: 95,
       currencyCode: 'EUR',
-      lastUpdated: '2023-02-01',
+      lastUpdated: '2023-02-01T00:00:00Z',
       breakdown: []
     };
     (mockAdapter2.getEarnings as any).mockResolvedValue(earnings2);

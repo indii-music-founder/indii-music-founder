@@ -102,7 +102,7 @@ vi.mock('firebase/firestore', () => ({
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
-vi.mock('@/services/firebase', () => ({ db: {} }));
+
 
 // Helper to update store mock during test execution
 const updateStoreMock = (overrides: any) => {
