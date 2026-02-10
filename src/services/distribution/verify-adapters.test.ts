@@ -9,6 +9,22 @@ import { dsrService } from '@/services/ddex/DSRService';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 
+// Mock Electron API for tests
+vi.stubGlobal('electronAPI', {
+    sftp: {
+        isConnected: vi.fn().mockResolvedValue(true),
+        connect: vi.fn().mockResolvedValue({ success: true }),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+        uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
+    },
+    distribution: {
+        stageRelease: vi.fn().mockResolvedValue({
+            success: true,
+            packagePath: '/mock/package/path'
+        }),
+    }
+});
+
 // Mock dependencies
 vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
     distributionStore: {
@@ -22,6 +38,12 @@ vi.mock('../EarningsService', () => ({
     earningsService: {
         getEarnings: vi.fn().mockResolvedValue(null),
         getAllEarnings: vi.fn().mockResolvedValue([]),
+    }
+}));
+
+vi.mock('@/services/ddex/ERNService', () => ({
+    ernService: {
+        generateERN: vi.fn().mockResolvedValue({ success: true, xml: '<xml>mock-ern</xml>' }),
     }
 }));
 
@@ -76,11 +98,17 @@ describe('Distribution System Verification', () => {
     let cdbaby: CDBabyAdapter;
     let symphonic: SymphonicAdapter;
 
-    beforeAll(() => {
+    beforeAll(async () => {
         distrokid = new DistroKidAdapter();
         tunecore = new TuneCoreAdapter();
         cdbaby = new CDBabyAdapter();
         symphonic = new SymphonicAdapter();
+
+        // Properly connect to satisfy internal 'connected' state and hardening checks
+        await distrokid.connect({ apiKey: 'mock-key', sftpHost: 'mock-host' });
+        await tunecore.connect({ apiKey: 'mock-key', username: 'test-user' });
+        await cdbaby.connect({ apiKey: 'mock-key' });
+        await symphonic.connect({ apiKey: 'mock-key', accountId: 'partner-123', sftpHost: 'mock-host' });
 
         DistributorService.registerAdapter(distrokid);
         DistributorService.registerAdapter(tunecore);
@@ -100,7 +128,7 @@ describe('Distribution System Verification', () => {
 
     describe('DistroKid Adapter', () => {
         it('should connect successfully', async () => {
-            await expect(distrokid.connect({ apiKey: 'mock-key' })).resolves.not.toThrow();
+            await expect(distrokid.connect({ apiKey: 'mock-key', sftpHost: 'mock-host' })).resolves.not.toThrow();
         });
 
         it('should validate metadata', async () => {
@@ -141,7 +169,7 @@ describe('Distribution System Verification', () => {
 
     describe('Symphonic Adapter', () => {
         it('should connect successfully', async () => {
-            await expect(symphonic.connect({ apiKey: 'mock-key', accountId: 'partner-123' })).resolves.not.toThrow();
+            await expect(symphonic.connect({ apiKey: 'mock-key', accountId: 'partner-123', sftpHost: 'mock-host' })).resolves.not.toThrow();
         });
 
         it('should validate metadata', async () => {
