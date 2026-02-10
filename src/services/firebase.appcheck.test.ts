@@ -1,6 +1,9 @@
 // src/services/firebase.appcheck.test.ts
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+// Unmock the service so we can test its real initialization logic
+vi.unmock('@/services/firebase');
+
 // Mocks
 const mockInitializeApp = vi.fn();
 const mockInitializeAppCheck = vi.fn();
@@ -63,8 +66,9 @@ describe('Firebase App Check Initialization', () => {
             firebaseConfig: { apiKey: 'test' }
         }));
 
-        // Import the service
-        await import('./firebase');
+        // Initialize the service manually
+        const { initializeAppCheckService } = await import('./firebase');
+        initializeAppCheckService();
 
         expect(mockInitializeAppCheck).toHaveBeenCalled();
         expect(mockReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
@@ -104,7 +108,9 @@ describe('Firebase App Check Initialization', () => {
         }));
 
         // Import the service
-        await import('./firebase');
+        // Initialize the service manually
+        const { initializeAppCheckService } = await import('./firebase');
+        initializeAppCheckService();
 
         expect(mockInitializeAppCheck).toHaveBeenCalled();
         expect(mockReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
