@@ -13,19 +13,63 @@ const mockGenerateContentStream = vi.fn();
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContentStream: (...args: any[]) => mockGenerateContentStream(...args),
+        generateContent: (...args: any[]) => mockGenerateContentStream(...args), // Use same mock for simplicity as BaseAgent uses this
         // Add other methods if needed by BaseAgent
         generateSpeech: vi.fn(),
     }
 }));
 
+// Mock Environment to prevent Fallback Mode in CI/Test
+vi.mock('@/config/env', () => ({
+    env: {
+        DEV: false,
+        apiKey: 'test-api-key',
+        appCheckKey: 'test-app-check-key', // CRITICAL: This bypasses fallback mode
+        firebaseProjectId: 'test-project',
+    }
+}));
+
+// Mock auth store - INLINED to avoid hoisting issues
+// Mock auth store - INLINED to avoid hoisting issues
+vi.mock('@/core/store', () => {
+    const mockState = {
+        currentModule: 'agent',
+        user: { uid: 'test-user' },
+        // Add minimal state needed
+    };
+    const useStore = vi.fn(() => mockState);
+    // Attach getState to the hook function (Zustand pattern)
+    (useStore as any).getState = vi.fn(() => mockState);
+    (useStore as any).setState = vi.fn();
+
+    return {
+        useStore,
+        // Optional: keep authStore if tests use it, otherwise remove
+        authStore: {
+            userId: 'test-user',
+            user: { uid: 'test-user' }
+        }
+    };
+});
+
 // Mock TokenUsageService to verify quota checks
 const mockCheckQuota = vi.fn();
 const mockTrackUsage = vi.fn();
+const mockCheckRateLimit = vi.fn();
 
 vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: (...args: any[]) => mockCheckQuota(...args),
         trackUsage: (...args: any[]) => mockTrackUsage(...args),
+        checkRateLimit: (...args: any[]) => mockCheckRateLimit(...args),
+    }
+}));
+
+// Mock MembershipService to prevent Budget Exceeded errors in BaseAgent
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn(() => Promise.resolve({ allowed: true })),
+        recordSpend: vi.fn(() => Promise.resolve()),
     }
 }));
 
@@ -34,6 +78,7 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     functions: {},
     ai: { type: 'mock-ai-instance' },
+    getFirebaseAI: () => ({ type: 'mock-ai-instance' }), // CRITICAL: Required for bootstrap
     remoteConfig: {},
     db: {}
 }));
