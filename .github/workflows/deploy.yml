@@ -30,6 +30,7 @@ jobs:
         timeout-minutes: 30
         run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
         env:
+          NODE_OPTIONS: --max-old-space-size=4096
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
           VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
           VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
