@@ -44,9 +44,17 @@ vi.mock('./MemoryService', () => ({
     }
 }));
 
-vi.mock('@/services/firebase', () => ({
-    auth: { currentUser: { uid: 'test-user' } }
-}));
+vi.mock('@/services/firebase', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@/services/firebase')>();
+    return {
+        ...actual,
+        auth: { currentUser: { uid: 'test-user' } },
+        getFirebaseAI: vi.fn(),
+        // Define simple mocks for named exports that might be missing or need specific behavior
+        remoteConfig: {}, // Ensure named export exists
+        functions: {}
+    };
+});
 
 describe('Agent Tool Accessibility Audit', () => {
 
@@ -223,7 +231,7 @@ describe('Agent Tool Accessibility Audit', () => {
             }
 
             // This is a warning, not a failure - some tools might be in TOOL_REGISTRY
-            expect(missingImplementations.length).toBeLessThanOrEqual(5); // Allow some flexibility
+            expect(missingImplementations.length, `Missing implementations: ${JSON.stringify(missingImplementations, null, 2)}`).toBeLessThanOrEqual(5); // Allow some flexibility
         });
     });
 });
