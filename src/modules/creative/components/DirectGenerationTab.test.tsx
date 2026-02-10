@@ -61,6 +61,7 @@ describe('DirectGenerationTab', () => {
         },
         setPrompt: vi.fn(),
         addToHistory: vi.fn(),
+        setSelectedItem: vi.fn(),
         currentProjectId: 'test-project',
         whiskState: {}
     };

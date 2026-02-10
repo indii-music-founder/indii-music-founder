@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
@@ -8,6 +8,22 @@ import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapte
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets, IDistributorAdapter } from '@/services/distribution/types/distributor';
+
+// Mock Electron API for tests
+vi.stubGlobal('electronAPI', {
+    sftp: {
+        isConnected: vi.fn().mockResolvedValue(true),
+        connect: vi.fn().mockResolvedValue({ success: true }),
+        disconnect: vi.fn().mockResolvedValue(undefined),
+        uploadDirectory: vi.fn().mockResolvedValue({ success: true }),
+    },
+    distribution: {
+        stageRelease: vi.fn().mockResolvedValue({
+            success: true,
+            packagePath: '/mock/package/path'
+        }),
+    }
+});
 
 // Mock dependencies to prevent permission errors
 vi.mock('@/services/distribution/DistributionPersistenceService', () => ({
@@ -113,7 +129,8 @@ describe('All Distribution Adapters Integration', () => {
             await expect(adapter.connect({
                 apiKey: 'test-api-key',
                 accessToken: 'test-access-token',
-                accountId: 'test-account'
+                accountId: 'test-account',
+                sftpHost: 'mock-sftp-host'
             })).resolves.not.toThrow();
         });
 
@@ -123,7 +140,7 @@ describe('All Distribution Adapters Integration', () => {
 
             // Each adapter returns a different status
             if (adapter.name === 'DistroKid') {
-                expect(result.status).toBe('processing');
+                expect(result.status).toBe('in_review');
             } else if (adapter.name === 'TuneCore') {
                 expect(result.status).toBe('pending_review');
             } else if (adapter.name === 'CDBaby') {

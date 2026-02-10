@@ -124,8 +124,8 @@ export class ImageGenerationService {
                 count: count,
                 // Gemini 3 Pro Image (Imagen 3) is strictly Text-to-Image.
                 model: options.model === 'pro' ? 'pro' : 'fast',
-                // Imagen 3 does not support thinking/grounding - removing from payload to prevent 400s
-                // Removing images: [] as it might trigger invalid argument for T2I
+                thinking: options.thinking ?? false,
+                useGrounding: options.useGrounding ?? false
             });
             console.log('[ImageGen DEBUG] generateImageV3 returned:', result);
 

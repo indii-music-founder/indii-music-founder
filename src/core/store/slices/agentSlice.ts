@@ -1,7 +1,7 @@
 import { StateCreator } from 'zustand';
 import { z } from 'zod';
 import { SpecializedAgent } from '@/services/agent/types';
-import { agentRegistry } from '@/services/agent/registry';
+// import { agentRegistry } from '@/services/agent/registry'; // Removed to break circular dependency
 
 const AgentSchema = z.object({
     id: z.string(),
@@ -375,6 +375,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         set({ isLoadingAgents: true, agentsError: null });
         try {
             // Simulate async if needed, or just handle sync failure
+            const { agentRegistry } = await import('@/services/agent/registry');
             const agents = agentRegistry.getAll();
 
             // Validate data integrity

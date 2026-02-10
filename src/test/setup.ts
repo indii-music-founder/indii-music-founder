@@ -224,8 +224,12 @@ vi.mock('firebase/storage', () => ({
 // Mock Firebase Remote Config
 vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn(() => Promise.resolve(true)),
-    getValue: vi.fn((rc, key) => ({
-        asString: () => key === 'model_name' ? 'mock-model-v1' : 'us-central1',
+    getValue: vi.fn((_rc, key) => ({
+        asString: () => {
+            if (key === 'model_name') return 'mock-model-v1';
+            // Return empty object as string for all other keys that might be parsed as JSON
+            return '{}';
+        },
         asBoolean: () => false,
         asNumber: () => 1
     })),
@@ -301,21 +305,24 @@ vi.mock('@/services/agent/AgentZeroService', () => ({
 }));
 
 // Mock lucide-react with simple stub factory
-vi.mock('lucide-react', async () => {
-    const React = await import('react');
+vi.mock('lucide-react', () => {
+    const React = require('react');
 
     const createMockIcon = (name: string) => {
-        const MockIcon = (props: Record<string, unknown>) => {
+        const MockIcon = (props: any) => {
+            const { size, color, ...rest } = props;
             return React.createElement('svg', {
                 'data-testid': `icon-${name}`,
-                ...props
+                width: size || 24,
+                height: size || 24,
+                stroke: color || 'currentColor',
+                ...rest
             });
         };
         MockIcon.displayName = name;
         return MockIcon;
     };
 
-    // Pre-define commonly used icons to avoid dynamic property access issues
     return {
         __esModule: true,
         // UI Layout
@@ -326,7 +333,6 @@ vi.mock('lucide-react', async () => {
         PanelTopOpen: createMockIcon('PanelTopOpen'),
         MonitorPlay: createMockIcon('MonitorPlay'),
         Database: createMockIcon('Database'),
-
         // Navigation
         ChevronDown: createMockIcon('ChevronDown'),
         ChevronUp: createMockIcon('ChevronUp'),
@@ -391,6 +397,7 @@ vi.mock('lucide-react', async () => {
         User: createMockIcon('User'),
         Users: createMockIcon('Users'),
         UserPlus: createMockIcon('UserPlus'),
+        UserIcon: createMockIcon('UserIcon'),
         // Other common
         Star: createMockIcon('Star'),
         Heart: createMockIcon('Heart'),
@@ -425,6 +432,7 @@ vi.mock('lucide-react', async () => {
         Layout: createMockIcon('Layout'),
         LayoutDashboard: createMockIcon('LayoutDashboard'),
         LayoutGrid: createMockIcon('LayoutGrid'),
+        LayoutTemplate: createMockIcon('LayoutTemplate'),
         Palette: createMockIcon('Palette'),
         Paintbrush: createMockIcon('Paintbrush'),
         Pen: createMockIcon('Pen'),
@@ -436,6 +444,9 @@ vi.mock('lucide-react', async () => {
         AlignLeft: createMockIcon('AlignLeft'),
         AlignCenter: createMockIcon('AlignCenter'),
         AlignRight: createMockIcon('AlignRight'),
+        AlignVerticalJustifyStart: createMockIcon('AlignVerticalJustifyStart'),
+        AlignVerticalJustifyCenter: createMockIcon('AlignVerticalJustifyCenter'),
+        AlignVerticalJustifyEnd: createMockIcon('AlignVerticalJustifyEnd'),
         BarChart: createMockIcon('BarChart'),
         BarChart2: createMockIcon('BarChart2'),
         BarChart3: createMockIcon('BarChart3'),
@@ -492,6 +503,7 @@ vi.mock('lucide-react', async () => {
         Linkedin: createMockIcon('Linkedin'),
         SkipBack: createMockIcon('SkipBack'),
         SkipForward: createMockIcon('SkipForward'),
+        SkipForwardIcon: createMockIcon('SkipForward'),
         Slack: createMockIcon('Slack'),
         Discord: createMockIcon('Discord'),
         Feather: createMockIcon('Feather'),
@@ -529,6 +541,7 @@ vi.mock('lucide-react', async () => {
         Command: createMockIcon('Command'),
         Crosshair: createMockIcon('Crosshair'),
         Disc: createMockIcon('Disc'),
+        Disc3: createMockIcon('Disc3'),
         Divide: createMockIcon('Divide'),
         DoorOpen: createMockIcon('DoorOpen'),
         DoorClosed: createMockIcon('DoorClosed'),
@@ -573,6 +586,12 @@ vi.mock('lucide-react', async () => {
         XSquare: createMockIcon('XSquare'),
         ZoomIn: createMockIcon('ZoomIn'),
         ZoomOut: createMockIcon('ZoomOut'),
+        Music2: createMockIcon('Music2'),
+        Ticket: createMockIcon('Ticket'),
+        Undo: createMockIcon('Undo'),
+        Redo: createMockIcon('Redo'),
+        Sticker: createMockIcon('Sticker'),
+        LayoutGridIcon: createMockIcon('LayoutGrid'),
     };
 });
 

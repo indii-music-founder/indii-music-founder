@@ -215,6 +215,7 @@ describe('Agent Tool Accessibility Audit', () => {
 
                 declaredTools.forEach(tool => {
                     // Check if it's in config.functions OR in global TOOL_REGISTRY
+                    // console.log(`Checking tool: ${tool}, implemented: ${implementedTools.includes(tool)}, in Registry: ${!!TOOL_REGISTRY[tool]}`);
                     if (!implementedTools.includes(tool) && !TOOL_REGISTRY[tool]) {
                         missingImplementations.push({ agent: config.name, tool });
                     }
