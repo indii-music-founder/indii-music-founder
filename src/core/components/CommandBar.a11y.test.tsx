@@ -62,14 +62,7 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
-vi.mock('framer-motion', () => ({
-    motion: {
-        div: React.forwardRef(({ children, className, ...props }: any, ref: any) => (
-            <div ref={ref} className={className} {...props}>{children}</div>
-        ))
-    },
-    AnimatePresence: ({ children }: any) => <>{children}</>
-}));
+
 
 describe('CommandBar Accessibility', () => {
     const mockSetModule = vi.fn();
@@ -78,13 +71,16 @@ describe('CommandBar Accessibility', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            toggleAgentWindow: mockToggleAgentWindow,
-            isAgentOpen: false,
-            chatChannel: 'agent', // Ensure delegate menu is visible
-            setChatChannel: vi.fn(),
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockImplementation((selector) => {
+            const state = {
+                currentModule: 'dashboard',
+                setModule: mockSetModule,
+                toggleAgentWindow: mockToggleAgentWindow,
+                isAgentOpen: false,
+                chatChannel: 'agent', // Ensure delegate menu is visible
+                setChatChannel: vi.fn(),
+            };
+            return selector ? selector(state) : state;
         });
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
@@ -98,7 +94,7 @@ describe('CommandBar Accessibility', () => {
     it('should have no accessibility violations when Delegate Menu is open', async () => {
         const { container } = render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
+        const delegateBtn = screen.getByLabelText('Select active agent');
         fireEvent.click(delegateBtn!);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
@@ -110,7 +106,7 @@ describe('CommandBar Accessibility', () => {
     it('should close Delegate Menu when Escape key is pressed', async () => {
         render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
+        const delegateBtn = screen.getByLabelText('Select active agent');
         fireEvent.click(delegateBtn!);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
@@ -125,7 +121,7 @@ describe('CommandBar Accessibility', () => {
     it('should return focus to the trigger button when Delegate Menu is closed', async () => {
         render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
+        const delegateBtn = screen.getByLabelText('Select active agent');
         delegateBtn!.focus();
         fireEvent.click(delegateBtn!);
 
