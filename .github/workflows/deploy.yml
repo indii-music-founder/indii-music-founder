@@ -31,14 +31,12 @@ jobs:
         run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}
-
-
+          VITE_API_KEY: ${{ secrets['VITE_API_KEY'] }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets['VITE_VERTEX_PROJECT_ID'] }}
+          VITE_VERTEX_LOCATION: ${{ secrets['VITE_VERTEX_LOCATION'] }}
+          VITE_FIREBASE_API_KEY: ${{ secrets['VITE_FIREBASE_API_KEY'] }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets['VITE_FIREBASE_PROJECT_ID'] }}
+          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: ${{ secrets['VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'] }}
 
       - name: Run E2E tests (critical paths only)
         run: npm run test:e2e
@@ -54,11 +52,11 @@ jobs:
         run: npm run build:studio
         env:
           NODE_ENV: production
-          VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
-          VITE_VERTEX_PROJECT_ID: ${{ secrets.VITE_VERTEX_PROJECT_ID }}
-          VITE_VERTEX_LOCATION: ${{ secrets.VITE_VERTEX_LOCATION }}
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_API_KEY: ${{ secrets['VITE_API_KEY'] }}
+          VITE_VERTEX_PROJECT_ID: ${{ secrets['VITE_VERTEX_PROJECT_ID'] }}
+          VITE_VERTEX_LOCATION: ${{ secrets['VITE_VERTEX_LOCATION'] }}
+          VITE_FIREBASE_API_KEY: ${{ secrets['VITE_FIREBASE_API_KEY'] }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets['VITE_FIREBASE_PROJECT_ID'] }}
 
       - name: Verify build outputs
         run: |
@@ -101,8 +99,10 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Authenticate with Firebase
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets['FIREBASE_SERVICE_ACCOUNT'] }}
         run: |
-          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > $HOME/gcloud-key.json
+          echo "$FIREBASE_SERVICE_ACCOUNT" > $HOME/gcloud-key.json
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           firebase projects:list --json
 

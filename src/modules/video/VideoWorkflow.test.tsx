@@ -14,8 +14,9 @@ vi.mock('@/core/store', () => ({
 }));
 
 vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({ status: 'idle', setProgress: vi.fn() }));
+    const fn = Object.assign(vi.fn(), {
+        getState: vi.fn(() => ({ status: 'idle', setProgress: vi.fn() }))
+    });
     return { useVideoEditorStore: fn };
 });
 

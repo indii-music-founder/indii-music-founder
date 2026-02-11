@@ -15,6 +15,10 @@ const mocks = vi.hoisted(() => ({
         setFfmpegPath: vi.fn(),
         setFfprobePath: vi.fn(),
         ffprobe: vi.fn()
+    },
+    accessControlService: {
+        verifyAccess: vi.fn(() => true), // Default to true for tests
+        grantAccess: vi.fn()
     }
 }));
 
@@ -27,6 +31,14 @@ vi.mock('electron', () => ({
 vi.mock('fs', () => ({
     default: mocks.fs,
     ...mocks.fs
+}));
+
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: mocks.accessControlService
+}));
+
+vi.mock('../utils/file-security', () => ({
+    validateSafeAudioPath: vi.fn((p) => p)
 }));
 
 vi.mock('fluent-ffmpeg', () => ({

@@ -43,7 +43,7 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
       name: `Child of ${p1.name} & ${p2.name}`,
       systemPrompt: p1.systemPrompt + ' + ' + p2.systemPrompt,
       parameters: {
-          temperature: (p1.parameters.temperature + p2.parameters.temperature) / 2
+        temperature: (p1.parameters.temperature + p2.parameters.temperature) / 2
       },
       generation: Math.max(p1.generation, p2.generation),
       lineage: [p1.id, p2.id]
@@ -54,8 +54,8 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
       ...g,
       systemPrompt: g.systemPrompt + ' [MUTATED]',
       parameters: {
-          ...g.parameters,
-          temperature: Math.min(1.0, g.parameters.temperature + 0.1)
+        ...g.parameters,
+        temperature: Math.min(1.0, g.parameters.temperature + 0.1)
       }
     }));
   });
@@ -63,23 +63,23 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
   it('Diversity Injection: Ensures population escapes "Clonal Stagnation" via mutation', async () => {
     // 1. Setup: Population of Clones
     const clones = Array(5).fill(null).map((_, i) => ({
-        ...mockGene,
-        id: `clone-${i}`,
-        systemPrompt: 'I am a clone',
-        fitness: 0.5
+      ...mockGene,
+      id: `clone-${i}`,
+      systemPrompt: 'I am a clone',
+      fitness: 0.5
     }));
 
     engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
     // Mock Mutation to produce random variations
     mockMutationFn.mockImplementation(async (g) => ({
-        ...g,
-        systemPrompt: g.systemPrompt + ` [MUTATED-${Math.random().toString(36).substring(7)}]`
+      ...g,
+      systemPrompt: g.systemPrompt + ` [MUTATED-${Math.random().toString(36).substring(7)}]`
     }));
 
     // 2. Evolve with guaranteed mutation to avoid probabilistic flakiness
-    const diverstiyConfig = { ...config, mutationRate: 1.0 };
-    engine = new EvolutionEngine(diverstiyConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+    const diversityConfig = { ...config, mutationRate: 1.0 };
+    engine = new EvolutionEngine(diversityConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
     const nextGen = await engine.evolve(clones);
 
     // 3. Measure Diversity
@@ -118,10 +118,10 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
     // All other 3 agents must be offspring of 'elite' and 'elite'
     const offspring = nextGen.slice(1);
     offspring.forEach(child => {
-        expect(child.lineage).toEqual(['elite', 'elite']);
-        expect(child.systemPrompt).toContain('SURVIVOR');
-        // Because of mutation (rate 1.0), they MUST contain the tag
-        expect(child.systemPrompt).toContain('[MUTATED]');
+      expect(child.lineage).toEqual(['elite', 'elite']);
+      expect(child.systemPrompt).toContain('SURVIVOR');
+      // Because of mutation (rate 1.0), they MUST contain the tag
+      expect(child.systemPrompt).toContain('[MUTATED]');
     });
   });
 });

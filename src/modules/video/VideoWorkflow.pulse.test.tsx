@@ -49,17 +49,18 @@ const editorStoreState = {
 };
 
 vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn(() => ({
+    const fn = Object.assign(vi.fn(() => ({
         ...editorStoreState,
         setJobId: mockSetJobId,
         setStatus: mockSetJobStatus,
         setProgress: mockSetProgress,
         setViewMode: vi.fn(),
-    }));
-    (fn as any).getState = vi.fn(() => ({
-        status: editorStoreState.status,
-        setProgress: mockSetProgress
-    }));
+    })), {
+        getState: vi.fn(() => ({
+            status: editorStoreState.status,
+            setProgress: mockSetProgress
+        }))
+    });
     return { useVideoEditorStore: fn };
 });
 

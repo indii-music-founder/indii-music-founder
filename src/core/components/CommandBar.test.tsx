@@ -63,7 +63,7 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div className={className} {...props}>{children}</div>
     },
-    AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>
+    AnimatePresence: ({ children }: { children: React.ReactNode }) => children
 }));
 
 // Define the store shape for testing

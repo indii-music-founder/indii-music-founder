@@ -20,6 +20,10 @@ const mocks = vi.hoisted(() => ({
         setFfmpegPath: vi.fn(),
         setFfprobePath: vi.fn(),
         ffprobe: vi.fn()
+    },
+    accessControlService: {
+        verifyAccess: vi.fn(() => true), // Default to true for tests
+        grantAccess: vi.fn()
     }
 }));
 
@@ -54,6 +58,16 @@ vi.mock('crypto', () => ({
 // Mock dependencies
 vi.mock('../services/APIService', () => ({
     apiService: { getSongMetadata: vi.fn() }
+}));
+
+// Mock Access Control
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: mocks.accessControlService
+}));
+
+// Mock ValidateSafeAudioPath
+vi.mock('../utils/file-security', () => ({
+    validateSafeAudioPath: vi.fn((p) => p)
 }));
 
 // Import handler
