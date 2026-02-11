@@ -28,6 +28,7 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 - **Role:** Provides the high-level strategy, much like a manager giving instructions to a specialized employee.
 
 **Available Directives:**
+
 - `agent_stability.md` - Agent reliability standards
 - `architecture_standard.md` - Architectural guidelines
 - `direct_distribution_engine.md` - Distribution engine SOP
@@ -142,6 +143,7 @@ indiiOS-Alpha-Electron/
 ## Tech Stack
 
 ### Frontend
+
 | Category | Technology | Notes |
 |----------|-----------|-------|
 | Framework | React 18 | With lazy-loaded modules |
@@ -160,6 +162,7 @@ indiiOS-Alpha-Electron/
 | Validation | Zod 3.25 | Schema validation |
 
 ### Backend
+
 | Category | Technology | Notes |
 |----------|-----------|-------|
 | Functions | Firebase Functions 7.0 (Gen 2) | Node.js 22 runtime |
@@ -171,6 +174,7 @@ indiiOS-Alpha-Electron/
 | Analytics | BigQuery | Revenue analytics |
 
 ### Desktop (Electron 33)
+
 | Component | Purpose |
 |-----------|---------|
 | Electron Forge 7.8 / Builder 26.0 | Packaging (DMG, NSIS, AppImage) |
@@ -179,6 +183,7 @@ indiiOS-Alpha-Electron/
 | FFmpeg / FFProbe | Audio/video processing |
 
 ### Testing
+
 | Tool | Purpose |
 |------|---------|
 | Vitest 4.0 | Unit tests (jsdom environment) |
@@ -191,12 +196,14 @@ indiiOS-Alpha-Electron/
 ## Development Commands
 
 ### Daily Development
+
 ```bash
 npm run dev                    # Start Vite dev server on :4242
 npm run desktop:dev            # Run Electron dev (requires :4242 running)
 ```
 
 ### Building
+
 ```bash
 npm run build                  # Typecheck + lint + Vite production build
 npm run build:studio           # Vite build only (no lint/typecheck)
@@ -210,6 +217,7 @@ npm run build:desktop:linux    # Linux only (AppImage)
 ```
 
 ### Testing
+
 ```bash
 npm test                       # Run Vitest in watch mode
 npm test -- --run              # Run Vitest once (CI mode)
@@ -218,6 +226,7 @@ npm run test:e2e               # Run Playwright E2E tests
 ```
 
 ### Code Quality
+
 ```bash
 npm run lint                   # ESLint check (.ts, .tsx)
 npm run lint:fix               # Auto-fix lint issues
@@ -225,6 +234,7 @@ npm run typecheck              # TypeScript type checking (tsc --noEmit)
 ```
 
 ### Deployment
+
 ```bash
 npm run deploy                 # Build studio + deploy to Firebase hosting (app target)
 ```
@@ -234,12 +244,14 @@ npm run deploy                 # Build studio + deploy to Firebase hosting (app 
 ## Key Conventions
 
 ### Path Aliases
+
 ```typescript
 import { Something } from '@/services/ai/AIService';    // src/*
 import { AgentDef } from '@agents/creative-director';     // agents/*
 ```
 
 ### State Management (Zustand)
+
 - Root store at `src/core/store.ts`
 - Domain slices in `src/core/store/slices/`:
   - `appSlice.ts` - UI state, current module, navigation
@@ -255,23 +267,27 @@ import { AgentDef } from '@agents/creative-director';     // agents/*
 - Use `useShallow` from `zustand/react/shallow` to prevent unnecessary re-renders
 
 ### Module System
+
 - All feature modules are **lazy-loaded** via `React.lazy()` in `src/core/App.tsx`
 - Module components mapped in `MODULE_COMPONENTS` record by `ModuleId`
 - Standalone modules (no chrome/sidebar) defined in `STANDALONE_MODULES`
 - Each module lives in `src/modules/<name>/` with its own components, hooks, and types
 
 ### Component Organization
+
 - Shared UI primitives in `src/components/ui/` (Radix-based)
 - Module-specific components in `src/modules/<name>/components/`
 - Layout components in `src/components/layout/`
 
 ### ESLint Rules
+
 - `@typescript-eslint/no-explicit-any`: warn (not error)
 - `@typescript-eslint/no-unused-vars`: warn, with `^_` prefix ignored
 - `react-refresh/only-export-components`: warn
 - Ignored directories: `dist`, `landing-page`, `functions/lib`, `_archive_legacy`
 
 ### TypeScript Configuration
+
 - Target: ES2022, strict mode enabled
 - Module resolution: bundler
 - JSX: react-jsx
@@ -284,6 +300,7 @@ import { AgentDef } from '@agents/creative-director';     // agents/*
 All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for local development.
 
 **Required for development:**
+
 - `VITE_API_KEY` - Gemini API key
 - `VITE_FIREBASE_API_KEY` - Firebase API key (identifier, not secret)
 - `VITE_FIREBASE_PROJECT_ID` - Firebase project ID
@@ -291,6 +308,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - `VITE_FIREBASE_STORAGE_BUCKET` - Storage bucket
 
 **Optional:**
+
 - `VITE_VERTEX_PROJECT_ID` / `VITE_VERTEX_LOCATION` - Vertex AI config
 - `VITE_GOOGLE_MAPS_API_KEY` - Google Maps
 - `VITE_SKIP_ONBOARDING` - Skip onboarding in dev
@@ -301,6 +319,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 ## Testing Conventions
 
 ### Unit Tests (Vitest)
+
 - Test setup: `src/test/setup.ts` - provides centralized Firebase mocks, ResizeObserver/Canvas/matchMedia mocks
 - Environment: jsdom with `@testing-library/jest-dom`
 - Co-locate tests with source: `*.test.ts` / `*.test.tsx`
@@ -309,6 +328,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
+
 - Test files in `/e2e/` directory (60+ specs)
 - Categories: agent flows, chat interaction, creative persistence, mobile responsiveness, maestro workflows, chaos testing
 - Run: `npm run test:e2e`
@@ -318,6 +338,7 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 ## CI/CD Pipeline
 
 **GitHub Actions** (`.github/workflows/deploy.yml`):
+
 1. Triggered on push to `main` or manual dispatch
 2. Node.js 22.x with npm caching
 3. Steps: Lint -> Unit tests -> E2E tests -> Build landing -> Build studio -> Deploy to Firebase
@@ -327,7 +348,9 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 5. Required secrets: `VITE_API_KEY`, `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_PROJECT_ID`, `VITE_VERTEX_PROJECT_ID`, `VITE_VERTEX_LOCATION`, `FIREBASE_SERVICE_ACCOUNT`
 
 ### Build Pipeline (`npm run build`)
+
 The `build` script runs three steps sequentially:
+
 1. `npm run typecheck` - TypeScript compiler check
 2. `npm run lint` - ESLint
 3. `vite build` - Production bundle with terser minification (console/debugger stripped)
@@ -360,10 +383,25 @@ The `build` script runs three steps sequentially:
 ## Operating Principles
 
 ### 1. Check for tools first
+
 Never reinvent the wheel. Before writing a new script, audit `execution/` for existing tools that fulfill the directive.
 
 ### 2. Self-anneal on failure
+
 When a script fails, analyze the stack trace, fix the deterministic code, and re-verify. If a fix involves external costs (tokens/credits), seek user approval before proceeding.
+
+### 1.4 AGENT GUIDELINES PROTOCOL (LATEST)
+
+- **Single Source of Truth:** You MUST read `.docs/AGENT_GUIDELINES.md` and `.docs/agent_guidelines.json` at the start of every session to align with the latest protocols.
+- **Versioning:** Check the version in `agent_guidelines.json` and ensure your actions are compatible.
+- **Messaging:** Adhere to the messaging standards defined in the guidelines (e.g., `✅ Task complete:`).
+
+---
+
+## 2. AI MODEL POLICY (CRITICAL - HIGHEST PRIORITY)
+
+> [!WARNING]
+> This is a core architectural policy. Violations are treated as terminal errors.
 
 ### 3. API SECURITY & CREDENTIALS POLICY
 
