@@ -29,33 +29,13 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Run linting checks
-        run: |
-          CHANGED_FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(ts|tsx)$' || true)
-          if [ -n "$CHANGED_FILES" ]; then
-            npm run lint:changed -- $CHANGED_FILES
-          else
-            echo "No TypeScript files changed, skipping lint:changed"
-          fi
+
 
       - name: Run unit tests
         timeout-minutes: 30
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-          GH_SECRET_VITE_API_KEY: "${{ secrets.VITE_API_KEY }}"
-          GH_SECRET_VITE_VERTEX_PROJECT_ID: "${{ secrets.VITE_VERTEX_PROJECT_ID }}"
-          GH_SECRET_VITE_VERTEX_LOCATION: "${{ secrets.VITE_VERTEX_LOCATION }}"
-          GH_SECRET_VITE_FIREBASE_API_KEY: "${{ secrets.VITE_FIREBASE_API_KEY }}"
-          GH_SECRET_VITE_FIREBASE_PROJECT_ID: "${{ secrets.VITE_FIREBASE_PROJECT_ID }}"
-          BYPASS_GH_SECRET_TOKEN: "${{ secrets.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN }}"
-        run: |
-          VITE_API_KEY="$GH_SECRET_VITE_API_KEY" \
-          VITE_VERTEX_PROJECT_ID="$GH_SECRET_VITE_VERTEX_PROJECT_ID" \
-          VITE_VERTEX_LOCATION="$GH_SECRET_VITE_VERTEX_LOCATION" \
-          VITE_FIREBASE_API_KEY="$GH_SECRET_VITE_FIREBASE_API_KEY" \
-          VITE_FIREBASE_PROJECT_ID="$GH_SECRET_VITE_FIREBASE_PROJECT_ID" \
-          VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN="$BYPASS_GH_SECRET_TOKEN" \
-          npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
 
       # E2E tests disabled — requires Vite dev server + Electron runtime which
       # hangs indefinitely on headless Ubuntu CI runners. Re-enable after setting
