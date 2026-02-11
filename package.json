@@ -27,8 +27,12 @@
     "electron:build": "npm run build:electron && electron-builder --publish never",
     "electron:dev": "npm run build:electron && VITE_DEV_SERVER_URL=http://localhost:4242 npx electron dist-electron/main.cjs",
     "generate:icons": "node scripts/generate-pwa-icons.cjs",
+    "prelint": "node scripts/syncAgentGuidelines.ts",
+    "pretest": "node scripts/syncAgentGuidelines.ts",
+    "sync:agents": "node scripts/syncAgentGuidelines.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
+    "lint:changed": "eslint --max-warnings=0 --ext .ts,.tsx --no-error-on-unmatched-pattern --",
     "make": "electron-forge make",
     "package": "electron-forge package",
     "preview": "vite preview",
@@ -39,7 +43,7 @@
     "test": "vitest",
     "test:e2e": "playwright test",
     "typecheck": "tsc --noEmit",
-    "lint:changed": "eslint --max-warnings=0 --ext .ts,.tsx --no-error-on-unmatched-pattern --"
+    "prepare": "husky"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
@@ -166,6 +170,7 @@
     "globals": "^16.5.0",
     "google-auth-library": "^10.5.0",
     "googleapis": "^170.0.0",
+    "husky": "^9.1.7",
     "idb": "^8.0.3",
     "javascript-obfuscator": "^4.2.2",
     "jest-axe": "^10.0.0",
