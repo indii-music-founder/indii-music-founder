@@ -107,9 +107,8 @@ export function registerVideoHandlers() {
     });
 
     /**
-     * SECURITY HANDLER: video:render (Stub for security tests)
-     * This handler is required by security tests to verify path traversal 
-     * and access control on video rendering outputs.
+     * SECURITY HANDLER: video:render
+     * Validates output path before rendering video.
      */
     ipcMain.handle('video:render', async (event, config: any) => {
         try {
@@ -121,31 +120,30 @@ export function registerVideoHandlers() {
 
             const outputLocation = config.outputLocation;
 
-            // 1. Path Traversal Check
-            if (outputLocation.includes('..')) {
+            // 1. Path Traversal Check — resolve against safe root and verify containment
+            const documentsPath = app.getPath('documents');
+            const safeRoot = path.resolve(documentsPath, 'IndiiOS');
+            const resolvedOutput = path.resolve(outputLocation);
+
+            if (!resolvedOutput.startsWith(safeRoot + path.sep) && resolvedOutput !== safeRoot) {
                 throw new Error("Security Violation: Path traversal detected in output location");
             }
 
             // 2. Access Control Check
-            if (!accessControlService.verifyAccess(outputLocation)) {
+            if (!accessControlService.verifyAccess(resolvedOutput)) {
                 throw new Error("Security Violation: Unauthorized output location");
             }
 
             // 3. File Extension Check
-            const ext = path.extname(outputLocation).toLowerCase();
+            const ext = path.extname(resolvedOutput).toLowerCase();
             const allowedExts = ['.mp4', '.mov', '.webm'];
             if (!allowedExts.includes(ext)) {
                 throw new Error(`Security Violation: File type ${ext} is not allowed`);
             }
 
-            console.log(`[VideoHandler] Rendering video to: ${outputLocation}`);
+            console.log(`[VideoHandler] Rendering video to: ${resolvedOutput}`);
 
-            // For security tests specifically
-            if (outputLocation.includes('/mock/')) {
-                return '/mock/output.mp4';
-            }
-
-            return outputLocation;
+            return resolvedOutput;
         } catch (error) {
             console.error('[VideoHandler] Render failed security check:', error);
             throw error;

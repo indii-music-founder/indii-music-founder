@@ -1,19 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerVideoHandlers } from './video';
-import { ipcMain } from 'electron';
+import path from 'path';
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
     ipcMain: { handle: vi.fn() },
     app: {
         getPath: (name: string) => {
-            if (name === 'documents') return '/mock/documents';
-            if (name === 'userData') return '/mock/userData';
-            return '/mock/temp';
+            if (name === 'documents') return '/safe/documents';
+            if (name === 'userData') return '/safe/userData';
+            return '/safe/temp';
         }
     },
     shell: { showItemInFolder: vi.fn() },
-    render: vi.fn().mockResolvedValue('/mock/output.mp4'),
     validateSender: vi.fn(),
     verifyAccess: vi.fn().mockReturnValue(true),
     fs: {
@@ -35,23 +34,27 @@ vi.mock('electron', () => ({
     }
 }));
 
-// Mock ElectronRenderService
-vi.mock('../services/ElectronRenderService', () => ({
-    electronRenderService: {
-        render: mocks.render
-    }
-}));
-
 // Mock AccessControlService
 vi.mock('../security/AccessControlService', () => ({
     accessControlService: {
-        verifyAccess: mocks.verifyAccess
+        verifyAccess: mocks.verifyAccess,
+        grantAccess: vi.fn()
     }
 }));
 
 // Mock IPC Security
 vi.mock('../utils/ipc-security', () => ({
     validateSender: mocks.validateSender
+}));
+
+// Mock network security
+vi.mock('../utils/network-security', () => ({
+    validateSafeUrlAsync: vi.fn().mockResolvedValue(undefined)
+}));
+
+// Mock validation
+vi.mock('../utils/validation', () => ({
+    FetchUrlSchema: { parse: vi.fn() }
 }));
 
 // Mock fs
@@ -62,13 +65,14 @@ vi.mock('fs', () => ({
     realpathSync: mocks.fs.realpathSync
 }));
 
-describe('🛡️ Shield: Video Render Security Test', () => {
+describe('Shield: Video Render Security Test', () => {
     let handlers: Record<string, (...args: any[]) => Promise<any>> = {};
 
     beforeEach(() => {
         vi.clearAllMocks();
         handlers = {};
-        mocks.ipcMain.handle.mockImplementation((channel, handler) => {
+        mocks.verifyAccess.mockReturnValue(true);
+        mocks.ipcMain.handle.mockImplementation((channel: string, handler: any) => {
             handlers[channel] = handler;
         });
         registerVideoHandlers();
@@ -80,18 +84,28 @@ describe('🛡️ Shield: Video Render Security Test', () => {
         return handler(sender, ...args);
     };
 
+    const sender = { senderFrame: { url: 'file://valid' } };
+
     it('should BLOCK malicious output paths (Path Traversal)', async () => {
-        const maliciousPath = '/mock/documents/../../etc/passwd.mp4';
+        // Path traversal that resolves outside safe root
+        const maliciousPath = '/safe/documents/IndiiOS/../../etc/passwd.mp4';
         const config = {
             compositionId: 'test-comp',
             outputLocation: maliciousPath
         };
 
-        // Simulate realpath resolving to a sensitive directory
-        mocks.fs.realpathSync.mockReturnValueOnce('/etc');
+        await expect(invoke('video:render', sender, config))
+            .rejects.toThrow(/Security Violation/i);
+    });
 
-        await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
-            .rejects.toThrow(/Security Violation|Access Denied/i);
+    it('should BLOCK paths outside the safe root', async () => {
+        const config = {
+            compositionId: 'test-comp',
+            outputLocation: '/etc/evil.mp4'
+        };
+
+        await expect(invoke('video:render', sender, config))
+            .rejects.toThrow(/Security Violation/i);
     });
 
     it('should BLOCK unauthorized output locations via AccessControlService', async () => {
@@ -99,33 +113,32 @@ describe('🛡️ Shield: Video Render Security Test', () => {
 
         const config = {
             compositionId: 'test-comp',
-            outputLocation: '/unauthorized/path/video.mp4'
+            outputLocation: '/safe/documents/IndiiOS/video.mp4'
         };
 
-        await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
-            .rejects.toThrow(/Security Violation|Unauthorized|Access Denied/i);
+        await expect(invoke('video:render', sender, config))
+            .rejects.toThrow(/Security Violation|Unauthorized/i);
     });
 
     it('should BLOCK disallowed extensions', async () => {
         const config = {
             compositionId: 'test-comp',
-            outputLocation: '/mock/documents/IndiiOS/malware.exe'
+            outputLocation: '/safe/documents/IndiiOS/malware.exe'
         };
 
-        await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
+        await expect(invoke('video:render', sender, config))
             .rejects.toThrow(/File type .* is not allowed/i);
     });
 
-    it('should ALLOW valid output paths in IndiiOS folder', async () => {
-        const validPath = '/mock/documents/IndiiOS/my-video.mp4';
+    it('should ALLOW valid output paths inside IndiiOS folder', async () => {
+        const validPath = '/safe/documents/IndiiOS/my-video.mp4';
         const config = {
             compositionId: 'test-comp',
             outputLocation: validPath
         };
 
-        await expect(invoke('video:render', { senderFrame: { url: 'file://valid' } }, config))
-            .resolves.toBe('/mock/output.mp4');
-
-        // expect(mocks.render).toHaveBeenCalledWith(config);
+        const result = await invoke('video:render', sender, config);
+        // Handler returns the resolved path directly — no mock stubs
+        expect(result).toBe(path.resolve(validPath));
     });
 });
