@@ -98,11 +98,8 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
 
 // Mock the @/services/firebase module FIRST to prevent module-level initialization
 // This is critical because firebase.ts has side effects that call real Firebase APIs at import time
-vi.mock('@/services/firebase', () => ({
-    app: { name: 'mock-app', options: {} },
-    db: {},
-    storage: {},
-    auth: {
+vi.mock('@/services/firebase', () => {
+    const mockAuth = {
         currentUser: { uid: 'test-uid', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('test-token') },
         onAuthStateChanged: vi.fn((callback) => {
             // Simulate immediate callback with authenticated user
@@ -113,15 +110,23 @@ vi.mock('@/services/firebase', () => ({
         }),
         signInWithEmailAndPassword: vi.fn(),
         signOut: vi.fn()
-    },
-    functions: {},
-    functionsWest1: {},
-    remoteConfig: { defaultConfig: {} },
-    messaging: null,
-    appCheck: null,
-    ai: { instance: null },
-    getFirebaseAI: vi.fn(() => null)
-}));
+    };
+
+    return {
+        app: { name: 'mock-app', options: {} },
+        db: {},
+        storage: {},
+        auth: mockAuth,
+        functions: {},
+        functionsWest1: {},
+        remoteConfig: { defaultConfig: {} },
+        messaging: null,
+        appCheck: null,
+        ai: { instance: null },
+        getFirebaseAI: vi.fn(() => null),
+        initializeAppCheckService: vi.fn()
+    };
+});
 
 // Mock Firebase App
 vi.mock('firebase/app', () => ({
