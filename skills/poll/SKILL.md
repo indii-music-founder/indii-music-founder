@@ -19,7 +19,7 @@ The Poll skill monitors `AGENT_BRIDGE.md` for status changes and triggers approp
 
 ## 2. AGENT_BRIDGE.md Location
 
-```
+```text
 /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/AGENT_BRIDGE.md
 ```
 
@@ -28,7 +28,7 @@ The Poll skill monitors `AGENT_BRIDGE.md` for status changes and triggers approp
 ## 3. Status Definitions
 
 | Status | Meaning | Action |
-|--------|---------|--------|
+| --- | --- | --- |
 | `BUILD_PENDING` | Build in progress | Wait, no action |
 | `BUILD_COMPLETE` | Build succeeded | Trigger QA workflow |
 | `BUILD_FAILED` | Build failed | Read error, attempt fix |
@@ -119,7 +119,7 @@ Build succeeded. TypeScript compilation passed. Ready for QA.
 
 error message here
 
-```
+```text
 
 ## QA Results
 <!-- Populated after QA workflow -->
@@ -142,7 +142,7 @@ POL requests → in.dex agent
 
 When `BUILD_COMPLETE` is detected:
 
-```
+```text
 1. Update bridge: QA_IN_PROGRESS
 2. Run browser-based visual tests
 3. Run E2E test suite
@@ -158,7 +158,7 @@ When `BUILD_COMPLETE` is detected:
 ### 7.1 Build Failures (AUTO-FIXABLE)
 
 | Error Type | Auto-Fix Action |
-|------------|-----------------|
+| --- | --- |
 | TypeScript type error | Analyze, apply fix, rebuild |
 | Missing import | Add import statement |
 | Unused variable | Remove or mark as used |
@@ -167,7 +167,7 @@ When `BUILD_COMPLETE` is detected:
 ### 7.2 Build Failures (ESCALATE)
 
 | Error Type | Escalation Action |
-|------------|-------------------|
+| --- | --- |
 | Runtime crash | Add to error ledger, notify user |
 | Dependency conflict | Notify user for resolution |
 | Environment issue | Document, notify user |

@@ -13,7 +13,7 @@ last_updated: 2026-02-06
 
 ## 1. Core Visual Language
 
-**"Glass, Light, and Depth."**
+> **"Glass, Light, and Depth."**
 
 indiiOS uses a futuristic, high-performance aesthetic.
 
@@ -31,7 +31,7 @@ ALWAYS use tokens. NEVER hardcode hex values.
 ### 2.1 Department Colors
 
 | Dept | Token | Usage |
-|---|---|---|
+| --- | --- | --- |
 | **Creative** | `--color-dept-creative` | Studio, AI generation |
 | **Finance** | `--color-dept-finance` | Dashboard, charts |
 | **Legal** | `--color-dept-legal` | Contracts, rights |
@@ -41,7 +41,7 @@ ALWAYS use tokens. NEVER hardcode hex values.
 ### 2.2 Spacing & Radius
 
 | Scale | Token | Pixels |
-|---|---|---|
+| --- | --- | --- |
 | **Space** | `--space-1` to `--space-12` | 4px to 48px |
 | **Radius** | `--radius-sm` to `--radius-full` | 2px to 9999px |
 
@@ -305,7 +305,7 @@ export const popIn: Variants = {
 ### 5.3 Color Contrast
 
 | Element | Minimum Ratio | Recommended |
-|---------|---------------|-------------|
+| --- | --- | --- |
 | Body text | 4.5:1 | 7:1 |
 | Large text (18px+) | 3:1 | 4.5:1 |
 | Interactive elements | 3:1 | 4.5:1 |

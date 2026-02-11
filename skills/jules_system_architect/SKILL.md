@@ -13,7 +13,7 @@ last_updated: 2026-02-06
 
 ## 1. Core Philosophy
 
-**"Architecture is not about code; it's about constraints."**
+> **"Architecture is not about code; it's about constraints."**
 
 Jules enforces the **3-Layer Architecture**:
 
@@ -91,7 +91,7 @@ When building new features:
 
 All directories use `kebab-case`. No exceptions.
 
-```
+```text
 ✅ src/services/ai-providers/
 ✅ src/components/chat-overlay/
 ❌ src/services/AIProviders/
@@ -133,7 +133,7 @@ Design for mobile constraints first, then enhance for larger screens.
 WCAG 2.1 AA compliance is mandatory.
 
 | Requirement | Implementation |
-|-------------|----------------|
+| --- | --- |
 | Focus visible | `outline: 2px solid` on `:focus-visible` |
 | Color contrast | 4.5:1 minimum for body text |
 | Keyboard nav | All interactive elements tabbable |
@@ -196,7 +196,7 @@ const random = Math.random(); // Predictable, not secure
 ### Law 12: API Key Classification
 
 | Type | Example | Treatment |
-|------|---------|-----------|
+| --- | --- | --- |
 | **Identifier** | Firebase `AIza*` | Safe in client code |
 | **Secret** | Stripe `sk_*` | Server-only, .env |
 | **Token** | GitHub `ghp_*` | Server-only, rotatable |
@@ -292,7 +292,7 @@ Load media progressively: placeholder → low-res → full-res.
 ## 6. Naming Conventions
 
 | Element | Convention | Example |
-|---------|------------|---------|
+| --- | --- | --- |
 | **Directories** | kebab-case | `agent-zero/` |
 | **Components** | PascalCase | `ChatOverlay.tsx` |
 | **Hooks** | camelCase + use | `useImageGeneration.ts` |

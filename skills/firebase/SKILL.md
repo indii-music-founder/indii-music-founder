@@ -13,7 +13,7 @@ last_updated: 2026-02-06
 
 ## 1. Core Philosophy
 
-**"Serverless does not mean structureless."**
+> **"Serverless does not mean structureless."**
 
 We use Firebase as a **backend-as-a-service**, not just a database.
 
@@ -25,7 +25,7 @@ We use Firebase as a **backend-as-a-service**, not just a database.
 
 ## 2. Project Structure (Gen 2)
 
-```
+```text
 /
 ├── firebase.json              # Hosting, Firestore, Storage config
 ├── firestore.rules            # Security rules (Role-Based Access Control)
@@ -104,7 +104,7 @@ for await (const chunk of stream.stream) {
 ### 4.2 Deployment Options
 
 | Method | Command | Use Case |
-|--------|---------|----------|
+| --- | --- | --- |
 | **GitHub** | Auto-deploy on push | Standard workflow |
 | **CLI Source** | `firebase deploy` | Local + other Firebase services |
 | **Terraform** | Container images | CI/CD pipelines |
@@ -207,7 +207,7 @@ const campaignDoc = {
 ### 6.1 New Features
 
 | Feature | Description |
-|---------|-------------|
+| --- | --- |
 | **Passkeys** | Passwordless FIDO2 authentication |
 | **EU Consent Policy** | GDPR-compliant consent mode |
 | **Link Domain** | Custom domains for email links |
@@ -348,7 +348,7 @@ service firebase.storage {
 > **Firebase API Keys (`AIza*`) are IDENTIFIERS, not secrets.**
 
 | Fact | Explanation |
-|------|-------------|
+| --- | --- |
 | **Publicly visible** | Safe to include in client code/config |
 | **Not authorization** | Don't grant access to data |
 | **Authorization via Rules** | Security enforced by Firestore/Storage rules |
@@ -380,7 +380,7 @@ const stripeSecret = "sk_live_...";  // NEVER DO THIS
 
 ## 11. Critical Indexes (indiiOS Context)
 
-```
+```text
 # Required composite indexes for this project
 agent_traces: userId + timestamp (Observability)
 user_usage_stats: userId + date (Billing)
