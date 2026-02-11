@@ -66,7 +66,10 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: { currentUser: { uid: 'test-user-id' } },
+    remoteConfig: { defaultConfig: {} },
+    initializeAppCheckService: vi.fn(),
 }));
 
 describe('VideoWorkflow', () => {
