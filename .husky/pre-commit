@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-npm run sync:agents && git add src/agents
+npm run sync:agents && git add src/core/agent-guidelines.json src/agents/*/agent-guidelines.json
