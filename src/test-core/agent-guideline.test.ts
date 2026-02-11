@@ -12,46 +12,21 @@ import { JulesAgent } from "@/services/agent/JulesAgent";
 
 type AgentName = "Orchestrator" | "Gemini" | "Claude" | "Jules";
 
-const agents: Record<AgentName, any> = {
+interface AgentWithGuidelines {
+    getGuidelines(): unknown;
+}
+
+const agents: Record<AgentName, AgentWithGuidelines> = {
     Orchestrator: OrchestratorAgent,
     Gemini: GeminiAgent,
     Claude: ClaudeAgent,
     Jules: JulesAgent,
 };
 
-// Helper: fetch agent’s current guidelines
-async function getAgentGuidelines(agent: any) {
-    if (agent.getGuidelines) return agent.getGuidelines();
-    // fallback for agents that expose a `guidelines` property
-    return agent.guidelines ?? {};
-}
-
-// Recursive deep equality check with descriptive error
-function compareGuidelines(
-    expected: Record<string, any>,
-    actual: Record<string, any>,
-    path = ""
-) {
-    for (const key of Object.keys(expected)) {
-        const fullPath = path ? `${path}.${key}` : key;
-        expect(actual).toHaveProperty(key);
-        const expectedVal = expected[key];
-        const actualVal = actual[key];
-
-        if (expectedVal && typeof expectedVal === "object" && !Array.isArray(expectedVal)) {
-            compareGuidelines(expectedVal, actualVal, fullPath);
-        } else {
-            expect(actualVal).toEqual(expectedVal);
-        }
-    }
-}
-
 describe("Agent Guideline Consistency", () => {
-    it("all agents match the canonical instructions", async () => {
-        for (const [name, agent] of Object.entries(agents)) {
-            const agentGuidelines = await getAgentGuidelines(agent);
-            compareGuidelines(canonicalGuidelines, agentGuidelines);
-        }
+    it.each(Object.entries(agents))("matches canonical instructions for %s", async (name, agent) => {
+        const agentGuidelines = agent.getGuidelines();
+        expect(agentGuidelines).toEqual(canonicalGuidelines);
     });
 
     it("canonical JSON is valid TypeScript type", () => {
@@ -62,3 +37,4 @@ describe("Agent Guideline Consistency", () => {
         expect(Array.isArray(canonicalGuidelines.agents)).toBe(true);
     });
 });
+

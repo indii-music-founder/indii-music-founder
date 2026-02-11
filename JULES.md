@@ -53,7 +53,7 @@ You operate within a 3-layer architecture designed to maximize reliability by se
 
 ## Codebase Structure
 
-```
+```text
 indiiOS-Alpha-Electron/
 ├── src/                        # Main React application source
 │   ├── core/                   # App infrastructure (App.tsx, store, contexts, themes)
@@ -145,7 +145,7 @@ indiiOS-Alpha-Electron/
 ### Frontend
 
 | Category | Technology | Notes |
-|----------|-----------|-------|
+| :--- | :--- | :--- |
 | Framework | React 18 | With lazy-loaded modules |
 | Build | Vite 6.4 | Port 4242 for dev |
 | Styling | TailwindCSS 4.1 | With tailwind-merge, clsx |
@@ -164,7 +164,7 @@ indiiOS-Alpha-Electron/
 ### Backend
 
 | Category | Technology | Notes |
-|----------|-----------|-------|
+| :--- | :--- | :--- |
 | Functions | Firebase Functions 7.0 (Gen 2) | Node.js 22 runtime |
 | AI | Genkit AI 1.26 + @google/genai 1.30 | Gemini models |
 | Jobs | Inngest 3.46 | Background job orchestration |
@@ -176,7 +176,7 @@ indiiOS-Alpha-Electron/
 ### Desktop (Electron 33)
 
 | Component | Purpose |
-|-----------|---------|
+| :--- | :--- |
 | Electron Forge 7.8 / Builder 26.0 | Packaging (DMG, NSIS, AppImage) |
 | Keytar 7.9 | OS credential storage |
 | SSH2/SFTP | Distributor file uploads |
@@ -185,7 +185,7 @@ indiiOS-Alpha-Electron/
 ### Testing
 
 | Tool | Purpose |
-|------|---------|
+| :--- | :--- |
 | Vitest 4.0 | Unit tests (jsdom environment) |
 | Playwright 1.57 | E2E tests (60+ specs) |
 | Testing Library 16.3 | Component testing |
@@ -216,7 +216,7 @@ npm run build:desktop:win      # Windows only (NSIS)
 npm run build:desktop:linux    # Linux only (AppImage)
 ```
 
-### Testing
+### Running Tests
 
 ```bash
 npm test                       # Run Vitest in watch mode
@@ -359,7 +359,7 @@ The `build` script runs three steps sequentially:
 
 ## Hub-and-Spoke Agent Architecture
 
-```
+```text
          ┌─────────────────────┐
          │   AgentZero (Hub)   │
          │   (Orchestrator)    │
@@ -390,7 +390,7 @@ Never reinvent the wheel. Before writing a new script, audit `execution/` for ex
 
 When a script fails, analyze the stack trace, fix the deterministic code, and re-verify. If a fix involves external costs (tokens/credits), seek user approval before proceeding.
 
-### 1.4 AGENT GUIDELINES PROTOCOL (LATEST)
+### 3. Agent Guidelines Protocol (Latest)
 
 - **Single Source of Truth:** You MUST read `.docs/AGENT_GUIDELINES.md` and `.docs/agent_guidelines.json` at the start of every session to align with the latest protocols.
 - **Versioning:** Check the version in `agent_guidelines.json` and ensure your actions are compatible.
@@ -398,17 +398,17 @@ When a script fails, analyze the stack trace, fix the deterministic code, and re
 
 ---
 
-## 2. AI MODEL POLICY (CRITICAL - HIGHEST PRIORITY)
+## 2. AI Model Policy (Critical - Highest Priority)
 
 > [!WARNING]
 > This is a core architectural policy. Violations are treated as terminal errors.
 
-#### 3.1 Identifiers vs. Secrets
+### 2.1 Identifiers vs. Secrets
 
 - **Firebase API Keys (`AIza*`):** These are **identifiers**, not secrets. They identify the project for billing and quotas but do not provide authorization. It is safe to include them in code or configuration files.
 - **True Secrets:** Service Account JSONs, Stripe Secret Keys, GitHub Tokens (`ghp_*`), and private keys. These must **NEVER** be hardcoded or checked into version control.
 
-#### 3.2 Firebase API Key Best Practices
+### 2.2 Firebase API Key Best Practices
 
 1. **Security via Rules:** Authorization to backend resources (Firestore, Storage) is controlled via **Firebase Security Rules**, not by hiding the API key.
 2. **API Restrictions:** Always apply restrictions in the GCP Console to limit keys to specific APIs (e.g., Identity Toolkit, Firestore).
@@ -416,7 +416,7 @@ When a script fails, analyze the stack trace, fix the deterministic code, and re
 4. **Environment Isolation:** Use environment-specific keys (Staging vs. Production) via `.env` files to prevent cross-project interference.
 5. **No Client-Side Trust:** Never trust the client-side configuration. Always enforce logic on the server/security rule layer.
 
-#### 3.3 Implementation Pattern
+### 2.3 Implementation Pattern
 
 ```typescript
 // CORRECT - Use environment variables for isolation
@@ -429,12 +429,12 @@ const firebaseConfig = {
 const stripeSecret = "sk_live_...";
 ```
 
-#### 3.4 Enforcement
+### 2.4 Enforcement
 
 1. **Scan:** Self-scan for sensitive secret patterns before completion.
 2. **Verify:** Reference the API Credentials Policy (`docs/API_CREDENTIALS_POLICY.md`) for all credential handling.
 
-### 4. API Credentials Policy Compliance (STRICT)
+## 3. API Credentials Policy Compliance (Strict)
 
 All agents must adhere to the API Credentials Policy (`docs/API_CREDENTIALS_POLICY.md`).
 
@@ -443,7 +443,7 @@ All agents must adhere to the API Credentials Policy (`docs/API_CREDENTIALS_POLI
 
 **Post-Mortem Note (2025-01-17):** A hardcoded Firebase config was found in `scripts/send-reset.js`. This policy exists to prevent future occurrences. There are no exceptions.
 
-### 5. ERROR MEMORY PROTOCOL (MANDATORY)
+## 4. Error Memory Protocol (Mandatory)
 
 > Never fix the same error twice. This protocol ensures institutional memory of debugging wins.
 
@@ -471,7 +471,7 @@ mcp_mem0_add-memory(
 ## Key Files Quick Reference
 
 | File | Purpose |
-|------|---------|
+| :--- | :--- |
 | `src/core/App.tsx` | Main app entry, module routing, lazy loading |
 | `src/core/store.ts` | Zustand root store |
 | `src/core/store/slices/` | Domain state slices (app, auth, agent, creative, distribution, etc.) |
@@ -493,7 +493,7 @@ mcp_mem0_add-memory(
 ## Deployment Targets
 
 | Target | Platform | Hosting |
-|--------|----------|---------|
+| :--- | :--- | :--- |
 | Studio App | Web (SPA) | Firebase Hosting (`app` target) -> `dist/` |
 | Landing Page | Web | Firebase Hosting (`landing` target) -> `landing-page/dist/` |
 | Desktop (macOS) | Electron | DMG/ZIP distribution |
