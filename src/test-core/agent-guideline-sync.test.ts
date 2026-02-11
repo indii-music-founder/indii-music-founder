@@ -20,7 +20,6 @@ const agentPaths = [
 
 describe("Agent Guidelines Sync", () => {
     let canonicalJson: Record<string, unknown>;
-    let canonicalJson: any;
 
     beforeAll(() => {
         const content = fs.readFileSync(canonicalPath, "utf8");
@@ -29,30 +28,23 @@ describe("Agent Guidelines Sync", () => {
 
     agentPaths.forEach((agentPath) => {
         it(`matches canonical guidelines for ${path.basename(path.dirname(agentPath))}`, () => {
-            // Ensure the file exists for the test to run (it should be created by the sync script)
+            // 1. Fail fast if file is missing (do not auto-create)
             if (!fs.existsSync(agentPath)) {
-                // If it doesn't exist, strictly speaking the sync script should have run.
-                // But following the user's self-healing pattern:
-                const dir = path.dirname(agentPath);
-                if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-                fs.writeFileSync(agentPath, JSON.stringify(canonicalJson, null, 2) + "\n");
+                throw new Error(
+                    `Agent guidelines file missing at ${agentPath}.\n` +
+                    `Run 'npm run sync:agents' to generate it.`
+                );
             }
 
-            let agentContent = fs.readFileSync(agentPath, "utf8");
-            let agentJson = JSON.parse(agentContent);
+            // 2. Read and parse
+            const agentContent = fs.readFileSync(agentPath, "utf8");
+            const agentJson = JSON.parse(agentContent);
 
-            const mismatch = JSON.stringify(agentJson) !== JSON.stringify(canonicalJson);
-            if (mismatch) {
-                // Auto-update the agent file
-                fs.writeFileSync(agentPath, JSON.stringify(canonicalJson, null, 2) + "\n");
-                console.warn(`⚠️ ${path.basename(path.dirname(agentPath))}/agent-guidelines.json was out-of-sync and has been updated!`);
+            // 3. Strict equality check (excluding generated metadata)
+            const { _comment, _generated, lastUpdated, ...cleanAgentJson } = agentJson as any;
+            const { _comment: _c, _generated: _g, lastUpdated: _l, ...cleanCanonical } = canonicalJson as any;
 
-                // Re-read to ensure verification passes
-                agentContent = fs.readFileSync(agentPath, "utf8");
-                agentJson = JSON.parse(agentContent);
-            }
-
-            expect(JSON.stringify(agentJson)).toEqual(JSON.stringify(canonicalJson));
+            expect(cleanAgentJson).toEqual(cleanCanonical);
         });
     });
 });

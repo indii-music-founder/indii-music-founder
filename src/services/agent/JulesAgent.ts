@@ -1,7 +1,7 @@
-import guidelines from '@/core/agent-guidelines.json';
+import { getAgentGuidelines } from './AgentGuidelines';
 
 export class JulesAgent {
     static getGuidelines() {
-        return guidelines;
+        return getAgentGuidelines();
     }
 }
