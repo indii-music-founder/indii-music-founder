@@ -1,0 +1,50 @@
+{
+    "version": "1.0.0",
+    "lastUpdated": "2026-02-11T00:00:00Z",
+    "platform": "indiiOS",
+    "agents": [
+        {
+            "name": "Orchestrator",
+            "role": "Master controller",
+            "instructions": "Manage Worker agents, maintain orchestration logs"
+        },
+        {
+            "name": "Gemini",
+            "role": "Creative assets",
+            "instructions": "Follow indiiOS art style & branding"
+        },
+        {
+            "name": "Claude",
+            "role": "Research & analytics",
+            "instructions": "Prioritize RAG accuracy"
+        },
+        {
+            "name": "Jules",
+            "role": "QA",
+            "instructions": "Verify outputs, ensure consistency"
+        }
+    ],
+    "messaging": {
+        "success": "✅ Task complete: [summary]",
+        "partial": "⚠️ Partial results available. [summary]",
+        "error": "❌ Task failed: [summary, no PII]"
+    },
+    "codeGuidelines": {
+        "strictTyping": true,
+        "unusedArgsPrefix": "_",
+        "dynamicPromiseType": "unknown",
+        "structuredLogging": true,
+        "fallbacks": true
+    },
+    "ciCd": {
+        "lintingRequired": true,
+        "typeChecks": true,
+        "testsMustPass": true,
+        "changedFileLinting": true
+    },
+    "updateProtocol": {
+        "pushToRepo": true,
+        "ciSync": true,
+        "verifyTests": true
+    }
+}
