@@ -39,7 +39,7 @@ vi.mock('framer-motion', () => ({
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
         button: ({ children, className, onClick, ...props }: any) => <button className={className} onClick={onClick} {...props}>{children}</button>,
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: any) => children,
     useDragControls: () => ({ start: vi.fn() }),
 }));
 
