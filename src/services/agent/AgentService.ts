@@ -117,12 +117,12 @@ export class AgentService {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).finally(() => {
-                        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                         
                         if (timeoutHandle) clearTimeout(timeoutHandle);
                     }),
                     timeoutPromise
                 ]);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('[AgentService] Message Flow Failed:', err);
 
                 // TIMEOUT GRACE: Check if images were added to gallery during execution
@@ -272,7 +272,7 @@ export class AgentService {
                     id: uuidv4(),
                     text: event.content || '', // Ensure no undefined text
                     timestamp: Date.now(),
-                    type: event.type as any, // Typed in interface
+                    type: event.type as AgentThought["type"], // Typed in interface
                 };
 
                 if (event.type === 'tool' || event.type === 'tool_result') {
@@ -305,7 +305,7 @@ export class AgentService {
         }
     }
 
-    private async handleAgentZeroFlow(text: string, attachments: any[] | undefined, responseId: string): Promise<void> {
+    private async handleAgentZeroFlow(text: string, attachments: unknown[] | undefined, responseId: string): Promise<void> {
         const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
 
@@ -368,7 +368,7 @@ export class AgentService {
                     text: response.message + links
                 });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             updateAgentMessage(responseId, {
                 text: `Agent Zero Error: ${err.message}`,
                 thoughts: [{
@@ -455,7 +455,7 @@ export class AgentService {
      * @param parentTraceId Optional trace ID for observability chaining.
      * @param attachments Optional file attachments.
      */
-    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<any> {
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<unknown> {
         // CRITICAL: Deep clone context to prevent mutation affecting parent agent
         // Context objects are passed by reference and can be mutated during execution,
         // causing parent agents to lose their execution state ("dismantling")
@@ -528,7 +528,7 @@ export class AgentService {
             return '[REDACTED_CREDIT_CARD]';
         });
 
-        redacted = redacted.replace(passwordRegex, (match, prefix, value) => {
+        redacted = redacted.replace(passwordRegex, (match, prefix, _value) => {
             return `${prefix}[REDACTED_PASSWORD]`;
         });
 

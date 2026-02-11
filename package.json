@@ -38,7 +38,8 @@
     "changelog:update": "bash scripts/generate-changelog.sh --prepend",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lint:changed": "eslint --max-warnings=0 --ext .ts,.tsx --no-error-on-unmatched-pattern --"
   },
   "dependencies": {
     "@emotion/is-prop-valid": "^1.4.0",
