@@ -19,7 +19,7 @@ const agentPaths = [
 ];
 
 describe("Agent Guidelines Sync", () => {
-    let canonicalJson: any;
+    let canonicalJson: Record<string, unknown>;
 
     beforeAll(() => {
         const content = fs.readFileSync(canonicalPath, "utf8");
