@@ -95,8 +95,12 @@ describe('PromptArea State Feedback', () => {
     expect(runBtn).not.toBeDisabled();
     expect(screen.queryByTestId('run-loader')).not.toBeInTheDocument();
 
-    // Click run
-    fireEvent.click(runBtn);
+    // Click run - use act to flush state updates from the async handler
+    await act(async () => {
+      fireEvent.click(runBtn);
+      // Allow microtask to flush for setIsProcessing(true)
+      await new Promise(r => setTimeout(r, 0));
+    });
 
     // Verify loading state: Loader visible
     expect(screen.getByTestId('run-loader')).toBeInTheDocument();

@@ -29,6 +29,23 @@ vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     }
 }));
 
+// Mock env config to provide fake API key for fallback mode
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'test-api-key-for-keeper',
+        VITE_API_KEY: 'test-api-key-for-keeper',
+        DEV: true
+    },
+    firebaseConfig: {
+        apiKey: 'test-firebase-key',
+        authDomain: 'test.firebaseapp.com',
+        projectId: 'test-project',
+        storageBucket: 'test.appspot.com',
+        messagingSenderId: '123',
+        appId: '1:123:web:abc'
+    }
+}));
+
 // MOCK FIREBASE COMPLETELY
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },

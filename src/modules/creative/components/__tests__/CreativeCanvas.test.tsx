@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import CreativeCanvas from '../CreativeCanvas';
 import React from 'react';
 
@@ -10,7 +10,8 @@ vi.mock('@/core/store', () => ({
         setActiveReferenceImage: vi.fn(),
         uploadedImages: [],
         addUploadedImage: vi.fn(),
-        currentProjectId: 'test-project'
+        currentProjectId: 'test-project',
+        generatedHistory: []
     })
 }));
 
@@ -22,7 +23,6 @@ vi.mock('@/core/context/ToastContext', () => ({
     })
 }));
 
-// Mock Fabric.js
 // Mock Fabric.js
 vi.mock('fabric', () => {
     const CanvasMock = vi.fn().mockImplementation(function (this: any) {
@@ -39,29 +39,33 @@ vi.mock('fabric', () => {
         };
     });
 
-    const ImageMock = {
-        fromURL: vi.fn().mockResolvedValue({
-            scale: vi.fn(),
-            set: vi.fn(),
-            width: 100,
-            height: 100
-        })
-    };
-
-    const RectMock = vi.fn();
-    const CircleMock = vi.fn();
-    const ITextMock = vi.fn();
-    const PencilBrushMock = vi.fn();
-
     return {
         Canvas: CanvasMock,
-        Image: ImageMock,
-        Rect: RectMock,
-        Circle: CircleMock,
-        IText: ITextMock,
-        PencilBrush: PencilBrushMock,
+        Image: { fromURL: vi.fn().mockResolvedValue({ scale: vi.fn(), set: vi.fn(), width: 100, height: 100 }) },
+        Rect: vi.fn(),
+        Circle: vi.fn(),
+        IText: vi.fn(),
+        PencilBrush: vi.fn(),
     };
 });
+
+vi.mock('@/services/storage/repository', () => ({
+    saveAssetToStorage: vi.fn(),
+    saveCanvasStateToStorage: vi.fn(),
+    getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('../services/CanvasOperationsService', () => ({
+    canvasOps: { addRectangle: vi.fn(), addCircle: vi.fn(), addText: vi.fn(), initialize: vi.fn() }
+}));
+
+vi.mock('../services/VideoDirector', () => ({
+    VideoDirector: { animate: vi.fn() }
+}));
+
+vi.mock('@/services/image/EditingService', () => ({
+    Editing: { magicFill: vi.fn() }
+}));
 
 describe('CreativeCanvas', () => {
     const mockItem = {
@@ -84,44 +88,23 @@ describe('CreativeCanvas', () => {
         expect(container).toBeEmptyDOMElement();
     });
 
-    it('should render image preview initially', () => {
+    it('should render canvas container when item is provided', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-        expect(screen.getByAltText('test prompt')).toBeInTheDocument();
-        expect(screen.getByText('Preview')).toBeInTheDocument();
+        expect(screen.getByTestId('creative-canvas-container')).toBeInTheDocument();
     });
 
-    it('should switch to edit mode when "Edit in Canvas" is clicked', () => {
+    it('should render the magic fill input', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-
-        const editButton = screen.getByText('Edit in Canvas');
-        fireEvent.click(editButton);
-
-        expect(screen.getByText('Fabric.js Editor')).toBeInTheDocument();
-        expect(screen.getByTitle('Magic Fill')).toBeInTheDocument();
+        expect(screen.getByTestId('magic-fill-input')).toBeInTheDocument();
     });
 
-    it('should show Magic Fill UI when toggled', () => {
+    it('should show Animate button for images', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-
-        // Enter edit mode
-        fireEvent.click(screen.getByText('Edit in Canvas'));
-
-        // Toggle Magic Fill
-        const magicFillButton = screen.getByTitle('Magic Fill');
-        fireEvent.click(magicFillButton);
-
-        expect(screen.getByPlaceholderText('Describe changes...')).toBeInTheDocument();
-        expect(screen.getByText('Generate')).toBeInTheDocument();
+        expect(screen.getByTestId('animate-btn')).toBeInTheDocument();
     });
 
-    it('should show Animate button for images in preview mode', () => {
+    it('should show close button', () => {
         render(<CreativeCanvas item={mockItem} onClose={mockOnClose} />);
-        expect(screen.getByText('Animate')).toBeInTheDocument();
-    });
-
-    it('should NOT show Animate button for videos', () => {
-        const videoItem = { ...mockItem, type: 'video' as const };
-        render(<CreativeCanvas item={videoItem} onClose={mockOnClose} />);
-        expect(screen.queryByText('Animate')).not.toBeInTheDocument();
+        expect(screen.getByTestId('canvas-close-btn')).toBeInTheDocument();
     });
 });

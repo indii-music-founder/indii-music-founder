@@ -37,8 +37,10 @@ export const ProducerAgent: AgentConfig = {
             }
         ]
     }],
-    functions: {
-        create_call_sheet: ProducerTools.create_call_sheet,
-        breakdown_script: ProducerTools.breakdown_script
+    get functions() {
+        return {
+            create_call_sheet: ProducerTools.create_call_sheet,
+            breakdown_script: ProducerTools.breakdown_script
+        };
     }
 };

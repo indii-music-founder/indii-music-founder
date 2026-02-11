@@ -14,6 +14,10 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 vi.mock('@/services/firebase', () => ({
     functions: {},
+    remoteConfig: { defaultConfig: {} },
+    auth: { currentUser: { uid: 'test-user' } },
+    db: {},
+    storage: {}
 }));
 
 vi.mock('firebase/functions', () => ({

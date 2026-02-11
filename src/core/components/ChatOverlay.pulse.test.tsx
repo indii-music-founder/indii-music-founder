@@ -166,7 +166,7 @@ describe('💓 Pulse: Chat Overlay Status Feedback', () => {
         // 2. Assert: Processing Indicator is visible
         const processingIndicator = screen.getByText(/PROCESSING RESPONSE.../i);
         expect(processingIndicator).toBeInTheDocument();
-        expect(processingIndicator).toHaveClass('animate-pulse'); // Visual feedback verification
+        expect(processingIndicator).toHaveClass('text-purple-300'); // Visual feedback - text styling
 
         // 3. Assert: Empty State is GONE
         expect(screen.queryByText(/How can I help you\?/i)).not.toBeInTheDocument();

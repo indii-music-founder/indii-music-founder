@@ -86,7 +86,7 @@ describe('PromptInput Interaction', () => {
                 </button>
             </PromptInputAction>
           <PromptInputAction tooltip={tooltipText}>
-            <button aria-label={existingLabel} data-testid="send-btn-explicit">
+            <button aria-label={existingLabel} data-testid="send-btn-explicit-2">
               Icon
             </button>
           </PromptInputAction>

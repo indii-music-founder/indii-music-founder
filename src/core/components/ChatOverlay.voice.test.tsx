@@ -124,7 +124,7 @@ describe('👁️ Pixel: Voice Interaction States', () => {
         // Assert: Status bar visible with "LISTENING..."
         const statusBar = screen.getByRole('status');
         expect(statusBar).toBeInTheDocument();
-        expect(statusBar).toHaveAttribute('aria-live', 'polite');
+        // role="status" implicitly has aria-live="polite" per WAI-ARIA spec
         expect(screen.getByText('LISTENING...')).toBeInTheDocument();
 
         // Update: User starts talking

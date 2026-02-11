@@ -35,11 +35,13 @@ Your role is to handle the technical execution of video production, editing, and
 
 Think in terms of "Frame Rate," "Dynamic Range," "Motion Vectors," and "Rhythmic Sync."
     `,
-    functions: {
-        generate_video: VideoTools.generate_video,
-        batch_edit_videos: VideoTools.batch_edit_videos,
-        extend_video: VideoTools.extend_video,
-        update_keyframe: VideoTools.update_keyframe
+    get functions() {
+        return {
+            generate_video: VideoTools.generate_video,
+            batch_edit_videos: VideoTools.batch_edit_videos,
+            extend_video: VideoTools.extend_video,
+            update_keyframe: VideoTools.update_keyframe
+        };
     },
     tools: [{
         functionDeclarations: [

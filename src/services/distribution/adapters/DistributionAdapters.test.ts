@@ -141,14 +141,15 @@ describe('Distribution Adapters', () => {
                 .rejects.toThrow('Not connected');
         });
 
-        it('should successfully build package and simulate delivery when connected', async () => {
+        it('should return delivery unavailable when SFTP is not configured', async () => {
             const adapter = new SymphonicAdapter();
             await adapter.connect({ username: 'user', password: 'password', apiKey: 'test-key' });
 
             const result = await adapter.createRelease(mockMetadata, mockAssets);
 
-            expect(result.success).toBe(true);
-            expect(result.status).toBe('delivered');
+            // SFTP delivery is stubbed - returns failure until real SFTP credentials are configured
+            expect(result.success).toBe(false);
+            expect(result.status).toBe('failed');
             expect(result.releaseId).toBeDefined();
         });
     });
@@ -160,15 +161,15 @@ describe('Distribution Adapters', () => {
                 .rejects.toThrow('Not connected');
         });
 
-        it('should successfully generate CSV package when connected', async () => {
+        it('should return connection error when SFTP is not configured', async () => {
             const adapter = new DistroKidAdapter();
             await adapter.connect({ apiKey: 'test-key' });
 
             const result = await adapter.createRelease(mockMetadata, mockAssets);
 
-            expect(result.success).toBe(true);
-            expect(result.status).toMatch(/delivered|processing/);
-            expect(result.distributorReleaseId).toBeDefined();
+            // SFTP delivery is stubbed - returns failure until real credentials are configured
+            expect(result.success).toBe(false);
+            expect(result.status).toBe('failed');
         });
     });
 

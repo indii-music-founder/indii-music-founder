@@ -3,9 +3,33 @@ import { AgentContext } from '../../types';
 import { AI } from '@/services/ai/AIService';
 import { TraceService } from '../../observability/TraceService';
 
-vi.mock('@/services/ai/AIService');
-vi.mock('../../observability/TraceService');
+vi.mock('@/services/firebase', () => ({
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} },
+    db: {},
+    functions: {},
+    storage: {}
+}));
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn()
+    }
+}));
+vi.mock('../../observability/TraceService', () => ({
+    TraceService: {
+        startTrace: vi.fn().mockResolvedValue('trace-123'),
+        addStep: vi.fn().mockResolvedValue(undefined),
+        completeTrace: vi.fn().mockResolvedValue(undefined)
+    }
+}));
 vi.mock('../../AgentService');
+vi.mock('../../registry', () => ({
+    agentRegistry: {
+        getAll: vi.fn().mockReturnValue([
+            { id: 'legal', name: 'Legal', description: 'Legal agent' }
+        ])
+    }
+}));
 
 describe('HybridOrchestrator Integration', () => {
     let orchestrator: HybridOrchestrator;

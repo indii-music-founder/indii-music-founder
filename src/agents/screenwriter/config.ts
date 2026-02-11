@@ -35,8 +35,10 @@ export const ScreenwriterAgent: AgentConfig = {
             }
         ]
     }],
-    functions: {
-        format_screenplay: ScreenwriterTools.format_screenplay,
-        analyze_script_structure: ScreenwriterTools.analyze_script_structure
+    get functions() {
+        return {
+            format_screenplay: ScreenwriterTools.format_screenplay,
+            analyze_script_structure: ScreenwriterTools.analyze_script_structure
+        };
     }
 };

@@ -63,6 +63,14 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
             setModule: mockSetModule,
             toggleAgentWindow: mockToggleAgentWindow,
             isAgentOpen: false,
+            chatChannel: 'agent',
+            setChatChannel: vi.fn(),
+            isCommandBarDetached: false,
+            setCommandBarDetached: vi.fn(),
+            commandBarInput: '',
+            setCommandBarInput: vi.fn(),
+            commandBarAttachments: [],
+            setCommandBarAttachments: vi.fn(),
         });
 
         // Mock useToast
@@ -81,12 +89,12 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         expect(input).toBeInTheDocument();
 
         // 2. Verify "Send" (Run) button is visible
-        const runButton = screen.getByText('Run').closest('button');
+        const runButton = screen.getByRole('button', { name: /run command/i });
         expect(runButton).toBeVisible();
 
         // 3. Verify Desktop-only features are hidden via JS logic
-        // "Delegate to..." button should be hidden
-        const delegateButton = screen.queryByText(/Delegate to/i);
+        // Agent selector button should be hidden on mobile
+        const delegateButton = screen.queryByRole('button', { name: /select active agent/i });
         expect(delegateButton).not.toBeInTheDocument();
 
         // "Attach" button should be hidden
