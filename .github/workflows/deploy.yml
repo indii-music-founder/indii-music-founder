@@ -30,7 +30,13 @@ jobs:
         run: npm run lint
 
       - name: Run linting checks
-        run: npm run lint:changed -- $(git diff --name-only origin/main...HEAD | tr "\n" " ")
+        run: |
+          CHANGED_FILES=$(git diff --name-only origin/main...HEAD | grep -E '\.(ts|tsx)$' || true)
+          if [ -n "$CHANGED_FILES" ]; then
+            npm run lint:changed -- $CHANGED_FILES
+          else
+            echo "No TypeScript files changed, skipping lint:changed"
+          fi
 
       - name: Run unit tests
         timeout-minutes: 30
