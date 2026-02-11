@@ -19,6 +19,7 @@ const agentPaths = [
 ];
 
 describe("Agent Guidelines Sync", () => {
+    let canonicalJson: Record<string, unknown>;
     let canonicalJson: any;
 
     beforeAll(() => {
