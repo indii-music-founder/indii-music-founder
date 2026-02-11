@@ -120,7 +120,7 @@ describe('Mobile Experience Integration', () => {
             const fab = screen.getByLabelText('Open Navigation');
             // Check styling roughly
             expect(fab.className).toContain('fixed');
-            expect(fab.className).toContain('bottom-6');
+            expect(fab.className).toContain('bottom-32');
         });
     });
 

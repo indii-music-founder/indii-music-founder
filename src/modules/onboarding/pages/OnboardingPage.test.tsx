@@ -124,7 +124,7 @@ describe('OnboardingPage', () => {
             expect(screen.getByLabelText('Type your message')).toBeInTheDocument();
 
             // Mobile view button (hidden on desktop, but in DOM)
-            expect(screen.getByLabelText('View profile progress')).toBeInTheDocument();
+            expect(screen.getByLabelText(/View profile progress/)).toBeInTheDocument();
         });
     });
 

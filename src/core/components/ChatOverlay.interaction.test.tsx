@@ -83,10 +83,9 @@ describe('🖱️ Click: ChatOverlay Interactions', () => {
         // Assert: PromptArea is visible
         expect(screen.getByTestId('mock-prompt-area')).toBeInTheDocument();
 
-        // Assert: Button state
-        const detachBtn = screen.getByTestId('detach-input-btn');
+        // Assert: Button state - component uses title attribute, not data-testid
+        const detachBtn = screen.getByTitle('Detach Input');
         expect(detachBtn).toBeInTheDocument();
-        expect(detachBtn).toHaveAttribute('aria-label', 'Detach Input');
 
         // 2. Interaction: Click Detach
         fireEvent.click(detachBtn);
@@ -110,9 +109,9 @@ describe('🖱️ Click: ChatOverlay Interactions', () => {
         // Assert: PromptArea is NOT visible
         expect(screen.queryByTestId('mock-prompt-area')).not.toBeInTheDocument();
 
-        // Assert: Button state updated
-        const dockedBtn = screen.getByTestId('detach-input-btn');
-        expect(dockedBtn).toHaveAttribute('aria-label', 'Dock Input');
+        // Assert: Button state updated - title changes to "Dock Input"
+        const dockedBtn = screen.getByTitle('Dock Input');
+        expect(dockedBtn).toBeInTheDocument();
     });
 
     it('Scenario 2: Minimize Interaction', () => {
@@ -120,7 +119,8 @@ describe('🖱️ Click: ChatOverlay Interactions', () => {
             <ChatOverlay onClose={mockOnClose} onToggleMinimize={mockOnToggleMinimize} />
         );
 
-        const minimizeBtn = screen.getByTestId('minimize-chat-btn');
+        // Component uses aria-label, not data-testid
+        const minimizeBtn = screen.getByRole('button', { name: 'Minimize chat' });
 
         // Interaction
         fireEvent.click(minimizeBtn);

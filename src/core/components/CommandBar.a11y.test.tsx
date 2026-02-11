@@ -85,6 +85,12 @@ describe('CommandBar Accessibility', () => {
             isAgentOpen: false,
             chatChannel: 'agent', // Ensure delegate menu is visible
             setChatChannel: vi.fn(),
+            isCommandBarDetached: false,
+            setCommandBarDetached: vi.fn(),
+            commandBarInput: '',
+            setCommandBarInput: vi.fn(),
+            commandBarAttachments: [],
+            setCommandBarAttachments: vi.fn(),
         });
         (useToast as unknown as ReturnType<typeof vi.fn>).mockReturnValue(mockToast);
     });
@@ -98,8 +104,8 @@ describe('CommandBar Accessibility', () => {
     it('should have no accessibility violations when Delegate Menu is open', async () => {
         const { container } = render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
-        fireEvent.click(delegateBtn!);
+        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
+        fireEvent.click(delegateBtn);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
 
@@ -110,8 +116,8 @@ describe('CommandBar Accessibility', () => {
     it('should close Delegate Menu when Escape key is pressed', async () => {
         render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
-        fireEvent.click(delegateBtn!);
+        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
+        fireEvent.click(delegateBtn);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
 
@@ -125,9 +131,9 @@ describe('CommandBar Accessibility', () => {
     it('should return focus to the trigger button when Delegate Menu is closed', async () => {
         render(<CommandBar />);
 
-        const delegateBtn = screen.getByText(/Delegate to/i).closest('button');
-        delegateBtn!.focus();
-        fireEvent.click(delegateBtn!);
+        const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
+        delegateBtn.focus();
+        fireEvent.click(delegateBtn);
 
         expect(screen.getByRole('menu')).toBeInTheDocument();
 
@@ -140,6 +146,6 @@ describe('CommandBar Accessibility', () => {
         });
 
         // We expect focus to return to the trigger
-        expect(document.activeElement).toBe(delegateBtn);
+        expect(document.activeElement).toBe(delegateBtn!);
     });
 });

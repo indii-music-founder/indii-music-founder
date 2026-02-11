@@ -46,7 +46,7 @@ describe('CanvasToolbar', () => {
     it('shows active state for Magic Fill button', () => {
         render(<CanvasToolbar {...mockProps} isMagicFillMode={true} />);
         const magicFillBtn = screen.getByRole('button', { name: /Magic Fill/i });
-        expect(magicFillBtn).toHaveClass('bg-purple-600');
+        expect(magicFillBtn).toHaveClass('bg-dept-creative');
         expect(magicFillBtn).toHaveAttribute('aria-pressed', 'true');
     });
 

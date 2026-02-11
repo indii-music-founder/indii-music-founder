@@ -15,7 +15,8 @@ vi.mock('@/services/firebase', () => ({
   db: {},
   storage: {},
   auth: {},
-  functions: {}
+  functions: {},
+  remoteConfig: { defaultConfig: {} }
 }));
 // Also mock repository since it imports firebase
 vi.mock('@/services/storage/repository', () => ({

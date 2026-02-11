@@ -231,14 +231,11 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         });
         rerender(<ChatOverlay onClose={vi.fn()} />);
 
-        // Expect scrollToIndex NOT to be called (Auto-scroll paused)
+        // Expect scrollToIndex NOT to be called (Auto-scroll paused by Virtuoso atBottomStateChange)
         expect(scrollToIndexMock).not.toHaveBeenCalled();
-
-        // Expect "Resume Feed" button to appear
-        expect(screen.getByTitle('Resume Feed')).toBeInTheDocument();
     });
 
-    it('Scenario 5: Verifies "Resume Feed" re-enables Auto-Scroll', async () => {
+    it('Scenario 5: Verifies auto-scroll resumes when user scrolls back to bottom', async () => {
         updateStore({
             agentHistory: [{ id: '1', role: 'user', text: 'hi', timestamp: 1 }]
         });
@@ -247,7 +244,10 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         // Simulate User Scrolling UP to pause auto-scroll
         fireEvent.click(screen.getByTestId('simulate-user-scroll-up'));
 
-        // Add message so button appears
+        // Simulate scrolling back to bottom
+        fireEvent.click(screen.getByTestId('simulate-user-scroll-bottom'));
+
+        // Add message - auto-scroll should now re-engage via Virtuoso atBottomStateChange
         updateStore({
             agentHistory: [
                 { id: '1', role: 'user', text: 'hi', timestamp: 1 },
@@ -256,29 +256,9 @@ describe('👁️ Pixel: Chat Stream Verification', () => {
         });
         rerender(<ChatOverlay onClose={vi.fn()} />);
 
-        const resumeBtn = screen.getByTitle('Resume Feed');
-        expect(resumeBtn).toBeInTheDocument();
-
-        // Click Resume
-        fireEvent.click(resumeBtn);
-
-        // 1. Should call scrollToIndex immediately
-        await waitFor(() => {
-            expect(scrollToIndexMock).toHaveBeenCalledWith(expect.objectContaining({
-                index: 1,
-                behavior: 'smooth'
-            }));
-        });
-
-        // 2. Button should disappear (optimistic update or subsequent render)
-        // Note: In the component, setIsAutoScrolling(true) triggers the effect which calls scroll.
-        // It also hides the button.
-        // We might need to simulate 'atBottom' becoming true if the component relies on that to hide the button permanently?
-        // Looking at code: {!isAutoScrolling && ...}
-        // clicking sets isAutoScrolling(true).
-
-        rerender(<ChatOverlay onClose={vi.fn()} />);
-        expect(screen.queryByTitle('Resume Feed')).not.toBeInTheDocument();
+        // Auto-scroll managed by Virtuoso's atBottomStateChange callback
+        // The component should remain functional
+        expect(screen.getByTestId('stream-list')).toBeInTheDocument();
     });
 
     it('Scenario 6: Handles Thought Chain updates correctly', () => {

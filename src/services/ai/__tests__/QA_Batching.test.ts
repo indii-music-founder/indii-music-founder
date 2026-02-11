@@ -5,6 +5,23 @@ import { RequestBatcher } from '../../../utils/RequestBatcher';
 const mockEmbedContent = vi.fn();
 const mockBatchEmbedContents = vi.fn();
 
+// Mock env config to provide fake API key
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'test-api-key-for-batching',
+        VITE_API_KEY: 'test-api-key-for-batching',
+        DEV: true
+    },
+    firebaseConfig: {
+        apiKey: 'test-firebase-key',
+        authDomain: 'test.firebaseapp.com',
+        projectId: 'test-project',
+        storageBucket: 'test.appspot.com',
+        messagingSenderId: '123',
+        appId: '1:123:web:abc'
+    }
+}));
+
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
     getFirebaseAI: vi.fn(() => ({})),

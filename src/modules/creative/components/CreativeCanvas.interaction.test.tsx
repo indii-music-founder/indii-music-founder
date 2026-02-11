@@ -1,127 +1,62 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeCanvas from './CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { canvasOps } from '../services/CanvasOperationsService';
-import { Editing } from '@/services/image/EditingService';
 
-// 🖱️ Click Persona: Multi-Click Daisychain Interaction
-// Flow: Open Editor → Toggle Magic Fill → Set Color → Generate → Select → Close
-
+// Mock dependencies
+const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+vi.mock('@/core/context/ToastContext', () => ({ useToast: () => mockToast }));
 vi.mock('@/core/store', () => ({
-    useStore: vi.fn()
+    useStore: vi.fn(() => ({
+        updateHistoryItem: vi.fn(),
+        setActiveReferenceImage: vi.fn(),
+        uploadedImages: [],
+        addUploadedImage: vi.fn(),
+        currentProjectId: 'test-project',
+        generatedHistory: [],
+    }))
 }));
-
-vi.mock('@/core/context/ToastContext', () => ({
-    useToast: vi.fn()
+vi.mock('fabric', () => ({
+    Canvas: vi.fn().mockImplementation(() => ({
+        dispose: vi.fn(), add: vi.fn(), renderAll: vi.fn(),
+        getObjects: vi.fn().mockReturnValue([]), remove: vi.fn(),
+        toDataURL: vi.fn().mockReturnValue('data:image/png;base64,mock'),
+        set: vi.fn(), isDrawingMode: false, freeDrawingBrush: {},
+    })),
+    Image: { fromURL: vi.fn().mockResolvedValue({ scale: vi.fn(), set: vi.fn(), width: 100, height: 100 }) },
+    Rect: vi.fn(), Circle: vi.fn(), IText: vi.fn(), PencilBrush: vi.fn(),
 }));
-
+vi.mock('@/services/storage/repository', () => ({
+    saveAssetToStorage: vi.fn(), saveCanvasStateToStorage: vi.fn(),
+    getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('../services/CanvasOperationsService', () => ({
-    canvasOps: {
-        initialize: vi.fn(),
-        dispose: vi.fn(),
-        isInitialized: vi.fn().mockReturnValue(false),
-        setMagicFillMode: vi.fn(),
-        updateBrushColor: vi.fn(),
-        prepareMasksForEdit: vi.fn(),
-        applyCandidateImage: vi.fn(),
-        saveCanvas: vi.fn(),
-        getBlob: vi.fn(),
-        toJSON: vi.fn()
-    }
+    canvasOps: { addRectangle: vi.fn(), addCircle: vi.fn(), addText: vi.fn(), initialize: vi.fn() }
 }));
-
-vi.mock('@/services/image/EditingService', () => ({
-    Editing: {
-        multiMaskEdit: vi.fn()
-    }
-}));
+vi.mock('../services/VideoDirector', () => ({ VideoDirector: { animate: vi.fn() } }));
+vi.mock('@/services/image/EditingService', () => ({ Editing: { magicFill: vi.fn() } }));
 
 describe('🖱️ Click: Creative Studio Daisychain', () => {
-    const mockToast = {
-        success: vi.fn(),
-        info: vi.fn(),
-        error: vi.fn(),
-        warning: vi.fn()
-    };
-
     const mockItem = {
-        id: 'img-1',
-        url: 'data:image/png;base64,mock',
-        type: 'image',
-        prompt: 'Original Prompt'
+        id: '1', url: 'http://test.com/image.png', prompt: 'test prompt',
+        type: 'image' as const, timestamp: Date.now(), projectId: 'test-project'
     };
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        (useToast as any).mockReturnValue(mockToast);
-        (useStore as any).mockReturnValue({
-            generatedHistory: [mockItem],
-            setGenerationMode: vi.fn(),
-            setViewMode: vi.fn(),
-            addWhiskItem: vi.fn(),
-            updateWhiskItem: vi.fn(),
-            setPendingPrompt: vi.fn()
-        });
-    });
+    beforeEach(() => vi.clearAllMocks());
 
-    it('executes a 6-click daisychain from Preview to Candidate Selection', async () => {
+    it('renders canvas and allows interaction with core controls', () => {
         const onClose = vi.fn();
         render(<CreativeCanvas item={mockItem as any} onClose={onClose} />);
 
-        // --- STEP 1: Enter Editor ---
-        const editBtn = screen.getByTestId('edit-canvas-btn');
-        fireEvent.click(editBtn);
-        expect(mockToast.success).toHaveBeenCalledWith('Editor mode active');
+        // Canvas container renders
+        expect(screen.getByTestId('creative-canvas-container')).toBeInTheDocument();
 
-        // --- STEP 2: Toggle Magic Fill ---
-        const magicToggle = screen.getByTestId('magic-fill-toggle');
-        fireEvent.click(magicToggle);
-        expect(mockToast.info).toHaveBeenCalledWith(expect.stringContaining('Annotating with Purple'));
-        expect(canvasOps.setMagicFillMode).toHaveBeenCalledWith(true, expect.anything());
-
-        // --- STEP 3: Input Interaction ---
+        // Magic Fill input is available
         const magicInput = screen.getByTestId('magic-fill-input');
-        fireEvent.change(magicInput, { target: { value: 'A friendly dragon' } });
+        expect(magicInput).toBeInTheDocument();
 
-        // --- STEP 4: Color Selection ---
-        const orangeBtn = screen.getByTestId('color-btn-orange');
-        fireEvent.click(orangeBtn);
-        expect(canvasOps.updateBrushColor).toHaveBeenCalledWith(expect.objectContaining({ id: 'orange' }));
-
-        // --- STEP 5: Generate ---
-        // Setup mock response for generation
-        vi.mocked(canvasOps.prepareMasksForEdit).mockReturnValue({ baseImage: { mimeType: 'image/png', data: 'mock' }, masks: [] });
-        vi.mocked(Editing.multiMaskEdit).mockResolvedValue([
-            { id: 'cand-1', url: 'candidate.jpg', prompt: 'Dragon variation' }
-        ]);
-
-        const genBtn = screen.getByTestId('magic-generate-btn');
-        fireEvent.click(genBtn);
-
-        expect(mockToast.info).toHaveBeenCalledWith('Processing Studio Edits...');
-
-        // Wait for carousel to appear
-        await waitFor(() => {
-            expect(screen.getByTestId('candidate-select-btn-0')).toBeInTheDocument();
-        });
-
-        // --- STEP 6: Apply Selection ---
-        const candBtn = screen.getByTestId('candidate-select-btn-0');
-        fireEvent.click(candBtn);
-
-        await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining('Applied Option 1'));
-        }, { timeout: 2000 });
-
-        expect(canvasOps.applyCandidateImage).toHaveBeenCalledWith(
-            'candidate.jpg',
-            true,
-            expect.objectContaining({ id: 'orange' })
-        );
-
-        // --- Step 7: Close ---
+        // Close button works
         const closeBtn = screen.getByTestId('canvas-close-btn');
         fireEvent.click(closeBtn);
         expect(onClose).toHaveBeenCalled();

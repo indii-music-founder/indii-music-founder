@@ -40,7 +40,8 @@ describe('StandardMerch Loading States (Pulse)', () => {
 
         render(<StandardMerch />);
 
-        const loader = screen.queryByRole('status') || screen.queryByTestId('merch-loader') || screen.queryByText(/loading/i);
+        const loaders = screen.queryAllByRole('status');
+        const loader = loaders.length > 0 ? loaders[0] : (screen.queryByTestId('merch-loader') || screen.queryByText(/loading/i));
         expect(loader).toBeInTheDocument();
     });
 
