@@ -46,10 +46,10 @@ describe('AudioFidelityFeature', () => {
   };
 
   it('should validate inputs correctly', async () => {
-    // @ts-expect-error - testing runtime validation
     const result = await feature.execute({
       filePath: '', // Invalid
-      targetStandard: 'Invalid' // Invalid enum
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      targetStandard: 'Invalid' as any // Invalid enum
     });
 
     expect(result.success).toBe(false);
