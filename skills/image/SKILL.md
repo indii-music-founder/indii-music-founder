@@ -14,7 +14,7 @@ last_updated: 2026-02-06
 ## 1. Core Model Capabilities
 
 | Capability | Model | Specs |
-|------------|-------|-------|
+| --- | --- | --- |
 | **Text-to-Image** | `gemini-3-pro-image-preview` | High-fidelity photorealism, text rendering, diverse styles |
 | **Image Editing** | `gemini-3-pro-image-preview` | Inpainting, outpainting, object swap, style transfer, color adjustment |
 | **Resolution** | Up to 4K | 1:1, 16:9, 4:3, 3:4, 9:16 aspect ratios |
@@ -158,7 +158,7 @@ response = client.models.generate_content(
 ## 6. Editing Commands Reference
 
 | Command Type | Example Prompt |
-|--------------|----------------|
+| --- | --- |
 | **Color Change** | "Change the car from red to blue" |
 | **Object Swap** | "Replace the coffee cup with a glass of wine" |
 | **Background Change** | "Change the background to a beach sunset" |
@@ -212,7 +212,7 @@ fs.writeFileSync("cat_dj.png", imageBuffer);
 ## 8. Error Handling & Troubleshooting
 
 | Error | Cause | Solution |
-|-------|-------|----------|
+| --- | --- | --- |
 | **400** | Missing `response_modalities` | Add `response_modalities=["IMAGE"]` |
 | **400** | Missing thought signature (editing) | Include `thought_signature` from previous response |
 | **400** | Invalid aspect ratio | Use supported ratios only |
@@ -254,7 +254,7 @@ fs.writeFileSync("cat_dj.png", imageBuffer);
 ## 10. Pricing Summary
 
 | Resolution | Price/Image |
-|------------|-------------|
+| --- | --- |
 | 1K | $0.134 |
 | 2K | $0.134 |
 | 4K | $0.24 |

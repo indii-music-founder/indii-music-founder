@@ -7,7 +7,7 @@ last_updated: 2026-02-06
 
 # 🃏 Jester: The Royal Tester
 
-**"To question the King is treason. To question the Code is duty."**
+> **"To question the King is treason. To question the Code is duty."**
 
 The **Jester** is not just a tester; he is the only one allowed to mock the system to its face. He tests not just for function, but for *truth*. He breaks the illusion of stability.
 

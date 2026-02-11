@@ -35,7 +35,7 @@ graph TD
 
 ## 2. Error Ledger Location
 
-```
+```text
 .agent/skills/error_memory/ERROR_LEDGER.md
 ```
 
@@ -54,9 +54,10 @@ graph TD
 
 **Prevention**: How to avoid in the future
 **Related Files**: `path/to/affected.ts`
+
 ---
 
-```
+```text
 
 ### 2.2 Ledger Entry Example
 
@@ -78,9 +79,10 @@ const response = await model.generateContent(historyWithSignature);
 
 **Prevention**: Always capture and return `thought_signature` for multi-turn conversations
 **Related Files**: `src/services/ai/ImageGenerationService.ts`
+
 ---
 
-```
+```text
 
 ---
 
@@ -129,7 +131,7 @@ mcp_mem0_add-memory({
 ## 4. Error Classification
 
 | Category | Mem0 User ID | Ledger Section |
-|----------|--------------|----------------|
+| --- | --- | --- |
 | **Firebase/Auth** | `indiiOS-errors` | `## Firebase Errors` |
 | **AI/Gemini** | `indiiOS-errors` | `## AI Service Errors` |
 | **Build/TypeScript** | `indiiOS-errors` | `## Build Errors` |
@@ -144,7 +146,7 @@ mcp_mem0_add-memory({
 ### 5.1 Gemini 3 Errors
 
 | Error | Pattern | Fix |
-|-------|---------|-----|
+| --- | --- | --- |
 | `400` | Missing thought signature | Include `thought_signature` from previous response |
 | `400` | Using `thinking_budget` | Replace with `thinking_level` parameter |
 | `400` | Wrong FC/FR order | Use `FC1+sig, FC2, FR1, FR2` not interleaved |
@@ -154,7 +156,7 @@ mcp_mem0_add-memory({
 ### 5.2 Firebase Errors
 
 | Error | Pattern | Fix |
-|-------|---------|-----|
+| --- | --- | --- |
 | `permission-denied` | Security rule blocked | Check rules logic, verify `request.auth` |
 | `unauthenticated` | Missing auth token | Ensure user is logged in before call |
 | `not-found` | Document doesn't exist | Check path, handle missing docs gracefully |
@@ -163,7 +165,7 @@ mcp_mem0_add-memory({
 ### 5.3 Build Errors
 
 | Error | Pattern | Fix |
-|-------|---------|-----|
+| --- | --- | --- |
 | `TS2307` | Cannot find module | Check path alias, install missing package |
 | `TS2345` | Argument type mismatch | Fix types, add type guards |
 | `TS2339` | Property does not exist | Add property to interface, use optional chaining |
@@ -175,10 +177,7 @@ mcp_mem0_add-memory({
 
 > If a fix fails verification **twice**, pivot strategy.
 
-```
-Strike 1: Initial fix attempt fails
-  → Re-analyze, try variation of same approach
-
+```text
 Strike 2: Second fix attempt fails
   → STOP CURRENT APPROACH
   → Add extensive logging

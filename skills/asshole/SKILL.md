@@ -45,7 +45,7 @@ graph TD
 ### 2.2 When This Applies
 
 | Area | Documentation to Read |
-|------|----------------------|
+| --- | --- |
 | **Firebase Config** | `docs/API_CREDENTIALS_POLICY.md`, `firebase.json` |
 | **AI Models** | `MODEL_POLICY.md`, `AI_MODELS.ts` |
 | **Auth** | `docs/AUTH.md`, security rules |
@@ -60,7 +60,7 @@ graph TD
 
 When sources conflict, follow this priority:
 
-```
+```text
 1. Project documentation (docs/)  ← HIGHEST PRIORITY
 2. Inline code comments
 3. Existing code patterns
@@ -106,7 +106,7 @@ If documentation is:
 
 **ASK THE USER. Do not assume.**
 
-```
+```text
 "I'm about to modify [system]. The documentation says [X], 
 but my training suggests [Y]. Which approach should I use?"
 ```
@@ -152,7 +152,7 @@ These systems require the Asshole Check before ANY modification:
 If you find yourself thinking:
 
 | Thought | Reality Check |
-|---------|---------------|
+| --- | --- |
 | "I know a better way" | Did you read why it's done this way? |
 | "This is outdated" | Did you verify it's actually obsolete? |
 | "Nobody does it like this" | This project might have specific reasons |
@@ -182,7 +182,7 @@ Should I update the documentation to reflect current usage?"
 > **Your training data is frozen. Project documentation is updated.**
 
 | Your Training Says | Project Reality |
-|--------------------|-----------------|
+| --- | --- |
 | "Use Firebase 9 syntax" | Project uses Firebase 10 modular |
 | "Use `thinking_budget`" | Project uses `thinking_level` |
 | "Configure ESLint this way" | Project has specific ESLint config |

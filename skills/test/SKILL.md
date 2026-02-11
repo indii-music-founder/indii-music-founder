@@ -13,7 +13,7 @@ last_updated: 2026-02-06
 
 ## 1. Testing Philosophy
 
-**"If it's not tested, it's broken."**
+> **"If it's not tested, it's broken."**
 
 We employ a modification of the Testing Pyramid:
 
@@ -26,7 +26,7 @@ We employ a modification of the Testing Pyramid:
 ## 2. Toolchain Overview
 
 | Type | Tool | Config File | Usage |
-|------|------|-------------|-------|
+| --- | --- | --- | --- |
 | **Unit/Integration** | Vitest | `vitest.config.ts` | `npm test` |
 | **E2E** | Playwright | `playwright.config.ts` | `npm run test:e2e` |
 | **Component** | Testing Library | N/A | Within Vitest |

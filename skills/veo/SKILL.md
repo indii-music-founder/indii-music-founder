@@ -14,7 +14,7 @@ last_updated: 2026-02-06
 ## 1. Core Model Capabilities
 
 | Capability | Model | Specs |
-|---|---|---|
+| --- | --- | --- |
 | **Text-to-Video** | `veo-3.1-generate-preview` | High-fidelity, cinematic quality, 24/30/60 fps |
 | **Video Extension** | `veo-3.1-generate-preview` | Extend Veo videos up to 20x (max 141s total) |
 | **Resolution** | 1080p, 4K (Upscaled) | `16:9`, `9:16` aspect ratios |
@@ -179,7 +179,7 @@ Use Gemini 3 models for video understanding with configurable resolution.
 ### 5.1 Token Usage per Frame
 
 | Resolution | Tokens/Frame | Use Case |
-|------------|--------------|----------|
+| --- | --- | --- |
 | `media_resolution_low` | 70 | Action recognition, motion analysis |
 | `media_resolution_medium` | 70 | Standard understanding |
 | `media_resolution_high` | 280 | Text-heavy, OCR, fine details |
@@ -216,14 +216,14 @@ print(response.text)
 
 ### 6.1 Prompt Structure
 
-```
+```text
 [Camera Movement] + [Subject/Action] + [Environment] + [Mood/Lighting] + [Audio Cues] + [Quality Markers]
 ```
 
 ### 6.2 Camera Movement Keywords
 
 | Movement | Description |
-|----------|-------------|
+| --- | --- |
 | `drone shot` | Aerial perspective |
 | `tracking shot` | Following subject |
 | `push in` / `dolly in` | Moving closer |
@@ -360,7 +360,7 @@ curl -X GET "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT
 ## 10. Error Handling
 
 | Error | Cause | Solution |
-|-------|-------|----------|
+| --- | --- | --- |
 | **400** | Invalid aspect ratio | Use only `9:16` or `16:9` |
 | **400** | Invalid resolution | Check model support (4K not on all) |
 | **400** | Extension on non-Veo video | Only Veo outputs can be extended |
@@ -373,7 +373,7 @@ curl -X GET "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT
 ## 11. Pricing Reference (Feb 2026)
 
 | Model | Price |
-|-------|-------|
+| --- | --- |
 | Veo 3.1 | See Vertex AI pricing page |
 | Veo 3.0 | See Vertex AI pricing page |
 

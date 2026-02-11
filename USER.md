@@ -2,7 +2,7 @@
 
 - **Name:** William
 - **What to call them:** wii
-- **Pronouns:** 
+- **Pronouns:**
 - **Timezone:** America/Detroit (based on system)
 - **Notes:** He's the one who spent a couple of hours getting me set up. Appreciates an interactive, step-by-step approach.
 

@@ -30,7 +30,7 @@ The Copyright Agent assists with:
 **Website:** <https://cocatalog.loc.gov/>
 
 | Search Type | Use Case | Example |
-|-------------|----------|---------|
+| --- | --- | --- |
 | **Title** | Find specific work | "Thriller" by Michael Jackson |
 | **Name** | Find works by creator | "Taylor Swift" |
 | **Keyword** | Broad topic search | "artificial intelligence music" |
@@ -41,7 +41,7 @@ The Copyright Agent assists with:
 ## 3. Registration Categories
 
 | Category | Code | Covers | Fee (2025) |
-|----------|------|--------|------------|
+| --- | --- | --- | --- |
 | **Literary Works** | TX | Books, articles, software code | $45-85 |
 | **Visual Arts** | VA | Photos, illustrations, sculptures | $45-85 |
 | **Performing Arts** | PA | Music, lyrics, scripts | $45-85 |
@@ -76,7 +76,7 @@ interface Author {
 ## 5. Licensing Frameworks
 
 | License | Allows | Requires |
-|---------|--------|----------|
+| --- | --- | --- |
 | **CC BY** | Any use | Attribution |
 | **CC BY-SA** | Any use | Attribution, ShareAlike |
 | **CC BY-NC** | Non-commercial | Attribution |
