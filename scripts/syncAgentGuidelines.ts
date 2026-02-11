@@ -63,6 +63,11 @@ export function syncAllAgents() {
 }
 
 // Auto-run if executed directly
+// Auto-run if executed directly (works with both .ts and compiled .js)
+if (import.meta.url === `file://${process.argv[1]}` || process.argv[1].endsWith('syncAgentGuidelines.ts')) {
+    syncAllAgents();
+}
+}
 if (process.argv[1] === __filename) {
     syncAllAgents();
 }
