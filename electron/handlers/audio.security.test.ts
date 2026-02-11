@@ -19,6 +19,17 @@ vi.mock('electron', () => ({
     }
 }));
 
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: {
+        verifyAccess: vi.fn(() => true),
+        grantAccess: vi.fn()
+    }
+}));
+
+vi.mock('../utils/file-security', () => ({
+    validateSafeAudioPath: vi.fn((p) => p)
+}));
+
 // Mock external deps
 vi.mock('fluent-ffmpeg', () => ({
     default: {
@@ -44,8 +55,8 @@ vi.mock('fs', async (importOriginal) => {
             return s;
         }),
         realpathSync: vi.fn().mockImplementation((p) => {
-             if (p === '/tmp/exploit.wav') return '/etc/passwd';
-             return p;
+            if (p === '/tmp/exploit.wav') return '/etc/passwd';
+            return p;
         })
     };
     return {

@@ -1,4 +1,28 @@
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
+
+// Mock Environment Variables globally
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'MOCK_VITE_API_KEY',
+        firebaseApiKey: 'MOCK_FIREBASE_API_KEY',
+        projectId: 'mock-project-id',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token',
+        skipOnboarding: true,
+        isDev: true,
+        isProd: false
+    },
+    default: {
+        apiKey: 'MOCK_VITE_API_KEY',
+        firebaseApiKey: 'MOCK_FIREBASE_API_KEY',
+        projectId: 'mock-project-id',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token',
+        skipOnboarding: true,
+        isDev: true,
+        isProd: false
+    }
+}));
 
 // Only import DOM-specific modules when running in jsdom environment
 if (typeof window !== 'undefined') {
@@ -92,6 +116,49 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
     Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true, configurable: true });
 }
 
+// Mock framer-motion
+vi.mock('framer-motion', async (importOriginal) => {
+    const React = await import('react');
+    return {
+        motion: {
+            div: ({ children, ...props }: any) => React.createElement('div', props, children),
+            span: ({ children, ...props }: any) => React.createElement('span', props, children),
+            button: ({ children, ...props }: any) => React.createElement('button', props, children),
+            p: ({ children, ...props }: any) => React.createElement('p', props, children),
+            h1: ({ children, ...props }: any) => React.createElement('h1', props, children),
+            h2: ({ children, ...props }: any) => React.createElement('h2', props, children),
+            h3: ({ children, ...props }: any) => React.createElement('h3', props, children),
+            section: ({ children, ...props }: any) => React.createElement('section', props, children),
+            nav: ({ children, ...props }: any) => React.createElement('nav', props, children),
+            header: ({ children, ...props }: any) => React.createElement('header', props, children),
+            footer: ({ children, ...props }: any) => React.createElement('footer', props, children),
+            aside: ({ children, ...props }: any) => React.createElement('aside', props, children),
+            main: ({ children, ...props }: any) => React.createElement('main', props, children),
+            article: ({ children, ...props }: any) => React.createElement('article', props, children),
+        },
+        useMotionValue: vi.fn(() => ({
+            set: vi.fn(),
+            get: vi.fn(() => 0),
+            on: vi.fn(() => () => { }),
+            onChange: vi.fn(() => () => { }),
+        })),
+        useSpring: vi.fn(() => ({
+            set: vi.fn(),
+            get: vi.fn(() => 0),
+            on: vi.fn(() => () => { }),
+            onChange: vi.fn(() => () => { }),
+        })),
+        useTransform: vi.fn(() => ({
+            get: vi.fn(() => 0),
+        })),
+        useScroll: vi.fn(() => ({
+            scrollY: { get: vi.fn(() => 0), on: vi.fn(() => () => { }) },
+            scrollYProgress: { get: vi.fn(() => 0), on: vi.fn(() => () => { }) },
+        })),
+        AnimatePresence: ({ children }: any) => children,
+    };
+});
+
 // ============================================================================
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
@@ -119,7 +186,11 @@ vi.mock('@/services/firebase', () => {
         auth: mockAuth,
         functions: {},
         functionsWest1: {},
-        remoteConfig: { defaultConfig: {} },
+        remoteConfig: {
+            defaultConfig: {},
+            fetchAndActivate: vi.fn().mockResolvedValue(true),
+            getValue: vi.fn()
+        },
         messaging: null,
         appCheck: null,
         ai: { instance: null },

@@ -40,10 +40,10 @@ vi.mock('@/core/store', () => {
         user: { uid: 'test-user' },
         // Add minimal state needed
     };
-    const useStore = vi.fn(() => mockState);
-    // Attach getState to the hook function (Zustand pattern)
-    (useStore as any).getState = vi.fn(() => mockState);
-    (useStore as any).setState = vi.fn();
+    const useStore = Object.assign(vi.fn(() => mockState), {
+        getState: vi.fn(() => mockState),
+        setState: vi.fn()
+    });
 
     return {
         useStore,

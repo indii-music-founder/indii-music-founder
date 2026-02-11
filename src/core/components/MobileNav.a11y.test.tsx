@@ -43,7 +43,7 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>
+    AnimatePresence: ({ children }: any) => children
 }));
 
 describe('♿ MobileNav Accessibility', () => {
