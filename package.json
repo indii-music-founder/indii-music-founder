@@ -30,6 +30,8 @@
     "prelint": "tsx scripts/syncAgentGuidelines.ts",
     "pretest": "tsx scripts/syncAgentGuidelines.ts",
     "sync:agents": "tsx scripts/syncAgentGuidelines.ts",
+    "prelint": "node scripts/syncAgentGuidelines.ts",
+    "pretest": "node scripts/syncAgentGuidelines.ts",
     "sync:agents": "node scripts/syncAgentGuidelines.ts",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
