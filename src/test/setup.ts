@@ -1,4 +1,28 @@
-import { vi } from 'vitest';
+import { vi, beforeEach, afterEach } from 'vitest';
+
+// Mock Environment Variables globally
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'MOCK_VITE_API_KEY',
+        firebaseApiKey: 'MOCK_FIREBASE_API_KEY',
+        projectId: 'mock-project-id',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token',
+        skipOnboarding: true,
+        isDev: true,
+        isProd: false
+    },
+    default: {
+        apiKey: 'MOCK_VITE_API_KEY',
+        firebaseApiKey: 'MOCK_FIREBASE_API_KEY',
+        projectId: 'mock-project-id',
+        appCheckKey: 'mock-app-check-key',
+        appCheckDebugToken: 'mock-debug-token',
+        skipOnboarding: true,
+        isDev: true,
+        isProd: false
+    }
+}));
 
 // Only import DOM-specific modules when running in jsdom environment
 if (typeof window !== 'undefined') {
@@ -92,6 +116,8 @@ if (typeof globalThis.localStorage === 'undefined' || !(globalThis.localStorage?
     Object.defineProperty(globalThis, 'localStorage', { value: localStorageMock, writable: true, configurable: true });
 }
 
+// framer-motion mock is defined below (single instance to avoid conflicts)
+
 // ============================================================================
 // FIREBASE MOCKS - Centralized for all test files
 // ============================================================================
@@ -119,7 +145,11 @@ vi.mock('@/services/firebase', () => {
         auth: mockAuth,
         functions: {},
         functionsWest1: {},
-        remoteConfig: { defaultConfig: {} },
+        remoteConfig: {
+            defaultConfig: {},
+            fetchAndActivate: vi.fn().mockResolvedValue(true),
+            getValue: vi.fn()
+        },
         messaging: null,
         appCheck: null,
         ai: { instance: null },
@@ -641,7 +671,7 @@ vi.mock('framer-motion', async () => {
     return {
         __esModule: true,
         AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
-        motion: { // Define commonly used motion components
+        motion: {
             div: createMotionComponent('div'),
             span: createMotionComponent('span'),
             section: createMotionComponent('section'),
@@ -653,12 +683,30 @@ vi.mock('framer-motion', async () => {
             a: createMotionComponent('a'),
             svg: createMotionComponent('svg'),
             path: createMotionComponent('path'),
-            // Fallback proxy for others if needed? No, explicit list is safer for type errors.
+            h1: createMotionComponent('h1'),
+            h2: createMotionComponent('h2'),
+            h3: createMotionComponent('h3'),
+            nav: createMotionComponent('nav'),
+            header: createMotionComponent('header'),
+            footer: createMotionComponent('footer'),
+            aside: createMotionComponent('aside'),
+            main: createMotionComponent('main'),
+            article: createMotionComponent('article'),
         },
-        // Mock hooks if needed in future
+        // Mock hooks
         useAnimation: () => ({ start: vi.fn(), stop: vi.fn(), set: vi.fn() }),
-        useMotionValue: (v: any) => ({ get: () => v, set: vi.fn() }),
+        useMotionValue: (v: any) => ({ get: () => v, set: vi.fn(), on: vi.fn(() => () => {}), onChange: vi.fn(() => () => {}) }),
+        useSpring: vi.fn(() => ({
+            set: vi.fn(),
+            get: vi.fn(() => 0),
+            on: vi.fn(() => () => {}),
+            onChange: vi.fn(() => () => {}),
+        })),
         useTransform: () => ({ get: () => 0 }),
+        useScroll: vi.fn(() => ({
+            scrollY: { get: vi.fn(() => 0), on: vi.fn(() => () => {}) },
+            scrollYProgress: { get: vi.fn(() => 0), on: vi.fn(() => () => {}) },
+        })),
     };
 });
 
