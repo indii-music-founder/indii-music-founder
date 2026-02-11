@@ -16,6 +16,7 @@ export default defineConfig({
     teardownTimeout: 1000,
     hookTimeout: 10000,
     pool: 'forks',
+    passWithNoTests: true,
     exclude: [
       ...configDefaults.exclude,
       '**/e2e/**',
