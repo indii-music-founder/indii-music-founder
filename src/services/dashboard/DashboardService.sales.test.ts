@@ -11,7 +11,10 @@ vi.mock('@/core/store', () => ({
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: { currentUser: { uid: 'test-user-id' } },
+    remoteConfig: { defaultConfig: {} },
+    initializeAppCheckService: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -36,11 +39,21 @@ describe('DashboardService - Sales Analytics', () => {
         lastUpdated: 1234567890
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
+        const { useStore } = await import('@/core/store');
         vi.clearAllMocks();
+        // Clear static cache to ensure test isolation
+        (DashboardService as any).cache.clear();
+        (DashboardService as any).analyticsCache = null;
+        (DashboardService as any).storageCache = null;
+
+        // Default user profile for all tests
+        (useStore.getState as any).mockReturnValue({
+            userProfile: { id: 'test-user-id' }
+        });
         // Default console mocks to keep test output clean
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => { });
+        vi.spyOn(console, 'error').mockImplementation(() => { });
     });
 
     afterEach(() => {
@@ -100,7 +113,7 @@ describe('DashboardService - Sales Analytics', () => {
         // We can verify a specific property known to be in the fallback but not in our mock invalid data just to be sure
         // But better yet, check that it logged a warning
         expect(console.warn).toHaveBeenCalledWith(
-            "Invalid sales analytics data:",
+            "Firestore data failed schema validation:",
             expect.anything()
         );
 
@@ -122,7 +135,7 @@ describe('DashboardService - Sales Analytics', () => {
         const result = await DashboardService.getSalesAnalytics();
 
         expect(console.warn).toHaveBeenCalledWith(
-            "Failed to fetch sales analytics doc, falling back to simulation",
+            "Firestore fetch failed:",
             expect.any(Error)
         );
 

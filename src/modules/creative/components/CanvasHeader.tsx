@@ -82,7 +82,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         ) : (
                             <>
                                 <Wand2 size={12} />
-                                <span>Refine</span>
+                                <span>Magic Edit</span>
                             </>
                         )}
                     </button>

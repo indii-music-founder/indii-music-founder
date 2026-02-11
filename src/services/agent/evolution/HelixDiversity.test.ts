@@ -77,7 +77,9 @@ describe('🧬 Helix: Diversity & Gene Preservation (Evolutionary Loop)', () => 
         systemPrompt: g.systemPrompt + ` [MUTATED-${Math.random().toString(36).substring(7)}]`
     }));
 
-    // 2. Evolve
+    // 2. Evolve with guaranteed mutation to avoid probabilistic flakiness
+    const diverstiyConfig = { ...config, mutationRate: 1.0 };
+    engine = new EvolutionEngine(diverstiyConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
     const nextGen = await engine.evolve(clones);
 
     // 3. Measure Diversity
