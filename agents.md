@@ -36,7 +36,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 - This is your curated memory — the distilled essence, not raw logs
 - Over time, review your daily files and update MEMORY.md with what's worth keeping
 
-### 📝 Write It Down - No "Mental Notes"
+### 📝 Write It Down - No "Mental Notes"!
 
 - **Memory is limited** — if you want to remember something, WRITE IT TO A FILE
 - "Mental notes" don't survive session restarts. Files do.
@@ -70,7 +70,7 @@ Capture what matters. Decisions, context, things to remember. Skip the secrets u
 
 You have access to your human's stuff. That doesn't mean you _share_ their stuff. In groups, you're a participant — not their voice, not their proxy. Think before you speak.
 
-### 💬 Know When to Speak
+### 💬 Know When to Speak!
 
 In group chats where you receive every message, be **smart about when to contribute**:
 
@@ -96,7 +96,7 @@ In group chats where you receive every message, be **smart about when to contrib
 
 Participate, don't dominate.
 
-### 😊 React Like a Human
+### 😊 React Like a Human!
 
 On platforms that support reactions (Discord, Slack), use emoji reactions naturally:
 
@@ -125,7 +125,7 @@ Skills provide your tools. When you need one, check its `SKILL.md`. Keep local n
 - **Discord links:** Wrap multiple links in `<>` to suppress embeds: `<https://example.com>`
 - **WhatsApp:** No headers — use **bold** or CAPS for emphasis
 
-## 💓 Heartbeats - Be Proactive
+## 💓 Heartbeats - Be Proactive!
 
 When you receive a heartbeat poll (message matches the configured heartbeat prompt), don't just reply `HEARTBEAT_OK` every time. Use heartbeats productively!
 
@@ -212,7 +212,6 @@ The goal: Be helpful without being annoying. Check in a few times a day, do usef
 This is a starting point. Add your own conventions, style, and rules as you figure out what works.
 
 ---
-
 ---
 
 # indiiOS Codebase Reference
@@ -359,52 +358,52 @@ indiiOS-Alpha-Electron/
 
 ### Frontend
 
-| Category     | Technology                       | Notes                     |
-| ------------ | -------------------------------- | ------------------------- |
-| Framework    | React 18                         | With lazy-loaded modules  |
-| Build        | Vite 6.4                         | Port 4242 for dev         |
-| Styling      | TailwindCSS 4.1                  | With tailwind-merge, clsx |
-| State        | Zustand 5.0                      | Slice-based store pattern |
-| Animation    | Framer Motion 12.x               |                           |
-| Canvas       | Fabric.js 6.9                    | Image editing             |
-| Graph Editor | React Flow 11.11                 | Workflow automation       |
-| Audio        | Wavesurfer.js 7.11 + Essentia.js | Analysis & visualization  |
-| Video        | Remotion 4.0                     | Video rendering           |
-| 3D           | Three.js 0.182                   | Via @react-three/fiber    |
-| Charts       | Recharts 3.6                     | Data visualization        |
-| Router       | React Router 7.11                | URL sync                  |
-| UI Kit       | Radix UI + Lucide icons          | Accessible primitives     |
-| Validation   | Zod 3.25                         | Schema validation         |
+| Category | Technology | Notes |
+|----------|-----------|-------|
+| Framework | React 18 | With lazy-loaded modules |
+| Build | Vite 6.4 | Port 4242 for dev |
+| Styling | TailwindCSS 4.1 | With tailwind-merge, clsx |
+| State | Zustand 5.0 | Slice-based store pattern |
+| Animation | Framer Motion 12.x | |
+| Canvas | Fabric.js 6.9 | Image editing |
+| Graph Editor | React Flow 11.11 | Workflow automation |
+| Audio | Wavesurfer.js 7.11 + Essentia.js | Analysis & visualization |
+| Video | Remotion 4.0 | Video rendering |
+| 3D | Three.js 0.182 | Via @react-three/fiber |
+| Charts | Recharts 3.6 | Data visualization |
+| Router | React Router 7.11 | URL sync |
+| UI Kit | Radix UI + Lucide icons | Accessible primitives |
+| Validation | Zod 3.25 | Schema validation |
 
 ### Backend
 
-| Category  | Technology                          | Notes                        |
-| --------- | ----------------------------------- | ---------------------------- |
-| Functions | Firebase Functions 7.0 (Gen 2)      | Node.js 22 runtime           |
-| AI        | Genkit AI 1.26 + @google/genai 1.30 | Gemini models                |
-| Jobs      | Inngest 3.46                        | Background job orchestration |
-| Payments  | Stripe 20.1                         | Subscription billing         |
-| Database  | Firestore                           | With security rules          |
-| Storage   | Firebase Storage                    | With security rules          |
-| Analytics | BigQuery                            | Revenue analytics            |
+| Category | Technology | Notes |
+|----------|-----------|-------|
+| Functions | Firebase Functions 7.0 (Gen 2) | Node.js 22 runtime |
+| AI | Genkit AI 1.26 + @google/genai 1.30 | Gemini models |
+| Jobs | Inngest 3.46 | Background job orchestration |
+| Payments | Stripe 20.1 | Subscription billing |
+| Database | Firestore | With security rules |
+| Storage | Firebase Storage | With security rules |
+| Analytics | BigQuery | Revenue analytics |
 
 ### Desktop (Electron 33)
 
-| Component                         | Purpose                         |
-| --------------------------------- | ------------------------------- |
+| Component | Purpose |
+|-----------|---------|
 | Electron Forge 7.8 / Builder 26.0 | Packaging (DMG, NSIS, AppImage) |
-| Keytar 7.9                        | OS credential storage           |
-| SSH2/SFTP                         | Distributor file uploads        |
-| FFmpeg / FFProbe                  | Audio/video processing          |
+| Keytar 7.9 | OS credential storage |
+| SSH2/SFTP | Distributor file uploads |
+| FFmpeg / FFProbe | Audio/video processing |
 
 ### Testing
 
-| Tool                 | Purpose                        |
-| -------------------- | ------------------------------ |
-| Vitest 4.0           | Unit tests (jsdom environment) |
-| Playwright 1.57      | E2E tests (60+ specs)          |
-| Testing Library 16.3 | Component testing              |
-| axe-core 4.11        | Accessibility testing          |
+| Tool | Purpose |
+|------|---------|
+| Vitest 4.0 | Unit tests (jsdom environment) |
+| Playwright 1.57 | E2E tests (60+ specs) |
+| Testing Library 16.3 | Component testing |
+| axe-core 4.11 | Accessibility testing |
 
 ---
 
@@ -461,8 +460,8 @@ npm run deploy                 # Build studio + deploy to Firebase hosting (app 
 ### Path Aliases
 
 ```typescript
-import { Something } from "@/services/ai/AIService"; // src/*
-import { AgentDef } from "@agents/creative-director"; // agents/*
+import { Something } from '@/services/ai/AIService';    // src/*
+import { AgentDef } from '@agents/creative-director';     // agents/*
 ```
 
 ### State Management (Zustand)
@@ -665,11 +664,10 @@ Before debugging ANY error, you MUST follow this workflow:
 **Adding to mem0:**
 
 ```javascript
-mcp_mem0_add -
-  memory(
-    (content = "ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>"),
-    (userId = "indiiOS-errors"),
-  );
+mcp_mem0_add-memory(
+  content="ERROR: <pattern> | FIX: <solution> | FILE: <relevant file>",
+  userId="indiiOS-errors"
+)
 ```
 
 **Failure to check the ledger first is a protocol violation.**
@@ -678,33 +676,33 @@ mcp_mem0_add -
 
 ## Key Files Quick Reference
 
-| File                     | Purpose                                                              |
-| ------------------------ | -------------------------------------------------------------------- |
-| `src/core/App.tsx`       | Main app entry, module routing, lazy loading                         |
-| `src/core/store.ts`      | Zustand root store                                                   |
+| File | Purpose |
+|------|---------|
+| `src/core/App.tsx` | Main app entry, module routing, lazy loading |
+| `src/core/store.ts` | Zustand root store |
 | `src/core/store/slices/` | Domain state slices (app, auth, agent, creative, distribution, etc.) |
-| `src/core/constants.ts`  | Module IDs, standalone module list                                   |
-| `vite.config.ts`         | Build config, path aliases, PWA, chunk splitting                     |
-| `tsconfig.json`          | TypeScript config (ES2022, strict, bundler resolution)               |
-| `eslint.config.js`       | ESLint flat config with React/TS rules                               |
-| `firebase.json`          | Firebase hosting (2 targets), Firestore, Storage config              |
-| `firestore.rules`        | Firestore security rules                                             |
-| `storage.rules`          | Cloud Storage security rules                                         |
-| `electron/main.ts`       | Electron main process                                                |
-| `electron/preload.ts`    | Electron IPC bridge                                                  |
-| `docker-compose.yml`     | Agent Zero + Ollama containers                                       |
-| `.env.example`           | Environment variable template                                        |
-| `src/test/setup.ts`      | Vitest global test setup and Firebase mocks                          |
+| `src/core/constants.ts` | Module IDs, standalone module list |
+| `vite.config.ts` | Build config, path aliases, PWA, chunk splitting |
+| `tsconfig.json` | TypeScript config (ES2022, strict, bundler resolution) |
+| `eslint.config.js` | ESLint flat config with React/TS rules |
+| `firebase.json` | Firebase hosting (2 targets), Firestore, Storage config |
+| `firestore.rules` | Firestore security rules |
+| `storage.rules` | Cloud Storage security rules |
+| `electron/main.ts` | Electron main process |
+| `electron/preload.ts` | Electron IPC bridge |
+| `docker-compose.yml` | Agent Zero + Ollama containers |
+| `.env.example` | Environment variable template |
+| `src/test/setup.ts` | Vitest global test setup and Firebase mocks |
 
 ---
 
 ## Deployment Targets
 
-| Target            | Platform           | Hosting                                                     |
-| ----------------- | ------------------ | ----------------------------------------------------------- |
-| Studio App        | Web (SPA)          | Firebase Hosting (`app` target) -> `dist/`                  |
-| Landing Page      | Web                | Firebase Hosting (`landing` target) -> `landing-page/dist/` |
-| Desktop (macOS)   | Electron           | DMG/ZIP distribution                                        |
-| Desktop (Windows) | Electron           | NSIS installer                                              |
-| Desktop (Linux)   | Electron           | AppImage                                                    |
-| Cloud Functions   | Firebase Functions | GCP Cloud Run (Gen 2)                                       |
+| Target | Platform | Hosting |
+|--------|----------|---------|
+| Studio App | Web (SPA) | Firebase Hosting (`app` target) -> `dist/` |
+| Landing Page | Web | Firebase Hosting (`landing` target) -> `landing-page/dist/` |
+| Desktop (macOS) | Electron | DMG/ZIP distribution |
+| Desktop (Windows) | Electron | NSIS installer |
+| Desktop (Linux) | Electron | AppImage |
+| Cloud Functions | Firebase Functions | GCP Cloud Run (Gen 2) |
