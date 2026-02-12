@@ -19,6 +19,9 @@ The Poll skill monitors `AGENT_BRIDGE.md` for status changes and triggers approp
 
 ## 2. AGENT_BRIDGE.md Location
 
+- **Status File:** `AGENT_BRIDGE.md`
+- **Location:** Project Root
+- **Purpose:** Cross-agent state synchronization.
 - **Description:** "Updates the global AGENT_BRIDGE.md state file."
 - **Path:** `AGENT_BRIDGE.md` (Project Root)
 ```text
