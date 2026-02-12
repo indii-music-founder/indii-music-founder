@@ -1,3 +1,39 @@
+# Error Memory Ledger
+
+> **Protocol:** profound-memory
+> **Version:** 1.0.0
+
+This ledger tracks solved technical challenges to prevent regression. Before debugging, **ALWAYS** check here first.
+
+## Usage
+
+1. **Search:** Ctrl+F this file for error signatures.
+2. **Query:** Use `mcp_mem0_search-memories(query="<error>", userId="indiiOS-errors")`.
+3. **Solve:** Apply the documented fix.
+4. **Record:** After solving a *new* unique error, add it here and to mem0.
+
+```javascript
+mcp_mem0_add-memory(
+  content="ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>",
+  userId="indiiOS-errors"
+)
+```
+
+## Entry Format
+
+- **Header:** `## [ID] [Short Description]`
+- **Pattern:** Exact error message or symptom.
+- **Context:** Where/when it happens.
+- **Root Cause:** Technical explanation.
+- **Fix:** Code snippet or steps.
+- **prevention:** How to avoid it.
+- **Meta:** Date Added, Related Errors.
+
+---
+
+## FIRESTORE-001 Runtime errors when accessing nested objects
+
+**Pattern:** Parent object is undefined (e.g., Firestore document missing)
 **Context:** Runtime errors when accessing nested objects
 **Root Cause:** The parent object is undefined. Common with Firestore data that may not exist yet.
 **Fix:**
