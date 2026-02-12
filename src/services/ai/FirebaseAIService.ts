@@ -1361,7 +1361,11 @@ export class FirebaseAIService {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
+        return new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'AI Service Failure',
+            { retryable: false, originalError: import.meta.env.DEV ? msg : undefined }
+        );
     }
 
     private async withRetry<T>(
