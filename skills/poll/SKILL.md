@@ -21,6 +21,9 @@ The Poll skill monitors `AGENT_BRIDGE.md` for status changes and triggers approp
 
 - **Description:** "Updates the global AGENT_BRIDGE.md state file."
 - **Path:** `AGENT_BRIDGE.md` (Project Root)
+```text
+/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/AGENT_BRIDGE.md
+```
 
 ---
 
