@@ -1350,6 +1350,7 @@ export class FirebaseAIService {
                 { retryable: false }
             );
         }
+
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
         }
