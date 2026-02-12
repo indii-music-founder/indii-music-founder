@@ -29,25 +29,25 @@ The Copyright Agent assists with:
 
 **Website:** <https://cocatalog.loc.gov/>
 
-| Search Type | Use Case | Example |
-| --- | --- | --- |
-| **Title** | Find specific work | "Thriller" by Michael Jackson |
-| **Name** | Find works by creator | "Taylor Swift" |
-| **Keyword** | Broad topic search | "artificial intelligence music" |
-| **Registration Number** | Verify existing registration | "PAu003-123-456" |
+| Search Type             | Use Case                     | Example                         |
+| ----------------------- | ---------------------------- | ------------------------------- |
+| **Title**               | Find specific work           | "Thriller" by Michael Jackson   |
+| **Name**                | Find works by creator        | "Taylor Swift"                  |
+| **Keyword**             | Broad topic search           | "artificial intelligence music" |
+| **Registration Number** | Verify existing registration | "PAu003-123-456"                |
 
 ---
 
 ## 3. Registration Categories
 
-| Category | Code | Covers | Fee (2025) |
-| --- | --- | --- | --- |
-| **Literary Works** | TX | Books, articles, software code | $45-85 |
-| **Visual Arts** | VA | Photos, illustrations, sculptures | $45-85 |
-| **Performing Arts** | PA | Music, lyrics, scripts | $45-85 |
-| **Sound Recordings** | SR | Audio recordings | $45-85 |
-| **Motion Pictures** | PA | Films, videos | $45-85 |
-| **Group Photo** | GRPPH | Up to 750 photos | $85 |
+| Category             | Code  | Covers                            | Fee (2025) |
+| -------------------- | ----- | --------------------------------- | ---------- |
+| **Literary Works**   | TX    | Books, articles, software code    | $45-85     |
+| **Visual Arts**      | VA    | Photos, illustrations, sculptures | $45-85     |
+| **Performing Arts**  | PA    | Music, lyrics, scripts            | $45-85     |
+| **Sound Recordings** | SR    | Audio recordings                  | $45-85     |
+| **Motion Pictures**  | PA    | Films, videos                     | $45-85     |
+| **Group Photo**      | GRPPH | Up to 750 photos                  | $85        |
 
 ---
 
@@ -60,7 +60,7 @@ interface CopyrightApplication {
   dateOfFirstPublication?: Date;
   authors: Author[];
   claimant: Claimant;
-  depositType: 'upload' | 'physical';
+  depositType: "upload" | "physical";
 }
 
 interface Author {
@@ -75,12 +75,12 @@ interface Author {
 
 ## 5. Licensing Frameworks
 
-| License | Allows | Requires |
-| --- | --- | --- |
-| **CC BY** | Any use | Attribution |
-| **CC BY-SA** | Any use | Attribution, ShareAlike |
-| **CC BY-NC** | Non-commercial | Attribution |
-| **CC0** | Any use | Nothing |
+| License      | Allows         | Requires                |
+| ------------ | -------------- | ----------------------- |
+| **CC BY**    | Any use        | Attribution             |
+| **CC BY-SA** | Any use        | Attribution, ShareAlike |
+| **CC BY-NC** | Non-commercial | Attribution             |
+| **CC0**      | Any use        | Nothing                 |
 
 ---
 

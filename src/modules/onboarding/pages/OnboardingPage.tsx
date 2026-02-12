@@ -88,7 +88,7 @@ export default function OnboardingPage() {
             setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
             onboardingAnalytics.start();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, []);
 
     // Auto-scroll to bottom

@@ -41,7 +41,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             const greeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
             setHistory([{ role: 'model', parts: [{ text: greeting }] }]);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [isOpen]);
 
     // Auto-scroll to bottom

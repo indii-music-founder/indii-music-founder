@@ -9,7 +9,7 @@
 **Steps:**
 
 1. Navigate to **Creative Studio**.
-2. Enter Prompt: *"A futuristic sleek sports car parked on a cliff edge at sunset, synthwave style, highly detailed, 8k"*.
+2. Enter Prompt: _"A futuristic sleek sports car parked on a cliff edge at sunset, synthwave style, highly detailed, 8k"_.
 3. Generate the image.
 4. **Expected Result:** A high-quality image appears in the gallery.
 
@@ -21,7 +21,7 @@
 1. Switch to **Video Mode**.
 2. Open the **First Frame** selector.
 3. Select the generated "Sports Car" image from the **History** tab.
-4. Enter Prompt: *"The car's headlights turn on and it slowly levitates off the ground, dust swirling"*.
+4. Enter Prompt: _"The car's headlights turn on and it slowly levitates off the ground, dust swirling"_.
 5. Click **Generate Video**.
 6. **Expected Result:** The system acknowledges the request and generates a **Storyboard Preview** (since we are using the smart fallback) showing the car's levitation sequence.
 

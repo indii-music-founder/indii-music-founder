@@ -36,7 +36,7 @@ const Map: React.FC<MapProps> = ({ center, zoom, markers }) => {
                 ]
             }));
         }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
     }, []); // Run once on mount - center/zoom updates handled by separate effect
 
     useEffect(() => {

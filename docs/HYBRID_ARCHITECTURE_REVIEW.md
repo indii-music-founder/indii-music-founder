@@ -11,11 +11,13 @@
 ### All Tasks Completed
 
 **Phase 0 - Critical Security**
+
 - ✅ **P0: Docker ports bound to `127.0.0.1`** - No longer exposed to network
 - ✅ **P0: `WEB_UI_HOST` set to `127.0.0.1`** - Internal binding only
 - ✅ **P0: Created `.dockerignore`** - Secrets excluded from build context
 
 **Phase 1 - Container Hardening**
+
 - ✅ **P1: Added health checks** - Container auto-recovery enabled
 - ✅ **P1: Added resource limits** - 2 CPU, 4GB RAM caps
 - ✅ **P1: Added network isolation** - `indii-internal` bridge network
@@ -24,10 +26,12 @@
 - ✅ **P1: Added request timeouts** - All fetch calls now have timeouts (30-120s)
 
 **Phase 2 - Secrets Broker Completion**
+
 - ✅ **P2: Completed `auth_broker.py`** - Full handle-to-secret mapping with TTL
 - ✅ **P2: Created `SecretsBroker.ts`** - TypeScript client for frontend integration
 
 **Phase 3 - R2A2 Consistency**
+
 - ✅ **P3: Synced `InputSanitizer.ts`** - Matches Python R2A2 patterns with confidence scoring
 
 ---
@@ -44,31 +48,32 @@ The indiiOS codebase demonstrates **significant architectural alignment** with t
 
 ### 1.1 Three-Layer Architecture
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
-|----------------------|------------------------|----------|--------|
-| Layer 1: Directive (SOPs) | Natural language procedures | `directives/` | ✅ Complete |
-| Layer 2: Orchestration | AI reasoning & routing | `src/services/agent/AgentOrchestrator.ts` | ✅ Complete |
-| Layer 3: Execution | Deterministic scripts | `execution/` + `python/` | ✅ Complete |
+| Blueprint Requirement     | indiiOS Implementation      | Location                                  | Status      |
+| ------------------------- | --------------------------- | ----------------------------------------- | ----------- |
+| Layer 1: Directive (SOPs) | Natural language procedures | `directives/`                             | ✅ Complete |
+| Layer 2: Orchestration    | AI reasoning & routing      | `src/services/agent/AgentOrchestrator.ts` | ✅ Complete |
+| Layer 3: Execution        | Deterministic scripts       | `execution/` + `python/`                  | ✅ Complete |
 
 ### 1.2 Agent Zero Sidecar
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
-|----------------------|------------------------|----------|--------|
-| Dockerized runtime | Container config | `docker-compose.yml` | ✅ Complete |
-| HTTP API dispatch | TypeScript client | `src/services/agent/AgentZeroService.ts` | ✅ Complete |
-| Custom tools | Python tools | `python/tools/` | ✅ Complete |
-| Agent profiles | YAML configs | `agents/` | ✅ Complete |
+| Blueprint Requirement | indiiOS Implementation | Location                                 | Status      |
+| --------------------- | ---------------------- | ---------------------------------------- | ----------- |
+| Dockerized runtime    | Container config       | `docker-compose.yml`                     | ✅ Complete |
+| HTTP API dispatch     | TypeScript client      | `src/services/agent/AgentZeroService.ts` | ✅ Complete |
+| Custom tools          | Python tools           | `python/tools/`                          | ✅ Complete |
+| Agent profiles        | YAML configs           | `agents/`                                | ✅ Complete |
 
 ### 1.3 R2A2 Reflective Risk-Awareness Layer
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
-|----------------------|------------------------|----------|--------|
-| Input pre-scanning | `scan_instruction()` | `python/api/indii_task.py` | ✅ Complete |
-| Injection detection | 10 pattern checks | `python/api/indii_task.py:28-44` | ✅ Complete |
-| Challenge response | Security violation flow | `python/api/indii_task.py:76-82` | ✅ Complete |
-| Path validation | `img://` protocol check | `python/api/indii_task.py:60-62` | ✅ Complete |
+| Blueprint Requirement | indiiOS Implementation  | Location                         | Status      |
+| --------------------- | ----------------------- | -------------------------------- | ----------- |
+| Input pre-scanning    | `scan_instruction()`    | `python/api/indii_task.py`       | ✅ Complete |
+| Injection detection   | 10 pattern checks       | `python/api/indii_task.py:28-44` | ✅ Complete |
+| Challenge response    | Security violation flow | `python/api/indii_task.py:76-82` | ✅ Complete |
+| Path validation       | `img://` protocol check | `python/api/indii_task.py:60-62` | ✅ Complete |
 
 **Implemented injection patterns:**
+
 ```python
 suspicious_patterns = [
     "ignore previous instructions",
@@ -86,20 +91,20 @@ suspicious_patterns = [
 
 ### 1.4 Ephemeral Secrets Broker
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
-|----------------------|------------------------|----------|--------|
-| Opaque handle generation | `generate_handle` action | `python/api/auth_broker.py` | ✅ Complete |
-| Session zeroization | `zeroize_session` action | `python/api/auth_broker.py` | ✅ Complete |
-| Intent verification | `verify_intent` action | `python/api/auth_broker.py` | ✅ Complete |
-| Agent tool integration | Auth tool | `python/tools/indii_auth_tool.py` | ✅ Complete |
-| Handle-to-secret mapping | In-memory store with TTL | `python/api/auth_broker.py` | ✅ Complete |
+| Blueprint Requirement    | indiiOS Implementation   | Location                          | Status      |
+| ------------------------ | ------------------------ | --------------------------------- | ----------- |
+| Opaque handle generation | `generate_handle` action | `python/api/auth_broker.py`       | ✅ Complete |
+| Session zeroization      | `zeroize_session` action | `python/api/auth_broker.py`       | ✅ Complete |
+| Intent verification      | `verify_intent` action   | `python/api/auth_broker.py`       | ✅ Complete |
+| Agent tool integration   | Auth tool                | `python/tools/indii_auth_tool.py` | ✅ Complete |
+| Handle-to-secret mapping | In-memory store with TTL | `python/api/auth_broker.py`       | ✅ Complete |
 
 ### 1.5 Architect-Sentinel Dual Model
 
-| Blueprint Requirement | indiiOS Implementation | Location | Status |
-|----------------------|------------------------|----------|--------|
-| Architect (high reasoning) | Gemini 3 Pro | `agents/providers.yaml` | ✅ Configured |
-| Sentinel (fast execution) | Gemini 3 Flash | `agents/providers.yaml` | ✅ Configured |
+| Blueprint Requirement      | indiiOS Implementation | Location                | Status        |
+| -------------------------- | ---------------------- | ----------------------- | ------------- |
+| Architect (high reasoning) | Gemini 3 Pro           | `agents/providers.yaml` | ✅ Configured |
+| Sentinel (fast execution)  | Gemini 3 Flash         | `agents/providers.yaml` | ✅ Configured |
 
 ```yaml
 # agents/providers.yaml
@@ -116,14 +121,14 @@ sentinel:
 
 ### 1.6 Security Testing Coverage
 
-| Test Category | Files | Coverage |
-|--------------|-------|----------|
-| Agent PII redaction | `AgentService.security.test.ts` | ✅ Credit cards, passwords |
-| SSRF protection | `distribution_ssrf.security.test.ts` | ✅ localhost, 169.254.169.254 |
-| Distribution sandbox | `distribution_sandbox.security.test.ts` | ✅ Complete |
-| Network security | `network.security.test.ts` | ✅ Complete |
-| Video handler security | `video.security.test.ts` | ✅ Complete |
-| DevOps tools security | `DevOpsTools.security.test.ts` | ✅ Complete |
+| Test Category          | Files                                   | Coverage                      |
+| ---------------------- | --------------------------------------- | ----------------------------- |
+| Agent PII redaction    | `AgentService.security.test.ts`         | ✅ Credit cards, passwords    |
+| SSRF protection        | `distribution_ssrf.security.test.ts`    | ✅ localhost, 169.254.169.254 |
+| Distribution sandbox   | `distribution_sandbox.security.test.ts` | ✅ Complete                   |
+| Network security       | `network.security.test.ts`              | ✅ Complete                   |
+| Video handler security | `video.security.test.ts`                | ✅ Complete                   |
+| DevOps tools security  | `DevOpsTools.security.test.ts`          | ✅ Complete                   |
 
 **Total security test files:** 15+
 
@@ -136,12 +141,13 @@ sentinel:
 ### 2.1 Docker Container Exposure (CRITICAL) — ✅ FIXED
 
 **Previous state:**
+
 ```yaml
 ports:
-  - "50080:80"   # Was exposed to ALL network interfaces
+  - "50080:80" # Was exposed to ALL network interfaces
   - "8880:8080"
 environment:
-  - WEB_UI_HOST=0.0.0.0  # Was binding to all interfaces
+  - WEB_UI_HOST=0.0.0.0 # Was binding to all interfaces
 ```
 
 **Resolution:** Ports now bound to `127.0.0.1:50080:80` and `127.0.0.1:8880:8080`. `WEB_UI_HOST` set to `127.0.0.1`.
@@ -208,6 +214,7 @@ ports:
 ```
 
 **Verification:**
+
 ```bash
 docker-compose up -d
 netstat -an | grep 50080
@@ -280,10 +287,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2.0'
+          cpus: "2.0"
           memory: 4G
         reservations:
-          cpus: '0.5'
+          cpus: "0.5"
           memory: 512M
     networks:
       - indii-internal
@@ -337,7 +344,7 @@ class Healthz(ApiHandler):
 
 // REPLACE with:
 if (import.meta.env.DEV) {
-    console.debug('[AgentZeroService] Token generated');
+  console.debug("[AgentZeroService] Token generated");
 }
 ```
 
@@ -473,58 +480,61 @@ class AuthBroker(ApiHandler):
  * Integrates opaque handle pattern into frontend.
  */
 export class SecretsBroker {
-    private static readonly BROKER_URL = 'http://127.0.0.1:50080/auth_broker';
+  private static readonly BROKER_URL = "http://127.0.0.1:50080/auth_broker";
 
-    /**
-     * Request an opaque handle for a secret.
-     * The actual secret is never returned to the frontend.
-     */
-    static async getHandle(secretId: string): Promise<string> {
-        const response = await fetch(this.BROKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'generate_handle', secret_id: secretId })
-        });
+  /**
+   * Request an opaque handle for a secret.
+   * The actual secret is never returned to the frontend.
+   */
+  static async getHandle(secretId: string): Promise<string> {
+    const response = await fetch(this.BROKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "generate_handle", secret_id: secretId }),
+    });
 
-        const data = await response.json();
-        if (data.status !== 'success') {
-            throw new Error(data.error || 'Failed to get handle');
-        }
-        return data.handle;
+    const data = await response.json();
+    if (data.status !== "success") {
+      throw new Error(data.error || "Failed to get handle");
     }
+    return data.handle;
+  }
 
-    /**
-     * Zeroize all handles for the current session.
-     * Call this when a task completes or user logs out.
-     */
-    static async zeroize(): Promise<void> {
-        await fetch(this.BROKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ action: 'zeroize_session' })
-        });
+  /**
+   * Zeroize all handles for the current session.
+   * Call this when a task completes or user logs out.
+   */
+  static async zeroize(): Promise<void> {
+    await fetch(this.BROKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "zeroize_session" }),
+    });
+  }
+
+  /**
+   * Request gatekeeper approval for high-privilege actions.
+   */
+  static async verifyIntent(
+    intent: string,
+    proposedAction: string,
+  ): Promise<string> {
+    const response = await fetch(this.BROKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        action: "verify_intent",
+        intent,
+        proposed_action: proposedAction,
+      }),
+    });
+
+    const data = await response.json();
+    if (data.status !== "success") {
+      throw new Error(data.error || "Intent verification failed");
     }
-
-    /**
-     * Request gatekeeper approval for high-privilege actions.
-     */
-    static async verifyIntent(intent: string, proposedAction: string): Promise<string> {
-        const response = await fetch(this.BROKER_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'verify_intent',
-                intent,
-                proposed_action: proposedAction
-            })
-        });
-
-        const data = await response.json();
-        if (data.status !== 'success') {
-            throw new Error(data.error || 'Intent verification failed');
-        }
-        return data.gatekeeper_token;
-    }
+    return data.gatekeeper_token;
+  }
 }
 ```
 
@@ -587,19 +597,19 @@ static analyzeInjectionRisk(input: string): {
 
 ## 4. Implementation Priority (ALL COMPLETE ✅)
 
-| Priority | Task | Status |
-|----------|------|--------|
-| **P0** | Bind ports to localhost | ✅ Complete |
-| **P0** | Create .dockerignore | ✅ Complete |
-| **P0** | Update WEB_UI_HOST | ✅ Complete |
-| **P1** | Add health checks | ✅ Complete |
-| **P1** | Add resource limits | ✅ Complete |
-| **P1** | Create health endpoint | ✅ Complete |
-| **P1** | Remove token logging | ✅ Complete |
-| **P1** | Add request timeout | ✅ Complete |
-| **P2** | Complete auth_broker | ✅ Complete |
-| **P2** | Create SecretsBroker.ts | ✅ Complete |
-| **P3** | Sync InputSanitizer | ✅ Complete |
+| Priority | Task                    | Status      |
+| -------- | ----------------------- | ----------- |
+| **P0**   | Bind ports to localhost | ✅ Complete |
+| **P0**   | Create .dockerignore    | ✅ Complete |
+| **P0**   | Update WEB_UI_HOST      | ✅ Complete |
+| **P1**   | Add health checks       | ✅ Complete |
+| **P1**   | Add resource limits     | ✅ Complete |
+| **P1**   | Create health endpoint  | ✅ Complete |
+| **P1**   | Remove token logging    | ✅ Complete |
+| **P1**   | Add request timeout     | ✅ Complete |
+| **P2**   | Complete auth_broker    | ✅ Complete |
+| **P2**   | Create SecretsBroker.ts | ✅ Complete |
+| **P3**   | Sync InputSanitizer     | ✅ Complete |
 
 **Implementation completed:** 2025-01-29
 
@@ -685,20 +695,20 @@ curl -X POST http://localhost:50080/auth_broker \
 
 ## Appendix A: File Reference
 
-| Category | File Path |
-|----------|-----------|
-| Docker config | `docker-compose.yml` |
-| Docker ignore | `.dockerignore` |
-| Dockerfile | `Dockerfile.local` |
-| Agent Zero client | `src/services/agent/AgentZeroService.ts` |
-| Secrets broker (TS) | `src/services/agent/SecretsBroker.ts` |
-| R2A2 scanner | `python/api/indii_task.py` |
-| Secrets broker (Python) | `python/api/auth_broker.py` |
-| Health endpoint | `python/api/healthz.py` |
-| Auth tool | `python/tools/indii_auth_tool.py` |
-| Provider config | `agents/providers.yaml` |
-| Input sanitizer | `src/services/ai/utils/InputSanitizer.ts` |
-| Security tests | `**/*.security.test.ts` (15+ files) |
+| Category                | File Path                                 |
+| ----------------------- | ----------------------------------------- |
+| Docker config           | `docker-compose.yml`                      |
+| Docker ignore           | `.dockerignore`                           |
+| Dockerfile              | `Dockerfile.local`                        |
+| Agent Zero client       | `src/services/agent/AgentZeroService.ts`  |
+| Secrets broker (TS)     | `src/services/agent/SecretsBroker.ts`     |
+| R2A2 scanner            | `python/api/indii_task.py`                |
+| Secrets broker (Python) | `python/api/auth_broker.py`               |
+| Health endpoint         | `python/api/healthz.py`                   |
+| Auth tool               | `python/tools/indii_auth_tool.py`         |
+| Provider config         | `agents/providers.yaml`                   |
+| Input sanitizer         | `src/services/ai/utils/InputSanitizer.ts` |
+| Security tests          | `**/*.security.test.ts` (15+ files)       |
 
 ## Appendix B: Blueprint Reference
 

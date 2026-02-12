@@ -5,32 +5,37 @@
 The automated deployment pipeline is currently failing due to missing/expired OAuth tokens for Firebase.
 
 ### Diagnosis
+
 The logs indicate:
 `Error: Deploy target landing not configured for project... No OAuth tokens found`
 
 ### Remediation Steps
 
-1.  **Generate a new CI Token:**
-    Run the following command in your local terminal:
-    ```bash
-    firebase login:ci
-    ```
-    This will open a browser. Authenticate with the owner account (`Narrow Channel` / `automator@indiios.com`).
+1. **Generate a new CI Token:**
+   Run the following command in your local terminal:
 
-2.  **Update GitHub Secrets:**
-    *   Copy the token output from the terminal.
-    *   Go to GitHub Repository Settings -> Secrets and variables -> Actions.
-    *   Update `FIREBASE_TOKEN` with the new value.
+   ```bash
+   firebase login:ci
+   ```
 
-3.  **Configure Firebase Targets:**
-    Ensure the `landing` target is mapped in `.firebaserc`. If missing, run:
-    ```bash
-    firebase target:apply hosting landing landing-page
-    ```
-    (Replace `landing-page` with the actual site ID from Firebase Console).
+   This will open a browser. Authenticate with the owner account (`Narrow Channel` / `automator@indiios.com`).
 
-4.  **Retry Deployment:**
-    Re-run the failed GitHub Action workflow.
+2. **Update GitHub Secrets:**
+   - Copy the token output from the terminal.
+   - Go to GitHub Repository Settings -> Secrets and variables -> Actions.
+   - Update `FIREBASE_TOKEN` with the new value.
+
+3. **Configure Firebase Targets:**
+   Ensure the `landing` target is mapped in `.firebaserc`. If missing, run:
+
+   ```bash
+   firebase target:apply hosting landing landing-page
+   ```
+
+   (Replace `landing-page` with the actual site ID from Firebase Console).
+
+4. **Retry Deployment:**
+   Re-run the failed GitHub Action workflow.
 
 ## 📦 Build Verification
 

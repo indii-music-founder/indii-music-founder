@@ -142,13 +142,13 @@ The Agent Zero Sidecar has successfully passed all verification tests across 5 p
 
 ## Performance Metrics
 
-| Metric | Value |
-| ------ | ----- |
-| Container Startup Time | ~3-5 seconds |
-| Health Check Response Time | <100ms |
+| Metric                      | Value        |
+| --------------------------- | ------------ |
+| Container Startup Time      | ~3-5 seconds |
+| Health Check Response Time  | <100ms       |
 | Image Generation (Imagen 3) | ~251 seconds |
-| Headless Task Processing | <5 seconds |
-| SIGTERM Graceful Shutdown | ~3 seconds |
+| Headless Task Processing    | <5 seconds   |
+| SIGTERM Graceful Shutdown   | ~3 seconds   |
 
 ---
 
@@ -158,7 +158,7 @@ The Agent Zero Sidecar has successfully passed all verification tests across 5 p
 ✅ **Secrets Management:** Opaque handles with TTL-based expiration  
 ✅ **Zeroization:** Post-task cleanup of all sensitive handles  
 ✅ **Prompt Injection Resistance:** Successfully resisted malicious instructions  
-✅ **File Integrity:** System files protected from unauthorized deletion  
+✅ **File Integrity:** System files protected from unauthorized deletion
 
 ---
 

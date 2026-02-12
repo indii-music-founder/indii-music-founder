@@ -41,23 +41,26 @@ graph TD
 
 ### 2.1 Ledger Entry Format
 
-```markdown
+````markdown
 ## [ERROR_CODE] Short Description
+
 **Date**: YYYY-MM-DD
 **Error Pattern**: `exactErrorMessageOrCode`
 **Stack Signature**: `FileName:LineNumber` or key trace
 **Root Cause**: One-sentence explanation
 **Fix**:
+
 ```code
 // Exact code change that fixed it
 ```
+````
 
 **Prevention**: How to avoid in the future
 **Related Files**: `path/to/affected.ts`
 
 ---
 
-```text
+````text
 
 ### 2.2 Ledger Entry Example
 
@@ -75,14 +78,14 @@ const response = await model.generateContent(history);
 // AFTER (fixed)
 const response = await model.generateContent(historyWithSignature);
 // Where historyWithSignature includes thought_signature from previous model response
-```
+````
 
 **Prevention**: Always capture and return `thought_signature` for multi-turn conversations
 **Related Files**: `src/services/ai/ImageGenerationService.ts`
 
 ---
 
-```text
+````text
 
 ---
 
@@ -107,37 +110,41 @@ mcp_mem0_search-memories({
   query: "Cannot read properties of undefined reading map",
   userId: "indiiOS-errors"
 })
-```
+````
 
 ### 3.2 Adding to Memory
 
 After solving a NEW error (not in ledger or mem0):
 
 ```javascript
-mcp_mem0_add-memory({
-  content: "ERROR: <exact pattern> | FIX: <solution summary> | FILE: <relevant file> | DATE: <YYYY-MM-DD>",
-  userId: "indiiOS-errors"
-})
+mcp_mem0_add -
+  memory({
+    content:
+      "ERROR: <exact pattern> | FIX: <solution summary> | FILE: <relevant file> | DATE: <YYYY-MM-DD>",
+    userId: "indiiOS-errors",
+  });
 
 // Example:
-mcp_mem0_add-memory({
-  content: "ERROR: 400 INVALID_ARGUMENT Missing thought_signature | FIX: Capture thought_signature from response.candidates[0].content.parts[0].thought_signature and include in next request history | FILE: src/services/ai/ImageGenerationService.ts | DATE: 2026-02-06",
-  userId: "indiiOS-errors"
-})
+mcp_mem0_add -
+  memory({
+    content:
+      "ERROR: 400 INVALID_ARGUMENT Missing thought_signature | FIX: Capture thought_signature from response.candidates[0].content.parts[0].thought_signature and include in next request history | FILE: src/services/ai/ImageGenerationService.ts | DATE: 2026-02-06",
+    userId: "indiiOS-errors",
+  });
 ```
 
 ---
 
 ## 4. Error Classification
 
-| Category | Mem0 User ID | Ledger Section |
-| --- | --- | --- |
-| **Firebase/Auth** | `indiiOS-errors` | `## Firebase Errors` |
-| **AI/Gemini** | `indiiOS-errors` | `## AI Service Errors` |
-| **Build/TypeScript** | `indiiOS-errors` | `## Build Errors` |
-| **E2E/Playwright** | `indiiOS-errors` | `## Test Failures` |
-| **Runtime/React** | `indiiOS-errors` | `## Runtime Errors` |
-| **Infrastructure** | `indiiOS-errors` | `## DevOps Errors` |
+| Category             | Mem0 User ID     | Ledger Section         |
+| -------------------- | ---------------- | ---------------------- |
+| **Firebase/Auth**    | `indiiOS-errors` | `## Firebase Errors`   |
+| **AI/Gemini**        | `indiiOS-errors` | `## AI Service Errors` |
+| **Build/TypeScript** | `indiiOS-errors` | `## Build Errors`      |
+| **E2E/Playwright**   | `indiiOS-errors` | `## Test Failures`     |
+| **Runtime/React**    | `indiiOS-errors` | `## Runtime Errors`    |
+| **Infrastructure**   | `indiiOS-errors` | `## DevOps Errors`     |
 
 ---
 
@@ -145,31 +152,31 @@ mcp_mem0_add-memory({
 
 ### 5.1 Gemini 3 Errors
 
-| Error | Pattern | Fix |
-| --- | --- | --- |
+| Error | Pattern                   | Fix                                                |
+| ----- | ------------------------- | -------------------------------------------------- |
 | `400` | Missing thought signature | Include `thought_signature` from previous response |
-| `400` | Using `thinking_budget` | Replace with `thinking_level` parameter |
-| `400` | Wrong FC/FR order | Use `FC1+sig, FC2, FR1, FR2` not interleaved |
-| `403` | Wrong location | Use `global` endpoint for preview models |
-| `429` | Rate limit | Implement exponential backoff |
+| `400` | Using `thinking_budget`   | Replace with `thinking_level` parameter            |
+| `400` | Wrong FC/FR order         | Use `FC1+sig, FC2, FR1, FR2` not interleaved       |
+| `403` | Wrong location            | Use `global` endpoint for preview models           |
+| `429` | Rate limit                | Implement exponential backoff                      |
 
 ### 5.2 Firebase Errors
 
-| Error | Pattern | Fix |
-| --- | --- | --- |
-| `permission-denied` | Security rule blocked | Check rules logic, verify `request.auth` |
-| `unauthenticated` | Missing auth token | Ensure user is logged in before call |
-| `not-found` | Document doesn't exist | Check path, handle missing docs gracefully |
-| `quota-exceeded` | Daily limit hit | Check billing, add free tier guards |
+| Error               | Pattern                | Fix                                        |
+| ------------------- | ---------------------- | ------------------------------------------ |
+| `permission-denied` | Security rule blocked  | Check rules logic, verify `request.auth`   |
+| `unauthenticated`   | Missing auth token     | Ensure user is logged in before call       |
+| `not-found`         | Document doesn't exist | Check path, handle missing docs gracefully |
+| `quota-exceeded`    | Daily limit hit        | Check billing, add free tier guards        |
 
 ### 5.3 Build Errors
 
-| Error | Pattern | Fix |
-| --- | --- | --- |
-| `TS2307` | Cannot find module | Check path alias, install missing package |
-| `TS2345` | Argument type mismatch | Fix types, add type guards |
+| Error    | Pattern                 | Fix                                              |
+| -------- | ----------------------- | ------------------------------------------------ |
+| `TS2307` | Cannot find module      | Check path alias, install missing package        |
+| `TS2345` | Argument type mismatch  | Fix types, add type guards                       |
 | `TS2339` | Property does not exist | Add property to interface, use optional chaining |
-| `HMR` | Full reload needed | Restart dev server |
+| `HMR`    | Full reload needed      | Restart dev server                               |
 
 ---
 

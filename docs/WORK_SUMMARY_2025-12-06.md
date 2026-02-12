@@ -35,7 +35,7 @@ This document summarizes the critical debugging, feature implementation, and sys
   - `list_organizations()`: Lists available orgs.
   - `switch_organization(orgId)`: Switches context (and reloads projects).
   - `create_organization(name)`: Creates new orgs on the fly.
-  - *Crucial Fix:* Patched `auth.currentUser.uid` access to prevent crashes.
+  - _Crucial Fix:_ Patched `auth.currentUser.uid` access to prevent crashes.
 - **StorageTools:**
   - `list_files(limit, type)`: Lists recent generated history/files.
   - `search_files(query)`: Basic search for past work.

@@ -13,12 +13,12 @@ last_updated: 2026-02-06
 
 ## 1. Core Model Capabilities
 
-| Capability | Model | Specs |
-| --- | --- | --- |
-| **Text-to-Image** | `gemini-3-pro-image-preview` | High-fidelity photorealism, text rendering, diverse styles |
-| **Image Editing** | `gemini-3-pro-image-preview` | Inpainting, outpainting, object swap, style transfer, color adjustment |
-| **Resolution** | Up to 4K | 1:1, 16:9, 4:3, 3:4, 9:16 aspect ratios |
-| **Text Rendering** | Native | Can render legible text inside images |
+| Capability         | Model                        | Specs                                                                  |
+| ------------------ | ---------------------------- | ---------------------------------------------------------------------- |
+| **Text-to-Image**  | `gemini-3-pro-image-preview` | High-fidelity photorealism, text rendering, diverse styles             |
+| **Image Editing**  | `gemini-3-pro-image-preview` | Inpainting, outpainting, object swap, style transfer, color adjustment |
+| **Resolution**     | Up to 4K                     | 1:1, 16:9, 4:3, 3:4, 9:16 aspect ratios                                |
+| **Text Rendering** | Native                       | Can render legible text inside images                                  |
 
 ---
 
@@ -34,7 +34,7 @@ await imageService.generateImage({
   prompt: "A futuristic city with flying cars and neon lights",
   aspectRatio: "16:9",
   style: "photorealistic",
-  count: 1
+  count: 1,
 });
 ```
 
@@ -46,7 +46,7 @@ The AI can edit existing images based on natural language instructions.
 // Editing function
 await imageService.editImage(originalImageBlob, {
   prompt: "Change the sky to a sunset",
-  mask: optionalMaskBlob // Optional for targeted edits
+  mask: optionalMaskBlob, // Optional for targeted edits
 });
 ```
 
@@ -64,7 +64,7 @@ await imageService.editImage(originalImageBlob, {
 
 ### 3.2 Negative Prompts
 
-*Note: Gemini 3 handles negative constraints naturally within the main prompt, but explicit negative prompts can still be useful.*
+_Note: Gemini 3 handles negative constraints naturally within the main prompt, but explicit negative prompts can still be useful._
 
 "Avoid: blurring, distortion, low resolution, bad anatomy, extra fingers, text watermark."
 
@@ -157,20 +157,20 @@ response = client.models.generate_content(
 
 ## 6. Editing Commands Reference
 
-| Command Type | Example Prompt |
-| --- | --- |
-| **Color Change** | "Change the car from red to blue" |
-| **Object Swap** | "Replace the coffee cup with a glass of wine" |
-| **Background Change** | "Change the background to a beach sunset" |
-| **Style Transfer** | "Apply a watercolor painting style" |
-| **Lighting** | "Change to dramatic sunset lighting" |
-| **Time of Day** | "Change to nighttime with city lights" |
-| **Camera Angle** | "Show this from a bird's eye view" |
-| **Add Object** | "Add a rainbow in the sky" |
-| **Remove Object** | "Remove the person in the background" |
-| **Aspect Ratio Zoom** | "Zoom in on the face, maintain 16:9" |
-| **Weather** | "Add falling snow to the scene" |
-| **Text Add** | "Add the text 'SALE 50% OFF' in red letters" |
+| Command Type          | Example Prompt                                |
+| --------------------- | --------------------------------------------- |
+| **Color Change**      | "Change the car from red to blue"             |
+| **Object Swap**       | "Replace the coffee cup with a glass of wine" |
+| **Background Change** | "Change the background to a beach sunset"     |
+| **Style Transfer**    | "Apply a watercolor painting style"           |
+| **Lighting**          | "Change to dramatic sunset lighting"          |
+| **Time of Day**       | "Change to nighttime with city lights"        |
+| **Camera Angle**      | "Show this from a bird's eye view"            |
+| **Add Object**        | "Add a rainbow in the sky"                    |
+| **Remove Object**     | "Remove the person in the background"         |
+| **Aspect Ratio Zoom** | "Zoom in on the face, maintain 16:9"          |
+| **Weather**           | "Add falling snow to the scene"               |
+| **Text Add**          | "Add the text 'SALE 50% OFF' in red letters"  |
 
 ---
 
@@ -183,23 +183,23 @@ import * as fs from "fs";
 const ai = new GoogleGenAI({});
 
 async function generateImage(prompt: string): Promise<Buffer> {
-    const response = await ai.models.generateContent({
-        model: "gemini-3-pro-image-preview",
-        contents: prompt,
-        config: {
-            responseModalities: ["IMAGE"],
-            imageConfig: {
-                aspectRatio: "16:9",
-                imageSize: "2K"
-            }
-        }
-    });
+  const response = await ai.models.generateContent({
+    model: "gemini-3-pro-image-preview",
+    contents: prompt,
+    config: {
+      responseModalities: ["IMAGE"],
+      imageConfig: {
+        aspectRatio: "16:9",
+        imageSize: "2K",
+      },
+    },
+  });
 
-    const imagePart = response.candidates?.[0]?.content?.parts?.[0];
-    if (imagePart?.inlineData?.data) {
-        return Buffer.from(imagePart.inlineData.data, "base64");
-    }
-    throw new Error("No image generated");
+  const imagePart = response.candidates?.[0]?.content?.parts?.[0];
+  if (imagePart?.inlineData?.data) {
+    return Buffer.from(imagePart.inlineData.data, "base64");
+  }
+  throw new Error("No image generated");
 }
 
 // Usage
@@ -211,14 +211,14 @@ fs.writeFileSync("cat_dj.png", imageBuffer);
 
 ## 8. Error Handling & Troubleshooting
 
-| Error | Cause | Solution |
-| --- | --- | --- |
-| **400** | Missing `response_modalities` | Add `response_modalities=["IMAGE"]` |
+| Error   | Cause                               | Solution                                           |
+| ------- | ----------------------------------- | -------------------------------------------------- |
+| **400** | Missing `response_modalities`       | Add `response_modalities=["IMAGE"]`                |
 | **400** | Missing thought signature (editing) | Include `thought_signature` from previous response |
-| **400** | Invalid aspect ratio | Use supported ratios only |
-| **400** | `image_size` lowercase | Use uppercase: `2K` not `2k` |
-| **413** | Image too large | Compress or use GCS for >7MB |
-| **429** | Rate limit | Implement backoff, respect quotas |
+| **400** | Invalid aspect ratio                | Use supported ratios only                          |
+| **400** | `image_size` lowercase              | Use uppercase: `2K` not `2k`                       |
+| **413** | Image too large                     | Compress or use GCS for >7MB                       |
+| **429** | Rate limit                          | Implement backoff, respect quotas                  |
 
 ---
 
@@ -253,9 +253,9 @@ fs.writeFileSync("cat_dj.png", imageBuffer);
 
 ## 10. Pricing Summary
 
-| Resolution | Price/Image |
-| --- | --- |
-| 1K | $0.134 |
-| 2K | $0.134 |
-| 4K | $0.24 |
+| Resolution | Price/Image  |
+| ---------- | ------------ |
+| 1K         | $0.134       |
+| 2K         | $0.134       |
+| 4K         | $0.24        |
 | Text Input | $2/1M tokens |

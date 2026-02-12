@@ -25,12 +25,12 @@ We employ a modification of the Testing Pyramid:
 
 ## 2. Toolchain Overview
 
-| Type | Tool | Config File | Usage |
-| --- | --- | --- | --- |
-| **Unit/Integration** | Vitest | `vitest.config.ts` | `npm test` |
-| **E2E** | Playwright | `playwright.config.ts` | `npm run test:e2e` |
-| **Component** | Testing Library | N/A | Within Vitest |
-| **Mocking** | MSW / Vi | `src/test/mocks/` | API & Service mocks |
+| Type                 | Tool            | Config File            | Usage               |
+| -------------------- | --------------- | ---------------------- | ------------------- |
+| **Unit/Integration** | Vitest          | `vitest.config.ts`     | `npm test`          |
+| **E2E**              | Playwright      | `playwright.config.ts` | `npm run test:e2e`  |
+| **Component**        | Testing Library | N/A                    | Within Vitest       |
+| **Mocking**          | MSW / Vi        | `src/test/mocks/`      | API & Service mocks |
 
 ---
 
@@ -39,43 +39,43 @@ We employ a modification of the Testing Pyramid:
 ### 3.1 Service Test
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AIService } from './AIService';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { AIService } from "./AIService";
 
-describe('AIService', () => {
-    let service: AIService;
+describe("AIService", () => {
+  let service: AIService;
 
-    beforeEach(() => {
-        vi.clearAllMocks();
-        service = new AIService();
-    });
+  beforeEach(() => {
+    vi.clearAllMocks();
+    service = new AIService();
+  });
 
-    it('should generate content successfully', async () => {
-        const mockResponse = { text: 'Hello AI' };
-        vi.spyOn(service, 'generate').mockResolvedValue(mockResponse);
+  it("should generate content successfully", async () => {
+    const mockResponse = { text: "Hello AI" };
+    vi.spyOn(service, "generate").mockResolvedValue(mockResponse);
 
-        const result = await service.generate('prompt');
-        expect(result).toEqual(mockResponse);
-    });
+    const result = await service.generate("prompt");
+    expect(result).toEqual(mockResponse);
+  });
 
-    it('should handle errors gracefully', async () => {
-        vi.spyOn(service, 'generate').mockRejectedValue(new Error('API Error'));
-        await expect(service.generate('prompt')).rejects.toThrow('API Error');
-    });
+  it("should handle errors gracefully", async () => {
+    vi.spyOn(service, "generate").mockRejectedValue(new Error("API Error"));
+    await expect(service.generate("prompt")).rejects.toThrow("API Error");
+  });
 });
 ```
 
 ### 3.2 Component Test
 
 ```tsx
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { ChatOverlay } from './ChatOverlay';
-import { vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { ChatOverlay } from "./ChatOverlay";
+import { vi } from "vitest";
 
-describe('ChatOverlay', () => {
-  it('should send message on submit', async () => {
+describe("ChatOverlay", () => {
+  it("should send message on submit", async () => {
     const mockSendMessage = vi.fn();
-    vi.mock('@/hooks/useChat', () => ({
+    vi.mock("@/hooks/useChat", () => ({
       useChat: () => ({
         messages: [],
         sendMessage: mockSendMessage,
@@ -84,12 +84,12 @@ describe('ChatOverlay', () => {
     }));
 
     render(<ChatOverlay />);
-    
+
     const input = screen.getByPlaceholderText(/type a message/i);
-    await fireEvent.change(input, { target: { value: 'Hello AI' } });
-    await fireEvent.click(screen.getByRole('button', { name: /send/i }));
-    
-    expect(mockSendMessage).toHaveBeenCalledWith('Hello AI');
+    await fireEvent.change(input, { target: { value: "Hello AI" } });
+    await fireEvent.click(screen.getByRole("button", { name: /send/i }));
+
+    expect(mockSendMessage).toHaveBeenCalledWith("Hello AI");
   });
 });
 ```
@@ -101,21 +101,21 @@ describe('ChatOverlay', () => {
 ### 4.1 Basic spec
 
 ```typescript
-import { test, expect } from '@playwright/test';
+import { test, expect } from "@playwright/test";
 
-test('dashboard loads successfully', async ({ page }) => {
-  await page.goto('/');
+test("dashboard loads successfully", async ({ page }) => {
+  await page.goto("/");
   await expect(page).toHaveTitle(/indiiOS/);
-  await expect(page.getByTestId('dashboard-layout')).toBeVisible();
+  await expect(page.getByTestId("dashboard-layout")).toBeVisible();
 });
 ```
 
 ### 4.2 Visual Comparison
 
 ```typescript
-test('visual regression check', async ({ page }) => {
-  await page.goto('/dashboard');
-  await expect(page).toHaveScreenshot('dashboard-main.png');
+test("visual regression check", async ({ page }) => {
+  await page.goto("/dashboard");
+  await expect(page).toHaveScreenshot("dashboard-main.png");
 });
 ```
 
@@ -137,9 +137,9 @@ Defined in `src/test/setup.ts`:
 Use `vi.mock` for module-level mocking:
 
 ```typescript
-vi.mock('@/services/firebase/auth', () => ({
+vi.mock("@/services/firebase/auth", () => ({
   authService: {
-    currentUser: { uid: '123' },
+    currentUser: { uid: "123" },
     signIn: vi.fn(),
     signOut: vi.fn(),
   },

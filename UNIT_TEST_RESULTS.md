@@ -11,11 +11,11 @@
 
 The following table summarizes the execution results for the identified Unit/Integration tests.
 
-| Test Batch | Status | Passed | Failed | Notes |
-| --- | --- | --- | --- | --- |
-| **Core** | ✅ PASS | 89 | 0 | Services, Stores, Hooks, and Utils. |
-| **Features** | ✅ PASS | 10 | 0 | Feature-specific logic (e.g., VideoTools). |
-| **Remaining** | ✅ PASS | 30 | 0 | Specialized agents, evolution engine, finance, marketing. |
+| Test Batch    | Status  | Passed | Failed | Notes                                                     |
+| ------------- | ------- | ------ | ------ | --------------------------------------------------------- |
+| **Core**      | ✅ PASS | 89     | 0      | Services, Stores, Hooks, and Utils.                       |
+| **Features**  | ✅ PASS | 10     | 0      | Feature-specific logic (e.g., VideoTools).                |
+| **Remaining** | ✅ PASS | 30     | 0      | Specialized agents, evolution engine, finance, marketing. |
 
 ## Detailed Results
 

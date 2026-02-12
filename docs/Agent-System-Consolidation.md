@@ -9,12 +9,14 @@ Successfully consolidated the Mastra Agent system with the indiiOS custom agent 
 ### 1. Updated `agents/creative-director/src/index.ts`
 
 **Before:**
+
 - Used broken `imageTool.ts` with mock URLs (`placehold.co`)
 - No tool registration (`tools` array was missing)
 - No integration with working image generation services
 - Basic instructions without workflow guidance
 
 **After:**
+
 - Integrated with existing `DirectorTools` from indiiOS system
 - Created Mastra-compatible wrappers for:
   - `generateImageTool` - Real image generation via ImageGenerationService
@@ -31,6 +33,7 @@ Successfully consolidated the Mastra Agent system with the indiiOS custom agent 
 ### 2. Removed `agents/creative-director/src/tools/imageTool.ts`
 
 **Reason:**
+
 - Contained mock implementation
 - Was not connected to real image generation services
 - Functionality now provided by DirectorTools wrappers
@@ -38,6 +41,7 @@ Successfully consolidated the Mastra Agent system with the indiiOS custom agent 
 ### 3. Empty Directory: `agents/creative-director/src/tools/`
 
 **Status:**
+
 - Directory exists but is empty
 - No longer needed since all tools are defined in `index.ts`
 - Can be safely removed if desired
@@ -69,6 +73,7 @@ User Gallery Display
 ## Tool Details
 
 ### generate_image
+
 - **Source:** `DirectorTools.generate_image` → `ImageGenerationService.generateImages`
 - **Features:**
   - Real API calls (no mocks)
@@ -88,6 +93,7 @@ User Gallery Display
   - `uploadedImageIndex`: Recent uploads
 
 ### search_knowledge
+
 - **Source:** `KnowledgeTools.search_knowledge` → `GeminiRetrieval.query`
 - **Features:**
   - RAG-based knowledge base search
@@ -97,6 +103,7 @@ User Gallery Display
   - `query`: Search query
 
 ### batch_edit_images
+
 - **Source:** `DirectorTools.batch_edit_images` → `Editing.batchEdit`
 - **Features:**
   - Multi-image editing
@@ -107,6 +114,7 @@ User Gallery Display
   - `imageIndices`: Specific images to edit (optional)
 
 ### run_showroom_mockup
+
 - **Source:** `DirectorTools.run_showroom_mockup`
 - **Features:**
   - Professional product photography
@@ -120,6 +128,7 @@ User Gallery Display
 ### User Request: "Generate an album cover with neon style"
 
 **Agent Execution:**
+
 1. Calls `search_knowledge` with query "branding guidelines neon color palette"
 2. Retrieves brand context (if available)
 3. Enhances prompt: "Album cover with neon style, vibrant colors, artist branding"
@@ -143,7 +152,7 @@ User Gallery Display
 
 ## Testing
 
-### Manual Test Steps:
+### Manual Test Steps
 
 1. Start the Mastra Agent
 2. Request: "Search for brand guidelines"
@@ -153,7 +162,7 @@ User Gallery Display
 4. Check Gallery for generated images
    - Expected: Real images (not placehold.co)
 
-### Code Verification:
+### Code Verification
 
 ```bash
 # Build the project

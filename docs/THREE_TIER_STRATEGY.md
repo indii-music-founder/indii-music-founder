@@ -12,6 +12,7 @@
 ## Executive Summary
 
 This blueprint implements a three-tier product strategy to serve the entire music industry spectrum:
+
 - **Tier 1:** indiiOS Free (Web) - Entry-level cloud offering
 - **Tier 2:** indiiOS Pro (Web) - Professional cloud subscription
 - **Tier 3:** indiiOS Studio (Desktop) - Local-first hybrid offering with two variants
@@ -55,6 +56,7 @@ This blueprint implements a three-tier product strategy to serve the entire musi
 ## Phase 1: Enhance Current Web Offering (Immediate)
 
 ### Objectives
+
 - Solidify Tier 1 (Free) and Tier 2 (Pro) web products
 - Implement subscription system
 - Improve cloud performance
@@ -68,17 +70,17 @@ This blueprint implements a three-tier product strategy to serve the entire musi
 // src/services/subscription/SubscriptionTier.ts
 
 export enum SubscriptionTier {
-  FREE = 'free',
-  PRO_MONTHLY = 'pro_monthly',
-  PRO_YEARLY = 'pro_yearly',
-  STUDIO_MONTHLY = 'studio_monthly',
-  STUDIO_YEARLY = 'studio_yearly'
+  FREE = "free",
+  PRO_MONTHLY = "pro_monthly",
+  PRO_YEARLY = "pro_yearly",
+  STUDIO_MONTHLY = "studio_monthly",
+  STUDIO_YEARLY = "studio_yearly",
 }
 
 export interface TierLimits {
   name: string;
   price: number;
-  billingPeriod: 'month' | 'year' | 'once';
+  billingPeriod: "month" | "year" | "once";
   imageGenerations: {
     monthly: number;
     maxResolution: string;
@@ -91,7 +93,7 @@ export interface TierLimits {
   };
   aiChat: {
     tokensPerMonth: number;
-    modelTier: 'basic' | 'advanced' | 'unlimited';
+    modelTier: "basic" | "advanced" | "unlimited";
   };
   storage: {
     totalGB: number;
@@ -108,150 +110,160 @@ export interface TierLimits {
 // Tier Configuration
 export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
   [SubscriptionTier.FREE]: {
-    name: 'indiiOS Free',
+    name: "indiiOS Free",
     price: 0,
-    billingPeriod: 'once',
+    billingPeriod: "once",
     imageGenerations: {
       monthly: 50,
-      maxResolution: '1024x1024',
-      generationsPerMonth: 50
+      maxResolution: "1024x1024",
+      generationsPerMonth: 50,
     },
     videoGenerations: {
       totalDurationMinutes: 5,
-      maxResolution: '720p',
-      maxDurationSeconds: 15
+      maxResolution: "720p",
+      maxDurationSeconds: 15,
     },
     aiChat: {
       tokensPerMonth: 10000,
-      modelTier: 'basic'
+      modelTier: "basic",
     },
     storage: {
       totalGB: 2,
-      fileTypeAccess: ['jpg', 'png', 'mp4', 'mp3']
+      fileTypeAccess: ["jpg", "png", "mp4", "mp3"],
     },
     features: {
       collaboration: false,
-      exportFormats: ['png', 'jpg', 'mp4'],
-      agentCapabilities: ['basic_chat', 'suggestions'],
-      advancedTools: []
-    }
+      exportFormats: ["png", "jpg", "mp4"],
+      agentCapabilities: ["basic_chat", "suggestions"],
+      advancedTools: [],
+    },
   },
   [SubscriptionTier.PRO_MONTHLY]: {
-    name: 'indiiOS Pro',
+    name: "indiiOS Pro",
     price: 19,
-    billingPeriod: 'month',
+    billingPeriod: "month",
     imageGenerations: {
       monthly: 500,
-      maxResolution: '2048x2048',
-      generationsPerMonth: 500
+      maxResolution: "2048x2048",
+      generationsPerMonth: 500,
     },
     videoGenerations: {
       totalDurationMinutes: 30,
-      maxResolution: '1080p',
-      maxDurationSeconds: 60
+      maxResolution: "1080p",
+      maxDurationSeconds: 60,
     },
     aiChat: {
       tokensPerMonth: 100000,
-      modelTier: 'advanced'
+      modelTier: "advanced",
     },
     storage: {
       totalGB: 50,
-      fileTypeAccess: ['jpg', 'png', 'mp4', 'mp3', 'wav', 'flac', 'svg', 'pdf']
+      fileTypeAccess: ["jpg", "png", "mp4", "mp3", "wav", "flac", "svg", "pdf"],
     },
     features: {
       collaboration: true,
-      exportFormats: ['png', 'jpg', 'webp', 'mp4', 'mov', 'gif', 'wav', 'mp3'],
-      agentCapabilities: ['basic_chat', 'suggestions', 'delegation', 'long_term_memory'],
-      advancedTools: ['batch_processing', 'style_transfer', 'video_editing']
-    }
+      exportFormats: ["png", "jpg", "webp", "mp4", "mov", "gif", "wav", "mp3"],
+      agentCapabilities: [
+        "basic_chat",
+        "suggestions",
+        "delegation",
+        "long_term_memory",
+      ],
+      advancedTools: ["batch_processing", "style_transfer", "video_editing"],
+    },
   },
   [SubscriptionTier.PRO_YEARLY]: {
-    name: 'indiiOS Pro (Yearly)',
+    name: "indiiOS Pro (Yearly)",
     price: 190,
-    billingPeriod: 'year',
+    billingPeriod: "year",
     imageGenerations: {
       monthly: 500,
-      maxResolution: '2048x2048',
-      generationsPerMonth: 500
+      maxResolution: "2048x2048",
+      generationsPerMonth: 500,
     },
     videoGenerations: {
       totalDurationMinutes: 30,
-      maxResolution: '1080p',
-      maxDurationSeconds: 60
+      maxResolution: "1080p",
+      maxDurationSeconds: 60,
     },
     aiChat: {
       tokensPerMonth: 100000,
-      modelTier: 'advanced'
+      modelTier: "advanced",
     },
     storage: {
       totalGB: 50,
-      fileTypeAccess: ['jpg', 'png', 'mp4', 'mp3', 'wav', 'flac', 'svg', 'pdf']
+      fileTypeAccess: ["jpg", "png", "mp4", "mp3", "wav", "flac", "svg", "pdf"],
     },
     features: {
       collaboration: true,
-      exportFormats: ['png', 'jpg', 'webp', 'mp4', 'mov', 'gif', 'wav', 'mp3'],
-      agentCapabilities: ['basic_chat', 'suggestions', 'delegation', 'long_term_memory'],
-      advancedTools: ['batch_processing', 'style_transfer', 'video_editing']
-    }
+      exportFormats: ["png", "jpg", "webp", "mp4", "mov", "gif", "wav", "mp3"],
+      agentCapabilities: [
+        "basic_chat",
+        "suggestions",
+        "delegation",
+        "long_term_memory",
+      ],
+      advancedTools: ["batch_processing", "style_transfer", "video_editing"],
+    },
   },
   [SubscriptionTier.STUDIO_MONTHLY]: {
-    name: 'indiiOS Studio',
+    name: "indiiOS Studio",
     price: 49,
-    billingPeriod: 'month',
+    billingPeriod: "month",
     imageGenerations: {
       monthly: 2000,
-      maxResolution: '4096x4096',
-      generationsPerMonth: 2000
+      maxResolution: "4096x4096",
+      generationsPerMonth: 2000,
     },
     videoGenerations: {
       totalDurationMinutes: 120,
-      maxResolution: '4K',
-      maxDurationSeconds: 300
+      maxResolution: "4K",
+      maxDurationSeconds: 300,
     },
     aiChat: {
       tokensPerMonth: 500000,
-      modelTier: 'unlimited'
+      modelTier: "unlimited",
     },
     storage: {
       totalGB: 500,
-      fileTypeAccess: ['all']
+      fileTypeAccess: ["all"],
     },
     features: {
       collaboration: true,
-      exportFormats: ['all'],
-      agentCapabilities: ['all'],
-      advancedTools: ['all']
-    }
+      exportFormats: ["all"],
+      agentCapabilities: ["all"],
+      advancedTools: ["all"],
+    },
   },
   [SubscriptionTier.STUDIO_YEARLY]: {
-    name: 'indiiOS Studio (Yearly)',
+    name: "indiiOS Studio (Yearly)",
     price: 490,
-    billingPeriod: 'year',
+    billingPeriod: "year",
     imageGenerations: {
       monthly: 2000,
-      maxResolution: '4096x4096',
-      generationsPerMonth: 2000
+      maxResolution: "4096x4096",
+      generationsPerMonth: 2000,
     },
     videoGenerations: {
       totalDurationMinutes: 120,
-      maxResolution: '4K',
-      maxDurationSeconds: 300
+      maxResolution: "4K",
+      maxDurationSeconds: 300,
     },
     aiChat: {
       tokensPerMonth: 500000,
-      modelTier: 'unlimited'
+      modelTier: "unlimited",
     },
     storage: {
       totalGB: 500,
-      fileTypeAccess: ['all']
+      fileTypeAccess: ["all"],
     },
     features: {
       collaboration: true,
-      exportFormats: ['all'],
-      agentCapabilities: ['all'],
-      advancedTools: ['all']
-    }
-  }
+      exportFormats: ["all"],
+      agentCapabilities: ["all"],
+      advancedTools: ["all"],
+    },
+  },
 };
 ```
 
@@ -260,15 +272,15 @@ export const TIER_CONFIGS: Record<SubscriptionTier, TierLimits> = {
 ```typescript
 // src/services/subscription/SubscriptionService.ts
 
-import { initializeApp, getApps } from 'firebase/app';
-import { getFunctions, httpsCallable } from 'firebase/functions';
-import { SubscriptionTier, TIER_CONFIGS } from './SubscriptionTier';
+import { initializeApp, getApps } from "firebase/app";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { SubscriptionTier, TIER_CONFIGS } from "./SubscriptionTier";
 
 export interface Subscription {
   id: string;
   userId: string;
   tier: SubscriptionTier;
-  status: 'active' | 'past_due' | 'canceled' | 'trialing';
+  status: "active" | "past_due" | "canceled" | "trialing";
   currentPeriodStart: number;
   currentPeriodEnd: number;
   cancelAtPeriodEnd: boolean;
@@ -297,55 +309,55 @@ class SubscriptionService {
    */
   async canPerformAction(
     userId: string,
-    action: 'generateImage' | 'generateVideo' | 'chat' | 'storage',
-    amount: number = 1
+    action: "generateImage" | "generateVideo" | "chat" | "storage",
+    amount: number = 1,
   ): Promise<{ allowed: boolean; reason?: string; upgradeUrl?: string }> {
     const stats = await this.getUsageStats(userId);
     const tierConfig = TIER_CONFIGS[stats.tier];
 
     switch (action) {
-      case 'generateImage':
+      case "generateImage":
         if (stats.imagesRemaining < amount) {
           return {
             allowed: false,
             reason: `Image quota exceeded. ${stats.imagesGenerated}/${tierConfig.imageGenerations.monthly} generated.`,
-            upgradeUrl: '/pricing'
+            upgradeUrl: "/pricing",
           };
         }
         return { allowed: true };
 
-      case 'generateVideo':
+      case "generateVideo":
         if (stats.videoRemainingMinutes < amount / 60) {
           return {
             allowed: false,
             reason: `Video quota exceeded. ${stats.videoDurationMinutes}/${tierConfig.videoGenerations.totalDurationMinutes} minutes used.`,
-            upgradeUrl: '/pricing'
+            upgradeUrl: "/pricing",
           };
         }
         return { allowed: true };
 
-      case 'chat':
+      case "chat":
         if (stats.tokensRemaining < amount) {
           return {
             allowed: false,
             reason: `Token quota exceeded. Upgrade to continue using AI chat.`,
-            upgradeUrl: '/pricing'
+            upgradeUrl: "/pricing",
           };
         }
         return { allowed: true };
 
-      case 'storage':
+      case "storage":
         if (stats.storageRemainingGB < amount) {
           return {
             allowed: false,
             reason: `Storage quota exceeded. Upgrade for more space.`,
-            upgradeUrl: '/pricing'
+            upgradeUrl: "/pricing",
           };
         }
         return { allowed: true };
 
       default:
-        return { allowed: false, reason: 'Unknown action' };
+        return { allowed: false, reason: "Unknown action" };
     }
   }
 
@@ -362,12 +374,13 @@ class SubscriptionService {
       imagesGenerated: 23,
       imagesRemaining: tierConfig.imageGenerations.monthly - 23,
       videoDurationMinutes: 2,
-      videoRemainingMinutes: tierConfig.videoGenerations.totalDurationMinutes - 2,
+      videoRemainingMinutes:
+        tierConfig.videoGenerations.totalDurationMinutes - 2,
       aiChatTokens: 1500,
       tokensRemaining: tierConfig.aiChat.tokensPerMonth - 1500,
       storageUsedGB: 0.5,
       storageRemainingGB: tierConfig.storage.totalGB - 0.5,
-      resetDate: subscription.currentPeriodEnd
+      resetDate: subscription.currentPeriodEnd,
     };
 
     return stats;
@@ -383,7 +396,7 @@ class SubscriptionService {
 
     // Fetch from Firestore in production
     const functions = getFunctions();
-    const getSubscriptionFn = httpsCallable(functions, 'getSubscription');
+    const getSubscriptionFn = httpsCallable(functions, "getSubscription");
     const result = await getSubscriptionFn({ userId });
 
     const subscription: Subscription = result.data as Subscription;
@@ -398,16 +411,16 @@ class SubscriptionService {
     userId: string,
     tier: SubscriptionTier,
     successUrl: string,
-    cancelUrl: string
+    cancelUrl: string,
   ): Promise<{ checkoutUrl: string }> {
     const functions = getFunctions();
-    const createSessionFn = httpsCallable(functions, 'createCheckoutSession');
+    const createSessionFn = httpsCallable(functions, "createCheckoutSession");
 
     const result = await createSessionFn({
       userId,
       tier,
       successUrl,
-      cancelUrl
+      cancelUrl,
     });
 
     return result.data as { checkoutUrl: string };
@@ -418,7 +431,7 @@ class SubscriptionService {
    */
   async cancelSubscription(userId: string): Promise<void> {
     const functions = getFunctions();
-    const cancelFn = httpsCallable(functions, 'cancelSubscription');
+    const cancelFn = httpsCallable(functions, "cancelSubscription");
     await cancelFn({ userId });
   }
 
@@ -427,7 +440,7 @@ class SubscriptionService {
    */
   async resumeSubscription(userId: string): Promise<void> {
     const functions = getFunctions();
-    const resumeFn = httpsCallable(functions, 'resumeSubscription');
+    const resumeFn = httpsCallable(functions, "resumeSubscription");
     await resumeFn({ userId });
   }
 
@@ -451,19 +464,25 @@ export const subscriptionService = new SubscriptionService();
 ```typescript
 // functions/src/subscription/getSubscription.ts
 
-import { onCall } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
-import { Subscription, SubscriptionTier } from '../../../src/services/subscription/SubscriptionTier';
+import { onCall } from "firebase-functions/v2/https";
+import { getFirestore } from "firebase-admin/firestore";
+import {
+  Subscription,
+  SubscriptionTier,
+} from "../../../src/services/subscription/SubscriptionTier";
 
 export const getSubscription = onCall(async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   const db = getFirestore();
-  const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
+  const subscriptionDoc = await db
+    .collection("subscriptions")
+    .doc(userId)
+    .get();
 
   if (!subscriptionDoc.exists) {
     // Create free tier subscription
@@ -471,13 +490,13 @@ export const getSubscription = onCall(async (request) => {
       id: crypto.randomUUID(),
       userId,
       tier: SubscriptionTier.FREE,
-      status: 'active',
+      status: "active",
       currentPeriodStart: Date.now(),
       currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
-      cancelAtPeriodEnd: false
+      cancelAtPeriodEnd: false,
     };
 
-    await db.collection('subscriptions').doc(userId).set(freeSubscription);
+    await db.collection("subscriptions").doc(userId).set(freeSubscription);
     return freeSubscription;
   }
 
@@ -488,45 +507,45 @@ export const getSubscription = onCall(async (request) => {
 ```typescript
 // functions/src/subscription/createCheckoutSession.ts
 
-import { onCall } from 'firebase-functions/v2/https';
-import Stripe from 'stripe';
-import { SubscriptionTier } from '../../../src/services/subscription/SubscriptionTier';
+import { onCall } from "firebase-functions/v2/https";
+import Stripe from "stripe";
+import { SubscriptionTier } from "../../../src/services/subscription/SubscriptionTier";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-11-20.acacia'
+  apiVersion: "2024-11-20.acacia",
 });
 
 const TIER_PRICES: Record<SubscriptionTier, string> = {
-  [SubscriptionTier.FREE]: '', // Free tier, no checkout needed
-  [SubscriptionTier.PRO_MONTHLY]: 'price_pro_monthly_id',
-  [SubscriptionTier.PRO_YEARLY]: 'price_pro_yearly_id',
-  [SubscriptionTier.STUDIO_MONTHLY]: 'price_studio_monthly_id',
-  [SubscriptionTier.STUDIO_YEARLY]: 'price_studio_yearly_id'
+  [SubscriptionTier.FREE]: "", // Free tier, no checkout needed
+  [SubscriptionTier.PRO_MONTHLY]: "price_pro_monthly_id",
+  [SubscriptionTier.PRO_YEARLY]: "price_pro_yearly_id",
+  [SubscriptionTier.STUDIO_MONTHLY]: "price_studio_monthly_id",
+  [SubscriptionTier.STUDIO_YEARLY]: "price_studio_yearly_id",
 };
 
 export const createCheckoutSession = onCall(async (request) => {
   const { userId, tier, successUrl, cancelUrl } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new Error("Unauthorized");
   }
 
   if (tier === SubscriptionTier.FREE) {
-    throw new Error('Cannot create checkout session for free tier');
+    throw new Error("Cannot create checkout session for free tier");
   }
 
   const priceId = TIER_PRICES[tier];
   if (!priceId) {
-    throw new Error('Invalid tier');
+    throw new Error("Invalid tier");
   }
 
   const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    payment_method_types: ['card'],
+    mode: "subscription",
+    payment_method_types: ["card"],
     line_items: [{ price: priceId, quantity: 1 }],
     success_url: successUrl,
     cancel_url: cancelUrl,
-    metadata: { userId, tier }
+    metadata: { userId, tier },
   });
 
   return { checkoutUrl: session.url };
@@ -541,7 +560,7 @@ export const createCheckoutSession = onCall(async (request) => {
 interface UsageRecord {
   userId: string;
   project?: string;
-  type: 'image' | 'video' | 'chat_tokens' | 'storage';
+  type: "image" | "video" | "chat_tokens" | "storage";
   amount: number;
   timestamp: number;
   metadata?: Record<string, any>;
@@ -551,48 +570,59 @@ class UsageTracker {
   // Track image generation
   async trackImageGeneration(userId: string, project?: string): Promise<void> {
     await this.trackUsage(userId, {
-      type: 'image',
+      type: "image",
       amount: 1,
-      project
+      project,
     });
   }
 
   // Track video generation (in seconds)
-  async trackVideoGeneration(userId: string, durationSeconds: number, project?: string): Promise<void> {
+  async trackVideoGeneration(
+    userId: string,
+    durationSeconds: number,
+    project?: string,
+  ): Promise<void> {
     await this.trackUsage(userId, {
-      type: 'video',
+      type: "video",
       amount: durationSeconds,
       project,
-      metadata: { durationSeconds }
+      metadata: { durationSeconds },
     });
   }
 
   // Track AI chat token usage
   async trackChatTokens(userId: string, tokenCount: number): Promise<void> {
     await this.trackUsage(userId, {
-      type: 'chat_tokens',
-      amount: tokenCount
+      type: "chat_tokens",
+      amount: tokenCount,
     });
   }
 
   // Track storage usage (in GB)
-  async trackStorage(userId: string, gbAmount: number, path: string): Promise<void> {
+  async trackStorage(
+    userId: string,
+    gbAmount: number,
+    path: string,
+  ): Promise<void> {
     await this.trackUsage(userId, {
-      type: 'storage',
+      type: "storage",
       amount: gbAmount,
-      metadata: { path }
+      metadata: { path },
     });
   }
 
-  private async trackUsage(userId: string, record: Omit<UsageRecord, 'userId' | 'timestamp'>): Promise<void> {
-    const functions = require('@/services/firebase').functions;
-    const { httpsCallable } = require('firebase/functions');
+  private async trackUsage(
+    userId: string,
+    record: Omit<UsageRecord, "userId" | "timestamp">,
+  ): Promise<void> {
+    const functions = require("@/services/firebase").functions;
+    const { httpsCallable } = require("firebase/functions");
 
-    const trackUsageFn = httpsCallable(functions, 'trackUsage');
+    const trackUsageFn = httpsCallable(functions, "trackUsage");
     await trackUsageFn({
       userId,
       ...record,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 }
@@ -872,14 +902,14 @@ class OptimisticManager {
     actionType: string,
     payload: T,
     executeFn: () => Promise<any>,
-    rollbackFn: () => Promise<void>
+    rollbackFn: () => Promise<void>,
   ): Promise<any> {
     const action: OptimisticAction<T> = {
       id: actionId,
       type: actionType,
       payload,
       timestamp: Date.now(),
-      rollback: rollbackFn
+      rollback: rollbackFn,
     };
 
     this.pendingActions.set(actionId, action);
@@ -924,7 +954,7 @@ class CacheService {
     this.cache.set(key, {
       data,
       timestamp: Date.now(),
-      ttl
+      ttl,
     });
   }
 
@@ -980,6 +1010,7 @@ export const cacheService = new CacheService();
 ## Phase 2: Build TypeScript Native Desktop
 
 ### Objectives
+
 - Create TypeScript-native agent architecture for Electron
 - Implement Instrument layer
 - Build local compute foundation (optional)
@@ -994,7 +1025,7 @@ export interface InstrumentMetadata {
   id: string;
   name: string;
   description: string;
-  category: 'generation' | 'utility' | 'analysis' | 'communication';
+  category: "generation" | "utility" | "analysis" | "communication";
   version: string;
 
   // Execution
@@ -1003,14 +1034,14 @@ export interface InstrumentMetadata {
 
   // Economic Model
   cost: {
-    type: 'free' | 'quota' | 'token' | 'subscription';
+    type: "free" | "quota" | "token" | "subscription";
     amount: number;
     currency?: string;
   };
   requiresApproval: boolean;
 
   // Constraints
-  requiredTier?: 'free' | 'pro' | 'studio';
+  requiredTier?: "free" | "pro" | "studio";
   constraints: {
     maxResolution?: string;
     maxDuration?: number;
@@ -1019,7 +1050,7 @@ export interface InstrumentMetadata {
   };
 
   // Model Requirements
-  computeType: 'local' | 'cloud' | 'hybrid';
+  computeType: "local" | "cloud" | "hybrid";
   preferredModel?: string;
   fallbackModels?: string[];
 }
@@ -1046,7 +1077,10 @@ export interface Instrument {
   execute(params: Record<string, any>): Promise<InstrumentResult>;
 
   // Validation
-  validateInputs(params: Record<string, any>): { valid: boolean; errors: string[] };
+  validateInputs(params: Record<string, any>): {
+    valid: boolean;
+    errors: string[];
+  };
 
   // Cost estimation
   estimateCost(params: Record<string, any>): Promise<number>;
@@ -1076,74 +1110,78 @@ export interface InstrumentResult {
 ```typescript
 // src/services/agent/instruments/ImageGenerationInstrument.ts
 
-import { Instrument, InstrumentMetadata, InstrumentResult } from './InstrumentTypes';
-import { ImageGenerationService } from '@/services/image/ImageGenerationService';
-import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import {
+  Instrument,
+  InstrumentMetadata,
+  InstrumentResult,
+} from "./InstrumentTypes";
+import { ImageGenerationService } from "@/services/image/ImageGenerationService";
+import { subscriptionService } from "@/services/subscription/SubscriptionService";
 
 export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
-    id: 'generate_image',
-    name: 'Generate Image',
-    description: 'Generate AI images using Gemini 3.x',
-    category: 'generation',
-    version: '1.0.0',
+    id: "generate_image",
+    name: "Generate Image",
+    description: "Generate AI images using Gemini 3.x",
+    category: "generation",
+    version: "1.0.0",
 
     isAsync: true,
     timeoutMs: 120000,
 
     cost: {
-      type: 'quota',
-      amount: 1
+      type: "quota",
+      amount: 1,
     },
     requiresApproval: false,
 
-    requiredTier: 'free',
+    requiredTier: "free",
     constraints: {
-      maxResolution: '2048x2048',
-      allowedFormats: ['png', 'jpg']
+      maxResolution: "2048x2048",
+      allowedFormats: ["png", "jpg"],
     },
 
-    computeType: 'cloud',
-    preferredModel: 'gemini-3-pro-image-preview'
+    computeType: "cloud",
+    preferredModel: "gemini-3-pro-image-preview",
   };
 
   inputs = [
     {
-      type: 'string',
-      description: 'Text prompt describing the desired image',
+      type: "string",
+      description: "Text prompt describing the desired image",
       required: true,
-      schema: { type: 'string' }
+      schema: { type: "string" },
     },
     {
-      type: 'string',
+      type: "string",
       description: 'Aspect ratio (e.g., "1:1", "16:9", "9:16")',
       required: false,
-      schema: { type: 'string', enum: ['1:1', '16:9', '9:16', '4:3', '3:4'] }
+      schema: { type: "string", enum: ["1:1", "16:9", "9:16", "4:3", "3:4"] },
     },
     {
-      type: 'number',
-      description: 'Number of images to generate (1-4)',
+      type: "number",
+      description: "Number of images to generate (1-4)",
       required: false,
-      schema: { type: 'number', minimum: 1, maximum: 4 }
-    }
+      schema: { type: "number", minimum: 1, maximum: 4 },
+    },
   ];
 
   outputs = [
     {
-      type: 'array',
-      description: 'Array of generated image objects',
+      type: "array",
+      description: "Array of generated image objects",
       schema: {
-        type: 'array',
+        type: "array",
         items: {
-          type: 'object',
+          type: "object",
           properties: {
-            id: { type: 'string' },
-            url: { type: 'string' },
-            prompt: { type: 'string' }
-          }
-        }
-      }
-    }
+            id: { type: "string" },
+            url: { type: "string" },
+            prompt: { type: "string" },
+          },
+        },
+      },
+    },
   ];
 
   async execute(params: Record<string, any>): Promise<InstrumentResult> {
@@ -1151,11 +1189,11 @@ export class ImageGenerationInstrument implements Instrument {
 
     try {
       // Check quota
-      const userId = 'current-user-id'; // Get from auth context
+      const userId = "current-user-id"; // Get from auth context
       const quotaCheck = await subscriptionService.canPerformAction(
         userId,
-        'generateImage',
-        params.count || 1
+        "generateImage",
+        params.count || 1,
       );
 
       if (!quotaCheck.allowed) {
@@ -1163,8 +1201,8 @@ export class ImageGenerationInstrument implements Instrument {
           success: false,
           error: quotaCheck.reason,
           metadata: {
-            executionTimeMs: Date.now() - startTime
-          }
+            executionTimeMs: Date.now() - startTime,
+          },
         };
       }
 
@@ -1173,10 +1211,10 @@ export class ImageGenerationInstrument implements Instrument {
       if (!validation.valid) {
         return {
           success: false,
-          error: validation.errors.join(', '),
+          error: validation.errors.join(", "),
           metadata: {
-            executionTimeMs: Date.now() - startTime
-          }
+            executionTimeMs: Date.now() - startTime,
+          },
         };
       }
 
@@ -1184,8 +1222,8 @@ export class ImageGenerationInstrument implements Instrument {
       const imageService = new ImageGenerationService();
       const results = await imageService.generateImages({
         prompt: params.prompt,
-        aspectRatio: params.aspectRatio || '1:1',
-        count: params.count || 1
+        aspectRatio: params.aspectRatio || "1:1",
+        count: params.count || 1,
       });
 
       // Track usage
@@ -1199,45 +1237,52 @@ export class ImageGenerationInstrument implements Instrument {
           cost: await this.estimateCost(params),
           modelUsed: this.metadata.preferredModel,
           quotaImpact: {
-            type: 'image_generation',
-            amount: results.length
-          }
-        }
+            type: "image_generation",
+            amount: results.length,
+          },
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         metadata: {
-          executionTimeMs: Date.now() - startTime
-        }
+          executionTimeMs: Date.now() - startTime,
+        },
       };
     }
   }
 
-  validateInputs(params: Record<string, any>): { valid: boolean; errors: string[] } {
+  validateInputs(params: Record<string, any>): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
-    if (!params.prompt || typeof params.prompt !== 'string') {
-      errors.push('Prompt is required and must be a string');
+    if (!params.prompt || typeof params.prompt !== "string") {
+      errors.push("Prompt is required and must be a string");
     }
 
     if (params.count !== undefined) {
-      if (typeof params.count !== 'number' || params.count < 1 || params.count > 4) {
-        errors.push('Count must be a number between 1 and 4');
+      if (
+        typeof params.count !== "number" ||
+        params.count < 1 ||
+        params.count > 4
+      ) {
+        errors.push("Count must be a number between 1 and 4");
       }
     }
 
     if (params.aspectRatio !== undefined) {
-      const validRatios = ['1:1', '16:9', '9:16', '4:3', '3:4'];
+      const validRatios = ["1:1", "16:9", "9:16", "4:3", "3:4"];
       if (!validRatios.includes(params.aspectRatio)) {
-        errors.push(`Aspect ratio must be one of: ${validRatios.join(', ')}`);
+        errors.push(`Aspect ratio must be one of: ${validRatios.join(", ")}`);
       }
     }
 
     return {
       valid: errors.length === 0,
-      errors
+      errors,
     };
   }
 
@@ -1254,63 +1299,63 @@ export class ImageGenerationInstrument implements Instrument {
 ```typescript
 // src/services/agent/instruments/VideoGenerationInstrument.ts
 
-import { Instrument, InstrumentResult } from './InstrumentTypes';
-import { VideoGenerationService } from '@/services/video/VideoGenerationService';
+import { Instrument, InstrumentResult } from "./InstrumentTypes";
+import { VideoGenerationService } from "@/services/video/VideoGenerationService";
 
 export class VideoGenerationInstrument implements Instrument {
   metadata = {
-    id: 'generate_video',
-    name: 'Generate Video',
-    description: 'Generate AI videos using Veo 3.1',
-    category: 'generation',
-    version: '1.0.0',
+    id: "generate_video",
+    name: "Generate Video",
+    description: "Generate AI videos using Veo 3.1",
+    category: "generation",
+    version: "1.0.0",
 
     isAsync: true,
     timeoutMs: 300000, // 5 minutes
 
     cost: {
-      type: 'quota',
-      amount: 10
+      type: "quota",
+      amount: 10,
     },
     requiresApproval: true,
 
-    requiredTier: 'pro',
+    requiredTier: "pro",
     constraints: {
       maxDuration: 60,
-      allowedFormats: ['mp4', 'mov']
+      allowedFormats: ["mp4", "mov"],
     },
 
-    computeType: 'cloud',
-    preferredModel: 'veo-3.1-generate-preview'
+    computeType: "cloud",
+    preferredModel: "veo-3.1-generate-preview",
   };
 
   inputs = [
     {
-      type: 'string',
-      description: 'Text prompt describing the video',
+      type: "string",
+      description: "Text prompt describing the video",
       required: true,
-      schema: { type: 'string' }
+      schema: { type: "string" },
     },
     {
-      type: 'string',
+      type: "string",
       description: 'Aspect ratio (e.g., "16:9", "9:16")',
       required: false,
-      schema: { type: 'string', enum: ['16:9', '9:16'] }
+      schema: { type: "string", enum: ["16:9", "9:16"] },
     },
     {
-      type: 'number',
-      description: 'Duration in seconds (1-60)',
+      type: "number",
+      description: "Duration in seconds (1-60)",
       required: false,
-      schema: { type: 'number', minimum: 1, maximum: 60 }
-    }
+      schema: { type: "number", minimum: 1, maximum: 60 },
+    },
   ];
 
   outputs = [
     {
-      type: 'string',
-      description: 'Job ID for async video generation',
-      schema: { type: 'string' }
-    }
+      type: "string",
+      description: "Job ID for async video generation",
+      schema: { type: "string" },
+    },
   ];
 
   async execute(params: Record<string, any>): Promise<InstrumentResult> {
@@ -1320,8 +1365,8 @@ export class VideoGenerationInstrument implements Instrument {
       const videoService = new VideoGenerationService();
       const results = await videoService.generateVideo({
         prompt: params.prompt,
-        aspectRatio: params.aspectRatio || '16:9',
-        duration: params.duration || 15
+        aspectRatio: params.aspectRatio || "16:9",
+        duration: params.duration || 15,
       });
 
       return {
@@ -1330,25 +1375,28 @@ export class VideoGenerationInstrument implements Instrument {
         metadata: {
           executionTimeMs: Date.now() - startTime,
           cost: await this.estimateCost(params),
-          modelUsed: this.metadata.preferredModel
-        }
+          modelUsed: this.metadata.preferredModel,
+        },
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error',
+        error: error instanceof Error ? error.message : "Unknown error",
         metadata: {
-          executionTimeMs: Date.now() - startTime
-        }
+          executionTimeMs: Date.now() - startTime,
+        },
       };
     }
   }
 
-  validateInputs(params: Record<string, any>): { valid: boolean; errors: string[] } {
+  validateInputs(params: Record<string, any>): {
+    valid: boolean;
+    errors: string[];
+  } {
     const errors: string[] = [];
 
-    if (!params.prompt || typeof params.prompt !== 'string') {
-      errors.push('Prompt is required and must be a string');
+    if (!params.prompt || typeof params.prompt !== "string") {
+      errors.push("Prompt is required and must be a string");
     }
 
     return { valid: errors.length === 0, errors };
@@ -1367,9 +1415,9 @@ export class VideoGenerationInstrument implements Instrument {
 ```typescript
 // src/services/agent/instruments/InstrumentRegistry.ts
 
-import { Instrument } from './InstrumentTypes';
-import { ImageGenerationInstrument } from './ImageGenerationInstrument';
-import { VideoGenerationInstrument } from './VideoGenerationInstrument';
+import { Instrument } from "./InstrumentTypes";
+import { ImageGenerationInstrument } from "./ImageGenerationInstrument";
+import { VideoGenerationInstrument } from "./VideoGenerationInstrument";
 
 class InstrumentRegistry {
   private instruments: Map<string, Instrument> = new Map();
@@ -1390,28 +1438,30 @@ class InstrumentRegistry {
   }
 
   getByIds(ids: string[]): Instrument[] {
-    return ids.map(id => this.get(id)).filter((i): i is Instrument => i !== undefined);
+    return ids
+      .map((id) => this.get(id))
+      .filter((i): i is Instrument => i !== undefined);
   }
 
   getAll(): Instrument[] {
     return Array.from(this.instruments.values());
   }
 
-  getByCategory(category: Instrument['metadata']['category']): Instrument[] {
-    return this.getAll().filter(i => i.metadata.category === category);
+  getByCategory(category: Instrument["metadata"]["category"]): Instrument[] {
+    return this.getAll().filter((i) => i.metadata.category === category);
   }
 
-  getByComputeType(computeType: 'local' | 'cloud' | 'hybrid'): Instrument[] {
-    return this.getAll().filter(i => i.metadata.computeType === computeType);
+  getByComputeType(computeType: "local" | "cloud" | "hybrid"): Instrument[] {
+    return this.getAll().filter((i) => i.metadata.computeType === computeType);
   }
 
   search(query: string): Instrument[] {
     const lowerQuery = query.toLowerCase();
     return this.getAll().filter(
-      i =>
+      (i) =>
         i.metadata.name.toLowerCase().includes(lowerQuery) ||
         i.metadata.description.toLowerCase().includes(lowerQuery) ||
-        i.metadata.id.toLowerCase().includes(lowerQuery)
+        i.metadata.id.toLowerCase().includes(lowerQuery),
     );
   }
 }
@@ -1424,8 +1474,8 @@ export const instrumentRegistry = new InstrumentRegistry();
 ```typescript
 // src/services/agent/AgentExecutor.ts (Enhanced)
 
-import { InstrumentRegistry } from './instruments/InstrumentRegistry';
-import { subscriptionService } from '@/services/SubscriptionService';
+import { InstrumentRegistry } from "./instruments/InstrumentRegistry";
+import { subscriptionService } from "@/services/SubscriptionService";
 
 export class AgentExecutor {
   private instrumentRegistry: InstrumentRegistry;
@@ -1438,7 +1488,7 @@ export class AgentExecutor {
     agentId: string,
     task: string,
     context: AgentContext,
-    progressCallback?: AgentProgressCallback
+    progressCallback?: AgentProgressCallback,
   ): Promise<AgentResponse> {
     // Get agent configuration
     const agent = agentRegistry.get(agentId);
@@ -1447,42 +1497,48 @@ export class AgentExecutor {
     }
 
     // Build context with available instruments
-    const availableInstruments = this.instrumentRegistry.getAll().map(i => ({
+    const availableInstruments = this.instrumentRegistry.getAll().map((i) => ({
       id: i.metadata.id,
       name: i.metadata.name,
       description: i.metadata.description,
-      cost: i.metadata.cost
+      cost: i.metadata.cost,
     }));
 
     // Add instruments to tool definitions
     const tools = [
       ...agent.tools,
-      ...this.buildInstrumentTools(availableInstruments)
+      ...this.buildInstrumentTools(availableInstruments),
     ];
 
     // Execute with LLM
-    const response = await this.executeWithLLM(agent, task, context, tools, progressCallback);
+    const response = await this.executeWithLLM(
+      agent,
+      task,
+      context,
+      tools,
+      progressCallback,
+    );
 
     return response;
   }
 
   private buildInstrumentTools(instruments: any[]): any[] {
-    return instruments.map(instrument => ({
+    return instruments.map((instrument) => ({
       name: `use_instrument_${instrument.id}`,
       description: `Use the ${instrument.name} instrument. Description: ${instrument.description}`,
       parameters: {
-        type: 'OBJECT',
+        type: "OBJECT",
         properties: {
           instrument_id: {
-            type: 'string',
-            description: 'The ID of the instrument to use'
+            type: "string",
+            description: "The ID of the instrument to use",
           },
           params: {
-            type: 'OBJECT',
-            description: 'Parameters to pass to the instrument'
-          }
+            type: "OBJECT",
+            description: "Parameters to pass to the instrument",
+          },
         },
-        required: ['instrument_id', 'params']
+        required: ["instrument_id", "params"],
       },
       function: async (args: any) => {
         const instrument = this.instrumentRegistry.get(args.instrument_id);
@@ -1491,42 +1547,47 @@ export class AgentExecutor {
         }
 
         // Check if approval required
-        const requiresApproval = await instrument.requiresApproval?.(args.params);
+        const requiresApproval = await instrument.requiresApproval?.(
+          args.params,
+        );
         if (requiresApproval) {
           // Trigger approval UI flow
           const approved = await this.requestApproval(instrument, args.params);
           if (!approved) {
-            throw new Error('User denied approval');
+            throw new Error("User denied approval");
           }
         }
 
         const result = await instrument.execute(args.params);
 
         if (!result.success) {
-          throw new Error(result.error || 'Instrument execution failed');
+          throw new Error(result.error || "Instrument execution failed");
         }
 
         return result.data;
-      }
+      },
     }));
   }
 
-  private async requestApproval(instrument: Instrument, params: Record<string, any>): Promise<boolean> {
+  private async requestApproval(
+    instrument: Instrument,
+    params: Record<string, any>,
+  ): Promise<boolean> {
     // Show approval modal
     const estimatedCost = await instrument.estimateCost(params);
 
     return new Promise((resolve) => {
       // Trigger UI modal
       window.dispatchEvent(
-        new CustomEvent('approval-request', {
+        new CustomEvent("approval-request", {
           detail: {
             instrument: instrument.metadata,
             params,
             estimatedCost,
             onApprove: () => resolve(true),
-            onDeny: () => resolve(false)
-          }
-        })
+            onDeny: () => resolve(false),
+          },
+        }),
       );
     });
   }
@@ -1556,34 +1617,36 @@ export class LocalInferenceService {
 
   async chatCompletion(messages: any[], options: any): Promise<any> {
     if (!this.isInitialized) {
-      throw new Error('Local inference not initialized');
+      throw new Error("Local inference not initialized");
     }
 
     // Execute local inference
     // This would replace cloud API calls with local execution
 
     return {
-      text: 'Local inference result',
-      model: this.modelPath
+      text: "Local inference result",
+      model: this.modelPath,
     };
   }
 
   async generateImage(prompt: string): Promise<any> {
     if (!this.isInitialized) {
-      throw new Error('Local inference not initialized');
+      throw new Error("Local inference not initialized");
     }
 
     // Generate image locally
     // This would use TensorFlow.js or other local ML libraries
 
     return {
-      url: 'data:image/png;base64,...',
-      model: this.modelPath
+      url: "data:image/png;base64,...",
+      model: this.modelPath,
     };
   }
 }
 
-export const localInferenceService = new LocalInferenceService('/models/llama-3-8b');
+export const localInferenceService = new LocalInferenceService(
+  "/models/llama-3-8b",
+);
 ```
 
 ### 2.6 Economic Layer (Optional Tokens)
@@ -1611,7 +1674,7 @@ export class TokenService {
     // Use eth_connect or similar
 
     this.connected = true;
-    return '0x...'; // Return wallet address
+    return "0x..."; // Return wallet address
   }
 
   async getBalance(address: string): Promise<TokenBalance> {
@@ -1620,8 +1683,8 @@ export class TokenService {
     return {
       address,
       balance: 1000000000000000000n, // 1 A0T
-      symbol: 'A0T',
-      decimals: 18
+      symbol: "A0T",
+      decimals: 18,
     };
   }
 
@@ -1629,18 +1692,18 @@ export class TokenService {
     // Approve indiiOS contract to spend A0T tokens
     // Returns transaction hash
 
-    return '0xtxhash...';
+    return "0xtxhash...";
   }
 
   async transferTokens(to: string, amount: bigint): Promise<string> {
     // Transfer A0T tokens
     // Returns transaction hash
 
-    return '0xtxhash...';
+    return "0xtxhash...";
   }
 }
 
-export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
+export const tokenService = new TokenService("0xA0T_CONTRACT_ADDRESS_ON_BASE");
 ```
 
 ---
@@ -1648,6 +1711,7 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
 ## Phase 3: Prepare for Variant Product Release
 
 ### Objectives
+
 - Finalize product differentiation
 - Prepare marketing materials
 - Set up distribution channels
@@ -1655,19 +1719,19 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
 
 ### 3.1 Product Matrix
 
-| Feature | Free (Web) | Pro (Web) | Studio Desktop (3A) | Studio Desktop (3B) |
-|---------|------------|-----------|-------------------|-------------------|
-| **Price** | $0 | $19/mo or $190/yr | $49/mo or $490/yr | Pay-per-use A0T |
-| **Image Gen** | 50/month | 500/month | Unlimited (local) | Unlimited (local) |
-| **Video Gen** | 5 min/month | 30 min/month | Unlimited (local) | Cloud via A0T |
-| **AI Chat** | 10k tokens | 100k tokens | Unlimited (local) | Unlimited (local) |
-| **Storage** | 2GB | 50GB | Local disk | Local disk |
-| **Agent Features** | Basic | Advanced | Full | Full (Python) |
-| **Offline Mode** | ❌ | ❌ | ✅ | ✅ |
-| **Privacy** | Medium | Medium | High | High |
-| **Docker Required** | ❌ | ❌ | ❌ | ✅ |
-| **Python Scripts** | ❌ | ❌ | ❌ | ✅ |
-| **File Access** | Cloud | Cloud | Local | Local |
+| Feature             | Free (Web)  | Pro (Web)         | Studio Desktop (3A) | Studio Desktop (3B) |
+| ------------------- | ----------- | ----------------- | ------------------- | ------------------- |
+| **Price**           | $0          | $19/mo or $190/yr | $49/mo or $490/yr   | Pay-per-use A0T     |
+| **Image Gen**       | 50/month    | 500/month         | Unlimited (local)   | Unlimited (local)   |
+| **Video Gen**       | 5 min/month | 30 min/month      | Unlimited (local)   | Cloud via A0T       |
+| **AI Chat**         | 10k tokens  | 100k tokens       | Unlimited (local)   | Unlimited (local)   |
+| **Storage**         | 2GB         | 50GB              | Local disk          | Local disk          |
+| **Agent Features**  | Basic       | Advanced          | Full                | Full (Python)       |
+| **Offline Mode**    | ❌          | ❌                | ✅                  | ✅                  |
+| **Privacy**         | Medium      | Medium            | High                | High                |
+| **Docker Required** | ❌          | ❌                | ❌                  | ✅                  |
+| **Python Scripts**  | ❌          | ❌                | ❌                  | ✅                  |
+| **File Access**     | Cloud       | Cloud             | Local               | Local               |
 
 ### 3.2 Deployment Configuration
 
@@ -1676,20 +1740,13 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
 ```yaml
 # firebase.json (Web Hosting)
 {
-  "hosting": {
-    "public": "dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
-    "rewrites": [
-      {
-        "source": "**",
-        "destination": "/index.html"
-      }
-    ]
-  },
-  "functions": {
-    "source": "functions",
-    "runtime": "nodejs22"
-  }
+  "hosting":
+    {
+      "public": "dist",
+      "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+      "rewrites": [{ "source": "**", "destination": "/index.html" }],
+    },
+  "functions": { "source": "functions", "runtime": "nodejs22" },
 }
 ```
 
@@ -1703,11 +1760,7 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
   "directories": {
     "output": "dist-electron"
   },
-  "files": [
-    "dist-electron/**/*",
-    "dist/**/*",
-    "package.json"
-  ],
+  "files": ["dist-electron/**/*", "dist/**/*", "package.json"],
   "mac": {
     "target": ["dmg", "zip"],
     "hardenedRuntime": true,
@@ -1739,12 +1792,7 @@ export const tokenService = new TokenService('0xA0T_CONTRACT_ADDRESS_ON_BASE');
   "directories": {
     "output": "dist-electron-docker"
   },
-  "files": [
-    "dist-electron/**/*",
-    "dist/**/*",
-    "docker/**/*",
-    "package.json"
-  ],
+  "files": ["dist-electron/**/*", "dist/**/*", "docker/**/*", "package.json"],
   "extraResources": [
     {
       "from": "docker/docker-compose.yml",
@@ -1804,7 +1852,7 @@ CMD ["sh", "-c", "ollama serve > /dev/null 2>&1 & python /opt/agent-zero/main.py
 
 ```yaml
 # docker/docker-compose.yml
-version: '3.8'
+version: "3.8"
 
 services:
   agent-zero:
@@ -1916,6 +1964,7 @@ export const ProductComparison: React.FC = () => {
 ## Phase 4: Foundation for Future Docker Agent Zero
 
 ### Objectives
+
 - Create Docker-ready architecture
 - Prepare Python instrument ecosystem
 - Design A0T token integration
@@ -2386,24 +2435,28 @@ class IndiiOSAgentZeroBridge:
 ## Implementation Timeline
 
 ### Phase 1 (Weeks 1-4): Cloud Enhancement
+
 - [ ] Week 1: Subscription tier definitions and UI
 - [ ] Week 2: Firebase Functions for Stripe integration
 - [ ] Week 3: Usage tracking and quota management
 - [ ] Week 4: Performance optimization (caching, optimistic updates)
 
 ### Phase 2 (Weeks 5-10): Desktop Foundation
+
 - [ ] Week 5-6: Instrument layer architecture
 - [ ] Week 7-8: Core instruments (Image, Video)
 - [ ] Week 9: Agent integration with instruments
 - [ ] Week 10: Local compute foundation (optional)
 
 ### Phase 3 (Weeks 11-14): Product Variant Prep
+
 - [ ] Week 11: Product matrix finalization
 - [ ] Week 12: Deployment configuration for all variants
 - [ ] Week 13: Docker configuration for variant 3B
 - [ ] Week 14: Marketing materials and documentation
 
 ### Phase 4 (Weeks 15-20): Docker Agent Zero Foundation
+
 - [ ] Week 15-16: Python instrument ecosystem
 - [ ] Week 17-18: A0T token integration (optional)
 - [ ] Week 19: Agent Zero integration layer
@@ -2414,16 +2467,19 @@ class IndiiOSAgentZeroBridge:
 ## Success Metrics
 
 ### Tier 1 (Free)
+
 - Sign-ups: 1,000/month
 - Conversion to Pro: >5%
 - Daily active users: >200
 
 ### Tier 2 (Pro)
+
 - Subscribers: 50/month
 - Churn rate: <5%
 - Feature utilization: High
 
 ### Tier 3 (Studio)
+
 - Downloads: 20/month
 - Monthly active: 80%
 - Desktop preference: >70%
@@ -2433,16 +2489,19 @@ class IndiiOSAgentZeroBridge:
 ## Risk Mitigation
 
 ### Technical Risks
+
 - **Docker Complexity:** Provide TypeScript-native variant (3A) for majority
 - **Performance:** Implement caching and optimistic updates
 - **Offline Mode:** Design sync architecture carefully
 
 ### Business Risks
+
 - **Market Confusion:** Clear product differentiation
 - **Pricing:** Competitive analysis and A/B testing
 - **Support:** Tier-specific support SLAs
 
 ### Security Risks
+
 - **Local Data:** Encryption at rest
 - **Cloud Data:** Access controls and audit logs
 - **Authentication:** Multi-factor authentication for higher tiers
@@ -2460,6 +2519,7 @@ This three-tier strategy provides comprehensive coverage of the music industry's
 By leveraging the existing TypeScript codebase and gradually adding Docker support, we ensure rapid development while maintaining flexibility for future expansion.
 
 The architecture prioritizes:
+
 - **User Privacy**: Multiple deployment options
 - **Flexibility**: Mix of local and cloud compute
 - **Scalability**: Can grow with user needs

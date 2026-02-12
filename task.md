@@ -105,11 +105,11 @@
 - [x] UI: Add tool execution progress feedback in ChatOverlay. **COMPLETED** (2026-01-30 - Intelligent response parsing + visual badges)
 - [x] Testing: Run full regression test suite with Electron app. **COMPLETED** (2026-01-30 - 2002/2164 tests passing, 93% pass rate)
 - [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**
-108:
-109: ## Tasks - Image Upload & Compression Reliability (2026-02-07)
-110:
-111: - [x] Fix: Implement 30s timeout and CORS robustness in `CloudStorageService.compressImage`. <!-- id: 300 -->
-112: - [x] Fix: Re-enable Cloud Storage `smartSave` in `ImageGenerationService` with automatic local compression fallback. <!-- id: 301 -->
-113: - [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
-114: - [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
-115: - [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->
+      108:
+      109: ## Tasks - Image Upload & Compression Reliability (2026-02-07)
+      110:
+      111: - [x] Fix: Implement 30s timeout and CORS robustness in `CloudStorageService.compressImage`. <!-- id: 300 -->
+      112: - [x] Fix: Re-enable Cloud Storage `smartSave` in `ImageGenerationService` with automatic local compression fallback. <!-- id: 301 -->
+      113: - [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
+      114: - [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
+      115: - [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->

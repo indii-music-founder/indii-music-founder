@@ -34,16 +34,16 @@ Legacy models are **STRICTLY PROHIBITED** under **ALL CIRCUMSTANCES**, including
 
 ## Approved Models (ONLY THESE ARE ALLOWED)
 
-| Purpose                      | Model ID                        | Notes                                  |
-| ---------------------------- | ------------------------------- | -------------------------------------- |
-| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks        |
-| **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput |
-| **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)  |
-| **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis          |
-| **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis           |
-| **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation              |
-| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only               |
-| **Local Utility (DMR)**      | `llama3:8b` (or similar)         | Local processing via Docker Model Runner|
+| Purpose                      | Model ID                        | Notes                                    |
+| ---------------------------- | ------------------------------- | ---------------------------------------- |
+| **Text/Reasoning (Complex)** | `gemini-3-pro-preview`          | Agents, analysis, complex tasks          |
+| **Text/Reasoning (Fast)**    | `gemini-3-flash-preview`        | Routing, simple tasks, high-throughput   |
+| **Image Generation**         | `gemini-3-pro-image-preview`    | All image synthesis (Nano Banana Pro)    |
+| **Audio Generation (TTS)**   | `gemini-2.5-pro-tts`            | High-quality speech synthesis            |
+| **Audio Generation (Fast)**  | `gemini-2.5-flash-tts`          | Low-latency speech synthesis             |
+| **Video Generation**         | `veo-3.1-generate-preview`      | Standard video generation                |
+| **Video Generation (Fast)**  | `veo-3.1-fast-generate-preview` | Draft/preview videos only                |
+| **Local Utility (DMR)**      | `llama3:8b` (or similar)        | Local processing via Docker Model Runner |
 
 ---
 
@@ -110,13 +110,13 @@ const response = await AI.generateContent({
 
 ## Model Selection Guide
 
-| Task Type                 | Use This                       | Model ID                       |
-| ------------------------- | ------------------------------ | ------------------------------ |
-| Agent reasoning           | `AI_MODELS.TEXT.AGENT`         | `gemini-3-pro-preview`         |
-| Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`          | `gemini-3-flash-preview`       |
-| Image generation          | `AI_MODELS.IMAGE.GENERATION`   | `gemini-3-pro-image-preview`   |
-| Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`          | `gemini-2.5-pro-tts`           |
-| Video generation          | `AI_MODELS.VIDEO.GENERATION`   | `veo-3.1-generate-preview`     |
+| Task Type                 | Use This                     | Model ID                     |
+| ------------------------- | ---------------------------- | ---------------------------- |
+| Agent reasoning           | `AI_MODELS.TEXT.AGENT`       | `gemini-3-pro-preview`       |
+| Fast routing/simple tasks | `AI_MODELS.TEXT.FAST`        | `gemini-3-flash-preview`     |
+| Image generation          | `AI_MODELS.IMAGE.GENERATION` | `gemini-3-pro-image-preview` |
+| Audio/TTS generation      | `AI_MODELS.AUDIO.PRO`        | `gemini-2.5-pro-tts`         |
+| Video generation          | `AI_MODELS.VIDEO.GENERATION` | `veo-3.1-generate-preview`   |
 
 ---
 
@@ -150,16 +150,16 @@ This means:
 
 ```typescript
 // MISTAKE 1: "I'll just use 1.5 Flash because it's faster"
-model: 'gemini-1.5-flash'  // BANNED
+model: "gemini-1.5-flash"; // BANNED
 
 // MISTAKE 2: "Let me try the older model to debug"
-model: 'gemini-1.5-pro'    // BANNED
+model: "gemini-1.5-pro"; // BANNED
 
 // MISTAKE 3: "The error says to use this model"
-model: 'gemini-pro'        // BANNED
+model: "gemini-pro"; // BANNED
 
 // CORRECT: Always use the approved models
-model: AI_MODELS.TEXT.FAST  // gemini-3-flash-preview
+model: AI_MODELS.TEXT.FAST; // gemini-3-flash-preview
 ```
 
 ---

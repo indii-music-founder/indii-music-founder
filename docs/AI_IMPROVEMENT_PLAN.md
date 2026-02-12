@@ -40,7 +40,7 @@ interface ToolResult<T = unknown> {
 // Wrapper function for all tools
 async function withToolErrorHandling<T>(
   toolName: string,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<ToolResult<T>> {
   try {
     const data = await fn();
@@ -50,9 +50,9 @@ async function withToolErrorHandling<T>(
       success: false,
       error: {
         code: `TOOL_${toolName.toUpperCase()}_ERROR`,
-        message: error instanceof Error ? error.message : 'Unknown error',
-        recoverable: isRecoverableError(error)
-      }
+        message: error instanceof Error ? error.message : "Unknown error",
+        recoverable: isRecoverableError(error),
+      },
     };
   }
 }
@@ -78,7 +78,9 @@ class AICircuitBreaker {
 
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     if (this.isOpen()) {
-      throw new Error('Circuit breaker is open - AI service temporarily unavailable');
+      throw new Error(
+        "Circuit breaker is open - AI service temporarily unavailable",
+      );
     }
     try {
       const result = await fn();
@@ -130,7 +132,7 @@ interface AgentTrace {
 }
 
 interface AgentTraceStep {
-  type: 'routing' | 'context' | 'inference' | 'tool_call' | 'response';
+  type: "routing" | "context" | "inference" | "tool_call" | "response";
   timestamp: number;
   duration: number;
   details: Record<string, unknown>;
@@ -196,7 +198,7 @@ interface EnhancedMemory {
   id: string;
   projectId: string; // was in current MemoryItem
   content: string;
-  type: 'fact' | 'summary' | 'rule' | 'preference'; // added preference
+  type: "fact" | "summary" | "rule" | "preference"; // added preference
   importance: number; // 0-1 score
   accessCount: number;
   lastAccessed: number;
@@ -262,18 +264,18 @@ interface EnhancedSearchOptions {
 ```typescript
 class AIResponseCache {
   private cache: Map<string, CachedResponse> = new Map();
-  
+
   getCacheKey(request: GenerateContentOptions): string {
     return hash({
       model: request.model,
       contents: request.contents,
-      config: request.config
+      config: request.config,
     });
   }
-  
+
   async getOrGenerate(
     request: GenerateContentOptions,
-    generator: () => Promise<WrappedResponse>
+    generator: () => Promise<WrappedResponse>,
   ): Promise<WrappedResponse> {
     const key = this.getCacheKey(request);
     const cached = this.cache.get(key);
@@ -310,7 +312,7 @@ class AIResponseCache {
 ```typescript
 class ContextManager {
   private readonly maxTokens: number;
-  
+
   optimizeContext(context: PipelineContext): PipelineContext {
     const tokenCount = this.countTokens(context);
     if (tokenCount > this.maxTokens) {
@@ -318,8 +320,11 @@ class ContextManager {
     }
     return context;
   }
-  
-  private truncateContext(context: PipelineContext, maxTokens: number): PipelineContext {
+
+  private truncateContext(
+    context: PipelineContext,
+    maxTokens: number,
+  ): PipelineContext {
     // Priority: System prompt > Recent history > Memories > Old history
     // Implement intelligent truncation
   }
@@ -350,7 +355,7 @@ class ContextManager {
 interface AIUsageMetrics {
   timestamp: number;
   model: string;
-  operation: 'text' | 'image' | 'video' | 'embedding';
+  operation: "text" | "image" | "video" | "embedding";
   inputTokens: number;
   outputTokens: number;
   latency: number;
@@ -364,7 +369,7 @@ class AIMetricsCollector {
   async record(metrics: AIUsageMetrics): Promise<void> {
     // Send to analytics backend (BigQuery, etc.)
   }
-  
+
   async getUsageSummary(timeRange: [Date, Date]): Promise<UsageSummary> {
     // Aggregate metrics
   }
@@ -409,7 +414,7 @@ class InputSanitizer {
     // Validate input length
     // Strip dangerous characters
   }
-  
+
   detectInjection(input: string): boolean {
     // Check for common injection patterns
     // "Ignore previous instructions"
@@ -451,14 +456,14 @@ class InputSanitizer {
 ```typescript
 // Simple agent creation API
 const myAgent = createAgent({
-  id: 'my-agent',
-  name: 'My Agent',
-  description: 'Does something useful',
+  id: "my-agent",
+  name: "My Agent",
+  description: "Does something useful",
   prompt: `You are a helpful assistant...`,
   tools: [
-    tool('search', 'Search for information', searchSchema, searchHandler),
-    tool('create', 'Create something', createSchema, createHandler)
-  ]
+    tool("search", "Search for information", searchSchema, searchHandler),
+    tool("create", "Create something", createSchema, createHandler),
+  ],
 });
 ```
 
@@ -473,14 +478,14 @@ const myAgent = createAgent({
 const testHarness = createAgentTestHarness(myAgent);
 
 // Easy conversation testing
-await testHarness.send('Hello');
-expect(testHarness.lastResponse).toContain('Hi');
+await testHarness.send("Hello");
+expect(testHarness.lastResponse).toContain("Hi");
 
 // Tool call verification
-await testHarness.send('Search for cats');
+await testHarness.send("Search for cats");
 expect(testHarness.lastToolCall).toEqual({
-  name: 'search',
-  args: { query: 'cats' }
+  name: "search",
+  args: { query: "cats" },
 });
 ```
 
@@ -572,10 +577,10 @@ expect(testHarness.lastToolCall).toEqual({
 
 ### Phase 5: Developer Experience (Weeks 9-10) 🟡
 
- 1. Create agent development SDK (✅ DONE)
- 2. Add testing utilities (✅ DONE)
- 3. Improve type safety (✅ DONE)
- 4. Add prompt version control (✅ DONE)
+1.  Create agent development SDK (✅ DONE)
+2.  Add testing utilities (✅ DONE)
+3.  Improve type safety (✅ DONE)
+4.  Add prompt version control (✅ DONE)
 
 ### Phase 6: Advanced Features (Weeks 11-12) 🟢
 
@@ -588,14 +593,14 @@ expect(testHarness.lastToolCall).toEqual({
 
 ## Success Metrics
 
-| Metric | Current | Target |
-|--------|---------|--------|
-| Agent error rate | ~5% | <1% |
-| Average response time | ~3s | <2s |
-| Token efficiency | Unknown | Track baseline |
-| Test coverage (AI code) | ~40% | >80% |
-| Memory retrieval accuracy | Unknown | >85% |
-| Routing accuracy | Unknown | >95% |
+| Metric                    | Current | Target         |
+| ------------------------- | ------- | -------------- |
+| Agent error rate          | ~5%     | <1%            |
+| Average response time     | ~3s     | <2s            |
+| Token efficiency          | Unknown | Track baseline |
+| Test coverage (AI code)   | ~40%    | >80%           |
+| Memory retrieval accuracy | Unknown | >85%           |
+| Routing accuracy          | Unknown | >95%           |
 
 ---
 
@@ -610,15 +615,15 @@ expect(testHarness.lastToolCall).toEqual({
 
 ## Risks & Mitigations
 
-| Risk | Impact | Mitigation |
-|------|--------|------------|
-| Breaking existing agents | High | Comprehensive test suite, gradual rollout |
-| Increased costs from caching | Medium | TTL-based eviction, size limits |
-| Performance regression | High | Benchmark before/after each phase |
-| Token limit exceeded | Medium | Smart truncation, user notification |
+| Risk                         | Impact | Mitigation                                |
+| ---------------------------- | ------ | ----------------------------------------- |
+| Breaking existing agents     | High   | Comprehensive test suite, gradual rollout |
+| Increased costs from caching | Medium | TTL-based eviction, size limits           |
+| Performance regression       | High   | Benchmark before/after each phase         |
+| Token limit exceeded         | Medium | Smart truncation, user notification       |
 
 ---
 
-*Document Version: 1.1*
-*Last Updated: 2026-01-04*
-*Author: AI Assistant*
+_Document Version: 1.1_
+_Last Updated: 2026-01-04_
+_Author: AI Assistant_

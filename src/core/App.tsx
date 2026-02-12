@@ -62,7 +62,7 @@ const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntle
 // ============================================================================
 
 // Use flexible type to accommodate different component prop signatures
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
