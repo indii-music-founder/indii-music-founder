@@ -1340,6 +1340,11 @@ export class FirebaseAIService {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
                     'AI Verification Failed',
+            console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log the raw message!
+            if (this.useFallbackMode) {
+                return new AppException(
+                    AppErrorCode.UNAUTHORIZED,
+                    `AI Verification Failed: ${msg}`, // Include raw msg in user-facing error for now to help debug
                     { retryable: false }
                 );
             }
