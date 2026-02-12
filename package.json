@@ -31,7 +31,7 @@
     "prelint": "tsx scripts/syncAgentGuidelines.ts",
     "pretest": "tsx scripts/syncAgentGuidelines.ts",
     "sync:agents": "tsx scripts/syncAgentGuidelines.ts",
-    "lint": "eslint . --ext .ts,.tsx",
+    "lint": "eslint . --ext .ts,.tsx && npm run lint:md",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "lint:changed": "eslint --max-warnings=0 --ext .ts,.tsx --no-error-on-unmatched-pattern --",
     "make": "electron-forge make",

@@ -1,3 +1,41 @@
+# Error Memory Ledger
+
+> **Protocol:** profound-memory
+> **Version:** 1.0.0
+
+This ledger tracks solved technical challenges to prevent regression. Before debugging, **ALWAYS** check here first.
+
+## Usage
+
+1. **Search:** Ctrl+F this file for error signatures.
+2. **Query:** Use `mcp_mem0_search-memories(query="<error>", userId="indiiOS-errors")`.
+3. **Solve:** Apply the documented fix.
+4. **Record:** After solving a *new* unique error, add it here and to mem0.
+
+```javascript
+mcp_mem0_add-memory(
+  content="ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>",
+  userId="indiiOS-errors"
+)
+```
+
+## Entry Format
+
+- **Header:** `## [ID] [Short Description]`
+- **Pattern:** Exact error message or symptom.
+- **Stack Signature:** The distinctive part of the stack trace.
+- **Context:** Where/when it happens.
+- **Root Cause:** Technical explanation.
+- **Fix:** Code snippet or steps.
+- **Prevention:** How to avoid it.
+- **Related Files:** Specific file paths.
+- **Meta:** Date Added, Related Errors.
+
+---
+
+## FIRESTORE-001 Runtime errors when accessing nested objects
+
+**Pattern:** Parent object is undefined (e.g., Firestore document missing)
 **Context:** Runtime errors when accessing nested objects
 **Root Cause:** The parent object is undefined. Common with Firestore data that may not exist yet.
 **Fix:**
@@ -21,6 +59,10 @@ const value = data?.nested?.field ?? 'default';
 ## AUTH-001 User Not Authenticated
 
 **Pattern:** `auth.currentUser is null` / `User is not logged in`
+**Stack Signature:** `TypeError: Cannot read properties of null (reading 'uid')`
+**Context:** Operations requiring authentication
+**Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
+**Related Files:** `src/services/auth/AuthService.ts`, `src/components/ProtectedRoute.tsx`
 **Context:** Operations requiring authentication
 **Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
 **Fix:**
@@ -70,6 +112,26 @@ gcloud run services add-iam-policy-binding [SERVICE_NAME] \
 ```
 
 **Prevention:**
+When deploying new v2 callable functions:
+
+1. **Option A - Post-deployment IAM binding (current approach):**
+
+   ```bash
+   firebase deploy --only functions:[NAME]
+   gcloud run services add-iam-policy-binding [NAME] \
+     --region=us-central1 --member="allUsers" \
+     --role="roles/run.invoker" --project=[PROJECT_ID]
+   ```
+
+2. **Option B - Function definition with invoker:**
+
+   ```typescript
+   import { onCall } from 'firebase-functions/v2/https';
+   export const myFunction = onCall(
+     { invoker: 'public' }, // Allows unauthenticated invocations
+     async (request) => { /* ... */ }
+   );
+   ```
 When deploying new v2 callable functions, ensure invoker permissions:
 
 ```typescript
