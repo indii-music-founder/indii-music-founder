@@ -6,10 +6,11 @@
 **Execution Strategy:** Batched execution via Playwright
 
 ## Summary
+
 The following table summarizes the execution results for all identified E2E tests.
 
 | Test File | Status | Passed | Failed | Notes |
-|-----------|--------|--------|--------|-------|
+| :--- | :--- | :--- | :--- | :--- |
 | `temp/verify_simple.spec.ts` | ✅ PASS | 1 | 0 | Fixed port configuration. |
 | `auth-flow.spec.ts` | ⚠️ MIXED | 1 | 1 | Auth logic partially working. |
 | `flow-navigation.spec.ts` | ⚠️ MIXED | 3 | 3 | Fixed syntax error. Sidebar navigation works, back button flaky. |
@@ -53,4 +54,5 @@ The following table summarizes the execution results for all identified E2E test
 | `time-traveler.spec.ts` | ❌ FAIL | 0 | 1 | Project persistence failed. |
 
 ## Detailed Logs
+
 Detailed logs for each test batch were captured in `result_*.txt` files in the root directory.
