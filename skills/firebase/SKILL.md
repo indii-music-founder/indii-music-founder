@@ -18,7 +18,7 @@ last_updated: 2026-02-06
 We use Firebase as a **backend-as-a-service**, not just a database.
 
 - **Strict schemas** (Zod)
-- **Security Rules** (The rreal firewall)
+- **Security Rules** (The real firewall) - Never trust the client.
 - **Edge caching** (App Hosting)
 
 ---
