@@ -1333,7 +1333,9 @@ export class FirebaseAIService {
             lowerMsg.includes('app-check-token') ||
             lowerMsg.includes('unauthorized')
         ) {
-            console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log the raw message!
+            if (import.meta.env.DEV) {
+                console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log raw message only in DEV
+            }
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
