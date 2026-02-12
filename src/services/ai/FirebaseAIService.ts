@@ -1131,7 +1131,7 @@ export class FirebaseAIService {
         return this.mediaBreaker.execute(async () => {
             await this.ensureInitialized();
 
-            const modelName = modelOverride || AI_MODELS.AUDIO.PRO;
+            const modelName = modelOverride || AI_MODELS.AUDIO.TTS;
 
             const config: GenerationConfig = {
                 responseModalities: ['AUDIO'],

@@ -381,15 +381,24 @@ export class AIService {
             const err = error as RetryableError;
             const errorMessage = err.message ?? '';
 
+            // Abort/cancel errors are intentional — never retry these
+            const isAbortError =
+                errorMessage.includes('aborted') ||
+                errorMessage.includes('signal is aborted') ||
+                errorMessage.includes('AbortError') ||
+                errorMessage.includes('cancelled') ||
+                err.name === 'AbortError';
+
+            if (isAbortError) {
+                throw error;
+            }
+
             const isRetryable =
                 err.code === 'resource-exhausted' ||
                 err.code === 'unavailable' ||
                 errorMessage.includes('QUOTA_EXCEEDED') ||
                 errorMessage.includes('503') ||
-                errorMessage.includes('429') ||
-                // Abort errors from Firebase SDK are often transient and retryable
-                errorMessage.includes('aborted') ||
-                errorMessage.includes('signal is aborted');
+                errorMessage.includes('429');
 
             if (retries > 0 && isRetryable) {
                 console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
