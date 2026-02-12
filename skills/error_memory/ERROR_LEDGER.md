@@ -311,3 +311,63 @@ export const myTool = async () => {
 
 **Date Added:** 2026-02-06
 **Related Errors:** None
+
+---
+
+## AI-001 403 Forbidden on gemini-3-pro-preview
+
+**Pattern:** `AI Verification Failed: {"error":{"code":403,"message":"Requests to this API generativelanguage.goog...`
+**Stack Signature:** `403` from `generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent`
+**Context:** All AI calls in production (chat, image gen, agent routing) fail with 403.
+**Root Cause:** The API key (`VITE_API_KEY`) was revoked/throttled by Google — likely due to an API spike from a retry loop bug. Also: `gemini-3-pro-preview` requires **billing enabled** on the GCP project.
+**Fix:**
+
+1. Create a new API key in [Google AI Studio](https://aistudio.google.com/apikey).
+2. Update `.env` locally: `VITE_API_KEY`, `GEMINI_API_KEY`, `GOOGLE_API_KEY`.
+3. Update GitHub secret `VITE_API_KEY` for CI/CD.
+4. Rebuild and redeploy (`npm run build:studio && firebase deploy --only hosting:app`).
+5. Verify with curl:
+
+```bash
+curl -s "https://generativelanguage.googleapis.com/v1beta/models/gemini-3-pro-preview:generateContent?key=YOUR_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"contents":[{"parts":[{"text":"Say hello"}]}]}' | head -c 200
+```
+
+**Prevention:** Monitor API usage in AI Studio. Fix retry loops that could spike usage. Set API key quotas in GCP Console.
+**Related Files:** `.env`, `.github/workflows/deploy.yml`, `src/services/ai/FirebaseAIService.ts`
+**Date Added:** 2026-02-12
+**Related Errors:** AI-002
+
+---
+
+## AI-002 TTS Using Wrong Model (Text Model Instead of Audio)
+
+**Pattern:** TTS calls fail silently or return text instead of audio.
+**Context:** `generateSpeech()` in `FirebaseAIService.ts` was using `gemini-3-pro-preview` (a text model) instead of the dedicated `gemini-2.5-pro-tts`.
+**Root Cause:** The `AI_MODELS` config had no `AUDIO.TTS` entry, so TTS defaulted to the general text model which doesn't support audio output.
+**Fix:**
+
+```typescript
+// In ai-models.ts - add TTS constant
+export const APPROVED_MODELS = {
+  // ...existing...
+  AUDIO_TTS: 'gemini-2.5-pro-tts',
+};
+
+export const AI_MODELS = {
+  // ...existing...
+  AUDIO: { TTS: APPROVED_MODELS.AUDIO_TTS },
+};
+
+// In FirebaseAIService.ts - use it
+async generateSpeech(text: string, voice?: string, modelOverride?: string) {
+  const model = modelOverride || AI_MODELS.AUDIO.TTS; // NOT the text model
+  // ...
+}
+```
+
+**Prevention:** Always check `ai-models.ts` when adding new modalities. Each modality needs its own model entry.
+**Related Files:** `src/core/config/ai-models.ts`, `src/services/ai/FirebaseAIService.ts`
+**Date Added:** 2026-02-12
+**Related Errors:** AI-001
