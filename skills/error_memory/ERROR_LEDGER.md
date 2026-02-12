@@ -23,10 +23,12 @@ mcp_mem0_add-memory(
 
 - **Header:** `## [ID] [Short Description]`
 - **Pattern:** Exact error message or symptom.
+- **Stack Signature:** The distinctive part of the stack trace.
 - **Context:** Where/when it happens.
 - **Root Cause:** Technical explanation.
 - **Fix:** Code snippet or steps.
-- **prevention:** How to avoid it.
+- **Prevention:** How to avoid it.
+- **Related Files:** Specific file paths.
 - **Meta:** Date Added, Related Errors.
 
 ---
@@ -57,8 +59,10 @@ const value = data?.nested?.field ?? 'default';
 ## AUTH-001 User Not Authenticated
 
 **Pattern:** `auth.currentUser is null` / `User is not logged in`
+**Stack Signature:** `TypeError: Cannot read properties of null (reading 'uid')`
 **Context:** Operations requiring authentication
 **Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
+**Related Files:** `src/services/auth/AuthService.ts`, `src/components/ProtectedRoute.tsx`
 **Fix:**
 
 ```typescript
@@ -106,13 +110,26 @@ gcloud run services add-iam-policy-binding [SERVICE_NAME] \
 ```
 
 **Prevention:**
-When deploying new v2 callable functions, ensure invoker permissions:
+When deploying new v2 callable functions:
 
-```typescript
-// In function definition, or deploy with:
-// firebase deploy --only functions:[NAME]
-// Then run the gcloud IAM command above
-```
+1. **Option A - Post-deployment IAM binding (current approach):**
+
+   ```bash
+   firebase deploy --only functions:[NAME]
+   gcloud run services add-iam-policy-binding [NAME] \
+     --region=us-central1 --member="allUsers" \
+     --role="roles/run.invoker" --project=[PROJECT_ID]
+   ```
+
+2. **Option B - Function definition with invoker:**
+
+   ```typescript
+   import { onCall } from 'firebase-functions/v2/https';
+   export const myFunction = onCall(
+     { invoker: 'public' }, // Allows unauthenticated invocations
+     async (request) => { /* ... */ }
+   );
+   ```
 
 **Date Added:** 2026-02-05
 **Related Errors:** AUTH-001, FIRESTORE-001
