@@ -4,3 +4,4 @@ dist-electron
 .git
 .gemini
 coverage
+AGENTS.md
