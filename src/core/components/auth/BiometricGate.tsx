@@ -54,7 +54,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
             }, 100);
             return () => clearTimeout(timer);
         }
-         
+
     }, [isAvailable]);
 
     // Fallback unlock (e.g. if biometrics fail repeatedly or aren't actually available but flag is set)
@@ -62,7 +62,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
     // For this alpha, we might want a "Sign Out" option if they are stuck.
 
     if (!isBiometricEnabled || !isLocked) {
-        return <>{children}</>;
+        return children;
     }
 
     return (
