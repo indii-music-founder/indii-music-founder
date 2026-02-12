@@ -8,13 +8,13 @@ This document outlines the technical parameters and best practices for utilizing
 
 All AI interactions must adhere to the [Model Usage Policy](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/MODEL_POLICY.md).
 
-| Capability | Model ID | Recommended Thinking |
-| :--- | :--- | :--- |
-| **Complex Reasoning** | `gemini-3-pro-preview` | `HIGH` |
-| **Fast Routing** | `gemini-3-flash-preview` | `MEDIUM` |
-| **Image Synth** | `gemini-3-pro-image-preview` | N/A |
-| **Video Synth** | `veo-3.1-generate-preview` | N/A |
-| **Audio/TTS** | `gemini-2.5-pro-tts` | N/A |
+| Capability            | Model ID                     | Recommended Thinking |
+| :-------------------- | :--------------------------- | :------------------- |
+| **Complex Reasoning** | `gemini-3-pro-preview`       | `HIGH`               |
+| **Fast Routing**      | `gemini-3-flash-preview`     | `MEDIUM`             |
+| **Image Synth**       | `gemini-3-pro-image-preview` | N/A                  |
+| **Video Synth**       | `veo-3.1-generate-preview`   | N/A                  |
+| **Audio/TTS**         | `gemini-2.5-pro-tts`         | N/A                  |
 
 ---
 

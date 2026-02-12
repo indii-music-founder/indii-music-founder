@@ -13,6 +13,7 @@ Firestore is schemaless, so migrations focus on **data shape changes** rather th
 ## Migration Types
 
 ### 1. Additive (Non-Breaking)
+
 **Risk: Low** — No migration needed.
 
 - Adding a new optional field to a document
@@ -23,10 +24,11 @@ Firestore is schemaless, so migrations focus on **data shape changes** rather th
 
 ```typescript
 // Safe: new field with default
-const tier = doc.data()?.membershipTier ?? 'free';
+const tier = doc.data()?.membershipTier ?? "free";
 ```
 
 ### 2. Rename / Restructure (Breaking)
+
 **Risk: Medium** — Requires dual-read period.
 
 - Renaming a field (e.g., `name` → `displayName`)
@@ -35,13 +37,14 @@ const tier = doc.data()?.membershipTier ?? 'free';
 
 **Strategy:** Three-phase deployment:
 
-| Phase | Duration | Action |
-|-------|----------|--------|
-| 1. Dual Write | 1 deploy | Write to **both** old and new field |
-| 2. Backfill | 1-time script | Migrate existing documents to new shape |
-| 3. Cleanup | Next deploy | Remove old field reads/writes |
+| Phase         | Duration      | Action                                  |
+| ------------- | ------------- | --------------------------------------- |
+| 1. Dual Write | 1 deploy      | Write to **both** old and new field     |
+| 2. Backfill   | 1-time script | Migrate existing documents to new shape |
+| 3. Cleanup    | Next deploy   | Remove old field reads/writes           |
 
 ### 3. Destructive (High Risk)
+
 **Risk: High** — Data loss possible.
 
 - Deleting a collection
@@ -66,43 +69,45 @@ scripts/migrations/
 ### Script Template
 
 ```typescript
-import admin from 'firebase-admin';
+import admin from "firebase-admin";
 
-const DRY_RUN = process.argv.includes('--dry-run');
+const DRY_RUN = process.argv.includes("--dry-run");
 const BATCH_SIZE = 500;
 
 async function migrate() {
-    const db = admin.firestore();
-    const collection = db.collection('users');
-    let migrated = 0;
-    let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
+  const db = admin.firestore();
+  const collection = db.collection("users");
+  let migrated = 0;
+  let cursor: FirebaseFirestore.QueryDocumentSnapshot | undefined;
 
-    while (true) {
-        let query = collection.orderBy('__name__').limit(BATCH_SIZE);
-        if (cursor) query = query.startAfter(cursor);
+  while (true) {
+    let query = collection.orderBy("__name__").limit(BATCH_SIZE);
+    if (cursor) query = query.startAfter(cursor);
 
-        const snapshot = await query.get();
-        if (snapshot.empty) break;
+    const snapshot = await query.get();
+    if (snapshot.empty) break;
 
-        const batch = db.batch();
-        for (const doc of snapshot.docs) {
-            // Skip already-migrated documents
-            if (doc.data().newField !== undefined) continue;
+    const batch = db.batch();
+    for (const doc of snapshot.docs) {
+      // Skip already-migrated documents
+      if (doc.data().newField !== undefined) continue;
 
-            if (!DRY_RUN) {
-                batch.update(doc.ref, {
-                    newField: computeDefault(doc.data()),
-                });
-            }
-            migrated++;
-        }
-
-        if (!DRY_RUN) await batch.commit();
-        cursor = snapshot.docs[snapshot.docs.length - 1];
-        console.log(`Processed ${migrated} documents...`);
+      if (!DRY_RUN) {
+        batch.update(doc.ref, {
+          newField: computeDefault(doc.data()),
+        });
+      }
+      migrated++;
     }
 
-    console.log(`${DRY_RUN ? '[DRY RUN] Would migrate' : 'Migrated'} ${migrated} documents`);
+    if (!DRY_RUN) await batch.commit();
+    cursor = snapshot.docs[snapshot.docs.length - 1];
+    console.log(`Processed ${migrated} documents...`);
+  }
+
+  console.log(
+    `${DRY_RUN ? "[DRY RUN] Would migrate" : "Migrated"} ${migrated} documents`,
+  );
 }
 
 migrate().catch(console.error);

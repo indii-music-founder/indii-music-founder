@@ -140,53 +140,53 @@ This document details the comprehensive mobile UX upgrades implemented to transf
 #### Device Detection
 
 ```typescript
-isMobile() // Is mobile device?
-isIOS() // Is iOS?
-isAndroid() // Is Android?
-isStandalone() // Running as installed PWA?
+isMobile(); // Is mobile device?
+isIOS(); // Is iOS?
+isAndroid(); // Is Android?
+isStandalone(); // Running as installed PWA?
 ```
 
 #### PWA Management
 
 ```typescript
-initPWAInstall() // Initialize install prompt listener
-showPWAInstall() // Show install prompt
-canInstallPWA() // Check if installable
+initPWAInstall(); // Initialize install prompt listener
+showPWAInstall(); // Show install prompt
+canInstallPWA(); // Check if installable
 ```
 
 #### Native Sharing
 
 ```typescript
-nativeShare({ title, text, url, files }) // Native share sheet
-canShare(data) // Check if sharing is supported
+nativeShare({ title, text, url, files }); // Native share sheet
+canShare(data); // Check if sharing is supported
 ```
 
 #### Screen Wake Lock
 
 ```typescript
-requestWakeLock() // Prevent screen from sleeping
-releaseWakeLock() // Allow screen to sleep
+requestWakeLock(); // Prevent screen from sleeping
+releaseWakeLock(); // Allow screen to sleep
 ```
 
 #### Viewport Utilities
 
 ```typescript
-fixViewportHeight() // Fix iOS viewport height issues
-getSafeAreaInsets() // Get notch/island insets
-detectKeyboard() // Is keyboard open?
+fixViewportHeight(); // Fix iOS viewport height issues
+getSafeAreaInsets(); // Get notch/island insets
+detectKeyboard(); // Is keyboard open?
 ```
 
 #### Network Status
 
 ```typescript
-isOnline() // Online/offline status
-onNetworkChange(callback) // Listen for network changes
+isOnline(); // Online/offline status
+onNetworkChange(callback); // Listen for network changes
 ```
 
 #### Battery Status
 
 ```typescript
-getBatteryStatus() // Get battery level & charging state
+getBatteryStatus(); // Get battery level & charging state
 ```
 
 ---
@@ -301,45 +301,45 @@ haptic('success'); // Double tap pattern
 ### PWA Install
 
 ```typescript
-import { showPWAInstall, canInstallPWA } from '@/lib/mobile';
+import { showPWAInstall, canInstallPWA } from "@/lib/mobile";
 
 if (canInstallPWA()) {
-    const accepted = await showPWAInstall();
-    if (accepted) {
-        console.log('App installed!');
-    }
+  const accepted = await showPWAInstall();
+  if (accepted) {
+    console.log("App installed!");
+  }
 }
 ```
 
 ### Native Share
 
 ```typescript
-import { nativeShare, canShare } from '@/lib/mobile';
+import { nativeShare, canShare } from "@/lib/mobile";
 
 if (canShare({ url: currentUrl })) {
-    await nativeShare({
-        title: 'Check out my creation',
-        text: 'Made with indiiOS',
-        url: window.location.href
-    });
+  await nativeShare({
+    title: "Check out my creation",
+    text: "Made with indiiOS",
+    url: window.location.href,
+  });
 }
 ```
 
 ### Device Detection Example
 
 ```typescript
-import { isMobile, isIOS, isStandalone } from '@/lib/mobile';
+import { isMobile, isIOS, isStandalone } from "@/lib/mobile";
 
 if (isMobile()) {
-    // Show mobile-optimized UI
+  // Show mobile-optimized UI
 }
 
 if (isIOS()) {
-    // iOS-specific handling
+  // iOS-specific handling
 }
 
 if (isStandalone()) {
-    // Running as installed PWA - hide install prompt
+  // Running as installed PWA - hide install prompt
 }
 ```
 

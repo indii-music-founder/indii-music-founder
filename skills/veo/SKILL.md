@@ -13,12 +13,12 @@ last_updated: 2026-02-06
 
 ## 1. Core Model Capabilities
 
-| Capability | Model | Specs |
-| --- | --- | --- |
-| **Text-to-Video** | `veo-3.1-generate-preview` | High-fidelity, cinematic quality, 24/30/60 fps |
-| **Video Extension** | `veo-3.1-generate-preview` | Extend Veo videos up to 20x (max 141s total) |
-| **Resolution** | 1080p, 4K (Upscaled) | `16:9`, `9:16` aspect ratios |
-| **Audio** | Native | Synchronized audio generation support |
+| Capability          | Model                      | Specs                                          |
+| ------------------- | -------------------------- | ---------------------------------------------- |
+| **Text-to-Video**   | `veo-3.1-generate-preview` | High-fidelity, cinematic quality, 24/30/60 fps |
+| **Video Extension** | `veo-3.1-generate-preview` | Extend Veo videos up to 20x (max 141s total)   |
+| **Resolution**      | 1080p, 4K (Upscaled)       | `16:9`, `9:16` aspect ratios                   |
+| **Audio**           | Native                     | Synchronized audio generation support          |
 
 **Fast Model:** `veo-3.1-fast-generate-001` (lower latency, good for prototyping)
 
@@ -34,20 +34,20 @@ from vertexai.preview.vision import VideoGenerationModel
 
 def generate_video(prompt: str, output_path: str):
     model = VideoGenerationModel.from_pretrained("veo-3.1-generate-preview")
-    
+
     print(f"Generating video for: {prompt}")
-    
+
     response = model.generate_video(
         prompt=prompt,
         aspect_ratio="16:9",
         add_audio=True,
         person_generation="allow_adult"
     )
-    
+
     # Save to file
     with open(output_path, "wb") as f:
         f.write(response.video_bytes)
-    
+
     print(f"Video saved to {output_path}")
 
 # Usage
@@ -178,11 +178,11 @@ Use Gemini 3 models for video understanding with configurable resolution.
 
 ### 5.1 Token Usage per Frame
 
-| Resolution | Tokens/Frame | Use Case |
-| --- | --- | --- |
-| `media_resolution_low` | 70 | Action recognition, motion analysis |
-| `media_resolution_medium` | 70 | Standard understanding |
-| `media_resolution_high` | 280 | Text-heavy, OCR, fine details |
+| Resolution                | Tokens/Frame | Use Case                            |
+| ------------------------- | ------------ | ----------------------------------- |
+| `media_resolution_low`    | 70           | Action recognition, motion analysis |
+| `media_resolution_medium` | 70           | Standard understanding              |
+| `media_resolution_high`   | 280          | Text-heavy, OCR, fine details       |
 
 ### 5.2 Video Analysis Example
 
@@ -222,21 +222,21 @@ print(response.text)
 
 ### 6.2 Camera Movement Keywords
 
-| Movement | Description |
-| --- | --- |
-| `drone shot` | Aerial perspective |
-| `tracking shot` | Following subject |
-| `push in` / `dolly in` | Moving closer |
-| `pull back` / `dolly out` | Moving away |
-| `pan left/right` | Horizontal rotation |
-| `tilt up/down` | Vertical rotation |
-| `static shot` | Fixed camera |
-| `handheld` | Slight organic shake |
-| `crane shot` | Vertical movement |
-| `steadicam` | Smooth following |
-| `zoom in/out` | Lens zoom |
-| `slow motion` | Reduced speed |
-| `time lapse` | Accelerated time |
+| Movement                  | Description          |
+| ------------------------- | -------------------- |
+| `drone shot`              | Aerial perspective   |
+| `tracking shot`           | Following subject    |
+| `push in` / `dolly in`    | Moving closer        |
+| `pull back` / `dolly out` | Moving away          |
+| `pan left/right`          | Horizontal rotation  |
+| `tilt up/down`            | Vertical rotation    |
+| `static shot`             | Fixed camera         |
+| `handheld`                | Slight organic shake |
+| `crane shot`              | Vertical movement    |
+| `steadicam`               | Smooth following     |
+| `zoom in/out`             | Lens zoom            |
+| `slow motion`             | Reduced speed        |
+| `time lapse`              | Accelerated time     |
 
 ### 6.3 Audio Prompt Examples
 
@@ -271,35 +271,42 @@ print(response.text)
 ```typescript
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ vertexai: true, project: "your-project", location: "us-central1" });
+const ai = new GoogleGenAI({
+  vertexai: true,
+  project: "your-project",
+  location: "us-central1",
+});
 
-async function generateVideo(prompt: string, outputUri: string): Promise<string> {
-    let operation = await ai.models.generateVideos({
-        model: "veo-3.1-fast-generate-001",
-        prompt: prompt,
-        config: {
-            aspectRatio: "16:9",
-            generateAudio: true,
-            outputGcsUri: outputUri
-        }
-    });
+async function generateVideo(
+  prompt: string,
+  outputUri: string,
+): Promise<string> {
+  let operation = await ai.models.generateVideos({
+    model: "veo-3.1-fast-generate-001",
+    prompt: prompt,
+    config: {
+      aspectRatio: "16:9",
+      generateAudio: true,
+      outputGcsUri: outputUri,
+    },
+  });
 
-    // Poll until complete
-    while (!operation.done) {
-        await new Promise(resolve => setTimeout(resolve, 15000));
-        operation = await ai.operations.get({ name: operation.name });
-    }
+  // Poll until complete
+  while (!operation.done) {
+    await new Promise((resolve) => setTimeout(resolve, 15000));
+    operation = await ai.operations.get({ name: operation.name });
+  }
 
-    if (operation.response?.generatedVideos?.[0]?.video?.uri) {
-        return operation.response.generatedVideos[0].video.uri;
-    }
-    throw new Error("Video generation failed");
+  if (operation.response?.generatedVideos?.[0]?.video?.uri) {
+    return operation.response.generatedVideos[0].video.uri;
+  }
+  throw new Error("Video generation failed");
 }
 
 // Usage
 const videoUri = await generateVideo(
-    "A cat playing piano in a jazz club, cinematic lighting",
-    "gs://your-bucket/cat_piano/"
+  "A cat playing piano in a jazz club, cinematic lighting",
+  "gs://your-bucket/cat_piano/",
 );
 console.log(`Generated video: ${videoUri}`);
 ```
@@ -359,25 +366,25 @@ curl -X GET "https://us-central1-aiplatform.googleapis.com/v1/projects/${PROJECT
 
 ## 10. Error Handling
 
-| Error | Cause | Solution |
-| --- | --- | --- |
-| **400** | Invalid aspect ratio | Use only `9:16` or `16:9` |
-| **400** | Invalid resolution | Check model support (4K not on all) |
-| **400** | Extension on non-Veo video | Only Veo outputs can be extended |
-| **413** | Input image too large | Max 20MB for image-to-video |
-| **429** | Rate limit | 50 requests/min per model |
-| **503** | Service overload | Retry with exponential backoff |
+| Error   | Cause                      | Solution                            |
+| ------- | -------------------------- | ----------------------------------- |
+| **400** | Invalid aspect ratio       | Use only `9:16` or `16:9`           |
+| **400** | Invalid resolution         | Check model support (4K not on all) |
+| **400** | Extension on non-Veo video | Only Veo outputs can be extended    |
+| **413** | Input image too large      | Max 20MB for image-to-video         |
+| **429** | Rate limit                 | 50 requests/min per model           |
+| **503** | Service overload           | Retry with exponential backoff      |
 
 ---
 
 ## 11. Pricing Reference (Feb 2026)
 
-| Model | Price |
-| --- | --- |
+| Model   | Price                      |
+| ------- | -------------------------- |
 | Veo 3.1 | See Vertex AI pricing page |
 | Veo 3.0 | See Vertex AI pricing page |
 
-*Pricing varies by resolution and length. Check the official Vertex AI pricing for current rates.*
+_Pricing varies by resolution and length. Check the official Vertex AI pricing for current rates._
 
 ---
 

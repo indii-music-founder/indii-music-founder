@@ -117,7 +117,7 @@ export class AgentService {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).finally(() => {
-                         
+
                         if (timeoutHandle) clearTimeout(timeoutHandle);
                     }),
                     timeoutPromise
@@ -129,7 +129,8 @@ export class AgentService {
                 const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
                 const newItemsGenerated = galleryCountAfter > galleryCountBefore;
 
-                if (err.message?.includes('Timeout')) {
+                const errorMessage = err instanceof Error ? err.message : String(err);
+                if (errorMessage.includes('Timeout')) {
                     if (newItemsGenerated) {
                         // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
                         console.log('[AgentService] Timeout grace: Generation detected in gallery');
@@ -169,7 +170,7 @@ export class AgentService {
                 } else {
                     // Non-timeout error (API failure, etc)
                     updateAgentMessage(responseId, {
-                        text: `❌ **Error:** ${err.message || 'The request failed.'}`,
+                        text: `❌ **Error:** ${(err as Error).message || 'The request failed.'}`,
                         thoughts: [{
                             id: uuidv4(),
                             text: 'Execution failed',
@@ -182,10 +183,9 @@ export class AgentService {
                 // CRITICAL: Always clear streaming state to avoid stuck "..." loading
                 updateAgentMessage(responseId, { isStreaming: false });
             }
-
         } catch (e: unknown) {
-            const error = e instanceof Error ? e : new Error(String(e));
-            this.addSystemMessage(`❌ **Fatal Error:** ${error.message || 'Unknown error occurred.'}`);
+            const errObj = e instanceof Error ? e : new Error(String(e));
+            this.addSystemMessage(`❌ **Fatal Error:** ${errObj.message || 'Unknown error occurred.'}`);
         } finally {
             this.isProcessing = false;
         }
@@ -305,7 +305,7 @@ export class AgentService {
         }
     }
 
-    private async handleAgentZeroFlow(text: string, attachments: unknown[] | undefined, responseId: string): Promise<void> {
+    private async handleAgentZeroFlow(text: string, attachments: { mimeType: string; base64: string }[] | undefined, responseId: string): Promise<void> {
         const { useStore } = await import('@/core/store');
         const { updateAgentMessage } = useStore.getState();
 
@@ -313,7 +313,7 @@ export class AgentService {
         let agentZeroAttachments: { filename: string; base64: string }[] = [];
 
         if (attachments && attachments.length > 0) {
-            agentZeroAttachments = attachments.map((att, index) => {
+            agentZeroAttachments = attachments.map((att: { mimeType: string; base64: string }, index: number) => {
                 // Determine extension from mimeType
                 let ext = 'bin';
                 if (att.mimeType === 'image/jpeg') ext = 'jpg';
@@ -369,8 +369,9 @@ export class AgentService {
                 });
             }
         } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
             updateAgentMessage(responseId, {
-                text: `Agent Zero Error: ${err.message}`,
+                text: `Agent Zero Error: ${errorMessage}`,
                 thoughts: [{
                     id: uuidv4(),
                     text: 'Agent Zero Connection Failed',
@@ -455,7 +456,7 @@ export class AgentService {
      * @param parentTraceId Optional trace ID for observability chaining.
      * @param attachments Optional file attachments.
      */
-    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<unknown> {
+    async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<{ text: string; thoughtSignature?: string }> {
         // CRITICAL: Deep clone context to prevent mutation affecting parent agent
         // Context objects are passed by reference and can be mutated during execution,
         // causing parent agents to lose their execution state ("dismantling")

@@ -66,13 +66,13 @@ The "Liquid Logic" design is heavy on glassmorphism.
 
 To maintain velocity, documentation will serve as the "Living Memory".
 
-| Document | Purpose | Status |
-| :--- | :--- | :--- |
-| `hooks.json` | Protocol configuration | ✅ Stable |
-| `docs/HOOKS.md` | API Reference for Logic | 🔄 Needs Marketing/Social updates |
-| `RULES.md` | Agent Behavior & Limits | ✅ V5.0 Active |
-| `GEMINI.md` | AI Model Specs | ✅ V5.0 Active |
-| `docs/PHASE_2_ROADMAP.md` | **This Document** | 🆕 Live |
+| Document                  | Purpose                 | Status                            |
+| :------------------------ | :---------------------- | :-------------------------------- |
+| `hooks.json`              | Protocol configuration  | ✅ Stable                         |
+| `docs/HOOKS.md`           | API Reference for Logic | 🔄 Needs Marketing/Social updates |
+| `RULES.md`                | Agent Behavior & Limits | ✅ V5.0 Active                    |
+| `GEMINI.md`               | AI Model Specs          | ✅ V5.0 Active                    |
+| `docs/PHASE_2_ROADMAP.md` | **This Document**       | 🆕 Live                           |
 
 ---
 

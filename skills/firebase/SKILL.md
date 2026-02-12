@@ -48,39 +48,36 @@ We use Firebase as a **backend-as-a-service**, not just a database.
 **CRITICAL:** Gen 2 functions run on Cloud Run. Enable streaming for AI responses.
 
 ```typescript
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 
-const apiKey = defineSecret('OPENAI_API_KEY');
+const apiKey = defineSecret("OPENAI_API_KEY");
 
-export const chatStream = onCall(
-  { secrets: [apiKey] },
-  async (request) => {
-    const { message } = request.data;
-    
-    // 1. Return a stream immediately
-    const stream = await ai.chat.completions.create({
-      model: 'gpt-4-turbo',
-      messages: [{ role: 'user', content: message }],
-      stream: true,
-    });
+export const chatStream = onCall({ secrets: [apiKey] }, async (request) => {
+  const { message } = request.data;
 
-    // 2. Pipe to client
-    for await (const chunk of stream) {
-      response.sendChunk(chunk.choices[0].delta.content);
-    }
-    response.end();
+  // 1. Return a stream immediately
+  const stream = await ai.chat.completions.create({
+    model: "gpt-4-turbo",
+    messages: [{ role: "user", content: message }],
+    stream: true,
+  });
+
+  // 2. Pipe to client
+  for await (const chunk of stream) {
+    response.sendChunk(chunk.choices[0].delta.content);
   }
-);
+  response.end();
+});
 ```
 
 ### Client-Side Consumption
 
 ```typescript
-import { getFunctions, httpsCallable } from 'firebase/functions';
+import { getFunctions, httpsCallable } from "firebase/functions";
 
 const functions = getFunctions();
-const chatStream = httpsCallable(functions, 'chatStream');
+const chatStream = httpsCallable(functions, "chatStream");
 
 const result = await chatStream({ message: "Hello" });
 const stream = result.data as ReadableStream;
@@ -102,12 +99,12 @@ for await (const chunk of stream.stream) {
 
 ### 4.2 Deployment Options
 
-| Method | Command | Use Case |
-| --- | --- | --- |
-| **GitHub** | Auto-deploy on push | Standard workflow |
-| **CLI Source** | `firebase deploy` | Local + other Firebase services |
-| **Terraform** | Container images | CI/CD pipelines |
-| **Firebase Studio** | Export | AI-generated apps |
+| Method              | Command             | Use Case                        |
+| ------------------- | ------------------- | ------------------------------- |
+| **GitHub**          | Auto-deploy on push | Standard workflow               |
+| **CLI Source**      | `firebase deploy`   | Local + other Firebase services |
+| **Terraform**       | Container images    | CI/CD pipelines                 |
+| **Firebase Studio** | Export              | AI-generated apps               |
 
 ### 4.3 CLI Setup
 
@@ -122,8 +119,8 @@ firebase deploy  # Deploys hosting + functions + rules
 ### 4.4 Automatic Emulator Configuration
 
 ```typescript
-import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore';
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
 
 // No arguments = auto-connects to emulator locally, production when deployed
 const app = initializeApp();
@@ -140,29 +137,29 @@ const db = getFirestore();
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
+
     // User-owned documents
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    
+
     // Role-based access
     match /admin/{document=**} {
       allow read, write: if request.auth.token.admin == true;
     }
-    
+
     // Organization documents
     match /orgs/{orgId}/{document=**} {
       allow read: if request.auth.uid in resource.data.members;
       allow write: if request.auth.uid == resource.data.ownerId;
     }
-    
+
     // Public read, authenticated write
     match /public/{document=**} {
       allow read: if true;
       allow write: if request.auth != null;
     }
-    
+
     // Size validation
     match /uploads/{uploadId} {
       allow write: if request.resource.size < 5 * 1024 * 1024; // 5MB max
@@ -176,19 +173,19 @@ service cloud.firestore {
 ```typescript
 // ALWAYS use .limit() to prevent unbounded costs
 const recentPosts = query(
-  collection(db, 'posts'),
-  where('userId', '==', userId),
-  orderBy('createdAt', 'desc'),
-  limit(50)  // CRITICAL: Always limit
+  collection(db, "posts"),
+  where("userId", "==", userId),
+  orderBy("createdAt", "desc"),
+  limit(50), // CRITICAL: Always limit
 );
 
 // Use composite indexes (link provided in console error)
 // Denormalize for frequent access patterns
 const campaignDoc = {
-  id: 'campaign-123',
-  userId: 'user-456',
-  orgId: 'org-789',
-  members: ['user-456', 'user-789'],  // Denormalized for security rules
+  id: "campaign-123",
+  userId: "user-456",
+  orgId: "org-789",
+  members: ["user-456", "user-789"], // Denormalized for security rules
   // ... other fields
 };
 ```
@@ -205,23 +202,23 @@ const campaignDoc = {
 
 ### 6.1 New Features
 
-| Feature | Description |
-| --- | --- |
-| **Passkeys** | Passwordless FIDO2 authentication |
-| **EU Consent Policy** | GDPR-compliant consent mode |
-| **Link Domain** | Custom domains for email links |
-| **Tester Restrictions** | App Distribution access control |
+| Feature                 | Description                       |
+| ----------------------- | --------------------------------- |
+| **Passkeys**            | Passwordless FIDO2 authentication |
+| **EU Consent Policy**   | GDPR-compliant consent mode       |
+| **Link Domain**         | Custom domains for email links    |
+| **Tester Restrictions** | App Distribution access control   |
 
 ### 6.2 Custom Claims for RBAC
 
 ```typescript
 // Admin SDK (server-side)
-import { getAuth } from 'firebase-admin/auth';
+import { getAuth } from "firebase-admin/auth";
 
 await getAuth().setCustomUserClaims(uid, {
   admin: true,
-  role: 'editor',
-  orgId: 'org-123'
+  role: "editor",
+  orgId: "org-123",
 });
 
 // Client-side check
@@ -244,30 +241,27 @@ if (idTokenResult.claims.admin) {
 ### 7.1 Best Practices
 
 ```typescript
-import { onCall, HttpsError } from 'firebase-functions/v2/https';
-import { defineSecret } from 'firebase-functions/params';
+import { onCall, HttpsError } from "firebase-functions/v2/https";
+import { defineSecret } from "firebase-functions/params";
 
 // Secrets management
-const apiKey = defineSecret('EXTERNAL_API_KEY');
+const apiKey = defineSecret("EXTERNAL_API_KEY");
 
-export const secureFunction = onCall(
-  { secrets: [apiKey] },
-  async (request) => {
-    // App Check validation
-    if (!request.app) {
-      throw new HttpsError('failed-precondition', 'App Check failed');
-    }
-    
-    // Auth validation
-    if (!request.auth) {
-      throw new HttpsError('unauthenticated', 'Must be logged in');
-    }
-    
-    // Use secret
-    const key = apiKey.value();
-    // ... function logic
+export const secureFunction = onCall({ secrets: [apiKey] }, async (request) => {
+  // App Check validation
+  if (!request.app) {
+    throw new HttpsError("failed-precondition", "App Check failed");
   }
-);
+
+  // Auth validation
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "Must be logged in");
+  }
+
+  // Use secret
+  const key = apiKey.value();
+  // ... function logic
+});
 ```
 
 ### 7.2 CORS for Hybrid Apps
@@ -276,11 +270,11 @@ export const secureFunction = onCall(
 // Handle Electron file://, web production, and localhost
 export function getAllowedOrigins(): string[] {
   return [
-    'https://your-app.web.app',
-    'https://your-app.firebaseapp.com',
-    'http://localhost:4242',
-    'http://localhost:3000',
-    'file://',  // Electron
+    "https://your-app.web.app",
+    "https://your-app.firebaseapp.com",
+    "http://localhost:4242",
+    "http://localhost:3000",
+    "file://", // Electron
   ];
 }
 ```
@@ -313,7 +307,7 @@ firebase init dataconnect
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    
+
     // User uploads (500MB limit)
     match /users/{userId}/{allPaths=**} {
       allow read: if request.auth != null;
@@ -321,14 +315,14 @@ service firebase.storage {
                    && request.resource.size < 500 * 1024 * 1024
                    && request.resource.contentType.matches('image/.*|video/.*|application/pdf');
     }
-    
+
     // Project assets (1GB limit, shared access)
     match /projects/{projectId}/{allPaths=**} {
       allow read: if request.auth != null;
       allow write: if request.auth != null
                    && request.resource.size < 1024 * 1024 * 1024;
     }
-    
+
     // Public CDN assets (read-only)
     match /public/{allPaths=**} {
       allow read: if true;
@@ -346,12 +340,12 @@ service firebase.storage {
 
 > **Firebase API Keys (`AIza*`) are IDENTIFIERS, not secrets.**
 
-| Fact | Explanation |
-| --- | --- |
-| **Publicly visible** | Safe to include in client code/config |
-| **Not authorization** | Don't grant access to data |
-| **Authorization via Rules** | Security enforced by Firestore/Storage rules |
-| **API Restrictions** | Limit to specific Firebase APIs in Cloud Console |
+| Fact                        | Explanation                                      |
+| --------------------------- | ------------------------------------------------ |
+| **Publicly visible**        | Safe to include in client code/config            |
+| **Not authorization**       | Don't grant access to data                       |
+| **Authorization via Rules** | Security enforced by Firestore/Storage rules     |
+| **API Restrictions**        | Limit to specific Firebase APIs in Cloud Console |
 
 ### 10.2 What ARE Secrets
 
@@ -372,7 +366,7 @@ const firebaseConfig = {
 };
 
 // ❌ TERMINAL VIOLATION - Never store actual secrets
-const stripeSecret = "sk_live_...";  // NEVER DO THIS
+const stripeSecret = "sk_live_..."; // NEVER DO THIS
 ```
 
 ---

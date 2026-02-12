@@ -21,7 +21,7 @@ graph TD
     D -->|Dependency Break| A
     D -->|Cortex Mismatch| A
     D -->|Validation Pass| E["🚀 Production Build / Graphite Stack"]
-    
+
     subgraph "Beta Verification Loop (Strict)"
     A
     B
@@ -48,15 +48,15 @@ graph TD
 
 The primary entry point for global state management via Zustand. It utilizes a **Slice Pattern** for modularity.
 
-| Slice | Responsibility | Key Actions |
-| :--- | :--- | :--- |
-| **Profile** | User/Org data | `setUserProfile`, `setActiveOrg` |
-| **App** | UI Layout/Navigation | `setSidebarOpen`, `setTheme` |
-| **Agent** | AI Message History | `addAgentMessage`, `clearHistory` |
-| **Creative** | Creative Suite State | `saveDraft`, `loadProjects` |
-| **Workflow** | Background Tasks | `startWorkflow`, `updateProgress` |
-| **Distribution** | Release Tracking | `subscribeToReleases`, `fetchDistributors` |
-| **Marketing** | Campaign Management | `fetchCampaigns`, `updateStats` |
+| Slice            | Responsibility       | Key Actions                                |
+| :--------------- | :------------------- | :----------------------------------------- |
+| **Profile**      | User/Org data        | `setUserProfile`, `setActiveOrg`           |
+| **App**          | UI Layout/Navigation | `setSidebarOpen`, `setTheme`               |
+| **Agent**        | AI Message History   | `addAgentMessage`, `clearHistory`          |
+| **Creative**     | Creative Suite State | `saveDraft`, `loadProjects`                |
+| **Workflow**     | Background Tasks     | `startWorkflow`, `updateProgress`          |
+| **Distribution** | Release Tracking     | `subscribeToReleases`, `fetchDistributors` |
+| **Marketing**    | Campaign Management  | `fetchCampaigns`, `updateStats`            |
 
 ### 📦 Publishing & Distribution
 
@@ -171,7 +171,7 @@ Drives the Remotion-based video editor.
 
 - **`useToast`**: Global notification system (`success`, `error`, `promise`).
 - **`useAutoResizeTextarea`**: UI utility for dynamic text inputs.
-- **`useShowroom`**: *Deprecated*. Showroom logic is now handled locally in `Showroom.tsx` via `ShowroomService`.
+- **`useShowroom`**: _Deprecated_. Showroom logic is now handled locally in `Showroom.tsx` via `ShowroomService`.
 
 ---
 

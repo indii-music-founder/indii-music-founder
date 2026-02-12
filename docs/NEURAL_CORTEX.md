@@ -1,12 +1,14 @@
 # Neural Cortex: Semantic Visual Memory Core
 
 ## Overview
+
 The Neural Cortex is a vector-based imagination system that keeps indii's visual storytelling coherent over
 long story chains. Rather than relying on pixel references alone, it encodes the narrative intent and semantic
 identity of characters, locations, and props so regenerated frames stay faithful to the story bible and prior
 scenes.
 
 ## Objectives
+
 - **Eliminate visual drift:** Maintain consistent physical traits, costumes, lighting, and spatial relationships
   for recurring subjects across long sequences.
 - **Capture intent, not just appearance:** Preserve narrative roles, moods, and relationships so visuals reflect
@@ -15,6 +17,7 @@ scenes.
   downstream image/video models can query for anchors, constraints, and style references.
 
 ## Core Concepts
+
 - **Entity Profiles:** Canonical records for each character, location, and prop with attributes (visual
   descriptors, backstory, pose vocabularies), exemplar assets, and textual prompts distilled from the Show Bible.
 - **Multimodal Embeddings:** Embeddings derived from text, reference images, sketches, and storyboard panels
@@ -29,6 +32,7 @@ scenes.
   restorative inpainting.
 
 ## Data Flow
+
 1. **Ingest:** The Show Bible, Character Anchors, and Director's Board storyboards populate Entity Profiles and
    seed embeddings.
 2. **Contextualize:** When a Story Chain step starts, the Cortex retrieves relevant embeddings by entity, beat,
@@ -39,6 +43,7 @@ scenes.
    expected snapshot; deviations trigger automated revisions or Director agent feedback.
 
 ## Interfaces
+
 - **`getSceneContext(projectId, sceneId)`** → Returns Entity Profiles, relevant embeddings, and narrative anchors
   for the scene.
 - **`buildRenderDirectives(snapshot)`** → Produces structured prompts and constraints for the rendering model,
@@ -47,6 +52,7 @@ scenes.
   Entity Profiles.
 
 ## Integration Points
+
 - **Generalist/Director Agents:** Use Cortex retrieval to ground their shot planning and enforce continuity rules
   from the Show Bible.
 - **Infinite Reel & Daisy-Chains:** Each chained beat rehydrates the last snapshot, so transitions inherit
@@ -55,6 +61,7 @@ scenes.
   and product renders, enabling style transfer without losing semantic identity.
 
 ## Authenticity & Data Integrity
+
 - **No mocked context:** All retrievals must operate on real Show Bible entries, production assets, and storyboard
   metadata. Test harnesses should rely on fully-specified fixtures that mirror production schemas rather than
   dummy placeholders.
@@ -63,8 +70,10 @@ scenes.
 - **Tunable trust gates:** Drift alerts should fail closed when required inputs are missing, preventing the system
   from hallucinating continuity based on incomplete or fabricated data.
 
- add-semantic-visual-memory-core2025-12-1702-24-52
+add-semantic-visual-memory-core2025-12-1702-24-52
+
 ## Data Contracts & Operational Hardening
+
 - **Schema guardrails:** Formalize contracts for Entity Profiles, Scene Graph Snapshots, and Render Directives;
   version them and reject writes that violate required fields (roles, beat references, asset IDs, lighting tags,
   provenance, and approval state).
@@ -98,9 +107,10 @@ scenes.
 - **Contract drift monitors:** Instrument alerts for unexpected schema fields, missing residency tags, or
   downgraded approvals; open incidents automatically when contract drift exceeds thresholds.
 
+main
 
- main
 ## Verification & QA
+
 - **Preflight asset checks:** Rendering requests must validate that referenced Show Bible entries, storyboard panels,
   and exemplar assets exist and are approved before Cortex retrieval begins; otherwise the request is rejected with a
   fail-closed error.
@@ -108,7 +118,7 @@ scenes.
   strings or placeholder IDs) to prove the Cortex reads/writes the same shapes it will receive in production.
 - **Drift regression harness:** Add regression cases where assets are intentionally missing or altered; assert the
   trust gates block generation and surface provenance gaps instead of falling back to mocked continuity.
- add-semantic-visual-memory-core2025-12-1702-24-52
+  add-semantic-visual-memory-core2025-12-1702-24-52
 - **Budget validation:** Add load tests that assert p95/p99 latency stays within envelopes for hot vs. cold paths and
   that drift-alert precision/recall remains above agreed thresholds during high-concurrency runs.
 - **Residency drills:** Simulate regional outages; confirm fail-closed retrieval, alerting, and that no cross-region
@@ -121,6 +131,7 @@ scenes.
   exceeded; verify in tests that the enforcers fail closed instead of allowing degraded prompts to proceed.
 
 ## Performance, Capacity & Safety Budgets
+
 - **Latency envelopes:** Target p95 end-to-end retrieval + prompt synthesis under 500 ms for hot-cache scenarios;
   for cold starts, budget 1.5 s with explicit logging of cache-warm paths. Alert when p99 exceeds budgets for more
   than 5 minutes.
@@ -136,6 +147,7 @@ scenes.
   substitute synthetic/mocked data to satisfy continuity.
 
 ## Operational Runbook
+
 - **Health checks:** Instrument liveness/readiness probes for the vector index, metadata DB, embedding workers, and
   cache layers; surface per-shard health plus contract-version parity to block traffic on mismatches.
 - **Health check procedures:** Run synthetic queries against golden fixtures every 5 minutes; alert on p95 > 2x
@@ -172,6 +184,7 @@ scenes.
   (latency, drift F1, fail-closed counts, residency errors) to decide promotion or rollback.
 
 ## Chaos & Resilience Drills
+
 - **Failure injection:** Regularly inject index/metadata shard outages, cache evictions, and contract-version
   mismatches; verify traffic routes through back-pressure paths and fail-closed gates.
 - **Cold-path drills:** Force cold-start retrieval and embedding refreshes to validate latency budgets and cache-warm
@@ -184,6 +197,7 @@ scenes.
   gates, alerting, and automatic quarantining of non-conformant writes.
 
 ## Performance & Capacity Operations
+
 - **Budget enforcement:** Attach per-stage budgets (retrieval, prompt synthesis, drift scan, write) to observability
   dashboards with automated SLO burn alerts; block promotions when burn exceeds 5% in a release window.
 - **Capacity envelopes:** Publish per-region envelopes for retrieval QPS, embedding writes, drift scans, and contract
@@ -196,6 +210,7 @@ scenes.
   migration or Show Bible revision bumps.
 
 ## QA & Test Harnesses
+
 - **Golden fixtures:** Maintain contract-signed golden payloads for Entity Profiles, Scene Graph Snapshots, Render
   Directives, and Embedding Records; tests must load these fixtures and reject modified/mocked variants.
 - **Contract conformance tests:** Run suites that fuzz missing/extra fields, invalid residency tags, downgraded
@@ -206,6 +221,7 @@ scenes.
   block merges when p95/p99 or drift F1 falls outside envelopes.
 
 ## Rollout & Change Management
+
 - **Shadowing & canaries:** Ship Cortex changes behind feature flags; start with shadow reads/writes, then limited
   canaries per project/region with automated rollback thresholds on latency, drift F1, and fail-closed counts.
 - **Change windows:** Schedule deployments in approved windows with rollback owners and preflight contract/version
@@ -215,16 +231,17 @@ scenes.
 - **Rollback playbook:** Preserve snapshot IDs for embeddings, scene graphs, and contract versions; define the order
   of toggling kill switches, draining queues, and restoring prior snapshots.
 
- main
+main
 
 ## Implementation Notes
+
 - Start with existing RAG/semantic retrieval infrastructure; extend schemas to store multimodal embeddings keyed
   by entity and beat.
 - Favor transformer-based vision-language models that support both text and image embeddings for cross-modal
   retrieval.
 - Store provenance metadata (asset IDs, storyboard frame references, artist notes) to enable explainability and
   human override when drift checks fire.
- add-semantic-visual-memory-core2025-12-1702-24-52
+  add-semantic-visual-memory-core2025-12-1702-24-52
 - Add a freshness policy: expire or down-rank embeddings when a character, costume, or prop state changes in the
   Show Bible to avoid reusing stale visual guidance.
 - Keep a compact "beat-local" cache of embeddings and scene graphs for the active sequence to reduce lookup
@@ -239,6 +256,7 @@ scenes.
   back embeddings if drift deltas spike post-release.
 
 ## Improvement Plan
+
 - **Production benchmarks:** Track latency envelopes, drift-alert precision/recall, retry rates, cache hit ratios,
   and residency compliance; publish weekly summaries and gate releases on meeting targets.
 - **Cold-start mitigation:** Pre-warm embeddings and scene graphs for the next two beats during render queues;
@@ -256,4 +274,4 @@ scenes.
 - **Performance/capacity operations:** Maintain perf dashboards with stage/production comparables, validate
   back-pressure thresholds, and tune autoscaling based on error budget consumption.
 
- main
+main
