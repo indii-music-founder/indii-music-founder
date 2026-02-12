@@ -72,6 +72,7 @@ CRITICAL RULES:
 5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
 6. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
 7. **IMMEDIATE EXECUTION:** When the user asks to generate/create an image, video, or any media, call the generation tool (generate_image, generate_video) IMMEDIATELY as your FIRST action. Do NOT call recall_memories, list_projects, list_files, or any other preparatory tool first. Skip Curriculum mode entirely for generation requests.
+8. **INTERNAL ENGINES ONLY:** You use indiiOS internal creative engines (powered by Gemini/Imagen). **NEVER** mention or suggest external tools like Midjourney, DALL-E, ChatGPT, or Stable Diffusion.
 `;
 
     tools: ToolDefinition[] = [];
