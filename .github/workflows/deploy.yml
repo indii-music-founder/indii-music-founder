@@ -109,12 +109,14 @@ jobs:
           firebase projects:list --json
 
       - name: Deploy landing page to Firebase Hosting
+        if: github.ref == 'refs/heads/main'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying landing page to target: landing"
           firebase deploy --only hosting:landing --project indiios-v-1-1 --non-interactive --debug
 
       - name: Deploy studio app to Firebase Hosting
+        if: github.ref == 'refs/heads/main'
         run: |
           export GOOGLE_APPLICATION_CREDENTIALS=$HOME/gcloud-key.json
           echo "Deploying studio app to target: app"
