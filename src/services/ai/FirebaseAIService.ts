@@ -1335,6 +1335,13 @@ export class FirebaseAIService {
         ) {
             if (import.meta.env.DEV) {
                 console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log raw message only in DEV
+            console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log the raw message!
+            if (this.useFallbackMode) {
+                return new AppException(
+                    AppErrorCode.UNAUTHORIZED,
+                    `AI Verification Failed: ${msg}`, // Include raw msg in user-facing error for now to help debug
+                    { retryable: false }
+                );
             }
             // Sanitize all permission errors to prevent leaking internal details (App Check, Auth status, etc.)
             return new AppException(
