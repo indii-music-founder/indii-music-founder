@@ -37,19 +37,20 @@ This update also introduces **Server-Side Video Stitching** using the Google Clo
 
 To ensure production reliability, the following mechanisms are in place:
 
-*   **Inngest Retries:** Automatic retries are configured for transient failures (e.g., API timeouts, network glitches) during video generation steps.
-*   **Transcoder Failures:** Stitching failures are captured and logged to Firestore (`stitchError` field), setting the job status to `failed` to notify the user.
-*   **Input Validation:** Strict validation prevents invalid jobs from starting (e.g., empty prompt arrays).
-*   **Dead Letter Queue:** Failed Inngest events can be inspected and replayed via the Inngest dashboard.
+- **Inngest Retries:** Automatic retries are configured for transient failures (e.g., API timeouts, network glitches) during video generation steps.
+- **Transcoder Failures:** Stitching failures are captured and logged to Firestore (`stitchError` field), setting the job status to `failed` to notify the user.
+- **Input Validation:** Strict validation prevents invalid jobs from starting (e.g., empty prompt arrays).
+- **Dead Letter Queue:** Failed Inngest events can be inspected and replayed via the Inngest dashboard.
 
 ## Monitoring & Observability
 
 We recommend tracking the following metrics in Google Cloud Monitoring / BigQuery:
 
-*   **Job Latency:** Time from `queued` to `completed`.
-*   **Segment Generation Success Rate:** Monitor Veo API error rates.
-*   **Stitching Success Rate:** Monitor Transcoder API failures.
-*   **Cost Tracking:** Monitor Vertex AI and Transcoder API usage per user/organization.
+- **Job Latency:** Time from `queued` to `completed`.
+- **Segment Generation Success Rate:** Monitor Veo API error rates.
+- **Stitching Success Rate:** Monitor Transcoder API failures.
+- **Cost Tracking:** Monitor Vertex AI and Transcoder API usage per user/organization.
+
 ### 3. Architecture: Error Handling & Resilience
 
 To ensure production reliability, we have implemented the following strategies:
@@ -75,6 +76,7 @@ We are adopting a backend-first monitoring approach:
 
 - **Functions**: Successfully deployed to `<PROJECT_ID>` (`<REGION>`).
 - **PR**: Updates pushed to "Video Generation Updates" PR.
+
 ### 3. Deployment
 
 - **Functions**: Successfully deployed to `indiios-v-1-1` (us-central1).

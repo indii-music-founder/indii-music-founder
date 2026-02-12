@@ -60,10 +60,10 @@ This document summarizes the major refactoring and upgrades of the Agent System 
 
 ```typescript
 // Correct Mock Pattern
-vi.spyOn(AI, 'generateContent').mockResolvedValue({
+vi.spyOn(AI, "generateContent").mockResolvedValue({
   text: () => "Mock response",
   functionCalls: () => [],
-  response: { ...rawResponse } 
+  response: { ...rawResponse },
 } as any);
 ```
 

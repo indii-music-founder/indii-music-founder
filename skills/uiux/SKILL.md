@@ -30,19 +30,19 @@ ALWAYS use tokens. NEVER hardcode hex values.
 
 ### 2.1 Department Colors
 
-| Dept | Token | Usage |
-| --- | --- | --- |
-| **Creative** | `--color-dept-creative` | Studio, AI generation |
-| **Finance** | `--color-dept-finance` | Dashboard, charts |
-| **Legal** | `--color-dept-legal` | Contracts, rights |
-| **Marketing** | `--color-dept-marketing` | Campaigns, social |
-| **Global** | `--color-primary` | Main actions |
+| Dept          | Token                    | Usage                 |
+| ------------- | ------------------------ | --------------------- |
+| **Creative**  | `--color-dept-creative`  | Studio, AI generation |
+| **Finance**   | `--color-dept-finance`   | Dashboard, charts     |
+| **Legal**     | `--color-dept-legal`     | Contracts, rights     |
+| **Marketing** | `--color-dept-marketing` | Campaigns, social     |
+| **Global**    | `--color-primary`        | Main actions          |
 
 ### 2.2 Spacing & Radius
 
-| Scale | Token | Pixels |
-| --- | --- | --- |
-| **Space** | `--space-1` to `--space-12` | 4px to 48px |
+| Scale      | Token                            | Pixels        |
+| ---------- | -------------------------------- | ------------- |
+| **Space**  | `--space-1` to `--space-12`      | 4px to 48px   |
 | **Radius** | `--radius-sm` to `--radius-full` | 2px to 9999px |
 
 ---
@@ -72,7 +72,11 @@ ALWAYS use tokens. NEVER hardcode hex values.
 
 ```css
 .btn-dept-creative {
-  background: linear-gradient(135deg, var(--color-dept-creative), color-mix(in srgb, var(--color-dept-creative) 80%, black));
+  background: linear-gradient(
+    135deg,
+    var(--color-dept-creative),
+    color-mix(in srgb, var(--color-dept-creative) 80%, black)
+  );
   color: white;
   font-weight: var(--font-semibold);
   padding: var(--space-3) var(--space-6);
@@ -80,12 +84,16 @@ ALWAYS use tokens. NEVER hardcode hex values.
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: var(--shadow-md), 0 0 20px rgba(168, 85, 247, 0.3);
+  box-shadow:
+    var(--shadow-md),
+    0 0 20px rgba(168, 85, 247, 0.3);
 }
 
 .btn-dept-creative:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg), 0 0 30px rgba(168, 85, 247, 0.4);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 30px rgba(168, 85, 247, 0.4);
 }
 
 .btn-dept-creative:active {
@@ -127,11 +135,11 @@ ALWAYS use tokens. NEVER hardcode hex values.
     z-index: 50;
     transition: left 0.3s ease;
   }
-  
+
   .sidebar.open {
     left: 0;
   }
-  
+
   .main-content {
     margin-left: 0;
     padding: var(--space-4);
@@ -146,23 +154,23 @@ ALWAYS use tokens. NEVER hardcode hex values.
 ### 4.1 Standard Variants
 
 ```typescript
-import { motion, Variants } from 'framer-motion';
+import { motion, Variants } from "framer-motion";
 
 // Fade + Slide Up
 export const fadeInUp: Variants = {
   hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { duration: 0.4, ease: 'easeOut' }
-  }
+    transition: { duration: 0.4, ease: "easeOut" },
+  },
 };
 
 // Scale on Hover
 export const scaleOnHover: Variants = {
   initial: { scale: 1 },
   hover: { scale: 1.02 },
-  tap: { scale: 0.98 }
+  tap: { scale: 0.98 },
 };
 
 // Stagger Children
@@ -172,9 +180,9 @@ export const staggerContainer: Variants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.08,
-      delayChildren: 0.1
-    }
-  }
+      delayChildren: 0.1,
+    },
+  },
 };
 
 // Pop In
@@ -183,8 +191,8 @@ export const popIn: Variants = {
   visible: {
     opacity: 1,
     scale: 1,
-    transition: { type: 'spring', stiffness: 300, damping: 20 }
-  }
+    transition: { type: "spring", stiffness: 300, damping: 20 },
+  },
 };
 ```
 
@@ -238,7 +246,7 @@ export const popIn: Variants = {
 </button>
 
 // ✅ CORRECT
-<button 
+<button
   onClick={handleSubmit}
   aria-label="Submit form"
   type="submit"
@@ -252,9 +260,9 @@ export const popIn: Variants = {
 // ✅ CORRECT
 <div>
   <label htmlFor="email-input">Email Address</label>
-  <input 
+  <input
     id="email-input"
-    type="email" 
+    type="email"
     placeholder="you@example.com"
     aria-required="true"
   />
@@ -264,8 +272,8 @@ export const popIn: Variants = {
 <div className="modal">...</div>
 
 // ✅ CORRECT
-<div 
-  role="dialog" 
+<div
+  role="dialog"
   aria-modal="true"
   aria-labelledby="modal-title"
 >
@@ -304,12 +312,12 @@ export const popIn: Variants = {
 
 ### 5.3 Color Contrast
 
-| Element | Minimum Ratio | Recommended |
-| --- | --- | --- |
-| Body text | 4.5:1 | 7:1 |
-| Large text (18px+) | 3:1 | 4.5:1 |
-| Interactive elements | 3:1 | 4.5:1 |
-| Focus indicators | 3:1 | 4.5:1 |
+| Element              | Minimum Ratio | Recommended |
+| -------------------- | ------------- | ----------- |
+| Body text            | 4.5:1         | 7:1         |
+| Large text (18px+)   | 3:1           | 4.5:1       |
+| Interactive elements | 3:1           | 4.5:1       |
+| Focus indicators     | 3:1           | 4.5:1       |
 
 ---
 
@@ -367,7 +375,7 @@ export const popIn: Variants = {
     padding: 0;
     align-items: flex-end;
   }
-  
+
   .modal-content {
     max-width: 100%;
     border-radius: var(--radius-xl) var(--radius-xl) 0 0;
@@ -417,7 +425,7 @@ export const popIn: Variants = {
 
 ```tsx
 const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
-  <div 
+  <div
     className={`skeleton ${className}`}
     aria-hidden="true"
   />
@@ -445,8 +453,8 @@ const Skeleton: React.FC<{ className?: string }> = ({ className }) => (
 ### 8.2 Loading Spinners
 
 ```tsx
-const Spinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => (
-  <svg 
+const Spinner: React.FC<{ size?: "sm" | "md" | "lg" }> = ({ size = "md" }) => (
+  <svg
     className={`spinner spinner-${size}`}
     viewBox="0 0 24 24"
     aria-label="Loading"
@@ -463,7 +471,7 @@ const Spinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => (
 
 ### Design
 
-- [ ] No hardcoded colors (use dept-* tokens)
+- [ ] No hardcoded colors (use dept-\* tokens)
 - [ ] Glass/blur effects on elevated surfaces
 - [ ] Consistent border radius (use tokens)
 - [ ] Proper shadow hierarchy
@@ -497,9 +505,9 @@ const Spinner: React.FC<{ size?: 'sm' | 'md' | 'lg' }> = ({ size = 'md' }) => (
 ```css
 /* ❌ NEVER DO THIS */
 .bad-button {
-  background: red;           /* Use tokens */
-  position: absolute;        /* Avoid for main layouts */
-  bottom: 3px;              /* Use spacing tokens */
+  background: red; /* Use tokens */
+  position: absolute; /* Avoid for main layouts */
+  bottom: 3px; /* Use spacing tokens */
 }
 
 /* ✅ CORRECT */

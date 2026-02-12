@@ -11,12 +11,14 @@ The PWA manifest references 3 icon files that need to be created:
 ## Icon Requirements
 
 ### Maskable Icons (icon-192.png, icon-512.png)
+
 - **Safe area:** Content must fit within 80% center circle
 - **Full bleed:** Background extends to edges
 - **Purpose:** Works with shaped icon masks (Android adaptive icons)
 - **Format:** PNG with transparency or solid background
 
 ### Apple Touch Icon (apple-touch-icon.png)
+
 - **Size:** 180x180px
 - **Format:** PNG (no transparency needed, Apple adds rounded corners)
 - **Background:** Solid color recommended
@@ -24,6 +26,7 @@ The PWA manifest references 3 icon files that need to be created:
 ## Quick Solutions
 
 ### Option 1: Use Existing Favicon/Logo (Fastest)
+
 If you have `public/vite.svg` or another logo:
 
 ```bash
@@ -45,27 +48,30 @@ magick convert vite.svg -resize 180x180 -background "#0f0f0f" -flatten apple-tou
 ```
 
 ### Option 2: Online PWA Icon Generator (Easiest)
+
 Use these free tools:
 
-1. **PWA Asset Generator** - https://progressier.com/pwa-icons-and-ios-splash-screen-generator
+1. **PWA Asset Generator** - <https://progressier.com/pwa-icons-and-ios-splash-screen-generator>
    - Upload your logo
    - Auto-generates all required sizes
    - Includes maskable safe area
 
-2. **RealFaviconGenerator** - https://realfavicongenerator.net/
+2. **RealFaviconGenerator** - <https://realfavicongenerator.net/>
    - Comprehensive PWA icon generator
    - iOS, Android, Windows support
    - Download zip with all assets
 
-3. **Maskable.app** - https://maskable.app/editor
+3. **Maskable.app** - <https://maskable.app/editor>
    - Test and create maskable icons
    - Visual safe area preview
    - Export in all sizes
 
 ### Option 3: Design Software Export
+
 If you have Figma, Sketch, or Adobe tools:
 
 **Figma:**
+
 1. Create 512x512 artboard
 2. Add your logo centered (80% of canvas = 410x410 safe area)
 3. File → Export → PNG @ 1x for 512x512
@@ -73,12 +79,14 @@ If you have Figma, Sketch, or Adobe tools:
 5. File → Export → PNG @ 0.352x for 180x180
 
 **Photoshop:**
+
 1. New document 512x512px
 2. Add logo with 51px padding on all sides (safe area)
 3. Export → Export As → PNG
 4. Image → Image Size to resize for other variants
 
 ### Option 4: Use Default Placeholder (Temporary)
+
 Create simple colored squares as placeholders:
 
 ```bash
@@ -109,6 +117,7 @@ magick icon-192.png -gravity center -pointsize 48 -fill white -annotate +0+0 "in
 ```
 
 **Formula:** Safe area = Canvas size × 0.8
+
 - 192px → 154px safe area
 - 512px → 410px safe area
 
@@ -126,7 +135,7 @@ After creating icons:
 
 ## Testing Maskable Icons
 
-1. Visit https://maskable.app/editor
+1. Visit <https://maskable.app/editor>
 2. Upload your icon-192.png or icon-512.png
 3. Toggle different mask shapes
 4. Verify logo stays visible in all shapes
@@ -149,6 +158,7 @@ file public/apple-touch-icon.png
 ## Recommended Icon Design
 
 For **indiiOS branding:**
+
 - Background: `#0f0f0f` (matches theme)
 - Logo/Text: White or `#6366f1` (neon blue)
 - Style: Modern, clean, recognizable at small sizes
@@ -165,6 +175,7 @@ If you need to deploy immediately without icons:
 ## Need Help?
 
 If you don't have design tools or a logo:
+
 1. I can create an **SVG placeholder** you can convert to PNG
 2. Hire on Fiverr (~$5-20 for simple icon set)
 3. Use AI generators (DALL-E, Midjourney) to create logo

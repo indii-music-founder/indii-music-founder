@@ -43,7 +43,7 @@ export function useSocial(userId?: string) {
             Sentry.captureException(err);
             toast.error("Failed to load dashboard stats.");
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [userProfile?.id]);
 
     const loadFeed = useCallback(async () => {
@@ -59,7 +59,7 @@ export function useSocial(userId?: string) {
         } finally {
             setIsFeedLoading(false);
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [filter, userId, userProfile?.id]);
 
     // Real-time Data Sync
@@ -145,7 +145,7 @@ export function useSocial(userId?: string) {
             toast.error("Failed to schedule post.");
             return false;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [userProfile?.id, loadDashboardData]);
 
     const createPost = useCallback(async (content: string, mediaUrls: string[] = [], productId?: string) => {
@@ -161,7 +161,7 @@ export function useSocial(userId?: string) {
             toast.error("Failed to publish post.");
             return false;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, [loadFeed, loadDashboardData]);
 
     return {

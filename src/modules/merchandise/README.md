@@ -78,6 +78,7 @@ The Designer has **two modes** accessible via toggle:
 ```
 
 **Features:**
+
 - **Left Panel:** Asset library with 9 placeholder slots
 
 - **Left Panel:** Asset library with professional design placeholders
@@ -137,7 +138,7 @@ The Designer has **two modes** accessible via toggle:
   - Fashion Runway
   - Cozy Interior
 - **Motion Description:** Textarea for camera movement (enabled after mockup)
-- **Motion Presets (10):
+- \*\*Motion Presets (10):
   - Slow Pan Right/Left
   - 360° Orbit
   - Zoom In/Out
@@ -172,11 +173,13 @@ The Designer has **two modes** accessible via toggle:
 - **Send to Production** button
 
 ### 3. Catalog (Standard & Pro Collections)
+
 ### 3. Catalog (Standard & Pro Templates)
 
 **Purpose:** Browse and clone product templates
 
 **Standard Collection:**
+
 - Bright, vibrant aesthetic
 - Creamy yellow background (#FFF9E5)
 - Light yellow surface colors (#FFEBA0)
@@ -263,7 +266,7 @@ interface MerchProduct {
   title: string;
   image: string;
   price: string;
-  category: 'standard' | 'pro';
+  category: "standard" | "pro";
   tags?: string[];
   features?: string[];
   createdAt?: Timestamp;
@@ -278,7 +281,7 @@ interface ManufactureRequest {
   variantId: string;
   quantity: number;
   userId?: string;
-  status?: 'pending' | 'processing' | 'completed';
+  status?: "pending" | "processing" | "completed";
   orderId?: string;
   createdAt?: any;
 }
@@ -546,9 +549,10 @@ MerchStudio.tsx (Router)
 // ✅ CORRECT - Using crypto.getRandomValues()
 const array = new Uint8Array(9);
 crypto.getRandomValues(array);
-const randomPart = Array.from(array, byte =>
-  '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ'[byte % 36]
-).join('');
+const randomPart = Array.from(
+  array,
+  (byte) => "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"[byte % 36],
+).join("");
 const orderId = `ORDER-${randomPart}`;
 
 // ❌ WRONG - Using Math.random()
@@ -574,8 +578,10 @@ const orderId = `ORDER-${Math.random().toString(36).slice(2)}`;
 ```typescript
 // StandardProductCard uses memo with custom equality check
 export default memo(StandardProductCard, (prevProps, nextProps) => {
-  return prevProps.product.id === nextProps.product.id &&
-         prevProps.product.price === nextProps.product.price;
+  return (
+    prevProps.product.id === nextProps.product.id &&
+    prevProps.product.price === nextProps.product.price
+  );
 });
 ```
 
@@ -583,7 +589,7 @@ export default memo(StandardProductCard, (prevProps, nextProps) => {
 
 ```typescript
 // Define outside component to prevent reallocation
-const STARS = ['★', '★', '★', '★', '★'];
+const STARS = ["★", "★", "★", "★", "★"];
 
 function Component() {
   // Use STARS without recreating on each render
@@ -593,6 +599,7 @@ function Component() {
 ## Known Issues
 
 ### E2E Test Failures (Pre-Migration)
+
 - Standard collection price test fails (text split across elements)
 - Pro collection price test fails (same issue)
 
