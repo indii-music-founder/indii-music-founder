@@ -32,14 +32,14 @@ Add optional `productId` field to social posts:
 
 ```typescript
 interface SocialPost {
-    id: string;
-    authorId: string;
-    content: string;
-    mediaUrls?: string[];
-    productId?: string;  // NEW: Reference to a marketplace product
-    createdAt: Timestamp;
-    likes: number;
-    comments: Comment[];
+  id: string;
+  authorId: string;
+  content: string;
+  mediaUrls?: string[];
+  productId?: string; // NEW: Reference to a marketplace product
+  createdAt: Timestamp;
+  likes: number;
+  comments: Comment[];
 }
 ```
 
@@ -54,15 +54,17 @@ interface SocialPost {
 
 ```tsx
 // Pseudo-implementation
-{post.productId && (
+{
+  post.productId && (
     <div className="mt-4 border-t border-white/10 pt-4">
-        <ProductCard
-            productId={post.productId}
-            variant="embedded"
-            onPurchase={handleQuickPurchase}
-        />
+      <ProductCard
+        productId={post.productId}
+        variant="embedded"
+        onPurchase={handleQuickPurchase}
+      />
     </div>
-)}
+  );
+}
 ```
 
 #### 1.3 Add "Attach Product" to Post Composer
@@ -115,19 +117,23 @@ Provide artists with real-time revenue tracking from marketplace sales.
 
 ```typescript
 interface RevenueEntry {
-    id: string;
-    productId: string;
-    amount: number;
-    source: 'direct' | 'social_drop';
-    customerId: string;
-    timestamp: Timestamp;
+  id: string;
+  productId: string;
+  amount: number;
+  source: "direct" | "social_drop";
+  customerId: string;
+  timestamp: Timestamp;
 }
 
 class RevenueServiceImpl {
-    async getTotalRevenue(userId: string): Promise<number>;
-    async getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number>;
-    async getRevenueByProduct(userId: string): Promise<Map<string, number>>;
-    async recordSale(entry: Omit<RevenueEntry, 'id'>): Promise<void>;
+  async getTotalRevenue(userId: string): Promise<number>;
+  async getRevenueByPeriod(
+    userId: string,
+    start: Date,
+    end: Date,
+  ): Promise<number>;
+  async getRevenueByProduct(userId: string): Promise<Map<string, number>>;
+  async recordSale(entry: Omit<RevenueEntry, "id">): Promise<void>;
 }
 ```
 
@@ -152,10 +158,10 @@ Expand E2E test coverage for the full social drop interaction flow.
 **File:** `e2e/merchant-product-creation.spec.ts`
 
 ```typescript
-test('artist can create a product', async ({ page }) => {
-    // Navigate to MerchTable
-    // Fill product form (name, price, description, image)
-    // Submit and verify product appears in catalog
+test("artist can create a product", async ({ page }) => {
+  // Navigate to MerchTable
+  // Fill product form (name, price, description, image)
+  // Submit and verify product appears in catalog
 });
 ```
 
@@ -164,13 +170,13 @@ test('artist can create a product', async ({ page }) => {
 **File:** `e2e/merchant-social-drop.spec.ts`
 
 ```typescript
-test('artist can attach product to post', async ({ page }) => {
-    // Open post composer
-    // Click "Attach Product"
-    // Select product from picker
-    // Verify product preview shows
-    // Submit post
-    // Verify post appears with embedded product
+test("artist can attach product to post", async ({ page }) => {
+  // Open post composer
+  // Click "Attach Product"
+  // Select product from picker
+  // Verify product preview shows
+  // Submit post
+  // Verify post appears with embedded product
 });
 ```
 
@@ -179,13 +185,13 @@ test('artist can attach product to post', async ({ page }) => {
 **File:** `e2e/merchant-purchase.spec.ts`
 
 ```typescript
-test('fan can purchase from social drop', async ({ page }) => {
-    // View social feed
-    // Find post with embedded product
-    // Click "Buy" button
-    // Complete checkout flow
-    // Verify order confirmation
-    // Verify seller revenue updated
+test("fan can purchase from social drop", async ({ page }) => {
+  // View social feed
+  // Find post with embedded product
+  // Click "Buy" button
+  // Complete checkout flow
+  // Verify order confirmation
+  // Verify seller revenue updated
 });
 ```
 
@@ -194,12 +200,12 @@ test('fan can purchase from social drop', async ({ page }) => {
 **File:** `e2e/merchant-revenue.spec.ts`
 
 ```typescript
-test('revenue updates after sale', async ({ page }) => {
-    // Complete a purchase as fan
-    // Switch to seller account
-    // Navigate to revenue dashboard
-    // Verify sale appears in recent transactions
-    // Verify total revenue increased
+test("revenue updates after sale", async ({ page }) => {
+  // Complete a purchase as fan
+  // Switch to seller account
+  // Navigate to revenue dashboard
+  // Verify sale appears in recent transactions
+  // Verify total revenue increased
 });
 ```
 
@@ -207,16 +213,16 @@ test('revenue updates after sale', async ({ page }) => {
 
 ## Implementation Order
 
-| Step | Task | Effort | Dependencies |
-|------|------|--------|--------------|
-| 1 | Update Post schema with productId | Low | None |
-| 2 | Create ProductCard embedded variant | Medium | Step 1 |
-| 3 | Update SocialFeed to render drops | Medium | Step 2 |
-| 4 | Add product picker to PostComposer | Medium | Step 2 |
-| 5 | Create RevenueService | Medium | None |
-| 6 | Build RevenueView dashboard | High | Step 5 |
-| 7 | Integrate revenue in main dashboard | Low | Step 6 |
-| 8 | Write E2E tests | Medium | Steps 1-7 |
+| Step | Task                                | Effort | Dependencies |
+| ---- | ----------------------------------- | ------ | ------------ |
+| 1    | Update Post schema with productId   | Low    | None         |
+| 2    | Create ProductCard embedded variant | Medium | Step 1       |
+| 3    | Update SocialFeed to render drops   | Medium | Step 2       |
+| 4    | Add product picker to PostComposer  | Medium | Step 2       |
+| 5    | Create RevenueService               | Medium | None         |
+| 6    | Build RevenueView dashboard         | High   | Step 5       |
+| 7    | Integrate revenue in main dashboard | Low    | Step 6       |
+| 8    | Write E2E tests                     | Medium | Steps 1-7    |
 
 ---
 

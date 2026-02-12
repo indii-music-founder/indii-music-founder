@@ -16,10 +16,10 @@ The system follows a **Brain-Body-Bridge** pattern:
 
 - **Location**: Renderer Process (`src/services/agent/BrowserAgentDriver.ts`)
 - **Role**: Orchestrator. It implements the autonomous loop:
-    1. **Capture**: Requests a screenshot and the current URL via IPC.
-    2. **Reason**: Sends the visual state to Gemini 2.5 Pro UI with a high-level goal.
-    3. **Action**: Receives a JSON action (click, type, finish) and sends it to the Main process.
-    4. **Repeat**: Continues until the model signals success or failure.
+  1. **Capture**: Requests a screenshot and the current URL via IPC.
+  2. **Reason**: Sends the visual state to Gemini 2.5 Pro UI with a high-level goal.
+  3. **Action**: Receives a JSON action (click, type, finish) and sends it to the Main process.
+  4. **Repeat**: Continues until the model signals success or failure.
 
 ### 2. The Body (`BrowserAgentService.ts`)
 

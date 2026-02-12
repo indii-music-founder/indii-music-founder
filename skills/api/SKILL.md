@@ -21,13 +21,13 @@ Follow this progressive sequence for EVERY `/api` request:
 1. **Analyze & Identify**: Deconstruct the user's request to identify the specific Google services involved (e.g., "Cloud Run", "Firebase Auth", "BigQuery").
 
 2. **Fetch Live Context**:
-    - Use `search_documents` with specific keywords related to the identified services.
-    - Select the most relevant results and use `get_document` to retrieve the full context.
-    - If debugging an error, search for the specific error code or message.
+   - Use `search_documents` with specific keywords related to the identified services.
+   - Select the most relevant results and use `get_document` to retrieve the full context.
+   - If debugging an error, search for the specific error code or message.
 3. **Synthesize & Execute**:
-    - Combine the live documentation with your general reasoning.
-    - Provide exact code snippets, configuration steps, or architectural advice based on the **FETCHED** documentation.
-    - **FALLBACK**: If no relevant documentation is found via MCP, you may use your general knowledge but MUST explicitly state: *"Note: I could not find a specific live document for this query, so I am providing guidance based on my general knowledge."*
+   - Combine the live documentation with your general reasoning.
+   - Provide exact code snippets, configuration steps, or architectural advice based on the **FETCHED** documentation.
+   - **FALLBACK**: If no relevant documentation is found via MCP, you may use your general knowledge but MUST explicitly state: _"Note: I could not find a specific live document for this query, so I am providing guidance based on my general knowledge."_
 
 ## 🎯 Example Interactions
 

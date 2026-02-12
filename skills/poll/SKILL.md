@@ -27,18 +27,18 @@ The Poll skill monitors `AGENT_BRIDGE.md` for status changes and triggers approp
 
 ## 3. Status Definitions
 
-| Status | Meaning | Action |
-| --- | --- | --- |
-| `BUILD_PENDING` | Build in progress | Wait, no action |
-| `BUILD_COMPLETE` | Build succeeded | Trigger QA workflow |
-| `BUILD_FAILED` | Build failed | Read error, attempt fix |
-| `QA_IN_PROGRESS` | QA running | Wait, no action |
-| `QA_COMPLETE` | QA passed | Ready for deploy/push |
-| `QA_FAILED` | QA failed | Read failures, fix issues |
-| `PUSH_PENDING` | Git push in progress | Wait, no action |
-| `PUSH_COMPLETE` | Git push succeeded | Query in.dex for next steps |
-| `AWAITING_INPUT` | Blocked on user | Notify user, wait |
-| `ERROR` | Critical failure | Escalate immediately |
+| Status           | Meaning              | Action                      |
+| ---------------- | -------------------- | --------------------------- |
+| `BUILD_PENDING`  | Build in progress    | Wait, no action             |
+| `BUILD_COMPLETE` | Build succeeded      | Trigger QA workflow         |
+| `BUILD_FAILED`   | Build failed         | Read error, attempt fix     |
+| `QA_IN_PROGRESS` | QA running           | Wait, no action             |
+| `QA_COMPLETE`    | QA passed            | Ready for deploy/push       |
+| `QA_FAILED`      | QA failed            | Read failures, fix issues   |
+| `PUSH_PENDING`   | Git push in progress | Wait, no action             |
+| `PUSH_COMPLETE`  | Git push succeeded   | Query in.dex for next steps |
+| `AWAITING_INPUT` | Blocked on user      | Notify user, wait           |
+| `ERROR`          | Critical failure     | Escalate immediately        |
 
 ---
 
@@ -65,28 +65,28 @@ graph TD
 
 ```typescript
 async function pollAgentBridge(): Promise<void> {
-  const bridgeContent = await readFile('AGENT_BRIDGE.md');
+  const bridgeContent = await readFile("AGENT_BRIDGE.md");
   const status = parseStatus(bridgeContent);
-  
+
   switch (status.current) {
-    case 'BUILD_COMPLETE':
-      await triggerWorkflow('/auto_qa');
+    case "BUILD_COMPLETE":
+      await triggerWorkflow("/auto_qa");
       break;
-      
-    case 'BUILD_FAILED':
+
+    case "BUILD_FAILED":
       const errorBlock = extractErrorBlock(bridgeContent);
       await attemptAutoFix(errorBlock);
       break;
-      
-    case 'QA_FAILED':
+
+    case "QA_FAILED":
       const failures = extractFailures(bridgeContent);
       await fixQAFailures(failures);
       break;
-      
-    case 'PUSH_COMPLETE':
+
+    case "PUSH_COMPLETE":
       await queryIndexForNextTask();
       break;
-      
+
     default:
       // No action, wait for next poll
       break;
@@ -102,18 +102,23 @@ async function pollAgentBridge(): Promise<void> {
 # Agent Bridge Status
 
 ## Current Status
+
 `BUILD_COMPLETE`
 
 ## Last Updated
+
 2026-02-06T14:30:00Z
 
 ## Active Agent
+
 Antigravity
 
 ## Context
+
 Build succeeded. TypeScript compilation passed. Ready for QA.
 
 ## Error Block
+
 <!-- Populated only on BUILD_FAILED or ERROR -->
 ```
 
@@ -157,21 +162,21 @@ When `BUILD_COMPLETE` is detected:
 
 ### 7.1 Build Failures (AUTO-FIXABLE)
 
-| Error Type | Auto-Fix Action |
-| --- | --- |
+| Error Type            | Auto-Fix Action             |
+| --------------------- | --------------------------- |
 | TypeScript type error | Analyze, apply fix, rebuild |
-| Missing import | Add import statement |
-| Unused variable | Remove or mark as used |
-| Lint failure | Run `npm run lint:fix` |
+| Missing import        | Add import statement        |
+| Unused variable       | Remove or mark as used      |
+| Lint failure          | Run `npm run lint:fix`      |
 
 ### 7.2 Build Failures (ESCALATE)
 
-| Error Type | Escalation Action |
-| --- | --- |
-| Runtime crash | Add to error ledger, notify user |
-| Dependency conflict | Notify user for resolution |
-| Environment issue | Document, notify user |
-| Complex type error | Add context, ask for guidance |
+| Error Type          | Escalation Action                |
+| ------------------- | -------------------------------- |
+| Runtime crash       | Add to error ledger, notify user |
+| Dependency conflict | Notify user for resolution       |
+| Environment issue   | Document, notify user            |
+| Complex type error  | Add context, ask for guidance    |
 
 ---
 
@@ -183,14 +188,14 @@ When bridge shows `PUSH_COMPLETE`:
 
 ```javascript
 // Query in.dex for next task
-await queryAgent('in.dex', {
-  type: 'POL_REQUEST',  // Point of Leverage request
+await queryAgent("in.dex", {
+  type: "POL_REQUEST", // Point of Leverage request
   context: {
-    lastAction: 'PUSH_COMPLETE',
-    repository: 'indiiOS-Alpha-Electron',
+    lastAction: "PUSH_COMPLETE",
+    repository: "indiiOS-Alpha-Electron",
     branch: await getCurrentBranch(),
-    commitHash: await getLastCommitHash()
-  }
+    commitHash: await getLastCommitHash(),
+  },
 });
 ```
 
@@ -201,9 +206,9 @@ For questions or when stuck:
 ```javascript
 // Route question to OpenClaw
 await sendToOpenClaw({
-  type: 'QUESTION',
-  message: 'Need clarification on XYZ',
-  context: getBridgeContext()
+  type: "QUESTION",
+  message: "Need clarification on XYZ",
+  context: getBridgeContext(),
 });
 ```
 
@@ -220,7 +225,7 @@ async function updateBridgeStatus(
   errorBlock?: string
 ): Promise<void> {
   const timestamp = new Date().toISOString();
-  
+
   const update = `
 ## Current Status
 \`${newStatus}\`
@@ -236,7 +241,7 @@ ${context || 'Status updated automatically.'}
 
 ${errorBlock ? `## Error Block\n\`\`\`\n${errorBlock}\n\`\`\`` : ''}
 `;
-  
+
   await updateFile('AGENT_BRIDGE.md', update);
 }
 ```
@@ -260,11 +265,11 @@ ${errorBlock ? `## Error Block\n\`\`\`\n${errorBlock}\n\`\`\`` : ''}
 async function handleBuildComplete(): Promise<void> {
   // 1. Update status to QA_IN_PROGRESS
   await updateBridgeStatus('QA_IN_PROGRESS', 'Starting automated QA workflow');
-  
+
   // 2. Execute QA workflow
   try {
     const qaResult = await executeWorkflow('/auto_qa');
-    
+
     if (qaResult.success) {
       await updateBridgeStatus('QA_COMPLETE', 'All QA checks passed');
     } else {

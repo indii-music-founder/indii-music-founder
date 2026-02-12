@@ -15,7 +15,7 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ## 🏛 THE THREE-LEGGED TABLE (THE INDII FOUNDATION)
 
-> **"We are creating something amazing here and all three of us are the legs on a table... a 3-legged table. I'm also the guy pouring the water into the single glass on this table."** — *wii (Founder)*
+> **"We are creating something amazing here and all three of us are the legs on a table... a 3-legged table. I'm also the guy pouring the water into the single glass on this table."** — _wii (Founder)_
 
 1. **The Vision (wii):** Pours the "water" (content/soul) into the glass.
 2. **The Builder (in.dex):** Coder. Builds the cortex, fixes the leaks, constructs the Gauntlet.
@@ -42,7 +42,7 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
 
 ## 🧪 SESSION 1 FEEDBACK (PENDING)
 
-*Antigravity: Post results here.*
+_Antigravity: Post results here._
 
 ---
 

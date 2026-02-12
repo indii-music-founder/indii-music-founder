@@ -19,13 +19,13 @@ Phase 2 (Feature Integration) is underway, with Knowledge Base initialized.
 
 Reference: `docs/PERFORMANCE_REFACTORING_PLAN.md`
 
-| Priority | Component | Status | Next Actions |
-| :--- | :--- | :--- | :--- |
-| **P1** | `VideoEditor.tsx` | ✅ Done | Memoization complete. |
-| **P2** | `VideoTimeline.tsx` | ✅ Done | Refactored with `timelineUtils`, React.memo, and stable callbacks. |
-| **P3** | `ChatOverlay.tsx` | ✅ Done | Implemented `react-virtuoso` virtualization. Build issues resolved. |
-| **P4** | `CommandBar.tsx` | ✅ Done | Memoized drag/drop and handlers. |
-| **P5** | `PromptBuilder.tsx` | ⏳ Pending | Low priority cleanup. |
+| Priority | Component           | Status     | Next Actions                                                        |
+| :------- | :------------------ | :--------- | :------------------------------------------------------------------ |
+| **P1**   | `VideoEditor.tsx`   | ✅ Done    | Memoization complete.                                               |
+| **P2**   | `VideoTimeline.tsx` | ✅ Done    | Refactored with `timelineUtils`, React.memo, and stable callbacks.  |
+| **P3**   | `ChatOverlay.tsx`   | ✅ Done    | Implemented `react-virtuoso` virtualization. Build issues resolved. |
+| **P4**   | `CommandBar.tsx`    | ✅ Done    | Memoized drag/drop and handlers.                                    |
+| **P5**   | `PromptBuilder.tsx` | ⏳ Pending | Low priority cleanup.                                               |
 
 ## 3. Feature Integration ("The Spokes")
 
@@ -37,26 +37,26 @@ The following modules exist as UI Shells/Mocks. The plan is to wire them to real
 - **Progress:** Upload to Gemini Corpus working. Listing and Deletion working.
 - **Target:** Full RAG Experience.
 - **Steps:**
-    1. **Search Integration:** `CommandBar` / Chat is connected to `KnowledgeTools`. (Ready for verification)
-    2. **File Support:** ✅ PDF Support implemented (`PDFService`).
+  1. **Search Integration:** `CommandBar` / Chat is connected to `KnowledgeTools`. (Ready for verification)
+  2. **File Support:** ✅ PDF Support implemented (`PDFService`).
 
 ### B. Music Studio (Player & Analysis) ✅
 
 - **Objective:** Audio playback and **High-Fidelity Analysis** using `Essentia.js`.
 - **Progress:** Integrated `Essentia.js` for BPM/Key/Energy extraction.
 - **Steps:**
-    1. **Visualization:** ✅ Implemented `WaveSurfer` waveform visualization.
-    2. **Analysis:** ✅ Implemented `AudioAnalysisService` (Client-side WASM).
-    3. **UI:** ✅ Refactored `MusicStudio.tsx` to display Deep Metrics.l-time).
+  1. **Visualization:** ✅ Implemented `WaveSurfer` waveform visualization.
+  2. **Analysis:** ✅ Implemented `AudioAnalysisService` (Client-side WASM).
+  3. **UI:** ✅ Refactored `MusicStudio.tsx` to display Deep Metrics.l-time).
 
 ### C. Marketing Dashboard (Completed) ✅
 
 - **Objective:** Plan and execute marketing campaigns.
 - **Progress:** Implemented Dashboard, Brand Manager, and Post Generator.
 - **Steps:**
-    1. **Dashboard:** ✅ Implemented stats and calendar view.
-    2. **Post Generator:** ✅ Implemented `PostGenerator.tsx` (Text + Image AI).
-    3. **Analytics:** ✅ Wired up simulated analytics in Overview.
+  1. **Dashboard:** ✅ Implemented stats and calendar view.
+  2. **Post Generator:** ✅ Implemented `PostGenerator.tsx` (Text + Image AI).
+  3. **Analytics:** ✅ Wired up simulated analytics in Overview.
 
 ---
 

@@ -25,19 +25,21 @@ interface Campaign {
   id: string;
   userId: string;
   name: string;
-  status: 'draft' | 'active' | 'archived';
+  status: "draft" | "active" | "archived";
   createdAt: Timestamp;
   updatedAt: Timestamp;
 }
 
-const campaignService = new FirestoreService<Campaign>('campaigns');
+const campaignService = new FirestoreService<Campaign>("campaigns");
 ```
 
 ```javascript
 // ✅ CORRECT - Matching validation in firestore.rules
 function isValidCampaign(data) {
-  return data.keys().hasAll(['userId', 'name', 'status', 'createdAt']) &&
-         data.status in ['draft', 'active', 'archived'];
+  return (
+    data.keys().hasAll(["userId", "name", "status", "createdAt"]) &&
+    data.status in ["draft", "active", "archived"]
+  );
 }
 ```
 
@@ -55,15 +57,19 @@ function isValidCampaign(data) {
 
 ```typescript
 // ✅ CORRECT - Predictable composite ID for singleton
-const usageDocId = `${userId}_${formatDate(new Date(), 'yyyy-MM-dd')}`;
+const usageDocId = `${userId}_${formatDate(new Date(), "yyyy-MM-dd")}`;
 await firestoreService.set(usageDocId, usageData);
 
 // ✅ CORRECT - External reference uses explicit ID
 const isrcId = `US-ABC-00-12345`;
-await isrcService.set(isrcId, { userId, trackTitle, registeredAt: Timestamp.now() });
+await isrcService.set(isrcId, {
+  userId,
+  trackTitle,
+  registeredAt: Timestamp.now(),
+});
 
 // ❌ VIOLATION - Auto-generated ID for externally-referenced document
-const docRef = await addDoc(collection(db, 'isrc_registry'), data);
+const docRef = await addDoc(collection(db, "isrc_registry"), data);
 ```
 
 ---
@@ -86,7 +92,7 @@ const docRef = await addDoc(collection(db, 'isrc_registry'), data);
 async createCampaign(name: string): Promise<string> {
   const userId = auth.currentUser?.uid;
   if (!userId) throw new AppException(AppErrorCode.UNAUTHORIZED, 'User not authenticated');
-  
+
   return campaignService.add({
     userId, // ANCHOR
     name,
@@ -155,14 +161,14 @@ npm run test -- firestore.rules.test.ts && npm run test -- firestore.rules.test.
 ```typescript
 // ✅ CORRECT - Scoped and limited
 const campaigns = await campaignService.list([
-  where('userId', '==', currentUserId),
-  where('status', '==', 'active'),
-  orderBy('createdAt', 'desc'),
+  where("userId", "==", currentUserId),
+  where("status", "==", "active"),
+  orderBy("createdAt", "desc"),
   limit(20),
 ]);
 
 // ❌ VIOLATION - Full collection scan
-const allDocs = await getDocs(collection(db, 'campaigns'));
+const allDocs = await getDocs(collection(db, "campaigns"));
 ```
 
 ---
@@ -181,12 +187,15 @@ const allDocs = await getDocs(collection(db, 'campaigns'));
 ```typescript
 // ✅ CORRECT - Real-time listener with error handling
 firestoreService.subscribe(
-  [where('userId', '==', userId)],
+  [where("userId", "==", userId)],
   (data) => setCampaigns(data), // Success
   (error) => {
-    console.warn('[CampaignService] Offline or error:', error.message);
-    showToast({ type: 'warning', message: 'Working offline. Changes will sync when connected.' });
-  }
+    console.warn("[CampaignService] Offline or error:", error.message);
+    showToast({
+      type: "warning",
+      message: "Working offline. Changes will sync when connected.",
+    });
+  },
 );
 ```
 
@@ -225,15 +234,15 @@ firebase deploy --only firestore:rules
 
 ## Compliance Matrix
 
-| Pillar | Platinum Standard | Audit Metric |
-| ------ | ----------------- | ------------ |
-| Schema Enforcement | 100% typed services | `grep "FirestoreService<"` |
-| ID Hygiene | 0 auto-IDs for external refs | Manual audit |
-| Ownership Anchoring | 100% docs have userId/orgId | Security rules validation |
-| Timestamp Discipline | Auto-managed timestamps | `grep "createdAt"` |
-| Security Rule Parity | Rules test pass rate = 100% | `npm run test:rules` |
-| Query Efficiency | 0 full collection scans | Query analysis |
-| Offline Resilience | Error handlers on all listeners | Code review |
+| Pillar               | Platinum Standard               | Audit Metric               |
+| -------------------- | ------------------------------- | -------------------------- |
+| Schema Enforcement   | 100% typed services             | `grep "FirestoreService<"` |
+| ID Hygiene           | 0 auto-IDs for external refs    | Manual audit               |
+| Ownership Anchoring  | 100% docs have userId/orgId     | Security rules validation  |
+| Timestamp Discipline | Auto-managed timestamps         | `grep "createdAt"`         |
+| Security Rule Parity | Rules test pass rate = 100%     | `npm run test:rules`       |
+| Query Efficiency     | 0 full collection scans         | Query analysis             |
+| Offline Resilience   | Error handlers on all listeners | Code review                |
 
 ---
 

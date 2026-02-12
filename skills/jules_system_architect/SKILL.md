@@ -33,12 +33,12 @@ Use `import type` for interfaces. Use dynamic imports for circular runtime depen
 
 ```typescript
 // ✅ CORRECT
-import type { AgentConfig } from './types';
+import type { AgentConfig } from "./types";
 // Runtime import inside function
-const { useStore } = await import('@/core/store');
+const { useStore } = await import("@/core/store");
 
 // ❌ WRONG
-import { useStore } from '@/core/store'; // Top-level cycle
+import { useStore } from "@/core/store"; // Top-level cycle
 ```
 
 ### Law 2: Strong Typing (Zod)
@@ -49,7 +49,7 @@ All external inputs (API, user, IPC) must be validated with Zod.
 const UserSchema = z.object({
   id: z.string().uuid(),
   email: z.string().email(),
-  role: z.enum(['admin', 'user']),
+  role: z.enum(["admin", "user"]),
 });
 
 function createUser(input: unknown) {
@@ -69,7 +69,7 @@ Destructive actions must require user confirmation.
 
 ```typescript
 // ✅ CORRECT
-const confirmed = await confirmDialog('Delete this project permanently?');
+const confirmed = await confirmDialog("Delete this project permanently?");
 if (!confirmed) return;
 await deleteProject(projectId);
 
@@ -108,10 +108,14 @@ Never hardcode color values. Always use design tokens.
 
 ```css
 /* ✅ CORRECT */
-.button { background: var(--color-dept-creative); }
+.button {
+  background: var(--color-dept-creative);
+}
 
 /* ❌ WRONG */
-.button { background: #8b5cf6; }
+.button {
+  background: #8b5cf6;
+}
 ```
 
 ### Law 7: Mobile-First Design
@@ -120,25 +124,37 @@ Design for mobile constraints first, then enhance for larger screens.
 
 ```css
 /* ✅ CORRECT - Mobile first */
-.container { padding: 16px; }
-@media (min-width: 768px) { .container { padding: 32px; } }
+.container {
+  padding: 16px;
+}
+@media (min-width: 768px) {
+  .container {
+    padding: 32px;
+  }
+}
 
 /* ❌ WRONG - Desktop first */
-.container { padding: 32px; }
-@media (max-width: 768px) { .container { padding: 16px; } }
+.container {
+  padding: 32px;
+}
+@media (max-width: 768px) {
+  .container {
+    padding: 16px;
+  }
+}
 ```
 
 ### Law 8: Accessibility Non-Negotiable
 
 WCAG 2.1 AA compliance is mandatory.
 
-| Requirement | Implementation |
-| --- | --- |
-| Focus visible | `outline: 2px solid` on `:focus-visible` |
-| Color contrast | 4.5:1 minimum for body text |
-| Keyboard nav | All interactive elements tabbable |
-| Screen reader | Semantic HTML + ARIA where needed |
-| Touch targets | Minimum 44×44px |
+| Requirement    | Implementation                           |
+| -------------- | ---------------------------------------- |
+| Focus visible  | `outline: 2px solid` on `:focus-visible` |
+| Color contrast | 4.5:1 minimum for body text              |
+| Keyboard nav   | All interactive elements tabbable        |
+| Screen reader  | Semantic HTML + ARIA where needed        |
+| Touch targets  | Minimum 44×44px                          |
 
 ---
 
@@ -151,16 +167,16 @@ All Electron IPC messages must be validated with Zod on both sides.
 ```typescript
 // Shared schema
 const FileOperationSchema = z.object({
-  action: z.enum(['read', 'write', 'delete']),
+  action: z.enum(["read", "write", "delete"]),
   path: z.string().refine(isValidPath),
   content: z.string().optional(),
 });
 
 // Preload validation
-ipcRenderer.send('file-operation', FileOperationSchema.parse(data));
+ipcRenderer.send("file-operation", FileOperationSchema.parse(data));
 
 // Main process validation
-ipcMain.handle('file-operation', async (event, data) => {
+ipcMain.handle("file-operation", async (event, data) => {
   const validated = FileOperationSchema.parse(data);
   // ... safe to proceed
 });
@@ -171,11 +187,11 @@ ipcMain.handle('file-operation', async (event, data) => {
 All file paths must be validated and sandboxed.
 
 ```typescript
-import path from 'path';
+import path from "path";
 
 function isValidPath(filePath: string): boolean {
   const resolved = path.resolve(filePath);
-  const sandboxDir = path.resolve(app.getPath('userData'));
+  const sandboxDir = path.resolve(app.getPath("userData"));
   return resolved.startsWith(sandboxDir);
 }
 ```
@@ -195,11 +211,11 @@ const random = Math.random(); // Predictable, not secure
 
 ### Law 12: API Key Classification
 
-| Type | Example | Treatment |
-| --- | --- | --- |
-| **Identifier** | Firebase `AIza*` | Safe in client code |
-| **Secret** | Stripe `sk_*` | Server-only, .env |
-| **Token** | GitHub `ghp_*` | Server-only, rotatable |
+| Type           | Example          | Treatment              |
+| -------------- | ---------------- | ---------------------- |
+| **Identifier** | Firebase `AIza*` | Safe in client code    |
+| **Secret**     | Stripe `sk_*`    | Server-only, .env      |
+| **Token**      | GitHub `ghp_*`   | Server-only, rotatable |
 
 ---
 
@@ -213,15 +229,15 @@ Database schema changes must have explicit migration scripts.
 // migrations/2026_02_06_add_user_preferences.ts
 export async function up(db: Firestore): Promise<void> {
   // Add field with default value to existing documents
-  const users = await db.collection('users').get();
+  const users = await db.collection("users").get();
   const batch = db.batch();
-  
-  users.docs.forEach(doc => {
+
+  users.docs.forEach((doc) => {
     batch.update(doc.ref, {
-      preferences: { theme: 'dark', notifications: true }
+      preferences: { theme: "dark", notifications: true },
     });
   });
-  
+
   await batch.commit();
 }
 
@@ -245,8 +261,10 @@ interface AuditEvent {
   ip?: string;
 }
 
-async function logAuditEvent(event: Omit<AuditEvent, 'id' | 'timestamp'>): Promise<void> {
-  await db.collection('audit_logs').add({
+async function logAuditEvent(
+  event: Omit<AuditEvent, "id" | "timestamp">,
+): Promise<void> {
+  await db.collection("audit_logs").add({
     ...event,
     timestamp: FieldValue.serverTimestamp(),
   });
@@ -291,17 +309,17 @@ Load media progressively: placeholder → low-res → full-res.
 
 ## 6. Naming Conventions
 
-| Element | Convention | Example |
-| --- | --- | --- |
-| **Directories** | kebab-case | `agent-zero/` |
-| **Components** | PascalCase | `ChatOverlay.tsx` |
-| **Hooks** | camelCase + use | `useImageGeneration.ts` |
-| **Services** | PascalCase + Service | `AIService.ts` |
-| **Utils** | camelCase | `formatDate.ts` |
-| **Constants** | SCREAMING_SNAKE | `MAX_FILE_SIZE` |
-| **Env vars** | SCREAMING_SNAKE | `VITE_API_KEY` |
-| **CSS classes** | kebab-case | `.glass-card` |
-| **Types/Interfaces** | PascalCase | `UserProfile` |
+| Element              | Convention           | Example                 |
+| -------------------- | -------------------- | ----------------------- |
+| **Directories**      | kebab-case           | `agent-zero/`           |
+| **Components**       | PascalCase           | `ChatOverlay.tsx`       |
+| **Hooks**            | camelCase + use      | `useImageGeneration.ts` |
+| **Services**         | PascalCase + Service | `AIService.ts`          |
+| **Utils**            | camelCase            | `formatDate.ts`         |
+| **Constants**        | SCREAMING_SNAKE      | `MAX_FILE_SIZE`         |
+| **Env vars**         | SCREAMING_SNAKE      | `VITE_API_KEY`          |
+| **CSS classes**      | kebab-case           | `.glass-card`           |
+| **Types/Interfaces** | PascalCase           | `UserProfile`           |
 
 ---
 
@@ -309,20 +327,20 @@ Load media progressively: placeholder → low-res → full-res.
 
 ```typescript
 // 1. React/Framework
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
 
 // 2. Third-party libraries
-import { z } from 'zod';
-import { format } from 'date-fns';
+import { z } from "zod";
+import { format } from "date-fns";
 
 // 3. Internal aliases (@/)
-import { useAuth } from '@/hooks/useAuth';
-import { AIService } from '@/services/AIService';
+import { useAuth } from "@/hooks/useAuth";
+import { AIService } from "@/services/AIService";
 
 // 4. Relative imports (same feature/module)
-import { ChatMessage } from './ChatMessage';
-import type { ChatProps } from './types';
+import { ChatMessage } from "./ChatMessage";
+import type { ChatProps } from "./types";
 ```
 
 ---
@@ -335,10 +353,10 @@ class AIServiceError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly retryable: boolean = false
+    public readonly retryable: boolean = false,
   ) {
     super(message);
-    this.name = 'AIServiceError';
+    this.name = "AIServiceError";
   }
 }
 
@@ -349,9 +367,9 @@ async function generateContent(prompt: string): Promise<string> {
     return response.text;
   } catch (error) {
     if (error.code === 429) {
-      throw new AIServiceError('Rate limited', 'RATE_LIMITED', true);
+      throw new AIServiceError("Rate limited", "RATE_LIMITED", true);
     }
-    throw new AIServiceError('Generation failed', 'GENERATION_FAILED', false);
+    throw new AIServiceError("Generation failed", "GENERATION_FAILED", false);
   }
 }
 
@@ -387,8 +405,8 @@ const ImageEditor = lazy(() => import('./ImageEditor'));
 
 ```typescript
 // Memoize expensive computations
-const processedData = useMemo(() => 
-  heavyProcessing(rawData), 
+const processedData = useMemo(() =>
+  heavyProcessing(rawData),
   [rawData]
 );
 

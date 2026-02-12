@@ -22,9 +22,11 @@ Tier 3: indiiOS Studio (Desktop) ➜ Two variants:
 ## 📋 What Was Created
 
 ### 1. Complete Blueprint Document
+
 **Location:** `/docs/THREE_TIER_STRATEGY.md`
 
 This document contains:
+
 - ✅ Complete architectural analysis of all 5 options
 - ✅ Detailed Phase 1-4 implementation plans
 - ✅ Production-ready TypeScript code:
@@ -39,13 +41,13 @@ This document contains:
 
 ### 2. Decision Matrix
 
-| Dimension | Pure Local | Pure Cloud | Hybrid | Docker Agent Zero | TypeScript Native |
-|-----------|------------|------------|---------|-------------------|-------------------|
-| Privacy | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Offline | ⭐⭐⭐⭐⭐ | ⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| Compute | ⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
-| Dev Speed | Slow | Fast | Medium | Slow | Fast |
-| Music Fit | High | Medium | Very High | High | Very High |
+| Dimension | Pure Local | Pure Cloud | Hybrid     | Docker Agent Zero | TypeScript Native |
+| --------- | ---------- | ---------- | ---------- | ----------------- | ----------------- |
+| Privacy   | ⭐⭐⭐⭐⭐ | ⭐⭐       | ⭐⭐⭐⭐   | ⭐⭐⭐⭐⭐        | ⭐⭐⭐⭐          |
+| Offline   | ⭐⭐⭐⭐⭐ | ⭐         | ⭐⭐⭐⭐   | ⭐⭐⭐⭐⭐        | ⭐⭐⭐            |
+| Compute   | ⭐⭐       | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐        | ⭐⭐⭐⭐          |
+| Dev Speed | Slow       | Fast       | Medium     | Slow              | Fast              |
+| Music Fit | High       | Medium     | Very High  | High              | Very High         |
 
 ---
 
@@ -60,7 +62,9 @@ Based on the **Three-Tier Strategy**, here's the recommended implementation orde
 **Goal:** Solidify Tier 1 (Free) and Tier 2 (Pro) web products
 
 **Actions:**
+
 1. Create subscription module:
+
    ```bash
    mkdir -p src/services/subscription
    ```
@@ -79,6 +83,7 @@ Based on the **Three-Tier Strategy**, here's the recommended implementation orde
 **Goal:** Build TypeScript Native Desktop offering
 
 **Actions:**
+
 1. Implement Instrument layer
 2. Create core instruments (Image, Video)
 3. Integrate with existing AgentService
@@ -93,6 +98,7 @@ Based on the **Three-Tier Strategy**, here's the recommended implementation orde
 **Goal:** Release all three tiers simultaneously
 
 **Actions:**
+
 1. Finalize product differentiation
 2. Set up distribution channels
 3. Prepare marketing materials
@@ -105,6 +111,7 @@ Based on the **Three-Tier Strategy**, here's the recommended implementation orde
 **Goal:** Optional power-user variant
 
 **Actions:**
+
 1. Create Python instrument ecosystem
 2. Add A0T token integration
 3. Build Agent Zero bridge
@@ -116,13 +123,13 @@ Based on the **Three-Tier Strategy**, here's the recommended implementation orde
 
 ### For Music Industry Users
 
-| User Type | Recommended Tier | Why |
-|-----------|------------------|-----|
-| **Bedroom Producer** | Free or Studio 3A | Privacy needed, budget-conscious |
-| **Commercial Studio** | Pro (Web) | Collaboration, cloud scale |
-| **Touring Musician** | Studio 3A | Offline capability |
-| **Label Employee** | Pro (Web) | Team-based workflows |
-| **Developer/Power User** | Studio 3B | Python ecosystem, full customization |
+| User Type                | Recommended Tier  | Why                                  |
+| ------------------------ | ----------------- | ------------------------------------ |
+| **Bedroom Producer**     | Free or Studio 3A | Privacy needed, budget-conscious     |
+| **Commercial Studio**    | Pro (Web)         | Collaboration, cloud scale           |
+| **Touring Musician**     | Studio 3A         | Offline capability                   |
+| **Label Employee**       | Pro (Web)         | Team-based workflows                 |
+| **Developer/Power User** | Studio 3B         | Python ecosystem, full customization |
 
 ### Why TypeScript Native (3A) is Primary Recommendation
 
@@ -168,6 +175,7 @@ mkdir -p src/pages/pricing
 ### Option C: Get Feedback
 
 Share the decision matrix with your team:
+
 - Which tier should be priority?
 - What pricing works for your audience?
 - When should desktop variants launch?
@@ -177,6 +185,7 @@ Share the decision matrix with your team:
 ## 📊 Technical Architecture Summary
 
 ### Current State (What You Have)
+
 - ✅ React 19 + Vite frontend
 - ✅ Firebase Functions backend
 - ✅ AgentService + BaseAgent architecture
@@ -187,18 +196,21 @@ Share the decision matrix with your team:
 ### What You're Adding (Three-Tier)
 
 **Tier 1 & 2 (Web):**
+
 - Subscription management system
 - Stripe integration
 - Usage tracking and quota enforcement
 - Pricing page and upsell flows
 
 **Tier 3 - Variant 3A (Desktop - Recommended):**
+
 - Instrument layer (TypeScript wrappers)
 - Enhanced AgentService with instrument routing
 - Local compute foundation (optional)
 - Flexible economic model
 
 **Tier 3 - Variant 3B (Desktop - Power User):**
+
 - Docker container with Agent Zero
 - Python instrument ecosystem
 - A0T token integration (Base L2)
@@ -216,8 +228,8 @@ Your `ImageGenerationService` and `VideoGenerationService` already have quota ch
 // Before generation
 const quotaCheck = await subscriptionService.canPerformAction(
   userId,
-  'generateImage',
-  count
+  "generateImage",
+  count,
 );
 
 if (!quotaCheck.allowed) {
@@ -240,24 +252,32 @@ Add a "Pricing" link to your navigation that routes to the new pricing page.
 ## ⚠️ Important Decisions Needed
 
 ### 1. Pricing Strategy
+
 What are your actual prices?
+
 - Free: 50 images/month (suggested)
 - Pro: $19/mo (suggested)
 - Studio: $49/mo (suggested)
 
 ### 2. Feature Differentiation
+
 What features are exclusive to each tier?
+
 - Collaboration: Pro+ only?
 - High-res export: Studio only?
 - Offline mode: Studio only?
 
 ### 3. Timeline
+
 When do you want to launch:
+
 - Phase 1 (Web tiers):
 - Phase 3 (All tiers):
 
 ### 4. Docker Decision
+
 Will you build variant 3B (Docker Agent Zero)?
+
 - Yes: Set aside 5 weeks dev time
 - No: Focus on 3A only
 - Later: Build after 3A proven successful
@@ -266,22 +286,28 @@ Will you build variant 3B (Docker Agent Zero)?
 
 ## 📞 Support & Next Steps
 
-### If You Want to Start Phase 1:
+### If You Want to Start Phase 1
+
 I can help you:
+
 1. Create the subscription module files
 2. Integrate Stripe
 3. Build the pricing page
 4. Add usage dashboard to your existing dashboard
 
-### If You Want to Start Phase 2:
+### If You Want to Start Phase 2
+
 I can help you:
+
 1. Create the Instrument layer
 2. Implement ImageGenerationInstrument
 3. Integrate with your existing AgentService
 4. Package for Electron distribution
 
-### If You Want to Customize:
+### If You Want to Customize
+
 I can help you:
+
 1. Modify tier definitions
 2. Adjust pricing
 3. Add/remove features from tiers
@@ -292,6 +318,7 @@ I can help you:
 ## 📚 Documentation
 
 All implementation details are in:
+
 - **Main Blueprint:** `/docs/THREE_TIER_STRATEGY.md` (Complete guide)
 - **This Summary:** `/docs/IMPLEMENTATION_QUICKSTART.md` (This file)
 - **Project Files:** (Will be created as you implement phases)

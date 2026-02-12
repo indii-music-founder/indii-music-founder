@@ -10,13 +10,14 @@ This ledger tracks solved technical challenges to prevent regression. Before deb
 1. **Search:** Ctrl+F this file for error signatures.
 2. **Query:** Use `mcp_mem0_search-memories(query="<error>", userId="indiiOS-errors")`.
 3. **Solve:** Apply the documented fix.
-4. **Record:** After solving a *new* unique error, add it here and to mem0.
+4. **Record:** After solving a _new_ unique error, add it here and to mem0.
 
 ```javascript
-mcp_mem0_add-memory(
-  content="ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>",
-  userId="indiiOS-errors"
-)
+mcp_mem0_add -
+  memory(
+    (content = "ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>"),
+    (userId = "indiiOS-errors"),
+  );
 ```
 
 ## Entry Format
@@ -48,7 +49,7 @@ const value = data.nested.field;
 const value = data?.nested?.field;
 
 // ✅ Correct - with fallback
-const value = data?.nested?.field ?? 'default';
+const value = data?.nested?.field ?? "default";
 ```
 
 **Date Added:** 2026-01-23
@@ -70,7 +71,7 @@ const value = data?.nested?.field ?? 'default';
 const user = auth.currentUser;
 
 // ✅ Correct - wait for auth state
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged } from "firebase/auth";
 onAuthStateChanged(auth, (user) => {
   if (user) {
     // User is signed in
@@ -93,7 +94,7 @@ onAuthStateChanged(auth, (user) => {
 - Agent tool execution hangs indefinitely
 - SubscriptionService quota checks never complete
 - generate_image tool times out after 300s despite Cloud Function succeeding
-**Fix:**
+  **Fix:**
 
 ```bash
 # Add allUsers as invoker for each v2 function
@@ -104,8 +105,8 @@ gcloud run services add-iam-policy-binding [SERVICE_NAME] \
   --project=[PROJECT_ID]
 
 # Known v2 services requiring this fix:
-# getsubscription, getusagestats, trackusage, 
-# cancelsubscription, createcheckoutsession, 
+# getsubscription, getusagestats, trackusage,
+# cancelsubscription, createcheckoutsession,
 # getcustomerportal, resumesubscription
 ```
 
@@ -124,10 +125,12 @@ When deploying new v2 callable functions:
 2. **Option B - Function definition with invoker:**
 
    ```typescript
-   import { onCall } from 'firebase-functions/v2/https';
+   import { onCall } from "firebase-functions/v2/https";
    export const myFunction = onCall(
-     { invoker: 'public' }, // Allows unauthenticated invocations
-     async (request) => { /* ... */ }
+     { invoker: "public" }, // Allows unauthenticated invocations
+     async (request) => {
+       /* ... */
+     },
    );
    ```
 
@@ -167,7 +170,7 @@ When deploying new v2 callable functions, ensure invoker permissions:
 **Root Cause:** The hub-and-spoke architecture ONLY allows:
 
 - **Hub (generalist) → Any Specialist**: ✅ Valid
-- **Specialist → Hub (generalist)**: ✅ Valid  
+- **Specialist → Hub (generalist)**: ✅ Valid
 - **Specialist → Specialist**: ❌ BLOCKED
 
 Tests that attempt specialist-to-specialist delegation (e.g., `legal → video`) will fail with hub-and-spoke violation.
@@ -176,20 +179,20 @@ Tests that attempt specialist-to-specialist delegation (e.g., `legal → video`)
 ```typescript
 // ❌ Wrong - specialist to specialist (BLOCKED)
 const result = await delegateFunc({
-    targetAgentId: 'video',  // Another specialist
-    task: '...'
+  targetAgentId: "video", // Another specialist
+  task: "...",
 });
 
 // ✅ Correct - specialist to hub
 const result = await delegateFunc({
-    targetAgentId: 'generalist',  // Hub agent
-    task: '...'
+  targetAgentId: "generalist", // Hub agent
+  task: "...",
 });
 
 // ✅ Correct - hub to specialist
 const result = await delegateFunc({
-    targetAgentId: 'legal',  // Any specialist is fine from hub
-    task: '...'
+  targetAgentId: "legal", // Any specialist is fine from hub
+  task: "...",
 });
 ```
 
@@ -209,15 +212,15 @@ const result = await delegateFunc({
 
 ```typescript
 // ❌ Wrong - expecting raw data on result
-const result = await functions.get_project_details({ projectId: 'p1' });
-expect(result).toHaveProperty('id', 'p1');
-expect(result).toHaveProperty('name', 'Test Project');
+const result = await functions.get_project_details({ projectId: "p1" });
+expect(result).toHaveProperty("id", "p1");
+expect(result).toHaveProperty("name", "Test Project");
 
 // ✅ Correct - expecting wrapped response structure
-const result = await functions.get_project_details({ projectId: 'p1' });
-expect(result).toHaveProperty('success', true);
-expect(result.data).toHaveProperty('id', 'p1');
-expect(result.data).toHaveProperty('name', 'Test Project');
+const result = await functions.get_project_details({ projectId: "p1" });
+expect(result).toHaveProperty("success", true);
+expect(result.data).toHaveProperty("id", "p1");
+expect(result.data).toHaveProperty("name", "Test Project");
 ```
 
 **Prevention:** All BaseAgent tool functions wrap their results. When testing, always check for `success`, then access `result.data` for the actual payload.
@@ -280,15 +283,15 @@ vi.mock('google-auth-library', () => ({
 
 ```typescript
 // ❌ Wrong - top-level static import
-import { useStore } from '@/core/store';
+import { useStore } from "@/core/store";
 export const myTool = () => {
-    const state = useStore.getState();
+  const state = useStore.getState();
 };
 
 // ✅ Correct - dynamic import within function
 export const myTool = async () => {
-    const { useStore } = await import('@/core/store');
-    const state = useStore.getState();
+  const { useStore } = await import("@/core/store");
+  const state = useStore.getState();
 };
 ```
 

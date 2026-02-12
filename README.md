@@ -498,18 +498,18 @@ Automated deployment triggers on push to `main` branch. See `.github/workflows/d
 
 ## Documentation
 
-| Document                                                                 | Description                              |
-| ------------------------------------------------------------------------ | ---------------------------------------- |
-| [CLAUDE.md](./CLAUDE.md)                                                 | Comprehensive AI assistant guide         |
-| [MASTER_COMPLETION_PLAN.md](./MASTER_COMPLETION_PLAN.md)                 | RC1 Completion Status (Primary)          |
-| [TASKS.md](./TASKS.md)                                                   | Active Tasks & Operational Logs          |
-| [MODEL_POLICY.md](./MODEL_POLICY.md)                                     | AI model usage requirements              |
-| [RULES.md](./RULES.md)                                                   | Agent Zero protocol and design standards |
-| [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke design details             |
-| [docs/AUTONOMOUS_BROWSER_AGENT.md](./docs/AUTONOMOUS_BROWSER_AGENT.md)   | Self-driving browser internals           |
-| [docs/BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)           | Firebase + Vertex AI service map         |
-| [docs/DDEX_IMPLEMENTATION_PLAN.md](./docs/DDEX_IMPLEMENTATION_PLAN.md)   | Distribution integration details         |
-| [docs/HYBRID_ARCHITECTURE_REVIEW.md](./docs/HYBRID_ARCHITECTURE_REVIEW.md)| Hybrid Architecture & Security Verification |
+| Document                                                                   | Description                                 |
+| -------------------------------------------------------------------------- | ------------------------------------------- |
+| [CLAUDE.md](./CLAUDE.md)                                                   | Comprehensive AI assistant guide            |
+| [MASTER_COMPLETION_PLAN.md](./MASTER_COMPLETION_PLAN.md)                   | RC1 Completion Status (Primary)             |
+| [TASKS.md](./TASKS.md)                                                     | Active Tasks & Operational Logs             |
+| [MODEL_POLICY.md](./MODEL_POLICY.md)                                       | AI model usage requirements                 |
+| [RULES.md](./RULES.md)                                                     | Agent Zero protocol and design standards    |
+| [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md)   | Hub-and-spoke design details                |
+| [docs/AUTONOMOUS_BROWSER_AGENT.md](./docs/AUTONOMOUS_BROWSER_AGENT.md)     | Self-driving browser internals              |
+| [docs/BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)             | Firebase + Vertex AI service map            |
+| [docs/DDEX_IMPLEMENTATION_PLAN.md](./docs/DDEX_IMPLEMENTATION_PLAN.md)     | Distribution integration details            |
+| [docs/HYBRID_ARCHITECTURE_REVIEW.md](./docs/HYBRID_ARCHITECTURE_REVIEW.md) | Hybrid Architecture & Security Verification |
 
 ---
 

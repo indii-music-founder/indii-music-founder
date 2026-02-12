@@ -14,13 +14,13 @@ Implement full authentication (email/password + Google OAuth) for indiiOS, with 
 
 ## Current State
 
-| Component        | Status                           |
-| ---------------- | -------------------------------- |
-| Firebase Project | `indiios-v-1-1` (configured)     |
-| Current Auth     | Email/Pass + Google + Anon       |
-| User Profiles    | Firestore (`users` collection)   |
-| Organizations    | Firestore with `members[]`       |
-| Login UI         | Implemented (`/login`, `/signup`)|
+| Component        | Status                            |
+| ---------------- | --------------------------------- |
+| Firebase Project | `indiios-v-1-1` (configured)      |
+| Current Auth     | Email/Pass + Google + Anon        |
+| User Profiles    | Firestore (`users` collection)    |
+| Organizations    | Firestore with `members[]`        |
+| Login UI         | Implemented (`/login`, `/signup`) |
 
 ---
 
@@ -120,10 +120,10 @@ interface UserDocument {
   photoURL?: string;
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
-  tier: 'free' | 'pro' | 'enterprise';
-  subscriptionId?: string;       // Stripe Subscription ID
-  customerId?: string;           // Stripe Customer ID
-  status: 'active' | 'past_due' | 'canceled' | 'trialing';
+  tier: "free" | "pro" | "enterprise";
+  subscriptionId?: string; // Stripe Subscription ID
+  customerId?: string; // Stripe Customer ID
+  status: "active" | "past_due" | "canceled" | "trialing";
   trialEndsAt?: Timestamp;
 }
 ```
