@@ -63,8 +63,6 @@ const value = data?.nested?.field ?? 'default';
 **Context:** Operations requiring authentication
 **Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
 **Related Files:** `src/services/auth/AuthService.ts`, `src/components/ProtectedRoute.tsx`
-**Context:** Operations requiring authentication
-**Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
 **Fix:**
 
 ```typescript
@@ -132,6 +130,7 @@ When deploying new v2 callable functions:
      async (request) => { /* ... */ }
    );
    ```
+
 When deploying new v2 callable functions, ensure invoker permissions:
 
 ```typescript
