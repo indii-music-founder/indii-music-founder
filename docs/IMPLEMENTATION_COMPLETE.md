@@ -59,6 +59,17 @@ Successfully implemented a **comprehensive three-tier product strategy** that tr
 | **Offline**      | ❌ No (web only)     | ❌ No (web only)       | ✅ **Yes (local mode)**      |
 | **Agent Powers** | Basic                | Advanced               | **Full instruments**         |
 | **API Access**   | ❌                   | ❌                     | ✅ **Yes**                   |
+| Feature | Tier 1 (Free) | Tier 2 (Pro) | Tier 3 (Studio Desktop - 3A) |
+|---------|-----------------|----------------|----------------------------|
+| **Price** | $0 (forever) | $19/mo or $190/yr | $49/mo |
+| **Images** | 50/mo (1K max) | 500/mo (2K max) | 2000/mo (4K max) |
+| **Video** | 5 min/mo (720p, 15s) | 30 min/mo (1080p, 60s) | 120 min/mo (4K, 300s) |
+| **Storage** | 2GB total | 50GB total | 500GB total |
+| **AI Chat** | 10k tokens/mo | 100k tokens/mo | 500k tokens/mo |
+| **Platform** | Web only | Web only | **Desktop + Cloud** |
+| **Offline** | ❌ No (web only) | ❌ No (web only) | ✅ **Yes (local mode)** |
+| **Agent Powers** | Basic | Advanced | **Full instruments** |
+| **API Access** | ❌ | ❌ | ✅ **Yes** |
 
 ---
 
@@ -214,6 +225,26 @@ User approves → Execute + track usage
 #### Modified Files (3)
 
 1. `functions/src/index.ts` - Added subscription exports
+**Instrument Layer (7):**
+24. `src/services/agent/instruments/InstrumentTypes.ts`
+25. `src/services/agent/instruments/ImageGenerationInstrument.ts`
+26. `src/services/agent/instruments/VideoGenerationInstrument.ts`
+27. `src/services/agent/instruments/InstrumentRegistry.ts`
+28. `src/services/agent/AgentContextBridge.ts`
+29. `src/services/agent/InstrumentAgentService.ts`
+30. `src/components/instruments/InstrumentApprovalModal.tsx`
+
+**Desktop Deployment (4):**
+31. `electron-builder-studio.json`
+32. `scripts/build-desktop.sh`
+33. `scripts/build/postinstall.sh`
+34. `scripts/build/notarize.js`
+35. `config/environments/.env.development.example`
+36. `config/environments/.env.production.example`
+
+#### Modified Files (3)
+
+37. `functions/src/index.ts` - Added subscription exports
 2. `src/services/image/ImageGenerationService.ts` - Integrated subscription system
 3. `src/core/App.tsx` - Added ApprovalManager integration
 
@@ -471,6 +502,7 @@ User approves → Execute + track usage
 ✅ **Market Segmentation** - Free, Pro, Studio tiers  
 ✅ **Flexible Model** - User can choose web-only or desktop + cloud  
 ✅ **Scalability** - Architecture supports millions of users
+✅ **Scalability** - Architecture supports millions of users  
 
 ### Technical Goals
 
@@ -480,6 +512,7 @@ User approves → Execute + track usage
 ✅ **Performance** - Caching, optimizations, lazy loading  
 ✅ **User Experience** - Approval gates, progress indicators  
 ✅ **Security** - Authentication, quotas, code signing
+✅ **Security** - Authentication, quotas, code signing  
 
 ### Product Readiness
 
@@ -487,6 +520,7 @@ User approves → Execute + track usage
 ✅ **Agent Capabilities** - Instruments discovered and executed  
 ✅ **Desktop Packaging** - Multi-platform build automation  
 ✅ **Documentation** - Complete guides and checklists
+✅ **Documentation** - Complete guides and checklists  
 
 ---
 

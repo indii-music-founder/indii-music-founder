@@ -18,6 +18,13 @@ mcp_mem0_add -
     (content = "ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>"),
     (userId = "indiiOS-errors"),
   );
+4. **Record:** After solving a *new* unique error, add it here and to mem0.
+
+```javascript
+mcp_mem0_add-memory(
+  content="ERROR: <Pattern> | FIX: <Fix Summary> | FILE: <File>",
+  userId="indiiOS-errors"
+)
 ```
 
 ## Entry Format
@@ -61,6 +68,9 @@ const value = data?.nested?.field ?? "default";
 
 **Pattern:** `auth.currentUser is null` / `User is not logged in`
 **Stack Signature:** `TypeError: Cannot read properties of null (reading 'uid')`
+**Context:** Operations requiring authentication
+**Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
+**Related Files:** `src/services/auth/AuthService.ts`, `src/components/ProtectedRoute.tsx`
 **Context:** Operations requiring authentication
 **Root Cause:** Code runs before Firebase Auth initializes, or user session expired.
 **Related Files:** `src/services/auth/AuthService.ts`, `src/components/ProtectedRoute.tsx`
@@ -131,6 +141,10 @@ When deploying new v2 callable functions:
      async (request) => {
        /* ... */
      },
+   import { onCall } from 'firebase-functions/v2/https';
+   export const myFunction = onCall(
+     { invoker: 'public' }, // Allows unauthenticated invocations
+     async (request) => { /* ... */ }
    );
    ```
 
