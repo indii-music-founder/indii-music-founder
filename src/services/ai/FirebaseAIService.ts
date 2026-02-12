@@ -1337,7 +1337,7 @@ export class FirebaseAIService {
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
-                    `AI Verification Failed: ${msg}`, // Include raw msg in user-facing error for now to help debug
+                    'AI Verification Failed',
                     { retryable: false }
                 );
             }
