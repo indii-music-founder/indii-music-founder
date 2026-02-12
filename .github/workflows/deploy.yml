@@ -101,6 +101,7 @@ jobs:
         run: npm install -g firebase-tools
 
       - name: Authenticate with Firebase
+        if: github.ref == 'refs/heads/main'
         env:
           FIREBASE_SERVICE_ACCOUNT: "${{ secrets.FIREBASE_SERVICE_ACCOUNT }}"
         run: |
@@ -123,6 +124,7 @@ jobs:
           firebase deploy --only hosting:app --project indiios-v-1-1 --non-interactive --debug
 
       - name: Lighthouse CI audit
+        if: github.ref == 'refs/heads/main'
         run: |
           npm install -g @lhci/cli
           lhci autorun --config='{"ci":{"collect":{"url":["https://app.indiios.com/"],"numberOfRuns":1},"assert":{"assertions":{"categories:performance":["warn",{"minScore":0.6}],"categories:accessibility":["warn",{"minScore":0.7}],"categories:best-practices":["warn",{"minScore":0.7}]}},"upload":{"target":"temporary-public-storage"}}}' || echo "::warning::Lighthouse audit completed with warnings - review scores above"
