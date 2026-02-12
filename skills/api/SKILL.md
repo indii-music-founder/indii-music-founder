@@ -19,7 +19,7 @@ This skill REQUIRES the following tools from the `google-developer-knowledge` MC
 Follow this progressive sequence for EVERY `/api` request:
 
 1. **Analyze & Identify**: Deconstruct the user's request to identify the specific Google services involved (e.g., "Cloud Run", "Firebase Auth", "BigQuery").
-1. **Analyze & Identify**: Deconstruct the user's request to identify the specific Google services involved (e.g., "Cloud Run", "Firebase Auth", "BigQuery").
+
 1. **Fetch Live Context**:
     - Use `search_documents` with specific keywords related to the identified services.
     - Select the most relevant results and use `get_document` to retrieve the full context.
