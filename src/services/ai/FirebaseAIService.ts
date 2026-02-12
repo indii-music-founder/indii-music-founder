@@ -1334,8 +1334,9 @@ export class FirebaseAIService {
             lowerMsg.includes('unauthorized')
         ) {
             if (import.meta.env.DEV) {
-                console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log raw message only in DEV
-            console.error('[FirebaseAIService] Permission Error Detail:', msg); // Log the raw message!
+                console.error('[FirebaseAIService] Permission Error Detail:', msg);
+            }
+
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
