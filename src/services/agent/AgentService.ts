@@ -202,8 +202,7 @@ export class AgentService {
         forcedAgentId?: string
     ): Promise<void> {
         const { useStore } = await import('@/core/store');
-        const { updateAgentMessage } = useStore.getState();
-        const { activeAgentProvider } = useStore.getState();
+        const { updateAgentMessage, activeAgentProvider } = useStore.getState();
 
         // 1. Check Provider: If set to 'agent-zero', delegate immediately
         if (activeAgentProvider === 'agent-zero') {
