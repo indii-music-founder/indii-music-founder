@@ -22,6 +22,12 @@ if [ -z "$KEY" ]; then
     if [ -f .env ]; then
         # Use exact match with ^GEMINI_API_KEY= (anchored to line start)
         # Extract everything after the first '=' to handle keys containing '='
+        # Strip optional quotes and trailing whitespace
+        DETECTED_KEY=$(grep -E "^GEMINI_API_KEY=" .env | head -1 | sed 's/^GEMINI_API_KEY=//' | sed "s/^['\"]//; s/['\"]$//")
+
+        # Fallback to VITE_API_KEY if GEMINI_API_KEY not found
+        if [ -z "$DETECTED_KEY" ]; then
+            DETECTED_KEY=$(grep -E "^VITE_API_KEY=" .env | head -1 | sed 's/^VITE_API_KEY=//' | sed "s/^['\"]//; s/['\"]$//")
         DETECTED_KEY=$(grep -E "^GEMINI_API_KEY=" .env | head -1 | sed 's/^GEMINI_API_KEY=//')
 
         # Fallback to VITE_API_KEY if GEMINI_API_KEY not found
@@ -53,6 +59,12 @@ if [ -z "$KEY" ]; then
     exit 1
 fi
 
+# Validate key format (basic sanity check)
+if [ ${#KEY} -lt 10 ]; then
+    echo -e "${RED}Key appears too short (less than 10 characters). Aborting.${NC}"
+    exit 1
+fi
+
 echo -e "Updating GEMINI_API_KEY secret in Firebase..."
 
 # Pipe the key to firebase functions:secrets:set to avoid interactive prompt
@@ -61,3 +73,4 @@ echo -n "$KEY" | firebase functions:secrets:set GEMINI_API_KEY
 echo -e "${GREEN}Secret updated successfully!${NC}"
 echo -e "You may need to redeploy functions for the change to take effect immediately, although secrets are usually live."
 echo -e "Run: firebase deploy --only functions:generateImageV3,functions:editImage"
+
