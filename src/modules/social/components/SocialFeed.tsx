@@ -8,6 +8,9 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send,
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { MessageSquarePlus } from 'lucide-react';
+import { PostSkeleton } from '@/components/shared/Skeleton';
 
 interface SocialFeedProps {
     userId?: string;
@@ -218,19 +221,22 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             {/* Feed List */}
             <div className="flex-1 overflow-y-auto">
                 {loading ? (
-                    <div className="flex justify-center p-8">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <div className="divide-y divide-gray-800">
+                        {[1, 2, 3, 4, 5].map(i => <PostSkeleton key={i} />)}
                     </div>
                 ) : posts.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center p-12 text-center text-gray-500 animate-in fade-in duration-500">
-                        <div className="bg-gray-800/50 p-4 rounded-full mb-4">
-                            <Ghost size={32} className="text-gray-400" aria-hidden="true" />
-                        </div>
-                        <h3 className="text-lg font-medium text-white mb-1">It's quiet in here</h3>
-                        <p className="text-sm max-w-[250px]">
-                            No posts yet. Be the first to share what's happening in your studio!
-                        </p>
-                    </div>
+                    <EmptyState
+                        icon={MessageSquarePlus}
+                        title="Your feed is empty"
+                        description="Be the first to share what's happening in your studio! Link your socials or post a new drop to get started."
+                        action={(!userId || userId === userProfile?.id) ? {
+                            label: "Create First Post",
+                            onClick: () => {
+                                const textarea = document.querySelector('textarea');
+                                if (textarea) textarea.focus();
+                            }
+                        } : undefined}
+                    />
                 ) : (
                     <div className="divide-y divide-gray-800">
                         {posts.map((post) => (

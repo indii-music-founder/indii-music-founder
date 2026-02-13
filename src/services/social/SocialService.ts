@@ -126,6 +126,7 @@ export class SocialService {
     const rawPost = {
       ...post,
       authorId: userProfile.id,
+      userId: userProfile.id, // For security rules
       status: CampaignStatus.PENDING
     };
 
@@ -155,7 +156,7 @@ export class SocialService {
 
     const q = query(
       collection(db, "scheduled_posts"),
-      where("authorId", "==", targetUserId),
+      where("userId", "==", targetUserId), // Align with security rules
       where("status", "==", CampaignStatus.PENDING),
       orderBy("scheduledTime", "asc"),
     );
@@ -233,6 +234,7 @@ export class SocialService {
 
     const postData = {
       authorId: userProfile.id,
+      userId: userProfile.id, // For security rules
       authorName: userProfile.displayName || "Anonymous",
       authorAvatar: userProfile.photoURL || null,
       content,

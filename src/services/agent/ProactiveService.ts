@@ -15,6 +15,8 @@ import { events, EventType } from '@/core/events';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentContext, ProactiveTask } from './types';
 
+import { pulseEngine } from './pulse/PulseEngine';
+
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];
     private activeInterval: NodeJS.Timeout | null = null;
@@ -26,6 +28,7 @@ export class ProactiveService {
 
     start() {
         this.startPolling();
+        pulseEngine.start();
     }
 
     /**
@@ -39,7 +42,15 @@ export class ProactiveService {
             'DEPARTMENT_REQUEST',
             'SYSTEM_ALERT',
             'TASK_COMPLETED',
-            'TASK_FAILED'
+            'TASK_FAILED',
+            // Autonomy Engine Events
+            'IMAGE_GENERATED',
+            'VIDEO_RENDER_COMPLETE',
+            'AUDIO_ANALYSIS_COMPLETE',
+            'REVENUE_DETECTED',
+            'DISTRIBUTION_SUBMITTED',
+            'SESSION_STARTED',
+            'SESSION_ENDED'
         ];
 
         allEvents.forEach(eventType => {
@@ -118,10 +129,12 @@ export class ProactiveService {
             const fullTask = `[PROACTIVE TRIGGER] ${task.task}${contextMsg}`;
 
             // Run agent
+            // Run agent
             const { agentService } = await import('./AgentService');
+            // Mock a context for proactive trigger
             const context: AgentContext = {
                 traceId: `proactive-${task.id}`,
-                // @ts-expect-error - testing private method access if needed - extensions for proactive details
+                // Extensions for proactive details
                 proactiveTask: task,
                 triggerType: task.triggerType
             };
@@ -159,6 +172,12 @@ export class ProactiveService {
             userId
         };
 
+        // For addDoc, we don't need to pass ID usually, but if type requires it we match.
+        // Actually addDoc returns a ref with ID.
+        // Let's stick to the existing pattern of omitting ID for addDoc if possible, 
+        // but Typescript might complain if we cast to ProactiveTask before adding.
+        // The previous code had: const task: Omit<ProactiveTask, 'id'> = ...
+
         const docRef = await addDoc(collection(db, 'proactive_tasks'), task);
         return docRef.id;
     }
@@ -187,6 +206,7 @@ export class ProactiveService {
     dispose() {
         if (this.activeInterval) clearInterval(this.activeInterval);
         this.unsubscribers.forEach(unsub => unsub());
+        pulseEngine.stop();
     }
 }
 

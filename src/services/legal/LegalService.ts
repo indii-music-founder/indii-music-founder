@@ -7,6 +7,7 @@ import {
     getDoc,
     getDocs,
     query,
+    where,
     orderBy,
     serverTimestamp,
     updateDoc
@@ -36,7 +37,7 @@ export class LegalService {
             updatedAt: serverTimestamp()
         };
 
-        const docRef = await addDoc(collection(db, 'users', userProfile.id, 'contracts'), contractData);
+        const docRef = await addDoc(collection(db, 'contracts'), contractData);
         return docRef.id;
     }
 
@@ -52,7 +53,7 @@ export class LegalService {
             );
         }
 
-        const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
+        const docRef = doc(db, 'contracts', id);
 
         await updateDoc(docRef, {
             ...updates,
@@ -68,7 +69,8 @@ export class LegalService {
         if (!userProfile?.id) return [];
 
         const q = query(
-            collection(db, 'users', userProfile.id, 'contracts'),
+            collection(db, 'contracts'),
+            where('userId', '==', userProfile.id),
             orderBy('updatedAt', 'desc')
         );
 
@@ -86,15 +88,54 @@ export class LegalService {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) return null;
 
-        const docRef = doc(db, 'users', userProfile.id, 'contracts', id);
+        const docRef = doc(db, 'contracts', id);
         const snapshot = await getDoc(docRef);
 
         if (snapshot.exists()) {
+            const data = snapshot.data();
+            // Safety check: ensure user owns this contract
+            if (data.userId !== userProfile.id) return null;
+
             return {
                 id: snapshot.id,
-                ...snapshot.data()
+                ...data
             } as unknown as LegalContract;
         }
         return null;
+    }
+
+    /**
+     * Export a contract to PDF
+     */
+    static async exportContractToPDF(id: string): Promise<boolean> {
+        const contract = await this.getContractById(id);
+        if (!contract) throw new Error('Contract not found');
+
+        // Note: For actual Markdown to HTML conversion in the tool or background,
+        // we'd use marked or similar. Here we'll wrap it in standard HTML tags.
+        // The electron handler handles the styling.
+        const createdAt = contract.createdAt;
+        const dateString = createdAt && typeof (createdAt as any).toDate === 'function'
+            ? (createdAt as any).toDate().toLocaleDateString()
+            : new Date(typeof createdAt === 'number' ? createdAt : Date.now()).toLocaleDateString();
+
+        const html = `
+            <h1>${contract.title}</h1>
+            <div><strong>Date:</strong> ${dateString}</div>
+            <div><strong>Parties:</strong> ${contract.parties.join(', ')}</div>
+            <div style="margin-top: 20px;">
+                ${contract.content.split('\n').map(line => `<p>${line}</p>`).join('')}
+            </div>
+        `;
+
+        if (window.electronAPI?.savePDF) {
+            const result = await window.electronAPI.savePDF(html, contract.title);
+            return result.success;
+        } else {
+            // Fallback for web version
+            console.warn('[LegalService] Electron bridge unavailable. Using browser print.');
+            window.print();
+            return true;
+        }
     }
 }

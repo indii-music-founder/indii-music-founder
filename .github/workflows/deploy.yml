@@ -32,10 +32,10 @@ jobs:
 
 
       - name: Run unit tests
-        timeout-minutes: 30
+        timeout-minutes: 10
         env:
           NODE_OPTIONS: --max-old-space-size=4096
-        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=30000 --bail=3 --no-file-parallelism
+        run: npm test -- --run --reporter=verbose --pool=forks --testTimeout=15000 --bail=3 --no-file-parallelism
 
       # E2E tests disabled — requires Vite dev server + Electron runtime which
       # hangs indefinitely on headless Ubuntu CI runners. Re-enable after setting

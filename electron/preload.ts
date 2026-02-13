@@ -26,6 +26,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setPrivacyMode: (enabled: boolean) => ipcRenderer.invoke('privacy:toggle-protection', enabled),
     selectFile: (options?: any) => ipcRenderer.invoke('system:select-file', options),
     selectDirectory: (options?: any) => ipcRenderer.invoke('system:select-directory', options),
+    savePDF: (html: string, title?: string) => ipcRenderer.invoke('system:save-pdf', html, title),
 
     // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {
@@ -59,6 +60,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
     },
+    socialInitiateOAuth: (platform: string) => ipcRenderer.invoke('social:initiate-oauth', platform),
+    getSocialToken: (platform: string) => ipcRenderer.invoke('social:get-token', platform),
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),
@@ -99,6 +102,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
     updater: {
         check: () => ipcRenderer.invoke('updater:check'),
         install: () => ipcRenderer.invoke('updater:install'),
+    },
+
+    // Social (OAuth Flows)
+    social: {
+        connectOAuth: (provider: string) => ipcRenderer.invoke('social:connect-oauth', provider),
     },
 
     testAgent: (query?: string) => ipcRenderer.invoke('test:browser-agent', query),

@@ -21,7 +21,8 @@ export const ScheduledPostSchema = z.object({
         return new Date(val).getTime();
     }).optional(),
     status: CampaignStatusSchema.default('PENDING'),
-    authorId: z.string().optional() // Assigned by backend/service
+    authorId: z.string().optional(), // Assigned by backend/service
+    userId: z.string().optional() // For security rules and querying
 });
 
 export const CreatePostRequestSchema = z.object({

@@ -38,11 +38,11 @@ export const useCanvasHistory = (
     if (!canvas || isPerformingAction.current) return;
 
     try {
-      const json = JSON.stringify(canvas.toObject(['name'])); // Include custom properties
+      const json = JSON.stringify(canvas.toObject(['name', 'selectable', 'evented']));
       const timestamp = Date.now();
 
       setHistory((prevHistory) => {
-        // Remove any "future" states if we're not at the end
+        // Remove any "future" states
         const newHistory = prevHistory.slice(0, historyIndex + 1);
 
         // Add new state
@@ -51,23 +51,21 @@ export const useCanvasHistory = (
         // Limit history size
         if (newHistory.length > maxHistorySize) {
           newHistory.shift();
-          return newHistory;
         }
 
-        return newHistory;
+        return [...newHistory];
       });
 
       setHistoryIndex((prevIndex) => {
-        const newHistory = history.slice(0, prevIndex + 1);
-        if (newHistory.length >= maxHistorySize) {
-          return maxHistorySize - 1;
+        if (history.length >= maxHistorySize && prevIndex === maxHistorySize - 1) {
+          return prevIndex; // Keep index at the end if we shifted
         }
         return prevIndex + 1;
       });
     } catch (error) {
       console.error('Failed to save canvas state:', error);
     }
-  }, [canvas, history, historyIndex, maxHistorySize]);
+  }, [canvas, history.length, historyIndex, maxHistorySize]);
 
   // Debounced save state
   const debouncedSaveState = useCallback(() => {
