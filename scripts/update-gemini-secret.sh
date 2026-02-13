@@ -20,6 +20,17 @@ KEY="$1"
 if [ -z "$KEY" ]; then
     # Try to grep from local .env if it exists
     if [ -f .env ]; then
+        # Use exact match with ^GEMINI_API_KEY= (anchored to line start)
+        # Extract everything after the first '=' to handle keys containing '='
+        DETECTED_KEY=$(grep -E "^GEMINI_API_KEY=" .env | head -1 | sed 's/^GEMINI_API_KEY=//')
+
+        # Fallback to VITE_API_KEY if GEMINI_API_KEY not found
+        if [ -z "$DETECTED_KEY" ]; then
+            DETECTED_KEY=$(grep -E "^VITE_API_KEY=" .env | head -1 | sed 's/^VITE_API_KEY=//')
+        fi
+
+        if [ -n "$DETECTED_KEY" ]; then
+            echo -e "Found API key in .env"
         DETECTED_KEY=$(grep VITE_API_KEY .env | cut -d '=' -f2)
         if [ ! -z "$DETECTED_KEY" ]; then
             echo -e "Found key in .env: ${DETECTED_KEY:0:5}..."
