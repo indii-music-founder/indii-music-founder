@@ -51,3 +51,18 @@
         51: - [x] Resolve UID asynchronously from `useStore` in `AgentExecutor` if `auth.currentUser` is null.
         52: - **Infra**:
         53: - [x] Applied CORS policy to `gs://indiios-alpha-electron/` bucket.
+
+## 7. Image Generation Recovery & Agent Fidelity (Current)
+
+- **Goal**: Fix 400 Error and enforce "70/30" Human/Agent split.
+- **Fix (API)**:
+  - [x] Create script `scripts/update-gemini-secret.sh` for API Key rotation.
+  - [x] Run script to update Firebase Secret `GEMINI_API_KEY`.
+  - [x] Deployed `generateImageV3` & `editImage` functions to apply secret.
+- **Fix (Logic)**:
+  - [x] "Manual" Mode: Bypass HybridOrchestrator, route directly to `AgentExecutor`.
+  - [x] Hallucinations: Update `DirectorAgent` & `GeneralistAgent` prompts to forbid external tools.
+- **Verification**:
+  - [ ] Verify "Generate Image" in browser (Manual Mode).
+  - [ ] Verify "indii" Mode behavior (Hybrid).
+

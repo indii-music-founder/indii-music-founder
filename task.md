@@ -113,3 +113,13 @@
       113: - [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
       114: - [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
       115: - [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->
+
+## Tasks - Image Generation & Agent Fidelity (2026-02-12)
+
+- [x] **USER ACTION**: Run `scripts/update-gemini-secret.sh` to fix API Key. <!-- id: 405 -->
+- [x] **USER ACTION**: Run `scripts/update-gemini-secret.sh` to fix API Key. <!-- id: 405 -->
+- [x] Deploy Functions `generateImageV3` & `editImage` to apply secret. <!-- id: 406 -->
+- [x] Logic: Update `AgentService` to bypass HybridOrchestrator for 'Native' mode. <!-- id: 401 -->
+- [x] Prompts: Update `DirectorAgent` and `GeneralistAgent` prompts to forbid external tool hallucinations. <!-- id: 402 -->
+- [ ] Verification: Verify Image Generation works in browser. <!-- id: 403 -->
+- [ ] Verification: Verify 'Manual' mode behaves as direct 70% Human control. <!-- id: 404 -->
