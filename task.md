@@ -117,6 +117,7 @@
 ## Tasks - Image Generation & Agent Fidelity (2026-02-12)
 
 - [x] **USER ACTION**: Run `scripts/update-gemini-secret.sh` to fix API Key. <!-- id: 405 -->
+- [x] Deploy Functions `generateImageV3` & `editImage` to apply secret. <!-- id: 406 -->
 - [x] **USER ACTION**: Run `scripts/update-gemini-secret.sh` to fix API Key. <!-- id: 405 -->
 - [x] Deploy Functions `generateImageV3` & `editImage` to apply secret. <!-- id: 406 -->
 - [x] Logic: Update `AgentService` to bypass HybridOrchestrator for 'Native' mode. <!-- id: 401 -->
