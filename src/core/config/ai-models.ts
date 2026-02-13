@@ -15,7 +15,7 @@ export const APPROVED_MODELS = {
     IMAGE_FAST: 'gemini-3-pro-image-preview',
     AUDIO_PRO: 'gemini-3-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
-    AUDIO_TTS: 'gemini-2.5-pro-tts',
+    AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
     VIDEO_GEN: 'veo-3.1-generate-preview',
     BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
@@ -97,7 +97,7 @@ export const MODEL_PRICING = {
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
     'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
     'veo-3.1-generate-preview': { perGeneration: 0.05 },
-    'gemini-2.5-pro-tts': { input: 0.60, output: 4.00 },
+    'gemini-2.5-pro-preview-tts': { input: 0.60, output: 4.00 },
 } as const;
 
 /**
