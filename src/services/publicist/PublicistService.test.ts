@@ -65,7 +65,7 @@ describe('PublicistService Integration Tests', () => {
             expect(mockCallback).toHaveBeenCalledWith(expect.arrayContaining([
                 expect.objectContaining({
                     id: 'camp-1',
-                    name: 'Test Campaign',
+                    title: 'Test Release',
                     userId: mockUserId
                 })
             ]));
