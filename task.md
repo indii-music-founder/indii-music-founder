@@ -5,9 +5,9 @@
 - [x] 4.1 Implement empty state designs for critical modules (Creative, Social, Legal, Finance). <!-- id: 401 -->
 - [x] 4.2 Add loading skeletons for main data-fetching views. <!-- id: 402 -->
 - [x] 4.3 Add Error Boundaries to each major module. <!-- id: 403 -->
-- [ ] 4.4 Audit and fix remaining `console.info('placeholder')` calls and stubs. <!-- id: 404 -->
+- [x] 4.4 Audit and fix remaining `console.info('placeholder')` calls and stubs. <!-- id: 404 -->
 - [x] 4.5 Implement global keyboard shortcuts for power users (e.g., CMD+K for CommandBar). <!-- id: 405 -->
-- [ ] 4.6 Mobile responsiveness audit and fixes for core layouts. <!-- id: 406 -->
+- [x] 4.6 Mobile responsiveness audit and fixes for core layouts. <!-- id: 406 -->
 
 ## Archives
 

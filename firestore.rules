@@ -582,6 +582,11 @@ service cloud.firestore {
       allow delete: if isOwner(userId);
     }
 
+    // Social: linked_accounts subcollection
+    match /users/{userId}/linked_accounts/{platform} {
+      allow read, write: if isOwner(userId);
+    }
+
     // ========================================
     // SCHEDULED POSTS (Social Scheduling)
     // ========================================
@@ -605,6 +610,17 @@ service cloud.firestore {
     match /contracts/{contractId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // LEGAL AGREEMENTS (contracts)
+    // ========================================
+    
+    match /contracts/{contractId} {
+      // Allow read/update/delete only if user is authenticated and owns the contract
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow create if user is authenticated and assigns themselves as owner
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
     // ========================================

@@ -26,18 +26,18 @@ UX polish, empty states, error handling, and keyboard shortcuts.
 - **Target:** Major modules (`Social`, `Licensing`, `Finance`, `Distribution`).
 - **Action:** Wrapped critical sections in `ErrorBoundary`.
 
-## 4. Console.info Cleanup (In Progress)
+## 4. Console.info Cleanup (Completed)
 
 - **Target:** Entire codebase.
 - **Action:** Identify `console.info` calls used as placeholders.
-- **Replacement:** Use `toast.info` or proper implementation.
+- **Replacement:** Use `toast.info` or proper implementation/Logger.
 
-## 5. Keyboard Shortcuts (Pending)
+## 5. Keyboard Shortcuts (Completed)
 
 - **Target:** Global app.
 - **Action:** Implement command bar toggle (Msg+K) and navigation shortcuts.
 
-## 6. Mobile Responsiveness (Pending)
+## 6. Mobile Responsiveness (Completed)
 
 - **Target:** Core layouts.
 - **Action:** Audit and fix layout issues on smaller screens.

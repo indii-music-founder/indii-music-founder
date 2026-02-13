@@ -88,22 +88,13 @@ Key Terms: ${args.terms}`;
             throw new Error("Validation Error: 'contractId' is required.");
         }
 
-        try {
-            const success = await LegalService.exportContractToPDF(args.contractId);
-            if (success) {
-                return toolSuccess({}, "Contract PDF has been generated and saved locally.");
-            } else {
-                return {
-                    success: false,
-                    message: "PDF generation was cancelled or failed."
-                };
-            }
-        } catch (error) {
-            console.error('[LegalTools] export_contract_pdf Error:', error);
-            return {
-                success: false,
-                message: `Failed to export PDF: ${(error as Error).message}`
-            };
+        const success = await LegalService.exportContractToPDF(args.contractId);
+
+        if (success) {
+            return toolSuccess({}, "Contract PDF has been generated and saved locally.");
+        } else {
+            // Throw error to trigger standardized toolError handler in wrapTool
+            throw new Error("PDF generation was cancelled or failed.");
         }
     })
 };

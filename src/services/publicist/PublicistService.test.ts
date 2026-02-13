@@ -43,12 +43,13 @@ describe('PublicistService Integration Tests', () => {
                             id: 'camp-1',
                             data: () => ({
                                 name: 'Test Campaign',
+                                title: 'Test Release',
+                                artist: 'Test Artist',
                                 status: 'Draft',
                                 budget: 1000,
                                 userId: mockUserId,
-                                type: 'Album Launch', // valid type from schema
-                                startDate: { toDate: () => new Date() },
-                                endDate: { toDate: () => new Date() },
+                                type: 'Single', // valid type from schema
+                                releaseDate: new Date().toISOString(),
                                 openRate: 0,
                                 clickRate: 0
                             })
@@ -74,19 +75,13 @@ describe('PublicistService Integration Tests', () => {
     describe('addCampaign', () => {
         it('should add valid campaign with userId', async () => {
             const newCampaign: any = {
-                name: 'New Campaign', // name is likely not in schema if title is used? Or maybe name maps to title?
-                // Schema likely uses 'title' not 'name'. The error said 'title' is Required.
                 title: 'New Campaign',
                 artist: 'Test Artist',
                 status: 'Draft',
-                type: 'Single', // Valid enum
+                type: 'Single',
                 budget: 500,
                 releaseDate: new Date().toISOString(),
-                location: 'Global', // instead of targetAudience if schema differs?
-                // Let's keep extra fields if schema allows passthrough or stripUnknown
-                targetAudience: 'Global',
-                goals: 'Reach 1M',
-                timeline: 'Q1'
+                targetAudience: 'Global'
             };
 
             vi.mocked(addDoc).mockResolvedValue({ id: 'new-camp-id' } as any);
@@ -94,7 +89,7 @@ describe('PublicistService Integration Tests', () => {
             await PublicistService.addCampaign(mockUserId, newCampaign);
 
             expect(addDoc).toHaveBeenCalledWith(
-                expect.anything(), // collection reference
+                expect.anything(),
                 expect.objectContaining({
                     userId: mockUserId,
                     title: 'New Campaign',
@@ -102,7 +97,7 @@ describe('PublicistService Integration Tests', () => {
                     budget: 500,
                     type: 'Single',
                     status: 'Draft',
-                    // Schema adds defaults and strips unknowns like 'goals', 'timeline'
+                    targetAudience: 'Global',
                     progress: 0,
                     openRate: 0
                 })
