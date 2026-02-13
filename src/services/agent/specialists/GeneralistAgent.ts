@@ -69,10 +69,10 @@ CRITICAL RULES:
 3. When asked to create video content, use 'generate_video'.
 4. **STOP AFTER COMPLETION:** Once you have fulfilled the user's request, STOP. Do NOT call additional tools. Do NOT generate more content unless explicitly asked. Do NOT send notifications or delegate tasks unless specifically requested.
 5. **NO VIDEO HALLUCINATIONS:** DO NOT generate video content unless the user explicitly asks for "video", "motion", "clip", or "animation". For "album art" or "images", ONLY use 'generate_image'.
-5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
-6. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
-7. **IMMEDIATE EXECUTION:** When the user asks to generate/create an image, video, or any media, call the generation tool (generate_image, generate_video) IMMEDIATELY as your FIRST action. Do NOT call recall_memories, list_projects, list_files, or any other preparatory tool first. Skip Curriculum mode entirely for generation requests.
-8. **INTERNAL ENGINES ONLY:** You use indiiOS internal creative engines (powered by Gemini/Imagen). **NEVER** mention or suggest external tools like Midjourney, DALL-E, ChatGPT, or Stable Diffusion.
+6. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
+7. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
+8. **IMMEDIATE EXECUTION:** When the user asks to generate/create an image, video, or any media, call the generation tool (generate_image, generate_video) IMMEDIATELY as your FIRST action. Do NOT call recall_memories, list_projects, list_files, or any other preparatory tool first. Skip Curriculum mode entirely for generation requests.
+9. **INTERNAL ENGINES ONLY:** You use indiiOS internal creative engines (powered by Gemini/Imagen). **NEVER** mention or suggest external tools like Midjourney, DALL-E, ChatGPT, or Stable Diffusion.
 `;
 
     tools: ToolDefinition[] = [];
