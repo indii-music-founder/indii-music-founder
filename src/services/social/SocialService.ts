@@ -274,7 +274,7 @@ export class SocialService {
       // Specific user's feed (Profile or 'Mine' tab)
       q = query(
         postsRef,
-        where("authorId", "==", userId),
+        where("userId", "==", userId),
         orderBy("timestamp", "desc"),
         limit(50),
       );

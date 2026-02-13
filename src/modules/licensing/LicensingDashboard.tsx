@@ -19,7 +19,7 @@ export default function LicensingDashboard() {
 
     // Global exposed service for agent interaction (Development Only)
     useEffect(() => {
-        if (process.env.NODE_ENV === 'development') {
+        if (import.meta.env.DEV) {
             const win = window as unknown as Window & { licensingService: typeof licensingService };
             win.licensingService = licensingService;
         }

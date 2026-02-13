@@ -79,7 +79,7 @@ export function useSocial(userId?: string) {
         // 2. Scheduled Posts Listener
         const scheduledQuery = query(
             collection(db, "scheduled_posts"),
-            where("authorId", "==", userProfile.id),
+            where("userId", "==", userProfile.id),
             where("status", "==", "PENDING"),
             orderBy("scheduledTime", "asc")
         );
@@ -97,7 +97,7 @@ export function useSocial(userId?: string) {
         let postsQuery;
 
         if (targetId) {
-            postsQuery = query(postsRef, where("authorId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
+            postsQuery = query(postsRef, where("userId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
         } else {
             // Fallback/All query
             postsQuery = query(postsRef, orderBy("timestamp", "desc"), limit(50));
