@@ -128,18 +128,20 @@ export default function DirectGenerationTab() {
                     <div className="flex bg-white/5 rounded-lg p-1 border border-white/5 shrink-0">
                         <button
                             onClick={() => setMode('image')}
+                            aria-label="Image Mode"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'image' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
-                            <ImageIcon size={18} />
+                            <ImageIcon size={18} data-testid="icon-Image" />
                             <span className="text-xs font-bold uppercase tracking-wider">Image</span>
                         </button>
                         <button
                             onClick={() => setMode('video')}
+                            aria-label="Video Mode"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'video' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
-                            <Video size={18} />
+                            <Video size={18} data-testid="icon-Video" />
                             <span className="text-xs font-bold uppercase tracking-wider">Video</span>
                         </button>
                     </div>
@@ -166,9 +168,10 @@ export default function DirectGenerationTab() {
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !localPrompt.trim()}
+                                aria-label="Send"
                                 className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                {isGenerating ? <Loader2 size={16} className="animate-spin" data-testid="icon-Loader2" /> : <Send size={16} data-testid="icon-Send" />}
                             </button>
                         </div>
                     </div>
