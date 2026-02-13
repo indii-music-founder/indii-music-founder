@@ -4,6 +4,7 @@ import { useStore, HistoryItem } from '@/core/store';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/core/context/ToastContext';
+import { Logger } from '@/core/logger/Logger';
 import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';
 import { EndFrameSelector } from './EndFrameSelector';
@@ -302,14 +303,14 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             const blob = await canvasOps.getBlob();
             if (blob) {
                 const assetId = await saveAssetToStorage(blob);
-                console.info(`[CreativeCanvas] Saved asset ${assetId} to project`);
+                Logger.info('CreativeCanvas', `Saved asset ${assetId} to project`);
             }
 
             // Save the editable project state
             const json = await canvasOps.toJSON();
             if (json) {
                 await saveCanvasStateToStorage(item.id, json);
-                console.info(`[CreativeCanvas] Saved project state for ${item.id}`);
+                Logger.info('CreativeCanvas', `Saved project state for ${item.id}`);
             }
 
             toast.success('Canvas & Project State stored!');

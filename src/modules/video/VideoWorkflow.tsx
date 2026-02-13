@@ -8,6 +8,7 @@ import { WhiskService } from '../../services/WhiskService';
 // Removed unused imports from framer-motion and lucide-react as they are now in VideoStage
 import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
+import { Logger } from '@/core/logger/Logger';
 
 // Components
 import { DirectorPromptBar } from './components/DirectorPromptBar';
@@ -80,10 +81,10 @@ export const processJobUpdate = (
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
                     .then((path: string) => {
-                        console.log('Video saved locally to:', path);
+                        Logger.info('VideoWorkflow', 'Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
-                    .catch((err: any) => console.error('Failed to save to local folder:', err));
+                    .catch((err: any) => Logger.error('VideoWorkflow', 'Failed to save to local folder:', err));
             }
 
             const newAsset = {
@@ -257,8 +258,8 @@ export default function VideoWorkflow() {
                     // Trigger background download via Electron
                     if (window.electronAPI?.video?.saveAsset) {
                         window.electronAPI.video.saveAsset(data.videoUrl, filename)
-                            .then((path: string) => console.log('Video saved locally to:', path))
-                            .catch((err: any) => console.error('Failed to save to local folder:', err));
+                            .then((path: string) => Logger.info('VideoWorkflow', 'Video saved locally to:', path))
+                            .catch((err: any) => Logger.error('VideoWorkflow', 'Failed to save to local folder:', err));
                     }
 
                     const newAsset = {
@@ -337,7 +338,7 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
-                        console.info(`Segment ${current}/${total}`);
+                        Logger.info('VideoWorkflow', `Segment ${current}/${total}`);
                     }
                 });
             } else {
@@ -399,7 +400,7 @@ export default function VideoWorkflow() {
             }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error("Video generation failed:", error);
+            Logger.error('VideoWorkflow', "Video generation failed:", error);
             toast.error(`Trigger failed: ${message}`);
             setJobStatus('failed');
         }
