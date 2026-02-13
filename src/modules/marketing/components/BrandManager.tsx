@@ -729,9 +729,7 @@ const BrandManager: React.FC = () => {
                                                         <span>Auditing...</span>
                                                     </>
                                                 ) : (
-                                                    <>
-                                                        <span>Audit All Assets</span>
-                                                    </>
+                                                    <span>Audit All Assets</span>
                                                 )}
                                             </button>
                                         </div>
