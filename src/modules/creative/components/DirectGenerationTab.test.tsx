@@ -69,14 +69,14 @@ describe('DirectGenerationTab Component', () => {
         render(<DirectGenerationTab />);
 
         expect(screen.getByPlaceholderText(/Describe your image/i)).toBeInTheDocument();
-        expect(screen.getByText('IMAGE')).toBeInTheDocument();
-        expect(screen.getByText('VIDEO')).toBeInTheDocument();
+        expect(screen.getByText(/image/i)).toBeInTheDocument();
+        expect(screen.getByText(/video/i)).toBeInTheDocument();
     });
 
     it('should switch between image and video modes', () => {
         render(<DirectGenerationTab />);
 
-        const videoButton = screen.getByText('VIDEO');
+        const videoButton = screen.getByText(/video/i);
         fireEvent.click(videoButton);
 
         expect(screen.getByPlaceholderText(/Describe your video/i)).toBeInTheDocument();
@@ -99,7 +99,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
 
-        const sendButton = screen.getByRole('button', { name: '' }); // Send button
+        const sendButton = screen.getByRole('button', { name: /send/i }); // Send button
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -113,7 +113,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -134,7 +134,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -156,7 +156,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'Test' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -178,7 +178,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'Test' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -194,13 +194,13 @@ describe('DirectGenerationTab Component', () => {
         render(<DirectGenerationTab />);
 
         // Switch to video mode
-        const videoButton = screen.getByText('VIDEO');
+        const videoButton = screen.getByText(/video/i);
         fireEvent.click(videoButton);
 
         const input = screen.getByPlaceholderText(/Describe your video/i);
         fireEvent.change(input, { target: { value: 'A video scene' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -211,7 +211,7 @@ describe('DirectGenerationTab Component', () => {
     it('should handle video generation success', async () => {
         render(<DirectGenerationTab />);
 
-        const videoButton = screen.getByText('VIDEO');
+        const videoButton = screen.getByText(/video/i);
         fireEvent.click(videoButton);
 
         const input = screen.getByPlaceholderText(/Describe your video/i);
@@ -233,7 +233,7 @@ describe('DirectGenerationTab Component', () => {
 
         render(<DirectGenerationTab />);
 
-        const videoButton = screen.getByText('VIDEO');
+        const videoButton = screen.getByText(/video/i);
         fireEvent.click(videoButton);
 
         const input = screen.getByPlaceholderText(/Describe your video/i);
@@ -252,7 +252,7 @@ describe('DirectGenerationTab Component', () => {
     it('should not generate with empty prompt', () => {
         render(<DirectGenerationTab />);
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
 
         expect(sendButton).toBeDisabled();
     });
@@ -271,8 +271,8 @@ describe('DirectGenerationTab Component', () => {
         });
     });
 
-    it('should not generate on Shift+Enter', () => {
-        const { ImageGeneration } = require('@/services/image/ImageGenerationService');
+    it('should not generate on Shift+Enter', async () => {
+        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
         (ImageGeneration.generateImages as any).mockClear();
 
         render(<DirectGenerationTab />);
@@ -309,14 +309,12 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'Test' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
-        // Check for loader icon
         await waitFor(() => {
-            const buttons = screen.getAllByRole('button');
-            const sendBtn = buttons.find(btn => btn.querySelector('[data-testid="icon-Loader2"]'));
-            expect(sendBtn).toBeInTheDocument();
+            const sendBtn = screen.getByRole('button', { name: /send/i });
+            expect(sendBtn.querySelector('[data-testid="icon-Loader2"]')).toBeInTheDocument();
         });
 
         // Resolve the generation
