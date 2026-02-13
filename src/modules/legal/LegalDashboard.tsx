@@ -1,9 +1,13 @@
 import React, { useState } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Gavel } from 'lucide-react';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useToast } from '@/core/context/ToastContext';
+import { Skeleton } from '@/components/shared/Skeleton';
 import { AI } from '@/services/ai/AIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
+import { LegalService } from '@/services/legal/LegalService';
+import { LegalContract } from './types';
 
 export default function LegalDashboard() {
     const [isDragging, setIsDragging] = useState(false);
@@ -14,7 +18,25 @@ export default function LegalDashboard() {
         summary: string;
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
+    const [contracts, setContracts] = useState<LegalContract[]>([]);
+    const [isLoadingLibrary, setIsLoadingLibrary] = useState(false);
     const toast = useToast();
+
+    React.useEffect(() => {
+        loadContracts();
+    }, []);
+
+    const loadContracts = async () => {
+        setIsLoadingLibrary(true);
+        try {
+            const data = await LegalService.getContracts();
+            setContracts(data);
+        } catch (error) {
+            console.error("Failed to load contracts:", error);
+        } finally {
+            setIsLoadingLibrary(false);
+        }
+    };
 
     const handleDragOver = (e: React.DragEvent) => {
         e.preventDefault();
@@ -132,6 +154,19 @@ Only return valid JSON.
         toast.info("Opening entertainment lawyer directory...");
     };
 
+    const handleExportPDF = async (id: string, title: string) => {
+        try {
+            toast.info(`Generating PDF for ${title}...`);
+            const success = await LegalService.exportContractToPDF(id);
+            if (success) {
+                toast.success("PDF saved successfully!");
+            }
+        } catch (error) {
+            console.error("PDF Export failed:", error);
+            toast.error("Failed to generate PDF.");
+        }
+    };
+
     return (
         <div className="h-full flex flex-col bg-bg-dark text-white p-6 overflow-y-auto">
             <div className="mb-8">
@@ -237,6 +272,62 @@ Only return valid JSON.
                             >
                                 Analyze Another Document
                             </button>
+                        </div>
+                    )}
+                </div>
+
+                {/* Stored Agreements Section */}
+                <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-6 h-fit">
+                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+                        <Shield size={18} className="text-green-400" />
+                        Stored Agreements
+                    </h3>
+
+                    {isLoadingLibrary ? (
+                        <div className="space-y-3">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="bg-bg-dark border border-gray-800 rounded-lg p-4 flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <Skeleton variant="circular" className="w-10 h-10" />
+                                        <div className="space-y-2">
+                                            <Skeleton className="w-32 h-4" />
+                                            <Skeleton className="w-24 h-2" />
+                                        </div>
+                                    </div>
+                                    <Skeleton className="w-20 h-8" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : contracts.length === 0 ? (
+                        <EmptyState
+                            variant="minimal"
+                            icon={Gavel}
+                            title="No stored agreements"
+                            description="Your analyzed and generated contracts will appear here for quick access."
+                        />
+                    ) : (
+                        <div className="grid grid-cols-1 gap-3">
+                            {contracts.map((contract) => (
+                                <div key={contract.id} className="bg-bg-dark border border-gray-800 rounded-lg p-4 flex items-center justify-between hover:border-gray-700 transition-colors">
+                                    <div className="flex items-center gap-4">
+                                        <div className="bg-green-500/10 p-2 rounded text-green-400">
+                                            <FileText size={20} />
+                                        </div>
+                                        <div>
+                                            <div className="font-semibold text-sm">{contract.title}</div>
+                                            <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+                                                {contract.type} • {contract.parties.join(' vs ')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleExportPDF(contract.id, contract.title)}
+                                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-[11px] font-bold rounded border border-gray-700 text-gray-300 hover:text-white transition-all uppercase tracking-tight"
+                                    >
+                                        Export PDF
+                                    </button>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </div>

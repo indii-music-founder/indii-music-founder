@@ -5,6 +5,8 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
 import { WhiskService } from '@/services/WhiskService';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Sparkles } from 'lucide-react';
 
 interface GeneratedItem {
     id: string;
@@ -176,15 +178,18 @@ export default function DirectGenerationTab() {
             {/* Main Content: Results Grid */}
             <div className="flex-1 overflow-y-auto p-6">
                 {results.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
-                            <Settings2 size={32} className="opacity-50" />
-                        </div>
-                        <p className="text-sm font-medium">Direct Generation Mode</p>
-                        <p className="text-xs text-gray-500 max-w-xs text-center">
-                            Bypass the agent orchestration layer to directly test API integration and asset generation.
-                        </p>
-                    </div>
+                    <EmptyState
+                        icon={Sparkles}
+                        title="Start Creating"
+                        description="Bypass the agent orchestration layer to directly test API integration and asset generation. Enter a prompt to begin."
+                        action={{
+                            label: "Focus Prompt Bar",
+                            onClick: () => {
+                                const input = document.querySelector('input[type="text"]');
+                                if (input instanceof HTMLElement) input.focus();
+                            }
+                        }}
+                    />
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
                         {results.map((item) => (

@@ -14,6 +14,8 @@ import {
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { distributionStore } from '../DistributionPersistenceService';
+import { earningsService } from '../EarningsService';
 
 export class DistroKidAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -173,6 +175,15 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
+        // 1. Check persistence store for status first
+        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
+        const dkDeployment = deployments.find(d => d.distributorId === this.id);
+
+        if (dkDeployment) {
+            return dkDeployment.status as ReleaseStatus;
+        }
+
+        // 2. Default to live if we know it was delivered but no record found (unlikely)
         return 'live';
     }
 
@@ -184,25 +195,36 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        // Production: Return 0 earnings until actual API integration is available.
-        // DO NOT generate random numbers in production.
-        return {
-            distributorId: 'distrokid',
-            releaseId: releaseId,
-            period: period,
-            streams: 0,
-            downloads: 0,
-            grossRevenue: 0,
-            distributorFee: 0, // 100% Payout
-            netRevenue: 0,
-            currencyCode: 'USD',
-            lastUpdated: new Date().toISOString()
-        };
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to DistroKid');
+        }
+
+        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
+
+        if (!earnings) {
+            return {
+                distributorId: 'distrokid',
+                releaseId: releaseId,
+                period: period,
+                streams: 0,
+                downloads: 0,
+                grossRevenue: 0,
+                distributorFee: 0, // 100% Payout
+                netRevenue: 0,
+                currencyCode: 'USD',
+                lastUpdated: new Date().toISOString()
+            };
+        }
+        return earnings;
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        // Return empty array until real implementation
-        return [];
+        const isConnected = await this.isConnected();
+        if (!isConnected) {
+            throw new Error('Not connected to DistroKid');
+        }
+        return await earningsService.getAllEarnings(this.id, period);
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

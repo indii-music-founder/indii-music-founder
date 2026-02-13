@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ImageAsset } from '../types';
+import { SocialOAuthService } from '@/services/social/SocialOAuthService';
 
 interface AccountCreationWizardProps {
     onClose: () => void;
@@ -29,6 +30,28 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
     const [profileImage, setProfileImage] = useState<ImageAsset | null>(null);
     const [bannerImage, setBannerImage] = useState<ImageAsset | null>(null);
     const [selectingFor, setSelectingFor] = useState<'profile' | 'banner' | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
+
+    const handleConnect = async () => {
+        setIsConnecting(true);
+        try {
+            const account = await SocialOAuthService.initiateOAuth(platform.name.toLowerCase());
+            if (account) {
+                toast.success(`${platform.name} connected successfully!`);
+                setIsConnected(true);
+                // Skip to finish step if connected
+                setStep(4);
+            } else {
+                toast.error("Connection cancelled or failed");
+            }
+        } catch (error: any) {
+            console.error("Connection error:", error);
+            toast.error(error.message || "An error occurred during connection");
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     const handleGenerateIdentity = async () => {
         if (!brandName || !industry) {
@@ -100,6 +123,18 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         placeholder="e.g. Technology"
                     />
                 </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-800">
+                <p className="text-xs text-gray-500 mb-4 text-center">Already have an account? Connect it directly to automate posting.</p>
+                <button
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                    className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isConnecting ? <Loader2 size={18} className="animate-spin" /> : <ExternalLink size={18} />}
+                    Connect Existing {platform.name} Account
+                </button>
             </div>
         </div>
     );

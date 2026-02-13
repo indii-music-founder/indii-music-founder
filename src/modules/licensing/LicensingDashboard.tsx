@@ -9,6 +9,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useLicensing } from './hooks/useLicensing';
 import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 
 export default function LicensingDashboard() {
@@ -94,46 +95,48 @@ export default function LicensingDashboard() {
                                     title="No Pending Clearances"
                                     description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
                                     actionLabel="Draft New Deal"
-                                    onAction={() => console.info('Open draft modal')} // Placeholder for now
+                                    onAction={() => toast.info("Beta: Direct deal drafting is coming soon. Please use the Legal Agent to initiate deals for now.")}
                                     gradient="from-yellow-500/20 to-orange-500/20"
                                 />
                             ) : (
-                                requests.map((request, idx) => (
-                                    <motion.div
-                                        key={request.id}
-                                        initial={{ opacity: 0, x: -20 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        className="group relative bg-[#1c2128] p-5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_30px_rgba(79,70,229,0.05)]"
-                                    >
-                                        <div className="flex justify-between items-start gap-4">
-                                            <div className="space-y-1">
-                                                <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{request.title}</h3>
-                                                <p className="text-sm font-medium text-gray-400">{request.artist}</p>
-                                                <div className="flex items-center gap-3 pt-2">
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 font-bold tracking-wider uppercase">
-                                                        {request.status}
-                                                    </span>
-                                                    <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-gray-400 border border-white/5 font-bold tracking-wider uppercase">
-                                                        {request.usage}
+                                <ErrorBoundary moduleName="Licensing Requests">
+                                    {requests.map((request, idx) => (
+                                        <motion.div
+                                            key={request.id}
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className="group relative bg-[#1c2128] p-5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_30px_rgba(79,70,229,0.05)]"
+                                        >
+                                            <div className="flex justify-between items-start gap-4">
+                                                <div className="space-y-1">
+                                                    <h3 className="text-lg font-bold text-white group-hover:text-indigo-400 transition-colors uppercase tracking-tight">{request.title}</h3>
+                                                    <p className="text-sm font-medium text-gray-400">{request.artist}</p>
+                                                    <div className="flex items-center gap-3 pt-2">
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-yellow-500/10 text-yellow-500 border border-yellow-500/20 font-bold tracking-wider uppercase">
+                                                            {request.status}
+                                                        </span>
+                                                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-white/5 text-gray-400 border border-white/5 font-bold tracking-wider uppercase">
+                                                            {request.usage}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end gap-3">
+                                                    <button
+                                                        onClick={() => handleDraftAction(request)}
+                                                        className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-indigo-400/20 shadow-lg shadow-indigo-600/10 transition-all scale-95 group-hover:scale-100 hover:shadow-indigo-500/20"
+                                                    >
+                                                        <FileText size={14} />
+                                                        DRAFT AGREEMENT
+                                                    </button>
+                                                    <span className="text-[10px] font-medium text-gray-600">
+                                                        Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : (request.requestedAt as any).toDate().toLocaleDateString()) : 'N/A'}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="flex flex-col items-end gap-3">
-                                                <button
-                                                    onClick={() => handleDraftAction(request)}
-                                                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-indigo-400/20 shadow-lg shadow-indigo-600/10 transition-all scale-95 group-hover:scale-100 hover:shadow-indigo-500/20"
-                                                >
-                                                    <FileText size={14} />
-                                                    DRAFT AGREEMENT
-                                                </button>
-                                                <span className="text-[10px] font-medium text-gray-600">
-                                                    Requested • {request.requestedAt ? (request.requestedAt instanceof Date ? request.requestedAt.toLocaleDateString() : request.requestedAt.toDate().toLocaleDateString()) : 'N/A'}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </motion.div>
-                                ))
+                                        </motion.div>
+                                    ))}
+                                </ErrorBoundary>
                             )}
                         </AnimatePresence>
                     </div>
@@ -155,7 +158,7 @@ export default function LicensingDashboard() {
                                         title="Portfolio Empty"
                                         description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
                                         actionLabel="Import Agreement"
-                                        onAction={() => console.info('Import modal')}
+                                        onAction={() => toast.info("Beta: License import tool is under development.")}
                                         secondaryLabel="Scan Catalog"
                                         onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
                                         gradient="from-emerald-500/20 to-teal-500/20"
@@ -164,42 +167,44 @@ export default function LicensingDashboard() {
                                     <DealFlowChart />
                                 </div>
                             ) : (
-                                licenses.map((license, idx) => (
-                                    <motion.div
-                                        key={license.id}
-                                        initial={{ opacity: 0, scale: 0.95 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: idx * 0.05 }}
-                                        className="relative bg-gradient-to-r from-[#1c2128] to-[#161b22] p-5 rounded-2xl border border-white/5 overflow-hidden group hover:border-emerald-500/30 transition-all shadow-xl"
-                                    >
-                                        <div className="absolute top-0 right-0 p-3 text-emerald-500/10">
-                                            <ShieldCheck size={64} />
-                                        </div>
-                                        <div className="relative z-10 flex justify-between items-start">
-                                            <div className="space-y-1">
-                                                <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{license.title}</h3>
-                                                <p className="text-sm font-medium text-gray-400">{license.artist}</p>
-                                                <div className="flex items-center gap-4 pt-3">
-                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold text-[10px] tracking-widest">
-                                                        <CheckCircle2 size={10} />
-                                                        SECURED
-                                                    </div>
-                                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{license.licenseType}</span>
-                                                </div>
+                                <ErrorBoundary moduleName="License Portfolio">
+                                    {licenses.map((license, idx) => (
+                                        <motion.div
+                                            key={license.id}
+                                            initial={{ opacity: 0, scale: 0.95 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ delay: idx * 0.05 }}
+                                            className="relative bg-gradient-to-r from-[#1c2128] to-[#161b22] p-5 rounded-2xl border border-white/5 overflow-hidden group hover:border-emerald-500/30 transition-all shadow-xl"
+                                        >
+                                            <div className="absolute top-0 right-0 p-3 text-emerald-500/10">
+                                                <ShieldCheck size={64} />
                                             </div>
-                                            {license.agreementUrl && (
-                                                <a
-                                                    href={license.agreementUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all shadow-lg"
-                                                >
-                                                    <ExternalLink size={18} />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </motion.div>
-                                ))
+                                            <div className="relative z-10 flex justify-between items-start">
+                                                <div className="space-y-1">
+                                                    <h3 className="text-lg font-bold text-white group-hover:text-emerald-400 transition-colors uppercase tracking-tight">{license.title}</h3>
+                                                    <p className="text-sm font-medium text-gray-400">{license.artist}</p>
+                                                    <div className="flex items-center gap-4 pt-3">
+                                                        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-bold text-[10px] tracking-widest">
+                                                            <CheckCircle2 size={10} />
+                                                            SECURED
+                                                        </div>
+                                                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{license.licenseType}</span>
+                                                    </div>
+                                                </div>
+                                                {license.agreementUrl && (
+                                                    <a
+                                                        href={license.agreementUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all shadow-lg"
+                                                    >
+                                                        <ExternalLink size={18} />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </ErrorBoundary>
                             )}
                         </AnimatePresence>
                     </div>

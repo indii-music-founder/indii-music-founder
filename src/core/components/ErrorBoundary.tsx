@@ -1,10 +1,11 @@
-
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Props {
     children: ReactNode;
     fallback?: ReactNode;
+    moduleName?: string;
 }
 
 interface State {
@@ -42,7 +43,7 @@ export class ErrorBoundary extends Component<Props, State> {
             }
         }
 
-        console.error("Uncaught error:", error, errorInfo);
+        console.error(`Uncaught error in ${this.props.moduleName || 'component'}:`, error, errorInfo);
     }
 
     private isChunkLoadError(error: Error): boolean {
@@ -54,73 +55,84 @@ export class ErrorBoundary extends Component<Props, State> {
         );
     }
 
+    private handleReset = () => {
+        this.setState({ hasError: false, error: null });
+        if (this.state.error && this.isChunkLoadError(this.state.error)) {
+            window.location.reload();
+        }
+    };
+
+    private handleGoHome = () => {
+        this.setState({ hasError: false, error: null });
+        window.location.href = '/';
+    };
+
     public render() {
         if (this.state.hasError) {
-            // Specialized UI for persistent Chunk Load Errors (Loop detected)
-            if (this.state.error && this.isChunkLoadError(this.state.error)) {
-                return (
-                    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-background text-white p-6">
-                        <div className="max-w-md text-center">
-                            <h2 className="text-2xl font-bold mb-4">New Version Available</h2>
-                            <p className="text-gray-400 mb-8">
-                                A new version of the application has been deployed. Please refresh your browser to get the latest updates.
-                            </p>
-                            <button
-                                onClick={() => window.location.reload()}
-                                className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 rounded-lg font-medium transition-colors bg-white text-black"
-                            >
-                                <RefreshCw size={18} />
-                                Update Now
-                            </button>
-                        </div>
-                    </div>
-                );
-            }
+            const isChunkError = this.state.error && this.isChunkLoadError(this.state.error);
 
-            // Standard Error Fallback
-            return this.props.fallback || (
-                <div className="fixed inset-0 z-[999999] p-6 bg-[rgba(50,0,0,0.9)] text-white overflow-auto flex items-center justify-center">
-                    <div className="bg-red-900/20 border border-red-500 rounded-lg p-6 max-w-2xl w-full text-center">
-                        <div className="bg-red-900/30 p-4 rounded-full inline-block mb-4">
-                            <RefreshCw className="w-10 h-10 text-red-400" />
+            if (this.props.fallback) return this.props.fallback;
+
+            return (
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-black/40 backdrop-blur-xl rounded-2xl border border-white/5 m-4 min-h-[400px]">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="relative mb-8"
+                    >
+                        <div className="absolute inset-0 bg-red-500/20 blur-3xl rounded-full" />
+                        <div className="relative w-24 h-24 bg-gray-900 border border-red-500/30 rounded-3xl flex items-center justify-center text-red-500 shadow-2xl">
+                            {isChunkError ? (
+                                <RefreshCw size={48} strokeWidth={1.5} className="animate-spin-slow" />
+                            ) : (
+                                <AlertTriangle size={48} strokeWidth={1.5} />
+                            )}
                         </div>
-                        <h2 className="text-xl font-bold mb-2">Something went wrong</h2>
-                        <p className="text-gray-300 mb-6">
-                            An unexpected error occurred. You can try reloading, or go back to the dashboard.
-                        </p>
-                        {import.meta.env.DEV && this.state.error && (
-                            <>
-                                <p className="font-mono text-sm text-red-200 mb-2 text-left">
-                                    {this.state.error.message}
-                                </p>
-                                <pre className="text-xs mb-4 overflow-auto max-h-64 bg-black/50 p-4 rounded border border-red-500/30 text-left">
-                                    {this.state.error.stack}
-                                </pre>
-                            </>
-                        )}
-                        <div className="flex gap-3 justify-center">
+                    </motion.div>
+
+                    <h2 className="text-3xl font-display font-bold mb-3 tracking-tight">
+                        {isChunkError ? "Update Available" : "Module Crash Detected"}
+                    </h2>
+                    <p className="text-gray-400 max-w-md mb-10 leading-relaxed text-lg">
+                        {isChunkError
+                            ? "A new version of indiiOS has been deployed. Please refresh to continue using the latest features."
+                            : `Something went wrong in the ${this.props.moduleName || 'requested'} module. Agent Zero has been notified and is investigating.`
+                        }
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        <button
+                            onClick={this.handleReset}
+                            className="flex items-center gap-3 px-8 py-4 bg-white text-black font-bold rounded-2xl hover:bg-gray-200 transition-all active:scale-95 shadow-xl shadow-white/5 text-lg"
+                        >
+                            <RefreshCw size={20} />
+                            {isChunkError ? "Reload Now" : "Try Again"}
+                        </button>
+
+                        {!isChunkError && (
                             <button
-                                onClick={() => {
-                                    this.setState({ hasError: false, error: null });
-                                    window.location.hash = '';
-                                    window.location.reload();
-                                }}
-                                className="px-5 py-2.5 bg-red-600 hover:bg-red-500 rounded-md text-sm font-bold text-white transition-colors cursor-pointer shadow-lg hover:shadow-red-500/20 inline-flex items-center gap-2"
+                                onClick={this.handleGoHome}
+                                className="flex items-center gap-3 px-8 py-4 bg-white/5 text-white font-bold rounded-2xl hover:bg-white/10 transition-all active:scale-95 border border-white/10 text-lg"
                             >
-                                <RefreshCw size={16} />
-                                Reload Application
-                            </button>
-                            <button
-                                onClick={() => {
-                                    this.setState({ hasError: false, error: null });
-                                    window.location.href = '/';
-                                }}
-                                className="px-5 py-2.5 bg-white/10 hover:bg-white/20 border border-white/20 rounded-md text-sm font-bold text-white transition-colors cursor-pointer"
-                            >
+                                <Home size={20} />
                                 Go to Dashboard
                             </button>
-                        </div>
+                        )}
                     </div>
+
+                    {import.meta.env.DEV && this.state.error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="mt-16 w-full max-w-3xl p-6 bg-black/60 rounded-2xl border border-white/5 text-left overflow-hidden shadow-inner font-mono text-sm"
+                        >
+                            <p className="font-bold mb-3 uppercase tracking-[0.2em] text-[10px] text-gray-500">Developer Insights / Stack Trace</p>
+                            <div className="max-h-64 overflow-auto custom-scrollbar text-red-300/80 scroll-p-2">
+                                <p className="font-bold mb-2 text-red-400">{this.state.error.message}</p>
+                                {this.state.error.stack}
+                            </div>
+                        </motion.div>
+                    )}
                 </div>
             );
         }
