@@ -48,6 +48,9 @@ describe('PublicistService Integration Tests', () => {
                                 status: 'Draft',
                                 budget: 1000,
                                 userId: mockUserId,
+                                type: 'Album',
+                                releaseDate: new Date().toISOString(),
+                                progress: 0,
                                 type: 'Single', // valid type from schema
                                 releaseDate: new Date().toISOString(),
                                 openRate: 0,
