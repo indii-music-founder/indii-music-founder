@@ -325,16 +325,21 @@ CRITICAL RULES:
         const { currentOrganizationId, currentProjectId, currentModule } = useStore.getState();
 
         // Build rich context
+        // Extract artist display name for persona propagation
+        const artistDisplayName = context?.userProfile?.displayName || '';
+
         const orgContext = `
 ORGANIZATION CONTEXT:
 - Organization ID: ${currentOrganizationId}
 - Project ID: ${currentProjectId}
 - Current Module: ${currentModule || 'unknown'}
+${artistDisplayName ? `- Artist Name: ${artistDisplayName}` : ''}
 `;
 
         const brandKit = context?.brandKit;
         const brandContext = brandKit ? `
 BRAND CONTEXT:
+- Artist Name: ${artistDisplayName || 'N/A'}
 - Identity: ${context?.userProfile?.bio || 'N/A'}
 - Visual Style: ${brandKit.brandDescription || 'N/A'}
 - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
@@ -376,6 +381,9 @@ ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${i
 ${orgContext}
 ${brandContext}
 ${whiskContext}
+
+ARTIST IDENTITY ENFORCEMENT:
+${artistDisplayName ? `The artist you are working with is **${artistDisplayName}**. ALWAYS use this exact name when referring to the artist. NEVER invent, substitute, or hallucinate a different name.` : 'No artist profile loaded. Ask the user for their artist name if needed.'}
 
 MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
