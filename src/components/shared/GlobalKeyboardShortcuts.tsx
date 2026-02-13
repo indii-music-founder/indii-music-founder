@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Keyboard, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 interface ShortcutGroup {
     title: string;
@@ -17,6 +19,8 @@ const GLOBAL_SHORTCUT_GROUPS: ShortcutGroup[] = [
     {
         title: 'General',
         shortcuts: [
+            { keys: [MOD, 'K'], description: 'Toggle Agent / Command Bar' },
+            { keys: [MOD, 'B'], description: 'Toggle Sidebar' },
             { keys: ['?'], description: 'Show keyboard shortcuts' },
             { keys: ['Esc'], description: 'Close dialog / menu' },
             { keys: ['Enter'], description: 'Submit prompt / command' },
@@ -128,10 +132,46 @@ export function GlobalKeyboardShortcuts({ isOpen, onClose }: { isOpen: boolean; 
  * Hook to globally toggle the shortcuts modal with the "?" key.
  * Install once in the app shell (e.g., App.tsx or Sidebar).
  */
-export function useGlobalShortcutsModal() {
+export function useGlobalShortcuts() {
     const [isOpen, setIsOpen] = useState(false);
+    const { isAgentOpen, toggleAgentWindow, toggleSidebar, isCommandBarDetached } = useStore(useShallow(state => ({
+        isAgentOpen: state.isAgentOpen,
+        toggleAgentWindow: state.toggleAgentWindow,
+        toggleSidebar: state.toggleSidebar,
+        isCommandBarDetached: state.isCommandBarDetached
+    })));
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
+        // Toggle Command Bar (CMD+K)
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // If closed, open it. If open, just focus the input.
+            if (!isAgentOpen) {
+                toggleAgentWindow();
+            }
+
+            // Always try to focus the input
+            // Small delay to ensure render if it was closed
+            setTimeout(() => {
+                const input = document.getElementById('global-command-input');
+                if (input) {
+                    input.focus();
+                }
+            }, 50);
+            return;
+        }
+
+        // Toggle Sidebar (CMD+B)
+        if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleSidebar();
+            return;
+        }
+
+        // Help Modal (?)
         if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
             const target = e.target as HTMLElement;
             if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
@@ -140,10 +180,11 @@ export function useGlobalShortcutsModal() {
             e.preventDefault();
             setIsOpen(prev => !prev);
         }
+
         if (e.key === 'Escape' && isOpen) {
             setIsOpen(false);
         }
-    }, [isOpen]);
+    }, [isOpen, isAgentOpen, toggleAgentWindow, toggleSidebar]);
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
