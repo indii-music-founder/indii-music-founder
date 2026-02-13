@@ -44,7 +44,11 @@ export class ContextPipeline {
         // 4. Inject Living Context (The Vibe)
         let livingContext = '';
         if (auth.currentUser) {
-            livingContext = await livingFileService.injectContext(auth.currentUser.uid);
+            try {
+                livingContext = await livingFileService.injectContext(auth.currentUser.uid);
+            } catch (error) {
+                console.warn('[ContextPipeline] Failed to inject living context:', error);
+            }
         }
 
         // 5. Format memory context for agent consumption

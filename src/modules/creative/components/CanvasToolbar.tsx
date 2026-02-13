@@ -19,7 +19,7 @@ export const CanvasToolbar: React.FC<CanvasToolbarProps> = ({
     const baseButtonClass = "p-2 hover:bg-gray-800 rounded text-gray-400 hover:text-white transition-colors focus-visible:ring-2 focus-visible:ring-dept-creative/40 focus-visible:outline-none";
 
     return (
-        <div className="w-16 bg-background border-r border-gray-800 flex flex-col items-center py-4 gap-4">
+        <div className="w-full md:w-16 h-16 md:h-auto bg-background md:border-r border-gray-800 flex flex-row md:flex-col items-center justify-center md:justify-start py-2 md:py-4 px-4 md:px-0 gap-4 shrink-0">
             <button
                 onClick={addRectangle}
                 data-testid="add-rect-btn"

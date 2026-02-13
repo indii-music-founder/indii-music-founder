@@ -78,6 +78,9 @@ export class SmartContractService {
     async executePayout(contractAddress: string, amountUSDC: number): Promise<boolean> {
         console.info(`[SmartContract] Executing Payout of ${amountUSDC} USDC via ${contractAddress}`);
 
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User authentication required for payouts");
+
         // Logic: Check recoupment, then distribute
         // (Simplified stub)
 
@@ -91,6 +94,9 @@ export class SmartContractService {
      */
     async tokenizeAsset(isrc: string, totalShares: number): Promise<string> {
         console.info(`[SmartContract] Minting ${totalShares} SongShares for ${isrc}...`);
+
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User authentication required for tokenization");
 
         const tokenContract = `0xToken${Math.random().toString(16).slice(2, 10)}`;
         await this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);

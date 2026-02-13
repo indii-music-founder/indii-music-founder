@@ -28,8 +28,15 @@ export const useCanvasHistory = (
   maxHistorySize: number = 50,
   debounceMs: number = 300
 ): UseCanvasHistoryReturn => {
-  const [history, setHistory] = useState<CanvasHistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [historyState, setHistoryState] = useState<{
+    entries: CanvasHistoryState[];
+    index: number;
+  }>({ entries: [], index: -1 });
+
+  // Derived for convenience
+  const history = historyState.entries;
+  const historyIndex = historyState.index;
+
   const isPerformingAction = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -41,31 +48,25 @@ export const useCanvasHistory = (
       const json = JSON.stringify(canvas.toObject(['name', 'selectable', 'evented']));
       const timestamp = Date.now();
 
-      setHistory((prevHistory) => {
-        // Remove any "future" states
-        const newHistory = prevHistory.slice(0, historyIndex + 1);
-
-        // Add new state
+      setHistoryState((prev) => {
+        const newHistory = prev.entries.slice(0, prev.index + 1);
         newHistory.push({ json, timestamp });
 
-        // Limit history size
-        if (newHistory.length > maxHistorySize) {
+        const shifted = newHistory.length > maxHistorySize;
+        if (shifted) {
           newHistory.shift();
         }
 
-        return [...newHistory];
+        return {
+          entries: [...newHistory],
+          index: shifted ? newHistory.length - 1 : prev.index + 1
+        };
       });
 
-      setHistoryIndex((prevIndex) => {
-        if (history.length >= maxHistorySize && prevIndex === maxHistorySize - 1) {
-          return prevIndex; // Keep index at the end if we shifted
-        }
-        return prevIndex + 1;
-      });
     } catch (error) {
       console.error('Failed to save canvas state:', error);
     }
-  }, [canvas, history.length, historyIndex, maxHistorySize]);
+  }, [canvas, maxHistorySize]);
 
   // Debounced save state
   const debouncedSaveState = useCallback(() => {
@@ -90,7 +91,7 @@ export const useCanvasHistory = (
 
       await canvas.loadFromJSON(parsedJson);
       canvas.renderAll();
-      setHistoryIndex(historyIndex - 1);
+      setHistoryState(prev => ({ ...prev, index: prev.index - 1 }));
       isPerformingAction.current = false;
     } catch (error) {
       console.error('Failed to undo:', error);
@@ -110,7 +111,7 @@ export const useCanvasHistory = (
 
       await canvas.loadFromJSON(parsedJson);
       canvas.renderAll();
-      setHistoryIndex(historyIndex + 1);
+      setHistoryState(prev => ({ ...prev, index: prev.index + 1 }));
       isPerformingAction.current = false;
     } catch (error) {
       console.error('Failed to redo:', error);
@@ -120,8 +121,7 @@ export const useCanvasHistory = (
 
   // Clear all history
   const clearHistory = useCallback(() => {
-    setHistory([]);
-    setHistoryIndex(-1);
+    setHistoryState({ entries: [], index: -1 });
   }, []);
 
   // Auto-save on canvas modifications

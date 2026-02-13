@@ -22,7 +22,7 @@ export const ScheduledPostSchema = z.object({
     }).optional(),
     status: CampaignStatusSchema.default('PENDING'),
     authorId: z.string().optional(), // Assigned by backend/service
-    userId: z.string().optional() // For security rules and querying
+    userId: z.string() // Required for security rules and querying
 });
 
 export const CreatePostRequestSchema = z.object({

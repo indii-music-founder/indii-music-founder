@@ -171,6 +171,7 @@ Be direct, creative, and concise. Do not use tools.`;
             return text;
 
         } catch (e) {
+            console.error('[WorkflowCoordinator] Direct generation failed, delegating to agent:', e);
             return "DELEGATED_TO_AGENT";
         }
     }

@@ -447,9 +447,9 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     setIsHighFidelity={setIsHighFidelity}
                 />
 
-                <div className="flex-1 flex overflow-hidden">
+                <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                     {/* Left Sidebar: Tools & Annotations */}
-                    <aside className="border-r border-gray-800 bg-[#0a0a0a] flex flex-col items-center">
+                    <aside className="border-b md:border-b-0 md:border-r border-gray-800 bg-[#0a0a0a] flex flex-row md:flex-col items-center h-auto md:h-full w-full md:w-auto overflow-x-auto md:overflow-visible z-10">
                         <CanvasToolbar
                             addRectangle={() => canvasOps.addRectangle()}
                             addCircle={() => canvasOps.addCircle()}
@@ -457,7 +457,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                             toggleMagicFill={toggleMagicFill}
                             isMagicFillMode={isMagicFillMode}
                         />
-                        <div className="flex-1 overflow-y-auto w-full custom-scrollbar py-4 px-2">
+                        <div className="flex-1 overflow-x-auto md:overflow-y-auto w-full custom-scrollbar py-2 px-2 md:py-4 flex flex-row md:flex-col gap-2 items-center">
                             <AnnotationPalette
                                 activeColor={activeColor}
                                 onColorSelect={setActiveColor}
@@ -468,7 +468,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                     </aside>
 
                     {/* Stage: Main Viewport */}
-                    <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-12">
+                    <main className="flex-1 relative bg-[#050505] flex items-center justify-center overflow-hidden p-4 md:p-12">
                         {item.type === 'video' && !item.url.startsWith('data:image') ? (
                             <video src={item.url} controls className="max-w-full max-h-full object-contain shadow-2xl rounded-lg" />
                         ) : (
