@@ -9,6 +9,7 @@ import { registerCredentialHandlers } from './handlers/credential';
 import { registerSFTPHandlers } from './handlers/sftp';
 import { setupDistributionHandlers as registerDistributionHandlers } from './handlers/distribution';
 import { registerAgentHandlers } from './handlers/agent';
+import { registerSocialHandlers } from './handlers/social';
 import { registerVideoHandlers } from './handlers/video';
 import { configureSecurity } from './security';
 import { DockerService } from './services/DockerService';
@@ -156,6 +157,7 @@ if (!gotTheLock) {
         registerSFTPHandlers();
         registerDistributionHandlers();
         registerAgentHandlers();
+        registerSocialHandlers();
         registerVideoHandlers();
 
         // Ensure AI Services are running

@@ -13,6 +13,8 @@ import {
 } from '../types/distributor';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { ernService } from '@/services/ddex/ERNService';
+import { DDEX_CONFIG } from '@/core/config/ddex';
 
 export class SymphonicAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'symphonic';
@@ -63,21 +65,85 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
         }
 
         console.info('[Symphonic] Initiating release delivery:', metadata.trackTitle);
-        const releaseId = `SYM-${Date.now()}`;
+        const internalId = metadata.id || `SYM-${Date.now()}`;
 
         try {
-            // 1. Build Package
-            const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
+            // 1. Generate DDEX ERN XML
+            const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'symphonic', assets);
 
-            if (typeof window !== 'undefined' && window.electronAPI?.sftp) {
-                console.info('[Symphonic] Delivering via Electron SFTP IPC...');
-                // STUB: Awaiting Symphonic SFTP credentials for production delivery
-                // Integration point: window.electronAPI.sftp.put(folderReleaseId, packageBuffer)
+            if (!ernResult.success || !ernResult.xml) {
+                return {
+                    success: false,
+                    status: 'failed',
+                    errors: [{ code: 'ERN_GENERATION_FAILED', message: ernResult.error || 'Failed to generate ERN' }]
+                };
+            }
+
+            // 2. Real Transmission (If running in Electron with SFTP bridge)
+            if (this.credentials?.sftpHost && window.electronAPI?.distribution?.stageRelease) {
+                console.info('[Symphonic] Executing real SFTP delivery...');
+
+                // 2a. Prepare file map for staging
+                const files: { type: 'content' | 'path'; data: string; name: string }[] = [
+                    { type: 'content', data: ernResult.xml!, name: 'ern.xml' }
+                ];
+
+                let resourceCounter = 1;
+
+                // 2b. Map Audio Files
+                const tracks = (metadata.tracks && metadata.tracks.length > 0)
+                    ? metadata.tracks
+                    : [metadata];
+
+                tracks.forEach((track, index) => {
+                    const ref = `A${resourceCounter++}`;
+                    let assetObj = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
+
+                    // Fallback to singular audioFile if needed
+                    if (!assetObj && index === 0 && assets.audioFile) {
+                        assetObj = { ...assets.audioFile, trackIndex: 0 };
+                    }
+
+                    if (assetObj) {
+                        const ext = assetObj.format || 'wav';
+                        files.push({
+                            type: 'path',
+                            data: assetObj.url,
+                            name: `resources/${ref}.${ext}`
+                        });
+                    }
+                });
+
+                // 2c. Map Cover Art
+                if (assets.coverArt) {
+                    const ref = `IMG${resourceCounter++}`;
+                    const ext = assets.coverArt.url.split('?')[0].split('.').pop() || 'jpg';
+                    files.push({
+                        type: 'path',
+                        data: assets.coverArt.url,
+                        name: `resources/${ref}.${ext}`
+                    });
+                }
+
+                // 3. Stage Files Locally
+                const stagingRes = await window.electronAPI.distribution.stageRelease(internalId, files);
+
+                if (!stagingRes.success || !stagingRes.packagePath) {
+                    throw new Error(stagingRes.error || 'Failed to stage release files locally');
+                }
+
+                console.info(`[Symphonic] Files staged at ${stagingRes.packagePath}. Starting upload...`);
+
+                // 4. Transmission
+                // Symphonic typically expects a folder named after the UPC or Release ID
+                const remoteFolder = `/${metadata.upc || internalId}`;
+                await this.uploadBundle(stagingRes.packagePath, remoteFolder);
+
                 return {
                     success: true,
                     status: 'delivered',
-                    releaseId: releaseId,
-                    distributorReleaseId: `SYM-${releaseId}`,
+                    releaseId: internalId,
+                    distributorReleaseId: `SYM-${internalId}`,
                     metadata: {
                         reviewRequired: true,
                         estimatedLiveDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString()
@@ -91,9 +157,9 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     status: 'failed',
                     errors: [{
                         code: 'DELIVERY_UNAVAILABLE',
-                        message: 'Symphonic delivery requires active SFTP session.'
+                        message: 'Symphonic delivery requires active SFTP session and Electron environment.'
                     }],
-                    releaseId
+                    releaseId: internalId
                 };
             }
 
@@ -106,7 +172,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     code: 'DELIVERY_FAILED',
                     message: error instanceof Error ? error.message : 'Unknown Delivery Error'
                 }],
-                releaseId
+                releaseId: internalId
             };
         }
     }

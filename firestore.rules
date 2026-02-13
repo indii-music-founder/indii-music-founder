@@ -352,6 +352,11 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.userId);
     }
 
+    match /earnings/{earningId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
     match /earnings_reports/{reportId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
@@ -533,6 +538,95 @@ service cloud.firestore {
     }
 
     match /tour_rider_items/{itemId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // PROACTIVE TASKS (Autonomy Engine - Pulse)
+    // ========================================
+    // Used by ProactiveService for heartbeat-triggered and scheduled agent tasks.
+    // Each task belongs to a specific user and can only be managed by that user.
+
+    match /proactive_tasks/{taskId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // SESSIONS (Agent Conversation Persistence)
+    // ========================================
+    // Used by SessionService for dual-write (Firestore + Electron local).
+    // Org-scoped: members of the same org can read each other's sessions.
+
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isOrgMember(resource.data.orgId)
+      );
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // LIVING FILES (Autonomy Engine - The Vibe)
+    // ========================================
+    // Dynamic Markdown files (SOUL, ARTIST, SHOWROOM, PULSE, EPISODIC, RHYTHM)
+    // stored as subcollections under users. The agent can read/write these.
+    // Only the owning user's agent can access their living files.
+
+    match /users/{userId}/living_files/{fileId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // ========================================
+    // SCHEDULED POSTS (Social Scheduling)
+    // ========================================
+    // Used by the social module for scheduling posts across platforms.
+
+    match /scheduled_posts/{postId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // SMART CONTRACTS (Legal)
+    // ========================================
+
+    match /smart_contracts/{contractId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /contracts/{contractId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // LEDGER (Blockchain/Legal)
+    // ========================================
+
+    match /ledger/{entryId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update, delete: if false; // Ledger is append-only
+    }
+
+    // ========================================
+    // PROCESSED REPORTS (DDEX/Distribution)
+    // ========================================
+
+    match /processed_reports/{reportId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /dsr_processed_reports/{reportId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }
