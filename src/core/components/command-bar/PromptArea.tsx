@@ -237,6 +237,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
+                    id="global-command-input"
                     placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
