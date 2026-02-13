@@ -299,6 +299,15 @@ CRITICAL RULES:
                     },
                     required: ['orgId']
                 }
+            },
+            {
+                name: 'compact_history',
+                description: 'Compact and summarize the current chat history into episodic memory. Use this when the conversation is becoming long or noisy.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
             }
         ];
 
@@ -400,10 +409,15 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
             .map(msg => `${msg.role.toUpperCase()}: ${msg.text}`)
             .join('\n');
 
+        const memorySection = context?.memoryContext
+            ? `\nRELEVANT MEMORIES:\n${context.memoryContext}\n`
+            : '';
+
         const fullPrompt = `${fullSystemPrompt}
 
 CONVERSATION HISTORY:
 ${historyText}
+${memorySection}
 
 CURRENT REQUEST: ${task}
 `;

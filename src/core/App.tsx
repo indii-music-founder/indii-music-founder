@@ -62,7 +62,7 @@ const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntle
 // ============================================================================
 
 // Use flexible type to accommodate different component prop signatures
- 
+
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
@@ -353,7 +353,7 @@ export default function App() {
 
                                 <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
                                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                                        <ErrorBoundary>
+                                        <ErrorBoundary moduleName={currentModule}>
                                             <Suspense fallback={<LoadingFallback />}>
                                                 <ModuleRenderer moduleId={currentModule as ModuleId} />
                                             </Suspense>

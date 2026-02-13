@@ -5,7 +5,8 @@ import { ContextPipeline, PipelineContext } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HybridOrchestrator } from './hybrid/HybridOrchestrator';
 import { AgentExecutor } from './components/AgentExecutor';
-import { AgentContext } from './types';
+import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentContext, HUB_AGENT_ID, SPOKE_AGENT_IDS } from './types';
+import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
@@ -117,7 +118,6 @@ export class AgentService {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
                     this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).finally(() => {
-
                         if (timeoutHandle) clearTimeout(timeoutHandle);
                     }),
                     timeoutPromise
@@ -216,7 +216,7 @@ export class AgentService {
             coordinatorResult = 'DELEGATED_TO_AGENT';
         } else {
             // Pass REDACTED text to the coordinator
-            coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk) => {
+            coordinatorResult = await coordinator.handleUserRequest(text, context, (chunk: string) => {
                 // Update the UI optimistically if chunks arrive from fast path
                 updateAgentMessage(responseId, { text: chunk });
             });
@@ -466,8 +466,6 @@ export class AgentService {
      */
     async runAgent(agentId: string, task: string, parentContext?: AgentContext, parentTraceId?: string, attachments?: { mimeType: string; base64: string }[]): Promise<{ text: string; thoughtSignature?: string }> {
         // CRITICAL: Deep clone context to prevent mutation affecting parent agent
-        // Context objects are passed by reference and can be mutated during execution,
-        // causing parent agents to lose their execution state ("dismantling")
         let context: AgentContext;
 
         if (parentContext) {
@@ -475,12 +473,37 @@ export class AgentService {
             try {
                 context = structuredClone(parentContext);
             } catch (e) {
-                console.warn('[AgentService] Context clone failed, using shallow copy:', e);
                 context = { ...parentContext };
             }
 
-            // Restore non-serializable properties after cloning
-            // (chatHistory and attachments contain references we want to preserve)
+            // Ensure Living Context is present
+            if (!context.livingContext) {
+                const { auth } = await import('@/services/firebase');
+                if (auth.currentUser) {
+                    const { livingFileService } = await import('./living/LivingFileService');
+                    context.livingContext = await livingFileService.injectContext(auth.currentUser.uid);
+                }
+            }
+
+            // Phase 3: Semantic Retrieval Integration
+            const projectId = context.projectId || (await import('@/core/store')).useStore.getState().currentProjectId;
+            if (projectId && !context.memoryContext) {
+                try {
+                    console.log(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
+                    const memories = await memoryService.recallMemories(projectId, task, 5);
+                    if (memories && memories.length > 0) {
+                        context.relevantMemories = memories.map((m: any) => m.content);
+                        context.memoryContext = memories
+                            .map((m: any) => `- [${new Date(m.timestamp).toLocaleDateString()}] (${m.type}): ${m.content}`)
+                            .join('\n');
+                        console.log(`[AgentService] Injected ${memories.length} memories into context.`);
+                    }
+                } catch (e) {
+                    console.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);
+                }
+            }
+
+            // Restore non-serializable properties
             if (parentContext.chatHistory) {
                 context.chatHistory = [...parentContext.chatHistory];
             }
@@ -515,24 +538,10 @@ export class AgentService {
      * Redacts sensitive information from the input text before sending it to the LLM.
      */
     private redactPII(text: string): string {
-        // Redact Credit Cards: 13-19 digits, possibly separated by spaces or dashes.
-        // Supports 4 groups of 4 (Visa/MC) and 15-digit (AMEX) formats.
-        // Regex looks for sequences of digits/spaces/dashes that look like cards.
         const creditCardRegex = /\b(?:\d[ -]*?){13,16}\b/g;
-
-        // Redact "Password: value" pattern
-        // Matches "password" followed by optional "is", then optional separators (colon, space, equals),
-        // then captures the value until whitespace or punctuation.
-        // We use a replacement function to ensure we replace the VALUE, not the label.
-        // Regex: (password(?:\s+is)?[:\s=]+)([^\s\.,;!]+)
         const passwordRegex = /(password(?:\s+is)?[:\s=]+)([^\s.,;!]+)/gi;
 
-        // Heuristic Check: Only replace if it passes Luhn check?
-        // For now, simple pattern matching to avoid complexity in this security filter.
-        // Note: The previous regex was too strict (4x4). This one is broader.
         let redacted = text.replace(creditCardRegex, (match) => {
-            // Basic filter to avoid matching timestamps or simple IDs (e.g. 2024-10-10)
-            // A credit card usually has mixed spacing or is long.
             if (match.replace(/\D/g, '').length < 13) return match;
             return '[REDACTED_CREDIT_CARD]';
         });
@@ -546,4 +555,3 @@ export class AgentService {
 }
 
 export const agentService = new AgentService();
-

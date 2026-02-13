@@ -8,6 +8,7 @@ import { SocialStats, ScheduledPost } from '@/services/social/types';
 import { useStore } from '@/core/store';
 import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 export default function SocialDashboard() {
     const toast = useToast();
@@ -17,7 +18,9 @@ export default function SocialDashboard() {
     // Use the hook for data
     const {
         stats,
+        posts,
         scheduledPosts,
+        linkedAccounts,
         actions
     } = useSocial(); // No userId needed for my dashboard
 
@@ -107,10 +110,10 @@ export default function SocialDashboard() {
                 </div>
                 <div className="flex items-center gap-4">
                     <button
-                        onClick={() => setIsAccountWizardOpen(true)}
-                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700"
+                        onClick={() => actions.linkAccount('twitter')}
+                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors flex items-center gap-2 border border-gray-700 hover:border-gray-500"
                     >
-                        <UserPlus size={18} /> Add Account
+                        <UserPlus size={18} /> Link Account
                     </button>
                     <button
                         onClick={() => setIsCreateModalOpen(true)}
@@ -161,6 +164,22 @@ export default function SocialDashboard() {
                 </div>
             </div>
 
+            {/* Linked Accounts Row */}
+            {linkedAccounts.length > 0 && (
+                <div className="mb-8">
+                    <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wider mb-4">Connected Platforms</h3>
+                    <div className="flex flex-wrap gap-4">
+                        {linkedAccounts.map(account => (
+                            <div key={account.platform} className="bg-[#161b22] border border-gray-800 px-4 py-2 rounded-lg flex items-center gap-3">
+                                <div className={`w-2 h-2 rounded-full ${account.platform === 'twitter' ? 'bg-sky-400' : 'bg-pink-500'}`}></div>
+                                <span className="text-sm font-medium">{account.platform === 'twitter' ? 'X (Twitter)' : account.platform}</span>
+                                <span className="text-xs text-gray-500 font-mono">@{account.username}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
             {/* Calendar Section */}
             <div className="bg-[#161b22] border border-gray-800 rounded-xl overflow-hidden">
                 <div className="p-6 border-b border-gray-800 flex items-center justify-between">
@@ -201,7 +220,9 @@ export default function SocialDashboard() {
 
             {/* Social Feed */}
             <div className="mt-8">
-                <SocialFeed />
+                <ErrorBoundary moduleName="Social Feed">
+                    <SocialFeed />
+                </ErrorBoundary>
             </div>
 
             {isCreateModalOpen && (

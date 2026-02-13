@@ -1,7 +1,9 @@
 import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { motion } from 'framer-motion';
-import { DollarSign, Camera, Loader2, Plus } from 'lucide-react';
+import { DollarSign, Camera, Loader2, Plus, Receipt } from 'lucide-react';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Skeleton } from '@/components/shared/Skeleton';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 import { useToast } from '@/core/context/ToastContext';
 import { useFinance } from '../hooks/useFinance';
@@ -36,17 +38,30 @@ export const ExpenseTracker: React.FC = React.memo(() => {
     const expenseList = useMemo(() => {
         if (isLoading) {
             return (
-                <div className="flex flex-col items-center justify-center py-20">
-                    <Loader2 className="animate-spin text-gray-600 mb-2" />
-                    <p className="text-gray-500 text-sm">Loading expenses...</p>
+                <div className="space-y-3">
+                    {[1, 2, 3, 4].map(i => (
+                        <div key={i} className="bg-white/5 border border-white/5 rounded-xl p-4 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                                <Skeleton variant="circular" className="w-10 h-10" />
+                                <div className="space-y-2">
+                                    <Skeleton className="w-32 h-4" />
+                                    <Skeleton className="w-24 h-2" />
+                                </div>
+                            </div>
+                            <Skeleton className="w-16 h-6" />
+                        </div>
+                    ))}
                 </div>
             );
         }
         if (expenses.length === 0) {
             return (
-                <div className="text-center text-gray-500 py-10">
-                    No expenses recorded yet. Note your costs to calculate tax deductions.
-                </div>
+                <EmptyState
+                    variant="minimal"
+                    icon={Receipt}
+                    title="No expenses recorded"
+                    description="Note your costs to calculate tax deductions. Drag & drop a receipt to start."
+                />
             );
         }
         return expenses.map(expense => (
