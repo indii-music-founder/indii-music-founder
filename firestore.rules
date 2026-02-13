@@ -505,6 +505,20 @@ service cloud.firestore {
     }
 
     // ========================================
+    // PUBLICIST CAMPAIGNS & CONTACTS (User Scoped)
+    // ========================================
+
+    match /publicist_campaigns/{campaignId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /publicist_contacts/{contactId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
     // TOURING & LOGISTICS (User Scoped)
     // ========================================
 

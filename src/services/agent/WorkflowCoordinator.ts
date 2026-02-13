@@ -139,10 +139,23 @@ export class WorkflowCoordinator {
     ): Promise<string> {
         // Direct call to FirebaseAI (Gemini) for fast response
         try {
-            // Prepare a simple system prompt
-            const systemPrompt = `You are indii, a creative assistant. 
-            The user has asked for a quick content generation. 
-            Be direct, creative, and concise. Do not use tools.`;
+            // Build persona-aware system prompt from context
+            const artistName = context.userProfile?.displayName || '';
+            const brandDesc = context.brandKit?.brandDescription || '';
+            const genre = context.brandKit?.releaseDetails?.genre || '';
+
+            let personaContext = '';
+            if (artistName) {
+                personaContext += `\nYou are working with the artist **${artistName}**.`;
+                personaContext += ` ALWAYS use this exact name when referring to the artist. NEVER invent a different name.`;
+            }
+            if (brandDesc) personaContext += `\nBrand: ${brandDesc}`;
+            if (genre) personaContext += `\nGenre: ${genre}`;
+
+            const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}
+
+The user has asked for a quick content generation.
+Be direct, creative, and concise. Do not use tools.`;
 
             // We use generating content directly with the FAST model
             const response = await firebaseAI.generateContent(
