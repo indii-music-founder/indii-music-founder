@@ -28,6 +28,7 @@ export class EarningsService {
             if (period) {
                 // This assumes stored records have a compatible date field or we filter in memory
                 // For simplicity in this roadmap, we fetch the latest matching record
+                // TODO: Implement date range query constraints when composite index is ready
             }
 
             const q = query(
@@ -59,6 +60,10 @@ export class EarningsService {
                 where('userId', '==', auth.currentUser.uid), // Filter by user
                 where('distributorId', '==', distributorId)
             );
+
+            if (period) {
+                // TODO: Filter by date range
+            }
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => doc.data() as DistributorEarnings);

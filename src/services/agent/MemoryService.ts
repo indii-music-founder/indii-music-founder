@@ -1,6 +1,8 @@
 import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
+import { db } from '@/services/firebase';
+import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 
 export interface MemoryItem {
@@ -77,17 +79,19 @@ class MemoryService {
     ): Promise<void> {
         const service = this.getService(projectId);
 
-        // Check for duplicates using string match (exact content)
-        // In production this might be similarity based
-        let existingMemories: MemoryItem[] = [];
+        // Check for duplicates using efficient query
         try {
-            existingMemories = await service.list();
+            const q = query(
+                collection(db, this.getCollectionPath(projectId)),
+                where('content', '==', content),
+                limit(1)
+            );
+            const snapshot = await getDocs(q);
+            if (!snapshot.empty) {
+                return;
+            }
         } catch (e) {
-            console.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
-        }
-
-        if (existingMemories.some(m => m.content === content)) {
-            return;
+            console.warn('[MemoryService] Failed to check for duplicates: (Non-blocking)', e);
         }
 
         // Generate embedding for the new memory
