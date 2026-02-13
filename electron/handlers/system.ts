@@ -91,14 +91,20 @@ export function registerSystemHandlers() {
             });
 
             // 2. Load the HTML (with some basic styling)
+            // Sanitize user-provided HTML to prevent script injection
+            const sanitizedHtml = htmlContent
+                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+                .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
+                .replace(/on\w+\s*=\s*'[^']*'/gi, '');
+
             const styledHtml = `
                 <html>
                     <head>
                         <style>
-                            body { font-family: 'Inter', sans-serif; padding: 40px; line-height: 1.6; color: #333; }
-                            h1 { border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 30px; }
+                            body { font-family: 'Inter', sans-serif; padding: 40px; line-height: 1.6; color: '#333'; }
+                            h1 { border-bottom: 2px solid '#333'; padding-bottom: 10px; margin-bottom: 30px; }
                             pre { white-space: pre-wrap; }
-                            .footer { margin-top: 50px; font-size: 10px; color: #888; border-top: 1px solid #eee; padding-top: 10px; }
+                            .footer { margin-top: 50px; font-size: 10px; color: '#888'; border-top: 1px solid '#eee'; padding-top: 10px; }
                         </style>
                     </head>
                     <body>
