@@ -22,6 +22,7 @@ describe('ErrorBoundary Component', () => {
         vi.spyOn(console, 'error').mockImplementation(() => {});
         // Clear sessionStorage before each test
         sessionStorage.clear();
+        // Reset stubbed envs
         vi.unstubAllEnvs();
     });
 
@@ -155,9 +156,11 @@ describe('ErrorBoundary Component', () => {
 
     it('should recover after error is fixed', () => {
         let shouldThrow = true;
+        const TestComponent = () => <ThrowError shouldThrow={shouldThrow} />;
 
         const { rerender } = render(
             <ErrorBoundary>
+                <TestComponent />
                 <ThrowError shouldThrow={shouldThrow} />
     });
 
@@ -177,7 +180,7 @@ describe('ErrorBoundary Component', () => {
         // Rerender with fixed component
         rerender(
             <ErrorBoundary>
-                <ThrowError shouldThrow={false} />
+                <TestComponent />
             </ErrorBoundary>
         );
 

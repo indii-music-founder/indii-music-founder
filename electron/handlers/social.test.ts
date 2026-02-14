@@ -3,14 +3,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // eslint-friendly handler type
 type IpcHandler = (...args: unknown[]) => unknown;
 
+// Mock Electron modules
 // Define mocks
 const mockHandle = vi.fn();
 const mockLoadURL = vi.fn().mockResolvedValue(undefined);
 const mockWebContentsOn = vi.fn();
 const mockOn = vi.fn();
 const mockClose = vi.fn();
-const mockValidateSender = vi.fn();
-const mockGetCredentials = vi.fn();
 
 // Constructor Spy
 const mockBrowserWindowConstructor = vi.fn();
@@ -28,6 +27,9 @@ MockBrowserWindow.mockImplementation(function(this: any, options: any) {
         close: mockClose
     };
 } as any);
+
+const mockValidateSender = vi.fn();
+const mockGetCredentials = vi.fn();
 
 vi.mock('electron', () => ({
     ipcMain: {
@@ -93,6 +95,7 @@ describe('Social Handler', () => {
 
             // Call the handler
             if (oauthHandler) {
+                // We don't await because it might hang waiting for window close
                 // We need to trigger the closed event to resolve the promise if it awaits window close
                 // But validation happens before window creation usually
 
@@ -105,6 +108,7 @@ describe('Social Handler', () => {
                     closeCall[1]();
                 }
 
+                await promise;
                 try {
                    await promise;
                 } catch (e) {
