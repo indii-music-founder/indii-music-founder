@@ -111,6 +111,8 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                             data: assetObj.url,
                             name: `resources/${ref}.${ext}`
                         });
+                    } else {
+                        console.warn(`[Symphonic] No audio file found for track index ${index} ("${(track as any).trackTitle || 'unknown'}"). ERN may reference a missing resource.`);
                     }
                 });
 

@@ -218,6 +218,7 @@ describe('DirectGenerationTab Component', () => {
         fireEvent.change(input, { target: { value: 'A video scene' } });
 
         const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -240,6 +241,7 @@ describe('DirectGenerationTab Component', () => {
         fireEvent.change(input, { target: { value: 'A video scene' } });
 
         const sendButton = screen.getByRole('button', { name: '' });
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {

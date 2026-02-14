@@ -1,6 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { useStore } from '@/core/store';
 import DistributionDashboard from './DistributionDashboard';
 
 // Mock child components
@@ -47,6 +48,7 @@ const mockSubscribeToReleases = vi.fn(() => () => {});
 
 vi.mock('@/core/store', () => ({
     useStore: () => ({
+    useStore: vi.fn(() => ({
         distribution: {
             releases: [],
             loading: false,
@@ -54,6 +56,7 @@ vi.mock('@/core/store', () => ({
         },
         subscribeToReleases: mockSubscribeToReleases
     })
+    }))
 }));
 
 describe('DistributionDashboard Component', () => {
@@ -105,6 +108,7 @@ describe('DistributionDashboard Component', () => {
 
     it('should show loading skeletons when loading', () => {
         vi.mocked(require('@/core/store').useStore).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             distribution: {
                 releases: [],
                 loading: true,
@@ -121,6 +125,7 @@ describe('DistributionDashboard Component', () => {
 
     it('should render releases when available', () => {
         vi.mocked(require('@/core/store').useStore).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             distribution: {
                 releases: [
                     {
@@ -154,6 +159,7 @@ describe('DistributionDashboard Component', () => {
 
     it('should show error state when error occurs', () => {
         vi.mocked(require('@/core/store').useStore).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             distribution: {
                 releases: [],
                 loading: false,
@@ -225,6 +231,7 @@ describe('DistributionDashboard Component', () => {
         }));
 
         vi.mocked(require('@/core/store').useStore).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             distribution: {
                 releases,
                 loading: false,
@@ -242,6 +249,7 @@ describe('DistributionDashboard Component', () => {
 
     it('should not show loading skeletons when releases are present', () => {
         vi.mocked(require('@/core/store').useStore).mockReturnValue({
+        vi.mocked(useStore).mockReturnValue({
             distribution: {
                 releases: [
                     {
@@ -271,4 +279,5 @@ describe('DistributionDashboard Component', () => {
         const mainContainer = container.querySelector('.max-w-7xl');
         expect(mainContainer).toBeInTheDocument();
     });
+});
 });
