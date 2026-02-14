@@ -23,6 +23,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
     if (variant === 'minimal') {
         return (
             <div className="flex flex-col items-center justify-center p-6 text-center border-2 border-dashed border-gray-800 rounded-xl bg-gray-900/50">
+                {/* Note: Icon.name may be unreliable in minified builds. */}
                 <Icon className="text-gray-600 mb-3" size={32} data-testid={`icon-${Icon.displayName || Icon.name || 'Icon'}`} />
                 <h3 className="text-gray-300 font-medium mb-1">{title}</h3>
                 <p className="text-gray-500 text-sm mb-4 max-w-xs">{description}</p>
@@ -47,6 +48,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
             <div className="relative mb-6">
                 <div className="absolute inset-0 bg-sky-500/20 blur-3xl rounded-full" />
                 <div className="relative w-20 h-20 bg-gray-900 border border-gray-800 rounded-2xl flex items-center justify-center text-sky-400 shadow-2xl">
+                    {/* Note: Icon.name may be unreliable in minified builds. */}
                     <Icon size={40} strokeWidth={1.5} data-testid={`icon-${Icon.displayName || Icon.name || 'Icon'}`} />
                 </div>
             </div>
