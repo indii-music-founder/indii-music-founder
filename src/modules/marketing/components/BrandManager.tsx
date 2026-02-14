@@ -201,7 +201,7 @@ const BrandManager: React.FC = () => {
             console.error("[BrandManager] Save failed: No userProfile.id");
             return;
         }
-        Logger.info('BrandManager', 'Saving bio');
+        Logger.info('BrandManager', `Saving bio for user: ${userProfile.id}`, { bioLength: bioDraft.length });
 
         try {
             const updatedProfile = { ...userProfile, bio: bioDraft };

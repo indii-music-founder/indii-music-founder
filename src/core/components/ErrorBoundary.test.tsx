@@ -139,8 +139,7 @@ describe('ErrorBoundary Component', () => {
         expect(screen.getByText(/Stack Trace/i)).toBeInTheDocument();
         expect(screen.getByText('Test error')).toBeInTheDocument();
 
-        // Restore
-        (import.meta.env as any) = originalEnv;
+        vi.unstubAllEnvs();
     });
 
     it('should not show error stack in production mode', () => {
@@ -160,13 +159,10 @@ describe('ErrorBoundary Component', () => {
 
         expect(screen.queryByText(/Stack Trace/i)).not.toBeInTheDocument();
 
-        // Restore
-        (import.meta.env as any) = originalEnv;
+        vi.unstubAllEnvs();
     });
 
     it('should recover after error is fixed', () => {
-        let shouldThrow = true;
-
         const { rerender } = render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={shouldThrow} />

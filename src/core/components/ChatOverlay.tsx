@@ -5,6 +5,8 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { agentRegistry } from '@/services/agent/registry';
 import { requestNotificationPermission } from '@/lib/mobile';
 import { MessageItem } from './chat/ChatMessage';
@@ -42,11 +44,16 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
     const [isStealth, setIsStealth] = useState(false);
     const [localSize, setLocalSize] = useState(windowSize);
     const isResizing = useRef(false);
+    const latestSize = useRef(localSize);
 
     // Sync local size when store changes
     useEffect(() => {
         setLocalSize(windowSize);
     }, [windowSize]);
+
+    useEffect(() => {
+        latestSize.current = localSize;
+    }, [localSize]);
 
     const handleResize = useCallback((direction: string, e: React.PointerEvent) => {
         e.preventDefault();
@@ -77,7 +84,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
         const onPointerUp = () => {
             isResizing.current = false;
-            setAgentWindowSize(localSize);
+            setAgentWindowSize(latestSize.current);
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
         };
@@ -290,6 +297,27 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                     {/* Mode Toggle: Chat (direct LLM) | Agent (specialist orchestration) | Sidecar (Agent Zero) */}
                                     <div className="flex items-center gap-0.5 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
+                                        <button
+                                            onClick={() => setActiveAgentProvider('direct')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'direct' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Direct LLM chat — fast, no tools"
+                                        >
+                                            Chat
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveAgentProvider('native')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Specialist agents with tools"
+                                        >
+                                            Agent
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveAgentProvider('agent-zero')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'agent-zero' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Agent Zero sidecar (Docker)"
+                                        >
+                                            indii
+                                        </button>
                                         <button onClick={() => setActiveAgentProvider('direct')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'direct' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Direct LLM chat — fast, no tools">Chat</button>
                                         <button onClick={() => setActiveAgentProvider('native')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`} title="Specialist agents with tools">Agent</button>
                                         <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Agent Zero sidecar (Docker)">indii</button>

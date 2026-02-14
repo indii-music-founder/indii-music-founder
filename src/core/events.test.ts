@@ -245,6 +245,8 @@ describe('EventBus', () => {
 
             // First callback threw, but we can still call emit again
             expect(errorCallback).toHaveBeenCalledTimes(1);
+            // normalCallback was NOT called because the error propagated (no isolation)
+            expect(normalCallback).not.toHaveBeenCalled();
         });
 
         it('should handle multiple on/off operations', () => {

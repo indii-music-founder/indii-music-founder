@@ -124,8 +124,11 @@ export function useSocial(userId?: string) {
 
         const linkedUnsub = onSnapshot(collection(db, "users", userProfile.id, "linked_accounts"), (snapshot) => {
             const data = snapshot.docs
-                .filter(doc => doc.data().linkedAt)
-                .map(doc => doc.data() as LinkedAccount);
+                .filter(doc => doc.data().linkedAt != null)
+                .map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                })) as (LinkedAccount & { id: string })[];
             setLinkedAccounts(data);
         });
 
