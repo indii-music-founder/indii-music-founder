@@ -27,6 +27,9 @@ MockBrowserWindow.mockImplementation(function(this: any) {
 
 const mockValidateSender = vi.fn();
 const mockGetCredentials = vi.fn();
+const mockBrowserWindow = vi.fn();
+const mockValidateSender = vi.fn();
+const mockGetCredentials = vi.fn();
 const mockCredentialService = {
     getCredentials: vi.fn()
 };
@@ -202,6 +205,13 @@ describe('Social Handler', () => {
 
             if (oauthHandler) {
                 const promise = oauthHandler(mockEvent, 'twitter');
+
+                // Simulate window closed to resolve
+                const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
+                if (closeCall) {
+                    closeCall[1]();
+                }
+
 
                 // Simulate window closed to resolve
                 const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
