@@ -11,6 +11,8 @@ import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 import { agentZeroService } from './AgentZeroService';
+import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * AgentService is the primary entry point for agent-related operations.
@@ -204,6 +206,12 @@ export class AgentService {
         const { useStore } = await import('@/core/store');
         const { updateAgentMessage, activeAgentProvider } = useStore.getState();
 
+        // 0. Direct Chat: Bypass all orchestration, talk straight to the LLM
+        if (activeAgentProvider === 'direct') {
+            await this.handleDirectChatFlow(text, attachments, context, responseId);
+            return;
+        }
+
         // 1. Check Provider: If set to 'agent-zero', delegate immediately
         if (activeAgentProvider === 'agent-zero') {
             await this.handleAgentZeroFlow(text, attachments, responseId);
@@ -388,6 +396,116 @@ export class AgentService {
                 }]
             });
             throw err; // Re-throw to be caught by executeFlow catch block
+        }
+    }
+
+    /**
+     * Direct Chat Flow: Bypasses all orchestration and talks straight to the LLM.
+     * Uses FirebaseAIService streaming for low-latency conversational responses.
+     * No tools, no specialist agents, no context pipeline overhead.
+     */
+    private async handleDirectChatFlow(
+        text: string,
+        attachments: { mimeType: string; base64: string }[] | undefined,
+        context: AgentContext,
+        responseId: string
+    ): Promise<void> {
+        const { useStore } = await import('@/core/store');
+        const { updateAgentMessage, agentHistory } = useStore.getState();
+
+        // Build persona-aware system prompt from context
+        const artistName = context.userProfile?.displayName || '';
+        const brandDesc = context.brandKit?.brandDescription || '';
+        const genre = context.brandKit?.releaseDetails?.genre || '';
+
+        let personaContext = '';
+        if (artistName) {
+            personaContext += `\nYou are working with the artist **${artistName}**.`;
+            personaContext += ` ALWAYS use this exact name when referring to the artist. NEVER invent a different name.`;
+        }
+        if (brandDesc) personaContext += `\nBrand: ${brandDesc}`;
+        if (genre) personaContext += `\nGenre: ${genre}`;
+
+        const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}
+
+Be direct, creative, and helpful. You are in direct chat mode — respond conversationally without using any tools or complex orchestration.
+If the user asks you to do something that requires tools (like generating images, searching files, or managing projects), suggest they switch to Agent mode for that task.`;
+
+        // Build chat history for multi-turn context (last 20 messages)
+        const recentHistory = agentHistory
+            .filter(m => m.role === 'user' || m.role === 'model')
+            .slice(-20)
+            .map(m => ({
+                role: m.role as 'user' | 'model',
+                parts: [{ text: m.text }]
+            }));
+
+        // Build the prompt contents: history + current message
+        const contents = [
+            ...recentHistory,
+            { role: 'user' as const, parts: [{ text }] }
+        ];
+
+        // Handle image attachments inline
+        if (attachments && attachments.length > 0) {
+            const lastContent = contents[contents.length - 1];
+            for (const att of attachments) {
+                lastContent.parts.push({
+                    inlineData: { mimeType: att.mimeType, data: att.base64 }
+                } as any);
+            }
+        }
+
+        try {
+            const { stream } = await firebaseAI.generateContentStream(
+                contents,
+                AI_MODELS.TEXT.FAST,
+                undefined,
+                systemPrompt
+            );
+
+            // Consume the ReadableStream and stream tokens to UI
+            const reader = stream.getReader();
+            let accumulatedText = '';
+
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunkText = typeof value.text === 'function' ? value.text() : '';
+                    if (chunkText) {
+                        accumulatedText += chunkText;
+                        updateAgentMessage(responseId, { text: accumulatedText });
+                    }
+                }
+            } finally {
+                reader.releaseLock();
+            }
+
+            // Final update
+            updateAgentMessage(responseId, {
+                text: accumulatedText || 'No response generated.',
+                thoughts: [{
+                    id: crypto.randomUUID(),
+                    text: 'Direct Chat (Fast Path)',
+                    timestamp: Date.now(),
+                    type: 'logic',
+                    toolName: 'Direct LLM'
+                }]
+            });
+        } catch (err: unknown) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            updateAgentMessage(responseId, {
+                text: `Chat Error: ${errorMessage}`,
+                thoughts: [{
+                    id: crypto.randomUUID(),
+                    text: 'Direct chat failed',
+                    timestamp: Date.now(),
+                    type: 'error'
+                }]
+            });
+            throw err;
         }
     }
 
