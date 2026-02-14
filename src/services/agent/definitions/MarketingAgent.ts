@@ -2,7 +2,7 @@ import { AgentConfig } from "../types";
 import systemPrompt from '@agents/marketing/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
-import { useStore } from '@/core/store';
+
 
 export const MarketingAgent: AgentConfig = {
     id: 'marketing',
@@ -97,6 +97,7 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
             }
         },
         generate_campaign_from_audio: async (args: { uploadedAudioIndex: number }) => {
+            const { useStore } = await import('@/core/store');
             const { uploadedAudio } = useStore.getState();
             const audioItem = uploadedAudio[args.uploadedAudioIndex || 0];
 

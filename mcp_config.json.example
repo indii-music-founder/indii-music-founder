@@ -1,0 +1,23 @@
+{
+  "mcpServers": {
+    "docker": {
+      "command": "docker",
+      "args": [
+        "mcp"
+      ]
+    },
+    "notebooklm": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "notebooklm-mcp@latest"
+      ]
+    },
+    "google-developer-knowledge": {
+      "serverUrl": "https://developerknowledge.googleapis.com/mcp",
+      "headers": {
+        "X-Goog-Api-Key": "YOUR_API_KEY_HERE"
+      }
+    }
+  }
+}

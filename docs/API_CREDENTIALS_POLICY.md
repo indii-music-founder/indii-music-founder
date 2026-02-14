@@ -29,30 +29,30 @@
 
 ### Primary AI Key: Gemini Developer API Key
 
-| Property | Value |
-| --- | --- |
-| **Key ID** | `Gemini Developer API key` |
-| **Project** | `indiios-v-1-1` |
-| **Restrictions** | ✅ Restricted to **Generative Language API** |
-| **Used In** | `.env` (VITE_API_KEY), `functions/.env` (GEMINI_API_KEY) |
+| Property         | Value                                                    |
+| ---------------- | -------------------------------------------------------- |
+| **Key ID**       | `Gemini Developer API key`                               |
+| **Project**      | `indiios-v-1-1`                                          |
+| **Restrictions** | ✅ Restricted to **Generative Language API**             |
+| **Used In**      | `.env` (VITE_API_KEY), `functions/.env` (GEMINI_API_KEY) |
 
 ### Firebase Auth Key: Browser key (auto-created by Firebase)
 
-| Property | Value |
-| --- | --- |
-| **Key ID** | `Browser key (auto created by Firebase)` |
-| **Project** | `indiios-v-1-1` |
+| Property         | Value                                                      |
+| ---------------- | ---------------------------------------------------------- |
+| **Key ID**       | `Browser key (auto created by Firebase)`                   |
+| **Project**      | `indiios-v-1-1`                                            |
 | **Restrictions** | ✅ Restricted to 24 Firebase APIs (Identity Toolkit, etc.) |
-| **Used In** | `.env` (VITE_FIREBASE_API_KEY) |
+| **Used In**      | `.env` (VITE_FIREBASE_API_KEY)                             |
 
 ---
 
 ## Keys Requiring Attention
 
-| Key Name | Issue | Recommended Action |
-| --- | --- | --- |
-| `indiiOS-Studio-Primary-2025` | ⚠️ Unrestricted | Add API restrictions |
-| `API key 2` | ⚠️ Unrestricted | Add API restrictions or delete if unused |
+| Key Name                      | Issue           | Recommended Action                       |
+| ----------------------------- | --------------- | ---------------------------------------- |
+| `indiiOS-Studio-Primary-2025` | ⚠️ Unrestricted | Add API restrictions                     |
+| `API key 2`                   | ⚠️ Unrestricted | Add API restrictions or delete if unused |
 
 ---
 
@@ -137,12 +137,12 @@ Deployment pipeline succeeded, but production app (`indii-backend`) was running 
 
 The following secrets must be maintained in **GitHub Repo Settings > Secrets and variables > Actions**:
 
-| Secret Name | Value Origin |
-| --- | --- |
-| `VITE_API_KEY` | `Gemini Developer API key` (Restricted) |
-| `VITE_FIREBASE_API_KEY` | `Browser key` (from Firebase) |
-| `VITE_VERTEX_PROJECT_ID` | `indiios-v-1-1` |
-| `VITE_VERTEX_LOCATION` | `us-central1` |
+| Secret Name              | Value Origin                            |
+| ------------------------ | --------------------------------------- |
+| `VITE_API_KEY`           | `Gemini Developer API key` (Restricted) |
+| `VITE_FIREBASE_API_KEY`  | `Browser key` (from Firebase)           |
+| `VITE_VERTEX_PROJECT_ID` | `indiios-v-1-1`                         |
+| `VITE_VERTEX_LOCATION`   | `us-central1`                           |
 
 > [!WARNING]
 > CI/CD Pipeline (`deploy.yml`) injects these secrets at build time. Changing `.env` locally has **NO EFFECT** on production builds. You must update GitHub Secrets manually.
@@ -175,12 +175,14 @@ Based on best practices, Firebase API keys follow a different security model tha
 ### 1. The Nature of Firebase API Keys
 
 Unlike typical API keys, Firebase API keys are **not used for authorization** and do not need to be treated as high-risk secrets. They serve to **identify** your Firebase project and associate requests with it for quota and billing purposes.
+
 - **Safety:** It is safe to include these keys in your code or checked-in configuration files.
 - **Authorization:** Access to backend resources (database, storage, etc.) must be controlled via **Firebase Security Rules** and **App Check**, not by hiding the API key.
 
 ### 2. API Restrictions
 
 While keys aren't secrets, they must still be restricted to limit their scope.
+
 - **Allowlisting:** Restrict API keys to only the specific APIs required (e.g., Identity Toolkit, Firestore).
 - **Caution:** When modifying restrictions, ensure you do not remove required APIs (like `firebaseinstallations.googleapis.com` or `identitytoolkit.googleapis.com`), which would cause app failure.
 
@@ -191,12 +193,14 @@ If using other Google Cloud APIs (Maps, Vision), create **separate, restricted A
 ### 4. Environment Isolation
 
 Do not share API keys across testing, staging, and production.
+
 - **Project Isolation:** Ensure staging apps interact only with staging Firebase projects.
 - **Configuration:** Use environment variables or configuration files to inject the correct keys for the current environment rather than hardcoding.
 
 ### 5. Quota Management
 
 To prevent abuse (e.g., brute-force attacks):
+
 - **Tighten Quotas:** Lower default quotas for sensitive endpoints like `identitytoolkit.googleapis.com` in the GCP Console to match expected traffic.
 
 ### 6. Client-Side Security Logic

@@ -15,6 +15,7 @@ export const APPROVED_MODELS = {
     IMAGE_FAST: 'gemini-3-pro-image-preview',
     AUDIO_PRO: 'gemini-3-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
+    AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
     VIDEO_GEN: 'veo-3.1-generate-preview',
     BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
@@ -32,6 +33,7 @@ export const AI_MODELS = {
     AUDIO: {
         PRO: APPROVED_MODELS.AUDIO_PRO,
         FLASH: APPROVED_MODELS.AUDIO_FLASH,
+        TTS: APPROVED_MODELS.AUDIO_TTS,
     },
     VIDEO: {
         GENERATION: APPROVED_MODELS.VIDEO_GEN,
@@ -95,6 +97,7 @@ export const MODEL_PRICING = {
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
     'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
     'veo-3.1-generate-preview': { perGeneration: 0.05 },
+    'gemini-2.5-pro-preview-tts': { input: 0.60, output: 4.00 },
 } as const;
 
 /**
@@ -111,8 +114,8 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 // ============================================================================
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
-    /gemini-1\./i,
-    /gemini-2\./i,
+    /gemini-1\./i,            // Block all legacy 1.x models
+    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS, image, pro, flash)
     /imagen-3/i,
 ];
 
@@ -151,6 +154,7 @@ validateModels();
 // Export type helpers
 export type TextModel = typeof AI_MODELS.TEXT[keyof typeof AI_MODELS.TEXT];
 export type ImageModel = typeof AI_MODELS.IMAGE[keyof typeof AI_MODELS.IMAGE];
+export type AudioModel = typeof AI_MODELS.AUDIO[keyof typeof AI_MODELS.AUDIO];
 export type VideoModel = typeof AI_MODELS.VIDEO[keyof typeof AI_MODELS.VIDEO];
 export type BrowserModel = typeof AI_MODELS.BROWSER[keyof typeof AI_MODELS.BROWSER];
 

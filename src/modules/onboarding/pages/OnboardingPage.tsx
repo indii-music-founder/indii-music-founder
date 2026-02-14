@@ -4,6 +4,7 @@ import { runOnboardingConversation, processFunctionCalls, calculateProfileStatus
 import { useToast } from '@/core/context/ToastContext';
 import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
+import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
@@ -85,8 +86,9 @@ export default function OnboardingPage() {
         if (history.length === 0) {
             const randomGreeting = OPENING_GREETINGS[Math.floor(Math.random() * OPENING_GREETINGS.length)];
             setHistory([{ role: 'model', parts: [{ text: randomGreeting }] }]);
+            onboardingAnalytics.start();
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+         
     }, []);
 
     // Auto-scroll to bottom
@@ -174,8 +176,16 @@ export default function OnboardingPage() {
 
                 setUserProfile(updatedProfile);
 
+                // Track field completions for analytics
+                for (const update of updates) {
+                    if (typeof update === 'string') {
+                        onboardingAnalytics.fieldCompleted(update, 'identity_core');
+                    }
+                }
+
                 if (isFinished) {
-                    // Handle completion
+                    const { coreProgress: cp, releaseProgress: rp } = calculateProfileStatus(updatedProfile);
+                    onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
                 }
 
                 // Check for UI Tools (multiple choice, insights, creative direction, distributor info)
@@ -250,6 +260,12 @@ export default function OnboardingPage() {
     };
 
     const handleComplete = () => {
+        const { coreProgress: cp, releaseProgress: rp } = calculateProfileStatus(userProfile);
+        if (cp >= 100 && rp >= 100) {
+            onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
+        } else {
+            onboardingAnalytics.skipped(cp, rp, 'complete');
+        }
         setModule('dashboard');
     };
 

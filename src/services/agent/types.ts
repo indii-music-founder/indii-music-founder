@@ -1,7 +1,7 @@
-import { WhiskState } from '@/core/store/slices/creativeSlice';
+import type { WhiskState } from '@/core/store/slices/creativeSlice';
 export type { WhiskState };
 
-import { AgentMessage } from '@/core/store';
+import type { AgentMessage } from '@/core/store/slices/agentSlice';
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { INDII_MESSAGES } from './constants';
 
@@ -11,6 +11,7 @@ export interface ToolParameterSchema {
     type: SchemaType;
     description?: string;
     enum?: string[];
+    default?: string | number | boolean;
     items?: ToolParameterSchema;
     properties?: Record<string, ToolParameterSchema>;
     required?: string[];
@@ -173,6 +174,10 @@ export interface AgentContext {
     attachments?: { mimeType: string; base64: string }[];
     systemPrompt?: string;
     whiskState?: WhiskState;
+    // Autonomy Engine Context
+    proactiveTask?: ProactiveTask;
+    triggerType?: ProactiveTriggerType;
+    livingContext?: string;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';

@@ -1,11 +1,13 @@
 # Asset Library Red Block Issue - Diagnostic & Fix Plan
 
 ## Problem Statement
+
 The Asset Library in the Merchandise Designer is displaying red blocks instead of actual images. This indicates that images are present in the store but failing to render properly.
 
 ## Root Cause Analysis
 
 ### Data Flow
+
 ```
 Store (CreativeSlice)
   ├─ generatedHistory: HistoryItem[]
@@ -23,44 +25,56 @@ Browser rendering
 ### Potential Root Causes
 
 #### 1. **Empty/Invalid URLs** (Most Likely)
+
 **Symptoms:**
+
 - Red blocks appearing
 - Images count shows correctly (e.g., "3 assets available")
 - No console errors about missing components
 
 **Diagnosis:**
+
 ```javascript
 // Add to AssetLibrary.tsx line 25 (after imageAssets computation)
-console.log('AssetLibrary Debug:', {
-    totalHistory: history.length,
-    imageAssetsCount: imageAssets.length,
-    sampleAssets: imageAssets.slice(0, 3).map(a => ({
-        id: a.id,
-        url: a.url?.substring(0, 50) + '...',
-        urlLength: a.url?.length,
-        urlType: a.url?.startsWith('data:') ? 'data-uri' :
-                 a.url?.startsWith('http') ? 'http' :
-                 a.url?.startsWith('blob:') ? 'blob' : 'unknown'
-    }))
+console.log("AssetLibrary Debug:", {
+  totalHistory: history.length,
+  imageAssetsCount: imageAssets.length,
+  sampleAssets: imageAssets.slice(0, 3).map((a) => ({
+    id: a.id,
+    url: a.url?.substring(0, 50) + "...",
+    urlLength: a.url?.length,
+    urlType: a.url?.startsWith("data:")
+      ? "data-uri"
+      : a.url?.startsWith("http")
+        ? "http"
+        : a.url?.startsWith("blob:")
+          ? "blob"
+          : "unknown",
+  })),
 });
 ```
 
 **Possible Issues:**
+
 - URLs are empty strings (`""`)
 - URLs are undefined/null
 - URLs are placeholder strings like "PENDING" or "GENERATING"
 - URLs are Firestore references instead of actual image data
 
 #### 2. **CORS/Cross-Origin Issues**
+
 **Symptoms:**
+
 - Console errors: "Access to image at '...' from origin '...' has been blocked by CORS policy"
 - Images work in some environments but not others
 
 **Diagnosis:**
+
 - Check browser DevTools Console for CORS errors
 - Check Network tab for 403/401 responses
 
 **Fix:**
+
 ```typescript
 // Add crossOrigin attribute to img tag (AssetLibrary.tsx:164)
 <img
@@ -76,48 +90,56 @@ console.log('AssetLibrary Debug:', {
 ```
 
 #### 3. **Data URI Storage Issues**
+
 **Symptoms:**
+
 - Images generate successfully but don't persist
 - Red blocks after page refresh
 - Works initially, fails after reload
 
 **Diagnosis:**
+
 ```javascript
 // Check what's actually in localStorage/IndexedDB
 // Add to browser console:
 const checkStorage = async () => {
-    const idb = indexedDB.open('firebaseLocalStorageDb');
-    idb.onsuccess = (e) => {
-        const db = e.target.result;
-        const tx = db.transaction(['firebaseLocalStorage'], 'readonly');
-        const store = tx.objectStore('firebaseLocalStorage');
-        const req = store.getAll();
-        req.onsuccess = () => {
-            console.log('IndexedDB contents:', req.result);
-        };
+  const idb = indexedDB.open("firebaseLocalStorageDb");
+  idb.onsuccess = (e) => {
+    const db = e.target.result;
+    const tx = db.transaction(["firebaseLocalStorage"], "readonly");
+    const store = tx.objectStore("firebaseLocalStorage");
+    const req = store.getAll();
+    req.onsuccess = () => {
+      console.log("IndexedDB contents:", req.result);
     };
+  };
 };
 checkStorage();
 ```
 
 **Known Issue:**
+
 - StorageService may be saving placeholder URLs to Firestore instead of full data URIs
 - CreativeSlice merge logic (lines 164-180) tries to preserve local data URIs but may fail
 
 #### 4. **CSS Background Color**
+
 **Symptoms:**
+
 - Red blocks are exactly that color (#FF0000 or similar)
 - No "broken image" icon visible
 
 **Diagnosis:**
+
 ```css
 /* Check if this exists anywhere in CSS: */
 .bg-neutral-800 {
-    background-color: #FF0000 !important; /* Suspicious override */
+  background-color: #ff0000 !important; /* Suspicious override */
 }
 ```
 
 **Fix:**
+
 - The `bg-neutral-800` class should be dark gray, not red
 - Check `tailwind.config.js` for color overrides
 - Check global CSS for suspicious `!important` rules
@@ -131,40 +153,40 @@ checkStorage();
 // Add after line 25 (after imageAssets useMemo):
 
 useEffect(() => {
-    console.group('🖼️ Asset Library Debug');
-    console.log('Total history items:', history.length);
-    console.log('Filtered image assets:', imageAssets.length);
+  console.group("🖼️ Asset Library Debug");
+  console.log("Total history items:", history.length);
+  console.log("Filtered image assets:", imageAssets.length);
 
-    if (imageAssets.length > 0) {
-        const sample = imageAssets[0];
-        console.log('Sample asset:', {
-            id: sample.id,
-            type: sample.type,
-            prompt: sample.prompt,
-            urlExists: !!sample.url,
-            urlLength: sample.url?.length,
-            urlPrefix: sample.url?.substring(0, 30),
-            timestamp: sample.timestamp,
-            origin: sample.origin
-        });
+  if (imageAssets.length > 0) {
+    const sample = imageAssets[0];
+    console.log("Sample asset:", {
+      id: sample.id,
+      type: sample.type,
+      prompt: sample.prompt,
+      urlExists: !!sample.url,
+      urlLength: sample.url?.length,
+      urlPrefix: sample.url?.substring(0, 30),
+      timestamp: sample.timestamp,
+      origin: sample.origin,
+    });
 
-        // Check if URL is valid
-        if (!sample.url || sample.url === '' || sample.url === 'PENDING') {
-            console.error('❌ Invalid URL detected:', sample.url);
-        } else if (sample.url.startsWith('data:image')) {
-            console.log('✅ Data URI detected (good)');
-        } else if (sample.url.startsWith('http')) {
-            console.log('⚠️ HTTP URL detected (check CORS)');
-        } else if (sample.url.startsWith('blob:')) {
-            console.log('⚠️ Blob URL detected (may expire)');
-        } else {
-            console.warn('⚠️ Unknown URL format:', sample.url.substring(0, 50));
-        }
+    // Check if URL is valid
+    if (!sample.url || sample.url === "" || sample.url === "PENDING") {
+      console.error("❌ Invalid URL detected:", sample.url);
+    } else if (sample.url.startsWith("data:image")) {
+      console.log("✅ Data URI detected (good)");
+    } else if (sample.url.startsWith("http")) {
+      console.log("⚠️ HTTP URL detected (check CORS)");
+    } else if (sample.url.startsWith("blob:")) {
+      console.log("⚠️ Blob URL detected (may expire)");
     } else {
-        console.warn('No image assets found');
+      console.warn("⚠️ Unknown URL format:", sample.url.substring(0, 50));
     }
+  } else {
+    console.warn("No image assets found");
+  }
 
-    console.groupEnd();
+  console.groupEnd();
 }, [imageAssets, history]);
 ```
 
@@ -202,15 +224,18 @@ useEffect(() => {
 // Or run in browser console:
 
 useStore.getState().generatedHistory.forEach((item, idx) => {
-    console.log(`History[${idx}]:`, {
-        id: item.id,
-        type: item.type,
-        hasUrl: !!item.url,
-        urlLength: item.url?.length,
-        urlType: item.url?.startsWith('data:') ? 'data-uri' :
-                 item.url?.startsWith('http') ? 'http' : 'unknown',
-        prompt: item.prompt?.substring(0, 30)
-    });
+  console.log(`History[${idx}]:`, {
+    id: item.id,
+    type: item.type,
+    hasUrl: !!item.url,
+    urlLength: item.url?.length,
+    urlType: item.url?.startsWith("data:")
+      ? "data-uri"
+      : item.url?.startsWith("http")
+        ? "http"
+        : "unknown",
+    prompt: item.prompt?.substring(0, 30),
+  });
 });
 ```
 
@@ -234,6 +259,7 @@ document.body.removeChild(testDiv);
 **Problem:** Assets have empty or placeholder URLs
 
 **Fix:**
+
 1. Check where images are added to history (image generation, upload)
 2. Ensure URLs are set correctly before adding to store
 3. Update StorageService to preserve full data URIs
@@ -259,6 +285,7 @@ async saveItem(item: HistoryItem) {
 **Problem:** Images take time to load
 
 **Fix:**
+
 ```typescript
 // Add loading state to each image
 const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
@@ -285,6 +312,7 @@ const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
 **Problem:** Some images will always fail to load
 
 **Fix:**
+
 ```typescript
 // Create a fallback component
 const ImageWithFallback: React.FC<{ src: string; alt: string }> = ({ src, alt }) => {
@@ -326,6 +354,7 @@ const ImageWithFallback: React.FC<{ src: string; alt: string }> = ({ src, alt })
 ## Expected Results After Fix
 
 **Success Criteria:**
+
 - ✅ Actual images render instead of red blocks
 - ✅ Console shows valid data URIs or accessible URLs
 - ✅ No image load errors in console
@@ -333,6 +362,7 @@ const ImageWithFallback: React.FC<{ src: string; alt: string }> = ({ src, alt })
 - ✅ Drag-and-drop works with visible thumbnails
 
 **Performance Metrics:**
+
 - Images load within 500ms
 - No layout shift when images load
 - Smooth hover transitions

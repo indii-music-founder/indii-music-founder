@@ -2,16 +2,31 @@ import { Sentry } from '@/lib/sentry';
 
 /**
  * Standard Application Logger
- * 
+ *
  * Centralizes logging to ensure consistent formatting and Sentry integration.
- * - In Development: Logs to console
- * - In Production: Logs to console (info/warn/error) and sends structured data to Sentry
+ * - In Development: Logs to console with human-readable format
+ * - In Production: Logs structured JSON for log aggregation + sends to Sentry
  */
 class LoggerService {
     private isDev = import.meta.env.DEV;
+    private isProd = import.meta.env.PROD;
 
     private formatMessage(module: string, message: string): string {
         return `[${module}] ${message}`;
+    }
+
+    private structuredLog(level: string, module: string, message: string, data?: unknown) {
+        if (!this.isProd) return;
+        const entry = {
+            timestamp: new Date().toISOString(),
+            severity: level.toUpperCase(),
+            module,
+            message,
+            ...(data !== undefined && { data }),
+        };
+        // Use appropriate console method for structured output
+        const fn = level === 'warn' ? console.warn : level === 'error' ? console.error : console.info;
+        fn(JSON.stringify(entry));
     }
 
     /**
@@ -27,9 +42,11 @@ class LoggerService {
      * Info logs - General operational events
      */
     info(module: string, message: string, data?: any) {
-        console.info(this.formatMessage(module, message), data !== undefined ? data : '');
+        if (this.isDev) {
+            console.info(this.formatMessage(module, message), data !== undefined ? data : '');
+        }
+        this.structuredLog('info', module, message, data);
 
-        // Add breadcrumb for context in case of future errors
         try {
             Sentry.addBreadcrumb({
                 category: module,
@@ -37,7 +54,7 @@ class LoggerService {
                 level: 'info',
                 data
             });
-        } catch (e) {
+        } catch {
             // Fail silently if Sentry not initialized
         }
     }
@@ -46,7 +63,10 @@ class LoggerService {
      * Warn logs - Non-critical issues
      */
     warn(module: string, message: string, data?: any) {
-        console.warn(this.formatMessage(module, message), data !== undefined ? data : '');
+        if (this.isDev) {
+            console.warn(this.formatMessage(module, message), data !== undefined ? data : '');
+        }
+        this.structuredLog('warn', module, message, data);
 
         try {
             Sentry.addBreadcrumb({
@@ -55,7 +75,7 @@ class LoggerService {
                 level: 'warning',
                 data
             });
-        } catch (e) {
+        } catch {
             // Fail silently
         }
     }
@@ -65,7 +85,10 @@ class LoggerService {
      * Automatically captures exception in Sentry
      */
     error(module: string, message: string, error?: any) {
-        console.error(this.formatMessage(module, message), error !== undefined ? error : '');
+        if (this.isDev) {
+            console.error(this.formatMessage(module, message), error !== undefined ? error : '');
+        }
+        this.structuredLog('error', module, message, error instanceof Error ? error.message : error);
 
         try {
             Sentry.captureException(error instanceof Error ? error : new Error(message), {
@@ -75,7 +98,7 @@ class LoggerService {
                     rawError: error
                 }
             });
-        } catch (e) {
+        } catch {
             // Fail silently
         }
     }

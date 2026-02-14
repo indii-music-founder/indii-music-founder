@@ -498,6 +498,11 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
+        // Build living context section (The Vibe)
+        const livingSection = context?.livingContext
+            ? `\n${context.livingContext}\n`
+            : '';
+
         let safeHistory = context?.chatHistoryString || '';
 
         // KEEPER: Intelligent Context Truncation
@@ -548,6 +553,7 @@ ${context.brandKit.releaseDetails ? `
 ` : ''}
 
 ${whiskContext}
+${livingSection}
 
 # HISTORY
 ${safeHistory}
@@ -597,7 +603,7 @@ ${task}
         this.loopDetector.clear();
 
         // Phase 3: Create isolated execution context for this agent run
-        const executionContext = ExecutionContextFactory.fromAgentContext(
+        const executionContext = await ExecutionContextFactory.fromAgentContext(
             {
                 userId: context?.userId,
                 projectId: context?.projectId,
@@ -616,7 +622,8 @@ ${task}
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
                     console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
-                    await executionContext.rollback();
+                    // executionContext.rollback() is already synchronous, but for consistency if we ever make it async:
+                    executionContext.rollback();
                     return {
                         text: 'Task halted: Budget exceeded.',
                         error: 'Budget exceeded',
@@ -743,7 +750,7 @@ ${task}
                     // Phase 3: Commit execution context changes on successful completion
                     if (executionContext.hasUncommittedChanges()) {
                         console.log(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
-                        executionContext.commit();
+                        await executionContext.commit();
                     }
 
                     return {

@@ -121,12 +121,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
 
     const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
-            setCommandBarAttachments([...commandBarAttachments, ...Array.from(e.target.files!)]);
+            setCommandBarAttachments([...(commandBarAttachments || []), ...Array.from(e.target.files!)]);
         }
     }, [commandBarAttachments, setCommandBarAttachments]);
 
     const removeAttachment = useCallback((index: number) => {
-        setCommandBarAttachments(commandBarAttachments.filter((_, i) => i !== index));
+        setCommandBarAttachments((commandBarAttachments || []).filter((_, i) => i !== index));
     }, [commandBarAttachments, setCommandBarAttachments]);
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -143,7 +143,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         e.preventDefault();
         setIsDragging(false);
         if (e.dataTransfer.files) {
-            setCommandBarAttachments([...commandBarAttachments, ...Array.from(e.dataTransfer.files)]);
+            setCommandBarAttachments([...(commandBarAttachments || []), ...Array.from(e.dataTransfer.files)]);
         }
     }, [commandBarAttachments, setCommandBarAttachments]);
 
@@ -165,12 +165,12 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         try {
             e?.preventDefault();
             const input = commandBarInput || '';
-            if (!input.trim() && commandBarAttachments.length === 0) return;
+            if (!input.trim() && (commandBarAttachments?.length ?? 0) === 0) return;
             if (isProcessing) return;
 
             setIsProcessing(true);
             const currentInput = input;
-            const currentAttachments = [...commandBarAttachments];
+            const currentAttachments = [...(commandBarAttachments || [])];
 
             setCommandBarInput('');
             setCommandBarAttachments([]);
@@ -237,6 +237,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
+                    id="global-command-input"
                     placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
@@ -256,22 +257,24 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     </button>
                                 </PromptInputAction>
 
-                                <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
-                                    <button
-                                        onClick={handleMicClick}
-                                        className={cn(
-                                            "flex items-center justify-center p-2 rounded-xl transition-all",
-                                            isListening
-                                                ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
-                                                : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                                        )}
-                                        aria-label={isListening ? "Stop listening" : "Voice Input"}
-                                    >
-                                        <Mic size={20} className={isListening ? "animate-pulse" : ""} />
-                                    </button>
-                                </PromptInputAction>
                             </>
                         )}
+
+                        <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
+                            <button
+                                onClick={handleMicClick}
+                                className={cn(
+                                    "flex items-center justify-center p-2 rounded-xl transition-all",
+                                    isListening
+                                        ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                        : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                                )}
+                                aria-label={isListening ? "Stop listening" : "Voice Input"}
+                            >
+                                <Mic size={20} className={isListening ? "animate-pulse" : ""} />
+                            </button>
+                        </PromptInputAction>
+
                         {!isMobile && (
                             <div className="relative">
                                 <button
@@ -337,11 +340,11 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <PromptInputAction tooltip="Run command">
                             <button
                                 onClick={(e) => handleSubmit(e)}
-                                disabled={(!(commandBarInput || '').trim() && commandBarAttachments.length === 0) || isProcessing}
+                                disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                                 data-testid="command-bar-run-btn"
                             >
-                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}
+                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
                             </button>
                         </PromptInputAction>
                     </div>

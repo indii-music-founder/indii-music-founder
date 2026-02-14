@@ -1,6 +1,7 @@
 
 import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { useStore } from '@/core/store';
 
 /**
  * SmartContractService
@@ -24,6 +25,7 @@ export interface SplitContractConfig {
 }
 
 export interface LedgerEntry {
+    userId: string; // Required for Security Rules
     hash: string;
     timestamp: string;
     action: 'UPLOAD' | 'METADATA_UPDATE' | 'SPLIT_EXECUTION' | 'TOKEN_MINT';
@@ -42,6 +44,9 @@ export class SmartContractService {
     async deploySplitContract(config: SplitContractConfig): Promise<string> {
         console.info(`[SmartContract] Deploying Split Contract for ISRC: ${config.isrc}...`);
 
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User authentication required for smart contracts");
+
         // validate inputs
         const total = config.payees.reduce((sum, p) => sum + p.percentage, 0);
         if (Math.abs(total - 100) > 0.01) {
@@ -54,6 +59,7 @@ export class SmartContractService {
         // Persist Contract Config
         await addDoc(collection(db, this.CONTRACTS_COLLECTION), {
             ...config,
+            userId: userProfile.id,
             contractAddress: mockAddress,
             deployedAt: Timestamp.now(),
             status: 'active'
@@ -72,6 +78,9 @@ export class SmartContractService {
     async executePayout(contractAddress: string, amountUSDC: number): Promise<boolean> {
         console.info(`[SmartContract] Executing Payout of ${amountUSDC} USDC via ${contractAddress}`);
 
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User authentication required for payouts");
+
         // Logic: Check recoupment, then distribute
         // (Simplified stub)
 
@@ -86,6 +95,9 @@ export class SmartContractService {
     async tokenizeAsset(isrc: string, totalShares: number): Promise<string> {
         console.info(`[SmartContract] Minting ${totalShares} SongShares for ${isrc}...`);
 
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) throw new Error("User authentication required for tokenization");
+
         const tokenContract = `0xToken${Math.random().toString(16).slice(2, 10)}`;
         await this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);
 
@@ -97,7 +109,13 @@ export class SmartContractService {
      * In 2026, this pushes to a public or permissioned blockchain.
      */
     private async recordToLedger(action: LedgerEntry['action'], entityId: string, details: string) {
+        const userProfile = useStore.getState().userProfile;
+        if (!userProfile?.id) {
+            throw new Error('User not authenticated: cannot record to ledger');
+        }
+
         const entry: LedgerEntry = {
+            userId: userProfile.id,
             hash: `hash_${Date.now()}_${Math.random()}`,
             timestamp: new Date().toISOString(),
             action,
@@ -119,9 +137,15 @@ export class SmartContractService {
      */
     async getChainOfCustody(entityId: string): Promise<LedgerEntry[]> {
         try {
+            const userProfile = useStore.getState().userProfile;
+            const userId = userProfile?.id;
+
+            if (!userId) return []; // Cannot read if not authenticated
+
             const q = query(
                 collection(db, this.LEDGER_COLLECTION),
-                where('entityId', '==', entityId)
+                where('entityId', '==', entityId),
+                where('userId', '==', userId) // Security rule alignment
             );
 
             const snapshot = await getDocs(q);

@@ -2,12 +2,16 @@ import { ContextResolver } from './ContextResolver';
 import { AgentContext } from '../types';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
-import { useStore } from '@/core/store';
+// useStore removed
+
+import { auth } from '@/services/firebase';
+import { livingFileService } from '@/services/agent/living/LivingFileService';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
     relevantMemories: string[];
     memoryContext: string;
+    livingContext?: string;
     swarmId?: string | null;
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
@@ -27,24 +31,36 @@ export class ContextPipeline {
         const stateContext = await this.resolver.resolveContext();
 
         // 2. Fetch History (The "Session")
-        const chatHistoryString = this.historyManager.getCompiledView();
+        const chatHistoryString = await this.historyManager.getCompiledView();
 
         // 3. Retrieve Relevant Memories (Semantic Long-Term Memory)
         // Only retrieve if Knowledge Base toggle is enabled
+        const { useStore } = await import('@/core/store');
         const { isKnowledgeBaseEnabled } = useStore.getState();
         const relevantMemories = isKnowledgeBaseEnabled
             ? await this.retrieveRelevantMemories(stateContext.projectId, chatHistoryString)
             : [];
 
-        // 4. Format memory context for agent consumption
+        // 4. Inject Living Context (The Vibe)
+        let livingContext = '';
+        if (auth.currentUser) {
+            try {
+                livingContext = await livingFileService.injectContext(auth.currentUser.uid);
+            } catch (error) {
+                console.warn('[ContextPipeline] Failed to inject living context:', error);
+            }
+        }
+
+        // 5. Format memory context for agent consumption
         const memoryContext = this.formatMemoryContext(relevantMemories);
 
-        // 5. Assemble Pipeline Context
+        // 6. Assemble Pipeline Context
         return {
             ...stateContext,
             chatHistoryString,
             relevantMemories,
-            memoryContext
+            memoryContext,
+            livingContext
         };
     }
 

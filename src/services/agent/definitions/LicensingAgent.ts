@@ -1,5 +1,5 @@
 import { AgentConfig } from "../types";
-import systemPrompt from '@agents/licensing/prompt.md?raw';
+import systemPrompt from '@/agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
 import { firebaseAI } from "@/services/ai/FirebaseAIService";

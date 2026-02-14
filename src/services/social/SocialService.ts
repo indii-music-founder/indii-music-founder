@@ -23,13 +23,14 @@ import {
   CampaignStatus,
 } from "./types";
 import { ScheduledPostSchema, CreatePostRequestSchema } from "@/modules/social/schemas";
-import { useStore } from "@/core/store";
+
 
 export class SocialService {
   /**
    * Follow a user
    */
   static async followUser(targetUserId: string): Promise<void> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
     const currentUserId = userProfile.id;
@@ -77,6 +78,7 @@ export class SocialService {
    * Get Social Dashboard Stats
    */
   static async getDashboardStats(): Promise<SocialStats> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id)
       return { followers: 0, following: 0, posts: 0, drops: 0 };
@@ -116,6 +118,7 @@ export class SocialService {
   static async schedulePost(
     post: Omit<ScheduledPost, "id" | "status" | "authorId">,
   ): Promise<string> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
@@ -123,6 +126,7 @@ export class SocialService {
     const rawPost = {
       ...post,
       authorId: userProfile.id,
+      userId: userProfile.id, // For security rules
       status: CampaignStatus.PENDING
     };
 
@@ -144,6 +148,7 @@ export class SocialService {
    * Get Scheduled Posts
    */
   static async getScheduledPosts(userId?: string): Promise<ScheduledPost[]> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     const targetUserId = userId || userProfile?.id;
 
@@ -151,7 +156,7 @@ export class SocialService {
 
     const q = query(
       collection(db, "scheduled_posts"),
-      where("authorId", "==", targetUserId),
+      where("userId", "==", targetUserId), // Align with security rules
       where("status", "==", CampaignStatus.PENDING),
       orderBy("scheduledTime", "asc"),
     );
@@ -168,6 +173,7 @@ export class SocialService {
      * Unfollow a user
      */
   static async unfollowUser(targetUserId: string): Promise<void> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
     const currentUserId = userProfile.id;
@@ -216,6 +222,7 @@ export class SocialService {
     mediaUrls: string[] = [],
     productId?: string,
   ): Promise<string> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) throw new Error("User not authenticated");
 
@@ -227,6 +234,7 @@ export class SocialService {
 
     const postData = {
       authorId: userProfile.id,
+      userId: userProfile.id, // For security rules
       authorName: userProfile.displayName || "Anonymous",
       authorAvatar: userProfile.photoURL || null,
       content,
@@ -266,7 +274,7 @@ export class SocialService {
       // Specific user's feed (Profile or 'Mine' tab)
       q = query(
         postsRef,
-        where("authorId", "==", userId),
+        where("userId", "==", userId),
         orderBy("timestamp", "desc"),
         limit(50),
       );
@@ -293,6 +301,7 @@ export class SocialService {
    * Check if currently following a user
    */
   static async isFollowing(targetUserId: string): Promise<boolean> {
+    const { useStore } = await import("@/core/store");
     const userProfile = useStore.getState().userProfile;
     if (!userProfile?.id) return false;
     const currentUserId = userProfile.id;
