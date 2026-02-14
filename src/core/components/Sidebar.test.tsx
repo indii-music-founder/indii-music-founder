@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from './Sidebar';
-import { useStore } from '../store';
+import { useStore } from '@/core/store';
 
 // Mock Lucide icons
 vi.mock('lucide-react', () => ({
@@ -45,7 +45,7 @@ vi.mock('@/core/components/ui/BiometricToggle', () => ({
 }));
 
 // Mock Store
-vi.mock('../store', () => ({
+vi.mock('@/core/store', () => ({
     useStore: vi.fn()
 }));
 

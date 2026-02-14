@@ -5,18 +5,19 @@ import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
 import { SocialOAuthService, LinkedAccount } from '@/services/social/SocialOAuthService';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 
 export function useSocial(userId?: string) {
-    const { userProfile } = useStore();
+    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const toast = useToast();
 
     // State
     const [stats, setStats] = useState<SocialStats>({ followers: 0, following: 0, posts: 0, drops: 0 });
     const [posts, setPosts] = useState<SocialPost[]>([]);
     const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
-    const [linkedAccounts, setLinkedAccounts] = useState<LinkedAccount[]>([]);
+    const [linkedAccounts, setLinkedAccounts] = useState<(LinkedAccount & { id: string })[]>([]);
 
     // Loading States
     const [isLoading, setIsLoading] = useState(true);

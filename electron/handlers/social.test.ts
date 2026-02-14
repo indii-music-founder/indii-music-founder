@@ -75,7 +75,6 @@ vi.mock('../utils/ipc-security', () => ({
 }));
 
 vi.mock('../services/CredentialService', () => ({
-    credentialService: mockCredentialService
     credentialService: {
         getCredentials: mockGetCredentials
     }
@@ -88,14 +87,6 @@ describe('Social Handler', () => {
     });
 
     it('should register social:connect-oauth handler', async () => {
-        // Import after mocks are set up
-        await import('./social');
-
-        expect(mockIpcMain.handle).toHaveBeenCalledWith(
-        const { registerSocialHandlers } = await import('./social');
-        registerSocialHandlers();
-
-        expect(mockIpcMain.handle).toHaveBeenCalledWith(
         const { registerSocialHandlers } = await import('./social');
         registerSocialHandlers();
 
@@ -106,13 +97,6 @@ describe('Social Handler', () => {
     });
 
     it('should register social:get-token handler', async () => {
-        await import('./social');
-
-        expect(mockIpcMain.handle).toHaveBeenCalledWith(
-        const { registerSocialHandlers } = await import('./social');
-        registerSocialHandlers();
-
-        expect(mockIpcMain.handle).toHaveBeenCalledWith(
         const { registerSocialHandlers } = await import('./social');
         registerSocialHandlers();
 
@@ -124,10 +108,6 @@ describe('Social Handler', () => {
 
     describe('social:connect-oauth', () => {
         it('should validate sender before processing', async () => {
-            let oauthHandler: IpcHandler | undefined;
-            let oauthHandler: Function | undefined;
-
-            mockIpcMain.handle.mockImplementation((channel, handler) => {
             let oauthHandler: ((...args: any[]) => any) | undefined;
 
             mockHandle.mockImplementation((channel, handler) => {
@@ -136,48 +116,31 @@ describe('Social Handler', () => {
                 }
             });
 
-            await import('./social');
             const { registerSocialHandlers } = await import('./social');
             registerSocialHandlers();
 
             expect(oauthHandler).toBeDefined();
 
             const mockEvent = { sender: {} };
-            mockBrowserWindow.mockReturnValue({
-                loadURL: vi.fn(),
-                webContents: {
-                    on: vi.fn()
-                },
-                on: vi.fn(),
-                close: vi.fn()
-            });
 
             // Call the handler
             if (oauthHandler) {
+                // Mock the promise resolution
                 const promise = oauthHandler(mockEvent, 'twitter');
 
-            if (oauthHandler) {
-                const promise = oauthHandler(mockEvent, 'twitter');
-
-                // Simulate window closed to resolve the promise
-                const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
-                if (closeCall) {
-                    closeCall[1]();
+                // Simulate window closed to resolve the promise if it's waiting
+                // Find the 'closed' event listener and call it
+                const closeCalls = mockOn.mock.calls.filter(call => call[0] === 'closed');
+                if (closeCalls.length > 0) {
+                     // Invoke the callback
+                     closeCalls[0][1]();
                 }
 
-                await promise;
-            // Call the handler
-            if (oauthHandler) {
-                oauthHandler(mockEvent, 'twitter');
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
             }
         });
 
         it('should create BrowserWindow for OAuth flow', async () => {
-            let oauthHandler: IpcHandler | undefined;
-            let oauthHandler: Function | undefined;
-
-            mockIpcMain.handle.mockImplementation((channel, handler) => {
             let oauthHandler: ((...args: any[]) => any) | undefined;
 
             mockHandle.mockImplementation((channel, handler) => {
@@ -186,18 +149,6 @@ describe('Social Handler', () => {
                 }
             });
 
-            const mockWindow = {
-                loadURL: vi.fn().mockResolvedValue(undefined),
-                webContents: {
-                    on: vi.fn()
-                },
-                on: vi.fn(),
-                close: vi.fn()
-            };
-
-            mockBrowserWindow.mockReturnValue(mockWindow);
-
-            await import('./social');
             const { registerSocialHandlers } = await import('./social');
             registerSocialHandlers();
 
@@ -207,6 +158,10 @@ describe('Social Handler', () => {
                 const promise = oauthHandler(mockEvent, 'twitter');
 
                 // Simulate window closed to resolve
+                // We need to capture the 'on' call to trigger 'closed'
+                // Since `oauthHandler` runs synchronously until `await new Promise`,
+                // `mockOn` should have been called by now.
+
                 const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
                 if (closeCall) {
                     closeCall[1]();
@@ -221,21 +176,6 @@ describe('Social Handler', () => {
 
                 await promise;
 
-                expect(MockBrowserWindow).toHaveBeenCalledWith(expect.objectContaining({
-                    width: 600,
-                    height: 800,
-                    title: 'Connect to Twitter'
-                expect(mockBrowserWindow).toHaveBeenCalledWith({
-                    width: 600,
-                    height: 800,
-                    show: true,
-                    title: 'Connect to twitter',
-                    autoHideMenuBar: true,
-                    webPreferences: {
-                        nodeIntegration: false,
-                        contextIsolation: true
-                    }
-                });
                 expect(mockBrowserWindowConstructor).toHaveBeenCalledWith(expect.objectContaining({
                     width: 600,
                     height: 800,
@@ -245,10 +185,6 @@ describe('Social Handler', () => {
         });
 
         it('should load mock OAuth page', async () => {
-            let oauthHandler: IpcHandler | undefined;
-            let oauthHandler: Function | undefined;
-
-            mockIpcMain.handle.mockImplementation((channel, handler) => {
             let oauthHandler: ((...args: any[]) => any) | undefined;
 
             mockHandle.mockImplementation((channel, handler) => {
@@ -257,18 +193,6 @@ describe('Social Handler', () => {
                 }
             });
 
-            const mockWindow = {
-                loadURL: vi.fn().mockResolvedValue(undefined),
-                webContents: {
-                    on: vi.fn()
-                },
-                on: vi.fn(),
-                close: vi.fn()
-            };
-
-            mockBrowserWindow.mockReturnValue(mockWindow);
-
-            await import('./social');
             const { registerSocialHandlers } = await import('./social');
             registerSocialHandlers();
 
@@ -277,7 +201,6 @@ describe('Social Handler', () => {
             if (oauthHandler) {
                 const promise = oauthHandler(mockEvent, 'twitter');
 
-                // Simulate window closed to resolve
                 const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
                 if (closeCall) {
                     closeCall[1]();
@@ -285,8 +208,6 @@ describe('Social Handler', () => {
 
                 await promise;
 
-                expect(mockWindow.loadURL).toHaveBeenCalled();
-                const loadedUrl = mockWindow.loadURL.mock.calls[0][0];
                 expect(mockLoadURL).toHaveBeenCalled();
                 const loadedUrl = mockLoadURL.mock.calls[0][0];
                 expect(loadedUrl).toContain('data:text/html');
@@ -296,10 +217,6 @@ describe('Social Handler', () => {
 
     describe('social:get-token', () => {
         it('should validate sender before processing', async () => {
-            let tokenHandler: IpcHandler | undefined;
-            let tokenHandler: Function | undefined;
-
-            mockIpcMain.handle.mockImplementation((channel, handler) => {
             let tokenHandler: ((...args: any[]) => any) | undefined;
 
             mockHandle.mockImplementation((channel, handler) => {
@@ -308,7 +225,6 @@ describe('Social Handler', () => {
                 }
             });
 
-            await import('./social');
             const { registerSocialHandlers } = await import('./social');
             registerSocialHandlers();
 
@@ -323,10 +239,6 @@ describe('Social Handler', () => {
         });
 
         it('should call credential service to get token', async () => {
-            let tokenHandler: IpcHandler | undefined;
-            let tokenHandler: Function | undefined;
-
-            mockIpcMain.handle.mockImplementation((channel, handler) => {
             let tokenHandler: ((...args: any[]) => any) | undefined;
 
             mockHandle.mockImplementation((channel, handler) => {
@@ -335,16 +247,6 @@ describe('Social Handler', () => {
                 }
             });
 
-            mockCredentialService.getCredentials.mockResolvedValue({
-                accessToken: 'test-token'
-            });
-
-            await import('./social');
-            mockGetCredentials.mockResolvedValue({
-                accessToken: 'test-token'
-            });
-
-            await import('./social');
             mockGetCredentials.mockResolvedValue({
                 accessToken: 'test-token'
             });
@@ -356,16 +258,6 @@ describe('Social Handler', () => {
 
             if (tokenHandler) {
                 await tokenHandler(mockEvent, 'twitter');
-                expect(mockCredentialService.getCredentials).toHaveBeenCalledWith('social_twitter');
-            }
-        });
-    });
-});
-                expect(mockGetCredentials).toHaveBeenCalledWith('social_twitter');
-            }
-        });
-    });
-});
                 expect(mockGetCredentials).toHaveBeenCalledWith('social_twitter');
             }
         });

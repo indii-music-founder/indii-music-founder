@@ -195,6 +195,23 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
     const activeBrandColor = brandColorMap[activeAgentId] || agentColor;
 
+    const BRAND_COLORS: Record<string, string> = {
+        purple: 'bg-purple-600 text-white shadow-sm',
+        orange: 'bg-orange-600 text-white shadow-sm',
+        emerald: 'bg-emerald-600 text-white shadow-sm',
+        yellow: 'bg-yellow-600 text-white shadow-sm',
+        blue: 'bg-blue-600 text-white shadow-sm',
+        indigo: 'bg-indigo-600 text-white shadow-sm',
+        rose: 'bg-rose-600 text-white shadow-sm',
+        sky: 'bg-sky-600 text-white shadow-sm',
+        pink: 'bg-pink-600 text-white shadow-sm',
+        slate: 'bg-slate-600 text-white shadow-sm',
+        // Fallback
+        default: 'bg-purple-600 text-white shadow-sm'
+    };
+
+    const activeBrandClass = BRAND_COLORS[activeBrandColor] || BRAND_COLORS.default;
+
     return (
         <>
             {/* Stealth Wake Button */}
@@ -306,7 +323,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         </button>
                                         <button
                                             onClick={() => setActiveAgentProvider('native')}
-                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'))}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'native' ? activeBrandClass : 'text-gray-500 hover:text-gray-300'))}
                                             title="Specialist agents with tools"
                                         >
                                             Agent
@@ -318,9 +335,6 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         >
                                             indii
                                         </button>
-                                        <button onClick={() => setActiveAgentProvider('direct')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'direct' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Direct LLM chat — fast, no tools">Chat</button>
-                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`} title="Specialist agents with tools">Agent</button>
-                                        <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Agent Zero sidecar (Docker)">indii</button>
                                     </div>
 
                                     {/* Action Buttons */}
