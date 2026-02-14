@@ -205,8 +205,6 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should wrap panels in ErrorBoundary components', () => {
-        render(<DistributionDashboard />);
-
         // ErrorBoundary is mocked to just pass through children
         // We verify panels are rendered which means ErrorBoundary is working
         const { container } = render(<DistributionDashboard />);

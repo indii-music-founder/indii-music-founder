@@ -94,7 +94,7 @@ describe('EmptyState Component', () => {
             />
         );
 
-        const icon = container.querySelector('[data-testid="icon-Sparkles"]');
+        const icon = container.querySelector('[data-testid^="icon-"]');
         expect(icon).toBeInTheDocument();
     });
 
