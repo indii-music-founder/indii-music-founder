@@ -96,7 +96,6 @@ export class WorkflowCoordinator {
             return 'COMPLEX_ORCHESTRATION';
         }
 
-        if (GENERATION_REGEXES.some(r => r.test(lower))) {
         if (GENERATION_REGEXES.some(r => r.test(lower)) && !complexityTriggers.some(t => lower.includes(t))) {
             return 'SIMPLE_GENERATION';
         }

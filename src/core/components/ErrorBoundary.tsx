@@ -56,8 +56,9 @@ export class ErrorBoundary extends Component<Props, State> {
     }
 
     private handleReset = () => {
+        const wasChunkError = this.state.error && this.isChunkLoadError(this.state.error);
         this.setState({ hasError: false, error: null });
-        if (this.state.error && this.isChunkLoadError(this.state.error)) {
+        if (wasChunkError) {
             window.location.reload();
         }
     };

@@ -1,6 +1,6 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { coordinator, WorkflowCoordinator } from './WorkflowCoordinator';
+import { coordinator } from './WorkflowCoordinator';
 import { firebaseAI } from '@/services/ai/FirebaseAIService'; // Mocked in setup
 import { fileSystemService } from '@/services/FileSystemService';
 import { AgentContext } from './types';

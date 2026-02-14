@@ -91,7 +91,6 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
             history: recentHistory.map(h => ({
                 role: h.role,
                 text: (h.text ?? '').substring(0, 300) // Increase snippet size for more context
-                text: (h.text || '').substring(0, 300) // Increase snippet size for more context
             })),
             message: `Retrieved ${recentHistory.length} most recent history items.`
         };
@@ -138,7 +137,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
 
             return {
                 summary,
-                message: "History successully compacted and archived to episodic memory for permanent retrieval.",
+                message: "History successfully compacted and archived to episodic memory for permanent retrieval.",
                 cleared: false // Flag to show we haven't cleared the UI store yet, just archived.
             };
         } catch (e) {

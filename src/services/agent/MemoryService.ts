@@ -237,7 +237,7 @@ class MemoryService {
 
             return relevantItems;
         } catch (error) {
-            console.error('[MemoryService] Error recalled memories:', error);
+            console.error('[MemoryService] Error recalling memories:', error);
             return [];
         }
     }

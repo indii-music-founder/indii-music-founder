@@ -5,7 +5,7 @@ import { memoryService } from '../MemoryService';
 // useStore removed
 
 import { auth } from '@/services/firebase';
-import { livingFileService } from '../living/LivingFileService';
+import { livingFileService } from '@/services/agent/living/LivingFileService';
 
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;

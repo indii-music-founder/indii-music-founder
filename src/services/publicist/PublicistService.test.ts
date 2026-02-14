@@ -6,8 +6,7 @@ import {
     query,
     where,
     onSnapshot,
-    addDoc,
-    updateDoc
+    addDoc
 } from 'firebase/firestore';
 
 // Mocks are already set up in src/test/setup.ts for firebase/firestore
