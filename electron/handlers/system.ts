@@ -91,11 +91,6 @@ export function registerSystemHandlers() {
             });
 
             // 2. Load the HTML (with some basic styling)
-            // Sanitize user-provided HTML to prevent script injection
-            const sanitizedHtml = htmlContent
-                .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-                .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
-                .replace(/on\w+\s*=\s*'[^']*'/gi, '');
 
             const styledHtml = `
                 <html>
