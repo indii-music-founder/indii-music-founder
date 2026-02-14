@@ -18,7 +18,7 @@ const mockSetContentProtection = vi.fn();
 const mockFromWebContents = vi.fn();
 
 const MockBrowserWindow = vi.fn();
-MockBrowserWindow.mockImplementation(function(this: any, options: any) {
+MockBrowserWindow.mockImplementation(function (this: any, options: any) {
     mockBrowserWindowConstructor(options);
     return {
         loadURL: mockLoadURL,
@@ -83,6 +83,7 @@ describe('System Handler', () => {
         expect(mockIpcMain.handle).toHaveBeenCalledWith('privacy:toggle-protection', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:select-file', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:select-directory', expect.any(Function));
+        expect(mockIpcMain.handle).toHaveBeenCalledWith('system:restart-ai', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:save-pdf', expect.any(Function));
     });
 
