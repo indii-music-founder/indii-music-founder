@@ -288,10 +288,11 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                                         </div>
                                     </div>
 
-                                    {/* Identity Toggle */}
-                                    <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
-                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>Manual</button>
-                                        <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? `bg-purple-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>indii</button>
+                                    {/* Mode Toggle: Chat (direct LLM) | Agent (specialist orchestration) | Sidecar (Agent Zero) */}
+                                    <div className="flex items-center gap-0.5 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
+                                        <button onClick={() => setActiveAgentProvider('direct')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'direct' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Direct LLM chat — fast, no tools">Chat</button>
+                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`} title="Specialist agents with tools">Agent</button>
+                                        <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'}`} title="Agent Zero sidecar (Docker)">indii</button>
                                     </div>
 
                                     {/* Action Buttons */}
