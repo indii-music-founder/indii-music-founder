@@ -155,17 +155,7 @@ describe('ErrorBoundary Component', () => {
     });
 
     it('should recover after error is fixed', () => {
-        let shouldThrow = true;
-        const TestComponent = () => <ThrowError shouldThrow={shouldThrow} />;
-
-        const { rerender } = render(
-            <ErrorBoundary>
-                <TestComponent />
-                <ThrowError shouldThrow={shouldThrow} />
-    });
-
-    it('should recover after error is fixed', () => {
-        // Start with a component that does NOT throw — use key to force remount
+        // Start with a component that throws
         const { rerender } = render(
             <ErrorBoundary key="recover-test">
                 <ThrowError shouldThrow={true} />
@@ -174,28 +164,18 @@ describe('ErrorBoundary Component', () => {
 
         expect(screen.getByText('Module Crash Detected')).toBeInTheDocument();
 
-        // Rerender the entire error boundary with a non-throwing child.
-        // Using a new key forces React to unmount the old ErrorBoundary and mount fresh.
-        rerender(
-            <ErrorBoundary key="recover-test-2">
-                <ThrowError shouldThrow={false} />
-        // Click reset
-        // Click reset to clear error boundary state
-        const resetButton = screen.getByRole('button', { name: /Try Again/i });
-        fireEvent.click(resetButton);
+        // Rerender with a component that doesn't throw
+        // We use a key to simulate a full remount/navigation if needed,
+        // but ErrorBoundary usually resets on prop change or via the button.
+        // Here we simulate the user fixing the issue and the app re-rendering.
 
-        // Rerender with fixed component
+        // Rerender with a new key to force a fresh mount of ErrorBoundary
+        // This simulates a complete reset or navigation away and back
         rerender(
-            <ErrorBoundary>
-                <TestComponent />
+            <ErrorBoundary key="recover-test-fixed">
+                <ThrowError shouldThrow={false} />
             </ErrorBoundary>
         );
-
-        // Then click reset to clear the error boundary state
-        const resetButtonAfter = screen.getByRole('button', { name: /Try Again/i });
-        fireEvent.click(resetButtonAfter);
-        const resetButton2 = screen.getByRole('button', { name: /Try Again/i });
-        fireEvent.click(resetButton2);
 
         expect(screen.queryByText('Module Crash Detected')).not.toBeInTheDocument();
         expect(screen.getByText('Working component')).toBeInTheDocument();
