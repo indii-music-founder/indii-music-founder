@@ -88,10 +88,9 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
             : useStore.getState().agentHistory) || [];
 
         const recentHistory = history.slice(-20); // Increase range for better context
-        return {
             history: recentHistory.map(h => ({
                 role: h.role,
-                text: h.text.substring(0, 300) // Increase snippet size for more context
+                text: (h.text ?? '').substring(0, 300) // Increase snippet size for more context
             })),
             message: `Retrieved ${recentHistory.length} most recent history items.`
         };
