@@ -6,6 +6,7 @@ import { fileSystemService } from '@/services/FileSystemService';
 
 export type TaskComplexity = 'SIMPLE_GENERATION' | 'COMPLEX_ORCHESTRATION';
 
+// Precompiled word-boundary regexes for generation trigger matching
 // Keywords implying simple generation (expanded for conversational queries)
 const GENERATION_TRIGGERS = [
     'write a', 'draft a', 'generate a', 'create a',
@@ -71,6 +72,7 @@ export class WorkflowCoordinator {
             return 'COMPLEX_ORCHESTRATION';
         }
 
+        if (GENERATION_REGEXES.some(r => r.test(lower))) {
         if (GENERATION_REGEXES.some(r => r.test(lower)) && !complexityTriggers.some(t => lower.includes(t))) {
             return 'SIMPLE_GENERATION';
         }
