@@ -143,7 +143,7 @@ export class LegalService {
 
         const html = `
             <h1>${this.escapeHtml(contract.title)}</h1>
-            <div><strong>Date:</strong> ${this.escapeHtml(dateString)}</div>
+            <div><strong>Date:</strong> ${dateString}</div>
             <div><strong>Parties:</strong> ${contract.parties.map(p => this.escapeHtml(p)).join(', ')}</div>
             <div style="margin-top: 20px;">
                 ${contract.content.split('\n').map(line => `<p>${this.escapeHtml(line)}</p>`).join('')}

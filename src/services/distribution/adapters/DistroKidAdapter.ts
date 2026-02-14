@@ -17,6 +17,31 @@ import { DDEX_CONFIG } from '@/core/config/ddex';
 import { distributionStore } from '../DistributionPersistenceService';
 import { earningsService } from '../EarningsService';
 
+const VALID_RELEASE_STATUSES: Set<ReleaseStatus> = new Set([
+    'draft', 'validating', 'pending_review', 'in_review', 'approved',
+    'processing', 'delivering', 'delivered', 'live',
+    'takedown_requested', 'taken_down', 'failed', 'rejected'
+]);
+
+/**
+ * Safely maps a persisted deployment status string to a valid ReleaseStatus.
+ * Returns 'processing' as a sensible fallback for unrecognized values.
+ */
+function mapDeploymentStatusToReleaseStatus(status: string): ReleaseStatus {
+    if (VALID_RELEASE_STATUSES.has(status as ReleaseStatus)) {
+        return status as ReleaseStatus;
+    }
+    // Map known persistence-only values that may appear from legacy data
+    switch (status) {
+        case 'submitted':       return 'in_review';
+        case 'takedown_pending': return 'takedown_requested';
+        case 'takedown_complete': return 'taken_down';
+        default:
+            console.warn(`[DistroKid] Unknown deployment status "${status}", defaulting to "processing"`);
+            return 'processing';
+    }
+}
+
 export class DistroKidAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
     readonly name = 'DistroKid';
@@ -180,7 +205,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
         const dkDeployment = deployments.find(d => d.distributorId === this.id);
 
         if (dkDeployment) {
-            return dkDeployment.status as ReleaseStatus;
+            return mapDeploymentStatusToReleaseStatus(dkDeployment.status);
         }
 
         // 2. Default to live if we know it was delivered but no record found (unlikely)

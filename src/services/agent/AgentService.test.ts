@@ -4,7 +4,6 @@ import { AgentService } from './AgentService';
 import { coordinator } from './WorkflowCoordinator';
 // We need to import the class to spy on prototype or just mock the singleton export
 import { useStore } from '@/core/store';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
 
 // Mock AgentExecutor
 vi.mock('./components/AgentExecutor', () => {

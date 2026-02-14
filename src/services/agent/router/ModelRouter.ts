@@ -1,5 +1,5 @@
 
-import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
  * Model Router

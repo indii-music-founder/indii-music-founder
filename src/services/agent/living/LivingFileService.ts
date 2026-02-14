@@ -1,5 +1,5 @@
 
-import { db, auth } from '@/services/firebase';
+import { db } from '@/services/firebase';
 import {
     doc,
     getDoc,

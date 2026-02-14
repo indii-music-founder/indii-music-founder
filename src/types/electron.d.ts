@@ -23,8 +23,6 @@ export interface ElectronAPI {
     selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
     savePDF: (html: string, title?: string) => Promise<{ success: boolean, filePath?: string, error?: string }>;
-    socialInitiateOAuth: (platform: string) => Promise<{ success: boolean, account?: any, error?: string }>;
-    getSocialToken: (platform: string) => Promise<string | null>;
 
     // Auth (Secure Main Process Flow)
     auth: {
@@ -73,6 +71,11 @@ export interface ElectronAPI {
         save: (id: string, creds: any) => Promise<void>;
         get: (id: string) => Promise<any | null>;
         delete: (id: string) => Promise<boolean>;
+    };
+
+    // Social (OAuth Flows)
+    social: {
+        connectOAuth: (provider: string) => Promise<{ success: boolean; provider: string; accessToken?: string; userId?: string; username?: string; displayName?: string; error?: string }>;
     };
 
     // Distribution (DDEX Packaging)
