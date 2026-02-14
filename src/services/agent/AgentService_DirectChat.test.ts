@@ -65,7 +65,7 @@ describe('AgentService Direct Chat Reproduction', () => {
             // The current message will be added by sendMessage
         ];
 
-        let currentHistory = [...history];
+        const currentHistory = [...history];
 
         mockAddAgentMessage.mockImplementation((msg) => {
             currentHistory.push(msg);

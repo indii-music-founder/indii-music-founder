@@ -11,7 +11,6 @@ import * as Sentry from '@sentry/react';
 
 export function useSocial(userId?: string) {
     const { userProfile } = useStore(useShallow((state) => ({ userProfile: state.userProfile })));
-    const { userProfile } = useStore(useShallow(state => ({ userProfile: state.userProfile })));
     const toast = useToast();
 
     // State
