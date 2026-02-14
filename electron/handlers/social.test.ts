@@ -27,8 +27,6 @@ MockBrowserWindow.mockImplementation(function(this: any) {
 
 const mockValidateSender = vi.fn();
 const mockGetCredentials = vi.fn();
-const mockBrowserWindow = vi.fn();
-const mockValidateSender = vi.fn();
 const mockCredentialService = {
     getCredentials: vi.fn()
 };
