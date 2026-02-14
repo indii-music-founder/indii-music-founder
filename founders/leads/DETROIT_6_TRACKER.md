@@ -8,7 +8,7 @@
 | **Moodymann** | Mahogani Music | High | Personal (via Manager) | Pitch Prep |
 | **Third Man Records** | Jack White / Archive | Medium | Archival "Vault" Play | Researching |
 | **UR** (Underground Resistance)| Mad Mike / UR | High | Personal / Ideological | Pitch Prep |
-| **Todd Johnson** | Promotions / Silly Girl | High | Personal / Buddy | Pitch Prep |
+| **Todd Johnson** | Charivari Detroit / Sillygirlie | High | Personal / Buddy | Pitch Prep |
 | **DTM** (Detroit Techno Militia) | T.Linder / Darkfader / DJ 3000 | High | Personal / Friends | Pitch Prep |
 
 ## Next Steps for in.dEX:
