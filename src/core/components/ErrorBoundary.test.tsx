@@ -173,6 +173,7 @@ describe('ErrorBoundary Component', () => {
 
         expect(screen.getByText('Module Crash Detected')).toBeInTheDocument();
 
+        // Click reset
         // Click reset to clear error boundary state
         const resetButton = screen.getByRole('button', { name: /Try Again/i });
         fireEvent.click(resetButton);
@@ -185,6 +186,8 @@ describe('ErrorBoundary Component', () => {
         );
 
         // Then click reset to clear the error boundary state
+        const resetButtonAfter = screen.getByRole('button', { name: /Try Again/i });
+        fireEvent.click(resetButtonAfter);
         const resetButton2 = screen.getByRole('button', { name: /Try Again/i });
         fireEvent.click(resetButton2);
 

@@ -97,6 +97,12 @@ vi.mock('fs/promises', () => ({
     }
 }));
 
+// Mock fs/promises
+const mockWriteFile = vi.fn().mockResolvedValue(undefined);
+vi.mock('fs/promises', () => ({
+    writeFile: mockWriteFile
+}));
+
 describe('System Handler', () => {
     beforeEach(() => {
         vi.resetModules();
@@ -126,7 +132,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'get-platform') {
-                    platformHandler = handler as IpcHandler;
+                    platformHandler = handler;
                 }
             });
 
@@ -152,7 +158,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'get-app-version') {
-                    versionHandler = handler as IpcHandler;
+                    versionHandler = handler;
                 }
             });
 
@@ -179,7 +185,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'privacy:toggle-protection') {
-                    protectionHandler = handler as IpcHandler;
+                    protectionHandler = handler;
                 }
             });
 
@@ -211,7 +217,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-file') {
-                    selectFileHandler = handler as IpcHandler;
+                    selectFileHandler = handler;
                 }
             });
 
@@ -248,7 +254,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-file') {
-                    selectFileHandler = handler as IpcHandler;
+                    selectFileHandler = handler;
                 }
             });
 
@@ -317,7 +323,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-directory') {
-                    selectDirHandler = handler as IpcHandler;
+                    selectDirHandler = handler;
                 }
             });
 
@@ -384,7 +390,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'system:save-pdf') {
-                    savePdfHandler = handler as IpcHandler;
+                    savePdfHandler = handler;
                 }
             });
 
@@ -464,7 +470,7 @@ describe('System Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'system:save-pdf') {
-                    savePdfHandler = handler as IpcHandler;
+                    savePdfHandler = handler;
                 }
             });
 

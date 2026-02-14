@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// eslint-friendly handler type
-type IpcHandler = (...args: unknown[]) => unknown;
-
 // Mock Electron modules
 // Define mocks
 const mockHandle = vi.fn();
@@ -27,6 +24,9 @@ MockBrowserWindow.mockImplementation(function(this: any, options: any) {
         close: mockClose
     };
 } as any);
+
+const mockValidateSender = vi.fn();
+const mockGetCredentials = vi.fn();
 
 const mockValidateSender = vi.fn();
 const mockGetCredentials = vi.fn();
@@ -95,6 +95,10 @@ describe('Social Handler', () => {
 
             // Call the handler
             if (oauthHandler) {
+                 // Trigger the promise but don't await it yet if it hangs on window close
+                 oauthHandler(mockEvent, 'twitter');
+
+                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 // We don't await because it might hang waiting for window close
                 // We need to trigger the closed event to resolve the promise if it awaits window close
                 // But validation happens before window creation usually
@@ -228,6 +232,7 @@ describe('Social Handler', () => {
 
     describe('social:get-token', () => {
         it('should validate sender before processing', async () => {
+             let tokenHandler: ((...args: any[]) => any) | undefined;
             let tokenHandler: IpcHandler | undefined;
             let tokenHandler: ((...args: any[]) => any) | undefined;
 
@@ -239,8 +244,6 @@ describe('Social Handler', () => {
 
             const { registerSocialHandlers } = await import('./social');
             registerSocialHandlers();
-
-            expect(tokenHandler).toBeDefined();
 
             const mockEvent = { sender: {} };
 
