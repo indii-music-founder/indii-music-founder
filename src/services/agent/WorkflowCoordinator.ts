@@ -54,6 +54,25 @@ export class WorkflowCoordinator {
         }
     }
 
+    // Keywords implying complex workflow or tool use
+    private static readonly COMPLEXITY_TRIGGERS = [
+        'plan', 'strategy', 'campaign', 'schedule', 'research',
+        'analyze', 'review', 'audit', 'manage', 'coordinate',
+        'find', 'search', 'upload', 'save', 'remember'
+    ];
+
+    // Keywords implying simple generation (expanded for conversational queries)
+    private static readonly GENERATION_TRIGGERS = [
+        'write a', 'draft a', 'generate a', 'create a',
+        'joke', 'poem', 'caption', 'email', 'list',
+        'explain', 'what is', 'what are', 'how do', 'how does',
+        'tell me', 'help me understand', 'summarize', 'describe',
+        'why is', 'why do', 'can you', 'could you'
+    ];
+
+    // Precompile regex for word boundaries
+    private static readonly GENERATION_REGEXES = WorkflowCoordinator.GENERATION_TRIGGERS.map(t => new RegExp(`\\b${t}\\b`, 'i'));
+
     /**
      * Heuristic-based routing.
      * Can be upgraded to LLM-based classification later.
@@ -61,6 +80,11 @@ export class WorkflowCoordinator {
     determineComplexity(message: string): TaskComplexity {
         const lower = message.toLowerCase();
 
+        if (WorkflowCoordinator.COMPLEXITY_TRIGGERS.some(t => lower.includes(t))) {
+            return 'COMPLEX_ORCHESTRATION';
+        }
+
+        if (WorkflowCoordinator.GENERATION_REGEXES.some(r => r.test(lower))) {
         // Keywords implying complex workflow or tool use
         const complexityTriggers = [
             'plan', 'strategy', 'campaign', 'schedule', 'research',
@@ -149,6 +173,7 @@ export class WorkflowCoordinator {
             }
         } catch (e) {
             // Ignore error if folder creation fails (might already exist)
+            console.debug('[WorkflowCoordinator] Folder creation skipped/failed:', e);
         }
     }
 
