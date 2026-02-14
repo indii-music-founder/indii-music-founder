@@ -89,6 +89,7 @@ Key Terms: ${args.terms}`;
         }
 
         const success = await LegalService.exportContractToPDF(args.contractId);
+
         if (success) {
             return toolSuccess({}, "Contract PDF has been generated and saved locally.");
         } else {

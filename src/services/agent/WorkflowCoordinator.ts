@@ -64,11 +64,14 @@ export class WorkflowCoordinator {
             'why is', 'why do', 'can you', 'could you'
         ];
 
+        // Precompile regex for word boundaries
+        const generationRegexes = generationTriggers.map(t => new RegExp(`\\b${t}\\b`, 'i'));
+
         if (complexityTriggers.some(t => lower.includes(t))) {
             return 'COMPLEX_ORCHESTRATION';
         }
 
-        if (generationTriggers.some(t => lower.includes(t)) && !complexityTriggers.some(t => lower.includes(t))) {
+        if (generationRegexes.some(r => r.test(lower)) && !complexityTriggers.some(t => lower.includes(t))) {
             return 'SIMPLE_GENERATION';
         }
 
@@ -107,6 +110,10 @@ export class WorkflowCoordinator {
         }
 
         // Only require tools for explicit persistence/retrieval actions, NOT for possessive "my"
+        // Note: 'save', 'find', 'search', 'upload' are already caught by complexityTriggers in determineComplexity,
+        // so they will be routed to COMPLEX_ORCHESTRATION before reaching here (which only runs for SIMPLE_GENERATION).
+        // 'download' is not in complexityTriggers, so we keep it here.
+        return lower.includes('download');
         return lower.includes('save to') || lower.includes('save this') ||
                lower.includes('find my') || lower.includes('search my') ||
                lower.includes('upload') || lower.includes('download');

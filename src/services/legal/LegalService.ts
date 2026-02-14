@@ -142,11 +142,6 @@ export class LegalService {
             : new Date(typeof createdAt === 'number' ? createdAt : Date.now()).toLocaleDateString();
 
         const html = `
-            <h1>${LegalService.escapeHtml(contract.title)}</h1>
-            <div><strong>Date:</strong> ${dateString}</div>
-            <div><strong>Parties:</strong> ${contract.parties.map(p => LegalService.escapeHtml(p)).join(', ')}</div>
-            <div style="margin-top: 20px;">
-                ${contract.content.split('\n').map(line => `<p>${LegalService.escapeHtml(line)}</p>`).join('')}
             <h1>${this.escapeHtml(contract.title)}</h1>
             <div><strong>Date:</strong> ${this.escapeHtml(dateString)}</div>
             <div><strong>Parties:</strong> ${contract.parties.map(p => this.escapeHtml(p)).join(', ')}</div>
