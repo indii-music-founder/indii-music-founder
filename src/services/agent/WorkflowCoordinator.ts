@@ -115,6 +115,9 @@ export class WorkflowCoordinator {
         // 'download' is not in complexityTriggers, so we keep it here.
         // 'download' is not in complexityTriggers, so we keep it here.
         return lower.includes('download');
+        return lower.includes('save to') || lower.includes('save this') ||
+               lower.includes('find my') || lower.includes('search my') ||
+               lower.includes('upload') || lower.includes('download');
     }
 
     /**
