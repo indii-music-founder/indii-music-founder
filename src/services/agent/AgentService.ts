@@ -419,6 +419,12 @@ Be direct, creative, and helpful. You are in direct chat mode — respond conver
 If the user asks you to do something that requires tools (like generating images, searching files, or managing projects), suggest they switch to Agent mode for that task.`;
 
         // Build chat history for multi-turn context (last 20 messages)
+        // Build chat history for multi-turn context (last 20 messages)
+        // Note: Filter out the current message which should be the last entry
+        const recentHistory = agentHistory
+            .filter(m => (m.role === 'user' || m.role === 'model') && m.text && m.text.trim() !== '')
+            .slice(-21) // Take 21 to ensure we have 20 after removing current
+            .slice(0, -1) // Exclude the current user message (last entry)
         const recentHistory = agentHistory
             .filter(m => m.role === 'user' || m.role === 'model')
             .slice(-20)
@@ -474,6 +480,7 @@ If the user asks you to do something that requires tools (like generating images
             updateAgentMessage(responseId, {
                 text: accumulatedText || 'No response generated.',
                 thoughts: [{
+                    id: uuidv4(),
                     id: crypto.randomUUID(),
                     text: 'Direct Chat (Fast Path)',
                     timestamp: Date.now(),
@@ -486,6 +493,7 @@ If the user asks you to do something that requires tools (like generating images
             updateAgentMessage(responseId, {
                 text: `Chat Error: ${errorMessage}`,
                 thoughts: [{
+                    id: uuidv4(),
                     id: crypto.randomUUID(),
                     text: 'Direct chat failed',
                     timestamp: Date.now(),

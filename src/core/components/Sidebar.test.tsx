@@ -3,7 +3,7 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Sidebar from './Sidebar';
-import { useStore } from '@/core/store';
+import { useStore } from '../store';
 
 // Mock Lucide icons
 vi.mock('lucide-react', () => ({

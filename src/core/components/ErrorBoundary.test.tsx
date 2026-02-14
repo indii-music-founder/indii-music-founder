@@ -150,6 +150,12 @@ describe('ErrorBoundary Component', () => {
     });
 
     it('should not show error stack in production mode', () => {
+        const originalEnv = import.meta.env;
+        (import.meta.env as any) = { ...originalEnv, DEV: false };
+        vi.unstubAllEnvs();
+    });
+
+    it('should not show error stack in production mode', () => {
         vi.stubEnv('DEV', false);
 
         render(
@@ -167,6 +173,13 @@ describe('ErrorBoundary Component', () => {
     it('should recover after error is fixed', () => {
         let shouldThrow = true;
 
+        const { rerender } = render(
+            <ErrorBoundary>
+                <ThrowError shouldThrow={shouldThrow} />
+        vi.unstubAllEnvs();
+    });
+
+    it('should recover after error is fixed', () => {
         const { rerender } = render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={shouldThrow} />
