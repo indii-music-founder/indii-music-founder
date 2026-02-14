@@ -9,45 +9,22 @@ const mockApp = {
     getVersion: vi.fn(() => '1.0.0')
 };
 
-class MockBrowserWindow {
-    loadURL = vi.fn().mockResolvedValue(undefined);
-    webContents = {
-        printToPDF: vi.fn().mockResolvedValue(Buffer.from('mock-pdf')),
-        on: vi.fn()
-    };
-    close = vi.fn();
-    destroy = vi.fn();
-
-    static fromWebContents = vi.fn();
-}
-// eslint-friendly handler type
-type IpcHandler = (...args: unknown[]) => unknown;
-
-// Define mocks
-const mockHandle = vi.fn();
-const mockGetVersion = vi.fn(() => '1.0.0');
-const mockShowOpenDialog = vi.fn();
-const mockShowSaveDialog = vi.fn();
-const mockValidateSender = vi.fn();
-const mockGrantAccess = vi.fn();
-const mockFromWebContents = vi.fn();
-const mockSetContentProtection = vi.fn();
+// Create a Plain MockBrowserWindow function
+const mockBrowserWindowConstructor = vi.fn();
 const mockLoadURL = vi.fn().mockResolvedValue(undefined);
 const mockPrintToPDF = vi.fn().mockResolvedValue(Buffer.from('pdf-data'));
 const mockClose = vi.fn();
+const mockSetContentProtection = vi.fn();
+const mockFromWebContents = vi.fn();
 
-// Constructor Spy
-const mockBrowserWindowConstructor = vi.fn();
-
-// Create a Plain MockBrowserWindow function
 const MockBrowserWindow = vi.fn();
 MockBrowserWindow.mockImplementation(function(this: any, options: any) {
-const MockBrowserWindow = function(options: any) {
     mockBrowserWindowConstructor(options);
     return {
         loadURL: mockLoadURL,
         webContents: {
-            printToPDF: mockPrintToPDF
+            printToPDF: mockPrintToPDF,
+            on: vi.fn()
         },
         close: mockClose,
         setContentProtection: mockSetContentProtection
@@ -57,17 +34,6 @@ const MockBrowserWindow = function(options: any) {
 // Attach static methods
 (MockBrowserWindow as any).fromWebContents = mockFromWebContents;
 
-// Mock Electron modules
-const mockIpcMain = {
-    handle: mockHandle
-};
-
-const mockApp = {
-    getVersion: mockGetVersion
-};
-
-const mockBrowserWindow = MockBrowserWindow;
-
 const mockDialog = {
     showOpenDialog: vi.fn(),
     showSaveDialog: vi.fn()
@@ -76,25 +42,14 @@ const mockDialog = {
 const mockValidateSender = vi.fn();
 const mockAccessControlService = {
     grantAccess: vi.fn()
-    showOpenDialog: mockShowOpenDialog,
-    showSaveDialog: mockShowSaveDialog
 };
 
-const mockAccessControlService = {
-    grantAccess: mockGrantAccess
-};
+const mockWriteFile = vi.fn().mockResolvedValue(undefined);
 
 vi.mock('electron', () => ({
     app: mockApp,
     ipcMain: mockIpcMain,
-    BrowserWindow: mockBrowserWindow,
-    dialog: mockDialog
-};
-
-vi.mock('electron', () => ({
-    app: mockApp,
-    ipcMain: mockIpcMain,
-    BrowserWindow: mockBrowserWindow,
+    BrowserWindow: MockBrowserWindow,
     dialog: mockDialog
 }));
 
@@ -106,20 +61,12 @@ vi.mock('../security/AccessControlService', () => ({
     accessControlService: mockAccessControlService
 }));
 
-// Mock fs/promises
-const mockWriteFile = vi.fn().mockResolvedValue(undefined);
 vi.mock('fs/promises', () => ({
     writeFile: mockWriteFile
-    accessControlService: {
-        grantAccess: mockGrantAccess
-    }
 }));
 
-// Mock fs/promises
-const mockWriteFile = vi.fn().mockResolvedValue(undefined);
-vi.mock('fs/promises', () => ({
-    writeFile: mockWriteFile
-}));
+// Type for handler
+type IpcHandler = (event: any, ...args: any[]) => Promise<any> | any;
 
 describe('System Handler', () => {
     beforeEach(() => {
@@ -136,20 +83,12 @@ describe('System Handler', () => {
         expect(mockIpcMain.handle).toHaveBeenCalledWith('privacy:toggle-protection', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:select-file', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:select-directory', expect.any(Function));
-        expect(mockIpcMain.handle).toHaveBeenCalledWith('system:restart-ai', expect.any(Function));
         expect(mockIpcMain.handle).toHaveBeenCalledWith('system:save-pdf', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('get-platform', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('get-app-version', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('privacy:toggle-protection', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('system:select-file', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('system:select-directory', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('system:save-pdf', expect.any(Function));
     });
 
     describe('get-platform', () => {
         it('should return platform and validate sender', async () => {
             let platformHandler: IpcHandler | undefined;
-            let platformHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'get-platform') {
@@ -175,7 +114,6 @@ describe('System Handler', () => {
     describe('get-app-version', () => {
         it('should return app version and validate sender', async () => {
             let versionHandler: IpcHandler | undefined;
-            let versionHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'get-app-version') {
@@ -202,7 +140,6 @@ describe('System Handler', () => {
     describe('privacy:toggle-protection', () => {
         it('should toggle content protection and validate sender', async () => {
             let protectionHandler: IpcHandler | undefined;
-            let protectionHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'privacy:toggle-protection') {
@@ -214,7 +151,7 @@ describe('System Handler', () => {
                 setContentProtection: vi.fn()
             };
 
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
 
             const { registerSystemHandlers } = await import('./system');
             registerSystemHandlers();
@@ -234,7 +171,6 @@ describe('System Handler', () => {
     describe('system:select-file', () => {
         it('should open file dialog and return selected file', async () => {
             let selectFileHandler: IpcHandler | undefined;
-            let selectFileHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-file') {
@@ -243,7 +179,7 @@ describe('System Handler', () => {
             });
 
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
             mockDialog.showOpenDialog.mockResolvedValue({
                 canceled: false,
                 filePaths: ['/path/to/file.txt']
@@ -258,8 +194,6 @@ describe('System Handler', () => {
                 const result = await selectFileHandler(mockEvent);
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 expect(mockDialog.showOpenDialog).toHaveBeenCalledWith(mockWindow, {
-
-                expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select File',
                     properties: ['openFile'],
                     filters: undefined
@@ -271,7 +205,6 @@ describe('System Handler', () => {
 
         it('should return null if dialog is canceled', async () => {
             let selectFileHandler: IpcHandler | undefined;
-            let selectFileHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-file') {
@@ -280,7 +213,7 @@ describe('System Handler', () => {
             });
 
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
             mockDialog.showOpenDialog.mockResolvedValue({
                 canceled: true,
                 filePaths: []
@@ -299,7 +232,6 @@ describe('System Handler', () => {
 
         it('should apply custom options', async () => {
             let selectFileHandler: IpcHandler | undefined;
-            let selectFileHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-file') {
@@ -308,7 +240,7 @@ describe('System Handler', () => {
             });
 
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
             mockDialog.showOpenDialog.mockResolvedValue({
                 canceled: false,
                 filePaths: ['/path/to/file.pdf']
@@ -326,8 +258,6 @@ describe('System Handler', () => {
             if (selectFileHandler) {
                 await selectFileHandler(mockEvent, options);
                 expect(mockDialog.showOpenDialog).toHaveBeenCalledWith(mockWindow, {
-
-                expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select PDF',
                     properties: ['openFile'],
                     filters: options.filters
@@ -339,7 +269,6 @@ describe('System Handler', () => {
     describe('system:select-directory', () => {
         it('should open directory dialog and return selected directory', async () => {
             let selectDirHandler: IpcHandler | undefined;
-            let selectDirHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-directory') {
@@ -348,7 +277,7 @@ describe('System Handler', () => {
             });
 
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
             mockDialog.showOpenDialog.mockResolvedValue({
                 canceled: false,
                 filePaths: ['/path/to/directory']
@@ -363,8 +292,6 @@ describe('System Handler', () => {
                 const result = await selectDirHandler(mockEvent);
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 expect(mockDialog.showOpenDialog).toHaveBeenCalledWith(mockWindow, {
-
-                expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select Directory',
                     properties: ['openDirectory']
                 });
@@ -375,7 +302,6 @@ describe('System Handler', () => {
 
         it('should return null if dialog is canceled', async () => {
             let selectDirHandler: IpcHandler | undefined;
-            let selectDirHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:select-directory') {
@@ -384,7 +310,7 @@ describe('System Handler', () => {
             });
 
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
+            mockFromWebContents.mockReturnValue(mockWindow);
             mockDialog.showOpenDialog.mockResolvedValue({
                 canceled: true,
                 filePaths: []
@@ -405,7 +331,6 @@ describe('System Handler', () => {
     describe('system:save-pdf', () => {
         it('should generate and save PDF', async () => {
             let savePdfHandler: IpcHandler | undefined;
-            let savePdfHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:save-pdf') {
@@ -413,38 +338,13 @@ describe('System Handler', () => {
                 }
             });
 
-            const mockPrintWindow = {
-                loadURL: vi.fn().mockResolvedValue(undefined),
-                webContents: {
-                    printToPDF: vi.fn().mockResolvedValue(Buffer.from('pdf-data'))
-                },
-                close: vi.fn()
-            };
-
-            // Mock BrowserWindow constructor
-            const OriginalBrowserWindow = (global as any).BrowserWindow;
-            (global as any).BrowserWindow = function(options: any) {
-                return mockPrintWindow;
-            };
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
-
-            // Mock BrowserWindow constructor
-            const OriginalBrowserWindow = (global as any).BrowserWindow;
-            (global as any).BrowserWindow = function(options: any) {
-                return mockPrintWindow;
-            };
+            mockFromWebContents.mockReturnValue(mockWindow);
 
             mockDialog.showSaveDialog.mockResolvedValue({
                 canceled: false,
                 filePath: '/path/to/output.pdf'
             });
-
-            // Mock fs/promises
-            const mockWriteFile = vi.fn().mockResolvedValue(undefined);
-            vi.doMock('fs/promises', () => ({
-                writeFile: mockWriteFile
-            }));
 
             const { registerSystemHandlers: register } = await import('./system');
             register();
@@ -457,27 +357,16 @@ describe('System Handler', () => {
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 expect(result.success).toBe(true);
                 expect(result.filePath).toBe('/path/to/output.pdf');
-            }
 
-            // Restore
-            (global as any).BrowserWindow = OriginalBrowserWindow;
-        });
-
-        it('should handle cancellation', async () => {
-
-                // Verify print window logic - check constructor calls
+                // Check if the print window was created
                 expect(mockBrowserWindowConstructor).toHaveBeenCalledWith(expect.objectContaining({
                     webPreferences: expect.objectContaining({ offscreen: true })
                 }));
             }
-
-            // Restore
-            (global as any).BrowserWindow = OriginalBrowserWindow;
         });
 
         it('should handle cancellation', async () => {
             let savePdfHandler: IpcHandler | undefined;
-            let savePdfHandler: ((...args: any[]) => any) | undefined;
 
             mockIpcMain.handle.mockImplementation((channel, handler) => {
                 if (channel === 'system:save-pdf') {
@@ -485,24 +374,10 @@ describe('System Handler', () => {
                 }
             });
 
-            const mockPrintWindow = {
-                loadURL: vi.fn().mockResolvedValue(undefined),
-                webContents: {
-                    printToPDF: vi.fn().mockResolvedValue(Buffer.from('pdf-data'))
-                },
-                close: vi.fn()
-            };
-
             const mockWindow = {};
-            mockBrowserWindow.fromWebContents.mockReturnValue(mockWindow);
-
-            const OriginalBrowserWindow = (global as any).BrowserWindow;
-            (global as any).BrowserWindow = function(options: any) {
-                return mockPrintWindow;
-            };
+            mockFromWebContents.mockReturnValue(mockWindow);
 
             mockDialog.showSaveDialog.mockResolvedValue({
-            mockShowSaveDialog.mockResolvedValue({
                 canceled: true
             });
 
@@ -517,8 +392,6 @@ describe('System Handler', () => {
                 expect(result.success).toBe(false);
                 expect(result.error).toBe('Save cancelled');
             }
-
-            (global as any).BrowserWindow = OriginalBrowserWindow;
         });
     });
 });

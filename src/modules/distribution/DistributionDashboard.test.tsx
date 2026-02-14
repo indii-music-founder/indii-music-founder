@@ -56,19 +56,20 @@ const mockUseStore = vi.fn((): any => ({
 
 vi.mock('@/core/store', () => ({
     useStore: (selector?: any) => selector ? selector(mockUseStore()) : mockUseStore()
-    useStore: vi.fn(() => ({
-        distribution: {
-            releases: [],
-            loading: false,
-            error: null
-        },
-        subscribeToReleases: mockSubscribeToReleases
-    }))
 }));
 
 describe('DistributionDashboard Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Reset default mock return value
+        mockUseStore.mockReturnValue({
+            distribution: {
+                releases: [],
+                loading: false,
+                error: null
+            },
+            subscribeToReleases: mockSubscribeToReleases
+        });
     });
 
     it('should render dashboard header', () => {
@@ -114,8 +115,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should show loading skeletons when loading', () => {
-        vi.mocked(mockUseStore).mockReturnValue({
-        vi.mocked(useStore).mockReturnValue({
+        mockUseStore.mockReturnValue({
             distribution: {
                 releases: [],
                 loading: true,
@@ -131,8 +131,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should render releases when available', () => {
-        vi.mocked(mockUseStore).mockReturnValue({
-        vi.mocked(useStore).mockReturnValue({
+        mockUseStore.mockReturnValue({
             distribution: {
                 releases: [
                     {
@@ -165,8 +164,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should show error state when error occurs', () => {
-        vi.mocked(mockUseStore).mockReturnValue({
-        vi.mocked(useStore).mockReturnValue({
+        mockUseStore.mockReturnValue({
             distribution: {
                 releases: [],
                 loading: false,
@@ -237,8 +235,7 @@ describe('DistributionDashboard Component', () => {
             releaseDate: '2024-01-01'
         }));
 
-        vi.mocked(mockUseStore).mockReturnValue({
-        vi.mocked(useStore).mockReturnValue({
+        mockUseStore.mockReturnValue({
             distribution: {
                 releases,
                 loading: false,
@@ -255,8 +252,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should not show loading skeletons when releases are present', () => {
-        vi.mocked(mockUseStore).mockReturnValue({
-        vi.mocked(useStore).mockReturnValue({
+        mockUseStore.mockReturnValue({
             distribution: {
                 releases: [
                     {
@@ -286,5 +282,4 @@ describe('DistributionDashboard Component', () => {
         const mainContainer = container.querySelector('.max-w-7xl');
         expect(mainContainer).toBeInTheDocument();
     });
-});
 });
