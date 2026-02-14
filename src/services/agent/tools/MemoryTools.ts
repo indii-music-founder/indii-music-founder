@@ -91,7 +91,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         return {
             history: recentHistory.map(h => ({
                 role: h.role,
-                text: h.text.substring(0, 300) // Increase snippet size for more context
+                text: (h.text || '').substring(0, 300) // Increase snippet size for more context
             })),
             message: `Retrieved ${recentHistory.length} most recent history items.`
         };
@@ -110,10 +110,10 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
             : useStore.getState().agentHistory) || [];
 
         if (history.length < 10) {
-            return {
-                success: false,
-                message: "History is currently too short (under 10 messages) to require compaction. Focus on high-value activity first."
-            };
+            return toolError(
+                "History is currently too short (under 10 messages) to require compaction. Focus on high-value activity first.",
+                "INSUFFICIENT_HISTORY"
+            );
         }
         try {
             console.log(`[MemoryTools] Initiating history compaction for ${history.length} messages...`);

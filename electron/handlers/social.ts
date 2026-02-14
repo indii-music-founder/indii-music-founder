@@ -116,7 +116,6 @@ export function registerSocialHandlers() {
 
     ipcMain.handle('social:get-token', async (event, platform: string) => {
         validateSender(event);
-        // Use top-level imported credentialService
         const creds = await credentialService.getCredentials(`social_${platform}` as any);
         return creds;
     });

@@ -68,6 +68,7 @@ describe('ErrorBoundary Component', () => {
 
     it('should handle reset button click', () => {
         const { rerender } = render(
+        render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={true} />
             </ErrorBoundary>
@@ -81,6 +82,7 @@ describe('ErrorBoundary Component', () => {
         // After reset, the error boundary should try to render children again
         // Since ThrowError still throws, it will show error again, but the click was handled
         expect(resetButton).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Try Again/i })).toBeInTheDocument();
     });
 
     it('should detect chunk load errors', () => {
@@ -126,6 +128,7 @@ describe('ErrorBoundary Component', () => {
         // Mock import.meta.env.DEV
         const originalEnv = import.meta.env;
         (import.meta.env as any) = { ...originalEnv, DEV: true };
+        vi.stubEnv('DEV', true);
 
         render(
             <ErrorBoundary>
@@ -143,6 +146,11 @@ describe('ErrorBoundary Component', () => {
     it('should not show error stack in production mode', () => {
         const originalEnv = import.meta.env;
         (import.meta.env as any) = { ...originalEnv, DEV: false };
+        vi.unstubAllEnvs();
+    });
+
+    it('should not show error stack in production mode', () => {
+        vi.stubEnv('DEV', false);
 
         render(
             <ErrorBoundary>
@@ -162,6 +170,13 @@ describe('ErrorBoundary Component', () => {
         const { rerender } = render(
             <ErrorBoundary>
                 <ThrowError shouldThrow={shouldThrow} />
+        vi.unstubAllEnvs();
+    });
+
+    it('should recover after error is fixed', () => {
+        const { rerender } = render(
+            <ErrorBoundary>
+                <ThrowError shouldThrow={true} />
             </ErrorBoundary>
         );
 
@@ -175,11 +190,16 @@ describe('ErrorBoundary Component', () => {
         fireEvent.click(resetButton);
 
         // Rerender with fixed component
+        // Update props first to stop throwing
         rerender(
             <ErrorBoundary>
                 <ThrowError shouldThrow={false} />
             </ErrorBoundary>
         );
+
+        // Then click reset to clear the error boundary state
+        const resetButton = screen.getByRole('button', { name: /Try Again/i });
+        fireEvent.click(resetButton);
 
         expect(screen.queryByText('Module Crash Detected')).not.toBeInTheDocument();
         expect(screen.getByText('Working component')).toBeInTheDocument();
