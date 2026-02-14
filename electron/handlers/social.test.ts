@@ -112,7 +112,7 @@ describe('Social Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'social:connect-oauth') {
-                    oauthHandler = handler as IpcHandler;
+                    oauthHandler = handler;
                 }
             });
 
@@ -128,6 +128,16 @@ describe('Social Handler', () => {
                 // Mock the promise resolution
                 const promise = oauthHandler(mockEvent, 'twitter');
 
+                // Simulate window closed to resolve the promise
+                // We need to capture the 'closed' handler registered via mockOn
+                 const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
+                 if (closeCall) {
+                     closeCall[1]();
+                 }
+
+                 await promise;
+
+                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 // Simulate window closed to resolve the promise if it's waiting
                 // Find the 'closed' event listener and call it
                 const closeCalls = mockOn.mock.calls.filter(call => call[0] === 'closed');
@@ -145,7 +155,7 @@ describe('Social Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'social:connect-oauth') {
-                    oauthHandler = handler as IpcHandler;
+                    oauthHandler = handler;
                 }
             });
 
@@ -179,7 +189,7 @@ describe('Social Handler', () => {
                 expect(mockBrowserWindowConstructor).toHaveBeenCalledWith(expect.objectContaining({
                     width: 600,
                     height: 800,
-                    title: 'Connect to Twitter' // Use title case as per implementation logic
+                    title: 'Connect to Twitter'
                 }));
             }
         });
@@ -189,7 +199,7 @@ describe('Social Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'social:connect-oauth') {
-                    oauthHandler = handler as IpcHandler;
+                    oauthHandler = handler;
                 }
             });
 
@@ -221,7 +231,7 @@ describe('Social Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'social:get-token') {
-                    tokenHandler = handler as IpcHandler;
+                    tokenHandler = handler;
                 }
             });
 
@@ -243,7 +253,7 @@ describe('Social Handler', () => {
 
             mockHandle.mockImplementation((channel, handler) => {
                 if (channel === 'social:get-token') {
-                    tokenHandler = handler as IpcHandler;
+                    tokenHandler = handler;
                 }
             });
 
