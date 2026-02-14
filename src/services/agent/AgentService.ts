@@ -493,7 +493,6 @@ If the user asks you to do something that requires tools (like generating images
                 text: `Chat Error: ${errorMessage}`,
                 thoughts: [{
                     id: uuidv4(),
-                    id: crypto.randomUUID(),
                     text: 'Direct chat failed',
                     timestamp: Date.now(),
                     type: 'error'
