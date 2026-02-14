@@ -481,7 +481,6 @@ If the user asks you to do something that requires tools (like generating images
                 text: accumulatedText || 'No response generated.',
                 thoughts: [{
                     id: uuidv4(),
-                    id: crypto.randomUUID(),
                     text: 'Direct Chat (Fast Path)',
                     timestamp: Date.now(),
                     type: 'logic',
