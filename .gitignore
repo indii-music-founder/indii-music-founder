@@ -32,6 +32,8 @@ temp_comparison_repo
 # Secrets
 scripts/configure_secrets.sh
 .env
+.env.*
+!.env.example
 
 # Test artifacts
 test_logs*.txt
@@ -73,3 +75,4 @@ identity_store.json
 # Python
 __pycache__/
 *.pyc
+mcp_config.json

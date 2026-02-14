@@ -31,7 +31,7 @@ Never use a global agent instance. Every request must be treated as a fresh sess
 {
   "project_id": "UUID_OR_ARTIST_ID",
   "instruction": "Draft a contract...",
-  "agent_profile": "legal_expert"  // Optional: Load specific persona
+  "agent_profile": "legal_expert" // Optional: Load specific persona
 }
 ```
 
@@ -49,13 +49,13 @@ Never use a global agent instance. Every request must be treated as a fresh sess
 
 **Critical Distinction:** Do not conflate internal "hands" with external "ears".
 
-| Feature | **Python Tool** | **API Handler** |
-| :--- | :--- | :--- |
-| **User** | The **LLM Agent** (Internal) | The **Indii App** (External) |
-| **Location** | `python/tools/` | `python/api/` |
-| **Base Class** | `Tool` | `ApiHandler` |
-| **Trigger** | LLM thought ("I need to draw") | HTTP POST (`/api/task`) |
-| **Discovery** | auto-discovered + System Prompt | auto-discovered by file existence |
+| Feature        | **Python Tool**                 | **API Handler**                   |
+| :------------- | :------------------------------ | :-------------------------------- |
+| **User**       | The **LLM Agent** (Internal)    | The **Indii App** (External)      |
+| **Location**   | `python/tools/`                 | `python/api/`                     |
+| **Base Class** | `Tool`                          | `ApiHandler`                      |
+| **Trigger**    | LLM thought ("I need to draw")  | HTTP POST (`/api/task`)           |
+| **Discovery**  | auto-discovered + System Prompt | auto-discovered by file existence |
 
 ### 3.1 Constructing an API Handler
 
@@ -107,12 +107,12 @@ return Response(
 ### 5.1 Storage Hierarchy
 
 1. **Global (Tier A):** Read-Only for Agents.
-    - *Path:* `/a0/knowledge` (Mounted from `./global_assets/knowledge`).
-    - *Content:* Templates, Brand Guidelines, Legal Boilerplate.
-    - **Config:** `docker-compose.yml` mounts host `./global_assets/knowledge` to `/a0/knowledge`.
+   - _Path:_ `/a0/knowledge` (Mounted from `./global_assets/knowledge`).
+   - _Content:_ Templates, Brand Guidelines, Legal Boilerplate.
+   - **Config:** `docker-compose.yml` mounts host `./global_assets/knowledge` to `/a0/knowledge`.
 2. **Project (Tier B):** Read-Write.
-    - *Path:* `/a0/usr/projects/{id}/memory`.
-    - *Content:* Private chats, specific contract drafts.
+   - _Path:_ `/a0/usr/projects/{id}/memory`.
+   - _Content:_ Private chats, specific contract drafts.
 
 ### 5.2 Implementation Logic
 

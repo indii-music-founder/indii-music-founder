@@ -82,7 +82,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         ) : (
                             <>
                                 <Wand2 size={12} />
-                                <span>Refine</span>
+                                <span>Magic Edit</span>
                             </>
                         )}
                     </button>
@@ -92,8 +92,8 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                         onClick={() => setIsHighFidelity(!isHighFidelity)}
                         title={isHighFidelity ? "Switch to High Speed (Flash)" : "Switch to High Fidelity (Pro)"}
                         className={`p-1.5 rounded-lg border transition-all ${isHighFidelity
-                                ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20'
-                                : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white'
+                            ? 'bg-amber-500/20 border-amber-500/50 text-amber-500 shadow-lg shadow-amber-500/20'
+                            : 'bg-gray-800 border-gray-700 text-gray-500 hover:text-white'
                             }`}
                     >
                         <Star size={12} fill={isHighFidelity ? "currentColor" : "none"} />
@@ -112,6 +112,14 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
 
                 {item.type === 'image' && (
                     <>
+                        <button
+                            onClick={onRefine}
+                            data-testid="refine-btn"
+                            className="px-4 py-2 bg-dept-creative/20 hover:bg-dept-creative/40 border border-dept-creative/50 text-dept-creative text-xs font-bold rounded-lg transition-colors flex items-center gap-2"
+                        >
+                            <Sparkles size={14} /> Refine
+                        </button>
+
                         {endFrameItem ? (
                             <div className="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded-lg">
                                 <img src={endFrameItem.url} alt="End Frame" className="w-6 h-6 rounded object-cover" />

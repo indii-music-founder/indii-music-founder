@@ -1,40 +1,82 @@
 # Load Tests
 
-This directory contains load testing scripts using [k6](https://k6.io/).
+Performance and stress testing scripts using [k6](https://k6.io/).
 
 ## Prerequisites
 
 1. **Install k6:**
-    * **Mac:** `brew install k6`
-    * **Windows:** `winget install k6`
-    * **Linux:** `sudo apt-key adv ...` (see k6 docs)
+   - **Mac:** `brew install k6`
+   - **Windows:** `winget install k6`
+   - **Linux:** See [k6 installation docs](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 
-2. **Start the Application:**
-    Ensure the Firebase Emulators are running.
+2. **Start the application:**
 
-    ```bash
-    npm run dev
-    ```
+   ```bash
+   firebase emulators:start   # For local testing
+   npm run dev                # Vite dev server
+   ```
 
-    (Note: Ensure `firebase emulators:start` is running if not included in `npm run dev`. Check `package.json` scripts.)
+## Available Tests
 
-## Running Tests
+### Health Check (`health-check.js`)
 
-### Agent Service Load Test
+Validates health endpoint handles sustained traffic within latency thresholds.
 
-Simulates 50 concurrent users hitting the `creativeDirectorAgent` endpoint.
+```bash
+k6 run load-tests/health-check.js
+
+# Against production:
+k6 run -e FUNCTIONS_URL=https://us-central1-indiios-v-1-1.cloudfunctions.net load-tests/health-check.js
+```
+
+- **Load:** 100 concurrent users
+- **Duration:** 50 seconds total
+- **Thresholds:** p95 < 500ms, <1% error rate
+
+### Agent Service (`agent-service.js`)
+
+Simulates concurrent users hitting the creative director agent.
 
 ```bash
 k6 run load-tests/agent-service.js
 ```
 
-## Scenarios
+- **Load:** 50 concurrent users
+- **Duration:** ~100 seconds total
+- **Thresholds:** p95 < 2s, <1% error rate
 
-* **Ramp Up:** 30s to 50 VUs
-* **Steady State:** 1m at 50 VUs
-* **Ramp Down:** 10s to 0 VUs
+### Video Generation (`video-generation.js`)
 
-## Thresholds
+Stress tests the video generation pipeline and rate limiter.
 
-* **Latency:** 95% of requests < 2s
-* **Error Rate:** < 1%
+```bash
+k6 run -e AUTH_TOKEN=<firebase-id-token> load-tests/video-generation.js
+```
+
+- **Load:** 10 concurrent users (conservative - expensive operations)
+- **Duration:** ~85 seconds total
+- **Thresholds:** p95 < 10s, <10% error rate (rate limiting expected)
+
+## Environment Variables
+
+| Variable        | Description                                   | Default        |
+| --------------- | --------------------------------------------- | -------------- |
+| `FUNCTIONS_URL` | Cloud Functions base URL                      | Local emulator |
+| `AUTH_TOKEN`    | Firebase ID token for authenticated endpoints | `test-token`   |
+
+## Interpreting Results
+
+k6 outputs:
+
+- **http_req_duration:** Response time percentiles (p50, p90, p95, p99)
+- **http_req_failed:** Error rate
+- **iterations:** Total requests completed
+- **vus:** Virtual users (concurrent connections)
+
+### Acceptable Thresholds
+
+| Endpoint         | p95 Target | Max Error Rate |
+| ---------------- | ---------- | -------------- |
+| Health Check     | < 500ms    | < 1%           |
+| Agent Service    | < 2s       | < 1%           |
+| Video Generation | < 10s      | < 10%          |

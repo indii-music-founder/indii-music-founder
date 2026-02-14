@@ -18,7 +18,7 @@ export class TransactionManager {
         // Capture critical slices that agents might modify
         // We can expand this list as needed.
         // For now, capturing everything is safer for generic agents.
-        this.stateManager.captureSnapshot(txId);
+        await this.stateManager.captureSnapshot(txId);
         return txId;
     }
 

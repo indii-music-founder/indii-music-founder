@@ -1,26 +1,43 @@
-# Implementation Plan - Video Keyframe Architect & UX Polish
+# Implementation Plan - Sprint 4: Polish the Experience
 
-## 1. UX Improvement: Explicit Analysis State
+## Goal
 
-- **Goal**: Clarify to the user *exactly* what the AI is doing (`Analyzing Scene` -> `Predicting Climax` -> `Synthesizing Image`).
-- **Files**: `src/modules/creative/components/CreativeCanvas.tsx`
-- **Change**: [DONE]
+UX polish, empty states, error handling, and keyboard shortcuts.
 
-## 2. API Hardening: Fix Vision Analysis (400 Error)
+## Strategy
 
-- **Goal**: Resolve the `Invalid Argument` error in `ImageGenerationService.captionImage`.
-- **Files**: `src/services/image/ImageGenerationService.ts`
-- **Fix**: [DONE]
+- **Robustness:** Add ErrorBoundaries to prevent app-wide crashes.
+- **Feedback:** Replace console logs with Toast notifications.
+- **Empty States:** Ensure no screen looks broken when empty.
+- **Performance:** Add loading skeletons.
 
-## 3. Dual-View Pipeline (Gemini 3 Image Editing)
+## 1. Empty States (Completed)
 
-- **Goal**: Implement high-fidelity and high-speed image editing workflows.
-- **Workflow A (Pro)**: Multimodal reasoning with Binary Mask + Source Image using `gemini-3-pro-image-preview`.
-- **Workflow B (Flash)**: Fast inpainting with Binary Mask + Source Image using `gemini-2.5-flash-image`.
-- **Ghost Export**: Fabric.js utility to extract pure black/white masks without UI flickering.
-- **File API**: Automatic fallback to Gemini File API for images >15MB to bypass payload limits.
+- **Target:** `Creative`, `Social`, `Legal`, `Finance` modules.
+- **Action:** Created `EmptyState` component and integrated it.
 
-## 4. Verification
+## 2. Loading Skeletons (Completed)
 
-- **Manual**: Run `npm run typecheck` and `npm run build:studio`.
-- **Browser**: Verify Magic Fill with "High Fidelity" toggle ON and OFF.
+- **Target:** Main dashboards.
+- **Action:** Created `Skeleton` component and integrated it.
+
+## 3. Error Boundaries (Completed)
+
+- **Target:** Major modules (`Social`, `Licensing`, `Finance`, `Distribution`).
+- **Action:** Wrapped critical sections in `ErrorBoundary`.
+
+## 4. Console.info Cleanup (Completed)
+
+- **Target:** Entire codebase.
+- **Action:** Identify `console.info` calls used as placeholders.
+- **Replacement:** Use `toast.info` or proper implementation/Logger.
+
+## 5. Keyboard Shortcuts (Completed)
+
+- **Target:** Global app.
+- **Action:** Implement command bar toggle (Msg+K) and navigation shortcuts.
+
+## 6. Mobile Responsiveness (Completed)
+
+- **Target:** Core layouts.
+- **Action:** Audit and fix layout issues on smaller screens.

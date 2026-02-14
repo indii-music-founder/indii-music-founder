@@ -10,9 +10,9 @@ Improve handling of `thoughtSignature` (Gemini 3 reasoning) and eliminate `as an
 2. **AI Services**: Update `AIService.ts` and `FirebaseAIService.ts` to inject and extract `thoughtSignature` correctly.
 3. **Agent Integration**: Ensure `BaseAgent.ts` propagates `thoughtSignature` between turns for function calling continuity.
 4. **General Type Safety**:
-    - Fix environment variable typing in `vite-env.d.ts`.
-    - Harmonize `Project` interfaces in store and dashboard.
-    - Resolve IPC payload typing in distribution components.
+   - Fix environment variable typing in `vite-env.d.ts`.
+   - Harmonize `Project` interfaces in store and dashboard.
+   - Resolve IPC payload typing in distribution components.
 
 ## Verification
 

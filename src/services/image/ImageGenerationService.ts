@@ -9,6 +9,7 @@ import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
 export interface ImageGenerationOptions {
     prompt: string;
@@ -123,8 +124,8 @@ export class ImageGenerationService {
                 count: count,
                 // Gemini 3 Pro Image (Imagen 3) is strictly Text-to-Image.
                 model: options.model === 'pro' ? 'pro' : 'fast',
-                // Imagen 3 does not support thinking/grounding - removing from payload to prevent 400s
-                // Removing images: [] as it might trigger invalid argument for T2I
+                thinking: options.thinking ?? false,
+                useGrounding: options.useGrounding ?? false
             });
             console.log('[ImageGen DEBUG] generateImageV3 returned:', result);
 
@@ -156,7 +157,8 @@ export class ImageGenerationService {
                     const { useStore } = await import('@/core/store');
                     const userId = useStore.getState().userProfile?.id;
 
-                    if (userId && false) { // TEMPORARY: Disable Cloud Storage to bypass CORS/Bucket issues
+
+                    if (userId) {
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
                         const saved = await CloudStorageService.smartSave(dataUri, id, userId);
                         finalUrl = saved.url;
@@ -223,6 +225,28 @@ export class ImageGenerationService {
                 }
             } catch (e) {
                 // Usage tracking failure should not block generation
+            }
+
+            // Persist image metadata to Firestore for future retrieval
+            for (const image of results) {
+                metadataPersistenceService.save('image', {
+                    prompt: options.prompt,
+                    aspectRatio: options.aspectRatio || '1:1',
+                    resolution: options.resolution,
+                    model: options.model || 'pro',
+                    sourceType: 'generation',
+                    isCoverArt: options.isCoverArt || false,
+                    imageId: image.id,
+                    // Don't store the full URL if it's a data URI (too large)
+                    hasDataUri: image.url.startsWith('data:'),
+                    generatedAt: new Date().toISOString(),
+                }, {
+                    showToasts: false, // Don't spam toasts for successful saves
+                    maxRetries: 1,
+                    queueOnFailure: true,
+                }).catch(err => {
+                    console.warn('[ImageGeneration] Failed to persist image metadata:', err);
+                });
             }
         }
 

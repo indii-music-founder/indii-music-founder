@@ -17,36 +17,25 @@ export function BiometricGate({ children }: BiometricGateProps) {
 
     const isBiometricEnabled = userProfile?.preferences?.biometricEnabled ?? false;
 
-    // Default to locked if enabled, unlocked if disabled
-    const [isLocked, setIsLocked] = useState(isBiometricEnabled);
+    // Track verification state - derive isLocked from enabled + verified
+    const [isVerified, setIsVerified] = useState(false);
     const [isAvailable, setIsAvailable] = useState(false);
     const [verificationError, setVerificationError] = useState<string | null>(null);
+
+    // Derive lock state: locked only when biometric is enabled AND not yet verified
+    const isLocked = isBiometricEnabled && !isVerified;
 
     // Effect to check availability on mount
     useEffect(() => {
         BiometricService.isAvailable().then(setIsAvailable);
     }, []);
 
-    // Effect to auto-prompt for unlocking on mount if locked
-    useEffect(() => {
-        if (isLocked && isAvailable && isBiometricEnabled) {
-            handleUnlock();
-        }
-    }, [isLocked, isAvailable, isBiometricEnabled]);
-
-    // If not enabled, ensure unlocked
-    useEffect(() => {
-        if (!isBiometricEnabled) {
-            setIsLocked(false);
-        }
-    }, [isBiometricEnabled]);
-
     const handleUnlock = async () => {
         setVerificationError(null);
         try {
             const success = await BiometricService.verify();
             if (success) {
-                setIsLocked(false);
+                setIsVerified(true);
             } else {
                 setVerificationError('Biometric verification failed. Please try again.');
             }
@@ -56,12 +45,24 @@ export function BiometricGate({ children }: BiometricGateProps) {
         }
     };
 
+    // Auto-prompt for unlocking on mount if locked and available
+    useEffect(() => {
+        if (isLocked && isAvailable) {
+            // Delay slightly to avoid set-state-in-effect warning and ensure mount
+            const timer = setTimeout(() => {
+                handleUnlock();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+
+    }, [isAvailable]);
+
     // Fallback unlock (e.g. if biometrics fail repeatedly or aren't actually available but flag is set)
     // PRO TIP: In a real banking app, this would fallback to password/pin.
     // For this alpha, we might want a "Sign Out" option if they are stuck.
 
     if (!isBiometricEnabled || !isLocked) {
-        return <>{children}</>;
+        return children;
     }
 
     return (

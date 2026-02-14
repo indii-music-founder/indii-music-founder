@@ -1,5 +1,6 @@
 import type { AnyToolFunction } from '../types';
-import { useStore } from '@/core/store';
+// useStore removed
+
 import type { AgentMode } from '@/core/store/slices/agentSlice';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 
@@ -56,6 +57,7 @@ export const CoreTools: Record<string, AnyToolFunction> = {
         content: string;
         type?: string;
     }, context, toolContext) => {
+        const { useStore } = await import('@/core/store');
         // Use toolContext to get the state action if possible, 
         // fall back to global store for actions that mutate outside transaction scope
         const state = toolContext?.getState() || useStore.getState();
@@ -80,6 +82,7 @@ export const CoreTools: Record<string, AnyToolFunction> = {
     }),
 
     set_mode: wrapTool('set_mode', async (args: { mode: string }, context, toolContext) => {
+        const { useStore } = await import('@/core/store');
         const state = toolContext?.getState() || useStore.getState();
         const { setAgentMode } = useStore.getState(); // Actions still via global store for now
         const currentMode = (state as any).agentMode;

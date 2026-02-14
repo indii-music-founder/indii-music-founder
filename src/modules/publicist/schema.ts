@@ -8,6 +8,7 @@ export const CampaignSchema = z.object({
     status: z.enum(['Draft', 'Live', 'Scheduled', 'Ended']).default('Draft'),
     progress: z.number().min(0).max(100).default(0),
     releaseDate: z.string(), // ISO Date string
+    targetAudience: z.string().optional(),
     coverUrl: z.string().url().optional(),
     openRate: z.number().min(0).max(100).default(0),
     budget: z.number().min(0).default(0), // New field replacing mock estimation

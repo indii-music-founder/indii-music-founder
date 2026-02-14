@@ -2,6 +2,8 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { httpsCallable } from 'firebase/functions';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -79,5 +81,29 @@ Key Terms: ${args.terms}`;
             terms: `Purpose: ${args.purpose}. Standard confidentiality obligations apply.`
         });
         return result;
+    }),
+
+    export_contract_pdf: wrapTool('export_contract_pdf', async (args: {
+        contractId: string;
+    }) => {
+        if (!args.contractId) {
+            throw new Error("Validation Error: 'contractId' is required.");
+        }
+
+        const generateContractPdf = httpsCallable<
+            { contractId: string },
+            { success: boolean; url?: string; error?: string }
+        >(functions, 'generateContractPdf');
+
+        const result = await generateContractPdf({ contractId: args.contractId });
+
+        if (result.data.success && result.data.url) {
+            return toolSuccess(
+                { url: result.data.url },
+                "Contract PDF has been generated. Download URL is ready."
+            );
+        } else {
+            throw new Error(result.data.error || "PDF generation failed.");
+        }
     })
 };

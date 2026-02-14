@@ -6,7 +6,8 @@
  * across all sessions and projects.
  */
 
-import { useStore } from '@/core/store';
+// useStore removed
+
 import { userMemoryService } from '@/services/agent/UserMemoryService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
@@ -33,6 +34,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -89,6 +91,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -132,6 +135,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
   get_user_context: wrapTool(
     'get_user_context',
     async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -182,6 +186,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -232,6 +237,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -269,6 +275,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -298,6 +305,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -327,6 +335,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
       _context?: AgentContext,
       toolContext?: ToolExecutionContext
     ) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {
@@ -361,6 +370,7 @@ export const UserMemoryTools: Record<string, AnyToolFunction> = {
   consolidate_user_memories: wrapTool(
     'consolidate_user_memories',
     async (_args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+      const { useStore } = await import('@/core/store');
       const userId = toolContext ? toolContext.get('user')?.uid : useStore.getState().user?.uid;
 
       if (!userId) {

@@ -19,7 +19,7 @@ export function useReleases(orgId: string | undefined) {
         if (!orgId) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             if (releases.length > 0) setReleases([]);
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+             
             if (loading) setLoading(false);
             return;
         }

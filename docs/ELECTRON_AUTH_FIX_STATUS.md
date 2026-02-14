@@ -41,33 +41,36 @@ The Electron app's Google sign-in was failing due to two issues:
 ```typescript
 // Auth Guard - Redirect unauthenticated users to login
 useEffect(() => {
-    if (isAuthReady && !isAuthenticated) {
-        const landingPageUrl = import.meta.env.VITE_LANDING_PAGE_URL || 'https://indiios-v-1-1.web.app/login';
+  if (isAuthReady && !isAuthenticated) {
+    const landingPageUrl =
+      import.meta.env.VITE_LANDING_PAGE_URL ||
+      "https://indiios-v-1-1.web.app/login";
 
-        // In Electron: Open login in SYSTEM BROWSER (not inside Electron)
-        if (window.electronAPI) {
-            console.log("[App] Electron detected - opening login in system browser");
-            window.electronAPI.openExternal(landingPageUrl);
+    // In Electron: Open login in SYSTEM BROWSER (not inside Electron)
+    if (window.electronAPI) {
+      console.log("[App] Electron detected - opening login in system browser");
+      window.electronAPI.openExternal(landingPageUrl);
 
-            // Set up listener for auth token from deep link callback
-            window.electronAPI.onAuthToken(async (tokenData) => {
-                try {
-                    console.log("[App] Received auth token from deep link");
-                    const { GoogleAuthProvider, signInWithCredential } = await import('firebase/auth');
-                    const { auth } = await import('@/services/firebase');
-                    const credential = GoogleAuthProvider.credential(
-                        tokenData.idToken,
-                        tokenData.accessToken || null
-                    );
-                    await signInWithCredential(auth, credential);
-                } catch (e) {
-                    console.error("[App] Bridge auth failed:", e);
-                }
-            });
-        } else {
-            window.location.href = landingPageUrl;
+      // Set up listener for auth token from deep link callback
+      window.electronAPI.onAuthToken(async (tokenData) => {
+        try {
+          console.log("[App] Received auth token from deep link");
+          const { GoogleAuthProvider, signInWithCredential } =
+            await import("firebase/auth");
+          const { auth } = await import("@/services/firebase");
+          const credential = GoogleAuthProvider.credential(
+            tokenData.idToken,
+            tokenData.accessToken || null,
+          );
+          await signInWithCredential(auth, credential);
+        } catch (e) {
+          console.error("[App] Bridge auth failed:", e);
         }
+      });
+    } else {
+      window.location.href = landingPageUrl;
     }
+  }
 }, [isAuthReady, isAuthenticated]);
 ```
 
@@ -77,34 +80,34 @@ useEffect(() => {
 
 ```typescript
 const startSignIn = async () => {
-    try {
-        const provider = new GoogleAuthProvider();
-        provider.setCustomParameters({ prompt: 'select_account' });
-        const result = await signInWithPopup(auth, provider);
+  try {
+    const provider = new GoogleAuthProvider();
+    provider.setCustomParameters({ prompt: "select_account" });
+    const result = await signInWithPopup(auth, provider);
 
-        // Get the GOOGLE OAuth credential (not Firebase ID token)
-        const credential = GoogleAuthProvider.credentialFromResult(result);
-        const googleIdToken = credential?.idToken;
-        const googleAccessToken = credential?.accessToken;
+    // Get the GOOGLE OAuth credential (not Firebase ID token)
+    const credential = GoogleAuthProvider.credentialFromResult(result);
+    const googleIdToken = credential?.idToken;
+    const googleAccessToken = credential?.accessToken;
 
-        if (googleIdToken) {
-            setStatus('Authenticated. Redirecting to Indii OS...');
-            const params = new URLSearchParams();
-            params.set('idToken', googleIdToken);
-            if (googleAccessToken) {
-                params.set('accessToken', googleAccessToken);
-            }
-            window.location.href = `indii-os://auth/callback?${params.toString()}`;
-            setStatus('Sign in complete. You can close this tab.');
-            setTimeout(() => window.close(), 2000);
-        } else {
-            setError('Failed to get Google credential');
-        }
-    } catch (e: any) {
-        console.error(e);
-        setError(e.message || 'Unknown error');
-        setStatus('Sign In Failed');
+    if (googleIdToken) {
+      setStatus("Authenticated. Redirecting to Indii OS...");
+      const params = new URLSearchParams();
+      params.set("idToken", googleIdToken);
+      if (googleAccessToken) {
+        params.set("accessToken", googleAccessToken);
+      }
+      window.location.href = `indii-os://auth/callback?${params.toString()}`;
+      setStatus("Sign in complete. You can close this tab.");
+      setTimeout(() => window.close(), 2000);
+    } else {
+      setError("Failed to get Google credential");
     }
+  } catch (e: any) {
+    console.error(e);
+    setError(e.message || "Unknown error");
+    setStatus("Sign In Failed");
+  }
 };
 ```
 
@@ -120,19 +123,21 @@ const startSignIn = async () => {
 
 ```typescript
 function handleDeepLink(url: string) {
-    console.log("Deep link received:", url);
-    try {
-        const urlObj = new URL(url);
-        const idToken = urlObj.searchParams.get('idToken');
-        const accessToken = urlObj.searchParams.get('accessToken');
+  console.log("Deep link received:", url);
+  try {
+    const urlObj = new URL(url);
+    const idToken = urlObj.searchParams.get("idToken");
+    const accessToken = urlObj.searchParams.get("accessToken");
 
-        if (idToken) {
-            const wins = BrowserWindow.getAllWindows();
-            wins.forEach(w => w.webContents.send('auth-token', { idToken, accessToken }));
-        }
-    } catch (e) {
-        console.error("Failed to parse deep link:", e);
+    if (idToken) {
+      const wins = BrowserWindow.getAllWindows();
+      wins.forEach((w) =>
+        w.webContents.send("auth-token", { idToken, accessToken }),
+      );
     }
+  } catch (e) {
+    console.error("Failed to parse deep link:", e);
+  }
 }
 ```
 
@@ -141,19 +146,21 @@ function handleDeepLink(url: string) {
 **Purpose:** Use `contextBridge` for secure IPC
 
 ```typescript
-import { contextBridge, ipcRenderer } from 'electron';
+import { contextBridge, ipcRenderer } from "electron";
 
 interface AuthTokenData {
-    idToken: string;
-    accessToken?: string | null;
+  idToken: string;
+  accessToken?: string | null;
 }
 
-contextBridge.exposeInMainWorld('electronAPI', {
-    getPlatform: () => ipcRenderer.invoke('get-platform'),
-    getAppVersion: () => ipcRenderer.invoke('get-app-version'),
-    openExternal: (url: string) => ipcRenderer.invoke('open-external', url),
-    onAuthToken: (callback: (tokenData: AuthTokenData) => void) =>
-        ipcRenderer.on('auth-token', (_: unknown, tokenData: AuthTokenData) => callback(tokenData)),
+contextBridge.exposeInMainWorld("electronAPI", {
+  getPlatform: () => ipcRenderer.invoke("get-platform"),
+  getAppVersion: () => ipcRenderer.invoke("get-app-version"),
+  openExternal: (url: string) => ipcRenderer.invoke("open-external", url),
+  onAuthToken: (callback: (tokenData: AuthTokenData) => void) =>
+    ipcRenderer.on("auth-token", (_: unknown, tokenData: AuthTokenData) =>
+      callback(tokenData),
+    ),
 });
 ```
 
@@ -173,21 +180,21 @@ Added same pattern as LoginForm with `window.electronAPI` detection.
 
 ```typescript
 export interface AuthTokenData {
-    idToken: string;
-    accessToken?: string | null;
+  idToken: string;
+  accessToken?: string | null;
 }
 
 export interface ElectronAPI {
-    getPlatform: () => Promise<string>;
-    getAppVersion: () => Promise<string>;
-    openExternal: (url: string) => Promise<void>;
-    onAuthToken: (callback: (tokenData: AuthTokenData) => void) => void;
+  getPlatform: () => Promise<string>;
+  getAppVersion: () => Promise<string>;
+  openExternal: (url: string) => Promise<void>;
+  onAuthToken: (callback: (tokenData: AuthTokenData) => void) => void;
 }
 
 declare global {
-    interface Window {
-        electronAPI?: ElectronAPI;
-    }
+  interface Window {
+    electronAPI?: ElectronAPI;
+  }
 }
 ```
 

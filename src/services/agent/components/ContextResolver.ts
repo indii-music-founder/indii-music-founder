@@ -1,4 +1,5 @@
-import { useStore, AgentMessage } from '@/core/store';
+import type { AgentMessage } from '@/core/store';
+// useStore removed
 import { UserProfile, BrandKit } from '@/modules/workflow/types';
 import { buildDistributorContext, getDistributorPromptContext } from '@/services/onboarding/DistributorContext';
 
@@ -6,6 +7,7 @@ import { AgentContext, ProjectHandle, DistributorInfo } from '../types';
 
 export class ContextResolver {
     async resolveContext(): Promise<AgentContext> {
+        const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule } = state;
         const currentProject = projects.find(p => p.id === currentProjectId);

@@ -12,6 +12,11 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    // Check if user has admin custom claim (set via Firebase Admin SDK server-side only)
+    function isAdmin() {
+      return isAuthenticated() && request.auth.token.admin == true;
+    }
+
     // Check if user is the owner of the document
     function isOwner(userId) {
       return isAuthenticated() && request.auth.uid == userId;
@@ -136,7 +141,7 @@ service cloud.firestore {
                     request.resource.data.role in ['user', 'artist'];
       allow update: if isOwner(userId) && (
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role']) ||
-        request.auth.token.admin == true
+        isAdmin()
       );
 
       // Music Library (Analyzed Tracks)
@@ -214,7 +219,7 @@ service cloud.firestore {
       allow create: if isRequestOrgMember() && isValidProject(request.resource.data);
       allow update: if isResourceOrgMember() && (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['orgId']) ||
-          request.auth.token.admin == true
+          isAdmin()
       );
       allow delete: if isResourceOrgMember();
     }
@@ -347,6 +352,11 @@ service cloud.firestore {
       allow create: if isOwner(request.resource.data.userId);
     }
 
+    match /earnings/{earningId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
     match /earnings_reports/{reportId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
@@ -382,7 +392,7 @@ service cloud.firestore {
       // Anyone authenticated can read the catalog
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -393,7 +403,7 @@ service cloud.firestore {
       // Anyone authenticated can read platform info
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -404,7 +414,7 @@ service cloud.firestore {
       // Authenticated users can read API status
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -415,7 +425,7 @@ service cloud.firestore {
       // Anyone authenticated can read templates
       allow read: if isAuthenticated();
       // Only admins can write
-      allow write: if isAuthenticated() && request.auth.token.admin == true;
+      allow write: if isAuthenticated() && isAdmin();
     }
 
     // ========================================
@@ -500,6 +510,20 @@ service cloud.firestore {
     }
 
     // ========================================
+    // PUBLICIST CAMPAIGNS & CONTACTS (User Scoped)
+    // ========================================
+
+    match /publicist_campaigns/{campaignId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /publicist_contacts/{contactId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
     // TOURING & LOGISTICS (User Scoped)
     // ========================================
 
@@ -514,6 +538,114 @@ service cloud.firestore {
     }
 
     match /tour_rider_items/{itemId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // PROACTIVE TASKS (Autonomy Engine - Pulse)
+    // ========================================
+    // Used by ProactiveService for heartbeat-triggered and scheduled agent tasks.
+    // Each task belongs to a specific user and can only be managed by that user.
+
+    match /proactive_tasks/{taskId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // SESSIONS (Agent Conversation Persistence)
+    // ========================================
+    // Used by SessionService for dual-write (Firestore + Electron local).
+    // Org-scoped: members of the same org can read each other's sessions.
+
+    match /sessions/{sessionId} {
+      allow read: if isAuthenticated() && (
+        resource.data.userId == request.auth.uid ||
+        isOrgMember(resource.data.orgId)
+      );
+      allow create: if isAuthenticated()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.orgId is string
+        && isOrgMember(request.resource.data.orgId);
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // LIVING FILES (Autonomy Engine - The Vibe)
+    // ========================================
+    // Dynamic Markdown files (SOUL, ARTIST, SHOWROOM, PULSE, EPISODIC, RHYTHM)
+    // stored as subcollections under users. The agent can read/write these.
+    // Only the owning user's agent can access their living files.
+
+    match /users/{userId}/living_files/{fileId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+      allow delete: if isOwner(userId);
+    }
+
+    // Social: linked_accounts subcollection
+    match /users/{userId}/linked_accounts/{platform} {
+      allow read, write: if isOwner(userId);
+    }
+
+    // ========================================
+    // SCHEDULED POSTS (Social Scheduling)
+    // ========================================
+    // Used by the social module for scheduling posts across platforms.
+
+    match /scheduled_posts/{postId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // SMART CONTRACTS (Legal)
+    // ========================================
+
+    match /smart_contracts/{contractId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /contracts/{contractId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    // ========================================
+    // LEGAL AGREEMENTS (contracts)
+    // ========================================
+    
+    match /contracts/{contractId} {
+      // Allow read/update/delete only if user is authenticated and owns the contract
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Allow create if user is authenticated and assigns themselves as owner
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // LEDGER (Blockchain/Legal)
+    // ========================================
+
+    match /ledger/{entryId} {
+      allow read: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+      allow update, delete: if false; // Ledger is append-only
+    }
+
+    // ========================================
+    // PROCESSED REPORTS (DDEX/Distribution)
+    // ========================================
+
+    match /processed_reports/{reportId} {
+      allow read, update, delete: if isOwner(resource.data.userId);
+      allow create: if isOwner(request.resource.data.userId);
+    }
+
+    match /dsr_processed_reports/{reportId} {
       allow read, update, delete: if isOwner(resource.data.userId);
       allow create: if isOwner(request.resource.data.userId);
     }

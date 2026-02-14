@@ -1,4 +1,3 @@
-
 # ⚡ MAXIMUM EFFICIENCY ARTIFACT: The IndiiOS Dividend Protocol
 
 > **Objective:** Systematically eliminate the "Artist Economy Leakage" identified in research (approx. $11k/yr lost).
@@ -18,23 +17,23 @@ We must define a strict metadata contract. No file leaves the studio without thi
 ```typescript
 // src/services/metadata/types.ts
 export interface GoldenMetadata {
-    // 1. Core Identity (The "Who")
-    trackTitle: string;
-    artistName: string;
-    isrc: string; // The License Plate
-    iswc?: string; // Composition ID
+  // 1. Core Identity (The "Who")
+  trackTitle: string;
+  artistName: string;
+  isrc: string; // The License Plate
+  iswc?: string; // Composition ID
 
-    // 2. The Splits (The "Who Gets Paid")
-    splits: {
-        legalName: string;
-        role: 'songwriter' | 'producer' | 'performer';
-        percentage: number; // Must sum to 100%
-        email: string;
-    }[];
+  // 2. The Splits (The "Who Gets Paid")
+  splits: {
+    legalName: string;
+    role: "songwriter" | "producer" | "performer";
+    percentage: number; // Must sum to 100%
+    email: string;
+  }[];
 
-    // 3. Rights Admin (The "Who Collects")
-    pro: 'ASCAP' | 'BMI' | 'SESAC' | 'None';
-    publisher: string;
+  // 3. Rights Admin (The "Who Collects")
+  pro: "ASCAP" | "BMI" | "SESAC" | "None";
+  publisher: string;
 }
 ```
 
@@ -42,8 +41,8 @@ export interface GoldenMetadata {
 
 1. [x] **Create Schema:** Create `src/services/metadata/types.ts`
 2. [x] **Create UI:** Build `MetadataDrawer.tsx` component in `src/modules/music/components/`
-    * Form fields for ISRC, Splits (with % validation).
-    * "Golden Seal" visual indicator (Green Check = Ready for Release).
+   - Form fields for ISRC, Splits (with % validation).
+   - "Golden Seal" visual indicator (Green Check = Ready for Release).
 3. [x] **Integrate:** Add `MetadataDrawer` to `MusicStudio.tsx`.
 4. [x] **Enforce:** Disable "Export" button until Golden Metadata is complete.
 
@@ -62,8 +61,8 @@ The current `FinanceAgent` is passive. It must be **Proactive**.
 
 1. [x] **Inject Knowledge:** Give `FinanceAgent` access to `Artist_Economics_Deep_Dive.md` via system prompt override.
 2. [x] **New Capabilities:**
-    * `audit_metadata()`: Check recent tracks for "Golden File" status.
-    * `forecast_revenue()`: Use the "Dividend" model to show saved fees (Gamification).
+   - `audit_metadata()`: Check recent tracks for "Golden File" status.
+   - `forecast_revenue()`: Use the "Dividend" model to show saved fees (Gamification).
 3. [ ] **Integration:** Display "Fees Saved: $XXXX" in `FinanceDashboard.tsx`.
 
 ---
@@ -77,8 +76,8 @@ The current `FinanceAgent` is passive. It must be **Proactive**.
 
 1. **Input:** "Golden File" Metadata + Audio Analysis (Energy, Key).
 2. **Process:**
-    * Agent searches Knowledge Base for `Music_Industry_History_Deep_Dive` to find "hooks" (e.g., "This track channels the 1980s synth-pop resurgence...").
-    * Generates 3 angles: "The Story", "The Industry Pitch", "The Fan Hook".
+   - Agent searches Knowledge Base for `Music_Industry_History_Deep_Dive` to find "hooks" (e.g., "This track channels the 1980s synth-pop resurgence...").
+   - Generates 3 angles: "The Story", "The Industry Pitch", "The Fan Hook".
 3. **Output:** Press Release PDF + 5 Social Post drafts.
 
 ### 3.2 The Implementation Steps
@@ -93,7 +92,7 @@ The current `FinanceAgent` is passive. It must be **Proactive**.
 **Goal:** Eliminate fragmentation fees.
 **Target Module:** `src/modules/publishing`
 
-*(Deferred for Phase 2 - Focus on Pillars 1-3 first)*
+_(Deferred for Phase 2 - Focus on Pillars 1-3 first)_
 
 ---
 
@@ -104,4 +103,4 @@ The current `FinanceAgent` is passive. It must be **Proactive**.
 3. **Wire It Up:** Block exports in `MusicStudio` until the form is filled.
 4. **Activate Agents:** Tell `FinanceAgent` to start tracking the savings.
 
-*This artifact is your compass. Proceed efficiently.*
+_This artifact is your compass. Proceed efficiently._
