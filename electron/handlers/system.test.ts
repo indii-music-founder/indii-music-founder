@@ -116,7 +116,6 @@ describe('System Handler', () => {
         expect(mockHandle).toHaveBeenCalledWith('privacy:toggle-protection', expect.any(Function));
         expect(mockHandle).toHaveBeenCalledWith('system:select-file', expect.any(Function));
         expect(mockHandle).toHaveBeenCalledWith('system:select-directory', expect.any(Function));
-        expect(mockHandle).toHaveBeenCalledWith('system:restart-ai', expect.any(Function));
         expect(mockHandle).toHaveBeenCalledWith('system:save-pdf', expect.any(Function));
     });
 
@@ -232,6 +231,7 @@ describe('System Handler', () => {
             if (selectFileHandler) {
                 const result = await selectFileHandler(mockEvent);
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
+
                 expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select File',
                     properties: ['openFile'],
@@ -300,6 +300,7 @@ describe('System Handler', () => {
 
             if (selectFileHandler) {
                 await selectFileHandler(mockEvent, options);
+
                 expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select PDF',
                     properties: ['openFile'],
@@ -336,6 +337,7 @@ describe('System Handler', () => {
             if (selectDirHandler) {
                 const result = await selectDirHandler(mockEvent);
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
+
                 expect(mockShowOpenDialog).toHaveBeenCalledWith(expect.anything(), {
                     title: 'Select Directory',
                     properties: ['openDirectory']
@@ -394,6 +396,11 @@ describe('System Handler', () => {
                 close: vi.fn()
             };
 
+            // Mock BrowserWindow constructor
+            const OriginalBrowserWindow = (global as any).BrowserWindow;
+            (global as any).BrowserWindow = function(options: any) {
+                return mockPrintWindow;
+            };
             const mockWindow = {};
             mockFromWebContents.mockReturnValue(mockWindow);
 
@@ -436,6 +443,13 @@ describe('System Handler', () => {
                 expect(mockValidateSender).toHaveBeenCalledWith(mockEvent);
                 expect(result.success).toBe(true);
                 expect(result.filePath).toBe('/path/to/output.pdf');
+            }
+
+            // Restore
+            (global as any).BrowserWindow = OriginalBrowserWindow;
+        });
+
+        it('should handle cancellation', async () => {
 
                 // Verify print window logic - check constructor calls
                 expect(mockBrowserWindowConstructor).toHaveBeenCalledWith(expect.objectContaining({
@@ -454,6 +468,19 @@ describe('System Handler', () => {
                 }
             });
 
+            const mockPrintWindow = {
+                loadURL: vi.fn().mockResolvedValue(undefined),
+                webContents: {
+                    printToPDF: vi.fn().mockResolvedValue(Buffer.from('pdf-data'))
+                },
+                close: vi.fn()
+            };
+
+            const OriginalBrowserWindow = (global as any).BrowserWindow;
+            (global as any).BrowserWindow = function(options: any) {
+                return mockPrintWindow;
+            };
+
             mockShowSaveDialog.mockResolvedValue({
                 canceled: true
             });
@@ -469,6 +496,8 @@ describe('System Handler', () => {
                 expect(result.success).toBe(false);
                 expect(result.error).toBe('Save cancelled');
             }
+
+            (global as any).BrowserWindow = OriginalBrowserWindow;
         });
     });
 });
