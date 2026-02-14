@@ -61,15 +61,6 @@ vi.mock('@/core/store', () => ({
 describe('DistributionDashboard Component', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        // Reset default mock return value
-        mockUseStore.mockReturnValue({
-            distribution: {
-                releases: [],
-                loading: false,
-                error: null
-            },
-            subscribeToReleases: mockSubscribeToReleases
-        });
     });
 
     it('should render dashboard header', () => {
@@ -115,7 +106,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should show loading skeletons when loading', () => {
-        mockUseStore.mockReturnValue({
+        vi.mocked(mockUseStore).mockReturnValue({
             distribution: {
                 releases: [],
                 loading: true,
@@ -131,7 +122,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should render releases when available', () => {
-        mockUseStore.mockReturnValue({
+        vi.mocked(mockUseStore).mockReturnValue({
             distribution: {
                 releases: [
                     {
@@ -164,7 +155,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should show error state when error occurs', () => {
-        mockUseStore.mockReturnValue({
+        vi.mocked(mockUseStore).mockReturnValue({
             distribution: {
                 releases: [],
                 loading: false,
@@ -235,7 +226,7 @@ describe('DistributionDashboard Component', () => {
             releaseDate: '2024-01-01'
         }));
 
-        mockUseStore.mockReturnValue({
+        vi.mocked(mockUseStore).mockReturnValue({
             distribution: {
                 releases,
                 loading: false,
@@ -252,7 +243,7 @@ describe('DistributionDashboard Component', () => {
     });
 
     it('should not show loading skeletons when releases are present', () => {
-        mockUseStore.mockReturnValue({
+        vi.mocked(mockUseStore).mockReturnValue({
             distribution: {
                 releases: [
                     {
