@@ -55,10 +55,13 @@ export class WorkflowCoordinator {
             'find', 'search', 'upload', 'save', 'remember'
         ];
 
-        // Keywords implying simple generation
+        // Keywords implying simple generation (expanded for conversational queries)
         const generationTriggers = [
             'write a', 'draft a', 'generate a', 'create a',
-            'joke', 'poem', 'caption', 'email', 'list'
+            'joke', 'poem', 'caption', 'email', 'list',
+            'explain', 'what is', 'what are', 'how do', 'how does',
+            'tell me', 'help me understand', 'summarize', 'describe',
+            'why is', 'why do', 'can you', 'could you'
         ];
 
         if (complexityTriggers.some(t => lower.includes(t))) {
@@ -69,8 +72,9 @@ export class WorkflowCoordinator {
             return 'SIMPLE_GENERATION';
         }
 
-        // Default to Complex to be safe (Agent can handle simple stuff too)
-        return 'COMPLEX_ORCHESTRATION';
+        // Default to Simple — the fast path handles most conversational queries well.
+        // Complex orchestration should be explicitly triggered by complexity keywords.
+        return 'SIMPLE_GENERATION';
     }
 
     private requiresTools(message: string): boolean {
@@ -102,7 +106,10 @@ export class WorkflowCoordinator {
             }
         }
 
-        return lower.includes('my') || lower.includes('save') || lower.includes('find');
+        // Only require tools for explicit persistence/retrieval actions, NOT for possessive "my"
+        return lower.includes('save to') || lower.includes('save this') ||
+               lower.includes('find my') || lower.includes('search my') ||
+               lower.includes('upload') || lower.includes('download');
     }
 
     /**

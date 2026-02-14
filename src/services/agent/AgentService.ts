@@ -255,20 +255,7 @@ export class AgentService {
             agentId = session?.participants?.[0] || 'generalist';
         }
 
-        // HYBRID GRAFT: Use the new HybridOrchestrator ONLY for 'agent-zero' or unassigned complex tasks
-        // 'native' mode (Manual) should bypass the orchestrator and go directly to the specialist.
-        if (activeAgentProvider !== 'native' && !forcedAgentId) {
-            console.info('[AgentService] Using Hybrid Orchestrator DNA...');
-            const hybridResponse = await this.hybridOrchestrator.execute(context, text, this);
-
-            updateAgentMessage(responseId, {
-                text: hybridResponse,
-                isStreaming: false
-            });
-            return;
-        }
-
-        // Update agent ID in the placeholder (Legacy/Native path)
+        // Update agent ID in the placeholder (Native/Agent path)
         updateAgentMessage(responseId, { agentId });
 
         let currentStreamedText = '';
