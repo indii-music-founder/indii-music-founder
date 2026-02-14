@@ -60,8 +60,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
     },
-    socialInitiateOAuth: (platform: string) => ipcRenderer.invoke('social:initiate-oauth', platform),
-    getSocialToken: (platform: string) => ipcRenderer.invoke('social:get-token', platform),
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),

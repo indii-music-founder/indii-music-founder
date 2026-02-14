@@ -111,8 +111,7 @@ export class SmartContractService {
     private async recordToLedger(action: LedgerEntry['action'], entityId: string, details: string) {
         const userProfile = useStore.getState().userProfile;
         if (!userProfile?.id) {
-            console.warn('[SmartContract] Cannot record to ledger: User not authenticated');
-            return;
+            throw new Error('User not authenticated: cannot record to ledger');
         }
 
         const entry: LedgerEntry = {

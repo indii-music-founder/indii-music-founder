@@ -55,10 +55,7 @@ describe('SocialService Integration Tests', () => {
             expect(addDoc).toHaveBeenCalledWith(
                 expect.anything(),
                 expect.objectContaining({
-                    userId: mockUserId, // Copied from userProfile.id in service, even if not in schema (addDoc saves the object passed to it)
-                    // Wait, service calls validation.data.
-                    // validation.data will STRIP userId if it's not in schema.
-                    // Let's check SocialService implementation.
+                    userId: mockUserId,
                     copy: 'Coming soon!',
                     status: 'PENDING'
                 })

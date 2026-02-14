@@ -34,7 +34,7 @@ export class SocialOAuthService {
 
         try {
             // We invoke a main process handler that opens a BrowserWindow for OAuth
-            const result = await (window.electronAPI as any).social?.connectOAuth(provider);
+            const result = await window.electronAPI.social.connectOAuth(provider);
 
             if (result?.success) {
                 const account: LinkedAccount = {
