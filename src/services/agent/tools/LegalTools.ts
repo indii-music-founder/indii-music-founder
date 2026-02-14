@@ -2,6 +2,8 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { LegalService } from '@/services/legal/LegalService';
 import { ContractStatus } from '@/modules/legal/types';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { httpsCallable } from 'firebase/functions';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
@@ -88,13 +90,20 @@ Key Terms: ${args.terms}`;
             throw new Error("Validation Error: 'contractId' is required.");
         }
 
-        const success = await LegalService.exportContractToPDF(args.contractId);
+        const generateContractPdf = httpsCallable<
+            { contractId: string },
+            { success: boolean; url?: string; error?: string }
+        >(functions, 'generateContractPdf');
 
-        if (success) {
-            return toolSuccess({}, "Contract PDF has been generated and saved locally.");
+        const result = await generateContractPdf({ contractId: args.contractId });
+
+        if (result.data.success && result.data.url) {
+            return toolSuccess(
+                { url: result.data.url },
+                "Contract PDF has been generated. Download URL is ready."
+            );
         } else {
-            // Throw error to trigger standardized toolError handler in wrapTool
-            throw new Error("PDF generation was cancelled or failed.");
+            throw new Error(result.data.error || "PDF generation failed.");
         }
     })
 };

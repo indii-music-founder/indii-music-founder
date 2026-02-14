@@ -96,7 +96,6 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     : [metadata];
 
                 tracks.forEach((track, index) => {
-                    const ref = `A${resourceCounter++}`;
                     let assetObj = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
 
                     // Fallback to singular audioFile if needed
@@ -104,14 +103,18 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                         assetObj = { ...assets.audioFile, trackIndex: 0 };
                     }
 
-                    if (assetObj) {
-                        const ext = assetObj.format || 'wav';
-                        files.push({
-                            type: 'path',
-                            data: assetObj.url,
-                            name: `resources/${ref}.${ext}`
-                        });
+                    if (!assetObj) {
+                        const trackTitle = (track as ExtendedGoldenMetadata).trackTitle || `Track ${index + 1}`;
+                        throw new Error(`Missing audio file for track ${index} ("${trackTitle}"). Cannot create delivery package with missing audio resources.`);
                     }
+
+                    const ref = `A${resourceCounter++}`;
+                    const ext = assetObj.format || 'wav';
+                    files.push({
+                        type: 'path',
+                        data: assetObj.url,
+                        name: `resources/${ref}.${ext}`
+                    });
                 });
 
                 // 2c. Map Cover Art

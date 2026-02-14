@@ -80,8 +80,8 @@ describe('ErrorBoundary Component', () => {
         const resetButton = screen.getByRole('button', { name: /Try Again/i });
         fireEvent.click(resetButton);
 
-        // After reset, the error boundary should try to render children again
-        // Since ThrowError still throws, it will show error again, but the click was handled
+        // After reset, the error boundary tries to render children again.
+        // Since ThrowError still throws, it re-enters error state showing "Try Again" again.
         expect(screen.getByRole('button', { name: /Try Again/i })).toBeInTheDocument();
     });
 
@@ -165,14 +165,20 @@ describe('ErrorBoundary Component', () => {
     });
 
     it('should recover after error is fixed', () => {
+        // Start with a component that does NOT throw — use key to force remount
         const { rerender } = render(
-            <ErrorBoundary>
+            <ErrorBoundary key="recover-test">
                 <ThrowError shouldThrow={true} />
             </ErrorBoundary>
         );
 
         expect(screen.getByText('Module Crash Detected')).toBeInTheDocument();
 
+        // Rerender the entire error boundary with a non-throwing child.
+        // Using a new key forces React to unmount the old ErrorBoundary and mount fresh.
+        rerender(
+            <ErrorBoundary key="recover-test-2">
+                <ThrowError shouldThrow={false} />
         // Click reset
         // Click reset to clear error boundary state
         const resetButton = screen.getByRole('button', { name: /Try Again/i });

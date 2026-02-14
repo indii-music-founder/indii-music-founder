@@ -129,7 +129,6 @@ export class ProactiveService {
             const fullTask = `[PROACTIVE TRIGGER] ${task.task}${contextMsg}`;
 
             // Run agent
-            // Run agent
             const { agentService } = await import('./AgentService');
             // Mock a context for proactive trigger
             const context: AgentContext = {
@@ -171,12 +170,6 @@ export class ProactiveService {
             createdAt: Date.now(),
             userId
         };
-
-        // For addDoc, we don't need to pass ID usually, but if type requires it we match.
-        // Actually addDoc returns a ref with ID.
-        // Let's stick to the existing pattern of omitting ID for addDoc if possible, 
-        // but Typescript might complain if we cast to ProactiveTask before adding.
-        // The previous code had: const task: Omit<ProactiveTask, 'id'> = ...
 
         const docRef = await addDoc(collection(db, 'proactive_tasks'), task);
         return docRef.id;

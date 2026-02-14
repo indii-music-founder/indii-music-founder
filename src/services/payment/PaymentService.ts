@@ -30,12 +30,9 @@ export class PaymentService implements PaymentProvider {
                 await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate latency
 
                 return {
+                    ...data,
                     id: `mock_tx_${Date.now()}`,
                     status: 'completed',
-                    amount: data.amount,
-                    currency: data.currency,
-                    buyerId: data.buyerId,
-                    sellerId: data.sellerId,
                     createdAt: new Date().toISOString()
                 };
             }

@@ -160,6 +160,8 @@ Only return valid JSON.
             const success = await LegalService.exportContractToPDF(id);
             if (success) {
                 toast.success("PDF saved successfully!");
+            } else {
+                toast.info("PDF export cancelled.");
             }
         } catch (error) {
             console.error("PDF Export failed:", error);
@@ -316,7 +318,7 @@ Only return valid JSON.
                                         <div>
                                             <div className="font-semibold text-sm">{contract.title}</div>
                                             <div className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
-                                                {contract.type} • {contract.parties.join(' vs ')}
+                                                {contract.type} • {contract.parties.join(' & ')}
                                             </div>
                                         </div>
                                     </div>
