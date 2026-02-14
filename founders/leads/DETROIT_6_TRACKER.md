@@ -1,4 +1,4 @@
-# Genesis Node Lead Tracker - "The Detroit 6"
+# Genesis Node Lead Tracker - "The Detroit 8"
 
 | Name | Role / Organization | Priority | Connection | Status |
 | :--- | :--- | :--- | :--- | :--- |
@@ -8,6 +8,8 @@
 | **Moodymann** | Mahogani Music | High | Personal (via Manager) | Pitch Prep |
 | **Third Man Records** | Jack White / Archive | Medium | Archival "Vault" Play | Researching |
 | **UR** (Underground Resistance)| Mad Mike / UR | High | Personal / Ideological | Pitch Prep |
+| **Todd Johnson** | Promotions / Silly Girl | High | Personal / Buddy | Pitch Prep |
+| **DTM** (Detroit Techno Militia) | T.Linder / Darkfader / DJ 3000 | High | Personal / Friends | Pitch Prep |
 
 ## Next Steps for in.dEX:
 1.  **Draft Custom Outreach:** Create personalized scripts for each lead in `founders/scripts/`.
