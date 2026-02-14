@@ -425,6 +425,7 @@ If the user asks you to do something that requires tools (like generating images
             .filter(m => (m.role === 'user' || m.role === 'model') && m.text && m.text.trim() !== '')
             .slice(-21) // Take 21 to ensure we have 20 after removing current
             .slice(0, -1) // Exclude the current user message (last entry)
+        const recentHistory = agentHistory
             .filter(m => m.role === 'user' || m.role === 'model')
             .slice(-20)
             .map(m => ({
