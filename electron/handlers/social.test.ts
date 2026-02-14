@@ -184,6 +184,20 @@ describe('Social Handler', () => {
                     closeCall[1]();
                 }
 
+
+                // Simulate window closed to resolve
+                const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
+                if (closeCall) {
+                    closeCall[1]();
+                }
+
+
+                // Simulate window closed to resolve
+                const closeCall = mockOn.mock.calls.find(c => c[0] === 'closed');
+                if (closeCall) {
+                    closeCall[1]();
+                }
+
                 await promise;
 
                 expect(mockBrowserWindowConstructor).toHaveBeenCalledWith(expect.objectContaining({
