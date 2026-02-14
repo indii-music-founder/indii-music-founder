@@ -99,7 +99,7 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your image/i);
         fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
 
-        const sendButton = screen.getByRole('button', { name: /send/i }); // Send button
+        const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
         await waitFor(() => {
@@ -217,7 +217,6 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your video/i);
         fireEvent.change(input, { target: { value: 'A video scene' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
         const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
@@ -240,7 +239,6 @@ describe('DirectGenerationTab Component', () => {
         const input = screen.getByPlaceholderText(/Describe your video/i);
         fireEvent.change(input, { target: { value: 'A video scene' } });
 
-        const sendButton = screen.getByRole('button', { name: '' });
         const sendButton = screen.getByRole('button', { name: /send/i });
         fireEvent.click(sendButton);
 
