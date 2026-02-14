@@ -430,20 +430,21 @@ If the user asks you to do something that requires tools (like generating images
             }));
 
         // Build the prompt contents: history + current message
-        const contents = [
-            ...recentHistory,
-            { role: 'user' as const, parts: [{ text }] }
-        ];
+        const currentMessagePart = { role: 'user' as const, parts: [{ text }] };
 
         // Handle image attachments inline
         if (attachments && attachments.length > 0) {
-            const lastContent = contents[contents.length - 1];
             for (const att of attachments) {
-                lastContent.parts.push({
+                currentMessagePart.parts.push({
                     inlineData: { mimeType: att.mimeType, data: att.base64 }
                 } as any);
             }
         }
+
+        const contents = [
+            ...recentHistory,
+            currentMessagePart
+        ];
 
         try {
             const { stream } = await firebaseAI.generateContentStream(
