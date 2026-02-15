@@ -570,6 +570,8 @@ export class FirebaseAIService {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
         }
 
+        const userId = auth.currentUser?.uid;
+
         // Build contents array for the new SDK format
         const contents = typeof prompt === 'string'
             ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
