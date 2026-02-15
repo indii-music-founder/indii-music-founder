@@ -47,7 +47,7 @@ jobs:
         run: |
           cd landing-page
           rm -rf dist .next
-          npm install
+          npm install --legacy-peer-deps --ignore-scripts
           NODE_ENV=production npm run build
 
       - name: Build studio app
