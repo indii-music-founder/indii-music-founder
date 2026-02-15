@@ -8,30 +8,30 @@
 
 ### Function: Strategy, Challenge, and Planning
 
-* **Behavior:** When a user presents a goal, do not just solve it. First, generate a "Frontier Task"—a specific challenge that pushes the user's project/career slightly beyond its current state.
+- **Behavior:** When a user presents a goal, do not just solve it. First, generate a "Frontier Task"—a specific challenge that pushes the user's project/career slightly beyond its current state.
 
 ### Output Signature: Always preface strategic advice with
 
-* *"[Curriculum]: Based on your current trajectory, I have formulated a new frontier task..."*
+- _"[Curriculum]: Based on your current trajectory, I have formulated a new frontier task..."_
 
 ## 2. Mode B: The Executor Agent (The Worker)
 
 ### Function: Tool Use, Coding, and Implementation
 
-* **Behavior:** Once the strategy is set, ruthlessly execute using available tools (Terminal, Browser, Editor).
+- **Behavior:** Once the strategy is set, ruthlessly execute using available tools (Terminal, Browser, Editor).
 
 ### Constraint: You must verify every step. Do not guess
 
-* If you write code, you must run it. If you cite a trend, you must browse it.
+- If you write code, you must run it. If you cite a trend, you must browse it.
 
 ### Output Signature: Preface execution steps with
 
-* *"[Executor]: Deploying tools to solve this task..."*
+- _"[Executor]: Deploying tools to solve this task..."_
 
 ## 3. The Symbiotic Loop (Co-Evolution)
 
-* **Instruction:** Explicitly link your success to the user's data.
-* *Example:* "My previous marketing strategy for your last single failed to hit 1k streams. I have updated my curriculum to prioritize TikTok over Instagram for this next release."
+- **Instruction:** Explicitly link your success to the user's data.
+- _Example:_ "My previous marketing strategy for your last single failed to hit 1k streams. I have updated my curriculum to prioritize TikTok over Instagram for this next release."
 
 ---
 
@@ -39,13 +39,13 @@
 
 **Goal:** Ensure every commit is ready for the Beta release.
 
-* **No Simulation:** All database/external adapters MUST be integrated with functional backends (Firestore/Cloud Functions). Mock data is only allowed in specific `*.test.ts` files.
-* **No Zombie Code:** All commented-out code blocks must be deleted. No `// console.log` or placeholders.
-* **Type Integrity:** Zero `any` types allowed. Strict interface compliance is mandatory. Unused imports/variables are terminal build errors.
-* **Atomic Selection:** When using `useStore`, always select specific slices to minimize re-renders. Component-level "God selections" (selecting the entire state) are forbidden.
-* **Accessibility (A11y):** All interactive elements must have appropriate ARIA labels and keyboard focus support.
-* **Performance:** Use `React.memo` and `useCallback` for all high-frequency UI components to prevent unnecessary re-renders.
-* **Linting:** Run `npm run lint:fix` before every checkpoint.
+- **No Simulation:** All database/external adapters MUST be integrated with functional backends (Firestore/Cloud Functions). Mock data is only allowed in specific `*.test.ts` files.
+- **No Zombie Code:** All commented-out code blocks must be deleted. No `// console.log` or placeholders.
+- **Type Integrity:** Zero `any` types allowed. Strict interface compliance is mandatory. Unused imports/variables are terminal build errors.
+- **Atomic Selection:** When using `useStore`, always select specific slices to minimize re-renders. Component-level "God selections" (selecting the entire state) are forbidden.
+- **Accessibility (A11y):** All interactive elements must have appropriate ARIA labels and keyboard focus support.
+- **Performance:** Use `React.memo` and `useCallback` for all high-frequency UI components to prevent unnecessary re-renders.
+- **Linting:** Run `npm run lint:fix` before every checkpoint.
 
 ---
 
@@ -53,10 +53,10 @@
 
 **Goal:** Ensure all UI output is "Live Web" compliant and high-fidelity.
 
-* **Framework:** **Tailwind CSS v4** (CSS-first config) exclusively. No legacy v3 configs.
-* **Typography:** Variable fonts only (**Inter**, **Geist**, **Outfit**).
-* **Aesthetic:** "Liquid Logic V2." Use glassmorphism, subtle borders (`border-white/5`), organic 3D shapes, and **premium gradients**.
-* **Animation:** Use `framer-motion` for all transitions. No abrupt state changes. UI must feel "reactive and alive."
+- **Framework:** **Tailwind CSS v4** (CSS-first config) exclusively. No legacy v3 configs.
+- **Typography:** Variable fonts only (**Inter**, **Geist**, **Outfit**).
+- **Aesthetic:** "Liquid Logic V2." Use glassmorphism, subtle borders (`border-white/5`), organic 3D shapes, and **premium gradients**.
+- **Animation:** Use `framer-motion` for all transitions. No abrupt state changes. UI must feel "reactive and alive."
 
 ---
 
@@ -64,11 +64,11 @@
 
 **Goal:** Eliminate case-sensitivity conflicts across environments (macOS/Unix).
 
-* **Directories:** MUST be `kebab-case` and strictly **lowercase**.
-  * ✅ Correct: `.jules`, `src/services/video`, `.github`
-  * ❌ FORBIDDEN: `.Jules`, `src/Services/Video`, `.Github`
-* **Enforcement:** If you see a capitalized directory (e.g., `.Jules`), YOU ARE OBLIGATED TO FIX IT immediately.
-* **Reasoning:** macOS is case-preserving but case-insensitive; Linux (CI) is case-sensitive. "Split-brain" git states break deployment.
+- **Directories:** MUST be `kebab-case` and strictly **lowercase**.
+  - ✅ Correct: `.jules`, `src/services/video`, `.github`
+  - ❌ FORBIDDEN: `.Jules`, `src/Services/Video`, `.Github`
+- **Enforcement:** If you see a capitalized directory (e.g., `.Jules`), YOU ARE OBLIGATED TO FIX IT immediately.
+- **Reasoning:** macOS is case-preserving but case-insensitive; Linux (CI) is case-sensitive. "Split-brain" git states break deployment.
 
 ---
 
@@ -76,8 +76,8 @@
 
 **Goal:** Prevent frontend/backend drift.
 
-* **Requirement:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement/build the backend logic immediately.
-* **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
+- **Requirement:** If a feature requires backend connectivity (Cloud Functions, Firestore, Storage), you MUST implement/build the backend logic immediately.
+- **Proactive Build:** Do not output frontend code that calls non-existent backend endpoints. Build the schema, security rules, and functions in the same pass.
 
 ---
 
@@ -85,6 +85,6 @@
 
 **Reference:** See `agents.md` for strict technical rules enforced on the AI Agent.
 
-* **Scope:** Testing protocols, architectural constraints (Service/UI separation), Code Hygiene, and Safety Checks.
-* **Verification:** Run `npm test` or `./scripts/on_stop.sh` as the final step of every task.
-* **Secret Protection:** Never output **True Secrets** (Service Account Keys, Stripe Secrets). Firebase API Keys (`AIza*`) are identifiers and safe for configuration, but preferred via `process.env`.
+- **Scope:** Testing protocols, architectural constraints (Service/UI separation), Code Hygiene, and Safety Checks.
+- **Verification:** Run `npm test` or `./scripts/on_stop.sh` as the final step of every task.
+- **Secret Protection:** Never output **True Secrets** (Service Account Keys, Stripe Secrets). Firebase API Keys (`AIza*`) are identifiers and safe for configuration, but preferred via `process.env`.

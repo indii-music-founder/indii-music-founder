@@ -314,7 +314,7 @@ export class FirebaseAIService {
                 // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                 // ============================================================
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig);
+                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
                 }
 
                 // ============================================================
@@ -389,7 +389,8 @@ export class FirebaseAIService {
         systemInstruction?: string,
         tools?: Tool[],
         safetySettings?: any[],
-        toolConfig?: any
+        toolConfig?: any,
+        options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
@@ -410,6 +411,7 @@ export class FirebaseAIService {
                     tools: tools as any,
                     toolConfig,
                     safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                    abortSignal: options?.signal
                 } as any,
             });
 
@@ -588,6 +590,7 @@ export class FirebaseAIService {
                 tools: tools as any,
                 toolConfig: options?.toolConfig,
                 safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                abortSignal: options?.signal
             } as any,
         });
 
@@ -1128,7 +1131,7 @@ export class FirebaseAIService {
         return this.mediaBreaker.execute(async () => {
             await this.ensureInitialized();
 
-            const modelName = modelOverride || AI_MODELS.AUDIO.PRO;
+            const modelName = modelOverride || AI_MODELS.AUDIO.TTS;
 
             const config: GenerationConfig = {
                 responseModalities: ['AUDIO'],
@@ -1330,15 +1333,25 @@ export class FirebaseAIService {
             lowerMsg.includes('app-check-token') ||
             lowerMsg.includes('unauthorized')
         ) {
+            if (import.meta.env.DEV) {
+                console.error('[FirebaseAIService] Permission Error Detail:', msg);
+            }
+
             if (this.useFallbackMode) {
                 return new AppException(
                     AppErrorCode.UNAUTHORIZED,
-                    'AI Verification Failed (Fallback API Key Invalid/Restricted). Check VITE_API_KEY permissions.',
+                    `AI Verification Failed: ${msg}`, // Include raw msg in user-facing error for now to help debug
                     { retryable: false }
                 );
             }
-            return new AppException(AppErrorCode.UNAUTHORIZED, 'AI Verification Failed (App Check/Auth)', { retryable: false });
+            // Sanitize all permission errors to prevent leaking internal details (App Check, Auth status, etc.)
+            return new AppException(
+                AppErrorCode.UNAUTHORIZED,
+                'AI Verification Failed',
+                { retryable: false }
+            );
         }
+
         if (msg.includes('Recaptcha')) {
             return new AppException(AppErrorCode.UNAUTHORIZED, 'Client Verification Failed (ReCaptcha)');
         }
@@ -1356,7 +1369,11 @@ export class FirebaseAIService {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
-        return new AppException(AppErrorCode.INTERNAL_ERROR, `AI Service Failure: ${msg}`, { retryable: false });
+        return new AppException(
+            AppErrorCode.INTERNAL_ERROR,
+            'AI Service Failure',
+            { retryable: false, originalError: import.meta.env.DEV ? msg : undefined }
+        );
     }
 
     private async withRetry<T>(

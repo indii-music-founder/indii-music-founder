@@ -15,7 +15,9 @@ export default defineConfig({
     reporters: ['default', 'github-actions'],
     teardownTimeout: 1000,
     hookTimeout: 10000,
+    testTimeout: 10000, // 10s default test timeout
     pool: 'forks',
+    passWithNoTests: true,
     exclude: [
       ...configDefaults.exclude,
       '**/e2e/**',

@@ -40,7 +40,7 @@ npm run generate:icons
 
 ### Option 3: Online Generator (No Installation)
 
-1. Visit: https://progressier.com/pwa-icons-and-ios-splash-screen-generator
+1. Visit: <https://progressier.com/pwa-icons-and-ios-splash-screen-generator>
 2. Upload `public/indiiOS-logo.svg`
 3. Download generated icons
 4. Move to `public/` directory:
@@ -78,10 +78,11 @@ Maskable icons need **20% safe area padding** on all sides:
 ```
 
 **Safe area sizes:**
+
 - 192px → 154px safe area (77px padding each side)
 - 512px → 410px safe area (51px padding each side)
 
-**Test your icons:** https://maskable.app/editor
+**Test your icons:** <https://maskable.app/editor>
 
 ---
 
@@ -94,6 +95,7 @@ ls -lh public/icon-*.png public/apple-touch-icon.png
 ```
 
 Expected output:
+
 ```
 -rw-r--r-- 1 user user  15K  icon-192.png
 -rw-r--r-- 1 user user  45K  icon-512.png
@@ -101,6 +103,7 @@ Expected output:
 ```
 
 Test in browser:
+
 - Visit: `http://localhost:4242/icon-192.png`
 - Visit: `http://localhost:4242/icon-512.png`
 - Visit: `http://localhost:4242/apple-touch-icon.png`
@@ -112,17 +115,21 @@ All should display the indiiOS logo.
 ## 🐛 Troubleshooting
 
 ### "ImageMagick not found"
+
 Install ImageMagick:
+
 - macOS: `brew install imagemagick`
 - Ubuntu: `sudo apt-get install imagemagick`
-- Windows: Download from https://imagemagick.org
+- Windows: Download from <https://imagemagick.org>
 
 ### "Sharp module not found"
+
 ```bash
 npm install --save-dev sharp
 ```
 
 ### "Scripts don't work"
+
 Use the online generator (Option 3 above) - no installation required.
 
 ---

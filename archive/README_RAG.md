@@ -34,5 +34,5 @@ Or use the "Stress Test" button in the Knowledge Base UI.
 
 ## Troubleshooting
 
-* **404 Not Found on `createDocument`**: This is a known issue with the current API configuration/key. `createCorpus` works, but `createDocument` fails. This might be due to API versioning or project restrictions.
-* **CORS Errors**: Ensure the proxy is running and `VITE_RAG_PROXY_URL` is set.
+- **404 Not Found on `createDocument`**: This is a known issue with the current API configuration/key. `createCorpus` works, but `createDocument` fails. This might be due to API versioning or project restrictions.
+- **CORS Errors**: Ensure the proxy is running and `VITE_RAG_PROXY_URL` is set.

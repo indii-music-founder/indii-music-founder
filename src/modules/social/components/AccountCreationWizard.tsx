@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ImageAsset } from '../types';
+import { SocialOAuthService } from '@/services/social/SocialOAuthService';
 
 interface AccountCreationWizardProps {
     onClose: () => void;
@@ -29,6 +30,28 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
     const [profileImage, setProfileImage] = useState<ImageAsset | null>(null);
     const [bannerImage, setBannerImage] = useState<ImageAsset | null>(null);
     const [selectingFor, setSelectingFor] = useState<'profile' | 'banner' | null>(null);
+    const [isConnected, setIsConnected] = useState(false);
+    const [isConnecting, setIsConnecting] = useState(false);
+
+    const handleConnect = async () => {
+        setIsConnecting(true);
+        try {
+            const account = await SocialOAuthService.initiateOAuth(platform.name.toLowerCase());
+            if (account) {
+                toast.success(`${platform.name} connected successfully!`);
+                setIsConnected(true);
+                // Skip to finish step if connected
+                setStep(4);
+            } else {
+                toast.error("Connection cancelled or failed");
+            }
+        } catch (error: any) {
+            console.error("Connection error:", error);
+            toast.error(error.message || "An error occurred during connection");
+        } finally {
+            setIsConnecting(false);
+        }
+    };
 
     const handleGenerateIdentity = async () => {
         if (!brandName || !industry) {
@@ -100,6 +123,18 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
                         placeholder="e.g. Technology"
                     />
                 </div>
+            </div>
+
+            <div className="pt-4 border-t border-gray-800">
+                <p className="text-xs text-gray-500 mb-4 text-center">Already have an account? Connect it directly to automate posting.</p>
+                <button
+                    onClick={handleConnect}
+                    disabled={isConnecting}
+                    className="w-full py-3 bg-white text-black font-bold rounded-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                    {isConnecting ? <Loader2 size={18} className="animate-spin" /> : <ExternalLink size={18} />}
+                    Connect Existing {platform.name} Account
+                </button>
             </div>
         </div>
     );
@@ -214,40 +249,63 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
 
     const renderStep4_Finish = () => (
         <div className="space-y-8 text-center py-8">
-            <div className="w-16 h-16 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
+            <div className={`w-16 h-16 ${isConnected ? 'bg-blue-500/10 text-blue-500' : 'bg-green-500/10 text-green-500'} rounded-full flex items-center justify-center mx-auto mb-4`}>
                 <CheckCircle size={32} />
             </div>
             <div>
-                <h3 className="text-2xl font-bold text-white mb-2">Ready to Create!</h3>
+                <h3 className="text-2xl font-bold text-white mb-2">{isConnected ? 'Account Connected!' : 'Ready to Create!'}</h3>
                 <p className="text-gray-400 max-w-md mx-auto">
-                    You have everything you need. Click the link below to go to {platform.name}'s sign-up page. Use the handles and bios you generated.
+                    {isConnected
+                        ? `Your ${platform.name} account has been successfully connected. You can now schedule posts directly.`
+                        : `You have everything you need. Click the link below to go to ${platform.name}'s sign-up page. Use the handles and bios you generated.`
+                    }
                 </p>
             </div>
 
-            <a
-                href={platform.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-xl shadow-blue-900/20"
-            >
-                Go to {platform.name} Sign Up <ExternalLink size={20} />
-            </a>
+            {!isConnected ? (
+                <>
+                    <a
+                        href={platform.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl transition-all transform hover:scale-105 shadow-xl shadow-blue-900/20"
+                    >
+                        Go to {platform.name} Sign Up <ExternalLink size={20} />
+                    </a>
 
-            <div className="bg-bg-dark p-4 rounded-xl border border-gray-800 text-left max-w-sm mx-auto">
-                <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Quick Copy</h4>
-                {generatedIdentity && generatedIdentity.handles[0] && (
-                    <div className="flex justify-between items-center mb-2">
-                        <span className="text-gray-300 text-sm">Handle</span>
-                        <button onClick={() => copyToClipboard(generatedIdentity.handles[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                    <div className="bg-bg-dark p-4 rounded-xl border border-gray-800 text-left max-w-sm mx-auto">
+                        <h4 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Quick Copy</h4>
+                        {generatedIdentity && generatedIdentity.handles[0] && (
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-gray-300 text-sm">Handle</span>
+                                <button onClick={() => copyToClipboard(generatedIdentity.handles[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                            </div>
+                        )}
+                        {generatedIdentity && generatedIdentity.bios[0] && (
+                            <div className="flex justify-between items-center">
+                                <span className="text-gray-300 text-sm">Bio</span>
+                                <button onClick={() => copyToClipboard(generatedIdentity.bios[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                            </div>
+                        )}
                     </div>
-                )}
-                {generatedIdentity && generatedIdentity.bios[0] && (
-                    <div className="flex justify-between items-center">
-                        <span className="text-gray-300 text-sm">Bio</span>
-                        <button onClick={() => copyToClipboard(generatedIdentity.bios[0])} className="text-blue-400 text-xs hover:underline">Copy Top Pick</button>
+                </>
+            ) : (
+                <div className="flex flex-col items-center gap-6 py-4">
+                    <div className="p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl text-center max-w-sm">
+                        <div className="w-12 h-12 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <CheckCircle className="text-blue-400" size={24} />
+                        </div>
+                        <h4 className="text-lg font-bold text-white mb-2">Socially Connected</h4>
+                        <p className="text-sm text-blue-200 opacity-80 mb-4">
+                            Your {platform.name} account is linked via OAuth. indii can now automate your release schedule and post updates for you.
+                        </p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-blue-500/20 rounded-lg text-blue-400 text-xs font-bold uppercase tracking-wider border border-blue-500/30">
+                            <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse" />
+                            OAuth Active
+                        </div>
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 

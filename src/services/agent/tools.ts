@@ -20,6 +20,8 @@ import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
 import { DistributionTools } from './tools/DistributionTools';
+import { LegalTools } from './tools/LegalTools';
+import { SuperpowerTools } from './tools/SuperpowerTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
@@ -44,6 +46,8 @@ export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...DevOpsTools,
     ...PUBLICIST_TOOLS,
     ...FinanceTools,
+    ...SuperpowerTools,
+    ...LegalTools,
     ...DistributionTools
 };
 
@@ -110,4 +114,6 @@ AVAILABLE TOOLS:
 57. delete_user_memory(memoryId: string) - Permanently delete a user memory.
 58. get_user_memory_analytics(days?: number) - Get analytics about user memories.
 59. consolidate_user_memories() - Consolidate user memories to reduce redundancy.
+60. draft_contract(type: string, parties: string[], terms: string) - Draft a legal contract.
+61. generate_nda(parties: string[], purpose: string, jurisdiction?: string) - Generate a Non-Disclosure Agreement.
 `;

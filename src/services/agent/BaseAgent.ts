@@ -498,6 +498,11 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
             : '';
 
+        // Build living context section (The Vibe)
+        const livingSection = context?.livingContext
+            ? `\n${context.livingContext}\n`
+            : '';
+
         let safeHistory = context?.chatHistoryString || '';
 
         // KEEPER: Intelligent Context Truncation
@@ -548,6 +553,7 @@ ${context.brandKit.releaseDetails ? `
 ` : ''}
 
 ${whiskContext}
+${livingSection}
 
 # HISTORY
 ${safeHistory}

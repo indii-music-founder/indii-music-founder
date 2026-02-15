@@ -5,6 +5,8 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
 import { WhiskService } from '@/services/WhiskService';
+import { EmptyState } from '@/components/shared/EmptyState';
+import { Sparkles } from 'lucide-react';
 
 interface GeneratedItem {
     id: string;
@@ -126,18 +128,20 @@ export default function DirectGenerationTab() {
                     <div className="flex bg-white/5 rounded-lg p-1 border border-white/5 shrink-0">
                         <button
                             onClick={() => setMode('image')}
+                            aria-label="Image Mode"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'image' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
-                            <ImageIcon size={18} />
+                            <ImageIcon size={18} data-testid="icon-Image" />
                             <span className="text-xs font-bold uppercase tracking-wider">Image</span>
                         </button>
                         <button
                             onClick={() => setMode('video')}
+                            aria-label="Video Mode"
                             className={`flex items-center gap-2 px-3 py-2 rounded-md transition-all ${mode === 'video' ? 'bg-dept-creative/20 text-dept-creative' : 'text-muted-foreground hover:text-foreground'
                                 }`}
                         >
-                            <Video size={18} />
+                            <Video size={18} data-testid="icon-Video" />
                             <span className="text-xs font-bold uppercase tracking-wider">Video</span>
                         </button>
                     </div>
@@ -164,9 +168,10 @@ export default function DirectGenerationTab() {
                             <button
                                 onClick={handleGenerate}
                                 disabled={isGenerating || !localPrompt.trim()}
+                                aria-label="Send"
                                 className="bg-foreground text-background p-1.5 rounded-lg hover:bg-white/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
-                                {isGenerating ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                                {isGenerating ? <Loader2 size={16} className="animate-spin" data-testid="icon-Loader2" /> : <Send size={16} data-testid="icon-Send" />}
                             </button>
                         </div>
                     </div>
@@ -176,15 +181,18 @@ export default function DirectGenerationTab() {
             {/* Main Content: Results Grid */}
             <div className="flex-1 overflow-y-auto p-6">
                 {results.length === 0 ? (
-                    <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-4">
-                        <div className="w-16 h-16 rounded-2xl bg-white/5 flex items-center justify-center">
-                            <Settings2 size={32} className="opacity-50" />
-                        </div>
-                        <p className="text-sm font-medium">Direct Generation Mode</p>
-                        <p className="text-xs text-gray-500 max-w-xs text-center">
-                            Bypass the agent orchestration layer to directly test API integration and asset generation.
-                        </p>
-                    </div>
+                    <EmptyState
+                        icon={Sparkles}
+                        title="Start Creating"
+                        description="Bypass the agent orchestration layer to directly test API integration and asset generation. Enter a prompt to begin."
+                        action={{
+                            label: "Focus Prompt Bar",
+                            onClick: () => {
+                                const input = document.querySelector('input[type="text"]');
+                                if (input instanceof HTMLElement) input.focus();
+                            }
+                        }}
+                    />
                 ) : (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 max-w-7xl mx-auto">
                         {results.map((item) => (

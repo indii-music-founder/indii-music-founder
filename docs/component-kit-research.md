@@ -4,9 +4,9 @@ This document provides a detailed analysis of three modern UI component librarie
 
 ## Executive Summary
 
-* **Prompt Kit**: Best for **AI-specific interactions** (chat interfaces, prompt inputs). It abstracts the complexity of building robust chat UIs.
-* **Motion Primitives**: Best for **high-end animations** and "delight" details. It uses `motion` (Framer Motion) to add professional polish.
-* **Kokonut UI**: Best for **complex, pre-designed UI blocks** (cards, search bars, buttons). It offers "drop-in" stunning components that save significant design time.
+- **Prompt Kit**: Best for **AI-specific interactions** (chat interfaces, prompt inputs). It abstracts the complexity of building robust chat UIs.
+- **Motion Primitives**: Best for **high-end animations** and "delight" details. It uses `motion` (Framer Motion) to add professional polish.
+- **Kokonut UI**: Best for **complex, pre-designed UI blocks** (cards, search bars, buttons). It offers "drop-in" stunning components that save significant design time.
 
 ---
 
@@ -29,22 +29,21 @@ npx shadcn@latest add "https://prompt-kit.com/c/prompt-input.json"
 
 **Prerequisites**:
 
-* `shadcn/ui` configured (Already present in project)
-* `tailwindcss` (Already present)
+- `shadcn/ui` configured (Already present in project)
+- `tailwindcss` (Already present)
 
 ### Key Components for indiiOS
 
-
 #### `PromptInput`
 
-* **Description**: A sophisticated textarea wrapper designed for AI prompts. It likely handles auto-resizing, submit-on-enter, and integrating actions (like attachments).
-* **Use Case**: Replace the current raw input fields in the **Assistant** and **Orchestrator** views.
-* **Benefit**: Standardizes the "talk to AI" experience across the app.
+- **Description**: A sophisticated textarea wrapper designed for AI prompts. It likely handles auto-resizing, submit-on-enter, and integrating actions (like attachments).
+- **Use Case**: Replace the current raw input fields in the **Assistant** and **Orchestrator** views.
+- **Benefit**: Standardizes the "talk to AI" experience across the app.
 
 #### `ChatContainer` & `Message`
 
-* **Description**: Components to structure the chat history, distinguishing between user and AI messages with proper styling.
-* **Use Case**: Refactor the main chat view in `src/app/assistant/page.tsx` (or equivalent) to use these for a more robust layout.
+- **Description**: Components to structure the chat history, distinguishing between user and AI messages with proper styling.
+- **Use Case**: Refactor the main chat view in `src/app/assistant/page.tsx` (or equivalent) to use these for a more robust layout.
 
 ### Integration Strategy
 
@@ -79,15 +78,15 @@ npx motion-primitives@latest add text-effect
 
 #### `TextEffect`
 
-* **Description**: Animates text per character, word, or line.
-* **Use Case**:
-  * **Streaming Responses**: Animate the AI's response as it streams in (e.g., a smooth fade-in or typewriter effect).
-  * **Headlines**: Animate section headers in the **Dashboard** or **Landing Page**.
+- **Description**: Animates text per character, word, or line.
+- **Use Case**:
+  - **Streaming Responses**: Animate the AI's response as it streams in (e.g., a smooth fade-in or typewriter effect).
+  - **Headlines**: Animate section headers in the **Dashboard** or **Landing Page**.
 
 #### `Toolbar` / `Dynamic Containers`
 
-* **Description**: Smoothly expanding/collapsing containers.
-* **Use Case**: The "Command Bar" or "Quick Actions" menu. When a user clicks a tool, the container can morph to show options.
+- **Description**: Smoothly expanding/collapsing containers.
+- **Use Case**: The "Command Bar" or "Quick Actions" menu. When a user clicks a tool, the container can morph to show options.
 
 ### Integration Strategy
 
@@ -120,25 +119,25 @@ npx shadcn@latest add @kokonutui/ai-input-search
 
 **Dependencies**:
 
-* Tailwind CSS v4 (Project uses v4)
-* `lucide-react`
+- Tailwind CSS v4 (Project uses v4)
+- `lucide-react`
 
 ### Key Components for indiiOS
 
 #### `AI Input Search`
 
-* **Description**: A rich input field with integrated search/command capabilities.
-* **Use Case**: The global **Command Bar**. This could be the "One Bar to Rule Them All" that the user requested for consolidating inputs.
+- **Description**: A rich input field with integrated search/command capabilities.
+- **Use Case**: The global **Command Bar**. This could be the "One Bar to Rule Them All" that the user requested for consolidating inputs.
 
 #### `File Upload`
 
-* **Description**: A polished file drop zone.
-* **Use Case**: **Urgent**. The user specifically requested improvements to the file drop UI. Kokonut's implementation is likely far superior to a basic HTML input.
+- **Description**: A polished file drop zone.
+- **Use Case**: **Urgent**. The user specifically requested improvements to the file drop UI. Kokonut's implementation is likely far superior to a basic HTML input.
 
 #### `Card` / `Bento Grid`
 
-* **Description**: Modern, glassmorphic or highly styled cards.
-* **Use Case**: The **Dashboard** layout. Displaying "Agents", "Recent Projects", or "Stats" in a Bento Grid layout would look very professional.
+- **Description**: Modern, glassmorphic or highly styled cards.
+- **Use Case**: The **Dashboard** layout. Displaying "Agents", "Recent Projects", or "Stats" in a Bento Grid layout would look very professional.
 
 ### Integration Strategy
 
@@ -152,7 +151,7 @@ npx shadcn@latest add @kokonutui/ai-input-search
 
 1. **Setup**: Ensure `components.json` is configured to allow the `@kokonutui` registry.
 2. **Pilot**:
-    * Install **Prompt Kit's `PromptInput`** and test it in the Assistant view.
-    * Install **Kokonut UI's `File Upload`** and replace the current drop zone.
+   - Install **Prompt Kit's `PromptInput`** and test it in the Assistant view.
+   - Install **Kokonut UI's `File Upload`** and replace the current drop zone.
 3. **Polish**:
-    * Install **Motion Primitives** and add `TextEffect` to the AI welcome message.
+   - Install **Motion Primitives** and add `TextEffect` to the AI welcome message.

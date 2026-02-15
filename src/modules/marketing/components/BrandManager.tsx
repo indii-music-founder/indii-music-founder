@@ -19,6 +19,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
 import { TourMap } from '@/modules/touring/components/TourMap';
+import { Logger } from '@/core/logger/Logger';
 import UnifiedAssetLibrary from './UnifiedAssetLibrary';
 
 // --- Sub-Components ---
@@ -200,7 +201,7 @@ const BrandManager: React.FC = () => {
             console.error("[BrandManager] Save failed: No userProfile.id");
             return;
         }
-        console.info(`[BrandManager] Saving bio for user: ${userProfile.id}`, { bioDraft });
+        Logger.info('BrandManager', `Saving bio for user: ${userProfile.id}`, { bioLength: bioDraft.length });
 
         try {
             const updatedProfile = { ...userProfile, bio: bioDraft };
@@ -209,7 +210,7 @@ const BrandManager: React.FC = () => {
             // which saves to LocalDB AND Firestore (if auth ID matches).
             setUserProfile(updatedProfile);
 
-            console.info("[BrandManager] Bio save triggered via ProfileSlice");
+            Logger.info('BrandManager', "Bio save triggered via ProfileSlice");
             setIsEditingBio(false);
             toast.success("Bio updated");
         } catch (e) {
@@ -728,9 +729,7 @@ const BrandManager: React.FC = () => {
                                                         <span>Auditing...</span>
                                                     </>
                                                 ) : (
-                                                    <>
-                                                        <span>Audit All Assets</span>
-                                                    </>
+                                                    <span>Audit All Assets</span>
                                                 )}
                                             </button>
                                         </div>

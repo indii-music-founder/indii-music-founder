@@ -1,10 +1,22 @@
-
 import { AgentContext } from './types';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { fileSystemService } from '@/services/FileSystemService';
 
 export type TaskComplexity = 'SIMPLE_GENERATION' | 'COMPLEX_ORCHESTRATION';
+
+// Precompiled word-boundary regexes for generation trigger matching
+// Keywords implying simple generation (expanded for conversational queries)
+const GENERATION_TRIGGERS = [
+    'write a', 'draft a', 'generate a', 'create a',
+    'joke', 'poem', 'caption', 'email', 'list',
+    'explain', 'what is', 'what are', 'how do', 'how does',
+    'tell me', 'help me understand', 'summarize', 'describe',
+    'why is', 'why do', 'can you', 'could you'
+];
+
+// Precompile regex for word boundaries
+const GENERATION_REGEXES = GENERATION_TRIGGERS.map(t => new RegExp(`\\b${t}\\b`, 'i'));
 
 export class WorkflowCoordinator {
 
@@ -28,18 +40,16 @@ export class WorkflowCoordinator {
             return this.executeDirectGeneration(userMessage, context, onStream);
         } else {
             // Default to Agent Orchestration for safety and tool access
-            // return agentService.sendMessage(userMessage) - wait, AgentService.sendMessage returns void and handles store. 
-            // We might need to refactor AgentService or just call it.
-            // For now, let's assume we call AgentService and it handles the UI updates.
-            // actually AgentService.sendMessage manages the whole flow including store updates.
-            // So we might need to intercept *before* AgentService.sendMessage is called, 
-            // OR make AgentService use this Coordinator.
-
-            // Let's assume we are integrating INTO AgentService.
-            // So this function might just return the Decision.
             return "DELEGATED_TO_AGENT";
         }
     }
+
+    // Keywords implying complex workflow or tool use
+    private static readonly COMPLEXITY_TRIGGERS = [
+        'plan', 'strategy', 'campaign', 'schedule', 'research',
+        'analyze', 'review', 'audit', 'manage', 'coordinate',
+        'find', 'search', 'upload', 'save', 'remember'
+    ];
 
     /**
      * Heuristic-based routing.
@@ -48,29 +58,17 @@ export class WorkflowCoordinator {
     determineComplexity(message: string): TaskComplexity {
         const lower = message.toLowerCase();
 
-        // Keywords implying complex workflow or tool use
-        const complexityTriggers = [
-            'plan', 'strategy', 'campaign', 'schedule', 'research',
-            'analyze', 'review', 'audit', 'manage', 'coordinate',
-            'find', 'search', 'upload', 'save', 'remember'
-        ];
-
-        // Keywords implying simple generation
-        const generationTriggers = [
-            'write a', 'draft a', 'generate a', 'create a',
-            'joke', 'poem', 'caption', 'email', 'list'
-        ];
-
-        if (complexityTriggers.some(t => lower.includes(t))) {
+        if (WorkflowCoordinator.COMPLEXITY_TRIGGERS.some(t => lower.includes(t))) {
             return 'COMPLEX_ORCHESTRATION';
         }
 
-        if (generationTriggers.some(t => lower.includes(t)) && !complexityTriggers.some(t => lower.includes(t))) {
-            return 'SIMPLE_GENERATION';
+        if (GENERATION_REGEXES.some(r => r.test(lower))) {
+             return 'SIMPLE_GENERATION';
         }
 
-        // Default to Complex to be safe (Agent can handle simple stuff too)
-        return 'COMPLEX_ORCHESTRATION';
+        // Default to Simple — the fast path handles most conversational queries well.
+        // Complex orchestration should be explicitly triggered by complexity keywords.
+        return 'SIMPLE_GENERATION';
     }
 
     private requiresTools(message: string): boolean {
@@ -102,7 +100,13 @@ export class WorkflowCoordinator {
             }
         }
 
-        return lower.includes('my') || lower.includes('save') || lower.includes('find');
+        // Only require tools for explicit persistence/retrieval actions, NOT for possessive "my"
+        // Note: 'save', 'find', 'search', 'upload' are already caught by complexityTriggers in determineComplexity,
+        // so they will be routed to COMPLEX_ORCHESTRATION before reaching here (which only runs for SIMPLE_GENERATION).
+        // 'download' is not in complexityTriggers, so we keep it here.
+        return lower.includes('save to') || lower.includes('save this') ||
+               lower.includes('find my') || lower.includes('search my') ||
+               lower.includes('upload') || lower.includes('download');
     }
 
     /**
@@ -129,6 +133,7 @@ export class WorkflowCoordinator {
             }
         } catch (e) {
             // Ignore error if folder creation fails (might already exist)
+            console.debug('[WorkflowCoordinator] Folder creation skipped/failed:', e);
         }
     }
 
@@ -139,10 +144,23 @@ export class WorkflowCoordinator {
     ): Promise<string> {
         // Direct call to FirebaseAI (Gemini) for fast response
         try {
-            // Prepare a simple system prompt
-            const systemPrompt = `You are indii, a creative assistant. 
-            The user has asked for a quick content generation. 
-            Be direct, creative, and concise. Do not use tools.`;
+            // Build persona-aware system prompt from context
+            const artistName = context.userProfile?.displayName || '';
+            const brandDesc = context.brandKit?.brandDescription || '';
+            const genre = context.brandKit?.releaseDetails?.genre || '';
+
+            let personaContext = '';
+            if (artistName) {
+                personaContext += `\nYou are working with the artist **${artistName}**.`;
+                personaContext += ` ALWAYS use this exact name when referring to the artist. NEVER invent a different name.`;
+            }
+            if (brandDesc) personaContext += `\nBrand: ${brandDesc}`;
+            if (genre) personaContext += `\nGenre: ${genre}`;
+
+            const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}
+
+The user has asked for a quick content generation.
+Be direct, creative, and concise. Do not use tools.`;
 
             // We use generating content directly with the FAST model
             const response = await firebaseAI.generateContent(
@@ -158,6 +176,7 @@ export class WorkflowCoordinator {
             return text;
 
         } catch (e) {
+            console.error('[WorkflowCoordinator] Direct generation failed, delegating to agent:', e);
             return "DELEGATED_TO_AGENT";
         }
     }

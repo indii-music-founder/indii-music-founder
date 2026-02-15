@@ -1,10 +1,11 @@
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
 import type { DistributorEarnings } from './types/distributor';
 import type { DateRange } from '@/services/ddex/types/common';
 
 export interface EarningsRecord extends DistributorEarnings {
     id?: string;
+    userId: string; // Added for multi-tenant isolation
     createdAt: number;
 }
 
@@ -16,7 +17,10 @@ export class EarningsService {
      */
     async getEarnings(distributorId: string, releaseId: string, period?: DateRange): Promise<DistributorEarnings | null> {
         try {
+            if (!auth.currentUser) return null;
+
             const constraints: any[] = [
+                where('userId', '==', auth.currentUser.uid),
                 where('distributorId', '==', distributorId),
                 where('releaseId', '==', releaseId)
             ];
@@ -24,6 +28,7 @@ export class EarningsService {
             if (period) {
                 // This assumes stored records have a compatible date field or we filter in memory
                 // For simplicity in this roadmap, we fetch the latest matching record
+                // TODO: Implement date range query constraints when composite index is ready
             }
 
             const q = query(
@@ -48,10 +53,17 @@ export class EarningsService {
      */
     async getAllEarnings(distributorId: string, period?: DateRange): Promise<DistributorEarnings[]> {
         try {
-             const q = query(
+            if (!auth.currentUser) return [];
+
+            const q = query(
                 collection(db, this.COLLECTION),
+                where('userId', '==', auth.currentUser.uid), // Filter by user
                 where('distributorId', '==', distributorId)
             );
+
+            if (period) {
+                // TODO: Filter by date range
+            }
 
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => doc.data() as DistributorEarnings);
@@ -66,8 +78,11 @@ export class EarningsService {
      */
     async recordEarnings(data: DistributorEarnings): Promise<string> {
         try {
+            if (!auth.currentUser) throw new Error('Authentication required to record earnings');
+
             const record: EarningsRecord = {
                 ...data,
+                userId: auth.currentUser.uid,
                 createdAt: Date.now()
             };
 

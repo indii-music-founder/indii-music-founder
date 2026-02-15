@@ -22,7 +22,7 @@ import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
-import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
+import { GlobalKeyboardShortcuts, useGlobalShortcuts } from '@/components/shared/GlobalKeyboardShortcuts';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -62,7 +62,7 @@ const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntle
 // ============================================================================
 
 // Use flexible type to accommodate different component prop signatures
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
@@ -300,7 +300,7 @@ export default function App() {
     // Initialize app
     useAppInitialization();
     useOnboardingRedirect();
-    const shortcutsModal = useGlobalShortcutsModal();
+    const shortcutsModal = useGlobalShortcuts();
 
     // Log module changes in dev
 
@@ -353,7 +353,7 @@ export default function App() {
 
                                 <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
                                     <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                                        <ErrorBoundary>
+                                        <ErrorBoundary moduleName={currentModule}>
                                             <Suspense fallback={<LoadingFallback />}>
                                                 <ModuleRenderer moduleId={currentModule as ModuleId} />
                                             </Suspense>

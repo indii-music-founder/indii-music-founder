@@ -207,7 +207,7 @@ export default function Sidebar() {
 
                 {isSidebarOpen && (
                     <p className="mt-4 text-[10px] text-gray-600 text-center italic">
-                        made by Detroit, for the world.
+                        made by Detroit, for the universe.
                     </p>
                 )}
             </div>

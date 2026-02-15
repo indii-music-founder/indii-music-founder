@@ -65,6 +65,55 @@ export class DSRUploadService {
             // Step 5: Save to Firestore for persistence
             await this.saveProcessedReport(userId, distributorId, processedBatch, report);
 
+            // Step 6: Record granular earnings for dashboard tracking
+            try {
+                const { earningsService } = await import('@/services/distribution/EarningsService');
+
+                // Group royalties by releaseId to match DistributorEarnings structure
+                const earningsByRelease = new Map<string, RoyaltyCalculation[]>();
+                processedBatch.royalties.forEach(r => {
+                    const list = earningsByRelease.get(r.releaseId) || [];
+                    list.push(r);
+                    earningsByRelease.set(r.releaseId, list);
+                });
+
+                // Persist each release's earnings
+                for (const [releaseId, tracks] of earningsByRelease.entries()) {
+                    const totalStreams = tracks.reduce((sum, t) => sum + t.totalStreams, 0);
+                    const totalDownloads = tracks.reduce((sum, t) => sum + t.totalDownloads, 0);
+                    const grossRevenue = tracks.reduce((sum, t) => sum + t.grossRevenue, 0);
+                    const netRevenue = tracks.reduce((sum, t) => sum + t.netRevenue, 0);
+
+                    await earningsService.recordEarnings({
+                        distributorId: distributorId as any,
+                        releaseId,
+                        period: processedBatch.royalties[0].period, // Use period from records
+                        streams: totalStreams,
+                        downloads: totalDownloads,
+                        grossRevenue,
+                        distributorFee: grossRevenue - netRevenue,
+                        netRevenue,
+                        currencyCode: processedBatch.royalties[0].currencyCode,
+                        lastUpdated: new Date().toISOString(),
+                        breakdown: tracks.map(t => ({
+                            platform: 'Various', // In a full DSR this would be more specific
+                            territoryCode: 'Global',
+                            streams: t.totalStreams,
+                            downloads: t.totalDownloads,
+                            revenue: t.netRevenue
+                        }))
+                    });
+                }
+            } catch (earnError) {
+                console.error('[DSRUploadService] Failed to record granular earnings:', earnError, {
+                    distributorId,
+                    reportId: processedBatch.reportId,
+                    period: processedBatch.royalties[0]?.period
+                });
+                // Allow process to succeed even if dashboard stats fail
+                Sentry.captureException(earnError);
+            }
+
             return {
                 success: true,
                 batchId: processedBatch.batchId,
@@ -109,7 +158,7 @@ export class DSRUploadService {
     }
 
     /**
-     * Save processed report to Firestore
+     * Save processed report to Firestore (Audit Log)
      */
     private async saveProcessedReport(
         userId: string,
@@ -142,7 +191,7 @@ export class DSRUploadService {
                 }
             });
 
-            console.log('[DSRUploadService] Report saved successfully:', batch.batchId);
+            console.log('[DSRUploadService] Audit record saved successfully:', batch.batchId);
         } catch (error) {
             console.error('[DSRUploadService] Failed to save report:', error);
             // Don't throw here - processing was successful even if save failed
