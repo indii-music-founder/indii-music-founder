@@ -10,7 +10,7 @@ export const SafetyRatingSchema = z.object({
 });
 
 export const VideoResolutionSchema = z.enum([
-    '1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024', '4k'
+    '720p', '1080p', '4k'
 ]);
 
 export const VideoAspectRatioSchema = z.enum([
