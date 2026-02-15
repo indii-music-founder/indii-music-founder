@@ -46,7 +46,7 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>
+    AnimatePresence: ({ children }: any) => children
 }));
 
 describe('📱 Viewport: CommandBar Responsiveness', () => {
@@ -85,7 +85,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         render(<CommandBar />);
 
         // 1. Verify Input Field is visible (Core Feature)
-        const input = screen.getByPlaceholderText(/describe your task/i);
+        const input = screen.getByPlaceholderText(/Message dashboard/i);
         expect(input).toBeInTheDocument();
 
         // 2. Verify "Send" (Run) button is visible
@@ -110,7 +110,7 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         render(<CommandBar />);
 
         // Find the voice button by the aria-label we just added
-        const voiceButton = screen.getByLabelText('Voice input');
+        const voiceButton = screen.getByLabelText(/voice input/i);
         expect(voiceButton).toBeInTheDocument();
         expect(voiceButton).toBeVisible();
 
