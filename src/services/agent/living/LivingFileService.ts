@@ -63,11 +63,23 @@ const DEFAULT_TEMPLATES: Record<LivingFileType, string> = {
 `
 };
 
+/**
+ * LivingFileService - Manages the "Living Files" system for persistent agent personality and context.
+ * 
+ * Each user has a set of markdown-based documents (SOUL, ARTIST, SHOWROOM, etc.) stored in Firestore
+ * that define their brand, preferences, and studio state. These are spliced into agent prompts
+ * to ensure continuity and custom behavior.
+ */
 export class LivingFileService {
     private readonly COLLECTION = 'living_files';
 
     /**
-     * Read a living file. If it doesn't exist, returns the default template.
+     * Read a living file from the user's collection.
+     * If the file does not exist, returns the default template for that file type.
+     * 
+     * @param userId - ID of the user.
+     * @param fileName - The type of living file to read.
+     * @returns A promise resolving to the file content string.
      */
     async read(userId: string, fileName: LivingFileType): Promise<string> {
         try {
@@ -88,7 +100,12 @@ export class LivingFileService {
     }
 
     /**
-     * Write/Update a living file.
+     * Write or update a living file in the user's collection.
+     * 
+     * @param userId - ID of the user.
+     * @param fileName - The type of living file to write.
+     * @param content - The new content for the file.
+     * @param source - The entity making the update (agent, system, or user).
      */
     async write(userId: string, fileName: LivingFileType, content: string, source: 'user' | 'agent' | 'system' = 'agent'): Promise<void> {
         if (!userId) {
@@ -115,7 +132,11 @@ export class LivingFileService {
     }
 
     /**
-     * Append to the EPISODIC log with a timestamp.
+     * Append an entry to the EPISODIC activity log.
+     * Automatically handles daily header creation and timestamping.
+     * 
+     * @param userId - ID of the user.
+     * @param entry - The text entry to append to the log.
      */
     async appendToEpisodic(userId: string, entry: string): Promise<void> {
         const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
