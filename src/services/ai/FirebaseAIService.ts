@@ -311,11 +311,17 @@ export class FirebaseAIService {
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
 
                 const result = await (async () => {
+                    // ============================================================
+                    // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
+                    // ============================================================
                     if (this.useFallbackMode && this.fallbackClient) {
                         return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
                     }
 
+                    // ============================================================
                     // NORMAL MODE: Use Firebase AI SDK with App Check
+                    // ============================================================
+
                     // 1. Check for Cached Content if systemInstruction is large
                     let cachedContent = options?.cachedContent;
                     if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
@@ -335,12 +341,13 @@ export class FirebaseAIService {
                         safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                     };
 
+                    // Inject cachedContent if supported/available
                     if (cachedContent) {
                         modelOptions.cachedContent = cachedContent;
                     }
 
-                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
-
+                    const modelOptionsFinal: any = { ...modelOptions };
+                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptionsFinal);
                     try {
                         return await modelCallback.generateContent(
                             typeof sanitizedPrompt === 'string'
@@ -348,15 +355,16 @@ export class FirebaseAIService {
                                 : { contents: sanitizedPrompt }
                         );
                     } catch (error) {
+                        // If we hit an App Check error during normal mode, switch to fallback
                         if (isAppCheckError(error) && !this.useFallbackMode) {
                             await this.triggerGlobalFallback();
                             return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
                         }
-                        throw error;
+                        throw this.handleError(error);
                     }
                 })();
 
-                // Track Usage (Universal)
+                // Track Usage (Unified for both modes)
                 if (userId && result.response.usageMetadata) {
                     await TokenUsageService.trackUsage(
                         userId,
@@ -367,7 +375,7 @@ export class FirebaseAIService {
                 }
 
                 return result;
-            }, 3, 1000, options?.signal);
+            }, 3, 1000, options?.signal); // Pass signal to withRetry
         });
     }
 
@@ -855,7 +863,7 @@ export class FirebaseAIService {
 
         const result = await this.rawGenerateContent(
             contents,
-            this.model?.model, // Safe access - rawGenerateContent will handle undefined
+            this.model?.model,
             {},
             systemInstruction
         );
@@ -1377,7 +1385,7 @@ export class FirebaseAIService {
         }
 
         // Service Availability
-        if (msg.includes('503') || msg.includes('500') || msg.includes('service unavailable') || msg.includes('overloaded') || lowerMsg.includes('internal error')) {
+        if (msg.includes('503') || msg.includes('500') || lowerMsg.includes('service unavailable') || lowerMsg.includes('overloaded') || lowerMsg.includes('internal error')) {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
