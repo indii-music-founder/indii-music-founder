@@ -272,12 +272,6 @@ export default function VideoWorkflow() {
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
             let finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
 
-            // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt for now
-            // until a native 'thinking' parameter is supported for Veo models.
-            if (studioControls.thinking) {
-                finalPrompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${finalPrompt}`;
-            }
-
             let results: { id: string; url: string; prompt: string; }[] = [];
 
             // Check for long-form Video
@@ -291,6 +285,7 @@ export default function VideoWorkflow() {
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
                     generateAudio: studioControls.generateAudio,
+                    thinking: studioControls.thinking,
                     model: studioControls.model,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
@@ -316,6 +311,7 @@ export default function VideoWorkflow() {
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
                     generateAudio: studioControls.generateAudio,
+                    thinking: studioControls.thinking,
                     model: studioControls.model
                 });
             }

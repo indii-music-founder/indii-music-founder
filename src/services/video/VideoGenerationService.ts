@@ -57,8 +57,14 @@ export class VideoGenerationService {
         }
     }
 
-    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number }, userProfile?: UserProfile): string {
+    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinking?: boolean }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
+
+        // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt
+        // Backend transformation as per Greptile PR #1200 feedback
+        if (settings.thinking) {
+            prompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`;
+        }
 
         if (userProfile) {
             const constraints = getVideoConstraints(userProfile);
@@ -126,7 +132,8 @@ export class VideoGenerationService {
         let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
-            fps: options.fps
+            fps: options.fps,
+            thinking: options.thinking
         }, options.userProfile);
 
         if (temporalContext) {
