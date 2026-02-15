@@ -60,12 +60,6 @@ export class VideoGenerationService {
     private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinking?: boolean }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
 
-        // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt
-        // Backend transformation as per Greptile PR #1200 feedback
-        if (settings.thinking) {
-            prompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`;
-        }
-
         if (userProfile) {
             const constraints = getVideoConstraints(userProfile);
             if (constraints.canvas) {
@@ -296,6 +290,7 @@ export class VideoGenerationService {
         negativePrompt?: string;
         firstFrame?: string;
         generateAudio?: boolean;
+        thinking?: boolean;
         model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
@@ -322,7 +317,9 @@ export class VideoGenerationService {
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
-        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {}, options.userProfile);
+        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
+            thinking: options.thinking
+        }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
@@ -344,6 +341,7 @@ export class VideoGenerationService {
                 resolution: options.resolution,
                 seed: options.seed,
                 generateAudio: options.generateAudio,
+                thinking: options.thinking,
                 model: options.model,
                 negativePrompt: options.negativePrompt,
             }
