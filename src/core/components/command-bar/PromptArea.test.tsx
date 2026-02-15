@@ -39,24 +39,27 @@ vi.mock('framer-motion', () => ({
 }));
 
 // Use vi.hoisted to create mutable store state accessible to the mock factory
-const storeState = vi.hoisted(() => ({
-  currentModule: 'dashboard',
-  setModule: vi.fn(),
-  toggleAgentWindow: vi.fn(),
-  isAgentOpen: false,
-  chatChannel: 'agent',
-  setChatChannel: vi.fn(),
-  isCommandBarDetached: false,
-  setCommandBarDetached: vi.fn(),
-  commandBarInput: 'test command',
-  setCommandBarInput: vi.fn(),
-  commandBarAttachments: [] as any[],
-  setCommandBarAttachments: vi.fn(),
-  activeAgentProvider: undefined,
-  setActiveAgentProvider: vi.fn(),
-  isKnowledgeBaseEnabled: false,
-  setKnowledgeBaseEnabled: vi.fn(),
-}));
+const storeState = vi.hoisted(() => {
+  const state: any = {
+    currentModule: 'dashboard',
+    setModule: vi.fn(),
+    toggleAgentWindow: vi.fn(),
+    isAgentOpen: false,
+    chatChannel: 'agent',
+    setChatChannel: vi.fn(),
+    isCommandBarDetached: false,
+    setCommandBarDetached: vi.fn(),
+    commandBarInput: 'test command',
+    commandBarAttachments: [],
+    activeAgentProvider: undefined,
+    setActiveAgentProvider: vi.fn(),
+    isKnowledgeBaseEnabled: false,
+    setKnowledgeBaseEnabled: vi.fn(),
+  };
+  state.setCommandBarInput = vi.fn((val: string) => { state.commandBarInput = val; });
+  state.setCommandBarAttachments = vi.fn((val: any[]) => { state.commandBarAttachments = val; });
+  return state;
+});
 
 vi.mock('@/core/store', () => ({
   useStore: (selector: any) => selector(storeState),

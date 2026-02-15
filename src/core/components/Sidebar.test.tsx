@@ -87,7 +87,7 @@ describe('Sidebar Component', () => {
         expect(screen.getByText("Departments")).toBeInTheDocument();
         expect(screen.getByText("Tools")).toBeInTheDocument();
         expect(screen.getByText('Test User')).toBeInTheDocument();
-        expect(screen.getByText('made by Detroit, for the world.')).toBeInTheDocument();
+        expect(screen.getByText('made by Detroit, for the universe.')).toBeInTheDocument();
     });
 
     it('should collapsed view when closed', () => {
