@@ -37,9 +37,9 @@ vi.mock('./components/ContextPipeline', () => ({
         });
     }
 }));
-vi.mock('./components/AgentOrchestrator', () => ({ AgentOrchestrator: class {} }));
-vi.mock('./hybrid/HybridOrchestrator', () => ({ HybridOrchestrator: class {} }));
-vi.mock('./components/AgentExecutor', () => ({ AgentExecutor: class {} }));
+vi.mock('./components/AgentOrchestrator', () => ({ AgentOrchestrator: class { } }));
+vi.mock('./hybrid/HybridOrchestrator', () => ({ HybridOrchestrator: class { } }));
+vi.mock('./components/AgentExecutor', () => ({ AgentExecutor: class { } }));
 vi.mock('./registry', () => ({ agentRegistry: { warmup: vi.fn() } }));
 vi.mock('./WorkflowCoordinator', () => ({ coordinator: { handleUserRequest: vi.fn() } }));
 vi.mock('./AgentZeroService', () => ({ agentZeroService: { sendMessage: vi.fn() } }));

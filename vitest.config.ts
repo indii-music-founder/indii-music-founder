@@ -27,7 +27,7 @@ export default defineConfig({
       '**/*.integration.test.tsx',
       // Skip torture tests
       '**/*.torture.test.ts',
-      '**/A2UI/**',
+      'A2UI/**',
     ]
   },
 });
