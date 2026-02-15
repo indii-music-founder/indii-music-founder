@@ -1,0 +1,846 @@
+
+> indii-os@0.1.0-beta.2 pretest
+> tsx scripts/syncAgentGuidelines.ts
+
+🔄 Syncing Agent Guidelines...
+✅ Synced version 1.0.0 (updated 2026-02-15T02:56:29.459Z) to src/core/agent-guidelines.json
+✅ Synced to src/agents/Orchestrator/agent-guidelines.json
+✅ Synced to src/agents/Gemini/agent-guidelines.json
+✅ Synced to src/agents/Claude/agent-guidelines.json
+✅ Synced to src/agents/Jules/agent-guidelines.json
+
+> indii-os@0.1.0-beta.2 test
+> vitest --run
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron[39m
+
+[90mstderr[2m | electron/handlers/distribution_sandbox.security.test.ts[2m > [22m[2mDistribution Handler Security Sandbox[2m > [22m[2mdistribution:stage-release[2m > [22m[2mshould block path traversal in file names
+[22m[39m[Distribution] Stage release failed: ZodError: [
+  {
+    "code": "custom",
+    "message": "File name must not contain path traversal characters",
+    "path": [
+      "files",
+      0,
+      "name"
+    ]
+  }
+]
+    at Object.get error [as error] [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mzod[24m/v3/types.js:39:31[90m)[39m
+    at ZodObject.parse [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mzod[24m/v3/types.js:114:22[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution.ts:39:62
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution_sandbox.security.test.ts:100:34
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37 {
+  issues: [
+    {
+      code: [32m'custom'[39m,
+      message: [32m'File name must not contain path traversal characters'[39m,
+      path: [36m[Array][39m
+    }
+  ],
+  addIssue: [36m[Function (anonymous)][39m,
+  addIssues: [36m[Function (anonymous)][39m,
+  errors: [
+    {
+      code: [32m'custom'[39m,
+      message: [32m'File name must not contain path traversal characters'[39m,
+      path: [36m[Array][39m
+    }
+  ]
+}
+
+[90mstderr[2m | electron/handlers/distribution_sandbox.security.test.ts[2m > [22m[2mDistribution Handler Security Sandbox[2m > [22m[2mdistribution:stage-release[2m > [22m[2mshould block absolute paths in file names
+[22m[39m[Distribution] Stage release failed: ZodError: [
+  {
+    "code": "custom",
+    "message": "File name must not contain path traversal characters",
+    "path": [
+      "files",
+      0,
+      "name"
+    ]
+  }
+]
+    at Object.get error [as error] [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mzod[24m/v3/types.js:39:31[90m)[39m
+    at ZodObject.parse [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mzod[24m/v3/types.js:114:22[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution.ts:39:62
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution_sandbox.security.test.ts:114:34
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:145:11
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:26
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1209:10[90m)[39m
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:1653:37 {
+  issues: [
+    {
+      code: [32m'custom'[39m,
+      message: [32m'File name must not contain path traversal characters'[39m,
+      path: [36m[Array][39m
+    }
+  ],
+  addIssue: [36m[Function (anonymous)][39m,
+  addIssues: [36m[Function (anonymous)][39m,
+  errors: [
+    {
+      code: [32m'custom'[39m,
+      message: [32m'File name must not contain path traversal characters'[39m,
+      path: [36m[Array][39m
+    }
+  ]
+}
+
+[90mstderr[2m | electron/handlers/distribution_sandbox.security.test.ts[2m > [22m[2mDistribution Handler Security Sandbox[2m > [22m[2mdistribution:stage-release[2m > [22m[2mshould verify access control for file:// paths
+[22m[39m[Distribution] Stage release failed: Error: Security Violation: Access to /sensitive/data.txt is denied. File was not authorized by user.
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution.ts:87:31
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution_sandbox.security.test.ts:130:28
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | electron/handlers/distribution_sandbox.security.test.ts[2m > [22m[2mDistribution Handler Security Sandbox[2m > [22m[2mdistribution:stage-release[2m > [22m[2mshould validate source path safety for file:// paths
+[22m[39m[Distribution] Stage release failed: Error: Unsafe source path
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution_sandbox.security.test.ts:147:23
+    at Mock [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/spy/dist/index.js:285:34[90m)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution.ts:91:21
+[90m    at processTicksAndRejections (node:internal/process/task_queues:105:5)[39m
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39melectron/handlers/distribution_sandbox.security.test.ts:150:28
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+ [32m✓[39m electron/handlers/distribution_sandbox.security.test.ts [2m([22m[2m8 tests[22m[2m)[22m[33m 1075[2mms[22m[39m
+       [33m[2m✓[22m[39m should block path traversal in file names [33m 1055[2mms[22m[39m
+ [32m✓[39m electron/handlers/system.test.ts [2m([22m[2m11 tests[22m[2m)[22m[33m 1148[2mms[22m[39m
+     [33m[2m✓[22m[39m should register all system handlers [33m 884[2mms[22m[39m
+ [32m✓[39m src/modules/dashboard/components/AgentWorkspace.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 73[2mms[22m[39m
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Failed to fetch dynamically imported module]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Failed to fetch dynamically imported module
+    at ThrowChunkError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:16:11)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+ [32m✓[39m src/components/shared/EmptyState.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 473[2mms[22m[39m
+[90mstderr[2m | src/core/components/ChatOverlay.test.tsx[2m > [22m[2mChatOverlay Component[2m > [22m[2mshould render messages
+[22m[39mWarning: Function components cannot be given refs. Attempts to access this ref will fail. Did you mean to use React.forwardRef()?
+
+Check the render method of `ChatOverlay`.
+    at Virtuoso (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ChatOverlay.test.tsx:98:16)
+    at div
+    at div
+    at ErrorBoundary (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ChatOverlay.test.tsx:112:21)
+    at div
+    at div (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ChatOverlay.test.tsx:18:13)
+    at div
+    at AnimatePresence (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ChatOverlay.test.tsx:29:23)
+    at ChatOverlay (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ChatOverlay.tsx:39:24)
+
+Error: Uncaught [Error: Failed to fetch dynamically imported module]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Failed to fetch dynamically imported module
+    at ThrowChunkError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:16:11)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at ErrorBoundary.componentDidCatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.tsx:39:33)
+    at ErrorBoundary.callback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:18785:12)
+    at callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15036:12)
+    at commitUpdateQueue (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15057:9)
+    at commitLayoutEffectOnFiber (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:23403:13) undefined
+Error: Uncaught [Error: Failed to fetch dynamically imported module]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Failed to fetch dynamically imported module
+    at ThrowChunkError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:16:11)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+[90mstderr[2m | src/core/components/ErrorBoundary.test.tsx[2m > [22m[2mErrorBoundary Component[2m > [22m[2mshould detect chunk load errors
+[22m[39m[ErrorBoundary] Detected chunk load error, reloading...
+
+ [32m✓[39m src/core/components/ChatOverlay.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 431[2mms[22m[39m
+     [33m[2m✓[22m[39m should render empty state correctly [33m 333[2mms[22m[39m
+ [32m✓[39m src/core/components/Sidebar.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 494[2mms[22m[39m
+     [33m[2m✓[22m[39m should toggle sidebar [33m 329[2mms[22m[39m
+Error: Uncaught [Error: Failed to fetch dynamically imported module]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Failed to fetch dynamically imported module
+    at ThrowChunkError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:16:11)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Not implemented: navigation (except hash changes)
+    at module.exports (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/browser/not-implemented.js:9:17)
+    at navigateFetch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/navigation.js:77:3)
+    at exports.navigate (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/navigation.js:55:3)
+    at LocationImpl.reload (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/window/Location-impl.js:225:5)
+    at Location.reload (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/Location.js:102:36)
+    at ErrorBoundary.componentDidCatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.tsx:39:33)
+    at ErrorBoundary.callback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:18785:12)
+    at callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15036:12)
+    at commitUpdateQueue (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15057:9)
+    at commitLayoutEffectOnFiber (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:23403:13) undefined
+[90mstderr[2m | src/core/components/ErrorBoundary.test.tsx[2m > [22m[2mErrorBoundary Component[2m > [22m[2mshould show different UI for chunk errors
+[22m[39m[ErrorBoundary] Detected chunk load error, reloading...
+
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+Error: Uncaught [Error: Test error]
+    at reportException (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/helpers/runtime-script-errors.js:66:24)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:353:9)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+    at HTMLUnknownElement.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventTarget.js:241:34)
+    at Object.invokeGuardedCallbackDev (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4213:16)
+    at invokeGuardedCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4277:31)
+    at beginWork$1 (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:27490:7)
+    at performUnitOfWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:26599:12) Error: Test error
+    at ThrowError (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/ErrorBoundary.test.tsx:9:15)
+    at renderWithHooks (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:20103:13)
+    at beginWork (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/react-dom/cjs/react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/generated/EventListener.js:26:30)
+    at innerInvokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:350:25)
+    at invokeEventListeners (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:286:3)
+    at HTMLUnknownElementImpl._dispatch (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:233:9)
+    at HTMLUnknownElementImpl.dispatchEvent (/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/node_modules/jsdom/lib/jsdom/living/events/EventTarget-impl.js:104:17)
+ [32m✓[39m src/core/components/ErrorBoundary.test.tsx [2m([22m[2m12 tests[22m[2m)[22m[33m 763[2mms[22m[39m
+     [33m[2m✓[22m[39m should handle reset button click [33m 357[2mms[22m[39m
+[90mstderr[2m | src/modules/creative/components/DirectGenerationTab.test.tsx[2m > [22m[2mDirectGenerationTab Component[2m > [22m[2mshould handle image generation error
+[22m[39mDirect Generation Failed: Error: Generation failed
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/modules/creative/components/DirectGenerationTab.test.tsx:129:13
+    at [90mfile:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4m@vitest[24m/runner/dist/index.js:915:20
+
+[90mstderr[2m | src/modules/creative/components/DirectGenerationTab.test.tsx[2m > [22m[2mDirectGenerationTab Component[2m > [22m[2mshould handle timeout errors specifically
+[22m[39mDirect Generation Failed: { code: [32m'deadline-exceeded'[39m, message: [32m'Timeout'[39m }
+
+[90mstderr[2m | src/modules/creative/components/DirectGenerationTab.test.tsx[2m > [22m[2mDirectGenerationTab Component[2m > [22m[2mshould handle quota exceeded errors
+[22m[39mDirect Generation Failed: { code: [32m'resource-exhausted'[39m, message: [32m'Quota exceeded'[39m }
+
+[90mstdout[2m | src/services/agent/AgentService.test.ts[2m > [22m[2mAgentService Integration Tests[2m > [22m[2mshould redact PII from user message
+[22m[39m🔒 PII Detected and Redacted from Agent Input
+
+[90mstderr[2m | src/services/agent/AgentService.test.ts[2m > [22m[2mAgentService Integration Tests[2m > [22m[2mshould handle timeout gracefully
+[22m[39m[AgentService] Message Flow Failed: Error: Indii Timeout: No response received after 300s.
+    at [90m/Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39msrc/services/agent/AgentService.ts:116:57
+    at callTimer [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/vi.2VT5v0um.js:2111:25[90m)[39m
+    at doTickInner [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/vi.2VT5v0um.js:2714:30[90m)[39m
+    at doTick [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/vi.2VT5v0um.js:2795:21[90m)[39m
+    at Immediate.<anonymous> [90m(file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/[39mnode_modules/[4mvitest[24m/dist/chunks/vi.2VT5v0um.js:2815:30[90m)[39m
+[90m    at processImmediate (node:internal/timers:505:21)[39m
+
+ [32m✓[39m src/services/agent/AgentService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[33m 1382[2mms[22m[39m
+     [33m[2m✓[22m[39m should send user message and route via Coordinator (Fast Path) [33m 1332[2mms[22m[39m
+ [32m✓[39m src/modules/creative/components/DirectGenerationTab.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 802[2mms[22m[39m
+ [32m✓[39m src/services/marketing/MarketingService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+[90mstderr[2m | src/services/ai/AIService.test.ts[2m > [22m[2mAIService Integration Tests[2m > [22m[2mgenerateContent[2m > [22m[2mshould handle rate limiting errors with retry
+[22m[39m[AIService] Operation failed, retrying in 1000ms... (3 attempts left)
+
+ [32m✓[39m src/services/ai/AIService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 144[2mms[22m[39m
+[90mstdout[2m | src/services/agent/AgentService_DirectChat.test.ts[2m > [22m[2mAgentService Direct Chat Reproduction[2m > [22m[2mshould not duplicate the latest user message in the prompt sent to LLM
+[22m[39mContents sent to LLM: [
+  {
+    "role": "user",
+    "parts": [
+      {
+        "text": "Previous message"
+      }
+    ]
+  },
+  {
+    "role": "model",
+    "parts": [
+      {
+        "text": "Previous response"
+      }
+    ]
+  },
+  {
+    "role": "user",
+    "parts": [
+      {
+        "text": "Hello world"
+      }
+    ]
+  }
+]
+
+ [32m✓[39m src/services/agent/AgentService_DirectChat.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 143[2mms[22m[39m
+[90mstdout[2m | electron/handlers/social.test.ts[2m > [22m[2mSocial Handler[2m > [22m[2msocial:connect-oauth[2m > [22m[2mshould validate sender before processing
+[22m[39m[SocialHandler] Starting OAuth Flow for: twitter
+
+[90mstdout[2m | electron/handlers/social.test.ts[2m > [22m[2mSocial Handler[2m > [22m[2msocial:connect-oauth[2m > [22m[2mshould create BrowserWindow for OAuth flow
+[22m[39m[SocialHandler] Starting OAuth Flow for: twitter
+
+[90mstdout[2m | electron/handlers/social.test.ts[2m > [22m[2mSocial Handler[2m > [22m[2msocial:connect-oauth[2m > [22m[2mshould load mock OAuth page
+[22m[39m[SocialHandler] Starting OAuth Flow for: twitter
+
+ [32m✓[39m electron/handlers/social.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 179[2mms[22m[39m
+[vitest-pool]: Timeout terminating forks worker for test files /Volumes/X SSD 2025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/electron/handlers/social.test.ts.
+ [32m✓[39m src/components/shared/Skeleton.test.tsx [2m([22m[2m13 tests[22m[2m)[22m[33m 580[2mms[22m[39m
+ [32m✓[39m src/services/social/SocialService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+ [32m✓[39m src/utils/async.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m✓[39m src/modules/distribution/DistributionDashboard.test.tsx [2m([22m[2m17 tests[22m[2m)[22m[33m 1485[2mms[22m[39m
+     [33m[2m✓[22m[39m should render dashboard header [33m 616[2mms[22m[39m
+     [33m[2m✓[22m[39m should show error state when error occurs [33m 351[2mms[22m[39m
+ [32m✓[39m src/services/finance/FinanceService.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 18[2mms[22m[39m
+ [32m✓[39m src/services/publicist/PublicistService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/core/events.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m✓[39m src/services/agent/WorkflowCoordinator.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32m✓[39m src/test-core/delay.behavior.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m✓[39m src/test-core/agent-guideline-sync.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m✓[39m src/test-foundation/sanity.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/test-core/json.types.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 1[2mms[22m[39m
+ [32m✓[39m src/test-core/agent-guideline.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 2[2mms[22m[39m
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts
+[22m[39m[DistributorService] Registered adapter: DistroKid
+[DistributorService] Registered adapter: TuneCore
+[DistributorService] Registered adapter: CDBaby
+[DistributorService] Registered adapter: Symphonic
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts
+[22m[39m[AgentRegistry] Pre-warming Generalist agent...
+[AgentRegistry] Loading agent 'generalist'...
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould start and schedule periodic pulses
+[22m[39m[PulseEngine] Starting Studio Pulse...
+[PulseEngine] Firing pulse check...
+[PulseEngine] Firing pulse check...
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould start and schedule periodic pulses
+[22m[39m[PulseEngine] Studio Pulse stopped.
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine
+[22m[39m[PulseEngine] PULSE_OK — all clear
+[PulseEngine] PULSE_OK — all clear
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould trigger agent when action is needed
+[22m[39m[PulseEngine] Firing pulse check...
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould trigger agent when action is needed
+[22m[39m[PulseEngine] ❤️ Pulse Action Triggered: Emails are pending
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould trigger agent when action is needed
+[22m[39m[PulseEngine] Studio Pulse stopped.
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould NOT trigger agent when no action is needed
+[22m[39m[PulseEngine] Firing pulse check...
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould NOT trigger agent when no action is needed
+[22m[39m[PulseEngine] PULSE_OK — all clear
+
+[90mstdout[2m | src/services/agent/pulse/PulseEngine.test.ts[2m > [22m[2mPulseEngine[2m > [22m[2mshould NOT trigger agent when no action is needed
+[22m[39m[PulseEngine] Studio Pulse stopped.
+
+ [32m✓[39m src/services/agent/pulse/PulseEngine.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+
+[2m Test Files [22m [1m[32m27 passed[39m[22m[90m (27)[39m
+[2m      Tests [22m [1m[32m183 passed[39m[22m[90m (183)[39m
+[2m   Start at [22m 21:56:29
+[2m   Duration [22m 12.90s[2m (transform 9.34s, setup 10.92s, import 18.08s, tests 9.39s, environment 51.46s)[22m
+
