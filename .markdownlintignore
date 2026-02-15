@@ -5,3 +5,16 @@ dist-electron
 .gemini
 coverage
 AGENTS.md
+A2UI
+landing-page/node_modules
+functions/node_modules
+_archive_legacy
+docs
+founders
+memory
+.agent
+execution
+directives
+proposals
+CHANGELOG.md
+README.md
