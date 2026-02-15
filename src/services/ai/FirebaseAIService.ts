@@ -310,70 +310,64 @@ export class FirebaseAIService {
                 // Validate & Sanitize
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-                // ============================================================
-                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
-                // ============================================================
-                if (this.useFallbackMode && this.fallbackClient) {
-                    return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
-                }
-
-                // ============================================================
-                // NORMAL MODE: Use Firebase AI SDK with App Check
-                // ============================================================
-
-                // 1. Check for Cached Content if systemInstruction is large
-                let cachedContent = options?.cachedContent;
-                if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                    const hash = CachedContextService.generateHash(systemInstruction, tools);
-                    const existingCache = await CachedContextService.findCache(hash);
-                    if (existingCache) {
-                        cachedContent = existingCache;
+                const result = await (async () => {
+                    if (this.useFallbackMode && this.fallbackClient) {
+                        return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
                     }
-                }
 
-                const modelOptions: any = {
-                    model: modelName,
-                    generationConfig: config,
-                    systemInstruction,
-                    tools,
-                    toolConfig: options?.toolConfig,
-                    safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
-                };
+                    // NORMAL MODE: Use Firebase AI SDK with App Check
+                    // 1. Check for Cached Content if systemInstruction is large
+                    let cachedContent = options?.cachedContent;
+                    if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                        const hash = CachedContextService.generateHash(systemInstruction, tools);
+                        const existingCache = await CachedContextService.findCache(hash);
+                        if (existingCache) {
+                            cachedContent = existingCache;
+                        }
+                    }
 
-                // Inject cachedContent if supported/available
-                if (cachedContent) {
-                    modelOptions.cachedContent = cachedContent;
-                }
+                    const modelOptions: any = {
+                        model: modelName,
+                        generationConfig: config,
+                        systemInstruction,
+                        tools,
+                        toolConfig: options?.toolConfig,
+                        safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
+                    };
 
-                const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+                    if (cachedContent) {
+                        modelOptions.cachedContent = cachedContent;
+                    }
 
-                try {
-                    const result = await modelCallback.generateContent(
-                        typeof sanitizedPrompt === 'string'
-                            ? sanitizedPrompt
-                            : { contents: sanitizedPrompt }
-                    );
+                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
 
-                    // Track Usage
-                    if (userId && result.response.usageMetadata) {
-                        await TokenUsageService.trackUsage(
-                            userId,
-                            modelName,
-                            result.response.usageMetadata.promptTokenCount || 0,
-                            result.response.usageMetadata.candidatesTokenCount || 0
+                    try {
+                        return await modelCallback.generateContent(
+                            typeof sanitizedPrompt === 'string'
+                                ? sanitizedPrompt
+                                : { contents: sanitizedPrompt }
                         );
+                    } catch (error) {
+                        if (isAppCheckError(error) && !this.useFallbackMode) {
+                            await this.triggerGlobalFallback();
+                            return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                        }
+                        throw error;
                     }
+                })();
 
-                    return result;
-                } catch (error) {
-                    // If we hit an App Check error during normal mode, switch to fallback
-                    if (isAppCheckError(error) && !this.useFallbackMode) {
-                        await this.triggerGlobalFallback();
-                        return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
-                    }
-                    throw this.handleError(error);
+                // Track Usage (Universal)
+                if (userId && result.response.usageMetadata) {
+                    await TokenUsageService.trackUsage(
+                        userId,
+                        modelName,
+                        result.response.usageMetadata.promptTokenCount || 0,
+                        result.response.usageMetadata.candidatesTokenCount || 0
+                    );
                 }
-            }, 3, 1000, options?.signal); // Pass signal to withRetry
+
+                return result;
+            }, 3, 1000, options?.signal);
         });
     }
 
@@ -641,7 +635,7 @@ export class FirebaseAIService {
             const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
             const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
 
-            return {
+            const finalResponse = {
                 response: {
                     candidates: lastChunk?.candidates || [],
                     usageMetadata: lastChunk?.usageMetadata,
@@ -657,6 +651,22 @@ export class FirebaseAIService {
                 },
                 usage: () => lastChunk?.usageMetadata
             };
+
+            // Track usage
+            if (userId && lastChunk?.usageMetadata) {
+                try {
+                    await TokenUsageService.trackUsage(
+                        userId,
+                        modelName,
+                        lastChunk.usageMetadata.promptTokenCount || 0,
+                        lastChunk.usageMetadata.candidatesTokenCount || 0
+                    );
+                } catch {
+                    // Non-critical
+                }
+            }
+
+            return finalResponse;
         })();
 
         return { stream, response: wrappedResponsePromise };
@@ -843,7 +853,7 @@ export class FirebaseAIService {
 
         const result = await this.rawGenerateContent(
             contents,
-            this.model!.model,
+            this.model?.model, // Safe access - rawGenerateContent will handle undefined
             {},
             systemInstruction
         );
@@ -893,7 +903,7 @@ export class FirebaseAIService {
                 }
             } : undefined
         }] as unknown as Tool[];
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
+        return this.rawGenerateContent(prompt, this.model?.model, {}, undefined, tools as any);
     }
 
     /**
@@ -1357,7 +1367,7 @@ export class FirebaseAIService {
         }
 
         // Detailed Quota & Rate Limit Mapping
-        if (msg.includes('quota') || msg.includes('resource-exhausted')) {
+        if (lowerMsg.includes('quota') || lowerMsg.includes('resource-exhausted')) {
             return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
         }
         if (msg.includes('429') || lowerMsg.includes('rate limit')) {
