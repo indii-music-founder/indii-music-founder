@@ -252,7 +252,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple aria-label="Upload files" />
                                 <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" aria-label="Take photo" />
                                 <PromptInputAction tooltip="Attach files">
-                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all">
+                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none">
                                         <Paperclip size={20} />
                                     </button>
                                 </PromptInputAction>
@@ -264,7 +264,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={handleMicClick}
                                 className={cn(
-                                    "flex items-center justify-center p-2 rounded-xl transition-all",
+                                    "flex items-center justify-center p-2 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                     isListening
                                         ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
                                         : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
@@ -286,7 +286,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
                                     className={cn(
-                                        "flex items-center justify-center w-10 h-10 rounded-full transition-all border",
+                                        "flex items-center justify-center w-10 h-10 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
@@ -309,7 +309,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
                             }}
                             className={cn(
-                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border",
+                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
                                 isKnowledgeBaseEnabled
                                     ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
                                     : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
