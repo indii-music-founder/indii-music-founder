@@ -166,10 +166,6 @@ export class HybridOrchestrator {
                     else break;
                 }
 
-                if (decision.complete) {
-                    isTaskComplete = true;
-                }
-
             } catch (e: any) {
                 console.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e?.message || e);
                 console.error(`[indii:Hybrid] Error details:`, e?.stack || 'No stack');

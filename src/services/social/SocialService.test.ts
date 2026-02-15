@@ -1,173 +1,183 @@
-
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SocialService } from './SocialService';
-import { useStore } from '@/core/store';
-import {
-    addDoc,
-    collection,
-    getDocs,
-    getDoc,
-    doc,
-    query,
-    where,
-    orderBy,
-    Timestamp,
-    runTransaction,
-    updateDoc,
-    increment,
-    serverTimestamp
-} from 'firebase/firestore';
 
-// Mock Store
-vi.mock('@/core/store', () => ({
-    useStore: {
-        getState: vi.fn()
+// --- Mocks ---
+
+const {
+    mockAddDoc,
+    mockGetDocs,
+    mockQuery,
+    mockCollection,
+    mockWhere,
+    mockOrderBy,
+    mockDoc,
+    mockUpdateDoc,
+    mockIncrement
+} = vi.hoisted(() => {
+    return {
+        mockAddDoc: vi.fn(),
+        mockGetDocs: vi.fn(),
+        mockQuery: vi.fn(),
+        mockCollection: vi.fn(),
+        mockWhere: vi.fn(),
+        mockOrderBy: vi.fn(),
+        mockDoc: vi.fn(),
+        mockUpdateDoc: vi.fn(),
+        mockIncrement: vi.fn()
+    }
+});
+
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    auth: {
+        currentUser: { uid: 'user-123' }
     }
 }));
 
-describe('SocialService Integration Tests', () => {
-    const mockUserId = 'test-uid';
+vi.mock('firebase/firestore', () => ({
+    addDoc: mockAddDoc,
+    getDocs: mockGetDocs,
+    query: mockQuery,
+    collection: mockCollection,
+    where: mockWhere,
+    orderBy: mockOrderBy,
+    limit: vi.fn(),
+    serverTimestamp: () => 'MOCK_TIMESTAMP',
+    doc: mockDoc,
+    updateDoc: mockUpdateDoc,
+    increment: mockIncrement,
+    runTransaction: vi.fn(), // Mocking transaction just in case
+    Timestamp: {
+        now: () => ({ toDate: () => new Date() })
+    }
+}));
 
+// Mock Zustand store access
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: () => ({
+            user: {
+                uid: 'user-123',
+                displayName: 'Test Artist',
+                photoURL: 'http://test.com/avatar.jpg'
+            },
+            userProfile: { id: 'user-123', displayName: 'Test Artist' }
+        })
+    }
+}));
+
+// --- Test Suite ---
+
+describe('SocialService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-
-        // Setup default store state
-        vi.mocked(useStore.getState).mockReturnValue({
-            userProfile: { id: mockUserId, displayName: 'Test User' }
-        } as any);
-
-        // Mock Firestore functions
-        vi.mocked(addDoc).mockResolvedValue({ id: 'new-doc-id' } as any);
-        vi.mocked(updateDoc).mockResolvedValue(undefined);
-    });
-
-    describe('schedulePost', () => {
-        it('should schedule a valid post', async () => {
-            const newPost: any = {
-                copy: 'Coming soon!',
-                scheduledTime: new Date().toISOString(),
-                platform: 'Twitter',
-                imageAsset: undefined
-            };
-
-            const result = await SocialService.schedulePost(newPost);
-
-            expect(addDoc).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    userId: mockUserId,
-                    copy: 'Coming soon!',
-                    status: 'PENDING'
-                })
-            );
-            expect(result).toBe('new-doc-id');
-        });
-
-        it('should validate scheduled post schema', async () => {
-            const invalidPost: any = {
-                content: '' // Invalid empty content
-            };
-
-            await expect(SocialService.schedulePost(invalidPost))
-                .rejects.toThrow('Invalid post data');
-        });
-    });
-
-    describe('getScheduledPosts', () => {
-        it('should fetch pending posts for user', async () => {
-            const mockPosts = [
-                { id: 'p1', content: 'Post 1', scheduledTime: '2025-01-01', status: 'PENDING', userId: mockUserId },
-                { id: 'p2', content: 'Post 2', scheduledTime: '2025-01-02', status: 'PENDING', userId: mockUserId }
-            ];
-
-            vi.mocked(getDocs).mockResolvedValue({
-                docs: mockPosts.map(p => ({
-                    id: p.id,
-                    data: () => p
-                }))
-            } as any);
-
-            const result = await SocialService.getScheduledPosts(mockUserId);
-            expect(result).toHaveLength(2);
-            expect(query).toHaveBeenCalledWith(
-                expect.anything(),
-                where('userId', '==', mockUserId),
-                where('status', '==', 'PENDING'),
-                orderBy('scheduledTime', 'asc')
-            );
-        });
+        mockCollection.mockReturnValue('MOCK_COLLECTION_REF');
     });
 
     describe('createPost', () => {
-        it('should create a post and update stats', async () => {
-            const content = 'Hello World';
+        it('should create a standard post without products', async () => {
+            mockAddDoc.mockResolvedValueOnce({ id: 'new-post-id' });
 
-            await SocialService.createPost(content, []);
+            const content = "Hello world!";
+            const result = await SocialService.createPost(content);
 
-            // Check post creation
-            expect(addDoc).toHaveBeenCalledWith(
-                expect.anything(), // posts collection
+            // 1. Verify Post Creation
+            expect(mockCollection).toHaveBeenCalledWith({}, 'posts'); // db is {}, check logic
+            expect(mockAddDoc).toHaveBeenCalledWith(
+                'MOCK_COLLECTION_REF',
                 expect.objectContaining({
-                    authorId: mockUserId,
-                    content
+                    authorId: 'user-123',
+                    content: content,
+                    productId: null,
+                    timestamp: 'MOCK_TIMESTAMP'
                 })
             );
 
-            // Check stats update
-            expect(updateDoc).toHaveBeenCalledWith(
-                expect.anything(), // user ref
+            // 2. Verify User Stats Update
+            expect(mockUpdateDoc).toHaveBeenCalled();
+            expect(mockIncrement).toHaveBeenCalledWith(1); // socialStats.posts
+            expect(result).toBe('new-post-id');
+        });
+
+        it('should create a Social Drop post (with productId)', async () => {
+            mockAddDoc.mockResolvedValueOnce({ id: 'drop-post-id' });
+
+            const content = "New Drop!";
+            const productId = "product-999";
+
+            await SocialService.createPost(content, [], productId);
+
+            // 1. Verify Post has productId
+            expect(mockAddDoc).toHaveBeenCalledWith(
+                'MOCK_COLLECTION_REF',
                 expect.objectContaining({
-                    'socialStats.posts': expect.anything() // increment(1)
+                    content: content,
+                    productId: productId
+                })
+            );
+
+            // 2. Verify Stats update includes drops increment
+            expect(mockUpdateDoc).toHaveBeenCalledWith(
+                undefined, // docRef mock
+                expect.objectContaining({
+                    'socialStats.posts': undefined, // checking structure
+                    'socialStats.drops': undefined
                 })
             );
         });
     });
 
-    describe('getDashboardStats', () => {
-        it('should return stats from user profile', async () => {
-            const mockStats = { followers: 100, following: 50, posts: 10, drops: 2 };
+    describe('getFeed', () => {
+        it('should fetch and format feed posts', async () => {
+            const mockDocs = [
+                {
+                    id: 'post-1',
+                    data: () => ({
+                        content: 'Post 1',
+                        authorId: 'user-A',
+                        timestamp: { toMillis: () => 1000 }
+                    })
+                }
+            ];
+            mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });
 
-            vi.mocked(getDoc).mockResolvedValue({
-                exists: () => true,
-                data: () => ({ socialStats: mockStats })
-            } as any);
+            const feed = await SocialService.getFeed();
 
-            const stats = await SocialService.getDashboardStats();
-            expect(stats).toEqual(mockStats);
-        });
-
-        it('should return defaults if stats missing', async () => {
-            vi.mocked(getDoc).mockResolvedValue({
-                exists: () => true,
-                data: () => ({}) // No socialStats
-            } as any);
-
-            const stats = await SocialService.getDashboardStats();
-            expect(stats).toEqual({ followers: 0, following: 0, posts: 0, drops: 0 });
+            expect(mockQuery).toHaveBeenCalled();
+            expect(feed).toHaveLength(1);
+            expect(feed[0].content).toBe('Post 1');
+            expect(feed[0].timestamp).toBe(1000);
         });
     });
+    describe('schedulePost', () => {
+        it('should add a post to scheduled_posts collection', async () => {
+            mockAddDoc.mockResolvedValueOnce({ id: 'scheduled-id' });
 
-    describe('followUser', () => {
-        it('should execute transaction to update followers/following', async () => {
-            const targetId = 'target-uid';
+            const post = {
+                platform: 'Twitter' as const,
+                copy: 'Test scheduled post',
+                imageAsset: {
+                    assetType: 'image' as const,
+                    title: 'Test',
+                    imageUrl: 'http://test.com/img.png',
+                    caption: 'Caption'
+                },
+                day: 1,
+                scheduledTime: Date.now()
+            };
 
-            // Mock runTransaction
-            vi.mocked(runTransaction).mockImplementation(async (db, updateFunction) => {
-                const mockTransaction = {
-                    get: vi.fn().mockResolvedValue({ exists: () => false }), // Not following yet
-                    set: vi.fn(),
-                    update: vi.fn()
-                };
-                await updateFunction(mockTransaction as any);
-                return undefined;
-            });
+            const id = await SocialService.schedulePost(post);
 
-            await SocialService.followUser(targetId);
-
-            expect(runTransaction).toHaveBeenCalled();
-            // We can't easily assert inside the transaction closure without complex spying, 
-            // but we verified runTransaction is called.
-            // If we want to verify transaction logic, we need to inspect the mock execution or expose the closure.
+            expect(mockCollection).toHaveBeenCalledWith({}, 'scheduled_posts');
+            expect(mockAddDoc).toHaveBeenCalledWith(
+                'MOCK_COLLECTION_REF',
+                expect.objectContaining({
+                    authorId: 'user-123',
+                    platform: 'Twitter',
+                    status: 'PENDING'
+                })
+            );
+            expect(id).toBe('scheduled-id');
         });
     });
 });

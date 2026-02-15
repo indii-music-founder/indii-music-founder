@@ -3,7 +3,6 @@
 The following is a list of all End-to-End (E2E) tests found in the codebase, located in the `e2e` directory and configured via `playwright.config.ts`.
 
 ## Main E2E Tests (e2e/)
-
 - agent-flow.spec.ts
 - assets-drawer.spec.ts
 - audio_intelligence_ui.spec.ts
@@ -46,5 +45,4 @@ The following is a list of all End-to-End (E2E) tests found in the codebase, loc
 - workflow-coordinator.spec.ts
 
 ## Temporary E2E Tests (e2e/temp/)
-
 - temp/verify_simple.spec.ts

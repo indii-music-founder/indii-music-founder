@@ -15,7 +15,7 @@ Simulate a complete user journey for releasing a Deep Detroit Tech track on indi
 ## Steps
 
 1. **Authentication**
-   - Navigate to `https://indiios-studio.web.app` or `http://localhost:4242` (if local). _We will use the live URL._
+   - Navigate to `https://indiios-studio.web.app` or `http://localhost:4242` (if local). *We will use the live URL.*
    - Attempt to Sign In with credentials.
    - If User not found, attempt Sign Up.
 

@@ -16,13 +16,11 @@ This plan architects the metadata and supply chain infrastructure to transform i
 - **AI-generated content flagging** (ERN 4.3 support)
 
 **Approach:** HYBRID
-
 - **Phase A:** Integrate with existing distributors (DistroKid, TuneCore, CD Baby) via their APIs
 - **Phase B:** Build internal DDEX infrastructure for direct DSP relationships
 - **Phase C:** Become our own distributor with direct DSP partnerships
 
 **Foundation Status:** ✅ STRONG
-
 - GoldenMetadata schema aligns with DDEX requirements
 - 8 distributors already profiled (DistroKid, TuneCore, CD Baby, etc.)
 - Agent framework ready (LicensingAgent, PublishingAgent, FinanceAgent)
@@ -35,29 +33,22 @@ This plan architects the metadata and supply chain infrastructure to transform i
 ## Phase 1: Access & Authorization
 
 ### 1.1 DDEX Knowledge Base Access
-
 **Action:** Register at DDEX Knowledge Base (kb.ddex.net)
-
 - Access text standards, XSD schemas, implementation guides
 - Download ERN, DSR, RIN, MWDR specifications
 
 ### 1.2 Execute Implementation License
-
 **Action:** Sign DDEX royalty-free "click-wrap" license
-
 - Required to use DDEX intellectual property
 - No cost, but legally required for compliance
 
 ### 1.3 Acquire DDEX Party Identifier (DPID)
-
 **Action:** Apply at dpid.ddex.net
-
 - Unique identifier for indiiOS as sender/recipient
 - Format: `PADPIDA{10-digit-code}`
 - Required for all DDEX message exchanges
 
 **Files to create:**
-
 ```
 src/services/ddex/
 ├── DDEXIdentity.ts       # DPID management
@@ -71,14 +62,13 @@ src/services/ddex/
 
 ### 2.1 Validation Tools
 
-| Tool                   | Purpose                        | Integration      |
-| ---------------------- | ------------------------------ | ---------------- |
-| **DDEX Workbench**     | ERN 3.8.2, 4.2, 4.3 validation | Web API or local |
-| **DDEX XML Validator** | XSD + Schematron validation    | npm package      |
-| **fast-xml-parser**    | XML↔JSON conversion            | npm install      |
+| Tool | Purpose | Integration |
+|------|---------|-------------|
+| **DDEX Workbench** | ERN 3.8.2, 4.2, 4.3 validation | Web API or local |
+| **DDEX XML Validator** | XSD + Schematron validation | npm package |
+| **fast-xml-parser** | XML↔JSON conversion | npm install |
 
 ### 2.2 Python Libraries (Backend)
-
 ```bash
 # Cloud Functions dependencies
 pip install dsrf        # Google's DSR parser
@@ -86,18 +76,16 @@ pip install ddexui      # Metadata creation helper
 ```
 
 ### 2.3 New Dependencies
-
 ```json
 // package.json additions
 {
   "fast-xml-parser": "^4.3.0",
   "xml2js": "^0.6.0",
-  "ajv": "^8.12.0" // JSON Schema validation
+  "ajv": "^8.12.0"  // JSON Schema validation
 }
 ```
 
 **Files to create:**
-
 ```
 src/services/ddex/
 ├── DDEXParser.ts         # XML parsing/generation
@@ -113,11 +101,9 @@ src/services/ddex/
 ## Phase 3: Standard Implementation
 
 ### 3.1 ERN - Electronic Release Notification (P0 - Critical)
-
 **Purpose:** Deliver releases to DSPs (replaces distributors)
 
 **Implementation:**
-
 ```typescript
 // src/services/ddex/ERNService.ts
 interface ERNMessage {
@@ -134,18 +120,15 @@ interface ERNMessage {
 ```
 
 **Key Features:**
-
 - Support ERN 4.3 for AI-generated content flagging
 - Map GoldenMetadata → ERN Release structure
 - Territory-specific deals (worldwide, US-only, etc.)
 
 **Files to modify:**
-
 - [src/services/metadata/types.ts](src/services/metadata/types.ts) - Extend GoldenMetadata
 - [src/modules/music/components/MetadataDrawer.tsx](src/modules/music/components/MetadataDrawer.tsx) - Add ERN fields
 
 **Files to create:**
-
 ```
 src/services/ddex/
 ├── ERNService.ts           # ERN message generation
@@ -155,27 +138,24 @@ src/services/ddex/
 ```
 
 ### 3.2 MEAD - Media Enrichment & Description (P1)
-
 **Purpose:** Enhanced metadata for discovery (lyrics, bios, focus tracks)
 
 ```typescript
 interface MEADMessage {
   lyrics: LyricContent[];
   artistBiographies: Biography[];
-  focusTracks: string[]; // Highlighted for playlists
+  focusTracks: string[];  // Highlighted for playlists
   credits: DetailedCredits[];
 }
 ```
 
 **Files to create:**
-
 ```
 src/services/ddex/
 └── MEADService.ts
 ```
 
 ### 3.3 RIN - Recording Information Notification (P1)
-
 **Purpose:** Capture data at point of creation (studio sessions)
 
 ```typescript
@@ -186,7 +166,7 @@ interface RINMessage {
     engineers: Contributor[];
     equipment: Equipment[];
   };
-  contributors: Contributor[]; // Ensures correct credits from start
+  contributors: Contributor[];  // Ensures correct credits from start
   masterRecordingId: string;
 }
 ```
@@ -194,27 +174,24 @@ interface RINMessage {
 **Integration point:** MusicStudio.tsx when user finalizes a track
 
 **Files to create:**
-
 ```
 src/services/ddex/
 └── RINService.ts
 ```
 
 ### 3.4 MWDR - Musical Work Data & Rights (P2)
-
 **Purpose:** Publishing rights management (replaces publishers/societies)
 
 **Sub-standards:**
-
 - **MWN (Musical Work Notification):** Rights claims and conflicts
 - **MWL (Musical Work Licensing):** License musical works
 
 ```typescript
 interface MWDRMessage {
   musicalWork: {
-    iswc: string; // International Standard Musical Work Code
+    iswc: string;           // International Standard Musical Work Code
     title: string;
-    writers: Writer[]; // Songwriters with splits
+    writers: Writer[];      // Songwriters with splits
     publishers: Publisher[];
     territories: string[];
   };
@@ -225,7 +202,6 @@ interface MWDRMessage {
 **Integration:** Extends existing PublishingAgent
 
 **Files to create:**
-
 ```
 src/services/ddex/
 ├── MWDRService.ts
@@ -234,7 +210,6 @@ src/services/ddex/
 ```
 
 ### 3.5 RDR - Recording Data & Rights (P2)
-
 **Purpose:** Neighboring rights (replaces SoundExchange, PPL)
 
 ```typescript
@@ -250,21 +225,19 @@ interface RDRMessage {
 ```
 
 **Files to create:**
-
 ```
 src/services/ddex/
 └── RDRService.ts
 ```
 
 ### 3.6 DSR - Digital Sales Reporting (P0 - Critical)
-
 **Purpose:** Process usage reports from DSPs (replaces royalty departments)
 
 ```typescript
 interface DSRReport {
   reportingPeriod: { start: string; end: string };
   salesTransactions: SalesTransaction[];
-  usageRecords: UsageRecord[]; // Streams, downloads
+  usageRecords: UsageRecord[];  // Streams, downloads
   royaltyCalculations: RoyaltyCalculation[];
 }
 
@@ -279,7 +252,6 @@ class DSRProcessor {
 ```
 
 **Files to create:**
-
 ```
 src/services/ddex/
 ├── DSRService.ts           # DSR parsing
@@ -293,34 +265,29 @@ src/services/ddex/
 ## Phase 4: Choreography & Protocol
 
 ### 4.1 DDEX Choreography Standard
-
 **Implementation:**
 
 ```typescript
 // src/services/ddex/DDEXChoreography.ts
 interface DeliveryConfig {
-  protocol: "SFTP" | "S3" | "GCS";
+  protocol: 'SFTP' | 'S3' | 'GCS';
   host: string;
   credentials: EncryptedCredentials;
   directoryNaming: {
-    pattern: "{ReleaseID}_{Timestamp}";
-    example: "R123456_20251226T120000Z";
+    pattern: '{ReleaseID}_{Timestamp}';
+    example: 'R123456_20251226T120000Z';
   };
 }
 
 class DDEXChoreography {
   // File exchange management
-  async deliverRelease(
-    ern: ERNMessage,
-    assets: Asset[],
-  ): Promise<DeliveryReceipt>;
+  async deliverRelease(ern: ERNMessage, assets: Asset[]): Promise<DeliveryReceipt>;
   async pollForAcknowledgement(deliveryId: string): Promise<AckStatus>;
-  async receiveReport(reportType: "DSR"): Promise<DSRReport>;
+  async receiveReport(reportType: 'DSR'): Promise<DSRReport>;
 }
 ```
 
 ### 4.2 Complete Set Semantics
-
 **Critical Rule:** Every update must contain ALL valid deals. Missing deals = takedown.
 
 ```typescript
@@ -336,7 +303,6 @@ async updateReleaseDeal(releaseId: string, deals: Deal[]) {
 ```
 
 ### 4.3 Testing Protocol
-
 ```typescript
 // src/services/ddex/DDEXTestMode.ts
 interface TestDelivery {
@@ -380,14 +346,8 @@ interface DistributorAdapter {
   name: string;
 
   // Release Management
-  createRelease(
-    metadata: GoldenMetadata,
-    assets: ReleaseAssets,
-  ): Promise<ReleaseId>;
-  updateRelease(
-    releaseId: string,
-    updates: Partial<GoldenMetadata>,
-  ): Promise<void>;
+  createRelease(metadata: GoldenMetadata, assets: ReleaseAssets): Promise<ReleaseId>;
+  updateRelease(releaseId: string, updates: Partial<GoldenMetadata>): Promise<void>;
   takedownRelease(releaseId: string): Promise<void>;
 
   // Status & Reporting
@@ -406,7 +366,7 @@ interface DistributorAdapter {
 // src/services/distribution/adapters/DistroKidAdapter.ts
 class DistroKidAdapter implements DistributorAdapter {
   // DistroKid API endpoints
-  private readonly API_BASE = "https://distrokid.com/api/v1";
+  private readonly API_BASE = 'https://distrokid.com/api/v1';
 
   async createRelease(metadata: GoldenMetadata, assets: ReleaseAssets) {
     // 1. Upload cover art (3000x3000 JPEG/PNG)
@@ -432,12 +392,10 @@ class DistributorService {
   async releaseToMultiple(
     metadata: GoldenMetadata,
     assets: ReleaseAssets,
-    distributors: string[],
+    distributors: string[]
   ): Promise<MultiReleaseResult> {
     const results = await Promise.allSettled(
-      distributors.map((d) =>
-        this.adapters.get(d)!.createRelease(metadata, assets),
-      ),
+      distributors.map(d => this.adapters.get(d)!.createRelease(metadata, assets))
     );
 
     // Track each distributor's release ID
@@ -457,7 +415,6 @@ class DistributorService {
 ## Phase 5: Backend Services
 
 ### 5.1 Cloud Functions Structure
-
 ```
 functions/src/ddex/
 ├── delivery.ts           # ERN delivery to DSPs
@@ -472,36 +429,35 @@ functions/src/ddex/
 ```
 
 ### 5.2 Inngest Workflows
-
 ```typescript
 // Async release delivery workflow
 const deliverReleaseFn = inngestClient.createFunction(
-  { id: "ddex-deliver-release" },
-  { event: "ddex/release.publish" },
+  { id: 'ddex-deliver-release' },
+  { event: 'ddex/release.publish' },
   async ({ event, step }) => {
     // Step 1: Validate ERN
-    const validation = await step.run("validate", () =>
-      DDEXValidator.validateERN(event.data.ern),
+    const validation = await step.run('validate', () =>
+      DDEXValidator.validateERN(event.data.ern)
     );
 
     // Step 2: Upload assets to DSP
-    const assetDelivery = await step.run("upload-assets", () =>
-      DDEXChoreography.uploadAssets(event.data.assets),
+    const assetDelivery = await step.run('upload-assets', () =>
+      DDEXChoreography.uploadAssets(event.data.assets)
     );
 
     // Step 3: Send ERN message
-    const delivery = await step.run("send-ern", () =>
-      DDEXChoreography.deliverERN(event.data.ern),
+    const delivery = await step.run('send-ern', () =>
+      DDEXChoreography.deliverERN(event.data.ern)
     );
 
     // Step 4: Poll for acknowledgement
-    const ack = await step.waitForEvent("ddex/ack.received", {
-      timeout: "24h",
-      match: "data.releaseId",
+    const ack = await step.waitForEvent('ddex/ack.received', {
+      timeout: '24h',
+      match: 'data.releaseId'
     });
 
-    return { status: "published", deliveryId: delivery.id };
-  },
+    return { status: 'published', deliveryId: delivery.id };
+  }
 );
 ```
 
@@ -510,7 +466,6 @@ const deliverReleaseFn = inngestClient.createFunction(
 ## Phase 6: UI/UX Components
 
 ### 6.1 Release Workflow UI
-
 ```
 src/modules/publishing/
 ├── PublishingDashboard.tsx    # Main dashboard (exists, expand)
@@ -525,9 +480,7 @@ src/modules/publishing/
 ```
 
 ### 6.2 Enhanced MetadataDrawer
-
 Add DDEX-specific fields:
-
 - Territory selection (worldwide, specific countries)
 - Release type (single, EP, album, compilation)
 - AI-generated content flag (ERN 4.3)
@@ -539,15 +492,14 @@ Add DDEX-specific fields:
 ## Phase 7: Data Models
 
 ### 7.1 Firestore Collections
-
 ```typescript
 // New collections
 interface DDEXRelease {
   id: string;
   orgId: string;
   projectId: string;
-  status: "draft" | "validating" | "delivering" | "published" | "failed";
-  ernVersion: "4.3";
+  status: 'draft' | 'validating' | 'delivering' | 'published' | 'failed';
+  ernVersion: '4.3';
   metadata: ExtendedGoldenMetadata;
   assets: {
     audioUrl: string;
@@ -584,18 +536,17 @@ interface RoyaltyPayment {
   recipient: RoyaltySplit;
   amount: number;
   currency: string;
-  status: "pending" | "paid" | "failed";
+  status: 'pending' | 'paid' | 'failed';
 }
 ```
 
 ### 7.2 Extend GoldenMetadata
-
 ```typescript
 // src/services/metadata/types.ts - Extensions
 interface ExtendedGoldenMetadata extends GoldenMetadata {
   // DDEX-specific fields
-  releaseType: "Single" | "EP" | "Album" | "Compilation";
-  territories: string[]; // ISO country codes or 'Worldwide'
+  releaseType: 'Single' | 'EP' | 'Album' | 'Compilation';
+  territories: string[];  // ISO country codes or 'Worldwide'
   preOrderDate?: string;
   releaseDate: string;
 
@@ -608,12 +559,12 @@ interface ExtendedGoldenMetadata extends GoldenMetadata {
   };
 
   // Additional identifiers
-  upc?: string; // Universal Product Code (album)
+  upc?: string;           // Universal Product Code (album)
   catalogNumber?: string;
   labelName: string;
 
   // Distribution
-  distributionChannels: ("streaming" | "download" | "physical")[];
+  distributionChannels: ('streaming' | 'download' | 'physical')[];
   exclusiveTerritory?: string;
   exclusiveEndDate?: string;
 }
@@ -623,30 +574,29 @@ interface ExtendedGoldenMetadata extends GoldenMetadata {
 
 ## Implementation Order
 
-| Phase | Component            | Priority | Effort   | Dependencies          |
-| ----- | -------------------- | -------- | -------- | --------------------- |
-| 1.1   | DPID Registration    | P0       | External | None                  |
-| 1.2   | DDEXIdentity.ts      | P0       | 2h       | DPID                  |
-| 2.1   | Install npm packages | P0       | 30m      | None                  |
-| 2.2   | DDEXParser.ts        | P0       | 4h       | npm packages          |
-| 2.3   | DDEXValidator.ts     | P0       | 4h       | DDEXParser            |
-| 3.1   | ERNService.ts        | P0       | 8h       | DDEXParser, Validator |
-| 3.6   | DSRService.ts        | P0       | 6h       | DDEXParser            |
-| 4.1   | DDEXChoreography.ts  | P1       | 6h       | ERNService            |
-| 5.1   | Cloud Functions      | P1       | 8h       | All services          |
-| 5.2   | Inngest workflows    | P1       | 4h       | Cloud Functions       |
-| 6.1   | ReleaseWizard.tsx    | P1       | 8h       | Services              |
-| 3.2   | MEADService.ts       | P2       | 4h       | ERNService            |
-| 3.3   | RINService.ts        | P2       | 4h       | DDEXParser            |
-| 3.4   | MWDRService.ts       | P2       | 6h       | DDEXParser            |
-| 3.5   | RDRService.ts        | P2       | 4h       | DDEXParser            |
+| Phase | Component | Priority | Effort | Dependencies |
+|-------|-----------|----------|--------|--------------|
+| 1.1 | DPID Registration | P0 | External | None |
+| 1.2 | DDEXIdentity.ts | P0 | 2h | DPID |
+| 2.1 | Install npm packages | P0 | 30m | None |
+| 2.2 | DDEXParser.ts | P0 | 4h | npm packages |
+| 2.3 | DDEXValidator.ts | P0 | 4h | DDEXParser |
+| 3.1 | ERNService.ts | P0 | 8h | DDEXParser, Validator |
+| 3.6 | DSRService.ts | P0 | 6h | DDEXParser |
+| 4.1 | DDEXChoreography.ts | P1 | 6h | ERNService |
+| 5.1 | Cloud Functions | P1 | 8h | All services |
+| 5.2 | Inngest workflows | P1 | 4h | Cloud Functions |
+| 6.1 | ReleaseWizard.tsx | P1 | 8h | Services |
+| 3.2 | MEADService.ts | P2 | 4h | ERNService |
+| 3.3 | RINService.ts | P2 | 4h | DDEXParser |
+| 3.4 | MWDRService.ts | P2 | 6h | DDEXParser |
+| 3.5 | RDRService.ts | P2 | 4h | DDEXParser |
 
 ---
 
 ## File Summary
 
 ### New Files to Create
-
 ```
 src/services/ddex/
 ├── index.ts                    # Main exports
@@ -689,7 +639,6 @@ functions/src/ddex/
 ```
 
 ### Files to Modify
-
 ```
 src/services/metadata/types.ts          # Extend GoldenMetadata
 src/modules/music/components/MetadataDrawer.tsx  # Add DDEX fields
@@ -742,21 +691,19 @@ package.json                            # Add dependencies
 ## 8.1 Available UI Framework Components
 
 ### Base Components (Already Available)
-
-| Component                          | Location                                               | Purpose                                     |
-| ---------------------------------- | ------------------------------------------------------ | ------------------------------------------- |
-| `ModuleDashboard`                  | `src/components/layout/ModuleDashboard.tsx`            | Page layout with tabs, header, actions      |
-| `PropertiesPanel` / `PanelSection` | `src/components/studio/PropertiesPanel.tsx`            | Collapsible sidebar panels                  |
-| `PromptInput`                      | `src/components/ui/prompt-input.tsx`                   | Auto-sizing input with actions              |
-| `ThreeDButton`                     | `src/components/ui/ThreeDButton.tsx`                   | Variants: primary, secondary, danger, ghost |
-| `ThreeDCard`                       | `src/components/ui/ThreeDCard.tsx`                     | 3D hover effect cards                       |
-| `FileUpload`                       | `src/components/kokonutui/file-upload.tsx`             | Drag-and-drop with progress                 |
-| `AnimatedNumber`                   | `src/components/motion-primitives/animated-number.tsx` | Smooth number transitions                   |
-| `TextEffect`                       | `src/components/motion-primitives/text-effect.tsx`     | Text reveal animations                      |
-| `Tooltip`                          | `src/components/ui/tooltip.tsx`                        | Radix UI tooltip                            |
+| Component | Location | Purpose |
+|-----------|----------|---------|
+| `ModuleDashboard` | `src/components/layout/ModuleDashboard.tsx` | Page layout with tabs, header, actions |
+| `PropertiesPanel` / `PanelSection` | `src/components/studio/PropertiesPanel.tsx` | Collapsible sidebar panels |
+| `PromptInput` | `src/components/ui/prompt-input.tsx` | Auto-sizing input with actions |
+| `ThreeDButton` | `src/components/ui/ThreeDButton.tsx` | Variants: primary, secondary, danger, ghost |
+| `ThreeDCard` | `src/components/ui/ThreeDCard.tsx` | 3D hover effect cards |
+| `FileUpload` | `src/components/kokonutui/file-upload.tsx` | Drag-and-drop with progress |
+| `AnimatedNumber` | `src/components/motion-primitives/animated-number.tsx` | Smooth number transitions |
+| `TextEffect` | `src/components/motion-primitives/text-effect.tsx` | Text reveal animations |
+| `Tooltip` | `src/components/ui/tooltip.tsx` | Radix UI tooltip |
 
 ### Design System Constants
-
 - **Dark backgrounds:** `#0f0f0f`, `#0d1117`, `#161b22`
 - **Card styling:** `bg-[#161b22] border border-gray-800 rounded-xl p-4`
 - **Focus rings:** `focus:border-blue-500 focus:ring-1 focus:ring-blue-500`
@@ -770,7 +717,6 @@ package.json                            # Add dependencies
 ### HIGH Priority (P0)
 
 #### 8.2.1 ReleaseStatusCard Component
-
 **File:** `src/modules/publishing/components/ReleaseStatusCard.tsx`
 **Purpose:** Show per-release delivery status across distributors
 
@@ -789,7 +735,6 @@ package.json                            # Add dependencies
 **Data source:** `DistributionPersistenceService.getDeploymentsForRelease()`
 
 #### 8.2.2 DistributorConnectionsPanel Component
-
 **File:** `src/modules/publishing/components/DistributorConnectionsPanel.tsx`
 **Purpose:** Manage distributor API connections
 
@@ -808,7 +753,6 @@ package.json                            # Add dependencies
 **Data source:** `CredentialService.getCredentials()`, adapter `.isConnected()`
 
 #### 8.2.3 EarningsDashboard Component
-
 **File:** `src/modules/publishing/components/EarningsDashboard.tsx`
 **Purpose:** Display royalties with breakdowns
 
@@ -833,7 +777,6 @@ package.json                            # Add dependencies
 ### MEDIUM Priority (P1)
 
 #### 8.2.4 DSRUploadModal Component
-
 **File:** `src/modules/publishing/components/DSRUploadModal.tsx`
 **Purpose:** Upload and parse DSR reports
 
@@ -859,7 +802,6 @@ package.json                            # Add dependencies
 **Uses:** `FileUpload` component, `DSRService.parseReport()`
 
 #### 8.2.5 ReleaseListView Component
-
 **File:** `src/modules/publishing/components/ReleaseListView.tsx`
 **Purpose:** Table of all releases with filters
 
@@ -878,7 +820,6 @@ package.json                            # Add dependencies
 **Data source:** `DistributorService.getAllReleases()`, Firestore `ddexReleases`
 
 #### 8.2.6 ValidationRequirementsModal Component
-
 **File:** `src/modules/publishing/components/ValidationRequirementsModal.tsx`
 **Purpose:** Show per-distributor requirements
 
@@ -899,7 +840,6 @@ package.json                            # Add dependencies
 **Data source:** `adapter.requirements` from each adapter
 
 #### 8.2.7 MultiDistributorProgress Component
-
 **File:** `src/modules/publishing/components/MultiDistributorProgress.tsx`
 **Purpose:** Real-time submission progress
 
@@ -920,17 +860,14 @@ package.json                            # Add dependencies
 ### LOW Priority (P2)
 
 #### 8.2.8 AnalyticsCharts Component
-
 **File:** `src/modules/publishing/components/AnalyticsCharts.tsx`
 **Purpose:** Time-series earnings visualization
 
 #### 8.2.9 ReleaseDetailPage Component
-
 **File:** `src/modules/publishing/components/ReleaseDetailPage.tsx`
 **Purpose:** Full release view with edit/takedown
 
 #### 8.2.10 PayoutHistory Component
-
 **File:** `src/modules/publishing/components/PayoutHistory.tsx`
 **Purpose:** Historical payout timeline
 
@@ -983,18 +920,18 @@ src/core/store/slices/publishingSlice.ts (NEW)
 
 ## 8.5 Implementation Order
 
-| Order | Component                                 | Effort | Dependencies                   |
-| ----- | ----------------------------------------- | ------ | ------------------------------ |
-| 1     | `DistributorConnectionsPanel`             | 4h     | CredentialService              |
-| 2     | `ReleaseListView`                         | 6h     | Firestore queries              |
-| 3     | `ReleaseStatusCard`                       | 4h     | DistributionPersistenceService |
-| 4     | `EarningsDashboard` + `EarningsBreakdown` | 8h     | DSRService                     |
-| 5     | `DSRUploadModal`                          | 4h     | FileUpload, DSRService         |
-| 6     | `ValidationRequirementsModal`             | 3h     | Adapter requirements           |
-| 7     | `MultiDistributorProgress`                | 4h     | DistributorService             |
-| 8     | Integrate into `PublishingDashboard`      | 4h     | All above                      |
-| 9     | `ReleaseDetailPage`                       | 6h     | ReleaseStatusCard              |
-| 10    | `AnalyticsCharts`                         | 8h     | Charting library               |
+| Order | Component | Effort | Dependencies |
+|-------|-----------|--------|--------------|
+| 1 | `DistributorConnectionsPanel` | 4h | CredentialService |
+| 2 | `ReleaseListView` | 6h | Firestore queries |
+| 3 | `ReleaseStatusCard` | 4h | DistributionPersistenceService |
+| 4 | `EarningsDashboard` + `EarningsBreakdown` | 8h | DSRService |
+| 5 | `DSRUploadModal` | 4h | FileUpload, DSRService |
+| 6 | `ValidationRequirementsModal` | 3h | Adapter requirements |
+| 7 | `MultiDistributorProgress` | 4h | DistributorService |
+| 8 | Integrate into `PublishingDashboard` | 4h | All above |
+| 9 | `ReleaseDetailPage` | 6h | ReleaseStatusCard |
+| 10 | `AnalyticsCharts` | 8h | Charting library |
 
 **Total Estimated Effort:** ~51 hours
 
@@ -1016,7 +953,6 @@ All new components must follow:
    - `✗` Failed: `text-red-400 bg-red-500/20`
 
 3. **Form inputs:**
-
    ```tsx
    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg
               text-white placeholder-gray-500 focus:border-blue-500
@@ -1046,24 +982,20 @@ All new components must follow:
 ## 8.7 Quality of Life Features
 
 ### Auto-refresh
-
 - Status cards auto-refresh every 30s
 - Earnings dashboard caches with 5-min TTL
 
 ### Error handling
-
 - Toast notifications for API errors
 - Retry buttons for failed operations
 - Graceful fallbacks for missing data
 
 ### Accessibility
-
 - ARIA labels on all interactive elements
 - Keyboard navigation support
 - Screen reader text for status icons
 
 ### Animations
-
 - `AnimatedNumber` for counter updates
 - `fade-in` for card appearances
 - `slide-in-from-bottom` for modals
@@ -1088,43 +1020,38 @@ All new components must follow:
 These services exist and are ready for UI integration:
 
 ### Distribution Services (`src/services/distribution/`)
-
-| File                                | Export               | Purpose                                                                       |
-| ----------------------------------- | -------------------- | ----------------------------------------------------------------------------- |
-| `DistributorService.ts`             | `DistributorService` | Main facade - `connect()`, `createRelease()`, `getConnectionStatuses()`       |
-| `DistributionPersistenceService.ts` | `distributionStore`  | Electron-store persistence - `getDeploymentsForRelease()`, `saveDeployment()` |
-| `types/distributor.ts`              | Types                | `DistributorId`, `ReleaseStatus`, `ReleaseAssets`, `DistributorRequirements`  |
+| File | Export | Purpose |
+|------|--------|---------|
+| `DistributorService.ts` | `DistributorService` | Main facade - `connect()`, `createRelease()`, `getConnectionStatuses()` |
+| `DistributionPersistenceService.ts` | `distributionStore` | Electron-store persistence - `getDeploymentsForRelease()`, `saveDeployment()` |
+| `types/distributor.ts` | Types | `DistributorId`, `ReleaseStatus`, `ReleaseAssets`, `DistributorRequirements` |
 
 ### Distributor Adapters (`src/services/distribution/adapters/`)
-
-| Adapter               | ID            | Status      |
-| --------------------- | ------------- | ----------- |
+| Adapter | ID | Status |
+|---------|-----|--------|
 | `DistroKidAdapter.ts` | `'distrokid'` | ✅ Complete |
-| `TuneCoreAdapter.ts`  | `'tunecore'`  | ✅ Complete |
-| `CDBabyAdapter.ts`    | `'cdbaby'`    | ✅ Complete |
+| `TuneCoreAdapter.ts` | `'tunecore'` | ✅ Complete |
+| `CDBabyAdapter.ts` | `'cdbaby'` | ✅ Complete |
 | `SymphonicAdapter.ts` | `'symphonic'` | ✅ Complete |
 
 ### Security Services (`src/services/security/`)
-
-| File                   | Export              | Purpose                                                                                      |
-| ---------------------- | ------------------- | -------------------------------------------------------------------------------------------- |
+| File | Export | Purpose |
+|------|--------|---------|
 | `CredentialService.ts` | `credentialService` | Keytar-based secure storage - `getCredentials()`, `saveCredentials()`, `deleteCredentials()` |
 
 ### DDEX Services (`src/services/ddex/`)
-
-| File            | Export       | Purpose                                                                                                 |
-| --------------- | ------------ | ------------------------------------------------------------------------------------------------------- |
+| File | Export | Purpose |
+|------|--------|---------|
 | `DSRService.ts` | `dsrService` | DSR parsing - `ingestFlatFile()`, `processReport()`, `getRevenueByTerritory()`, `getRevenueByService()` |
-| `DDEXParser.ts` | `DDEXParser` | XML↔JSON - `parseDSR()`, `parseERN()`                                                                   |
-| `ERNService.ts` | `ERNService` | Release notifications                                                                                   |
-| `types/dsr.ts`  | Types        | `DSRReport`, `DSRTransaction`, `DSRSummary`                                                             |
+| `DDEXParser.ts` | `DDEXParser` | XML↔JSON - `parseDSR()`, `parseERN()` |
+| `ERNService.ts` | `ERNService` | Release notifications |
+| `types/dsr.ts` | Types | `DSRReport`, `DSRTransaction`, `DSRSummary` |
 
 ### Existing UI (`src/modules/publishing/`)
-
-| File                           | Status                                                   |
-| ------------------------------ | -------------------------------------------------------- |
-| `PublishingDashboard.tsx`      | ✅ Exists - placeholder "No releases" section to replace |
-| `components/ReleaseWizard.tsx` | ✅ Exists - needs MultiDistributorProgress integration   |
+| File | Status |
+|------|--------|
+| `PublishingDashboard.tsx` | ✅ Exists - placeholder "No releases" section to replace |
+| `components/ReleaseWizard.tsx` | ✅ Exists - needs MultiDistributorProgress integration |
 
 ---
 
@@ -1133,13 +1060,9 @@ These services exist and are ready for UI integration:
 Copy these interfaces directly into each component file:
 
 ### ReleaseStatusCard
-
 ```typescript
 // src/modules/publishing/components/ReleaseStatusCard.tsx
-import type {
-  ReleaseStatus,
-  DistributorId,
-} from "@/services/distribution/types/distributor";
+import type { ReleaseStatus, DistributorId } from '@/services/distribution/types/distributor';
 
 interface DistributorDeployment {
   distributorId: DistributorId;
@@ -1156,7 +1079,7 @@ interface ReleaseStatusCardProps {
   artistName: string;
   coverArtUrl?: string;
   releaseDate: string;
-  releaseType: "Single" | "EP" | "Album" | "Compilation";
+  releaseType: 'Single' | 'EP' | 'Album' | 'Compilation';
   deployments: DistributorDeployment[];
   onRetry?: (distributorId: DistributorId) => void;
   onViewDetails?: () => void;
@@ -1165,13 +1088,9 @@ interface ReleaseStatusCardProps {
 ```
 
 ### DistributorConnectionsPanel
-
 ```typescript
 // src/modules/publishing/components/DistributorConnectionsPanel.tsx
-import type {
-  DistributorId,
-  DistributorRequirements,
-} from "@/services/distribution/types/distributor";
+import type { DistributorId, DistributorRequirements } from '@/services/distribution/types/distributor';
 
 interface DistributorConnectionState {
   id: DistributorId;
@@ -1193,7 +1112,6 @@ interface DistributorConnectionsPanelProps {
 ```
 
 ### EarningsDashboard
-
 ```typescript
 // src/modules/publishing/components/EarningsDashboard.tsx
 interface EarningsSummary {
@@ -1224,10 +1142,9 @@ interface EarningsDashboardProps {
 ```
 
 ### DSRUploadModal
-
 ```typescript
 // src/modules/publishing/components/DSRUploadModal.tsx
-import type { DSRReport, DSRTransaction } from "@/services/ddex/types/dsr";
+import type { DSRReport, DSRTransaction } from '@/services/ddex/types/dsr';
 
 interface DSRUploadModalProps {
   isOpen: boolean;
@@ -1246,13 +1163,9 @@ interface DSRPreviewState {
 ```
 
 ### ReleaseListView
-
 ```typescript
 // src/modules/publishing/components/ReleaseListView.tsx
-import type {
-  ReleaseStatus,
-  DistributorId,
-} from "@/services/distribution/types/distributor";
+import type { ReleaseStatus, DistributorId } from '@/services/distribution/types/distributor';
 
 interface ReleaseItem {
   id: string;
@@ -1260,7 +1173,7 @@ interface ReleaseItem {
   artistName: string;
   coverArtUrl?: string;
   releaseDate: string;
-  releaseType: "Single" | "EP" | "Album" | "Compilation";
+  releaseType: 'Single' | 'EP' | 'Album' | 'Compilation';
   status: ReleaseStatus; // Aggregate status
   distributors: { id: DistributorId; status: ReleaseStatus }[];
   createdAt: string;
@@ -1279,40 +1192,28 @@ interface ReleaseListViewProps {
 ```
 
 ### ValidationRequirementsModal
-
 ```typescript
 // src/modules/publishing/components/ValidationRequirementsModal.tsx
-import type {
-  DistributorId,
-  DistributorRequirements,
-} from "@/services/distribution/types/distributor";
+import type { DistributorId, DistributorRequirements } from '@/services/distribution/types/distributor';
 
 interface ValidationRequirementsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  distributors: {
-    id: DistributorId;
-    name: string;
-    requirements: DistributorRequirements;
-  }[];
+  distributors: { id: DistributorId; name: string; requirements: DistributorRequirements }[];
   highlightDistributor?: DistributorId; // Scroll to / highlight specific one
   className?: string;
 }
 ```
 
 ### MultiDistributorProgress
-
 ```typescript
 // src/modules/publishing/components/MultiDistributorProgress.tsx
-import type {
-  DistributorId,
-  ReleaseStatus,
-} from "@/services/distribution/types/distributor";
+import type { DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
 
 interface DistributorProgress {
   distributorId: DistributorId;
   name: string;
-  status: "queued" | "uploading" | "processing" | "complete" | "failed";
+  status: 'queued' | 'uploading' | 'processing' | 'complete' | 'failed';
   progress?: number; // 0-100 for uploading
   message?: string;
   releaseId?: string; // Assigned on success
@@ -1331,15 +1232,10 @@ interface MultiDistributorProgressProps {
 ```
 
 ### ReleaseDetailPage
-
 ```typescript
 // src/modules/publishing/components/ReleaseDetailPage.tsx
-import type { ExtendedGoldenMetadata } from "@/services/metadata/types";
-import type {
-  ReleaseAssets,
-  DistributorId,
-  ReleaseStatus,
-} from "@/services/distribution/types/distributor";
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import type { ReleaseAssets, DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
 
 interface ReleaseDetailPageProps {
   releaseId: string;
@@ -1359,7 +1255,6 @@ interface ReleaseDetailPageProps {
 ```
 
 ### AnalyticsCharts
-
 ```typescript
 // src/modules/publishing/components/AnalyticsCharts.tsx
 interface TimeSeriesDataPoint {
@@ -1370,8 +1265,8 @@ interface TimeSeriesDataPoint {
 
 interface AnalyticsChartsProps {
   data: TimeSeriesDataPoint[];
-  selectedMetric: "revenue" | "streams";
-  onMetricChange: (metric: "revenue" | "streams") => void;
+  selectedMetric: 'revenue' | 'streams';
+  onMetricChange: (metric: 'revenue' | 'streams') => void;
   dateRange: { start: string; end: string };
   loading?: boolean;
   className?: string;
@@ -1379,7 +1274,6 @@ interface AnalyticsChartsProps {
 ```
 
 ### PayoutHistory
-
 ```typescript
 // src/modules/publishing/components/PayoutHistory.tsx
 interface PayoutRecord {
@@ -1387,7 +1281,7 @@ interface PayoutRecord {
   date: string;
   amount: number;
   currencyCode: string;
-  status: "pending" | "processing" | "paid" | "failed";
+  status: 'pending' | 'processing' | 'paid' | 'failed';
   method: string; // e.g., "PayPal", "Bank Transfer"
   releases: { id: string; title: string; amount: number }[];
 }
@@ -1408,35 +1302,21 @@ Standard imports for all publishing components:
 
 ```typescript
 // React & Hooks
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback } from 'react';
 
 // Icons (Lucide)
 import {
-  Music,
-  Search,
-  Filter,
-  Plus,
-  MoreVertical,
-  CheckCircle,
-  Clock,
-  AlertCircle,
-  XCircle,
-  Eye,
-  Edit,
-  Trash2,
-  RefreshCw,
-  ExternalLink,
-  DollarSign,
-  Globe,
-  Download,
-  Upload,
-} from "lucide-react";
+  Music, Search, Filter, Plus, MoreVertical,
+  CheckCircle, Clock, AlertCircle, XCircle,
+  Eye, Edit, Trash2, RefreshCw, ExternalLink,
+  DollarSign, Globe, Download, Upload
+} from 'lucide-react';
 
 // Services
-import { DistributorService } from "@/services/distribution/DistributorService";
-import { distributionStore } from "@/services/distribution/DistributionPersistenceService";
-import { credentialService } from "@/services/security/CredentialService";
-import { dsrService } from "@/services/ddex/DSRService";
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { distributionStore } from '@/services/distribution/DistributionPersistenceService';
+import { credentialService } from '@/services/security/CredentialService';
+import { dsrService } from '@/services/ddex/DSRService';
 
 // Types
 import type {
@@ -1445,18 +1325,14 @@ import type {
   ReleaseAssets,
   DistributorRequirements,
   DistributorCredentials,
-} from "@/services/distribution/types/distributor";
-import type { DSRReport, DSRTransaction } from "@/services/ddex/types/dsr";
-import type { ExtendedGoldenMetadata } from "@/services/metadata/types";
+} from '@/services/distribution/types/distributor';
+import type { DSRReport, DSRTransaction } from '@/services/ddex/types/dsr';
+import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 
 // UI Components (Existing)
-import { FileUpload } from "@/components/kokonutui/file-upload";
-import { AnimatedNumber } from "@/components/motion-primitives/animated-number";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { FileUpload } from '@/components/kokonutui/file-upload';
+import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 ```
 
 ---
@@ -1465,63 +1341,20 @@ import {
 
 ```typescript
 // Consistent status styling across all components
-const STATUS_STYLES: Record<
-  ReleaseStatus,
-  { icon: LucideIcon; color: string; bgColor: string }
-> = {
-  draft: { icon: Edit, color: "text-gray-400", bgColor: "bg-gray-500/20" },
-  validating: {
-    icon: Clock,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/20",
-  },
-  pending_review: {
-    icon: Clock,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/20",
-  },
-  in_review: {
-    icon: Clock,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/20",
-  },
-  approved: {
-    icon: CheckCircle,
-    color: "text-green-400",
-    bgColor: "bg-green-500/20",
-  },
-  processing: {
-    icon: RefreshCw,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/20",
-  },
-  delivering: {
-    icon: RefreshCw,
-    color: "text-blue-400",
-    bgColor: "bg-blue-500/20",
-  },
-  delivered: {
-    icon: CheckCircle,
-    color: "text-green-400",
-    bgColor: "bg-green-500/20",
-  },
-  live: {
-    icon: CheckCircle,
-    color: "text-green-400",
-    bgColor: "bg-green-500/20",
-  },
-  takedown_requested: {
-    icon: AlertCircle,
-    color: "text-yellow-400",
-    bgColor: "bg-yellow-500/20",
-  },
-  taken_down: {
-    icon: XCircle,
-    color: "text-gray-400",
-    bgColor: "bg-gray-500/20",
-  },
-  failed: { icon: XCircle, color: "text-red-400", bgColor: "bg-red-500/20" },
-  rejected: { icon: XCircle, color: "text-red-400", bgColor: "bg-red-500/20" },
+const STATUS_STYLES: Record<ReleaseStatus, { icon: LucideIcon; color: string; bgColor: string }> = {
+  draft: { icon: Edit, color: 'text-gray-400', bgColor: 'bg-gray-500/20' },
+  validating: { icon: Clock, color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  pending_review: { icon: Clock, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  in_review: { icon: Clock, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  approved: { icon: CheckCircle, color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  processing: { icon: RefreshCw, color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  delivering: { icon: RefreshCw, color: 'text-blue-400', bgColor: 'bg-blue-500/20' },
+  delivered: { icon: CheckCircle, color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  live: { icon: CheckCircle, color: 'text-green-400', bgColor: 'bg-green-500/20' },
+  takedown_requested: { icon: AlertCircle, color: 'text-yellow-400', bgColor: 'bg-yellow-500/20' },
+  taken_down: { icon: XCircle, color: 'text-gray-400', bgColor: 'bg-gray-500/20' },
+  failed: { icon: XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' },
+  rejected: { icon: XCircle, color: 'text-red-400', bgColor: 'bg-red-500/20' },
 };
 ```
 
@@ -1530,18 +1363,15 @@ const STATUS_STYLES: Record<
 ## 8.13 Hooks to Create
 
 ### useDistributorConnections
-
 ```typescript
 // src/modules/publishing/hooks/useDistributorConnections.ts
-import { useState, useEffect, useCallback } from "react";
-import { DistributorService } from "@/services/distribution/DistributorService";
-import { credentialService } from "@/services/security/CredentialService";
-import type { DistributorId } from "@/services/distribution/types/distributor";
+import { useState, useEffect, useCallback } from 'react';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import { credentialService } from '@/services/security/CredentialService';
+import type { DistributorId } from '@/services/distribution/types/distributor';
 
 export function useDistributorConnections() {
-  const [connections, setConnections] = useState<DistributorConnectionState[]>(
-    [],
-  );
+  const [connections, setConnections] = useState<DistributorConnectionState[]>([]);
   const [loading, setLoading] = useState(true);
 
   const refresh = useCallback(async () => {
@@ -1551,38 +1381,29 @@ export function useDistributorConnections() {
     setLoading(false);
   }, []);
 
-  const connect = useCallback(
-    async (id: DistributorId, credentials: DistributorCredentials) => {
-      await DistributorService.connect(id, credentials);
-      await refresh();
-    },
-    [refresh],
-  );
-
-  const disconnect = useCallback(
-    async (id: DistributorId) => {
-      await DistributorService.disconnect(id);
-      await credentialService.deleteCredentials(id);
-      await refresh();
-    },
-    [refresh],
-  );
-
-  useEffect(() => {
-    refresh();
+  const connect = useCallback(async (id: DistributorId, credentials: DistributorCredentials) => {
+    await DistributorService.connect(id, credentials);
+    await refresh();
   }, [refresh]);
+
+  const disconnect = useCallback(async (id: DistributorId) => {
+    await DistributorService.disconnect(id);
+    await credentialService.deleteCredentials(id);
+    await refresh();
+  }, [refresh]);
+
+  useEffect(() => { refresh(); }, [refresh]);
 
   return { connections, loading, connect, disconnect, refresh };
 }
 ```
 
 ### useEarnings
-
 ```typescript
 // src/modules/publishing/hooks/useEarnings.ts
-import { useState, useEffect, useCallback } from "react";
-import { DistributorService } from "@/services/distribution/DistributorService";
-import type { AggregatedEarnings } from "@/services/distribution/types/distributor";
+import { useState, useEffect, useCallback } from 'react';
+import { DistributorService } from '@/services/distribution/DistributorService';
+import type { AggregatedEarnings } from '@/services/distribution/types/distributor';
 
 export function useEarnings(period: { start: string; end: string }) {
   const [earnings, setEarnings] = useState<AggregatedEarnings | null>(null);
@@ -1595,29 +1416,24 @@ export function useEarnings(period: { start: string; end: string }) {
     setLoading(false);
   }, [period.start, period.end]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   return { earnings, loading, refresh };
 }
 ```
 
 ### useReleaseList
-
 ```typescript
 // src/modules/publishing/hooks/useReleaseList.ts
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { distributionStore } from "@/services/distribution/DistributionPersistenceService";
-import type { ReleaseStatus } from "@/services/distribution/types/distributor";
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { distributionStore } from '@/services/distribution/DistributionPersistenceService';
+import type { ReleaseStatus } from '@/services/distribution/types/distributor';
 
 export function useReleaseList() {
   const [releases, setReleases] = useState<ReleaseItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ReleaseStatus | "all">(
-    "all",
-  );
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<ReleaseStatus | 'all'>('all');
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -1627,19 +1443,16 @@ export function useReleaseList() {
   }, []);
 
   const filteredReleases = useMemo(() => {
-    return releases.filter((r) => {
-      const matchesSearch =
-        searchQuery === "" ||
+    return releases.filter(r => {
+      const matchesSearch = searchQuery === '' ||
         r.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.artistName.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesStatus = statusFilter === "all" || r.status === statusFilter;
+      const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [releases, searchQuery, statusFilter]);
 
-  useEffect(() => {
-    refresh();
-  }, [refresh]);
+  useEffect(() => { refresh(); }, [refresh]);
 
   return {
     releases: filteredReleases,

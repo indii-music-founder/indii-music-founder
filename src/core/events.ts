@@ -5,19 +5,7 @@ export type EventType =
     | 'DEPARTMENT_REQUEST'
     | 'SYSTEM_ALERT'
     | 'TASK_COMPLETED'
-    | 'TASK_FAILED'
-    // NEW: Creative Events
-    | 'IMAGE_GENERATED'
-    | 'VIDEO_RENDER_COMPLETE'
-    | 'AUDIO_ANALYSIS_COMPLETE'
-    // NEW: Business Events
-    | 'DISTRIBUTION_SUBMITTED'
-    | 'REVENUE_DETECTED'
-    | 'CONTRACT_SIGNED'
-    // NEW: Lifecycle Events
-    | 'SESSION_STARTED'
-    | 'SESSION_ENDED'
-    | 'PROJECT_SWITCHED';
+    | 'TASK_FAILED';
 
 export interface AgentActionEvent {
     agentId: string;

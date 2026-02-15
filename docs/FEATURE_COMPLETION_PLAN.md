@@ -240,7 +240,7 @@ interface RevenueEntry {
   id: string;
   productId: string;
   amount: number;
-  source: "direct" | "social_drop";
+  source: 'direct' | 'social_drop';
   customerId: string;
   timestamp: Timestamp;
 }
@@ -249,10 +249,8 @@ class RevenueService {
   getTotalRevenue(userId: string): Promise<number>;
   getRevenueByPeriod(userId: string, start: Date, end: Date): Promise<number>;
   getRevenueByProduct(userId: string): Promise<Map<string, number>>;
-  getRevenueBySource(
-    userId: string,
-  ): Promise<{ direct: number; social: number }>;
-  recordSale(entry: Omit<RevenueEntry, "id">): Promise<void>;
+  getRevenueBySource(userId: string): Promise<{direct: number, social: number}>;
+  recordSale(entry: Omit<RevenueEntry, 'id'>): Promise<void>;
 }
 ```
 
@@ -301,12 +299,12 @@ class RevenueService {
 
 ## Execution Order (Recommended)
 
-| Phase | Feature                | Dependencies       | Effort |
-| ----- | ---------------------- | ------------------ | ------ |
-| 1     | Video Backend          | None               | Medium |
-| 2     | Agent Implementations  | None               | High   |
-| 3     | Distribution System    | Agents (optional)  | High   |
-| 4     | Social Drops + Revenue | Video (for promos) | High   |
+| Phase | Feature | Dependencies | Effort |
+|-------|---------|--------------|--------|
+| 1 | Video Backend | None | Medium |
+| 2 | Agent Implementations | None | High |
+| 3 | Distribution System | Agents (optional) | High |
+| 4 | Social Drops + Revenue | Video (for promos) | High |
 
 **Rationale:**
 
@@ -555,26 +553,26 @@ src/modules/dashboard/Dashboard.tsx
 
 ### By Severity
 
-| Severity     | Count | Examples                                             |
-| ------------ | ----- | ---------------------------------------------------- |
-| **Critical** | 6     | Earnings broken, DDEX incomplete, deprecated methods |
-| **High**     | 8     | Error boundaries, security, timer leaks              |
-| **Medium**   | 10    | Type safety, dead code, deep imports                 |
-| **Low**      | 6+    | Accessibility, memoization, organization             |
+| Severity | Count | Examples |
+|----------|-------|----------|
+| **Critical** | 6 | Earnings broken, DDEX incomplete, deprecated methods |
+| **High** | 8 | Error boundaries, security, timer leaks |
+| **Medium** | 10 | Type safety, dead code, deep imports |
+| **Low** | 6+ | Accessibility, memoization, organization |
 
 ### By Category
 
-| Category            | Issues                        |
-| ------------------- | ----------------------------- |
-| Distribution System | 8 (adapters, DDEX, currency)  |
-| Agent System        | 5 (framework-only agents)     |
-| Video Backend       | 4 (placeholder, job status)   |
-| Social Drops        | 8 (schema, UI, revenue)       |
-| Code Quality        | 6 (types, imports, dead code) |
-| Security            | 4 (JSON parse, logging, SFTP) |
-| Performance         | 3 (timers, memoization)       |
-| Accessibility       | 5 (ARIA, keyboard, focus)     |
-| Error Handling      | 5 (boundaries per module)     |
+| Category | Issues |
+|----------|--------|
+| Distribution System | 8 (adapters, DDEX, currency) |
+| Agent System | 5 (framework-only agents) |
+| Video Backend | 4 (placeholder, job status) |
+| Social Drops | 8 (schema, UI, revenue) |
+| Code Quality | 6 (types, imports, dead code) |
+| Security | 4 (JSON parse, logging, SFTP) |
+| Performance | 3 (timers, memoization) |
+| Accessibility | 5 (ARIA, keyboard, focus) |
+| Error Handling | 5 (boundaries per module) |
 
 ---
 

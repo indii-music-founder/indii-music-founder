@@ -32,22 +32,7 @@ vi.mock('@/services/storage/repository', () => ({
     getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('../services/CanvasOperationsService', () => ({
-    canvasOps: {
-        addRectangle: vi.fn(),
-        addCircle: vi.fn(),
-        addText: vi.fn(),
-        initialize: vi.fn(),
-        dispose: vi.fn(),
-        updateBrushColor: vi.fn(),
-        setMagicFillMode: vi.fn(),
-        prepareMasksForEdit: vi.fn().mockReturnValue({ masks: [], baseImage: '' }),
-        extractSemanticMask: vi.fn().mockReturnValue(''),
-        extractGeminiMask: vi.fn().mockReturnValue(''),
-        applyCandidateImage: vi.fn(),
-        saveCanvas: vi.fn(),
-        getBlob: vi.fn().mockResolvedValue(new Blob()),
-        toJSON: vi.fn().mockResolvedValue('{}')
-    }
+    canvasOps: { addRectangle: vi.fn(), addCircle: vi.fn(), addText: vi.fn(), initialize: vi.fn() }
 }));
 vi.mock('../services/VideoDirector', () => ({ VideoDirector: { animate: vi.fn() } }));
 vi.mock('@/services/image/EditingService', () => ({ Editing: { magicFill: vi.fn() } }));

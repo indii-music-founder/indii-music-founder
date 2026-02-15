@@ -86,28 +86,23 @@ Phase 4 implements **hub-and-spoke architecture enforcement** to prevent special
 
 ```typescript
 // The hub agent
-export const HUB_AGENT_ID = "generalist";
+export const HUB_AGENT_ID = 'generalist';
 
 // All specialist agents (spokes)
-export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(
-  (id) => id !== HUB_AGENT_ID,
-);
+export const SPOKE_AGENT_IDS = VALID_AGENT_IDS.filter(id => id !== HUB_AGENT_ID);
 ```
 
 **Added Helper Functions:**
 
 ```typescript
 // Check if agent is the hub
-export function isHubAgent(agentId: string): boolean;
+export function isHubAgent(agentId: string): boolean
 
 // Check if agent is a spoke
-export function isSpokeAgent(agentId: string): boolean;
+export function isSpokeAgent(agentId: string): boolean
 
 // Validate hub-and-spoke rules
-export function validateHubAndSpoke(
-  sourceAgentId: string,
-  targetAgentId: string,
-): string | null;
+export function validateHubAndSpoke(sourceAgentId: string, targetAgentId: string): string | null
 ```
 
 **Validation Logic:**
@@ -138,15 +133,12 @@ validateHubAndSpoke(source, target):
 // Phase 4: Enforce hub-and-spoke architecture
 const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
 if (hubSpokeError) {
-  console.warn(
-    `[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`,
-  );
-  return toolError(hubSpokeError, "HUB_SPOKE_VIOLATION");
+    console.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
+    return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
 }
 ```
 
 **Validation Order:**
-
 1. ✅ Validate arguments (targetAgentId, task)
 2. ✅ Validate targetAgentId is in VALID_AGENT_IDS
 3. ✅ **NEW:** Validate hub-and-spoke rules
@@ -165,10 +157,8 @@ if (hubSpokeError) {
 // Phase 4: Enforce hub-and-spoke architecture
 const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
 if (hubSpokeError) {
-  console.warn(
-    `[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`,
-  );
-  return { agentId: c.targetAgentId, error: hubSpokeError };
+    console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
+    return { agentId: c.targetAgentId, error: hubSpokeError };
 }
 ```
 
@@ -180,32 +170,32 @@ if (hubSpokeError) {
 
 ### Hub Agent
 
-| Agent ID     | Name       | Role                                                    |
-| ------------ | ---------- | ------------------------------------------------------- |
+| Agent ID | Name | Role |
+|----------|------|------|
 | `generalist` | Agent Zero | Central coordinator, orchestrates all specialist agents |
 
 ### Spoke Agents (Specialists)
 
-| Agent ID                | Name               | Domain                                  |
-| ----------------------- | ------------------ | --------------------------------------- |
-| `marketing`             | Marketing Agent    | Marketing campaigns & audience analysis |
-| `legal`                 | Legal Agent        | Contract analysis & legal compliance    |
-| `finance`               | Finance Agent      | Financial projections & earnings        |
-| `producer`              | Producer Agent     | Music production & creative direction   |
-| `director`              | Director Agent     | Video direction & cinematography        |
-| `screenwriter`          | Screenwriter Agent | Script writing & narrative              |
-| `video`                 | Video Agent        | Video generation & editing              |
-| `social`                | Social Agent       | Social media management                 |
-| `publicist`             | Publicist Agent    | Press releases & public relations       |
-| `road` / `road-manager` | Road Manager       | Tour planning & logistics               |
-| `publishing`            | Publishing Agent   | Music publishing & rights               |
-| `licensing`             | Licensing Agent    | Licensing & sync deals                  |
-| `brand`                 | Brand Agent        | Brand consistency & guidelines          |
-| `devops`                | DevOps Agent       | System operations & deployment          |
-| `security`              | Security Agent     | Security audits & permissions           |
-| `merchandise`           | Merchandise Agent  | Merch creation & production             |
-| `distribution`          | Distribution Agent | Direct-to-DSP distribution              |
-| `keeper`                | Keeper Agent       | Context integrity guardian              |
+| Agent ID | Name | Domain |
+|----------|------|--------|
+| `marketing` | Marketing Agent | Marketing campaigns & audience analysis |
+| `legal` | Legal Agent | Contract analysis & legal compliance |
+| `finance` | Finance Agent | Financial projections & earnings |
+| `producer` | Producer Agent | Music production & creative direction |
+| `director` | Director Agent | Video direction & cinematography |
+| `screenwriter` | Screenwriter Agent | Script writing & narrative |
+| `video` | Video Agent | Video generation & editing |
+| `social` | Social Agent | Social media management |
+| `publicist` | Publicist Agent | Press releases & public relations |
+| `road` / `road-manager` | Road Manager | Tour planning & logistics |
+| `publishing` | Publishing Agent | Music publishing & rights |
+| `licensing` | Licensing Agent | Licensing & sync deals |
+| `brand` | Brand Agent | Brand consistency & guidelines |
+| `devops` | DevOps Agent | System operations & deployment |
+| `security` | Security Agent | Security audits & permissions |
+| `merchandise` | Merchandise Agent | Merch creation & production |
+| `distribution` | Distribution Agent | Direct-to-DSP distribution |
+| `keeper` | Keeper Agent | Context integrity guardian |
 
 ---
 
@@ -216,14 +206,12 @@ if (hubSpokeError) {
 **Error Code:** `HUB_SPOKE_VIOLATION`
 
 **Example Message:**
-
 ```
 indii architecture rule: Specialist agent 'marketing' cannot delegate directly to 'finance'.
 Specialists must delegate to 'generalist' (Agent Zero), who will coordinate with other specialists as needed.
 ```
 
 **What This Means:**
-
 - A specialist tried to delegate to another specialist
 - The specialist should instead ask the hub to coordinate
 - The hub will then delegate to the appropriate specialist
@@ -247,20 +235,20 @@ Specialists must delegate to 'generalist' (Agent Zero), who will coordinate with
 
 ### ✅ Allowed Delegations
 
-| Source       | Target       | Reason                                 |
-| ------------ | ------------ | -------------------------------------- |
-| `generalist` | ANY spoke    | Hub can delegate to any specialist     |
-| ANY spoke    | `generalist` | Specialists can delegate back to hub   |
+| Source | Target | Reason |
+|--------|--------|--------|
+| `generalist` | ANY spoke | Hub can delegate to any specialist |
+| ANY spoke | `generalist` | Specialists can delegate back to hub |
 | `generalist` | `generalist` | Hub can self-delegate (though unusual) |
 
 ### ❌ Blocked Delegations
 
-| Source      | Target          | Reason                         |
-| ----------- | --------------- | ------------------------------ |
-| `marketing` | `finance`       | Spoke → Spoke (use hub)        |
-| `video`     | `social`        | Spoke → Spoke (use hub)        |
-| `finance`   | `legal`         | Spoke → Spoke (use hub)        |
-| ANY spoke   | ANY other spoke | Violates hub-and-spoke pattern |
+| Source | Target | Reason |
+|--------|--------|--------|
+| `marketing` | `finance` | Spoke → Spoke (use hub) |
+| `video` | `social` | Spoke → Spoke (use hub) |
+| `finance` | `legal` | Spoke → Spoke (use hub) |
+| ANY spoke | ANY other spoke | Violates hub-and-spoke pattern |
 
 ---
 
@@ -339,12 +327,10 @@ Finance receives error:
 ### Works With Phase 2 (Loop Detection)
 
 **Order of Validation:**
-
 1. Phase 4: Hub-and-spoke check
 2. Phase 2: Delegation loop detection
 
 **Both can trigger:**
-
 - Hub-and-spoke violation → Immediate rejection
 - Delegation loop → Immediate rejection
 - Both pass → Delegation proceeds
@@ -362,7 +348,6 @@ Finance receives error:
 ### Manual Test Scenarios
 
 **Test 1: Hub delegates to spoke** ✅ Should succeed
-
 ```typescript
 // In Generalist agent
 delegate_task(targetAgentId: 'marketing', task: 'Create campaign')
@@ -370,7 +355,6 @@ delegate_task(targetAgentId: 'marketing', task: 'Create campaign')
 ```
 
 **Test 2: Spoke delegates to hub** ✅ Should succeed
-
 ```typescript
 // In Marketing agent
 delegate_task(targetAgentId: 'generalist', task: 'Need help coordinating...')
@@ -378,7 +362,6 @@ delegate_task(targetAgentId: 'generalist', task: 'Need help coordinating...')
 ```
 
 **Test 3: Spoke delegates to spoke** ❌ Should fail
-
 ```typescript
 // In Marketing agent
 delegate_task(targetAgentId: 'finance', task: 'Calculate ROI')
@@ -397,25 +380,21 @@ npx tsc --noEmit
 ## Benefits
 
 ### 1. **Architectural Clarity**
-
 - Single coordination point (hub)
 - Clear separation of concerns
 - Easy to understand delegation flows
 
 ### 2. **Prevents Complexity**
-
 - No spoke-to-spoke spaghetti code
 - Reduces number of possible delegation paths
 - Easier to reason about agent interactions
 
 ### 3. **Better Debugging**
-
 - All delegations go through hub
 - Centralized logging point
 - Easier to trace execution paths
 
 ### 4. **Scalability**
-
 - Add new spokes without modifying existing ones
 - Hub manages all coordination logic
 - Clean separation of hub vs spoke logic
@@ -427,18 +406,16 @@ npx tsc --noEmit
 ### Optional Relaxation
 
 For specific use cases, consider:
-
 - Whitelist certain spoke-to-spoke delegations
 - Time-limited spoke-to-spoke permissions
 - Hub-approved spoke-to-spoke connections
 
 **Example:**
-
 ```typescript
 // Allow specific pairs
 const ALLOWED_SPOKE_PAIRS = [
-  ["video", "director"], // Video can consult Director
-  ["marketing", "brand"], // Marketing can consult Brand
+  ['video', 'director'],  // Video can consult Director
+  ['marketing', 'brand']  // Marketing can consult Brand
 ];
 ```
 
@@ -455,7 +432,6 @@ const ALLOWED_SPOKE_PAIRS = [
 **Phase 4:** Complete ✅
 
 **Changes:**
-
 - ✅ Hub-and-spoke definitions in types.ts
 - ✅ Validation functions implemented
 - ✅ Enforcement in delegate_task

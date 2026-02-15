@@ -18,20 +18,20 @@ export default function AnnotationPalette({
 }: AnnotationPaletteProps) {
 
     return (
-        <div className="flex flex-row md:flex-col gap-2 p-2 bg-[#111] md:border-r border-gray-800 w-full md:w-14 items-center h-full">
-            <div className="mb-0 md:mb-4 md:mt-2 shrink-0">
+        <div className="flex flex-col gap-2 p-2 bg-[#111] border-r border-gray-800 h-full w-14 items-center">
+            <div className="mb-4 mt-2">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-yellow-400 to-purple-600 flex items-center justify-center shadow-lg">
                     <span className="text-[10px] font-bold text-white">ID</span>
                 </div>
             </div>
 
-            <div className="flex flex-row md:flex-col gap-3 items-center flex-1 overflow-x-auto md:overflow-x-hidden md:overflow-y-auto w-full custom-scrollbar">
+            <div className="flex flex-col gap-3 items-center flex-1">
                 {STUDIO_COLORS.map((color) => {
                     const hasDefinition = !!colorDefinitions[color.id];
                     const isActive = activeColor.id === color.id;
 
                     return (
-                        <div key={color.id} className="relative group shrink-0">
+                        <div key={color.id} className="relative group">
                             <button
                                 onClick={() => onColorSelect(color)}
                                 data-testid={`color-btn-${color.id}`}
@@ -56,7 +56,7 @@ export default function AnnotationPalette({
                             )}
 
                             {/* Hover Label */}
-                            <div className="absolute left-1/2 -translate-x-1/2 top-full mt-2 md:left-full md:ml-3 md:top-1/2 md:-translate-y-1/2 md:translate-x-0 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-opacity">
+                            <div className="absolute left-full ml-3 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 whitespace-nowrap z-50 pointer-events-none transition-opacity">
                                 <span className="font-bold">{color.name}</span>
                                 {hasDefinition && <span className="block text-[10px] text-gray-400 max-w-[150px] truncate">{colorDefinitions[color.id]}</span>}
                             </div>
@@ -68,7 +68,7 @@ export default function AnnotationPalette({
             <button
                 onClick={onOpenDefinitions}
                 data-testid="palette-settings-btn"
-                className="ml-auto md:ml-0 md:mt-auto md:mb-2 w-10 h-10 shrink-0 rounded-xl bg-[#222] hover:bg-[#333] text-gray-400 hover:text-white flex items-center justify-center transition-colors border border-gray-800"
+                className="mt-auto mb-2 w-10 h-10 rounded-xl bg-[#222] hover:bg-[#333] text-gray-400 hover:text-white flex items-center justify-center transition-colors border border-gray-800"
                 title="Edit Definitions"
             >
                 <Settings size={18} />

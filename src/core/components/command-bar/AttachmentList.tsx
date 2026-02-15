@@ -6,7 +6,7 @@ interface AttachmentListProps {
     onRemove: (index: number) => void;
 }
 
-export const AttachmentList = memo(({ attachments = [], onRemove }: AttachmentListProps) => {
+export const AttachmentList = memo(({ attachments, onRemove }: AttachmentListProps) => {
     if (!attachments || attachments.length === 0) return null;
     return (
         <ul className="px-4 pb-2 flex gap-2 flex-wrap m-0 list-none" aria-label="Attached files">

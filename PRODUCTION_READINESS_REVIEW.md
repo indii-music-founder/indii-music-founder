@@ -4,7 +4,6 @@
 **Status:** 🚧 **NOT Production Ready**
 
 ## Executive Summary
-
 IndiiOS has a solid architectural foundation (React/Vite, Electron, Firebase Functions, Inngest), but it is currently in a "High-Fidelity Prototype" or "Alpha" state. Critical business logic (payments, revenue data) is mocked, and security rules are too permissive for a public launch.
 
 ---
@@ -12,18 +11,15 @@ IndiiOS has a solid architectural foundation (React/Vite, Electron, Firebase Fun
 ## 🔴 Critical Blockers (Must Fix)
 
 ### 1. Fake Financial Logic
-
 - **Mock Payments:** `MarketplaceService.purchaseProduct` contains `const success = true; // Simulate 100% success rate`. Real payment processing (Stripe/LemonSqueezy) is implemented in `functions/src/subscription` but not connected to the Marketplace.
 - **Data Fabrication:** `FinanceService.fetchEarnings` automatically seeds **fake revenue data** (e.g., "Spotify: $4500.20") for any new user if their collection is empty. This is deceptive for a real user.
 
 ### 2. Security Gaps
-
 - **Permissive Storage Rules:** `storage.rules` allows writes to `projects/{projectId}/{userId}` without verifying that `userId` is actually a member of `projectId`.
 - **Admin RCE Risk:** `executeBigQueryQuery` in Cloud Functions allows admins to execute raw SQL strings passed from the client. If an admin token is leaked, this allows full data exfiltration/destruction.
-- **Client-Side Validation:** `TouringService` relies on Zod parsing _after_ reading from Firestore or _before_ writing, but `firestore.rules` does not enforce schema validation. A malicious user can write invalid data directly to Firestore, breaking the UI for themselves or others.
+- **Client-Side Validation:** `TouringService` relies on Zod parsing *after* reading from Firestore or *before* writing, but `firestore.rules` does not enforce schema validation. A malicious user can write invalid data directly to Firestore, breaking the UI for themselves or others.
 
 ### 3. Hardcoded Configuration
-
 - **Production Fallbacks:** `src/config/env.ts` contains hardcoded "fallback" API keys and Project IDs for the production environment (`indiios-v-1-1`). If a developer or staging environment misses an env var, it will silently read/write to the production database.
 
 ---
@@ -31,16 +27,13 @@ IndiiOS has a solid architectural foundation (React/Vite, Electron, Firebase Fun
 ## 🟡 Hold Ups (Technical Debt)
 
 ### 1. Heavy Client Bundle
-
 - **Bloated Dependencies:** The application bundles `ffmpeg-static`, `ffprobe-static`, `tesseract.js`, `three`, and `fabric`. This results in a massive download size.
 - **Memory Usage:** The `MarketplaceService` uses an in-memory `Map` cache for products. While it has a size limit (`MAX_CACHE_SIZE = 100`), this state is lost on reload and duplicates data already cached by the Firestore SDK.
 
 ### 2. Incomplete Auth Flow
-
-- **Onboarding Gaps:** `App.tsx` lacks a dedicated routing strategy for unauthenticated users, relying on a loose `useOnboardingRedirect` hook. Comments indicate: _"We probably need a Login Module or Overlay."_
+- **Onboarding Gaps:** `App.tsx` lacks a dedicated routing strategy for unauthenticated users, relying on a loose `useOnboardingRedirect` hook. Comments indicate: *"We probably need a Login Module or Overlay."*
 
 ### 3. "Auto-Admin" Functions
-
 - **Missing granular permissions:** The backend relies heavily on a binary `admin: true` claim. There is no intermediate role (e.g., "Support", "Analyst") for internal tools like the DevOps dashboard.
 
 ---

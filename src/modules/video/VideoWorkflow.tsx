@@ -8,7 +8,6 @@ import { WhiskService } from '../../services/WhiskService';
 // Removed unused imports from framer-motion and lucide-react as they are now in VideoStage
 import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
-import { Logger } from '@/core/logger/Logger';
 
 // Components
 import { DirectorPromptBar } from './components/DirectorPromptBar';
@@ -81,10 +80,10 @@ export const processJobUpdate = (
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
                     .then((path: string) => {
-                        Logger.info('VideoWorkflow', 'Video saved locally to:', path);
+                        console.log('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
-                    .catch((err: any) => Logger.error('VideoWorkflow', 'Failed to save to local folder:', err));
+                    .catch((err: any) => console.error('Failed to save to local folder:', err));
             }
 
             const newAsset = {
@@ -232,24 +231,76 @@ export default function VideoWorkflow() {
 
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
             if (data) {
-                processJobUpdate(data, jobId, {
-                    currentProjectId,
-                    currentOrganizationId,
-                    localPrompt: localPromptRef.current,
-                    addToHistory,
-                    updateHistoryItem,
-                    setActiveVideo,
-                    setJobId,
-                    setJobStatus,
-                    setJobProgress: (p) => {
-                        setJobProgress(p);
-                        useVideoEditorStore.getState().setProgress(p);
-                    },
-                    toast,
-                    resetEditorProgress: () => useVideoEditorStore.getState().setProgress(0),
-                    getCurrentStatus: () => useVideoEditorStore.getState().status
-                });
+                const newStatus = data.status;
+
+                // Check current status to avoid unnecessary updates
+                const currentStatus = useVideoEditorStore.getState().status;
+                if (newStatus && newStatus !== currentStatus) {
+                    // Start of type guard
+                    if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
+                        setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
+                    }
+                }
+
+                if (data.progress !== undefined) {
+                    setJobProgress(data.progress);
+                    useVideoEditorStore.getState().setProgress(data.progress);
+                }
+
+                if (newStatus === 'completed' && data.videoUrl) {
+                    // Extract metadata from Veo 3.1 output (enforcing contract)
+                    const metadata = data.output?.metadata || data.metadata;
+
+                    // ⚡ Automatic Local Save (Veo 3.1 Requirement)
+                    const filename = `veo_${jobId}.mp4`;
+
+                    // Trigger background download via Electron
+                    if (window.electronAPI?.video?.saveAsset) {
+                        window.electronAPI.video.saveAsset(data.videoUrl, filename)
+                            .then((path: string) => console.log('Video saved locally to:', path))
+                            .catch((err: any) => console.error('Failed to save to local folder:', err));
+                    }
+
+                    const newAsset = {
+                        id: jobId,
+                        url: data.videoUrl,
+                        prompt: data.prompt || localPromptRef.current,
+                        type: 'video' as const,
+                        timestamp: Date.now(),
+                        projectId: currentProjectId || 'default',
+                        orgId: currentOrganizationId,
+                        meta: metadata ? JSON.stringify(metadata) : undefined
+                    };
+                    addToHistory(newAsset);
+                    setActiveVideo(newAsset);
+                    toast.success('Scene generated!');
+                    setJobId(null);
+                    setJobStatus('idle');
+                    useVideoEditorStore.getState().setProgress(0);
+                } else if (newStatus === 'failed') {
+                    toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
+                    setJobId(null);
+                    setJobStatus('failed');
+                    useVideoEditorStore.getState().setProgress(0);
+                }
             }
+            processJobUpdate(data, jobId, {
+                currentProjectId,
+                currentOrganizationId,
+                localPrompt: localPromptRef.current,
+                addToHistory,
+                updateHistoryItem,
+                setActiveVideo,
+                setJobId,
+                setJobStatus,
+                setJobProgress: (p) => {
+                    setJobProgress(p);
+                    useVideoEditorStore.getState().setProgress(p);
+                },
+                toast,
+                resetEditorProgress: () => useVideoEditorStore.getState().setProgress(0),
+                getCurrentStatus: () => useVideoEditorStore.getState().status
+            });
         });
 
         return () => { if (unsubscribe) unsubscribe(); };
@@ -286,7 +337,7 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
-                        Logger.info('VideoWorkflow', `Segment ${current}/${total}`);
+                        console.info(`Segment ${current}/${total}`);
                     }
                 });
             } else {
@@ -320,10 +371,10 @@ export default function VideoWorkflow() {
                         if (window.electronAPI?.video?.saveAsset) {
                             window.electronAPI.video.saveAsset(res.url, filename)
                                 .then((path: string) => {
-                                    Logger.info('VideoWorkflow', 'Video saved locally to:', path);
+                                    console.log('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });
                                 })
-                                .catch((err: any) => Logger.error('VideoWorkflow', 'Failed to save to local folder:', err));
+                                .catch((err: any) => console.error('Failed to save to local folder:', err));
                         }
 
                         const newAsset = {
@@ -348,7 +399,7 @@ export default function VideoWorkflow() {
             }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            Logger.error('VideoWorkflow', "Video generation failed:", error);
+            console.error("Video generation failed:", error);
             toast.error(`Trigger failed: ${message}`);
             setJobStatus('failed');
         }

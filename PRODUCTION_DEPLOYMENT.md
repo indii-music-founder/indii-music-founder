@@ -88,7 +88,6 @@ npm run electron:build
 1. Get a Developer ID from Apple Developer Portal
 2. Install signing certificate in Keychain
 3. Update `electron-builder.json`:
-
    ```json
    {
      "mac": {
@@ -112,7 +111,6 @@ npm run electron:build --win
 1. Get a code signing certificate from a CA (e.g., DigiCert)
 2. Install certificate in Windows Certificate Store
 3. Update `electron-builder.json`:
-
    ```json
    {
      "win": {
@@ -256,7 +254,6 @@ firebase deploy --only hosting --token <token>
 **Function deployment timeout:**
 
 - Increase timeout in `firebase.json`:
-
   ```json
   {
     "functions": [
@@ -305,7 +302,6 @@ Use these strategies to reduce cold start latency:
 
 1. Enable Gen 2 functions (already configured)
 2. Increase minimum instances for critical functions (cost tradeoff):
-
    ```javascript
    export const myFunction = onCall(
      {
@@ -320,9 +316,9 @@ Use these strategies to reduce cold start latency:
 
 ## Support and Resources
 
-- Firebase Documentation: <https://firebase.google.com/docs>
-- Electron Builder: <https://www.electron.build>
-- Sentry Documentation: <https://docs.sentry.io>
+- Firebase Documentation: https://firebase.google.com/docs
+- Electron Builder: https://www.electron.build
+- Sentry Documentation: https://docs.sentry.io
 - indiiOS Internal Docs: `docs/` directory
 
 ## Known Issues and Workarounds

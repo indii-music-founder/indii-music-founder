@@ -8,11 +8,11 @@
 
 indiiOS deploys to three targets. Each has its own rollback mechanism.
 
-| Target          | Platform                     | Rollback Method           |
-| --------------- | ---------------------------- | ------------------------- |
-| Studio Web App  | Firebase Hosting (`app`)     | Version revert            |
-| Landing Page    | Firebase Hosting (`landing`) | Version revert            |
-| Cloud Functions | Firebase Functions (Gen 2)   | Redeploy previous version |
+| Target | Platform | Rollback Method |
+|--------|----------|----------------|
+| Studio Web App | Firebase Hosting (`app`) | Version revert |
+| Landing Page | Firebase Hosting (`landing`) | Version revert |
+| Cloud Functions | Firebase Functions (Gen 2) | Redeploy previous version |
 
 ---
 
@@ -96,12 +96,12 @@ Desktop app updates are distributed via installers. Rollback requires users to r
 
 ### Immediate Mitigation (< 1 min)
 
-| Scenario               | Action                                       |
-| ---------------------- | -------------------------------------------- |
-| Broken UI/JS           | Firebase Hosting rollback                    |
-| Broken API/Functions   | Cloud Run traffic shift                      |
-| Security vulnerability | Enable `maintenance_mode` feature flag       |
-| Data corruption        | Pause writes via security rules, investigate |
+| Scenario | Action |
+|----------|--------|
+| Broken UI/JS | Firebase Hosting rollback |
+| Broken API/Functions | Cloud Run traffic shift |
+| Security vulnerability | Enable `maintenance_mode` feature flag |
+| Data corruption | Pause writes via security rules, investigate |
 
 ### Maintenance Mode
 
@@ -142,10 +142,10 @@ firebase functions:log --only triggerVideoJob --limit 20
 
 ### Decision Matrix
 
-| Severity | Symptoms             | Action                                |
-| -------- | -------------------- | ------------------------------------- |
-| P0       | App won't load       | Hosting rollback immediately          |
-| P0       | Auth broken          | Functions rollback + hosting rollback |
-| P1       | Feature broken       | Feature flag disable                  |
-| P2       | Performance degraded | Monitor, schedule fix                 |
-| P3       | Visual bug           | Schedule fix, no rollback             |
+| Severity | Symptoms | Action |
+|----------|----------|--------|
+| P0 | App won't load | Hosting rollback immediately |
+| P0 | Auth broken | Functions rollback + hosting rollback |
+| P1 | Feature broken | Feature flag disable |
+| P2 | Performance degraded | Monitor, schedule fix |
+| P3 | Visual bug | Schedule fix, no rollback |

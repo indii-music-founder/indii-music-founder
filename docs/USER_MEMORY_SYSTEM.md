@@ -66,25 +66,25 @@ interface UserMemory {
 
 ### Memory Categories
 
-| Category       | Purpose                           | Example                                       |
-| -------------- | --------------------------------- | --------------------------------------------- |
-| `preference`   | User preferences and settings     | "prefers dark mode", "likes minimal UI"       |
-| `fact`         | Facts about the user              | "is a music producer", "uses FL Studio"       |
-| `context`      | Working context                   | "working on album project", "learning mixing" |
-| `goal`         | User goals and objectives         | "wants to release EP by June"                 |
-| `skill`        | User skills and expertise         | "expert in sound design"                      |
-| `interaction`  | Interaction patterns              | "asks detailed technical questions"           |
-| `feedback`     | User feedback and corrections     | "doesn't like auto-suggestions"               |
-| `relationship` | Social/professional relationships | "collaborates with @username"                 |
+| Category | Purpose | Example |
+|----------|---------|---------|
+| `preference` | User preferences and settings | "prefers dark mode", "likes minimal UI" |
+| `fact` | Facts about the user | "is a music producer", "uses FL Studio" |
+| `context` | Working context | "working on album project", "learning mixing" |
+| `goal` | User goals and objectives | "wants to release EP by June" |
+| `skill` | User skills and expertise | "expert in sound design" |
+| `interaction` | Interaction patterns | "asks detailed technical questions" |
+| `feedback` | User feedback and corrections | "doesn't like auto-suggestions" |
+| `relationship` | Social/professional relationships | "collaborates with @username" |
 
 ### Importance Levels
 
-| Level      | Usage                                   | Retention   |
-| ---------- | --------------------------------------- | ----------- |
-| `critical` | Essential memories that define the user | Permanent   |
-| `high`     | Important context and preferences       | Long-term   |
-| `medium`   | Useful facts and details                | Medium-term |
-| `low`      | Temporary or less important info        | Short-term  |
+| Level | Usage | Retention |
+|-------|-------|-----------|
+| `critical` | Essential memories that define the user | Permanent |
+| `high` | Important context and preferences | Long-term |
+| `medium` | Useful facts and details | Medium-term |
+| `low` | Temporary or less important info | Short-term |
 
 ## Usage Guide
 
@@ -98,7 +98,7 @@ await save_user_memory({
   content: "User prefers concise explanations with minimal preamble",
   category: "preference",
   importance: "high",
-  tags: ["communication", "style"],
+  tags: ["communication", "style"]
 });
 
 // Save a user fact
@@ -106,7 +106,7 @@ await save_user_memory({
   content: "User is a hip-hop producer working primarily with Logic Pro X",
   category: "fact",
   importance: "high",
-  tags: ["profession", "tools"],
+  tags: ["profession", "tools"]
 });
 
 // Save a user goal
@@ -114,14 +114,14 @@ await save_user_memory({
   content: "User wants to master vocal mixing techniques by Q2 2026",
   category: "goal",
   importance: "medium",
-  tags: ["learning", "skills", "vocals"],
+  tags: ["learning", "skills", "vocals"]
 });
 ```
 
 **Direct Service Usage:**
 
 ```typescript
-import { userMemoryService } from "@/services/agent/UserMemoryService";
+import { userMemoryService } from '@/services/agent/UserMemoryService';
 
 const memoryId = await userMemoryService.saveMemory(
   userId,
@@ -131,8 +131,8 @@ const memoryId = await userMemoryService.saveMemory(
   {
     tags: ["communication", "technical"],
     sourceSessionId: currentSessionId,
-    sourceProjectId: currentProjectId,
-  },
+    sourceProjectId: currentProjectId
+  }
 );
 ```
 
@@ -145,11 +145,11 @@ const memoryId = await userMemoryService.saveMemory(
 const results = await search_user_memory({
   query: "What DAW does the user prefer?",
   categories: ["preference", "fact"],
-  limit: 5,
+  limit: 5
 });
 
 // Results include relevance scores
-results.forEach((result) => {
+results.forEach(result => {
   console.log(`${result.content} (score: ${result.relevanceScore})`);
 });
 ```
@@ -161,14 +161,14 @@ results.forEach((result) => {
 const goals = await list_user_memories({
   categories: ["goal"],
   isActive: true,
-  limit: 10,
+  limit: 10
 });
 
 // Find high-priority preferences
 const preferences = await search_user_memory({
   query: "user preferences",
   importance: ["critical", "high"],
-  categories: ["preference"],
+  categories: ["preference"]
 });
 ```
 
@@ -201,17 +201,17 @@ console.log(context.context.keyFacts);
 await update_user_memory({
   memoryId: "mem_123",
   content: "User prefers very concise explanations with zero preamble",
-  importance: "critical",
+  importance: "critical"
 });
 
 // Deactivate outdated memory
 await deactivate_user_memory({
-  memoryId: "mem_456",
+  memoryId: "mem_456"
 });
 
 // Permanently delete sensitive memory
 await delete_user_memory({
-  memoryId: "mem_789",
+  memoryId: "mem_789"
 });
 ```
 
@@ -251,14 +251,14 @@ await save_user_memory({
   content: `User is a ${userRole} working in ${industry}`,
   category: "fact",
   importance: "critical",
-  tags: ["onboarding", "profession"],
+  tags: ["onboarding", "profession"]
 });
 
 await save_user_memory({
   content: `User's primary goal: ${primaryGoal}`,
   category: "goal",
   importance: "high",
-  tags: ["onboarding", "objective"],
+  tags: ["onboarding", "objective"]
 });
 ```
 
@@ -266,21 +266,21 @@ await save_user_memory({
 
 ```typescript
 // User corrects the agent
-user: "Actually, I prefer using Ableton, not Logic Pro";
+user: "Actually, I prefer using Ableton, not Logic Pro"
 
 // Agent saves correction as feedback
 await save_user_memory({
   content: "User corrected previous assumption: prefers Ableton over Logic Pro",
   category: "feedback",
   importance: "high",
-  tags: ["correction", "daw", "tools"],
+  tags: ["correction", "daw", "tools"]
 });
 
 // Update the original fact
 await update_user_memory({
   memoryId: originalFactId,
   content: "User is a hip-hop producer working primarily with Ableton Live",
-  isActive: false,
+  isActive: false
 });
 ```
 
@@ -294,14 +294,14 @@ const userContext = await get_user_context();
 const relevantMemories = await search_user_memory({
   query: userMessage,
   categories: ["preference", "feedback"],
-  limit: 3,
+  limit: 3
 });
 
 // Use memories to personalize response
 const response = generatePersonalizedResponse(
   userMessage,
   userContext,
-  relevantMemories,
+  relevantMemories
 );
 ```
 
@@ -314,7 +314,7 @@ if (userDemonstratesNewSkill) {
     content: `User demonstrated proficiency in ${skillName}`,
     category: "skill",
     importance: "medium",
-    tags: ["skill-development", skillCategory],
+    tags: ["skill-development", skillCategory]
   });
 }
 
@@ -324,7 +324,7 @@ if (consistentPattern) {
     content: `User consistently ${patternDescription}`,
     category: "interaction",
     importance: "medium",
-    tags: ["behavior-pattern"],
+    tags: ["behavior-pattern"]
   });
 }
 ```
@@ -334,64 +334,58 @@ if (consistentPattern) {
 ### 1. Memory Granularity
 
 ✅ **DO**: Create atomic, specific memories
-
 ```typescript
 await save_user_memory({
   content: "User prefers concise explanations without preamble",
-  category: "preference",
+  category: "preference"
 });
 ```
 
 ❌ **DON'T**: Create overly broad memories
-
 ```typescript
 await save_user_memory({
-  content:
-    "User likes things to be done in a certain way with specific formatting...",
-  category: "preference",
+  content: "User likes things to be done in a certain way with specific formatting...",
+  category: "preference"
 });
 ```
 
 ### 2. Use Appropriate Categories
 
 ✅ **DO**: Choose the right category
-
 ```typescript
 // Facts about the user
 await save_user_memory({
   content: "User is a professional sound engineer",
-  category: "fact",
+  category: "fact"
 });
 
 // User preferences
 await save_user_memory({
   content: "User prefers dark mode UI",
-  category: "preference",
+  category: "preference"
 });
 ```
 
 ❌ **DON'T**: Mix categories
-
 ```typescript
 await save_user_memory({
   content: "User is a sound engineer who prefers dark mode",
-  category: "fact", // This mixes fact and preference
+  category: "fact" // This mixes fact and preference
 });
 ```
 
 ### 3. Set Importance Correctly
 
-| When to Use                         | Importance Level |
-| ----------------------------------- | ---------------- |
-| Core identity, critical preferences | `critical`       |
-| Important context, main goals       | `high`           |
-| Useful details, secondary info      | `medium`         |
-| Temporary notes, transient context  | `low`            |
+| When to Use | Importance Level |
+|-------------|------------------|
+| Core identity, critical preferences | `critical` |
+| Important context, main goals | `high` |
+| Useful details, secondary info | `medium` |
+| Temporary notes, transient context | `low` |
 
 ### 4. Tag Consistently
 
 Use consistent, lowercase, hyphenated tags:
-
 ```typescript
 ✅ ["music-production", "daw", "vocals"]
 ❌ ["Music Production", "DAW", "Vocals", "Music_Production"]
@@ -400,7 +394,6 @@ Use consistent, lowercase, hyphenated tags:
 ### 5. Leverage Semantic Search
 
 Instead of exact keyword matching, use natural language queries:
-
 ```typescript
 ✅ "What are the user's communication preferences?"
 ❌ "preference communication"
@@ -409,19 +402,18 @@ Instead of exact keyword matching, use natural language queries:
 ### 6. Update, Don't Duplicate
 
 When information changes, update or supersede existing memories:
-
 ```typescript
 // Option 1: Update existing memory
 await update_user_memory({
   memoryId: existingMemoryId,
-  content: updatedContent,
+  content: updatedContent
 });
 
 // Option 2: Create superseding memory
 await save_user_memory({
   content: newContent,
   category: "fact",
-  importance: "high",
+  importance: "high"
 });
 
 await deactivate_user_memory({ memoryId: oldMemoryId });
@@ -478,7 +470,7 @@ Users can **only** access their own memories.
 If you update the embedding model:
 
 ```typescript
-import { userMemoryService } from "@/services/agent/UserMemoryService";
+import { userMemoryService } from '@/services/agent/UserMemoryService';
 
 const updatedCount = await userMemoryService.regenerateEmbeddings(userId);
 console.log(`Regenerated ${updatedCount} embeddings`);
@@ -489,9 +481,7 @@ console.log(`Regenerated ${updatedCount} embeddings`);
 ```typescript
 const memories = await userMemoryService.exportMemories(userId);
 // Download as backup
-const blob = new Blob([JSON.stringify(memories, null, 2)], {
-  type: "application/json",
-});
+const blob = new Blob([JSON.stringify(memories, null, 2)], { type: 'application/json' });
 ```
 
 ### Import User Memories

@@ -5,7 +5,7 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-    { ignores: ['dist', 'node_modules', 'src/_archive_legacy', '**/dist-electron', '**/dist', '**/.next', '**/.turbo', '**/out', 'landing-page/**', 'functions/lib/**', 'A2UI/**'] },
+    { ignores: ['dist', 'node_modules', 'src/_archive_legacy', '**/dist-electron', '**/dist', '**/.next', '**/.turbo', '**/out', 'landing-page/**', 'functions/lib/**'] },
     {
         extends: [js.configs.recommended, ...tseslint.configs.recommended],
         files: ['**/*.{ts,tsx}'],
@@ -19,12 +19,12 @@ export default tseslint.config(
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
-            'react-refresh/only-export-components': 'off',
-            '@typescript-eslint/no-explicit-any': 'off',
-            '@typescript-eslint/no-unused-vars': 'off',
-            'no-unused-vars': 'off',
-            'react-hooks/exhaustive-deps': 'off',
-            'react-hooks/rules-of-hooks': 'off'
+            'react-refresh/only-export-components': [
+                'warn',
+                { allowConstantExport: true },
+            ],
+            '@typescript-eslint/no-explicit-any': 'warn',
+            '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
         },
     },
 );

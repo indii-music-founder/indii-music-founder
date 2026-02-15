@@ -10,7 +10,6 @@ Performance and stress testing scripts using [k6](https://k6.io/).
    - **Linux:** See [k6 installation docs](https://grafana.com/docs/k6/latest/set-up/install-k6/)
 
 2. **Start the application:**
-
    ```bash
    firebase emulators:start   # For local testing
    npm run dev                # Vite dev server
@@ -19,7 +18,6 @@ Performance and stress testing scripts using [k6](https://k6.io/).
 ## Available Tests
 
 ### Health Check (`health-check.js`)
-
 Validates health endpoint handles sustained traffic within latency thresholds.
 
 ```bash
@@ -34,7 +32,6 @@ k6 run -e FUNCTIONS_URL=https://us-central1-indiios-v-1-1.cloudfunctions.net loa
 - **Thresholds:** p95 < 500ms, <1% error rate
 
 ### Agent Service (`agent-service.js`)
-
 Simulates concurrent users hitting the creative director agent.
 
 ```bash
@@ -46,7 +43,6 @@ k6 run load-tests/agent-service.js
 - **Thresholds:** p95 < 2s, <1% error rate
 
 ### Video Generation (`video-generation.js`)
-
 Stress tests the video generation pipeline and rate limiter.
 
 ```bash
@@ -59,15 +55,14 @@ k6 run -e AUTH_TOKEN=<firebase-id-token> load-tests/video-generation.js
 
 ## Environment Variables
 
-| Variable        | Description                                   | Default        |
-| --------------- | --------------------------------------------- | -------------- |
-| `FUNCTIONS_URL` | Cloud Functions base URL                      | Local emulator |
-| `AUTH_TOKEN`    | Firebase ID token for authenticated endpoints | `test-token`   |
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `FUNCTIONS_URL` | Cloud Functions base URL | Local emulator |
+| `AUTH_TOKEN` | Firebase ID token for authenticated endpoints | `test-token` |
 
 ## Interpreting Results
 
 k6 outputs:
-
 - **http_req_duration:** Response time percentiles (p50, p90, p95, p99)
 - **http_req_failed:** Error rate
 - **iterations:** Total requests completed
@@ -75,8 +70,8 @@ k6 outputs:
 
 ### Acceptable Thresholds
 
-| Endpoint         | p95 Target | Max Error Rate |
-| ---------------- | ---------- | -------------- |
-| Health Check     | < 500ms    | < 1%           |
-| Agent Service    | < 2s       | < 1%           |
-| Video Generation | < 10s      | < 10%          |
+| Endpoint | p95 Target | Max Error Rate |
+|----------|-----------|----------------|
+| Health Check | < 500ms | < 1% |
+| Agent Service | < 2s | < 1% |
+| Video Generation | < 10s | < 10% |

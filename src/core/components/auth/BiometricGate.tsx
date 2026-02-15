@@ -48,13 +48,9 @@ export function BiometricGate({ children }: BiometricGateProps) {
     // Auto-prompt for unlocking on mount if locked and available
     useEffect(() => {
         if (isLocked && isAvailable) {
-            // Delay slightly to avoid set-state-in-effect warning and ensure mount
-            const timer = setTimeout(() => {
-                handleUnlock();
-            }, 100);
-            return () => clearTimeout(timer);
+            handleUnlock();
         }
-
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isAvailable]);
 
     // Fallback unlock (e.g. if biometrics fail repeatedly or aren't actually available but flag is set)
@@ -62,7 +58,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
     // For this alpha, we might want a "Sign Out" option if they are stuck.
 
     if (!isBiometricEnabled || !isLocked) {
-        return children;
+        return <>{children}</>;
     }
 
     return (
