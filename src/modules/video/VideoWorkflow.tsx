@@ -270,7 +270,7 @@ export default function VideoWorkflow() {
             if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
-            let finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
+            const finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 

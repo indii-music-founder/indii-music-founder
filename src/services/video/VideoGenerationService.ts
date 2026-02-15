@@ -20,6 +20,13 @@ import { metadataPersistenceService } from '@/services/persistence/MetadataPersi
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
+/**
+ * VideoGenerationService - Client-side orchestrator for AI video production
+ * 
+ * Handles quota checking, prompt enrichment (cinematography/physics), 
+ * temporal context analysis, and triggering both atomic and long-form 
+ * Daisychaining video generation via Cloud Functions.
+ */
 export class VideoGenerationService {
 
     private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
@@ -91,6 +98,13 @@ export class VideoGenerationService {
         return undefined;
     }
 
+    /**
+     * Triggers a standard (atomic) video generation job.
+     * Enriches the prompt, analyzes temporal context, and invokes the triggerVideoJob function.
+     * 
+     * @param options - Configuration for the video generation request.
+     * @returns A promise resolving to an array containing the jobId placeholder.
+     */
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
         // Zod Validation
         const validation = VideoGenerationOptionsSchema.safeParse(options);
@@ -281,6 +295,13 @@ export class VideoGenerationService {
         }
     }
 
+    /**
+     * Triggers a long-form (Daisychaining) video generation job.
+     * Splices a long request into segments, enriches them, and invokes triggerLongFormVideoJob.
+     * 
+     * @param options - Configuration for long-form generation including totalDuration.
+     * @returns A promise resolving to the main jobId placeholder.
+     */
     async generateLongFormVideo(options: {
         prompt: string;
         totalDuration: number;
