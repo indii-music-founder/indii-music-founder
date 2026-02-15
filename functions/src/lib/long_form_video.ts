@@ -48,6 +48,7 @@ export const LongFormVideoJobSchema = z.object({
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
         generateAudio: z.boolean().optional(),
+        thinking: z.boolean().optional(),
         model: z.string().optional(),
     }).optional().default({})
 });
@@ -128,6 +129,9 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
         // Initialize currentStartImage
         let currentStartImage = startImage;
+        const isThinking = options?.thinking === true;
+
+        console.log(`[Inngest] Starting long-form generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
         try {
             // Update main job status
@@ -140,7 +144,10 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
             for (let i = 0; i < prompts.length; i++) {
                 const segmentId = `${jobId}_seg_${i}`;
-                const prompt = prompts[i];
+                const rawPrompt = prompts[i];
+                const segmentPrompt = isThinking
+                    ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${rawPrompt}`
+                    : rawPrompt;
 
                 // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
@@ -168,7 +175,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     const requestBody = {
                         instances: [
                             {
-                                prompt: prompt,
+                                prompt: segmentPrompt,
                                 ...(imagePayload ? imagePayload : {})
                             }
                         ],

@@ -32,6 +32,7 @@ export const VideoJobSchema = z.object({
     duration: z.union([z.string(), z.number()]).optional().nullable(), // Allow number and null
     durationSeconds: z.number().optional().nullable(),
     generateAudio: z.boolean().optional().nullable(),
+    thinking: z.boolean().optional().nullable(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional(),
         resolution: z.enum(["720p", "1080p", "4k"]).optional(),

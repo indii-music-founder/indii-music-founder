@@ -7,7 +7,12 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
     { event: "video/generate.requested" },
     async ({ event, step }: any) => {
         const { jobId, prompt, userId, options } = event.data;
-        console.log(`[Inngest] Starting video generation for Job: ${jobId}`);
+        const isThinking = options?.thinking === true;
+        const finalPrompt = isThinking
+            ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`
+            : prompt;
+
+        console.log(`[Inngest] Starting video generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
         try {
             // Update status to processing
@@ -42,7 +47,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
                 const requestBody: any = {
-                    instances: [{ prompt: prompt }],
+                    instances: [{ prompt: finalPrompt }],
                     parameters: {
                         sampleCount: 1,
                         aspectRatio: options?.aspectRatio || "16:9",
