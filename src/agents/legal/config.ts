@@ -51,11 +51,15 @@ export const LegalAgent: AgentConfig = {
             }
         ]
     }],
-    get functions() {
-        return {
-            analyze_contract: AnalysisTools.analyze_contract,
-            draft_contract: LegalTools.draft_contract,
-            generate_nda: LegalTools.generate_nda
-        };
+    functions: {
+        analyze_contract: (args: any, ctx: any, tc: any) => AnalysisTools.analyze_contract(args, ctx, tc),
+        draft_contract: (args: any, ctx: any, tc: any) => {
+            if (!LegalTools) throw new Error("LegalTools not initialized");
+            return LegalTools.draft_contract(args, ctx, tc);
+        },
+        generate_nda: (args: any, ctx: any, tc: any) => {
+            if (!LegalTools) throw new Error("LegalTools not initialized");
+            return LegalTools.generate_nda(args, ctx, tc);
+        }
     }
 };

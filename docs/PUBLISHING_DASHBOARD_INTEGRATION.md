@@ -77,7 +77,6 @@ Created comprehensive test suite (`/e2e/publishing-dashboard.spec.ts`):
   - Verify all tabs render correctly
   - Default tab selection
   - Content rendering for each tab
-  
 - **Metric Switching** (1 test)
   - Toggle between Revenue and Streams
   - Visual state verification
@@ -115,14 +114,14 @@ Created comprehensive test suite (`/e2e/publishing-dashboard.spec.ts`):
 
 ### Type Fixes
 
-3. `/src/services/ddex/DSRUploadService.ts`
+1. `/src/services/ddex/DSRUploadService.ts`
    - Fixed type imports from `types/dsr.ts`
    - Corrected property names (reportingPeriod)
    - Fixed revenue calculation fields
 
 ### Testing
 
-4. `/e2e/publishing-dashboard.spec.ts` (NEW)
+1. `/e2e/publishing-dashboard.spec.ts` (NEW)
    - Comprehensive E2E test suite
    - Covers all major features
 

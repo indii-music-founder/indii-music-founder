@@ -5,11 +5,14 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore, AgentMessage } from '@/core/store';
 import { useVoice } from '@/core/context/VoiceContext';
 import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 import { agentRegistry } from '@/services/agent/registry';
 import { requestNotificationPermission } from '@/lib/mobile';
 import { MessageItem } from './chat/ChatMessage';
 import { useDragControls } from 'framer-motion';
 import { PromptArea } from './command-bar/PromptArea';
+import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 interface ChatOverlayProps {
     onClose: () => void;
@@ -17,7 +20,29 @@ interface ChatOverlayProps {
     onToggleMinimize?: () => void;
 }
 
-const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
+const BRAND_COLORS_TO_CLASSES: Record<string, string> = {
+    purple: 'bg-purple-600 text-white shadow-sm',
+    orange: 'bg-orange-600 text-white shadow-sm',
+    emerald: 'bg-emerald-600 text-white shadow-sm',
+    yellow: 'bg-yellow-600 text-white shadow-sm',
+    blue: 'bg-blue-600 text-white shadow-sm',
+    indigo: 'bg-indigo-600 text-white shadow-sm',
+    rose: 'bg-rose-600 text-white shadow-sm',
+    sky: 'bg-sky-600 text-white shadow-sm',
+    pink: 'bg-pink-600 text-white shadow-sm',
+    slate: 'bg-slate-600 text-white shadow-sm',
+    gray: 'bg-gray-600 text-white shadow-sm',
+    red: 'bg-red-600 text-white shadow-sm',
+    green: 'bg-green-600 text-white shadow-sm',
+    cyan: 'bg-cyan-600 text-white shadow-sm',
+    violet: 'bg-violet-600 text-white shadow-sm',
+    fuchsia: 'bg-fuchsia-600 text-white shadow-sm',
+    lime: 'bg-lime-600 text-white shadow-sm',
+    amber: 'bg-amber-600 text-white shadow-sm',
+    teal: 'bg-teal-600 text-white shadow-sm',
+};
+
+const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) => {
     // ⚡ Bolt Optimization: Selective store subscription
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
@@ -41,11 +66,16 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
     const [isStealth, setIsStealth] = useState(false);
     const [localSize, setLocalSize] = useState(windowSize);
     const isResizing = useRef(false);
+    const latestSize = useRef(localSize);
 
     // Sync local size when store changes
     useEffect(() => {
         setLocalSize(windowSize);
     }, [windowSize]);
+
+    useEffect(() => {
+        latestSize.current = localSize;
+    }, [localSize]);
 
     const handleResize = useCallback((direction: string, e: React.PointerEvent) => {
         e.preventDefault();
@@ -76,7 +106,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
 
         const onPointerUp = () => {
             isResizing.current = false;
-            setAgentWindowSize(localSize);
+            setAgentWindowSize(latestSize.current);
             window.removeEventListener('pointermove', onPointerMove);
             window.removeEventListener('pointerup', onPointerUp);
         };
@@ -87,7 +117,10 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
 
     // Visibility Toggles
     const toggleStealth = useCallback(() => setIsStealth(prev => !prev), []);
-    const toggleLocalMinimize = useCallback(() => setIsMinimized(prev => !prev), []);
+    const toggleLocalMinimize = useCallback(() => {
+        setIsMinimized(prev => !prev);
+        if (onToggleMinimize) onToggleMinimize();
+    }, [onToggleMinimize]);
 
     // Derived state for active agent
     const activeAgentId = useStore(state => {
@@ -183,6 +216,24 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
     };
 
     const activeBrandColor = brandColorMap[activeAgentId] || agentColor;
+    const activeClass = BRAND_COLORS_TO_CLASSES[activeBrandColor] || BRAND_COLORS_TO_CLASSES['purple'];
+
+    const BRAND_COLORS: Record<string, string> = {
+        purple: 'bg-purple-600 text-white shadow-sm',
+        orange: 'bg-orange-600 text-white shadow-sm',
+        emerald: 'bg-emerald-600 text-white shadow-sm',
+        yellow: 'bg-yellow-600 text-white shadow-sm',
+        blue: 'bg-blue-600 text-white shadow-sm',
+        indigo: 'bg-indigo-600 text-white shadow-sm',
+        rose: 'bg-rose-600 text-white shadow-sm',
+        sky: 'bg-sky-600 text-white shadow-sm',
+        pink: 'bg-pink-600 text-white shadow-sm',
+        slate: 'bg-slate-600 text-white shadow-sm',
+        // Fallback
+        default: 'bg-purple-600 text-white shadow-sm'
+    };
+
+    const activeBrandClass = BRAND_COLORS[activeBrandColor] || BRAND_COLORS.default;
 
     return (
         <>
@@ -201,9 +252,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                 {!isStealth && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ 
-                            opacity: 1, 
-                            scale: isMinimized ? 0.2 : 1, 
+                        animate={{
+                            opacity: 1,
+                            scale: isMinimized ? 0.2 : 1,
                             y: 0,
                             width: isMinimized ? 80 : localSize.width,
                             height: isMinimized ? 80 : localSize.height,
@@ -232,7 +283,16 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                 <Bot size={40} className="text-white" />
                             </div>
                         ) : (
-                            <>
+                            <ErrorBoundary fallback={
+                                <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-[#0c0c0e]">
+                                    <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 border border-red-500/20">
+                                        <Bot size={32} className="text-red-400" />
+                                    </div>
+                                    <h3 className="text-white font-bold mb-2">Agent Error</h3>
+                                    <p className="text-gray-400 text-sm mb-6 max-w-[200px]">Something went wrong while rendering the agent interface.</p>
+                                    <button onClick={() => window.location.reload()} className="px-4 py-2 bg-white/10 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-white/20 transition-colors">Reload Studio</button>
+                                </div>
+                            }>
                                 {/* Resize Handles */}
                                 {isDesktop && (
                                     <div className="absolute inset-0 pointer-events-none z-50">
@@ -251,7 +311,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                 <div onPointerDown={(e) => dragControls.start(e)} className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 cursor-grab active:cursor-grabbing" />
                                 <div className="relative z-30 px-6 py-5 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
                                     <div onPointerDown={(e) => dragControls.start(e)} className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing" />
-                                    
+
                                     <div className="flex items-center gap-4 relative z-10 pointer-events-none">
                                         <div className="relative group pointer-events-auto">
                                             <div className={`absolute -inset-1 bg-${activeBrandColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
@@ -275,16 +335,35 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                         </div>
                                     </div>
 
-                                    {/* Identity Toggle */}
-                                    <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
-                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>Manual</button>
-                                        <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? `bg-purple-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>indii</button>
+                                    {/* Mode Toggle: Chat (direct LLM) | Agent (specialist orchestration) | Sidecar (Agent Zero) */}
+                                    <div className="flex items-center gap-0.5 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
+                                        <button
+                                            onClick={() => setActiveAgentProvider('direct')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'direct' ? 'bg-emerald-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Direct LLM chat — fast, no tools"
+                                        >
+                                            Chat
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveAgentProvider('native')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'native' ? activeClass : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Specialist agents with tools"
+                                        >
+                                            Agent
+                                        </button>
+                                        <button
+                                            onClick={() => setActiveAgentProvider('agent-zero')}
+                                            className={twMerge(clsx('px-2.5 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all', activeAgentProvider === 'agent-zero' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-500 hover:text-gray-300'))}
+                                            title="Agent Zero sidecar (Docker)"
+                                        >
+                                            indii
+                                        </button>
                                     </div>
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-1 relative z-10">
-                                        <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title={isCommandBarDetached ? "Dock Input" : "Detach Input"}><Maximize2 size={18} /></button>
-                                        <button onClick={toggleLocalMinimize} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" aria-label="Minimize chat"><Minimize2 size={18} /></button>
+                                        <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title={isCommandBarDetached ? "Dock Input" : "Detach Input"} data-testid="detach-input-btn"><Maximize2 size={18} /></button>
+                                        <button onClick={toggleLocalMinimize} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" aria-label="Minimize chat" data-testid="minimize-chat-btn"><Minimize2 size={18} /></button>
                                         <button onClick={toggleStealth} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title="Stealth Mode"><Bot size={18} className="opacity-50" /></button>
                                         <button onClick={onClose} className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400" aria-label="Close Agent"><X size={18} /></button>
                                     </div>
@@ -300,7 +379,38 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                             <p className="text-sm text-gray-400 max-w-[280px]">I can help you create content, manage your studio, or analyze metrics.</p>
                                         </div>
                                     ) : (
-                                        <Virtuoso ref={virtuosoRef} style={{ height: '100%' }} data={messages} atBottomStateChange={setIsAutoScrolling} itemContent={itemContent} components={{ Header: () => <div className="h-4" />, Footer: () => <div className="h-32" /> }} className="custom-scrollbar" />
+                                        <>
+                                            <Virtuoso
+                                                ref={virtuosoRef}
+                                                style={{ height: '100%' }}
+                                                data={messages}
+                                                atBottomStateChange={setIsAutoScrolling}
+                                                itemContent={itemContent}
+                                                components={{ Header: () => <div className="h-4" />, Footer: () => <div className="h-32" /> }}
+                                                className="custom-scrollbar"
+                                            />
+                                            {!isAutoScrolling && (
+                                                <motion.button
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    exit={{ opacity: 0, y: 10 }}
+                                                    onClick={() => {
+                                                        setIsAutoScrolling(true);
+                                                        // Force scroll to bottom immediately as well
+                                                        virtuosoRef.current?.scrollToIndex({
+                                                            index: messages.length - 1,
+                                                            behavior: 'smooth',
+                                                            align: 'end',
+                                                        });
+                                                    }}
+                                                    className={`absolute bottom-8 left-1/2 -translate-x-1/2 bg-${activeBrandColor}-600 text-white px-4 py-2 rounded-full shadow-lg z-30 flex items-center gap-2 hover:bg-${activeBrandColor}-700 transition-all text-xs font-bold uppercase tracking-wider backdrop-blur-md border border-white/10`}
+                                                    title="Resume Feed"
+                                                >
+                                                    <RefreshCw size={14} />
+                                                    Resume Feed
+                                                </motion.button>
+                                            )}
+                                        </>
                                     )}
                                 </div>
 
@@ -309,16 +419,24 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
 
                                 {/* Status Footer */}
                                 {(isListening || isProcessing || transcript) && (
-                                    <div className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30" role="status">
+                                    <div className="px-6 py-3 bg-black/40 border-t border-white/5 backdrop-blur-md flex items-center justify-between text-xs font-mono relative z-30" role="status" aria-live="polite">
                                         <div className="flex items-center gap-3">
-                                            {isProcessing ? <><div className="flex gap-1"><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div><span className="text-purple-300">PROCESSING RESPONSE...</span></> : isListening ? <><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /><span className="text-red-300 font-bold">LISTENING...</span></> : null}
+                                            {isProcessing ? (
+                                                <><div className="flex gap-1"><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div><span className="text-purple-300 animate-pulse">PROCESSING RESPONSE...</span></>
+                                            ) : isListening ? (
+                                                <>
+                                                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                                    <span className="text-red-300 font-bold">LISTENING...</span>
+                                                    {transcript && <span className="ml-2 text-gray-400 truncate max-w-[200px]">"{transcript}"</span>}
+                                                </>
+                                            ) : null}
                                         </div>
                                     </div>
                                 )}
 
                                 {/* Branding Footer */}
                                 <div className="px-6 py-2 bg-black/20 border-t border-white/5 flex items-center justify-center relative z-30"><span className="text-xs text-white/30 font-medium">Powered by <span className="font-semibold text-white/40">indii</span></span></div>
-                            </>
+                            </ErrorBoundary>
                         )}
                     </motion.div>
                 )}

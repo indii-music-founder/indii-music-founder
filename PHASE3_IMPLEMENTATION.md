@@ -114,8 +114,8 @@ async function newTool(args: any, ctx: ToolExecutionContext) {
 **3.1 Imports:**
 
 ```typescript
-import { ExecutionContextFactory } from './AgentExecutionContext';
-import { ToolExecutionContext } from './ToolExecutionContext';
+import { ExecutionContextFactory } from "./AgentExecutionContext";
+import { ToolExecutionContext } from "./ToolExecutionContext";
 ```
 
 **3.2 Context Creation (before execution loop):**
@@ -123,12 +123,12 @@ import { ToolExecutionContext } from './ToolExecutionContext';
 ```typescript
 // Phase 3: Create isolated execution context for this agent run
 const executionContext = ExecutionContextFactory.fromAgentContext(
-    {
-        userId: context?.userId,
-        projectId: context?.projectId,
-        traceId: context?.traceId
-    },
-    this.id
+  {
+    userId: context?.userId,
+    projectId: context?.projectId,
+    traceId: context?.traceId,
+  },
+  this.id,
 );
 const toolContext = new ToolExecutionContext(executionContext);
 ```
@@ -138,8 +138,10 @@ const toolContext = new ToolExecutionContext(executionContext);
 ```typescript
 // Phase 3: Commit execution context changes on successful completion
 if (executionContext.hasUncommittedChanges()) {
-    console.log(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
-    executionContext.commit();
+  console.log(
+    `[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`,
+  );
+  executionContext.commit();
 }
 ```
 
@@ -148,14 +150,18 @@ if (executionContext.hasUncommittedChanges()) {
 ```typescript
 // Phase 3: Max iterations reached - rollback any uncommitted changes
 if (executionContext.hasUncommittedChanges()) {
-    console.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
-    executionContext.rollback();
+  console.warn(
+    `[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`,
+  );
+  executionContext.rollback();
 }
 
 // Phase 3: Error occurred - rollback any uncommitted changes
 if (executionContext.hasUncommittedChanges()) {
-    console.error(`[BaseAgent] Error occurred, rolling back ${executionContext.getChangeSummary()}`);
-    executionContext.rollback();
+  console.error(
+    `[BaseAgent] Error occurred, rolling back ${executionContext.getChangeSummary()}`,
+  );
+  executionContext.rollback();
 }
 ```
 
@@ -241,20 +247,20 @@ async function myTool(
 
 ```typescript
 class AgentExecutionContext {
-    private mergeStrategies: Map<keyof StoreState, MergeStrategy> = new Map();
+  private mergeStrategies: Map<keyof StoreState, MergeStrategy> = new Map();
 
-    setMergeStrategy(key: keyof StoreState, strategy: MergeStrategy) {
-        this.mergeStrategies.set(key, strategy);
-    }
+  setMergeStrategy(key: keyof StoreState, strategy: MergeStrategy) {
+    this.mergeStrategies.set(key, strategy);
+  }
 
-    commit() {
-        // Apply merge strategies for conflicted keys
-        conflicts.forEach(key => {
-            const strategy = this.mergeStrategies.get(key) || 'last-write-wins';
-            const merged = strategy.merge(snapshot[key], current[key], modified[key]);
-            updates[key] = merged;
-        });
-    }
+  commit() {
+    // Apply merge strategies for conflicted keys
+    conflicts.forEach((key) => {
+      const strategy = this.mergeStrategies.get(key) || "last-write-wins";
+      const merged = strategy.merge(snapshot[key], current[key], modified[key]);
+      updates[key] = merged;
+    });
+  }
 }
 ```
 
@@ -289,17 +295,17 @@ class AgentExecutionContext {
 **Test Code:**
 
 ```typescript
-test('Execution context rolls back on error', async () => {
-    const initialState = useStore.getState();
+test("Execution context rolls back on error", async () => {
+  const initialState = useStore.getState();
 
-    try {
-        await agent.execute('Cause an error');
-    } catch (err) {
-        // Error expected
-    }
+  try {
+    await agent.execute("Cause an error");
+  } catch (err) {
+    // Error expected
+  }
 
-    const finalState = useStore.getState();
-    expect(finalState).toEqual(initialState);
+  const finalState = useStore.getState();
+  expect(finalState).toEqual(initialState);
 });
 ```
 
@@ -502,17 +508,21 @@ All functions in `BaseAgent.functions` now accept optional third parameter `tool
 ```typescript
 // Before
 get_project_details: async ({ projectId }, _context) => {
-    const projects = useStore.getState().projects;
-    // ...
-}
+  const projects = useStore.getState().projects;
+  // ...
+};
 
 // After (Phase 3.5)
-get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
-    const projects = toolContext
-        ? toolContext.get('projects')
-        : (await import('@/core/store')).useStore.getState().projects;
-    // ...
-}
+get_project_details: async (
+  { projectId },
+  _context,
+  toolContext?: ToolExecutionContext,
+) => {
+  const projects = toolContext
+    ? toolContext.get("projects")
+    : (await import("@/core/store")).useStore.getState().projects;
+  // ...
+};
 ```
 
 ### What Works Now
@@ -538,6 +548,7 @@ wrapTool<TArgs>(
 ```
 
 **Impact:** Tools in TOOL_REGISTRY receive toolContext but can't access it:
+
 - MemoryTools (save_memory, recall_memories, read_history)
 - ProjectTools (create_project, open_project)
 - OrganizationTools (create_organization, switch_organization)
@@ -558,20 +569,20 @@ wrapTool<TArgs>(
 
 2. ✅ **Step 2: Critical Tool Migration** (This phase)
    - **MemoryTools.ts** - 3 tools migrated:
-     * `save_memory` - reads currentProjectId from toolContext
-     * `recall_memories` - reads currentProjectId from toolContext
-     * `read_history` - reads agentHistory from toolContext
+     - `save_memory` - reads currentProjectId from toolContext
+     - `recall_memories` - reads currentProjectId from toolContext
+     - `read_history` - reads agentHistory from toolContext
 
    - **ProjectTools.ts** - 3 tools migrated:
-     * `create_project` - reads currentOrganizationId from toolContext
-     * `list_projects` - reads projects from toolContext
-     * `open_project` - reads projects from toolContext
+     - `create_project` - reads currentOrganizationId from toolContext
+     - `list_projects` - reads projects from toolContext
+     - `open_project` - reads projects from toolContext
 
    - **OrganizationTools.ts** - 4 tools migrated:
-     * `list_organizations` - reads organizations from toolContext
-     * `switch_organization` - reads organizations, userProfile from toolContext
-     * `create_organization` - reads userProfile from toolContext
-     * `get_organization_details` - reads organizations, currentOrganizationId from toolContext
+     - `list_organizations` - reads organizations from toolContext
+     - `switch_organization` - reads organizations, userProfile from toolContext
+     - `create_organization` - reads userProfile from toolContext
+     - `get_organization_details` - reads organizations, currentOrganizationId from toolContext
 
 3. ✅ **Step 3: Type Definition Updates** (Already done in Phase 3)
    - `ToolFunction<TArgs>` type includes toolContext parameter
@@ -582,35 +593,41 @@ wrapTool<TArgs>(
 
 ```typescript
 // Phase 3.6: Execution context-aware tool
-wrapTool('tool_name', async (args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
+wrapTool(
+  "tool_name",
+  async (args, _context?: AgentContext, toolContext?: ToolExecutionContext) => {
     // Read state through execution context when available, fallback to direct store
     const stateValue = toolContext
-        ? toolContext.get('stateKey')
-        : useStore.getState().stateKey;
+      ? toolContext.get("stateKey")
+      : useStore.getState().stateKey;
 
     // Use isolated state...
 
     // Mutations still go through store actions (not in execution context scope)
     if (needToMutate) {
-        store.someAction(value);
+      store.someAction(value);
     }
 
     return result;
-})
+  },
+);
 ```
 
 **Why These Tools:**
+
 - **MemoryTools**: Modifies agentHistory (highest corruption risk from concurrent agents)
 - **ProjectTools**: Core project management, frequently used across agents
 - **OrganizationTools**: Core organization management, affects all project operations
 
 **Other Tools Status:**
+
 - **CoreTools**: Already has partial toolContext support from Phase 3.5
 - **VideoTools/DirectorTools**: Complex, mostly use store actions, low priority
 - **NavigationTools**: Only calls actions, no state reads, no migration needed
 - **CREATIVE_TOOLS**: Uses StorageService, no direct store access, no migration needed
 
 **Testing:**
+
 - ✅ TypeScript type checking passes with no errors
 - ✅ Backwards compatibility maintained (toolContext is optional)
 - ✅ Pattern established for future tool migrations

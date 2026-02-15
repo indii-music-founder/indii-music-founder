@@ -69,9 +69,10 @@ CRITICAL RULES:
 3. When asked to create video content, use 'generate_video'.
 4. **STOP AFTER COMPLETION:** Once you have fulfilled the user's request, STOP. Do NOT call additional tools. Do NOT generate more content unless explicitly asked. Do NOT send notifications or delegate tasks unless specifically requested.
 5. **NO VIDEO HALLUCINATIONS:** DO NOT generate video content unless the user explicitly asks for "video", "motion", "clip", or "animation". For "album art" or "images", ONLY use 'generate_image'.
-5. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
-6. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
-7. **IMMEDIATE EXECUTION:** When the user asks to generate/create an image, video, or any media, call the generation tool (generate_image, generate_video) IMMEDIATELY as your FIRST action. Do NOT call recall_memories, list_projects, list_files, or any other preparatory tool first. Skip Curriculum mode entirely for generation requests.
+6. **SPEAK VS ACTION:** If you use the 'speak' tool to announce what you are about to do, you MUST also execute the corresponding tool (like 'generate_image') in the same turn.
+7. **ONE AND DONE:** For simple requests like "generate an image of X", call 'generate_image' ONCE, then respond with the result. Do NOT call it multiple times or chain other tools.
+8. **IMMEDIATE EXECUTION:** When the user asks to generate/create an image, video, or any media, call the generation tool (generate_image, generate_video) IMMEDIATELY as your FIRST action. Do NOT call recall_memories, list_projects, list_files, or any other preparatory tool first. Skip Curriculum mode entirely for generation requests.
+9. **INTERNAL ENGINES ONLY:** You use indiiOS internal creative engines (powered by Gemini/Imagen). **NEVER** mention or suggest external tools like Midjourney, DALL-E, ChatGPT, or Stable Diffusion.
 `;
 
     tools: ToolDefinition[] = [];
@@ -298,6 +299,15 @@ CRITICAL RULES:
                     },
                     required: ['orgId']
                 }
+            },
+            {
+                name: 'compact_history',
+                description: 'Compact and summarize the current chat history into episodic memory. Use this when the conversation is becoming long or noisy.',
+                parameters: {
+                    type: 'OBJECT',
+                    properties: {},
+                    required: []
+                }
             }
         ];
 
@@ -324,16 +334,21 @@ CRITICAL RULES:
         const { currentOrganizationId, currentProjectId, currentModule } = useStore.getState();
 
         // Build rich context
+        // Extract artist display name for persona propagation
+        const artistDisplayName = context?.userProfile?.displayName || '';
+
         const orgContext = `
 ORGANIZATION CONTEXT:
 - Organization ID: ${currentOrganizationId}
 - Project ID: ${currentProjectId}
 - Current Module: ${currentModule || 'unknown'}
+${artistDisplayName ? `- Artist Name: ${artistDisplayName}` : ''}
 `;
 
         const brandKit = context?.brandKit;
         const brandContext = brandKit ? `
 BRAND CONTEXT:
+- Artist Name: ${artistDisplayName || 'N/A'}
 - Identity: ${context?.userProfile?.bio || 'N/A'}
 - Visual Style: ${brandKit.brandDescription || 'N/A'}
 - Colors: ${brandKit.colors?.join(', ') || 'N/A'}
@@ -376,6 +391,9 @@ ${orgContext}
 ${brandContext}
 ${whiskContext}
 
+ARTIST IDENTITY ENFORCEMENT:
+${artistDisplayName ? `The artist you are working with is **${artistDisplayName}**. ALWAYS use this exact name when referring to the artist. NEVER invent, substitute, or hallucinate a different name.` : 'No artist profile loaded. Ask the user for their artist name if needed.'}
+
 MODULE CONTEXT: You are currently in the '${currentModule}' module.
 - IF module is 'creative' OR 'director', YOU ARE THE CREATIVE DIRECTOR.
 - User requests for "images", "visuals", "scenes" MUST be handled by 'generate_image'.
@@ -391,10 +409,15 @@ MODULE CONTEXT: You are currently in the '${currentModule}' module.
             .map(msg => `${msg.role.toUpperCase()}: ${msg.text}`)
             .join('\n');
 
+        const memorySection = context?.memoryContext
+            ? `\nRELEVANT MEMORIES:\n${context.memoryContext}\n`
+            : '';
+
         const fullPrompt = `${fullSystemPrompt}
 
 CONVERSATION HISTORY:
 ${historyText}
+${memorySection}
 
 CURRENT REQUEST: ${task}
 `;

@@ -126,54 +126,58 @@ export const messaging = typeof window !== 'undefined' ? (() => {
 })() : null;
 
 // Initialize App Check
-let appCheck = null;
-if (typeof window !== 'undefined') {
-    // Debug token for local development - only set if explicitly configured
-    if (env.DEV && env.appCheckDebugToken) {
-        // @ts-expect-error - Firebase App Check debug token property not in Window interface
-        window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
-    }
+let appCheck: any = null;
 
-    // SECURITY: Warn in production if App Check is not configured
-    // This is a critical security control - App Check prevents unauthorized API access
-    if (!env.DEV && !env.appCheckKey) {
-        const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
-        console.warn(errorMessage);
-    }
-
-    // Initialize App Check if we have a valid key
-    // SKIP in Electron unless a debug token is explicitly provided (ReCaptcha Enterprise requires web origin)
-    // Or skip in development for bypass
-    // Initialize App Check if we have a valid key
-    // ALLOW in DEV if debug token is present (Fixes localhost "Permission Denied")
-    // SKIP in Electron unless a debug token is explicitly provided
-    const isElectron = !!window.electronAPI;
-    const shouldInitAppCheck = env.appCheckKey && (
-        (!env.DEV && (!isElectron || env.appCheckDebugToken)) ||
-        (env.DEV && env.appCheckDebugToken)
-    );
-
-    if (shouldInitAppCheck) {
-        if (isElectron && env.appCheckDebugToken) {
-            console.log('[App Check] Initializing in Electron with Debug Token');
+export function initializeAppCheckService() {
+    if (typeof window !== 'undefined') {
+        // Debug token for local development - only set if explicitly configured
+        if (env.DEV && env.appCheckDebugToken) {
+            // @ts-expect-error - Firebase App Check debug token property not in Window interface
+            window.FIREBASE_APPCHECK_DEBUG_TOKEN = env.appCheckDebugToken;
         }
 
-        try {
-            appCheck = initializeAppCheck(app, {
-                provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
-                isTokenAutoRefreshEnabled: true
-            });
-        } catch (e) {
-            console.error('App Check initialization failed:', e);
-            // In production, re-throw to prevent running without security
-            if (!env.DEV) {
-                throw e;
+        // SECURITY: Warn in production if App Check is not configured
+        // This is a critical security control - App Check prevents unauthorized API access
+        if (!env.DEV && !env.appCheckKey) {
+            const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
+            console.warn(errorMessage);
+        }
+
+        // Initialize App Check if we have a valid key
+        // ALLOW in DEV if debug token is present (Fixes localhost "Permission Denied")
+        // SKIP in Electron unless a debug token is explicitly provided
+        const isElectron = !!window.electronAPI;
+        const shouldInitAppCheck = env.appCheckKey && (
+            (!env.DEV && (!isElectron || env.appCheckDebugToken)) ||
+            (env.DEV && env.appCheckDebugToken)
+        );
+
+        if (shouldInitAppCheck) {
+            if (isElectron && env.appCheckDebugToken) {
+                console.log('[App Check] Initializing in Electron with Debug Token');
             }
+
+            try {
+                appCheck = initializeAppCheck(app, {
+                    provider: new ReCaptchaEnterpriseProvider(env.appCheckKey!),
+                    isTokenAutoRefreshEnabled: true
+                });
+            } catch (e) {
+                console.error('App Check initialization failed:', e);
+                // In production, re-throw to prevent running without security
+                if (!env.DEV) {
+                    throw e;
+                }
+            }
+        } else if (isElectron && env.appCheckKey) {
+            console.log('[App Check] Skipped initialization in Electron (missing debug token)');
         }
-    } else if (isElectron && env.appCheckKey) {
-        console.log('[App Check] Skipped initialization in Electron (missing debug token)');
     }
 }
+
+// Auto-initialize
+initializeAppCheckService();
+
 export { appCheck };
 
 

@@ -28,7 +28,7 @@ TASK: Semantic Image Inpainting.
 INPUTS:
 1. IMAGE_SOURCE: The original high-resolution photo.
 2. IMAGE_MASK: A binary mask where WHITE pixels mark the target area.
-INSTRUCTION: 
+INSTRUCTION:
 - Analyze IMAGE_SOURCE to understand the lighting, depth, and texture.
 - Identify the object or background area under the WHITE pixels in IMAGE_MASK.
 - Refine the mask edges to include natural object boundaries based on your spatial reasoning.
@@ -64,11 +64,13 @@ CONSTRAINTS:
 ### Spatial Inference
 
 If a mask is "loose" (low fidelity), always instruct the model to:
+
 > "Identify the primary object inside the highlight and refine the selection to include the whole object before applying changes."
 
 ### Lighting Consistency
 
 Always append:
+
 > "Analyze the light source direction in the source image and apply identical shadows and highlights to the modified content."
 
 ---
