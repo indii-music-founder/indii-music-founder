@@ -19,6 +19,12 @@ export class HistoryManager {
     /**
      * Retrieves the recent conversation history from the store.
      */
+    /**
+     * Retrieves the recent conversation history from the store.
+     * Filters for clean user/model messages.
+     * 
+     * @returns A promise resolving to the list of clean agent messages.
+     */
     async getRecentHistory(): Promise<AgentMessage[]> {
         const { useStore } = await import('@/core/store');
         const { agentHistory } = useStore.getState();
@@ -48,6 +54,12 @@ export class HistoryManager {
     /**
      * Creates a "Compiled View" of the history.
      * Uses a sliding window for recent messages and summarizes the middle-history.
+     */
+    /**
+     * Creates a "Compiled View" of the history.
+     * Uses a sliding window for recent messages and summarizes history beyond the threshold.
+     * 
+     * @returns A promise resolving to the compiled history string for LLM context.
      */
     async getCompiledView(): Promise<string> {
         const history = await this.getRecentHistory();

@@ -14,6 +14,15 @@ import type { AgentService } from '../AgentService';
 export class HybridOrchestrator {
     private MAX_TURNS = 10;
 
+    /**
+     * Executes a multi-turn reasoning loop (Indii Fusion Engine).
+     * Combines Specialist Agents with System Tools (Browser, Knowledge Base).
+     * 
+     * @param context - The current agent context.
+     * @param userQuery - The original user request.
+     * @param service - Optional AgentService for delegating to specialists.
+     * @returns The final answer or progress report to the user.
+     */
     async execute(context: AgentContext, userQuery: string, service?: AgentService): Promise<string> {
         const userId = auth.currentUser?.uid || 'anonymous';
         const traceId = await TraceService.startTrace(userId, 'hybrid-orchestrator', userQuery);
