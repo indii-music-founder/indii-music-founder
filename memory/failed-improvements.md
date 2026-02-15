@@ -1,8 +1,10 @@
 # Failed Improvement: Proposal 001
+
 **Date:** 2026-02-11
 **ID:** 001
 **Summary:** Attempted to add unit tests for `src/utils/async.ts`.
 **Reason for Failure:** Infrastructure mismatch.
+
 - `vitest` and `@types/node` appear to be missing or not correctly linked in the environment where the agent executes the tests.
 - `npx vitest` failed with `ERR_MODULE_NOT_FOUND`.
 - `tsc` failed to find `vitest` types.

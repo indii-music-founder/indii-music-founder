@@ -1,8 +1,11 @@
 # Operation Door-Open: Pax (Paxahau) Outreach
+
 ## Target: Sam Fotias (Pax)
+
 ## Context: Movement 2026 Sovereign Infrastructure
 
 ### The "Bridge" Script
+
 "Sam, it’s wii. I was thinking about that Movement Compilation I did years ago for the artists—how much work it was just to give them a physical piece of the city. 
 
 I’ve spent the last few years building the digital evolution of that. It’s called **indii**. It’s the first 'Sovereign Engine' that lets artists own their distribution and smart-contract splits directly, no middlemen. 

@@ -1,8 +1,11 @@
 # Operation Door-Open: Underground Resistance (UR) Outreach
+
 ## Target: Mad Mike Banks / Underground Resistance
+
 ## Context: Technical Weapons for Sonic Independence
 
 ### The "Revolutionary" Script
+
 "Mike, it's wii. I've spent the last 5 years in the cave building the technical weapon that matches the UR manifesto. It's called **indii**.
 
 It's a local-first sovereign engine that gives artists 100% control over their code, their masters, and their revenue. No aggregators, no corporate tax, no middlemen. He who owns the code controls the universe. 

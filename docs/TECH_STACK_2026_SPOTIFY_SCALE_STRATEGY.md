@@ -1,4 +1,5 @@
 # indiiOS 2026+ Technology Direction
+
 ## Spotify-Scale Systems, indiiOS Values
 
 **Owner:** Platform Architecture  
@@ -10,6 +11,7 @@
 ## 1) Positioning: Scale Like Spotify, Operate Like indiiOS
 
 We are not modeling ourselves after every DSP norm. We are taking the **technical lessons** (scale, uptime, eventing, security, distribution resilience) while building a platform that is:
+
 - artist-first,
 - consent-driven,
 - rights-transparent,
@@ -22,20 +24,24 @@ In short: **Spotify-scale systems, indiiOS ethics.**
 ## 2) Current-State Snapshot (What We Already Have)
 
 ### Frontend / Product Surface
+
 - React + Vite + TypeScript with lazy-loaded module architecture.
 - Electron desktop wrapper and separate landing-page app.
 - Strong module segmentation already in place (creative, video, distribution, finance, legal, social, workflow, etc.).
 
 ### Backend / Services
+
 - Firebase-first backend (Functions Gen2, Firestore, Storage).
 - Node.js/TypeScript-heavy service layer with Python tools for deterministic workflows.
 - Existing agent hub-and-spoke architecture with AgentZero + specialists.
 
 ### Data + Compliance
+
 - Existing DDEX tooling and distribution execution paths.
 - Established security rules/policy baseline that now needs DSP-scale hardening and auditing.
 
 ### Infrastructure
+
 - Containerized components exist (agent sidecar, Docker pathways).
 - CI/CD and quality gates are in place, but eventing and service autonomy are still early-stage.
 
@@ -46,6 +52,7 @@ In short: **Spotify-scale systems, indiiOS ethics.**
 ## 3) Target-State Technology Stack (2026+)
 
 ### A) Core Architecture: Event-Driven Microservices
+
 - Service decomposition by bounded domains:
   - Identity/Profile
   - Catalog/Metadata
@@ -58,38 +65,45 @@ In short: **Spotify-scale systems, indiiOS ethics.**
 - CQRS/event-driven processing where scale and write throughput demand it.
 
 ### B) Client Platform
+
 - Continue React + TypeScript for web/desktop consistency.
 - Enforce container contracts so teams ship independently.
 - Adopt Lottie-based animation patterns for high-performance campaign visuals and recaps.
 - Move native build ergonomics toward Bazel-like reproducibility for larger teams.
 
 ### C) Backend Runtime Model
+
 - Keep Node.js/TypeScript + Python where velocity and existing assets are strongest.
 - Add a JVM lane (Java/Kotlin/Scala) for high-throughput core services when justified.
 - Separate synchronous product APIs from asynchronous event pipelines.
 
 ### D) Data at Scale
+
 - Retain Firebase where it delivers speed and operational simplicity.
 - Introduce a high-write distributed data tier (Cassandra-compatible model) for playback and activity firehoses.
 - Treat polyglot persistence as deliberate architecture with strict contracts.
 
 ### E) Search + Discovery
+
 - Add dedicated search infrastructure (Elasticsearch/OpenSearch/Solr-class).
 - Expand lyric/semantic retrieval and relevance ranking.
 - Couple with embedding/NLP pipelines for better recommendation inputs.
 
 ### F) Streaming + Delivery Security
+
 - Move packaging toward CMAF + HLS + DASH manifest compatibility.
 - Standardize encryption around MPEG-CENC patterns.
 - Implement multi-DRM (Widevine/FairPlay/PlayReady) with SPEKE/CPIX-compatible key exchange.
 - Add fraud and abuse controls for stream integrity.
 
 ### G) Rights + Industry Interop
+
 - Treat DDEX as core infrastructure, not an edge feature.
 - Expand ERN and rights-reporting automation.
 - Build compliance-grade reporting lanes for PRO and MLC obligations.
 
 ### H) Infra + FinOps
+
 - Kubernetes-managed orchestration for critical workloads.
 - Procurement split:
   - Reserved/Committed baseline,
@@ -136,6 +150,7 @@ These are not optional values statements; they are architecture and policy requi
 AI must be a governed platform layer, not an untracked sidecar.
 
 ### Required operating model
+
 1. Every agent action emits/consumes first-class domain events.
 2. Every deterministic tool has typed versioned contracts.
 3. Every costly model path has budget caps + fallback policies.
@@ -149,24 +164,28 @@ This keeps the "gatekeeper" agent system powerful, accountable, and legally defe
 ## 7) Execution Roadmap
 
 ### Phase 0 (0-90 days): Foundation
+
 - Finalize service boundary map and event taxonomy.
 - Launch event backbone pilot.
 - Define platform SLOs (latency, uptime, throughput, AI task reliability).
 - Draft enforceable consent + remix + rights governance policy.
 
 ### Phase 1 (3-6 months): Platform Buildout
+
 - Move highest-value async flows to event bus.
 - Stand up search and semantic indexing lanes.
 - Add first high-write telemetry data path.
 - Add AI observability + budget enforcement.
 
 ### Phase 2 (6-12 months): Rights + Streaming Hardening
+
 - Deploy CMAF packaging and manifest strategy.
 - Implement multi-DRM path + key management.
 - Expand DDEX, royalty, and reporting automation.
 - Deploy anti-fraud controls for stream integrity.
 
 ### Phase 3 (12+ months): Hypergrowth + Governance Maturity
+
 - Scale independent service domains globally.
 - Optimize infra procurement and failover policy.
 - Enforce governance-by-default for consent and rights controls.
@@ -200,10 +219,12 @@ This keeps the "gatekeeper" agent system powerful, accountable, and legally defe
 ## 10) Final Direction
 
 This is our baseline architecture direction:
+
 - **build for Spotify-level scale and resilience,**
 - **without inheriting exploitative platform behavior.**
 
 All major proposals must now answer three questions:
+
 1. What capability does this unlock?
 2. What metric does this improve?
 3. How does this preserve artist consent, rights, and platform integrity?

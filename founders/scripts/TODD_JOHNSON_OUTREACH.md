@@ -1,8 +1,11 @@
 # Operation Door-Open: Todd Johnson Outreach
+
 ## Target: Todd Johnson (Charivari Detroit)
+
 ## Context: Music 4.0 for the New Generation (Sillygirlie)
 
 ### The "Buddy" Script
+
 "Hey Todd, it's wii. Hope you and the family are doing good. 
 
 I’ve been heads-down for a long time building something that I think is going to be a game-changer for the next generation of Detroit artists—specifically for what Sillygirlie is doing. But also, I was thinking about the infrastructure for Charivari. It’s called **indii**. 

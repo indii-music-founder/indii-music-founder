@@ -59,7 +59,7 @@ vi.mock('framer-motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
-  AnimatePresence: ({ children }: any) => <>{children}</>,
+  AnimatePresence: ({ children }: any) => children,
 }));
 
 // Mock prompt-input components to avoid context issues or simplify structure?
@@ -105,7 +105,7 @@ describe('PromptArea Accessibility', () => {
     // Expected classes: focus-visible:ring-2
     // We expect these to be MISSING initially.
 
-    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, modeToggleBtn, runBtn];
+    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, delegateBtn, runBtn];
 
     // We assert that they DO NOT have the classes yet (to confirm reproduction of "issue")
     // Or we can just try to assert they DO have them and let it fail.
@@ -115,12 +115,12 @@ describe('PromptArea Accessibility', () => {
     // Using simple class check string inclusion.
 
     buttonsToCheck.forEach(btn => {
-       // Ideally we want this to pass AFTER the fix.
-       // For now, I'll write the expectation for the FIX, and expect the test to FAIL.
-       // Or I can comment it out?
-       // No, I'll write the test to verify the fix.
-       expect(btn.className).toContain('focus-visible:ring-2');
-       expect(btn.className).toContain('focus-visible:ring-ring');
+      // Ideally we want this to pass AFTER the fix.
+      // For now, I'll write the expectation for the FIX, and expect the test to FAIL.
+      // Or I can comment it out?
+      // No, I'll write the test to verify the fix.
+      expect(btn.className).toContain('focus-visible:ring-2');
+      expect(btn.className).toContain('focus-visible:ring-ring');
     });
 
     // Also check the delegate button (left side)
