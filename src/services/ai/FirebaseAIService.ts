@@ -843,7 +843,7 @@ export class FirebaseAIService {
 
         const result = await this.rawGenerateContent(
             contents,
-            this.model!.model,
+            this.model?.model,
             {},
             systemInstruction
         );
@@ -893,7 +893,7 @@ export class FirebaseAIService {
                 }
             } : undefined
         }] as unknown as Tool[];
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
+        return this.rawGenerateContent(prompt, this.model?.model, {}, undefined, tools as any);
     }
 
     /**
@@ -1357,7 +1357,7 @@ export class FirebaseAIService {
         }
 
         // Detailed Quota & Rate Limit Mapping
-        if (msg.includes('quota') || msg.includes('resource-exhausted')) {
+        if (lowerMsg.includes('quota') || lowerMsg.includes('resource-exhausted')) {
             return new AppException(AppErrorCode.QUOTA_EXCEEDED, 'AI Quota Exceeded');
         }
         if (msg.includes('429') || lowerMsg.includes('rate limit')) {
@@ -1365,7 +1365,7 @@ export class FirebaseAIService {
         }
 
         // Service Availability
-        if (msg.includes('503') || msg.includes('500') || msg.includes('service unavailable') || msg.includes('overloaded') || lowerMsg.includes('internal error')) {
+        if (msg.includes('503') || msg.includes('500') || lowerMsg.includes('service unavailable') || lowerMsg.includes('overloaded') || lowerMsg.includes('internal error')) {
             return new AppException(AppErrorCode.NETWORK_ERROR, 'AI Service Temporarily Unavailable or Internal Error', { retryable: true });
         }
 
