@@ -48,6 +48,12 @@ interface QueuedSave {
 
 const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
 
+/**
+ * MetadataPersistenceService - Centralized service for reliable metadata persistence
+ * 
+ * Provides consistent error handling, automatic retry logic, and queue-based 
+ * offline resilience for all asset metadata.
+ */
 class MetadataPersistenceService {
     private isProcessingQueue = false;
 
@@ -159,6 +165,14 @@ class MetadataPersistenceService {
 
     /**
      * Main save method with retry logic and error handling
+     */
+    /**
+     * Main save method with retry logic and error handling.
+     * Enriches data with metadata and handles authentication checks.
+     * 
+     * @param assetType - The type of asset (audio, video, etc)
+     * @param data - The metadata payload to persist
+     * @param options - Persistence configuration (retries, toasts, etc)
      */
     async save(
         assetType: AssetType,
