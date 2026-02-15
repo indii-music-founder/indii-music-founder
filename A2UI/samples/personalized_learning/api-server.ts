@@ -611,8 +611,8 @@ Replace all [BRACKETED] placeholders with actual content. Vary which option is c
     console.log("[API Server] Local quiz generation response:", text.substring(0, 500));
 
     // Parse the JSON
-    let cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
-    let parsed = JSON.parse(cleaned);
+    const cleaned = text.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim();
+    const parsed = JSON.parse(cleaned);
 
     // Handle case where Gemini wraps the A2UI array in an object
     // We only want the A2UI messages array, not any wrapper object
