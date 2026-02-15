@@ -332,12 +332,14 @@ export class VideoGenerationService {
             orgId,
             startImage: options.firstFrame,
             totalDuration: options.totalDuration,
-            aspectRatio: targetAspectRatio,
-            resolution: options.resolution,
-            seed: options.seed,
-            generateAudio: options.generateAudio,
-            model: options.model,
-            negativePrompt: options.negativePrompt,
+            options: {
+                aspectRatio: targetAspectRatio,
+                resolution: options.resolution,
+                seed: options.seed,
+                generateAudio: options.generateAudio,
+                model: options.model,
+                negativePrompt: options.negativePrompt,
+            }
         });
 
         // Return a placeholder list with the main jobId

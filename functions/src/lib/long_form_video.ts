@@ -40,7 +40,7 @@ export const LongFormVideoJobSchema = z.object({
     userId: z.string(),
     orgId: z.string().optional().default("personal"),
     prompts: z.array(z.string()).min(1), // Validation fixed: must have at least 1 prompt
-    totalDuration: z.string().optional(),
+    totalDuration: z.union([z.string(), z.number()]).optional(),
     startImage: z.string().optional(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional().default("16:9"),
