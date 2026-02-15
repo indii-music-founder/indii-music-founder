@@ -203,11 +203,12 @@ class AgentZeroService {
     /**
      * Sends a message to Agent Zero.
      */
-    async sendMessage(message: string, attachments?: { filename: string; base64: string }[], contextId?: string): Promise<AgentZeroResponse> {
+    async sendMessage(message: string, attachments?: { filename: string; base64: string }[], contextId?: string, systemOverride?: string): Promise<AgentZeroResponse> {
         try {
             const payload: any = {
                 message,
                 context_id: contextId,
+                ...(systemOverride && { system_override: systemOverride }),
             };
 
             if (attachments && attachments.length > 0) {
