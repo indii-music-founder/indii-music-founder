@@ -270,7 +270,13 @@ export default function VideoWorkflow() {
             if (promptOverride) setLocalPrompt(promptToUse); // Ensure local state matches
 
             // Synthesize prompt with Whisk references (SUBJECT, SCENE, STYLE, MOTION)
-            const finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
+            let finalPrompt = WhiskService.synthesizeVideoPrompt(promptToUse, whiskState);
+
+            // 🧠 Thinking Mode: Incorporate advanced reasoning into the prompt for now
+            // until a native 'thinking' parameter is supported for Veo models.
+            if (studioControls.thinking) {
+                finalPrompt = `[Think CINEMATIC PHYSICS & CONTINUITY]: ${finalPrompt}`;
+            }
 
             let results: { id: string; url: string; prompt: string; }[] = [];
 
@@ -284,6 +290,8 @@ export default function VideoWorkflow() {
                     negativePrompt: studioControls.negativePrompt,
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
+                    generateAudio: studioControls.generateAudio,
+                    model: studioControls.model,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
                         Logger.info('VideoWorkflow', `Segment ${current}/${total}`);
@@ -305,7 +313,10 @@ export default function VideoWorkflow() {
                     timeOffset: videoInputs.timeOffset,
                     ingredients: videoInputs.ingredients?.map(i => i.url),
                     orgId: currentOrganizationId,
-                    duration: studioControls.duration
+                    duration: studioControls.duration,
+                    durationSeconds: studioControls.duration,
+                    generateAudio: studioControls.generateAudio,
+                    model: studioControls.model
                 });
             }
 

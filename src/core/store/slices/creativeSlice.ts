@@ -300,7 +300,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
 
     studioControls: {
         aspectRatio: '16:9',
-        resolution: '1280x720',
+        resolution: '720p',
         negativePrompt: '',
         seed: '',
         cameraMovement: 'Static',

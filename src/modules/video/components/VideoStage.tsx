@@ -19,6 +19,59 @@ export const VideoStage = React.memo<VideoStageProps>(({
     setVideoInputs
 }) => {
     const [videoError, setVideoError] = React.useState<string | null>(null);
+    const [displayProgress, setDisplayProgress] = React.useState(0);
+    const [statusMessageIndex, setStatusMessageIndex] = React.useState(0);
+
+    const PROGRESS_MESSAGES = React.useMemo(() => [
+        "AI Director is framing the scene...",
+        "Analyzing temporal continuity...",
+        "Synthesizing lighting and textures...",
+        "Neural networks are dreaming...",
+        "Calibrating movement vectors...",
+        "Baking cinematic details...",
+        "Finalizing pixels...",
+        "Polishing the master render..."
+    ], []);
+
+    // Simulated progress logic to prevent "0% panic"
+    React.useEffect(() => {
+        let interval: NodeJS.Timeout;
+
+        if (jobStatus === 'processing' || jobStatus === 'queued') {
+            // Reset for new job
+            if (jobProgress === 0 && displayProgress > 90) {
+                setDisplayProgress(0);
+                setStatusMessageIndex(0);
+            }
+
+            interval = setInterval(() => {
+                setDisplayProgress(prev => {
+                    // If real progress is ahead, jump to it
+                    if (jobProgress > prev) return jobProgress;
+                    // Otherwise, move slowly up to 95%
+                    if (prev < 95) {
+                        const increment = prev < 50 ? 1 : 0.5;
+                        return Math.min(95, prev + increment);
+                    }
+                    return prev;
+                });
+
+                setStatusMessageIndex(prev => (prev + 1) % PROGRESS_MESSAGES.length);
+            }, 3000); // Update every 3 seconds
+        } else {
+            setDisplayProgress(0);
+            setStatusMessageIndex(0);
+        }
+
+        return () => clearInterval(interval);
+    }, [jobStatus, jobProgress, PROGRESS_MESSAGES.length]);
+
+    // Ensure displayProgress jumps to real progress if it's significant
+    React.useEffect(() => {
+        if (jobProgress > displayProgress) {
+            setDisplayProgress(jobProgress);
+        }
+    }, [jobProgress]);
 
     React.useEffect(() => {
         setVideoError(null);
@@ -55,15 +108,17 @@ export const VideoStage = React.memo<VideoStageProps>(({
                         <h3 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-400 to-pink-600 animate-pulse capitalize">
                             {jobStatus === 'stitching' ? 'Stitching Masterpiece...' : 'Imaginating Scene...'}
                         </h3>
-                        <p className="text-gray-500 text-sm mt-2">
-                            {jobStatus === 'stitching' ? 'Finalizing your unified video' : `AI Director is rendering your vision (${jobProgress}%)`}
+                        <p className="text-gray-400 text-sm mt-2 font-medium">
+                            {jobStatus === 'stitching'
+                                ? 'Finalizing your unified video'
+                                : `${PROGRESS_MESSAGES[statusMessageIndex]} (${Math.round(displayProgress)}%)`}
                         </p>
                         {/* Progress Bar */}
                         <div className="w-64 h-1.5 bg-white/5 rounded-full mt-6 overflow-hidden">
                             <motion.div
                                 className="h-full bg-gradient-to-r from-purple-500 to-indigo-500"
                                 initial={{ width: 0 }}
-                                animate={{ width: `${jobProgress}%` }}
+                                animate={{ width: `${displayProgress}%` }}
                                 transition={{ duration: 0.5 }}
                             />
                         </div>
