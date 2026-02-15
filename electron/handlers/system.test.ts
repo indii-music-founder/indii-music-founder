@@ -17,7 +17,7 @@ const mockClose = vi.fn();
 const mockSetContentProtection = vi.fn();
 const mockFromWebContents = vi.fn();
 
-let MockBrowserWindow = vi.fn();
+const MockBrowserWindow = vi.fn();
 MockBrowserWindow.mockImplementation(function (this: any, options: any) {
     mockBrowserWindowConstructor(options);
     return {
