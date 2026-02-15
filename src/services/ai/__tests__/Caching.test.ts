@@ -41,8 +41,7 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('../billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
-        trackUsage: vi.fn().mockResolvedValue(true),
-        checkRateLimit: vi.fn().mockResolvedValue(true)
+        trackUsage: vi.fn().mockResolvedValue(true)
     }
 }));
 
@@ -74,13 +73,10 @@ describe('AI Caching (Browser Environment)', () => {
         mockGenerateContent.mockReset(); // Use reset to clear 'Once' implementations
         await aiCache.clear(); // Start with empty cache
 
-        // Setup default mock response with dual compatibility
-        const responseText = 'Fresh AI Response';
+        // Setup default mock response
         mockGenerateContent.mockResolvedValue({
-            text: responseText, // For Fallback SDK
-            candidates: [], // For Fallback SDK
-            response: { // For Firebase AI SDK
-                text: () => responseText,
+            response: {
+                text: () => 'Fresh AI Response',
                 usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
             }
         });
@@ -95,9 +91,8 @@ describe('AI Caching (Browser Environment)', () => {
         expect(response1).toBe('Fresh AI Response');
         expect(mockGenerateContent).toHaveBeenCalledTimes(1);
 
-        // 2. Refresh Mock to return something different
+        // 2. Refresh Mock to return something different (to prove we don't call it)
         mockGenerateContent.mockResolvedValueOnce({
-            text: 'Different Response',
             response: {
                 text: () => 'Different Response (Should Not Be Seen)'
             }
@@ -116,9 +111,7 @@ describe('AI Caching (Browser Environment)', () => {
         // Mock returning specific JSON
         const jsonResponse = JSON.stringify({ foo: 'bar' });
         mockGenerateContent.mockResolvedValue({
-            text: jsonResponse, // For Fallback SDK
-            candidates: [],
-            response: { text: () => jsonResponse } // For Firebase AI SDK
+            response: { text: () => jsonResponse }
         });
 
         // 1. First Call

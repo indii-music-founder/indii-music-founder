@@ -22,7 +22,7 @@ VITE_FIREBASE_API_KEY=your_firebase_api_key_here
 4. Under the "General" tab, you will see your "Web API Key".
 
 ## Security Note
-
+>
 > [!IMPORTANT]
 > Never commit your `.env` file to version control. It is already included in `.gitignore`.
 

@@ -114,17 +114,6 @@ As a specialist (spoke), you operate under strict architectural rules:
                     },
                     required: ["query"]
                 }
-            },
-            {
-                name: "export_contract_pdf",
-                description: "Export an existing contract draft to a PDF file.",
-                parameters: {
-                    type: "OBJECT",
-                    properties: {
-                        contractId: { type: "STRING", description: "The Firestore ID of the contract to export" }
-                    },
-                    required: ["contractId"]
-                }
             }
         ]
     }]

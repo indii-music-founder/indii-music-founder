@@ -374,7 +374,6 @@ export class DashboardService {
             const weeklyActivity = Array(7).fill(0);
             const wordCounts: Record<string, number> = {};
 
-            let deltaDays = 0;
             for (const item of history) {
                 // 1. Counts and Duration
                 if (item.type === 'image') {
@@ -388,9 +387,9 @@ export class DashboardService {
 
                 // 2. Weekly Activity
                 // Using (item.timestamp || now) to handle missing timestamp safely
-                deltaDays = Math.floor((now - (item.timestamp || now)) / dayMs);
-                if (deltaDays >= 0 && deltaDays < 7) {
-                    weeklyActivity[6 - deltaDays]++;
+                const daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
+                if (daysAgo >= 0 && daysAgo < 7) {
+                    weeklyActivity[6 - daysAgo]++;
                 }
 
                 // 3. Word Cloud

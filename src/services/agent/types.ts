@@ -174,10 +174,6 @@ export interface AgentContext {
     attachments?: { mimeType: string; base64: string }[];
     systemPrompt?: string;
     whiskState?: WhiskState;
-    // Autonomy Engine Context
-    proactiveTask?: ProactiveTask;
-    triggerType?: ProactiveTriggerType;
-    livingContext?: string;
 }
 
 export type ProactiveTriggerType = 'schedule' | 'event' | 'proactive_trigger';

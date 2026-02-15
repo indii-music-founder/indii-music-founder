@@ -1,5 +1,4 @@
 # Asset Library System Improvement Plan
-
 ## Comprehensive Architecture Overhaul
 
 ---
@@ -13,7 +12,6 @@ The current Asset Library has **placeholder URL issues** causing red blocks, alo
 ## Current Architecture Analysis
 
 ### Storage Flow
-
 ```
 Image Generation → Base64 Data URI (2-5MB)
                 ↓
@@ -28,15 +26,15 @@ Placeholder URLs     Full data URIs
 
 ### Critical Issues
 
-| Issue                  | Impact                        | Priority    |
-| ---------------------- | ----------------------------- | ----------- |
-| 1MB Firestore limit    | Placeholder URLs → Red blocks | 🔴 Critical |
-| No compression         | 2-5MB per image in memory     | 🔴 Critical |
-| No pagination          | Loads all 50 items on init    | 🟡 High     |
-| Blob URL leaks         | Memory growth over time       | 🟡 High     |
-| No cloud upload in dev | Broken dev experience         | 🟡 High     |
-| Poor search/filter     | Hard to find assets           | 🟢 Medium   |
-| No thumbnails          | Slow gallery rendering        | 🟢 Medium   |
+| Issue | Impact | Priority |
+|-------|--------|----------|
+| 1MB Firestore limit | Placeholder URLs → Red blocks | 🔴 Critical |
+| No compression | 2-5MB per image in memory | 🔴 Critical |
+| No pagination | Loads all 50 items on init | 🟡 High |
+| Blob URL leaks | Memory growth over time | 🟡 High |
+| No cloud upload in dev | Broken dev experience | 🟡 High |
+| Poor search/filter | Hard to find assets | 🟢 Medium |
+| No thumbnails | Slow gallery rendering | 🟢 Medium |
 
 ---
 
@@ -51,90 +49,84 @@ Placeholder URLs     Full data URIs
 ```typescript
 // src/services/StorageService.ts - NEW IMPLEMENTATION
 
-import { compress } from "browser-image-compression";
+import { compress } from 'browser-image-compression';
 
 export class StorageService {
-  /**
-   * Upload image to Firebase Storage with compression
-   * Returns cloud URL instead of data URI
-   */
-  static async saveImageToCloud(
-    dataUri: string,
-    id: string,
-    options: {
-      maxSizeMB?: number;
-      maxWidthOrHeight?: number;
-      useWebWorker?: boolean;
-    } = {},
-  ): Promise<string> {
-    try {
-      // Convert data URI to Blob
-      const blob = await this.dataURItoBlob(dataUri);
+    /**
+     * Upload image to Firebase Storage with compression
+     * Returns cloud URL instead of data URI
+     */
+    static async saveImageToCloud(
+        dataUri: string,
+        id: string,
+        options: {
+            maxSizeMB?: number;
+            maxWidthOrHeight?: number;
+            useWebWorker?: boolean;
+        } = {}
+    ): Promise<string> {
+        try {
+            // Convert data URI to Blob
+            const blob = await this.dataURItoBlob(dataUri);
 
-      // Compress image
-      const compressedBlob = await compress(blob, {
-        maxSizeMB: options.maxSizeMB || 0.5,
-        maxWidthOrHeight: options.maxWidthOrHeight || 2048,
-        useWebWorker: options.useWebWorker ?? true,
-        initialQuality: 0.8,
-      });
+            // Compress image
+            const compressedBlob = await compress(blob, {
+                maxSizeMB: options.maxSizeMB || 0.5,
+                maxWidthOrHeight: options.maxWidthOrHeight || 2048,
+                useWebWorker: options.useWebWorker ?? true,
+                initialQuality: 0.8
+            });
 
-      // Upload to Firebase Storage
-      const storageRef = ref(storage, `assets/${id}.jpg`);
-      await uploadBytes(storageRef, compressedBlob);
+            // Upload to Firebase Storage
+            const storageRef = ref(storage, `assets/${id}.jpg`);
+            await uploadBytes(storageRef, compressedBlob);
 
-      // Get download URL
-      const downloadURL = await getDownloadURL(storageRef);
+            // Get download URL
+            const downloadURL = await getDownloadURL(storageRef);
 
-      console.log(
-        `✅ Image uploaded: ${id} (${blob.size} → ${compressedBlob.size} bytes)`,
-      );
-      return downloadURL;
-    } catch (error) {
-      console.error("Failed to upload image:", error);
-      // Fallback to data URI if upload fails
-      return dataUri;
-    }
-  }
+            console.log(`✅ Image uploaded: ${id} (${blob.size} → ${compressedBlob.size} bytes)`);
+            return downloadURL;
 
-  /**
-   * Convert data URI to Blob
-   */
-  private static async dataURItoBlob(dataURI: string): Promise<Blob> {
-    const response = await fetch(dataURI);
-    return response.blob();
-  }
-
-  /**
-   * Save item with automatic cloud upload for large images
-   */
-  static async saveItem(item: HistoryItem): Promise<string> {
-    let imageUrl = item.url;
-
-    // If data URI, always upload to cloud
-    if (item.url.startsWith("data:")) {
-      imageUrl = await this.saveImageToCloud(item.url, item.id);
+        } catch (error) {
+            console.error('Failed to upload image:', error);
+            // Fallback to data URI if upload fails
+            return dataUri;
+        }
     }
 
-    // Save metadata to Firestore (now with cloud URL)
-    const docRef = doc(db, "history", item.id);
-    await setDoc(
-      docRef,
-      {
-        ...item,
-        url: imageUrl, // Cloud URL instead of data URI
-        updatedAt: serverTimestamp(),
-      },
-      { merge: true },
-    );
+    /**
+     * Convert data URI to Blob
+     */
+    private static async dataURItoBlob(dataURI: string): Promise<Blob> {
+        const response = await fetch(dataURI);
+        return response.blob();
+    }
 
-    return imageUrl;
-  }
+    /**
+     * Save item with automatic cloud upload for large images
+     */
+    static async saveItem(item: HistoryItem): Promise<string> {
+        let imageUrl = item.url;
+
+        // If data URI, always upload to cloud
+        if (item.url.startsWith('data:')) {
+            imageUrl = await this.saveImageToCloud(item.url, item.id);
+        }
+
+        // Save metadata to Firestore (now with cloud URL)
+        const docRef = doc(db, 'history', item.id);
+        await setDoc(docRef, {
+            ...item,
+            url: imageUrl, // Cloud URL instead of data URI
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+
+        return imageUrl;
+    }
 }
 ```
 
 **Benefits:**
-
 - ✅ No more placeholder URLs
 - ✅ Smaller Firestore documents (< 10KB)
 - ✅ Automatic image compression (50% size reduction)
@@ -196,35 +188,27 @@ static async generateThumbnail(dataUri: string, id: string): Promise<string> {
 ```
 
 **Update HistoryItem interface:**
-
 ```typescript
 // src/core/types/history.ts
 export interface HistoryItem {
-  id: string;
-  type: "image" | "video" | "music" | "text";
-  url: string;
-  thumbnailUrl?: string; // NEW: Small preview for gallery
-  prompt: string;
-  timestamp: number;
-  projectId: string;
-  orgId?: string;
-  meta?: string;
-  mask?: string;
-  category?:
-    | "headshot"
-    | "bodyshot"
-    | "clothing"
-    | "environment"
-    | "logo"
-    | "other";
-  tags?: string[];
-  subject?: string;
-  origin?: "generated" | "uploaded";
+    id: string;
+    type: 'image' | 'video' | 'music' | 'text';
+    url: string;
+    thumbnailUrl?: string; // NEW: Small preview for gallery
+    prompt: string;
+    timestamp: number;
+    projectId: string;
+    orgId?: string;
+    meta?: string;
+    mask?: string;
+    category?: 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'logo' | 'other';
+    tags?: string[];
+    subject?: string;
+    origin?: 'generated' | 'uploaded';
 }
 ```
 
 **Update AssetLibrary to use thumbnails:**
-
 ```typescript
 <img
     src={asset.thumbnailUrl || asset.url}
@@ -308,7 +292,6 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
 ```
 
 **Benefits:**
-
 - ✅ Only renders visible items (10-15 instead of 50+)
 - ✅ Smooth scrolling even with 1000+ assets
 - ✅ 60 FPS performance
@@ -483,73 +466,73 @@ const handleBulkDelete = async () => {
 // src/services/CacheService.ts - NEW FILE
 
 export class CacheService {
-  private static cache = new Map<string, { blob: Blob; timestamp: number }>();
-  private static MAX_CACHE_SIZE_MB = 50;
-  private static MAX_AGE_MS = 1000 * 60 * 30; // 30 minutes
+    private static cache = new Map<string, { blob: Blob; timestamp: number }>();
+    private static MAX_CACHE_SIZE_MB = 50;
+    private static MAX_AGE_MS = 1000 * 60 * 30; // 30 minutes
 
-  /**
-   * Cache image blob with automatic eviction
-   */
-  static async cacheImage(url: string, blob: Blob): Promise<void> {
-    // Evict old entries
-    this.evictExpired();
+    /**
+     * Cache image blob with automatic eviction
+     */
+    static async cacheImage(url: string, blob: Blob): Promise<void> {
+        // Evict old entries
+        this.evictExpired();
 
-    // Check cache size
-    const totalSize = this.getTotalCacheSize() + blob.size;
-    if (totalSize > this.MAX_CACHE_SIZE_MB * 1024 * 1024) {
-      this.evictOldest();
+        // Check cache size
+        const totalSize = this.getTotalCacheSize() + blob.size;
+        if (totalSize > this.MAX_CACHE_SIZE_MB * 1024 * 1024) {
+            this.evictOldest();
+        }
+
+        this.cache.set(url, {
+            blob,
+            timestamp: Date.now()
+        });
     }
 
-    this.cache.set(url, {
-      blob,
-      timestamp: Date.now(),
-    });
-  }
+    /**
+     * Get cached image or fetch from URL
+     */
+    static async getImage(url: string): Promise<string> {
+        const cached = this.cache.get(url);
 
-  /**
-   * Get cached image or fetch from URL
-   */
-  static async getImage(url: string): Promise<string> {
-    const cached = this.cache.get(url);
+        if (cached && Date.now() - cached.timestamp < this.MAX_AGE_MS) {
+            return URL.createObjectURL(cached.blob);
+        }
 
-    if (cached && Date.now() - cached.timestamp < this.MAX_AGE_MS) {
-      return URL.createObjectURL(cached.blob);
+        // Fetch and cache
+        const response = await fetch(url);
+        const blob = await response.blob();
+        await this.cacheImage(url, blob);
+
+        return URL.createObjectURL(blob);
     }
 
-    // Fetch and cache
-    const response = await fetch(url);
-    const blob = await response.blob();
-    await this.cacheImage(url, blob);
-
-    return URL.createObjectURL(blob);
-  }
-
-  private static evictExpired(): void {
-    const now = Date.now();
-    for (const [url, entry] of this.cache.entries()) {
-      if (now - entry.timestamp > this.MAX_AGE_MS) {
-        this.cache.delete(url);
-      }
+    private static evictExpired(): void {
+        const now = Date.now();
+        for (const [url, entry] of this.cache.entries()) {
+            if (now - entry.timestamp > this.MAX_AGE_MS) {
+                this.cache.delete(url);
+            }
+        }
     }
-  }
 
-  private static evictOldest(): void {
-    let oldest: [string, any] | null = null;
-    for (const entry of this.cache.entries()) {
-      if (!oldest || entry[1].timestamp < oldest[1].timestamp) {
-        oldest = entry;
-      }
+    private static evictOldest(): void {
+        let oldest: [string, any] | null = null;
+        for (const entry of this.cache.entries()) {
+            if (!oldest || entry[1].timestamp < oldest[1].timestamp) {
+                oldest = entry;
+            }
+        }
+        if (oldest) this.cache.delete(oldest[0]);
     }
-    if (oldest) this.cache.delete(oldest[0]);
-  }
 
-  private static getTotalCacheSize(): number {
-    let total = 0;
-    for (const entry of this.cache.values()) {
-      total += entry.blob.size;
+    private static getTotalCacheSize(): number {
+        let total = 0;
+        for (const entry of this.cache.values()) {
+            total += entry.blob.size;
+        }
+        return total;
     }
-    return total;
-  }
 }
 ```
 
@@ -694,7 +677,6 @@ toggleFavorite: (id: string) => {
 ## Implementation Priority
 
 ### Week 1: Critical Fixes
-
 - [x] Filter out placeholder URLs (DONE - commit cc004bc)
 - [ ] Implement cloud-first storage
 - [ ] Add image compression
@@ -702,21 +684,18 @@ toggleFavorite: (id: string) => {
 - [ ] Remove debug logging
 
 ### Week 2: UX Enhancements
-
 - [ ] Virtual scrolling
 - [ ] Loading states
 - [ ] Enhanced search/filter
 - [ ] Sort options
 
 ### Week 3: Performance
-
 - [ ] Smart caching
 - [ ] Pagination
 - [ ] Blob URL cleanup
 - [ ] Request deduplication
 
 ### Week 4: Advanced Features
-
 - [ ] Image preview modal
 - [ ] Bulk operations
 - [ ] Favorites
@@ -727,14 +706,12 @@ toggleFavorite: (id: string) => {
 ## Testing Checklist
 
 ### Performance Tests
-
 - [ ] Load 100+ assets without lag
 - [ ] Scroll gallery at 60 FPS
 - [ ] Memory usage < 200MB after 50 images loaded
 - [ ] First load < 2 seconds
 
 ### Functionality Tests
-
 - [ ] Upload image → shows in gallery
 - [ ] Generate AI image → shows in gallery
 - [ ] Drag asset to canvas → works
@@ -743,7 +720,6 @@ toggleFavorite: (id: string) => {
 - [ ] Refresh page → assets persist
 
 ### Edge Cases
-
 - [ ] No internet → shows cached assets
 - [ ] Large image (10MB+) → compresses automatically
 - [ ] Duplicate upload → deduplicates
@@ -754,7 +730,6 @@ toggleFavorite: (id: string) => {
 ## Expected Results After Implementation
 
 ### Before
-
 - ❌ Red blocks for placeholder URLs
 - ❌ 2-5MB data URIs in memory
 - ❌ Slow gallery rendering (50+ full images)
@@ -762,7 +737,6 @@ toggleFavorite: (id: string) => {
 - ❌ No bulk operations
 
 ### After
-
 - ✅ All images render correctly
 - ✅ < 100KB thumbnails in gallery
 - ✅ 60 FPS scrolling with 1000+ assets
@@ -770,49 +744,46 @@ toggleFavorite: (id: string) => {
 - ✅ Bulk delete, download, organize
 
 ### Performance Metrics
-
-| Metric                   | Before           | After  | Improvement       |
-| ------------------------ | ---------------- | ------ | ----------------- |
-| Gallery load time        | 3-5s             | < 1s   | **5x faster**     |
-| Memory usage (50 assets) | 250MB            | 50MB   | **80% reduction** |
-| Firestore document size  | 2-5MB (rejected) | < 10KB | **99% reduction** |
-| Scroll FPS               | 20-30            | 60     | **2x smoother**   |
+| Metric | Before | After | Improvement |
+|--------|--------|-------|-------------|
+| Gallery load time | 3-5s | < 1s | **5x faster** |
+| Memory usage (50 assets) | 250MB | 50MB | **80% reduction** |
+| Firestore document size | 2-5MB (rejected) | < 10KB | **99% reduction** |
+| Scroll FPS | 20-30 | 60 | **2x smoother** |
 
 ---
 
 ## Maintenance & Monitoring
 
 ### Logging Strategy
-
 ```typescript
 // Production-safe logging
 const logAssetOperation = (operation: string, metadata: any) => {
-  if (import.meta.env.DEV) {
-    console.log(`[AssetLibrary] ${operation}:`, metadata);
-  }
-  // In production, send to analytics
-  analytics.logEvent("asset_operation", { operation, ...metadata });
+    if (import.meta.env.DEV) {
+        console.log(`[AssetLibrary] ${operation}:`, metadata);
+    }
+    // In production, send to analytics
+    analytics.logEvent('asset_operation', { operation, ...metadata });
 };
 ```
 
 ### Performance Monitoring
-
 ```typescript
 // Track key metrics
 useEffect(() => {
-  const perfObserver = new PerformanceObserver((list) => {
-    for (const entry of list.getEntries()) {
-      if (entry.entryType === "measure" && entry.name.includes("asset")) {
-        analytics.logEvent("asset_performance", {
-          name: entry.name,
-          duration: entry.duration,
-        });
-      }
-    }
-  });
-  perfObserver.observe({ entryTypes: ["measure"] });
+    const perfObserver = new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+            if (entry.entryType === 'measure' && entry.name.includes('asset')) {
+                analytics.logEvent('asset_performance', {
+                    name: entry.name,
+                    duration: entry.duration
+                });
+            }
+        }
+    });
+    perfObserver.observe({ entryTypes: ['measure'] });
 
-  return () => perfObserver.disconnect();
+    return () => perfObserver.disconnect();
 }, []);
 ```
 
@@ -822,14 +793,13 @@ useEffect(() => {
 
 ### Storage Costs (Firebase)
 
-| Item              | Current                  | Optimized           | Savings  |
-| ----------------- | ------------------------ | ------------------- | -------- |
-| **Firestore**     | 2-5MB per doc (rejected) | 10KB per doc        | 99%      |
-| **Cloud Storage** | Unused                   | 500KB per image     | New cost |
-| **Bandwidth**     | N/A                      | ~50KB per thumbnail | Minimal  |
+| Item | Current | Optimized | Savings |
+|------|---------|-----------|---------|
+| **Firestore** | 2-5MB per doc (rejected) | 10KB per doc | 99% |
+| **Cloud Storage** | Unused | 500KB per image | New cost |
+| **Bandwidth** | N/A | ~50KB per thumbnail | Minimal |
 
 **Monthly estimate (1000 images):**
-
 - Firestore: $0.50 (metadata only)
 - Storage: $0.15 (compressed images)
 - Bandwidth: $0.20 (thumbnails)

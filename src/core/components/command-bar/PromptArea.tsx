@@ -237,7 +237,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
-                    id="global-command-input"
                     placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
@@ -252,29 +251,27 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple aria-label="Upload files" />
                                 <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" aria-label="Take photo" />
                                 <PromptInputAction tooltip="Attach files">
-                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none">
+                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all">
                                         <Paperclip size={20} />
                                     </button>
                                 </PromptInputAction>
 
+                                <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
+                                    <button
+                                        onClick={handleMicClick}
+                                        className={cn(
+                                            "flex items-center justify-center p-2 rounded-xl transition-all",
+                                            isListening
+                                                ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
+                                                : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
+                                        )}
+                                        aria-label={isListening ? "Stop listening" : "Voice Input"}
+                                    >
+                                        <Mic size={20} className={isListening ? "animate-pulse" : ""} />
+                                    </button>
+                                </PromptInputAction>
                             </>
                         )}
-
-                        <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
-                            <button
-                                onClick={handleMicClick}
-                                className={cn(
-                                    "flex items-center justify-center p-2 rounded-xl transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
-                                    isListening
-                                        ? "text-red-400 bg-red-400/10 hover:bg-red-400/20"
-                                        : "text-gray-400 hover:bg-white/10 hover:text-gray-200"
-                                )}
-                                aria-label={isListening ? "Stop listening" : "Voice Input"}
-                            >
-                                <Mic size={20} className={isListening ? "animate-pulse" : ""} />
-                            </button>
-                        </PromptInputAction>
-
                         {!isMobile && (
                             <div className="relative">
                                 <button
@@ -286,7 +283,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
                                     className={cn(
-                                        "flex items-center justify-center w-10 h-10 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                                        "flex items-center justify-center w-10 h-10 rounded-full transition-all border",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
@@ -309,7 +306,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
                             }}
                             className={cn(
-                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none",
+                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border",
                                 isKnowledgeBaseEnabled
                                     ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
                                     : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
@@ -344,7 +341,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                                 data-testid="command-bar-run-btn"
                             >
-                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
+                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}
                             </button>
                         </PromptInputAction>
                     </div>

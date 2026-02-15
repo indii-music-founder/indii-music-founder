@@ -17,7 +17,7 @@ Disrupt white-label aggregators (SonoSuite, LabelGrid) by providing a proprietar
 
 1. **Metadata QC**: Apply `style_guide_apple.json`. Reject keywords: "Chill", "Sleep", "Lofi".
 2. **Audio Forensics**: Run `audio_forensics.py`.
-   - **HARD GATE**: Reject any file with a spectral cutoff (upsampled fraud).
+    * **HARD GATE**: Reject any file with a spectral cutoff (upsampled fraud).
 3. **Visual Scans**: Vision check artwork for URLs/QR codes.
 
 ### Phase 3: Authority Layer (Identity)
@@ -28,8 +28,8 @@ Disrupt white-label aggregators (SonoSuite, LabelGrid) by providing a proprietar
 ### Phase 4: Compliance & Waterfall (Bank)
 
 1. **Digital Tax Wizard**:
-   - **Decision Tree**: US Person (W-9) | Int'l Individual (W-8BEN) | Int'l Entity (W-8BEN-E).
-   - **TIN Match**: Verify TIN format. If invalid, trigger **TIN MATCH FAIL** and set payout to **HELD**.
+    * **Decision Tree**: US Person (W-9) | Int'l Individual (W-8BEN) | Int'l Entity (W-8BEN-E).
+    * **TIN Match**: Verify TIN format. If invalid, trigger **TIN MATCH FAIL** and set payout to **HELD**.
 2. **Certification Block**: Collect mandatory "Signature under penalties of perjury."
 3. **Withholding Calculation**: Run `tax_withholding_engine.py`. Default to **30%** if uncertified.
 4. **Waterfall Settlement**: Execute `waterfall_payout.py` (Fee -> Recoup -> Splits).
@@ -41,7 +41,6 @@ Disrupt white-label aggregators (SonoSuite, LabelGrid) by providing a proprietar
 ## 🛑 Industrial Failure Conditions
 
 - **TIN Match Fail**: Invalid tax ID format. STOP payouts.
-
-- **Spectral Cutoff**: Suspected audio fraud. STOP delivery.
-- **Metadata SEO Keyword**: "Lofi/Chill" detected. REJECT and notify.
-- **Uncertified ID**: Missing perjury signature. LOCK 30% of funds.
+* **Spectral Cutoff**: Suspected audio fraud. STOP delivery.
+* **Metadata SEO Keyword**: "Lofi/Chill" detected. REJECT and notify.
+* **Uncertified ID**: Missing perjury signature. LOCK 30% of funds.

@@ -210,12 +210,12 @@ None required - enhancing existing components.
 
 ### Modified Files
 
-| File                                                      | Changes                                                           |
-| --------------------------------------------------------- | ----------------------------------------------------------------- |
-| `src/services/dashboard/DashboardService.ts`              | Add `duplicateProject`, `getAnalytics`, `getFirebaseStorageStats` |
-| `src/modules/dashboard/components/DataStorageManager.tsx` | Add tier badge, color-coded bar, breakdown                        |
-| `src/modules/dashboard/components/ProjectHub.tsx`         | Add dropdown menu with duplicate action                           |
-| `src/modules/dashboard/components/AnalyticsView.tsx`      | Fetch real data, add streak, word cloud                           |
+| File | Changes |
+|------|---------|
+| `src/services/dashboard/DashboardService.ts` | Add `duplicateProject`, `getAnalytics`, `getFirebaseStorageStats` |
+| `src/modules/dashboard/components/DataStorageManager.tsx` | Add tier badge, color-coded bar, breakdown |
+| `src/modules/dashboard/components/ProjectHub.tsx` | Add dropdown menu with duplicate action |
+| `src/modules/dashboard/components/AnalyticsView.tsx` | Fetch real data, add streak, word cloud |
 
 ---
 

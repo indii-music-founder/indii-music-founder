@@ -3,21 +3,18 @@ import { onSnapshot, doc, collection, query, where, orderBy, limit } from 'fireb
 import { db } from '@/services/firebase';
 import { SocialService } from '@/services/social/SocialService';
 import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types';
-import { SocialOAuthService, LinkedAccount } from '@/services/social/SocialOAuthService';
 import { useStore } from '@/core/store';
-import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 
 export function useSocial(userId?: string) {
-    const { userProfile } = useStore(useShallow((state) => ({ userProfile: state.userProfile })));
+    const { userProfile } = useStore();
     const toast = useToast();
 
     // State
     const [stats, setStats] = useState<SocialStats>({ followers: 0, following: 0, posts: 0, drops: 0 });
     const [posts, setPosts] = useState<SocialPost[]>([]);
     const [scheduledPosts, setScheduledPosts] = useState<ScheduledPost[]>([]);
-    const [linkedAccounts, setLinkedAccounts] = useState<(LinkedAccount & { id: string })[]>([]);
 
     // Loading States
     const [isLoading, setIsLoading] = useState(true);
@@ -46,7 +43,7 @@ export function useSocial(userId?: string) {
             Sentry.captureException(err);
             toast.error("Failed to load dashboard stats.");
         }
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile?.id]);
 
     const loadFeed = useCallback(async () => {
@@ -62,7 +59,7 @@ export function useSocial(userId?: string) {
         } finally {
             setIsFeedLoading(false);
         }
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filter, userId, userProfile?.id]);
 
     // Real-time Data Sync
@@ -80,7 +77,7 @@ export function useSocial(userId?: string) {
         // 2. Scheduled Posts Listener
         const scheduledQuery = query(
             collection(db, "scheduled_posts"),
-            where("userId", "==", userProfile.id),
+            where("authorId", "==", userProfile.id),
             where("status", "==", "PENDING"),
             orderBy("scheduledTime", "asc")
         );
@@ -98,7 +95,7 @@ export function useSocial(userId?: string) {
         let postsQuery;
 
         if (targetId) {
-            postsQuery = query(postsRef, where("userId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
+            postsQuery = query(postsRef, where("authorId", "==", targetId), orderBy("timestamp", "desc"), limit(50));
         } else {
             // Fallback/All query
             postsQuery = query(postsRef, orderBy("timestamp", "desc"), limit(50));
@@ -123,21 +120,10 @@ export function useSocial(userId?: string) {
             setIsFeedLoading(false);
         });
 
-        const linkedUnsub = onSnapshot(collection(db, "users", userProfile.id, "linked_accounts"), (snapshot) => {
-            const data = snapshot.docs
-                .filter(doc => doc.data().linkedAt != null)
-                .map(doc => ({
-                    id: doc.id,
-                    ...doc.data()
-                })) as (LinkedAccount & { id: string })[];
-            setLinkedAccounts(data);
-        });
-
         return () => {
             userUnsub();
             scheduledUnsub();
             feedUnsub();
-            linkedUnsub();
         };
     }, [userProfile?.id, userId, filter]);
 
@@ -159,7 +145,7 @@ export function useSocial(userId?: string) {
             toast.error("Failed to schedule post.");
             return false;
         }
-
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile?.id, loadDashboardData]);
 
     const createPost = useCallback(async (content: string, mediaUrls: string[] = [], productId?: string) => {
@@ -175,29 +161,14 @@ export function useSocial(userId?: string) {
             toast.error("Failed to publish post.");
             return false;
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loadFeed, loadDashboardData]);
-
-    const linkAccount = useCallback(async (platform: string) => {
-        try {
-            const account = await SocialOAuthService.initiateOAuth(platform);
-            if (account) {
-                toast.success(`Successfully linked ${platform} account: @${(account as any).username}`);
-                return true;
-            }
-            return false;
-        } catch (err) {
-            console.error("Failed to link account:", err);
-            toast.error("Failed to link account.");
-            return false;
-        }
-    }, [toast]);
 
     return {
         // Data
         stats,
         posts,
         scheduledPosts,
-        linkedAccounts,
 
         // UI State
         isLoading, // Global initial load
@@ -210,7 +181,6 @@ export function useSocial(userId?: string) {
         actions: {
             schedulePost,
             createPost,
-            linkAccount,
             refreshDashboard: loadDashboardData,
             refreshFeed: loadFeed
         }

@@ -1,6 +1,4 @@
 import React, { useState } from 'react';
-import { EmptyState } from '@/components/shared/EmptyState';
-import { Skeleton, CardSkeleton } from '@/components/shared/Skeleton';
 import { useFinance } from '../hooks/useFinance';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -86,15 +84,8 @@ export const EarningsDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState('overview');
 
     if (loading) return (
-        <div className="space-y-6 pt-2">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {[1, 2, 3, 4].map(i => <CardSkeleton key={i} />)}
-            </div>
-            <div className="grid gap-6 lg:grid-cols-7 xl:grid-cols-8">
-                <Skeleton className="col-span-4 xl:col-span-3 h-[300px]" />
-                <Skeleton className="col-span-3 xl:col-span-2 h-[300px]" />
-                <Skeleton className="col-span-3 xl:col-span-3 h-[300px]" />
-            </div>
+        <div className="flex items-center justify-center h-96">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
         </div>
     );
 
@@ -109,15 +100,20 @@ export const EarningsDashboard: React.FC = () => {
     );
 
     if (!earningsSummary) return (
-        <EmptyState
-            icon={DollarSign}
-            title="No reports found"
-            description="Your royalty reports haven't arrived yet. Once your distributor processes your streams, they'll appear here automatically."
-            action={{
-                label: "Refresh Data",
-                onClick: () => window.location.reload()
-            }}
-        />
+        <div className="flex flex-col items-center justify-center h-96 bg-black/20 rounded-3xl border border-white/5 m-8 border-dashed">
+            <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center text-gray-600 mb-4">
+                <DollarSign size={24} />
+            </div>
+            <h3 className="text-xl font-bold text-white mb-2">No Reports Found</h3>
+            <p className="text-gray-500 max-w-sm text-center px-6">
+                Your royalty reports haven't arrived yet. Once your distributor processes your streams, they'll appear here automatically.
+            </p>
+            <div className="mt-8 flex gap-4">
+                <button className="px-6 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-sm font-bold text-gray-300 transition-all uppercase tracking-widest">
+                    Refresh
+                </button>
+            </div>
+        </div>
     );
 
     return (

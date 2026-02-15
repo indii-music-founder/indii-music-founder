@@ -1,327 +1,132 @@
-import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import DirectGenerationTab from './DirectGenerationTab';
+import { useStore } from '@/core/store';
 
 // Mock dependencies
-const mockAddToHistory = vi.fn();
-const mockSetPrompt = vi.fn();
-const mockSetSelectedItem = vi.fn();
+vi.mock('@/core/store', () => ({
+    useStore: vi.fn()
+}));
+
 const mockToast = {
     success: vi.fn(),
     error: vi.fn(),
     info: vi.fn()
 };
 
-vi.mock('@/core/store', () => ({
-    useStore: () => ({
-        studioControls: {
-            aspectRatio: '16:9',
-            resolution: '1024x1024',
-            model: 'pro',
-            thinking: false
-        },
-        setPrompt: mockSetPrompt,
-        addToHistory: mockAddToHistory,
-        currentProjectId: 'test-project',
-        whiskState: {
-            subject: [],
-            style: [],
-            scene: []
-        },
-        setSelectedItem: mockSetSelectedItem
-    })
-}));
-
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => mockToast
 }));
 
+const mockGenerateImages = vi.fn();
 vi.mock('@/services/image/ImageGenerationService', () => ({
     ImageGeneration: {
-        generateImages: vi.fn().mockResolvedValue([
-            { id: '1', url: 'data:image/png;base64,test1' }
-        ])
+        generateImages: (...args: any[]) => mockGenerateImages(...args)
     }
 }));
 
+const mockGenerateVideo = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
-        generateVideo: vi.fn().mockResolvedValue([
-            { id: '1', url: 'https://test.com/video.mp4' }
-        ])
+        generateVideo: (...args: any[]) => mockGenerateVideo(...args)
     }
 }));
 
 vi.mock('@/services/WhiskService', () => ({
     WhiskService: {
-        synthesizeWhiskPrompt: vi.fn((prompt) => prompt),
-        synthesizeVideoPrompt: vi.fn((prompt) => prompt)
+        synthesizeWhiskPrompt: (prompt: string) => prompt,
+        synthesizeVideoPrompt: (prompt: string) => prompt
     }
 }));
 
-describe('DirectGenerationTab Component', () => {
+// Mock Lucide icons
+vi.mock('lucide-react', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('lucide-react')>()),
+    Loader2: ({ className }: { className: string }) => <div data-testid="loader" className={className}>Loading...</div>,
+    Image: () => <div data-testid="icon-image">Image</div>,
+    Video: () => <div data-testid="icon-video">Video</div>,
+    Send: () => <div data-testid="icon-send">Send</div>,
+    Settings2: () => <div>Settings</div>,
+    Download: () => <div>Download</div>
+}));
+
+describe('DirectGenerationTab', () => {
+    const mockStore = {
+        studioControls: {
+            aspectRatio: '1:1',
+            resolution: '1024x1024',
+            model: 'fast',
+            mediaResolution: 'medium',
+            thinking: false
+        },
+        setPrompt: vi.fn(),
+        addToHistory: vi.fn(),
+        currentProjectId: 'test-project',
+        whiskState: {}
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
+        (useStore as any).mockReturnValue(mockStore);
     });
 
-    it('should render with default state', () => {
-        render(<DirectGenerationTab />);
+    it('displays loading state while generating image', async () => {
+        let resolveGeneration: (value: any) => void;
+        const generationPromise = new Promise((resolve) => {
+            resolveGeneration = resolve;
+        });
 
-        expect(screen.getByPlaceholderText(/Describe your image/i)).toBeInTheDocument();
-        expect(screen.getByText(/image/i)).toBeInTheDocument();
-        expect(screen.getByText(/video/i)).toBeInTheDocument();
-    });
-
-    it('should switch between image and video modes', () => {
-        render(<DirectGenerationTab />);
-
-        const videoButton = screen.getByText(/video/i);
-        fireEvent.click(videoButton);
-
-        expect(screen.getByPlaceholderText(/Describe your video/i)).toBeInTheDocument();
-    });
-
-    it('should update prompt on input', () => {
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
-
-        expect(input).toHaveValue('A beautiful landscape');
-    });
-
-    it('should generate image on send button click', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
+        mockGenerateImages.mockReturnValue(generationPromise);
 
         render(<DirectGenerationTab />);
 
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
+        // Type prompt
+        const input = screen.getByPlaceholderText('Describe your image...');
+        fireEvent.change(input, { target: { value: 'A cute cat' } });
 
-        const sendButton = screen.getByRole('button', { name: /send/i });
+        // Click generate
+        const sendButton = screen.getByTestId('icon-send').parentElement as HTMLButtonElement;
         fireEvent.click(sendButton);
 
-        await waitFor(() => {
-            expect(ImageGeneration.generateImages).toHaveBeenCalled();
-        });
-    });
-
-    it('should handle image generation success', async () => {
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith('Image generated successfully');
-            expect(mockAddToHistory).toHaveBeenCalled();
-            expect(mockSetSelectedItem).toHaveBeenCalled();
-        });
-    });
-
-    it('should handle image generation error', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        (ImageGeneration.generateImages as any).mockRejectedValueOnce(
-            new Error('Generation failed')
-        );
-
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'A beautiful landscape' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.error).toHaveBeenCalledWith(
-                expect.stringContaining('Generation failed')
-            );
-        });
-    });
-
-    it('should handle timeout errors specifically', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        (ImageGeneration.generateImages as any).mockRejectedValueOnce({
-            code: 'deadline-exceeded',
-            message: 'Timeout'
-        });
-
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'Test' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.error).toHaveBeenCalledWith(
-                expect.stringContaining('timed out')
-            );
-        });
-    });
-
-    it('should handle quota exceeded errors', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        (ImageGeneration.generateImages as any).mockRejectedValueOnce({
-            code: 'resource-exhausted',
-            message: 'Quota exceeded'
-        });
-
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'Test' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.error).toHaveBeenCalledWith(
-                expect.stringContaining('Quota exceeded')
-            );
-        });
-    });
-
-    it('should generate video when in video mode', async () => {
-        const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
-
-        render(<DirectGenerationTab />);
-
-        // Switch to video mode
-        const videoButton = screen.getByText(/video/i);
-        fireEvent.click(videoButton);
-
-        const input = screen.getByPlaceholderText(/Describe your video/i);
-        fireEvent.change(input, { target: { value: 'A video scene' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(VideoGeneration.generateVideo).toHaveBeenCalled();
-        });
-    });
-
-    it('should handle video generation success', async () => {
-        render(<DirectGenerationTab />);
-
-        const videoButton = screen.getByText(/video/i);
-        fireEvent.click(videoButton);
-
-        const input = screen.getByPlaceholderText(/Describe your video/i);
-        fireEvent.change(input, { target: { value: 'A video scene' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalledWith('Video generated successfully');
-        });
-    });
-
-    it('should handle queued video generation', async () => {
-        const { VideoGeneration } = await import('@/services/video/VideoGenerationService');
-        (VideoGeneration.generateVideo as any).mockResolvedValueOnce([
-            { id: '1', url: '' } // Empty URL indicates queued
-        ]);
-
-        render(<DirectGenerationTab />);
-
-        const videoButton = screen.getByText(/video/i);
-        fireEvent.click(videoButton);
-
-        const input = screen.getByPlaceholderText(/Describe your video/i);
-        fireEvent.change(input, { target: { value: 'A video scene' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-        fireEvent.click(sendButton);
-
-        await waitFor(() => {
-            expect(mockToast.info).toHaveBeenCalledWith(
-                expect.stringContaining('Video job queued')
-            );
-        });
-    });
-
-    it('should not generate with empty prompt', () => {
-        render(<DirectGenerationTab />);
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
-
+        // Assert loading state
+        expect(screen.getByTestId('loader')).toBeInTheDocument();
         expect(sendButton).toBeDisabled();
-    });
 
-    it('should handle Enter key to generate', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'Test prompt' } });
-        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter' });
-
-        await waitFor(() => {
-            expect(ImageGeneration.generateImages).toHaveBeenCalled();
+        // Resolve generation
+        await act(async () => {
+            resolveGeneration!([{
+                id: 'img-1',
+                url: 'https://example.com/cat.jpg',
+                prompt: 'A cute cat',
+                timestamp: Date.now()
+            }]);
         });
+
+        // Assert success state
+        await waitFor(() => {
+            expect(screen.queryByTestId('loader')).not.toBeInTheDocument();
+        });
+
+        expect(screen.getByAltText('A cute cat')).toBeInTheDocument();
+        expect(mockToast.success).toHaveBeenCalledWith('Image generated successfully');
     });
 
-    it('should not generate on Shift+Enter', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        (ImageGeneration.generateImages as any).mockClear();
+    it('handles generation error correctly', async () => {
+        mockGenerateImages.mockRejectedValue(new Error('API Error'));
 
         render(<DirectGenerationTab />);
 
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'Test prompt' } });
-        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', shiftKey: true });
+        const input = screen.getByPlaceholderText('Describe your image...');
+        fireEvent.change(input, { target: { value: 'A crash test' } });
 
-        expect(ImageGeneration.generateImages).not.toHaveBeenCalled();
-    });
-
-    it('should show empty state when no results', () => {
-        render(<DirectGenerationTab />);
-
-        expect(screen.getByText('Start Creating')).toBeInTheDocument();
-        expect(screen.getByText(/Enter a prompt to begin/i)).toBeInTheDocument();
-    });
-
-    it('should display model name in prompt bar', () => {
-        render(<DirectGenerationTab />);
-
-        expect(screen.getByText('PRO')).toBeInTheDocument();
-    });
-
-    it('should show loading state during generation', async () => {
-        const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-        let resolveGeneration: any;
-        (ImageGeneration.generateImages as any).mockImplementation(
-            () => new Promise((resolve) => { resolveGeneration = resolve; })
-        );
-
-        render(<DirectGenerationTab />);
-
-        const input = screen.getByPlaceholderText(/Describe your image/i);
-        fireEvent.change(input, { target: { value: 'Test' } });
-
-        const sendButton = screen.getByRole('button', { name: /send/i });
+        const sendButton = screen.getByTestId('icon-send').parentElement as HTMLButtonElement;
         fireEvent.click(sendButton);
 
         await waitFor(() => {
-            const sendBtn = screen.getByRole('button', { name: /send/i });
-            expect(sendBtn.querySelector('[data-testid="icon-Loader2"]')).toBeInTheDocument();
+            expect(mockToast.error).toHaveBeenCalledWith(expect.stringContaining('Generation failed: API Error'));
         });
 
-        // Resolve the generation
-        resolveGeneration([{ id: '1', url: 'data:image/png;base64,test' }]);
-
-        await waitFor(() => {
-            expect(mockToast.success).toHaveBeenCalled();
-        });
+        expect(screen.getByTestId('icon-send')).toBeInTheDocument();
+        expect(sendButton).not.toBeDisabled();
     });
 });

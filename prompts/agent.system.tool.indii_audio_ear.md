@@ -7,19 +7,19 @@ It returns a `SonicProfile` JSON object containing musical metadata.
 
 usage:
 
-```json
+~~~json
 {
-  "thoughts": [
-    "User uploaded a new demo.",
-    "I need to analyze the tempo and key to inform the visual style."
-  ],
-  "headline": "Analyzing Audio Track",
-  "tool_name": "indii_audio_ear",
-  "tool_args": {
-    "audioUrl": "/a0/usr/projects/default/assets/audio/demo_v1.mp3"
-  }
+    "thoughts": [
+        "User uploaded a new demo.",
+        "I need to analyze the tempo and key to inform the visual style."
+    ],
+    "headline": "Analyzing Audio Track",
+    "tool_name": "indii_audio_ear",
+    "tool_args": {
+        "audioUrl": "/a0/usr/projects/default/assets/audio/demo_v1.mp3"
+    }
 }
-```
+~~~
 
 **Output Schema:**
 

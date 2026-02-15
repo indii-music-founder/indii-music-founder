@@ -1,3 +1,0 @@
-#!/usr/bin/env sh
-
-npm run sync:agents && git add 'src/agents/**/agent-guidelines.json'

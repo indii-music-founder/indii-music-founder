@@ -75,4 +75,3 @@ identity_store.json
 # Python
 __pycache__/
 *.pyc
-mcp_config.json

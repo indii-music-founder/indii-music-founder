@@ -1,5 +1,4 @@
-### response
-
+### response:
 final answer to user
 ends task processing use only when done or no task active
 put result in text arg
@@ -14,16 +13,17 @@ all math and variables wrap with latex notation delimiters <latex>x = ...</latex
 speech: text and lists are spoken, tables and code blocks not, therefore use tables for files and technicals, use text and lists for plain english, do not include technical details in lists
 
 usage:
-
-```json
+~~~json
 {
-  "thoughts": ["..."],
-  "headline": "Explaining why...",
-  "tool_name": "response",
-  "tool_args": {
-    "text": "Answer to the user"
-  }
+    "thoughts": [
+        "...",
+    ],
+    "headline": "Explaining why...",
+    "tool_name": "response",
+    "tool_args": {
+        "text": "Answer to the user",
+    }
 }
-```
+~~~
 
 {{ include "agent.system.response_tool_tips.md" }}

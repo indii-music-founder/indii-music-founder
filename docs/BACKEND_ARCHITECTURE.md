@@ -7,13 +7,13 @@
 
 The system uses a hybrid approach, with a strategic shift towards backend processing for heavy AI tasks:
 
-- **Frontend (Client-Side)**:
-  - **Text/Chat**: Uses `GoogleGenerativeAI` SDK (Gemini API) directly from the browser for low-latency interactions.
-  - **Lightweight Image Ops**: Some remix/style extraction tasks still run client-side (transitioning).
-- **Backend (Firebase Functions)**:
-  - **Video Generation**: Uses `Vertex AI API` via Google Cloud REST endpoint.
-  - **Image Generation**: Migrated to `generateImage` Cloud Function using Vertex AI.
-  - **Agent Execution**: Specialized agents (Creative Director, Road Manager, Brand Manager) run on server-side functions.
+* **Frontend (Client-Side)**:
+  * **Text/Chat**: Uses `GoogleGenerativeAI` SDK (Gemini API) directly from the browser for low-latency interactions.
+  * **Lightweight Image Ops**: Some remix/style extraction tasks still run client-side (transitioning).
+* **Backend (Firebase Functions)**:
+  * **Video Generation**: Uses `Vertex AI API` via Google Cloud REST endpoint.
+  * **Image Generation**: Migrated to `generateImage` Cloud Function using Vertex AI.
+  * **Agent Execution**: Specialized agents (Creative Director, Road Manager, Brand Manager) run on server-side functions.
 
 ## 2. Strategic Decision: Image Generation Migration
 
@@ -24,43 +24,43 @@ The system uses a hybrid approach, with a strategic shift towards backend proces
 When scaling from 1 user to 1,000 or 1,000,000 users, client-side generation fails for several critical reasons:
 
 1. **Rate Limiting (The "Thundering Herd"):**
-   - _Client-Side:_ 1,000 users hitting the API simultaneously will trigger Google's global rate limiters (429 Too Many Requests). The app becomes unusable for everyone.
-   - _Backend:_ We can implement **Request Queueing** (e.g., Cloud Tasks). If 1,000 requests come in, we process them at our provisioned rate (e.g., 50 per second) without dropping them.
+    * *Client-Side:* 1,000 users hitting the API simultaneously will trigger Google's global rate limiters (429 Too Many Requests). The app becomes unusable for everyone.
+    * *Backend:* We can implement **Request Queueing** (e.g., Cloud Tasks). If 1,000 requests come in, we process them at our provisioned rate (e.g., 50 per second) without dropping them.
 
 2. **Cost & Quota Management:**
-   - _Client-Side:_ Impossible to strictly enforce per-user cost limits securely.
-   - _Backend:_ We can check a user's subscription tier (Free vs. Pro) in Firestore _before_ incurring the cost of the generation. We can stop abuse instantly.
+    * *Client-Side:* Impossible to strictly enforce per-user cost limits securely.
+    * *Backend:* We can check a user's subscription tier (Free vs. Pro) in Firestore *before* incurring the cost of the generation. We can stop abuse instantly.
 
 3. **Security:**
-   - _Client-Side:_ Requires exposing API keys or proxy keys. High risk of leakage.
-   - _Backend:_ Uses IAM Service Accounts. Zero key exposure.
+    * *Client-Side:* Requires exposing API keys or proxy keys. High risk of leakage.
+    * *Backend:* Uses IAM Service Accounts. Zero key exposure.
 
 4. **Observability:**
-   - _Backend:_ We can log every generation request, success rate, and latency to BigQuery for analytics.
+    * *Backend:* We can log every generation request, success rate, and latency to BigQuery for analytics.
 
 ### Implementation Status
 
-- **Cloud Function:** `generateImage` in `functions/src/index.ts` is live.
-- **Logic:** Auth Check -> Vertex AI Call -> Response.
-- **Client:** `ImageGenerationService.ts` uses `httpsCallable` for generation.
+* **Cloud Function:** `generateImage` in `functions/src/index.ts` is live.
+* **Logic:** Auth Check -> Vertex AI Call -> Response.
+* **Client:** `ImageGenerationService.ts` uses `httpsCallable` for generation.
 
 ## 3. Backend Service Map
 
-| Service      | Function Name                         | Trigger  | Model                        | Scaling Strategy           |
-| :----------- | :------------------------------------ | :------- | :--------------------------- | :------------------------- |
-| **Video**    | `generateVideo`                       | HTTPS    | `veo-3.1-generate-preview`   | Async Queue (Long running) |
-| **Audio**    | `generateSpeech`                      | Callable | `gemini-2.5-pro-tts-preview` | Stateless                  |
-| **Image**    | `generateImage`                       | Callable | `gemini-3-pro-image-preview` | Stateless / Auto-scaling   |
-| **Director** | `creativeDirectorAgent`               | HTTPS    | `gemini-3-pro-preview`       | Stateless                  |
-| **Brand**    | `analyzeBrand`, `generateBrandAsset`  | Callable | `gemini-3-pro-preview`       | Stateless                  |
-| **Road**     | `generateItinerary`, `checkLogistics` | Callable | `gemini-3-pro-preview`       | Stateless                  |
-| **Campaign** | `executeCampaign`                     | Callable | `gemini-3-pro-preview`       | Stateless                  |
+| Service | Function Name | Trigger | Model | Scaling Strategy |
+| :--- | :--- | :--- | :--- | :--- |
+| **Video** | `generateVideo` | HTTPS | `veo-3.1-generate-preview` | Async Queue (Long running) |
+| **Audio** | `generateSpeech` | Callable | `gemini-2.5-pro-tts-preview` | Stateless |
+| **Image** | `generateImage` | Callable | `gemini-3-pro-image-preview` | Stateless / Auto-scaling |
+| **Director** | `creativeDirectorAgent` | HTTPS | `gemini-3-pro-preview` | Stateless |
+| **Brand** | `analyzeBrand`, `generateBrandAsset` | Callable | `gemini-3-pro-preview` | Stateless |
+| **Road** | `generateItinerary`, `checkLogistics` | Callable | `gemini-3-pro-preview` | Stateless |
+| **Campaign** | `executeCampaign` | Callable | `gemini-3-pro-preview` | Stateless |
 
 ## 4. Code Standards
 
-- **Runtime**: Node.js 22
-- **Framework**: Firebase Functions (Gen 2 preferred for concurrency).
-- **Auth**: `google-auth-library` for backend-to-backend; Firebase Auth for client-to-backend.
+* **Runtime**: Node.js 22
+* **Framework**: Firebase Functions (Gen 2 preferred for concurrency).
+* **Auth**: `google-auth-library` for backend-to-backend; Firebase Auth for client-to-backend.
 
 ## 5. Data Models
 
@@ -76,12 +76,12 @@ interface UserDocument {
   photoURL?: string;
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
-
+  
   // Membership & Billing
-  tier: "free" | "pro" | "enterprise";
-  subscriptionId?: string; // Stripe Subscription ID
-  customerId?: string; // Stripe Customer ID
-  status: "active" | "past_due" | "canceled" | "trialing";
+  tier: 'free' | 'pro' | 'enterprise';
+  subscriptionId?: string;       // Stripe Subscription ID
+  customerId?: string;           // Stripe Customer ID
+  status: 'active' | 'past_due' | 'canceled' | 'trialing';
   trialEndsAt?: Timestamp;
 
   // App Specific
@@ -100,18 +100,18 @@ We use a **webhook-driven** architecture for subscription management to ensure b
 1. **Trigger:** User selects a plan in the frontend (Landing Page or Studio default verified route).
 2. **Checkout:** Redirects to Stripe Checkout (Client-side init via Stripe SDK).
 3. **Fulfillment (Async):**
-   - Stripe calls our `handleStripeWebhook` Cloud Function.
-   - Function verifies signature.
-   - Updates Firestore `users/{uid}` with `tier`, `subscriptionId`, `status`.
+    * Stripe calls our `handleStripeWebhook` Cloud Function.
+    * Function verifies signature.
+    * Updates Firestore `users/{uid}` with `tier`, `subscriptionId`, `status`.
 4. **Enforcement:**
-   - **Frontend:** `MembershipService` listens to Firestore changes and unlocks features in real-time.
-   - **Backend:** Gated Cloud Functions (e.g., `generateVideo`) read the `tier` from Firestore before execution.
+    * **Frontend:** `MembershipService` listens to Firestore changes and unlocks features in real-time.
+    * **Backend:** Gated Cloud Functions (e.g., `generateVideo`) read the `tier` from Firestore before execution.
 
 ### Tier Enforcement Matrix
 
-| Feature               | Free               | Pro                  | Enterprise            |
-| :-------------------- | :----------------- | :------------------- | :-------------------- |
-| **Video Duration**    | 8 mins / 5 per day | 60 mins / 50 per day | 4 hours / 500 per day |
-| **Image Generation**  | 50 / day           | 500 / day            | 5000 / day            |
-| **Design Resolution** | 1024px (Low Res)   | 4096px (4K)          | 8192px (8K)           |
-| **Projects**          | 3 Projects         | 50 Projects          | Unlimited             |
+| Feature | Free | Pro | Enterprise |
+| :--- | :--- | :--- | :--- |
+| **Video Duration** | 8 mins / 5 per day | 60 mins / 50 per day | 4 hours / 500 per day |
+| **Image Generation** | 50 / day | 500 / day | 5000 / day |
+| **Design Resolution** | 1024px (Low Res) | 4096px (4K) | 8192px (8K) |
+| **Projects** | 3 Projects | 50 Projects | Unlimited |

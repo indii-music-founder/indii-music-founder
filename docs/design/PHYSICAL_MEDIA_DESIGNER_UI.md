@@ -17,8 +17,8 @@ The **Physical Media Designer** is a specialized workspace within IndiiOS for cr
 
 - **Tabs**:
   - **Templates**: Grid view of available formats (CD Front, Vinyl Jacket, etc.).
-    - _Interaction_: Clicking a template loads it onto the canvas.
-    - _Premium Content_: Pro/Enterprise templates are marked with a "Sovereign" gold badge.
+    - *Interaction*: Clicking a template loads it onto the canvas.
+    - *Premium Content*: Pro/Enterprise templates are marked with a "Sovereign" gold badge.
   - **Assets**: User's uploaded images, logos, and generated assets.
   - **Layers**: Simple list of regions (e.g., "Front Cover", "Spine").
 
@@ -66,18 +66,18 @@ When a user on a restricted tier attempts a Pro-only action or hits a daily quot
 1. **Select Format**: User opens "Physical Designer" -> clicks "Cassette J-Card".
 2. **Visual Setup**: Canvas loads the J-Card template. The "Front Panel" region is highlighted.
 3. **AI Generation**:
-   - User types in Right Sidebar: " Make a futuristic city background, cyan and magenta."
-   - System generates 4K image -> Auto-scales to cover the "Front Panel" + Bleed.
+    - User types in Right Sidebar: " Make a futuristic city background, cyan and magenta."
+    - System generates 4K image -> Auto-scales to cover the "Front Panel" + Bleed.
 4. **Refinement**:
-   - User clicks "Spine" region.
-   - User types: "Add text 'My Album - The Band' vertically."
-   - System places text, rotates it 90/270 degrees automatically based on the template spec.
+    - User clicks "Spine" region.
+    - User types: "Add text 'My Album - The Band' vertically."
+    - System places text, rotates it 90/270 degrees automatically based on the template spec.
 5. **Export**:
-   - User clicks "Export Print Ready".
-   - System checks tier limits:
-     - **Free**: 150DPI PNG/RGB.
-     - **Pro+**: 300DPI PDF/CMYK with bleed & trim marks.
-   - System generates the high-res file, ready for the print shop.
+    - User clicks "Export Print Ready".
+    - System checks tier limits:
+        - **Free**: 150DPI PNG/RGB.
+        - **Pro+**: 300DPI PDF/CMYK with bleed & trim marks.
+    - System generates the high-res file, ready for the print shop.
 
 ## Visual Style
 
