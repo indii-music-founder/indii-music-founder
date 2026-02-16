@@ -19,9 +19,6 @@ export class HistoryManager {
 
     /**
      * Retrieves the recent conversation history from the store.
-     */
-    /**
-     * Retrieves the recent conversation history from the store.
      * Filters for clean user/model messages.
      * 
      * @returns A promise resolving to the list of clean agent messages.
@@ -54,10 +51,6 @@ export class HistoryManager {
         }).join('\n');
     }
 
-    /**
-     * Creates a "Compiled View" of the history.
-     * Uses a sliding window for recent messages and summarizes the middle-history.
-     */
     /**
      * Creates a "Compiled View" of the history.
      * Uses a sliding window for recent messages and summarizes history beyond the threshold.

@@ -164,9 +164,6 @@ class MetadataPersistenceService {
     }
 
     /**
-     * Main save method with retry logic and error handling
-     */
-    /**
      * Main save method with retry logic and error handling.
      * Enriches data with metadata and handles authentication checks.
      * 
