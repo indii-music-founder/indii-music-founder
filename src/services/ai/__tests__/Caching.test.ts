@@ -43,8 +43,6 @@ vi.mock('../billing/TokenUsageService', () => ({
         checkQuota: vi.fn().mockResolvedValue(true),
         trackUsage: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(true)
-        checkRateLimit: vi.fn().mockResolvedValue(undefined),
-        trackUsage: vi.fn().mockResolvedValue(true)
     }
 }));
 
