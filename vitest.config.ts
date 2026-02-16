@@ -25,6 +25,9 @@ export default defineConfig({
       '**/*.integration.test.tsx',
       // Skip torture tests
       '**/*.torture.test.ts',
+      // Skip tests requiring Firebase emulator
+      'firestore.rules.test.ts',
+      'storage.rules.test.ts',
       'A2UI/**',
     ]
   },

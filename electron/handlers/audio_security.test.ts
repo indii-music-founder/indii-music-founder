@@ -56,6 +56,14 @@ vi.mock('../services/APIService', () => ({
     apiService: { getSongMetadata: vi.fn() }
 }));
 
+// Mock AccessControlService to allow valid paths
+vi.mock('../security/AccessControlService', () => ({
+    accessControlService: {
+        verifyAccess: vi.fn(() => true),
+        requestAccess: vi.fn(() => true)
+    }
+}));
+
 // Import handler
 import { registerAudioHandlers } from './audio';
 

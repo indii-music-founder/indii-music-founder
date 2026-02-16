@@ -29,6 +29,18 @@ vi.mock('electron', () => ({
     app: mocks.app
 }));
 
+// Mock 'electron-store' to prevent filesystem access in CI
+vi.mock('electron-store', () => ({
+    default: class MockStore {
+        store: Record<string, any> = {};
+        path = '/mock/store.json';
+        get(key: string) { return this.store[key]; }
+        set(key: string, val: any) { this.store[key] = val; }
+        delete(key: string) { delete this.store[key]; }
+        clear() { this.store = {}; }
+    }
+}));
+
 // Mock 'BrowserAgentService'
 vi.mock('../services/BrowserAgentService', () => ({
     browserAgentService: mocks.browserAgentService

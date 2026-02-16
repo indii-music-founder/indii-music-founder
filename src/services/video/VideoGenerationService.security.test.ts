@@ -17,7 +17,8 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     auth: {
         currentUser: { uid: 'test-user' }
-    }
+    },
+    remoteConfig: { defaultConfig: {} },
 }));
 
 // 3. Mock Firebase Functions
