@@ -384,6 +384,11 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     const maxExtractionAttempts = 2;
 
                     while (extractionAttempts < maxExtractionAttempts) {
+                            try {
+                                // 1. Trigger Frame Extraction Job
+                                const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                    const auth = new GoogleAuth({
+                                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
                         try {
                             // 1. Trigger Frame Extraction Job
                             const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
