@@ -14,8 +14,6 @@ export class HistoryManager {
     private readonly MAX_TOTAL_TURNS = 20;
     // High-fidelity turns kept in full
     private readonly MAX_RECENT_TURNS = 15;
-    // Threshold before we trigger summarization logic
-    private readonly MAX_TOTAL_TURNS = 25;
 
     /**
      * Retrieves the recent conversation history from the store.
