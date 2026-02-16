@@ -44,7 +44,7 @@ describe('Agent Zero Restoration', () => {
     it('save_memory tool should call MemoryService', async () => {
         const result = (await TOOL_REGISTRY['save_memory']({ content: 'Test memory' })) as any;
         expect(memoryService.saveMemory).toHaveBeenCalledWith('test-project', 'Test memory', 'fact');
-        expect(result.data.message).toContain('Memory saved');
+        expect(result.data.message).toContain('Memory processed');
     });
 
     it('recall_memories tool should call MemoryService', async () => {
