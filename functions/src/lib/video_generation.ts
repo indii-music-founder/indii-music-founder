@@ -7,7 +7,12 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
     { event: "video/generate.requested" },
     async ({ event, step }: any) => {
         const { jobId, prompt, userId, options } = event.data;
-        console.log(`[Inngest] Starting video generation for Job: ${jobId}`);
+        const isThinking = options?.thinking === true;
+        const finalPrompt = isThinking
+            ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`
+            : prompt;
+
+        console.log(`[Inngest] Starting video generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
         try {
             // Update status to processing
@@ -27,10 +32,10 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
 
             // Start Video Generation Operation (Vertex AI)
             const operation = await step.run("trigger-vertex-ai-video", async () => {
-                const { model: requestedModel, generateAudio } = options || {};
+                const { model: requestedModel, generateAudio: requestedAudio } = options || {};
                 const modelId = requestedModel === 'fast'
                     ? FUNCTION_AI_MODELS.VIDEO.FAST
-                    : FUNCTION_AI_MODELS.VIDEO.GENERATION;
+                    : FUNCTION_AI_MODELS.VIDEO.PRO;
 
                 const auth = new GoogleAuth({
                     scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -42,12 +47,12 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                 const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predictLongRunning`;
 
                 const requestBody: any = {
-                    instances: [{ prompt: prompt }],
+                    instances: [{ prompt: finalPrompt }],
                     parameters: {
                         sampleCount: 1,
                         aspectRatio: options?.aspectRatio || "16:9",
                         personGeneration: "allow_adult",
-                        includeAudio: generateAudio ?? true
+                        generateAudio: requestedAudio ?? true
                     }
                 };
 
@@ -64,11 +69,11 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     if (dur <= 4) dur = 4;
                     else if (dur <= 6) dur = 6;
                     else dur = 8;
-                    requestBody.parameters.duration = dur;
+                    requestBody.parameters.durationSeconds = dur;
 
                     // Force 8s for 1080p/4k
                     if (['1080p', '4k'].includes(options?.resolution)) {
-                        requestBody.parameters.duration = 8;
+                        requestBody.parameters.durationSeconds = 8;
                     }
                 }
 

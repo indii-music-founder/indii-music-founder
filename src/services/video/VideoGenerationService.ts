@@ -20,6 +20,13 @@ import { metadataPersistenceService } from '@/services/persistence/MetadataPersi
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
+/**
+ * VideoGenerationService - Client-side orchestrator for AI video production
+ * 
+ * Handles quota checking, prompt enrichment (cinematography/physics), 
+ * temporal context analysis, and triggering both atomic and long-form 
+ * Daisychaining video generation via Cloud Functions.
+ */
 export class VideoGenerationService {
 
     private async analyzeTemporalContext(image: string, offset: number, basePrompt: string): Promise<string> {
@@ -57,7 +64,7 @@ export class VideoGenerationService {
         }
     }
 
-    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number }, userProfile?: UserProfile): string {
+    private enrichPrompt(basePrompt: string, settings: { camera?: string, motion?: number, fps?: number, thinking?: boolean }, userProfile?: UserProfile): string {
         let prompt = basePrompt;
 
         if (userProfile) {
@@ -91,6 +98,13 @@ export class VideoGenerationService {
         return undefined;
     }
 
+    /**
+     * Triggers a standard (atomic) video generation job.
+     * Enriches the prompt, analyzes temporal context, and invokes the triggerVideoJob function.
+     * 
+     * @param options - Configuration for the video generation request.
+     * @returns A promise resolving to an array containing the jobId placeholder.
+     */
     async generateVideo(options: VideoGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
         // Zod Validation
         const validation = VideoGenerationOptionsSchema.safeParse(options);
@@ -126,7 +140,8 @@ export class VideoGenerationService {
         let enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
             camera: options.cameraMovement,
             motion: options.motionStrength,
-            fps: options.fps
+            fps: options.fps,
+            thinking: options.thinking
         }, options.userProfile);
 
         if (temporalContext) {
@@ -280,6 +295,13 @@ export class VideoGenerationService {
         }
     }
 
+    /**
+     * Triggers a long-form (Daisychaining) video generation job.
+     * Splices a long request into segments, enriches them, and invokes triggerLongFormVideoJob.
+     * 
+     * @param options - Configuration for long-form generation including totalDuration.
+     * @returns A promise resolving to the main jobId placeholder.
+     */
     async generateLongFormVideo(options: {
         prompt: string;
         totalDuration: number;
@@ -289,6 +311,7 @@ export class VideoGenerationService {
         negativePrompt?: string;
         firstFrame?: string;
         generateAudio?: boolean;
+        thinking?: boolean;
         model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
@@ -315,7 +338,9 @@ export class VideoGenerationService {
         const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
-        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {}, options.userProfile);
+        const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
+            thinking: options.thinking
+        }, options.userProfile);
 
         const targetAspectRatio = this.determineTargetAspectRatio(options);
 
@@ -332,12 +357,15 @@ export class VideoGenerationService {
             orgId,
             startImage: options.firstFrame,
             totalDuration: options.totalDuration,
-            aspectRatio: targetAspectRatio,
-            resolution: options.resolution,
-            seed: options.seed,
-            generateAudio: options.generateAudio,
-            model: options.model,
-            negativePrompt: options.negativePrompt,
+            options: {
+                aspectRatio: targetAspectRatio,
+                resolution: options.resolution,
+                seed: options.seed,
+                generateAudio: options.generateAudio,
+                thinking: options.thinking,
+                model: options.model,
+                negativePrompt: options.negativePrompt,
+            }
         });
 
         // Return a placeholder list with the main jobId

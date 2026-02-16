@@ -10,7 +10,7 @@ export const SafetyRatingSchema = z.object({
 });
 
 export const VideoResolutionSchema = z.enum([
-    '1280x720', '1920x1080', '1080x1920', '720x1280', '1024x1024', '4k'
+    '720p', '1080p', '4k'
 ]);
 
 export const VideoAspectRatioSchema = z.enum([
@@ -41,6 +41,7 @@ export const VideoGenerationOptionsSchema = z.object({
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.any()).optional(), // Can refine later
     generateAudio: z.boolean().optional(),
+    thinking: z.boolean().optional(),
     orgId: z.string().optional(),
     userProfile: z.any().optional() // Complex object, keep loose for now
 });

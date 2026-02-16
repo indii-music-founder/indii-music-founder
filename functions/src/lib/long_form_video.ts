@@ -2,6 +2,7 @@ import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
 import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
+import { FUNCTION_AI_MODELS } from "../config/models";
 
 /**
  * Robustly converts a Google Storage URL to a gs:// URI
@@ -39,7 +40,7 @@ export const LongFormVideoJobSchema = z.object({
     userId: z.string(),
     orgId: z.string().optional().default("personal"),
     prompts: z.array(z.string()).min(1), // Validation fixed: must have at least 1 prompt
-    totalDuration: z.string().optional(),
+    totalDuration: z.union([z.string(), z.number()]).optional(),
     startImage: z.string().optional(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional().default("16:9"),
@@ -47,6 +48,8 @@ export const LongFormVideoJobSchema = z.object({
         seed: z.number().optional(),
         negativePrompt: z.string().optional(),
         generateAudio: z.boolean().optional(),
+        thinking: z.boolean().optional(),
+        model: z.string().optional(),
     }).optional().default({})
 });
 
@@ -126,6 +129,9 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
         // Initialize currentStartImage
         let currentStartImage = startImage;
+        const isThinking = options?.thinking === true;
+
+        console.log(`[Inngest] Starting long-form generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
         try {
             // Update main job status
@@ -138,11 +144,17 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
             for (let i = 0; i < prompts.length; i++) {
                 const segmentId = `${jobId}_seg_${i}`;
-                const prompt = prompts[i];
+                const rawPrompt = prompts[i];
+                const segmentPrompt = isThinking
+                    ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${rawPrompt}`
+                    : rawPrompt;
 
                 // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
-                    const modelId = 'veo-3.1-generate-preview';
+                    const { model: requestedModel } = options || {};
+                    const modelId = requestedModel === 'fast'
+                        ? FUNCTION_AI_MODELS.VIDEO.FAST
+                        : FUNCTION_AI_MODELS.VIDEO.PRO;
 
                     const auth = new GoogleAuth({
                         scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -163,15 +175,16 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                     const requestBody = {
                         instances: [
                             {
-                                prompt: prompt,
+                                prompt: segmentPrompt,
                                 ...(imagePayload ? imagePayload : {})
                             }
                         ],
                         parameters: {
                             sampleCount: 1,
-                            videoLength: `${DEFAULT_SEGMENT_DURATION_SECONDS}s`,
+                            durationSeconds: DEFAULT_SEGMENT_DURATION_SECONDS,
                             aspectRatio: options?.aspectRatio || "16:9",
-                            ...(options?.generateAudio ? { generateAudio: true } : {})
+                            resolution: options?.resolution || "720p",
+                            generateAudio: !!options?.generateAudio
                         }
                     };
 
@@ -356,9 +369,14 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                         if (nextStartImage) currentStartImage = nextStartImage;
 
+                            const frameFile = files[0];
                     } catch (e: any) {
                         console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, e.message);
                         // Continue without chaining if extraction fails
+                    }
+                    
+                    // FIX #3: Better error handling for frame extraction - retry with fallback
+                    let extractionAttempts = 0;
                         // FIX #3: Better error handling for frame extraction - retry with fallback
                         let extractionAttempts = 0;
                         const maxExtractionAttempts = 2;
