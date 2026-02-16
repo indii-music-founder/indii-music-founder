@@ -266,7 +266,7 @@ describe('Multi-Agent Architecture Tests', () => {
             }, { someContext: true });
 
             expect(spy).toHaveBeenCalledWith('generalist', 'Create strict delegation test', expect.objectContaining({ someContext: true }), undefined, undefined);
-            expect(result.data).toBe('Delegation Success');
+            expect(result.data.text).toBe('Delegation Success');
 
             spy.mockRestore();
         });
