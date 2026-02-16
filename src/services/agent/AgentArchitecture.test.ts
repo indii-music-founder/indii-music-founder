@@ -251,7 +251,7 @@ describe('Multi-Agent Architecture Tests', () => {
             const { agentService } = await import('./AgentService');
 
             // Mock runAgent on the singleton
-            const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue('Delegation Success');
+            const spy = vi.spyOn(agentService, 'runAgent').mockResolvedValue({ text: 'Delegation Success' });
 
             // Use 'legal' agent delegating to 'generalist' (hub) - this is valid per hub-and-spoke architecture
             // Specialist → Specialist is blocked, only Specialist → Hub or Hub → Specialist is allowed
