@@ -111,7 +111,8 @@ describe('FingerprintService', () => {
 
         vi.spyOn(document, 'createElement').mockReturnValue(mockAudio as any);
 
-        const fingerprint = await service.generateFingerprint(mockFile, existingFeatures as any);
+        // Pass undefined for filePath (2nd arg) to ensure existingFeatures (3rd arg) is used
+        const fingerprint = await service.generateFingerprint(mockFile, undefined, existingFeatures as any);
 
         expect(fingerprint).toContain('150s');
     });

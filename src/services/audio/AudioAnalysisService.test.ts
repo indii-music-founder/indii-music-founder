@@ -64,7 +64,8 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: { currentUser: { uid: 'test-user' } }
 }));
 
 vi.mock('essentia.js', () => ({

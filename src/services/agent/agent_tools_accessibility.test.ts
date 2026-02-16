@@ -45,7 +45,8 @@ vi.mock('./MemoryService', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    auth: { currentUser: { uid: 'test-user' } }
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: {}
 }));
 
 describe('Agent Tool Accessibility Audit', () => {

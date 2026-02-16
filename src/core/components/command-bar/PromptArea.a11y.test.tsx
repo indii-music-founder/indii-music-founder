@@ -105,7 +105,7 @@ describe('PromptArea Accessibility', () => {
     // Expected classes: focus-visible:ring-2
     // We expect these to be MISSING initially.
 
-    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, modeToggleBtn, runBtn];
+    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, delegateBtn, runBtn];
 
     // We assert that they DO NOT have the classes yet (to confirm reproduction of "issue")
     // Or we can just try to assert they DO have them and let it fail.
