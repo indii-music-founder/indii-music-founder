@@ -123,6 +123,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 - Video Stage Integrity', () => {
 
         expect(screen.getByText(/Imaginating Scene.../)).toBeInTheDocument();
         expect(screen.getByText(/AI Director is framing the scene... \(42%\)/)).toBeInTheDocument();
+        expect(screen.getByText(/AI Director is .+\.\.\. \(42%\)/)).toBeInTheDocument();
         expect(screen.queryByTestId('video-player')).not.toBeInTheDocument();
     });
 });

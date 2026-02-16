@@ -29,6 +29,8 @@ describe('AI Model Validation', () => {
         for (const modelId of models) {
             // All recent models should contain 'gemini' or 'veo', or be an embedding model
             expect(modelId).toMatch(/^(gemini|veo|models\/)/);
+            // All models should be gemini, veo, or models/ namespace (e.g. embedding)
+            expect(modelId).toMatch(/^(gemini|veo)-|^models\//);
         }
     });
 });
