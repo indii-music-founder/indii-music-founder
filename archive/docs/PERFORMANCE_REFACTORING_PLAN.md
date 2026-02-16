@@ -29,19 +29,15 @@ This document outlines 5 high-impact performance refactoring opportunities ident
 ```typescript
 // 1. Use useRef for drag state to avoid effect recreation
 const dragStateRef = useRef(dragState);
-useEffect(() => {
-  dragStateRef.current = dragState;
-}, [dragState]);
+useEffect(() => { dragStateRef.current = dragState; }, [dragState]);
 
 // 2. Add throttled mouse handler
-const handleMouseMove = useMemo(
-  () =>
-    throttle((e: MouseEvent) => {
-      if (!dragStateRef.current.isDragging) return;
-      // ... existing logic
-    }, 16), // ~60fps
-  [],
-);
+const handleMouseMove = useMemo(() =>
+  throttle((e: MouseEvent) => {
+    if (!dragStateRef.current.isDragging) return;
+    // ... existing logic
+  }, 16), // ~60fps
+[]);
 
 // 3. Use requestAnimationFrame for drag updates
 const rafId = useRef<number>();
@@ -54,18 +50,18 @@ const updateDragPosition = useCallback((e: MouseEvent) => {
 
 // 4. Add event listeners once with cleanup
 useEffect(() => {
-  window.addEventListener("mousemove", handleMouseMove, { passive: true });
-  window.addEventListener("mouseup", handleMouseUp);
+  window.addEventListener('mousemove', handleMouseMove, { passive: true });
+  window.addEventListener('mouseup', handleMouseUp);
   return () => {
-    window.removeEventListener("mousemove", handleMouseMove);
-    window.removeEventListener("mouseup", handleMouseUp);
+    window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('mouseup', handleMouseUp);
   };
 }, []); // Empty deps - handlers use refs
 
 // 5. Memoize selected clip lookup
-const selectedClip = useMemo(
-  () => clips.find((c) => c.id === selectedClipId),
-  [clips, selectedClipId],
+const selectedClip = useMemo(() =>
+  clips.find(c => c.id === selectedClipId),
+  [clips, selectedClipId]
 );
 ```
 
@@ -95,8 +91,8 @@ const timeRulerMarks = useMemo(() => {
   const totalSeconds = Math.ceil(project.durationInFrames / project.fps);
   return Array.from({ length: totalSeconds + 1 }, (_, i) => ({
     second: i,
-    label: `${Math.floor(i / 60)}:${(i % 60).toString().padStart(2, "0")}`,
-    position: ((i * project.fps) / project.durationInFrames) * 100,
+    label: `${Math.floor(i / 60)}:${(i % 60).toString().padStart(2, '0')}`,
+    position: (i * project.fps / project.durationInFrames) * 100
   }));
 }, [project.durationInFrames, project.fps]);
 
@@ -114,23 +110,17 @@ const clipsByTrack = useMemo(() => {
 // File: src/modules/video/editor/utils/keyframeUtils.ts
 export function getKeyframeColor(easing: string): string {
   switch (easing) {
-    case "easeIn":
-      return "bg-blue-500";
-    case "easeOut":
-      return "bg-green-500";
-    case "easeInOut":
-      return "bg-purple-500";
-    default:
-      return "bg-yellow-500";
+    case 'easeIn': return 'bg-blue-500';
+    case 'easeOut': return 'bg-green-500';
+    case 'easeInOut': return 'bg-purple-500';
+    default: return 'bg-yellow-500';
   }
 }
 
 // 4. Use callback for Set updates
-const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(
-  () => new Set(),
-);
+const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(() => new Set());
 const toggleExpanded = useCallback((id: string) => {
-  setExpandedClipIds((prev) => {
+  setExpandedClipIds(prev => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id);
     else next.add(id);

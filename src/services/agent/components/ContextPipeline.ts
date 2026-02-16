@@ -4,14 +4,10 @@ import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
 // useStore removed
 
-import { auth } from '@/services/firebase';
-import { livingFileService } from '@/services/agent/living/LivingFileService';
-
 export interface PipelineContext extends AgentContext {
     chatHistoryString: string;
     relevantMemories: string[];
     memoryContext: string;
-    livingContext?: string;
     swarmId?: string | null;
     traceId?: string;
     attachments?: { mimeType: string; base64: string }[];
@@ -41,26 +37,15 @@ export class ContextPipeline {
             ? await this.retrieveRelevantMemories(stateContext.projectId, chatHistoryString)
             : [];
 
-        // 4. Inject Living Context (The Vibe)
-        let livingContext = '';
-        if (auth.currentUser) {
-            try {
-                livingContext = await livingFileService.injectContext(auth.currentUser.uid);
-            } catch (error) {
-                console.warn('[ContextPipeline] Failed to inject living context:', error);
-            }
-        }
-
-        // 5. Format memory context for agent consumption
+        // 4. Format memory context for agent consumption
         const memoryContext = this.formatMemoryContext(relevantMemories);
 
-        // 6. Assemble Pipeline Context
+        // 5. Assemble Pipeline Context
         return {
             ...stateContext,
             chatHistoryString,
             relevantMemories,
-            memoryContext,
-            livingContext
+            memoryContext
         };
     }
 

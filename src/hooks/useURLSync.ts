@@ -18,7 +18,7 @@ export function useURLSync() {
         if (targetModule !== currentModule && isValidModule(targetModule)) {
             setModule(targetModule);
         }
-         
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [location.pathname, setModule]);
 
     // 2. Store -> URL (Navigation)
@@ -33,6 +33,6 @@ export function useURLSync() {
             navigate(targetUrl);
         }
         // Remove location.pathname to prevent reverting URL during Back navigation
-         
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [currentModule, navigate]);
 }

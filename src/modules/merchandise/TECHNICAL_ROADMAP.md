@@ -197,15 +197,12 @@ const useCanvasHistory = (canvas: fabric.Canvas | null) => {
   }, [canvas, history, historyIndex]);
 
   // Debounced auto-save
-  const debouncedSave = useMemo(() => debounce(saveState, 300), [saveState]);
+  const debouncedSave = useMemo(
+    () => debounce(saveState, 300),
+    [saveState]
+  );
 
-  return {
-    undo,
-    redo,
-    saveState: debouncedSave,
-    canUndo: historyIndex > 0,
-    canRedo: historyIndex < history.length - 1,
-  };
+  return { undo, redo, saveState: debouncedSave, canUndo: historyIndex > 0, canRedo: historyIndex < history.length - 1 };
 };
 ```
 
@@ -427,7 +424,7 @@ canvas.on('object:added', (e) => {
 const [snapToGrid, setSnapToGrid] = useState(false);
 const GRID_SIZE = 20;
 
-canvas.on("object:moving", (e) => {
+canvas.on('object:moving', (e) => {
   if (!snapToGrid) return;
 
   const obj = e.target;
@@ -439,7 +436,7 @@ canvas.on("object:moving", (e) => {
 
 // Draw grid
 const drawGrid = (ctx: CanvasRenderingContext2D) => {
-  ctx.strokeStyle = "#333";
+  ctx.strokeStyle = '#333';
   ctx.lineWidth = 1;
 
   for (let i = 0; i < 800; i += GRID_SIZE) {
@@ -494,30 +491,26 @@ const handleDeleteLayer = (layer: CanvasObject) => {
 **Goal:** Align selected objects (left, center, right, top, middle, bottom)
 
 ```typescript
-const alignObjects = (
-  alignment: "left" | "center" | "right" | "top" | "middle" | "bottom",
-) => {
+const alignObjects = (alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
   const activeObjects = canvas.getActiveObjects();
   if (activeObjects.length < 2) return;
 
-  const bounds = activeObjects.map((obj) => ({
+  const bounds = activeObjects.map(obj => ({
     obj,
     left: obj.left,
     top: obj.top,
     width: obj.width * obj.scaleX,
-    height: obj.height * obj.scaleY,
+    height: obj.height * obj.scaleY
   }));
 
   switch (alignment) {
-    case "left":
-      const minLeft = Math.min(...bounds.map((b) => b.left));
-      bounds.forEach((b) => b.obj.set({ left: minLeft }));
+    case 'left':
+      const minLeft = Math.min(...bounds.map(b => b.left));
+      bounds.forEach(b => b.obj.set({ left: minLeft }));
       break;
-    case "center":
-      const centerX =
-        bounds.reduce((sum, b) => sum + b.left + b.width / 2, 0) /
-        bounds.length;
-      bounds.forEach((b) => b.obj.set({ left: centerX - b.width / 2 }));
+    case 'center':
+      const centerX = bounds.reduce((sum, b) => sum + b.left + b.width / 2, 0) / bounds.length;
+      bounds.forEach(b => b.obj.set({ left: centerX - b.width / 2 }));
       break;
     // ... other alignments
   }
@@ -547,8 +540,8 @@ const alignObjects = (
   orgId: string;
   projectId: string;
   name: string;
-  canvasJSON: string; // canvas.toJSON()
-  thumbnail: string; // dataURL
+  canvasJSON: string;  // canvas.toJSON()
+  thumbnail: string;   // dataURL
   lastModified: Timestamp;
   createdAt: Timestamp;
 }
@@ -567,19 +560,15 @@ const useAutoSave = (canvas: fabric.Canvas | null, designName: string) => {
     const canvasJSON = JSON.stringify(canvas.toJSON());
     const thumbnail = canvas.toDataURL({ multiplier: 0.5 });
 
-    await setDoc(
-      doc(db, "designs", designId),
-      {
-        userId: user.uid,
-        orgId: activeOrg.id,
-        projectId: currentProjectId,
-        name: designName,
-        canvasJSON,
-        thumbnail,
-        lastModified: serverTimestamp(),
-      },
-      { merge: true },
-    );
+    await setDoc(doc(db, 'designs', designId), {
+      userId: user.uid,
+      orgId: activeOrg.id,
+      projectId: currentProjectId,
+      name: designName,
+      canvasJSON,
+      thumbnail,
+      lastModified: serverTimestamp(),
+    }, { merge: true });
 
     setLastSaved(new Date());
     setIsSaving(false);
@@ -603,15 +592,15 @@ const useAutoSave = (canvas: fabric.Canvas | null, designName: string) => {
 **Goal:** PNG, JPG, SVG, WebP
 
 ```typescript
-const exportCanvas = (format: "png" | "jpeg" | "svg" | "webp") => {
-  if (format === "svg") {
+const exportCanvas = (format: 'png' | 'jpeg' | 'svg' | 'webp') => {
+  if (format === 'svg') {
     return canvas.toSVG();
   }
 
   return canvas.toDataURL({
-    format: format === "jpeg" ? "jpeg" : "png",
-    quality: format === "jpeg" ? 0.9 : 1,
-    multiplier: 2,
+    format: format === 'jpeg' ? 'jpeg' : 'png',
+    quality: format === 'jpeg' ? 0.9 : 1,
+    multiplier: 2
   });
 };
 
@@ -621,13 +610,13 @@ const toWebP = async (dataURL: string): Promise<string> => {
   img.src = dataURL;
   await img.decode();
 
-  const canvas = document.createElement("canvas");
+  const canvas = document.createElement('canvas');
   canvas.width = img.width;
   canvas.height = img.height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext('2d');
   ctx.drawImage(img, 0, 0);
 
-  return canvas.toDataURL("image/webp", 0.9);
+  return canvas.toDataURL('image/webp', 0.9);
 };
 ```
 
@@ -740,31 +729,31 @@ const usePerformanceMonitor = (canvas: fabric.Canvas | null) => {
 
 ## 📊 Quality Metrics Comparison
 
-| Feature                 | Figma | Canva | Our Canvas    | Gap      |
-| ----------------------- | ----- | ----- | ------------- | -------- |
-| _Core Functionality_    |       |       |               |          |
-| Object manipulation     | ✅    | ✅    | ✅            | 0%       |
-| Keyboard shortcuts      | ✅    | ✅    | ✅            | 0%       |
-| Copy/Paste              | ✅    | ✅    | ✅            | 0%       |
-| Multi-selection         | ✅    | ✅    | ✅            | 0%       |
-| Touch support           | ✅    | ✅    | ✅            | 0%       |
-| Error handling          | ✅    | ✅    | ✅            | 0%       |
-| _Missing Critical (P0)_ |       |       |               |          |
-| Undo/Redo               | ✅    | ✅    | ❌            | **100%** |
-| Drag-and-drop           | ✅    | ✅    | ❌            | **100%** |
-| Layer thumbnails        | ✅    | ✅    | ❌            | **100%** |
-| _Missing Polish (P1)_   |       |       |               |          |
-| Snap to grid            | ✅    | ✅    | ❌            | 100%     |
-| Alignment tools         | ✅    | ✅    | ❌            | 100%     |
-| Guides                  | ✅    | ✅    | ❌            | 100%     |
-| Delete confirmation     | ✅    | ✅    | ❌            | 100%     |
-| _Missing Advanced (P2)_ |       |       |               |          |
-| Draft persistence       | ✅    | ✅    | ❌            | 100%     |
-| Export formats          | ✅    | ✅    | ⚠️ (PNG only) | 75%      |
-| Accessibility           | ✅    | ✅    | ❌            | 100%     |
-| Version history         | ✅    | ✅    | ❌            | 100%     |
-| Comments                | ✅    | ✅    | ❌            | 100%     |
-| Collaboration           | ✅    | ✅    | ❌            | 100%     |
+| Feature                   | Figma | Canva | Our Canvas     | Gap      |
+| ------------------------- | ----- | ----- | -------------- | -------- |
+| *Core Functionality*      |       |       |                |          |
+| Object manipulation       | ✅    | ✅    | ✅             | 0%       |
+| Keyboard shortcuts        | ✅    | ✅    | ✅             | 0%       |
+| Copy/Paste                | ✅    | ✅    | ✅             | 0%       |
+| Multi-selection           | ✅    | ✅    | ✅             | 0%       |
+| Touch support             | ✅    | ✅    | ✅             | 0%       |
+| Error handling            | ✅    | ✅    | ✅             | 0%       |
+| *Missing Critical (P0)*   |       |       |                |          |
+| Undo/Redo                 | ✅    | ✅    | ❌             | **100%** |
+| Drag-and-drop             | ✅    | ✅    | ❌             | **100%** |
+| Layer thumbnails          | ✅    | ✅    | ❌             | **100%** |
+| *Missing Polish (P1)*     |       |       |                |          |
+| Snap to grid              | ✅    | ✅    | ❌             | 100%     |
+| Alignment tools           | ✅    | ✅    | ❌             | 100%     |
+| Guides                    | ✅    | ✅    | ❌             | 100%     |
+| Delete confirmation       | ✅    | ✅    | ❌             | 100%     |
+| *Missing Advanced (P2)*   |       |       |                |          |
+| Draft persistence         | ✅    | ✅    | ❌             | 100%     |
+| Export formats            | ✅    | ✅    | ⚠️ (PNG only)  | 75%      |
+| Accessibility             | ✅    | ✅    | ❌             | 100%     |
+| Version history           | ✅    | ✅    | ❌             | 100%     |
+| Comments                  | ✅    | ✅    | ❌             | 100%     |
+| Collaboration             | ✅    | ✅    | ❌             | 100%     |
 
 **Overall Parity Score:** 60%
 

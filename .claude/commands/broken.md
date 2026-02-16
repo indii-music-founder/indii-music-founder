@@ -24,7 +24,6 @@ You are performing a comprehensive audit of known broken items and error pattern
 ## Output Format
 
 Present findings as a structured report with sections for:
-
 - **Open Issues** (needs fixing)
 - **Recently Fixed** (verify still working)
 - **New Discoveries** (not yet documented — add to BROKEN.md)

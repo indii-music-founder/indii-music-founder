@@ -9,19 +9,16 @@ Implements complete indii branding for the AI agent system and adds comprehensiv
 ### 🎨 indii Branding Implementation (Phase 1-3)
 
 **Phase 1 (Essential):**
-
 - Created `src/services/agent/constants.ts` with `AGENT_SYSTEM_BRANDING` and `INDII_MESSAGES`
 - Updated `types.ts` to use `INDII_MESSAGES.hubSpokeViolation()`
 - Updated `AgentOrchestrator.ts` prompt to identify as "indii"
 
 **Phase 2 (Important):**
-
 - Updated `PHASE4_IMPLEMENTATION.md` with indii architecture diagram
 - Updated `AGENT_COLLABORATION_SUMMARY.md` with indii explanation
 - Added indii section to `README.md`
 
 **Phase 3 (Optional):**
-
 - Added "Powered by indii" footer badge to `ChatOverlay.tsx`
 - Updated console logs across core agent files:
   - `[AgentOrchestrator]` → `[indii:Orchestrator]`
@@ -93,19 +90,16 @@ Breakdown:
 ## Architecture Rules Validated
 
 **Hub (generalist/Agent Zero):**
-
 - ✅ Can delegate to ANY specialist
 - ✅ Can delegate to itself
 - ✅ Can receive delegation from ANY specialist
 
 **Spokes (Specialists):**
-
 - ✅ Can ONLY delegate to hub
 - ✅ CANNOT delegate to other spokes (400+ combinations blocked)
 - ✅ CANNOT self-delegate
 
 **indii Branding:**
-
 - ✅ Error messages use "indii architecture rule"
 - ✅ Messages reference "Agent Zero" for hub
 - ✅ Console logs prefixed with `[indii:*]`
@@ -115,14 +109,12 @@ Breakdown:
 ## Security & Performance
 
 **Security:**
-
 - ✅ SQL injection attempts blocked
 - ✅ XSS attempts blocked
 - ✅ Path traversal attempts blocked
 - ✅ Null/undefined handling
 
 **Performance:**
-
 - ✅ 1000 validations in <100ms
 - ✅ All agent combinations in <50ms
 
@@ -163,13 +155,11 @@ None. All existing tests pass with new branding.
 ## How to Test
 
 Run all tests:
-
 ```bash
 npx vitest run src/services/agent/__tests__/HubAndSpoke.test.ts src/services/agent/__tests__/IndiiBranding.test.ts src/services/agent/__tests__/AgentDelegation.test.ts src/services/agent/__tests__/AgentOrchestrator.test.ts
 ```
 
 Run specific test suites:
-
 ```bash
 # Hub-and-spoke architecture tests
 npx vitest run src/services/agent/__tests__/HubAndSpoke.test.ts

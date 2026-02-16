@@ -1,22 +1,12 @@
+// src/services/firebase.appcheck.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-vi.unmock('@/services/firebase');
 
 // Hoisted mocks for proper reference tracking
 const mocks = vi.hoisted(() => ({
     initializeApp: vi.fn(() => ({ name: 'mock-app', options: {} })),
     initializeAppCheck: vi.fn(),
     ReCaptchaEnterpriseProvider: vi.fn(),
-    mockEnv: {
-        env: {
-            appCheckKey: 'test-key',
-            DEV: false,
-            appCheckDebugToken: undefined as string | undefined
-        },
-        firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
-    }
 }));
-
-vi.mock('@/config/env', () => mocks.mockEnv);
 
 vi.mock('firebase/app', () => ({
     initializeApp: mocks.initializeApp
@@ -71,12 +61,15 @@ describe('Firebase App Check Initialization', () => {
     });
 
     it('should initialize App Check in standard web environment when key is present', async () => {
-        mocks.mockEnv.env.appCheckKey = 'test-key';
-        mocks.mockEnv.env.DEV = false;
-        mocks.mockEnv.env.appCheckDebugToken = undefined;
+        vi.doMock('@/config/env', () => ({
+            env: {
+                appCheckKey: 'test-key',
+                DEV: false
+            },
+            firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
+        }));
 
-        const { initializeAppCheckService } = await import('./firebase');
-        initializeAppCheckService();
+        await import('./firebase');
 
         expect(mocks.initializeAppCheck).toHaveBeenCalled();
         expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');
@@ -84,24 +77,33 @@ describe('Firebase App Check Initialization', () => {
 
     it('should NOT initialize App Check in Electron environment (no debug token)', async () => {
         (window as any).electronAPI = {};
-        mocks.mockEnv.env.appCheckKey = 'test-key';
-        mocks.mockEnv.env.DEV = false;
-        mocks.mockEnv.env.appCheckDebugToken = undefined;
 
-        const { initializeAppCheckService } = await import('./firebase');
-        initializeAppCheckService();
+        vi.doMock('@/config/env', () => ({
+            env: {
+                appCheckKey: 'test-key',
+                DEV: false
+            },
+            firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
+        }));
+
+        await import('./firebase');
 
         expect(mocks.initializeAppCheck).not.toHaveBeenCalled();
     });
 
     it('should initialize App Check in Electron environment WITH debug token', async () => {
         (window as any).electronAPI = {};
-        mocks.mockEnv.env.appCheckKey = 'test-key';
-        mocks.mockEnv.env.DEV = true;
-        mocks.mockEnv.env.appCheckDebugToken = 'debug-token';
 
-        const { initializeAppCheckService } = await import('./firebase');
-        initializeAppCheckService();
+        vi.doMock('@/config/env', () => ({
+            env: {
+                appCheckKey: 'test-key',
+                appCheckDebugToken: 'debug-token',
+                DEV: true
+            },
+            firebaseConfig: { apiKey: 'test', projectId: 'test-proj', authDomain: 'test.firebaseapp.com' }
+        }));
+
+        await import('./firebase');
 
         expect(mocks.initializeAppCheck).toHaveBeenCalled();
         expect(mocks.ReCaptchaEnterpriseProvider).toHaveBeenCalledWith('test-key');

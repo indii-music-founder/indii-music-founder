@@ -21,7 +21,6 @@ description: Universal recursive loop for progress review, re-evaluation, and ta
 
 ```markdown
 ### State Snapshot
-
 - **Goal:** [Summary]
 - **Status:** [X% / N/M tasks]
 - **Next:** [Tool + Target]
@@ -55,5 +54,4 @@ description: Universal recursive loop for progress review, re-evaluation, and ta
 ## 6. Completion
 
 **ONLY when AL tasks done, ALL prompts addressed, AND Verification passes:**
-
 > "I'm done lick my balls,BOSSMAN"

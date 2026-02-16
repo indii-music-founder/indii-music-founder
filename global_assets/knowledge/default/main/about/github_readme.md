@@ -1,7 +1,5 @@
 ![Agent Zero Logo](res/header.png)
-
 # Agent Zero Documentation
-
 To begin with Agent Zero, follow the links below for detailed guides on various topics:
 
 - **[Installation](installation.md):** Set up (or [update](installation.md#how-to-update-agent-zero)) Agent Zero on your system.
@@ -10,7 +8,7 @@ To begin with Agent Zero, follow the links below for detailed guides on various 
 - **[Contributing](contribution.md):** Learn how to contribute to the Agent Zero project.
 - **[Troubleshooting and FAQ](troubleshooting.md):** Find answers to common issues and questions.
 
-### Your experience with Agent Zero starts now
+### Your experience with Agent Zero starts now!
 
 - **Download Agent Zero:** Follow the [installation guide](installation.md) to download and run Agent Zero.
 - **Join the Community:** Join the Agent Zero [Skool](https://www.skool.com/agent-zero) or [Discord](https://discord.gg/B8KZKNsPpj) community to discuss ideas, ask questions, and collaborate with other contributors.

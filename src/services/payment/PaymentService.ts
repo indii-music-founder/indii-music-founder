@@ -3,6 +3,7 @@ import { PaymentProvider, PaymentTransaction, PaymentConfig } from './types';
 /**
  * PaymentService
  * Centralized handler for all payment processing operations.
+ * Currently serves as a placeholder/skeleton for future integration (Stripe/LemonSqueezy).
  */
 export class PaymentService implements PaymentProvider {
     name = 'IndiiOS Payment Service';
@@ -14,6 +15,7 @@ export class PaymentService implements PaymentProvider {
 
     /**
      * Initialize the payment service with configuration.
+     * Can be updated dynamically if needed.
      */
     configure(config: PaymentConfig) {
         this.config = config;
@@ -21,30 +23,18 @@ export class PaymentService implements PaymentProvider {
 
     /**
      * Process a payment transaction.
+     * @throws Error if payment processing is not enabled or implemented.
      */
     async processPayment(data: Omit<PaymentTransaction, 'id' | 'status' | 'createdAt'>): Promise<PaymentTransaction> {
         if (!this.config.enabled) {
-            // In DEV mode, we allow mock processing even if disabled for testing UI flows
-            if (import.meta.env.DEV) {
-                console.info('[PaymentService] 🚧 MOCK MODE: Processing simulated payment', data);
-                await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate latency
-
-                return {
-                    ...data,
-                    id: `mock_tx_${Date.now()}`,
-                    status: 'completed',
-                    createdAt: new Date().toISOString()
-                };
-            }
-
             console.warn('[PaymentService] Payment processing is currently disabled.');
             throw new Error('Payment processing is not yet enabled in this environment.');
         }
 
-        // Implementation for real providers would go here
-        if (this.config.provider === 'stripe') {
-            throw new Error('Stripe integration is pending configuration. Please set VITE_STRIPE_PUBLIC_KEY.');
-        }
+        // Future: Switch based on provider
+        // if (this.config.provider === 'stripe') { ... }
+
+        console.info('[PaymentService] Processing payment request:', data);
 
         throw new Error(`Payment provider '${this.config.provider}' is not fully implemented.`);
     }
@@ -53,16 +43,15 @@ export class PaymentService implements PaymentProvider {
      * Refund a transaction.
      */
     async refundPayment(transactionId: string): Promise<boolean> {
-        console.info(`[PaymentService] Requesting refund for ${transactionId}`);
-        // Mock success in dev
-        if (import.meta.env.DEV) return true;
+        if (!this.config.enabled) return false;
 
+        console.info(`[PaymentService] Requesting refund for ${transactionId}`);
         throw new Error('Refunds are not yet implemented.');
     }
 }
 
-// Singleton instance
+// Singleton instance with default "Disabled" configuration
 export const paymentService = new PaymentService({
-    provider: 'stripe',
-    enabled: false // Keep disabled by default for safety
+    provider: 'stripe', // Default target
+    enabled: false      // Explicitly disabled for safety
 });

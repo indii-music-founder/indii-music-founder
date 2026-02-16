@@ -1,3 +1,4 @@
+
 # Technical Roadmap & Debt
 
 > **Note:** This document tracks technical debt and backlog items for future sprints, not active work.
@@ -7,8 +8,8 @@ This document tracks technical debt, refactoring goals, and known issues.
 ## Active Issues (Backlog)
 
 - [ ] **Fix ReferenceError: renderStartTime is not defined**
-      _Context_: This error was reported but the specific file or code block causing it could not be located in the repository.
-      _Action_: If encountered in a script, ensure `const renderStartTime = performance.now();` is defined before usage.
+      *Context*: This error was reported but the specific file or code block causing it could not be located in the repository.
+      *Action*: If encountered in a script, ensure `const renderStartTime = performance.now();` is defined before usage.
 
 ## Technical Debt
 

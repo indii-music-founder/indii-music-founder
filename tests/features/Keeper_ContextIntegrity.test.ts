@@ -9,22 +9,10 @@ import { AppErrorCode } from '@/shared/types/errors';
 
 // Mock the AI Service to capture prompts and simulate responses
 const mockGenerateContentStream = vi.fn();
-const mockGenerateContent = vi.fn();
-const mockGenerateContentFallback = vi.fn();
-
-// Mock GoogleGenAI for fallback mode
-vi.mock('@google/genai', () => ({
-    GoogleGenAI: class {
-        models = {
-            generateContent: (...args: any[]) => mockGenerateContentFallback(...args),
-        };
-    }
-}));
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContentStream: (...args: any[]) => mockGenerateContentStream(...args),
-        generateContent: (...args: any[]) => mockGenerateContent(...args),
         // Add other methods if needed by BaseAgent
         generateSpeech: vi.fn(),
     }
@@ -37,7 +25,6 @@ const mockTrackUsage = vi.fn();
 vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: (...args: any[]) => mockCheckQuota(...args),
-        checkRateLimit: vi.fn().mockResolvedValue(true),
         trackUsage: (...args: any[]) => mockTrackUsage(...args),
     }
 }));
@@ -114,7 +101,6 @@ describe('📚 Keeper: Context Integrity', () => {
             agent = new BaseAgent(config);
 
             // Default mock response
-            // Default mock response for stream
             mockGenerateContentStream.mockResolvedValue({
                 stream: new ReadableStream({
                     start(controller) {
@@ -126,13 +112,6 @@ describe('📚 Keeper: Context Integrity', () => {
                     usage: () => ({ promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }),
                     functionCalls: () => []
                 })
-            });
-
-            // Default mock response for non-stream
-            mockGenerateContent.mockResolvedValue({
-                text: () => 'Response',
-                usage: () => ({ promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }),
-                functionCalls: () => []
             });
         });
 
@@ -149,9 +128,8 @@ describe('📚 Keeper: Context Integrity', () => {
             });
 
             // 3. Inspect the call to AI.generateContentStream
-            // 3. Inspect the call to AI.generateContent
-            expect(mockGenerateContent).toHaveBeenCalledTimes(1);
-            const callArgs = mockGenerateContent.mock.calls[0][0];
+            expect(mockGenerateContentStream).toHaveBeenCalledTimes(1);
+            const callArgs = mockGenerateContentStream.mock.calls[0][0];
             const promptParts = callArgs.contents[0].parts;
             const textPart = promptParts.find((p: any) => p.text && p.text.includes('# HISTORY'));
 
@@ -181,7 +159,7 @@ describe('📚 Keeper: Context Integrity', () => {
                 orgId: 'test-org'
             });
 
-            const callArgs = mockGenerateContent.mock.calls[0][0];
+            const callArgs = mockGenerateContentStream.mock.calls[0][0];
             const fullPrompt = callArgs.contents[0].parts[0].text;
 
             expect(fullPrompt).not.toContain('[...Older history truncated...]');
@@ -210,16 +188,6 @@ describe('📚 Keeper: Context Integrity', () => {
             });
 
             aiService = new FirebaseAIService();
-
-            // Default mock for fallback
-            mockGenerateContentFallback.mockResolvedValue({
-                candidates: [{
-                    content: { parts: [{ text: 'Fallback Response' }] },
-                    finishReason: 'STOP'
-                }],
-                usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 },
-                text: 'Fallback Response'
-            });
 
             // FIX: The issue in previous run was "Cannot read properties of null (reading 'model')"
             // This is because rawGenerateContent accesses `this.model!.model`.
@@ -259,8 +227,8 @@ describe('📚 Keeper: Context Integrity', () => {
             // Assert
             expect(mockCheckQuota).toHaveBeenCalledWith('test-user');
 
-            // AI should be called (fallback mode)
-            expect(mockGenerateContentFallback).toHaveBeenCalled();
+            // AI should be called
+            expect(mockGenerateContent).toHaveBeenCalled();
 
             // Track usage should be called
             expect(mockTrackUsage).toHaveBeenCalled();

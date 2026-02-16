@@ -22,30 +22,28 @@ Currently, the app uses **anonymous authentication** - users are auto-logged in 
 
 ## Current State
 
-| Component                 | Status                                             |
-| ------------------------- | -------------------------------------------------- |
-| Firebase Auth SDK         | Installed, using anonymous only                    |
-| SelectOrg Component       | Works (org creation/switching)                     |
-| AuthSlice (Zustand)       | Has org state, no user auth state                  |
-| User Profiles             | None - no `/users` collection                      |
-| Login Component           | Does not exist                                     |
-| Signup Component          | Does not exist                                     |
-| Firestore Rules           | Requires `request.auth != null` (anonymous passes) |
-| Landing Page Auth Buttons | Link to studio root (no real auth)                 |
+| Component | Status |
+|-----------|--------|
+| Firebase Auth SDK | Installed, using anonymous only |
+| SelectOrg Component | Works (org creation/switching) |
+| AuthSlice (Zustand) | Has org state, no user auth state |
+| User Profiles | None - no `/users` collection |
+| Login Component | Does not exist |
+| Signup Component | Does not exist |
+| Firestore Rules | Requires `request.auth != null` (anonymous passes) |
+| Landing Page Auth Buttons | Link to studio root (no real auth) |
 
 ---
 
 ## Architecture Decision
 
 ### Option A: Auth in Studio App (Recommended)
-
 - Landing page stays static, links to studio `/auth/*` routes
 - All auth logic lives in one place (studio)
 - Simpler Firebase config (one project)
 - Easier to maintain
 
 ### Option B: Auth in Landing Page
-
 - Would require Firebase SDK in Next.js landing page
 - Cross-domain session sharing complexity
 - Two places to maintain auth logic
@@ -61,7 +59,6 @@ Currently, the app uses **anonymous authentication** - users are auto-logged in 
 **Goal:** Create user data model and Firestore collection
 
 **Files to Create/Modify:**
-
 ```
 src/
 ├── types/User.ts                    # User type definitions
@@ -70,7 +67,6 @@ src/
 ```
 
 **User Model:**
-
 ```typescript
 interface UserProfile {
   uid: string;
@@ -81,18 +77,17 @@ interface UserProfile {
   updatedAt: Timestamp;
   emailVerified: boolean;
   membership: {
-    tier: "free" | "pro" | "enterprise";
+    tier: 'free' | 'pro' | 'enterprise';
     expiresAt: Timestamp | null;
   };
   preferences: {
-    theme: "dark" | "light";
+    theme: 'dark' | 'light';
     notifications: boolean;
   };
 }
 ```
 
 **Firestore Rules Addition:**
-
 ```javascript
 match /users/{userId} {
   allow read: if request.auth.uid == userId;
@@ -109,7 +104,6 @@ match /users/{userId} {
 **Goal:** Create login, signup, and password reset UI
 
 **Files to Create:**
-
 ```
 src/modules/auth/
 ├── Login.tsx              # Email/password login form
@@ -123,7 +117,6 @@ src/modules/auth/
 ```
 
 **Login.tsx Features:**
-
 - Email + Password fields
 - "Remember me" checkbox
 - "Forgot password?" link
@@ -132,7 +125,6 @@ src/modules/auth/
 - Loading state during auth
 
 **Signup.tsx Features:**
-
 - Email + Password + Confirm Password
 - Display name (optional)
 - Terms of Service checkbox
@@ -142,7 +134,6 @@ src/modules/auth/
 - Error handling
 
 **Design:**
-
 - Full-screen centered card (like SelectOrg)
 - indiiOS branding at top
 - Dark theme consistent with app
@@ -157,7 +148,6 @@ src/modules/auth/
 **Goal:** Wire up Firebase Auth methods and state management
 
 **Files to Modify:**
-
 ```
 src/
 ├── services/AuthService.ts          # New - auth methods
@@ -167,38 +157,32 @@ src/
 ```
 
 **AuthService Methods:**
-
 ```typescript
 class AuthService {
   // Email/Password
-  async signUp(
-    email: string,
-    password: string,
-    displayName?: string,
-  ): Promise<User>;
-  async signIn(email: string, password: string): Promise<User>;
-  async signOut(): Promise<void>;
-  async sendPasswordReset(email: string): Promise<void>;
-  async updatePassword(newPassword: string): Promise<void>;
+  async signUp(email: string, password: string, displayName?: string): Promise<User>
+  async signIn(email: string, password: string): Promise<User>
+  async signOut(): Promise<void>
+  async sendPasswordReset(email: string): Promise<void>
+  async updatePassword(newPassword: string): Promise<void>
 
   // Email Verification
-  async sendVerificationEmail(): Promise<void>;
-  async checkEmailVerified(): Promise<boolean>;
+  async sendVerificationEmail(): Promise<void>
+  async checkEmailVerified(): Promise<boolean>
 
   // Profile
-  async updateProfile(updates: Partial<UserProfile>): Promise<void>;
+  async updateProfile(updates: Partial<UserProfile>): Promise<void>
 
   // Upgrade from Anonymous
-  async linkAnonymousAccount(email: string, password: string): Promise<User>;
+  async linkAnonymousAccount(email: string, password: string): Promise<User>
 
   // State
-  getCurrentUser(): User | null;
-  onAuthStateChange(callback: (user: User | null) => void): Unsubscribe;
+  getCurrentUser(): User | null
+  onAuthStateChange(callback: (user: User | null) => void): Unsubscribe
 }
 ```
 
 **AuthSlice Additions:**
-
 ```typescript
 interface AuthSlice {
   // Existing
@@ -207,10 +191,10 @@ interface AuthSlice {
   userProfile: UserProfile;
 
   // New
-  user: User | null; // Firebase User object
-  isAuthenticated: boolean; // true if user is logged in (non-anonymous)
-  isLoading: boolean; // Auth state loading
-  authError: string | null; // Last error message
+  user: User | null;              // Firebase User object
+  isAuthenticated: boolean;       // true if user is logged in (non-anonymous)
+  isLoading: boolean;             // Auth state loading
+  authError: string | null;       // Last error message
 
   // New Actions
   setUser: (user: User | null) => void;
@@ -228,7 +212,6 @@ interface AuthSlice {
 **Goal:** Add auth routes and protect authenticated areas
 
 **Files to Modify:**
-
 ```
 src/
 ├── core/App.tsx                     # Add route handling
@@ -237,7 +220,6 @@ src/
 ```
 
 **Route Structure:**
-
 ```
 /                 → Dashboard (protected)
 /auth/login       → Login page
@@ -251,7 +233,6 @@ src/
 ```
 
 **ProtectedRoute Logic:**
-
 ```typescript
 function ProtectedRoute({ children }) {
   const { user, isLoading, isAuthenticated } = useStore();
@@ -269,7 +250,6 @@ function ProtectedRoute({ children }) {
 ```
 
 **Module States to Add:**
-
 ```typescript
 type ModuleId =
   | 'dashboard'
@@ -292,14 +272,12 @@ type ModuleId =
 **Goal:** Connect landing page auth buttons to real auth flows
 
 **Files to Modify:**
-
 ```
 landing-page/app/
 ├── page.tsx                    # Update auth button links
 ```
 
 **Changes:**
-
 ```typescript
 // Before
 <Link href="https://indiios-studio.web.app">Sign In</Link>
@@ -310,7 +288,6 @@ landing-page/app/
 ```
 
 **Also Update:**
-
 - Mobile menu links
 - CTA "Get Started Free" button
 - Any other auth-related links
@@ -324,7 +301,6 @@ landing-page/app/
 **Goal:** Handle users who start anonymous and later sign up
 
 **Strategy:**
-
 1. User arrives → Anonymous sign-in (current behavior)
 2. User creates org/projects as anonymous
 3. User clicks "Sign Up" → `linkWithCredential()` to preserve data
@@ -332,16 +308,12 @@ landing-page/app/
 5. All org memberships preserved
 
 **Firebase Method:**
-
 ```typescript
-import { linkWithCredential, EmailAuthProvider } from "firebase/auth";
+import { linkWithCredential, EmailAuthProvider } from 'firebase/auth';
 
 async function upgradeAnonymousAccount(email: string, password: string) {
   const credential = EmailAuthProvider.credential(email, password);
-  const userCredential = await linkWithCredential(
-    auth.currentUser!,
-    credential,
-  );
+  const userCredential = await linkWithCredential(auth.currentUser!, credential);
   // Same UID, now with email attached
   return userCredential.user;
 }
@@ -356,7 +328,6 @@ async function upgradeAnonymousAccount(email: string, password: string) {
 **Goal:** Clean logout that clears all state
 
 **Logout Actions:**
-
 1. Call `auth.signOut()` (Firebase)
 2. Clear Zustand state (user, orgs, history)
 3. Clear localStorage (orgId, userProfile, cached data)
@@ -364,7 +335,6 @@ async function upgradeAnonymousAccount(email: string, password: string) {
 5. Redirect to login page
 
 **UI Placement:**
-
 - User menu dropdown in dashboard header
 - Account settings page (future)
 
@@ -377,7 +347,6 @@ async function upgradeAnonymousAccount(email: string, password: string) {
 **Goal:** Add "Sign in with Google" for convenience
 
 **Files to Modify:**
-
 ```
 src/
 ├── services/firebase.ts          # Add GoogleAuthProvider
@@ -387,9 +356,8 @@ src/
 ```
 
 **Implementation:**
-
 ```typescript
-import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 
 async function signInWithGoogle() {
   const provider = new GoogleAuthProvider();
@@ -403,7 +371,6 @@ async function signInWithGoogle() {
 ```
 
 **Firebase Console Setup Required:**
-
 1. Enable Google provider in Authentication
 2. Add authorized domains
 3. Configure OAuth consent screen
@@ -415,35 +382,32 @@ async function signInWithGoogle() {
 ## File Summary
 
 ### New Files (8)
-
-| File                                     | Purpose                 |
-| ---------------------------------------- | ----------------------- |
-| `src/types/User.ts`                      | User type definitions   |
-| `src/services/AuthService.ts`            | Auth methods wrapper    |
-| `src/services/UserService.ts`            | User profile CRUD       |
-| `src/modules/auth/Login.tsx`             | Login page              |
-| `src/modules/auth/Signup.tsx`            | Signup page             |
-| `src/modules/auth/ForgotPassword.tsx`    | Password reset          |
-| `src/modules/auth/AuthLayout.tsx`        | Shared auth page layout |
-| `src/core/components/ProtectedRoute.tsx` | Route guard             |
+| File | Purpose |
+|------|---------|
+| `src/types/User.ts` | User type definitions |
+| `src/services/AuthService.ts` | Auth methods wrapper |
+| `src/services/UserService.ts` | User profile CRUD |
+| `src/modules/auth/Login.tsx` | Login page |
+| `src/modules/auth/Signup.tsx` | Signup page |
+| `src/modules/auth/ForgotPassword.tsx` | Password reset |
+| `src/modules/auth/AuthLayout.tsx` | Shared auth page layout |
+| `src/core/components/ProtectedRoute.tsx` | Route guard |
 
 ### Modified Files (7)
-
-| File                                 | Changes                   |
-| ------------------------------------ | ------------------------- |
-| `src/services/firebase.ts`           | Add auth providers        |
-| `src/core/store/slices/authSlice.ts` | Add user state            |
-| `src/core/store/slices/appSlice.ts`  | Add auth module IDs       |
-| `src/core/App.tsx`                   | Add auth routes, listener |
-| `firestore.rules`                    | Add /users rules          |
-| `landing-page/app/page.tsx`          | Update auth links         |
+| File | Changes |
+|------|---------|
+| `src/services/firebase.ts` | Add auth providers |
+| `src/core/store/slices/authSlice.ts` | Add user state |
+| `src/core/store/slices/appSlice.ts` | Add auth module IDs |
+| `src/core/App.tsx` | Add auth routes, listener |
+| `firestore.rules` | Add /users rules |
+| `landing-page/app/page.tsx` | Update auth links |
 
 ---
 
 ## Security Considerations
 
 ### Firestore Rules Updates
-
 ```javascript
 rules_version = '2';
 service cloud.firestore {
@@ -468,13 +432,11 @@ service cloud.firestore {
 ```
 
 ### Password Requirements
-
 - Minimum 8 characters
 - At least one number
 - At least one special character (optional)
 
 ### Rate Limiting
-
 - Firebase Auth has built-in rate limiting
 - 5 failed attempts → temporary lockout
 
@@ -483,13 +445,11 @@ service cloud.firestore {
 ## Testing Plan
 
 ### Unit Tests
-
 - AuthService methods
 - AuthSlice state updates
 - ProtectedRoute component
 
 ### E2E Tests
-
 - Sign up flow
 - Sign in flow
 - Password reset flow
@@ -497,7 +457,6 @@ service cloud.firestore {
 - Anonymous → authenticated upgrade
 
 ### Manual Testing
-
 - Cross-browser (Chrome, Safari, Firefox)
 - Mobile responsive
 - Error states (network offline, invalid credentials)
@@ -507,19 +466,16 @@ service cloud.firestore {
 ## Rollout Strategy
 
 ### Phase 1: Internal Testing (1-2 days)
-
 - Deploy to staging
 - Team tests all flows
 - Fix any issues
 
 ### Phase 2: Gradual Rollout
-
 - Deploy to production
 - Keep anonymous auth working (backward compatible)
 - Monitor for errors
 
 ### Phase 3: Encourage Sign-Up
-
 - Add prompts in app: "Save your work - create an account"
 - Email verification reminders
 - Feature gating for anonymous users (limited generations)
@@ -528,17 +484,17 @@ service cloud.firestore {
 
 ## Estimated Total Effort
 
-| Phase                        | Effort          |
-| ---------------------------- | --------------- |
-| Phase 1: User Profiles       | 1-2 hours       |
-| Phase 2: Auth Components     | 2-3 hours       |
-| Phase 3: Auth Service        | 2-3 hours       |
-| Phase 4: Routing             | 1-2 hours       |
-| Phase 5: Landing Integration | 30 min          |
-| Phase 6: Anonymous Migration | 1 hour          |
-| Phase 7: Logout              | 1 hour          |
-| Phase 8: Google OAuth        | 1-2 hours       |
-| **Total**                    | **10-15 hours** |
+| Phase | Effort |
+|-------|--------|
+| Phase 1: User Profiles | 1-2 hours |
+| Phase 2: Auth Components | 2-3 hours |
+| Phase 3: Auth Service | 2-3 hours |
+| Phase 4: Routing | 1-2 hours |
+| Phase 5: Landing Integration | 30 min |
+| Phase 6: Anonymous Migration | 1 hour |
+| Phase 7: Logout | 1 hour |
+| Phase 8: Google OAuth | 1-2 hours |
+| **Total** | **10-15 hours** |
 
 ---
 
