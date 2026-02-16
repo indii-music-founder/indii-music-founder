@@ -51,6 +51,10 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
       return 1.0;
     });
 
+    // FORCE ELITE COUNT to 2 so Doomed survives as an elite (since it has negative fitness)
+    // Otherwise, with eliteCount=1, only 'Mortal' (1.0) survives, and Doomed is culled.
+    engine['config'].eliteCount = 2;
+
     // Evolve
     const nextGen = await engine.evolve(population);
 
@@ -88,6 +92,10 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
       if (g.id === 'Doomed') return -Infinity;
       return 1.0;
     });
+
+    // FORCE ELITE COUNT to 2 so Broken survives as an elite (since it has 0 fitness)
+    // Otherwise, with eliteCount=1, only 'Mortal' (1.0) survives, and Broken is culled.
+    engine['config'].eliteCount = 2;
 
     // Evolve
     const nextGen = await engine.evolve(population);

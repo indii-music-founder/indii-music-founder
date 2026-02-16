@@ -44,7 +44,6 @@ export const LongFormVideoJobSchema = z.object({
         (val) => (val === '' || val === null || val === undefined ? undefined : val),
         z.coerce.number().optional(),
     ),
-    totalDuration: z.union([z.string(), z.number()]).optional(),
     startImage: z.string().optional(),
     options: z.object({
         aspectRatio: z.enum(["16:9", "9:16", "1:1"]).optional().default("16:9"),
@@ -500,6 +499,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                 currentStartImage = undefined;
                             }
                         }
+                    }
                 }
             } // This brace closes the `for (let i = 0; i < prompts.length; i++)` loop.
 
