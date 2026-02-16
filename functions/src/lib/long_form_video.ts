@@ -5,7 +5,7 @@ import { TranscoderServiceClient } from "@google-cloud/video-transcoder";
 import { FUNCTION_AI_MODELS } from "../config/models";
 
 /**
- * Robustly converts a Google Storage URL to a gs:// URI
+ * Robustly converts a Google Storage URL to a gs:// URI.
  */
 export function toGcsUri(url: string): string {
     const uri = url;
