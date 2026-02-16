@@ -41,6 +41,7 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('../billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(undefined),
         trackUsage: vi.fn().mockResolvedValue(true)
     }
 }));
