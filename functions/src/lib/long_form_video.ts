@@ -280,96 +280,68 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                 // 4. Extract last frame for daisychaining
                 if (i < prompts.length - 1) {
-                    try {
-                        // 4a. Trigger Transcoder Job
-                        const transcoderJobName = await step.run(`trigger-frame-extract-${i}`, async () => {
-                            const auth = new GoogleAuth({
-                                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                            });
-                            const transcoder = new TranscoderServiceClient();
-                            try {
-                                const projectId = await auth.getProjectId();
-                                const location = 'us-central1';
-                                const bucket = admin.storage().bucket();
-                                const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+                    // FIX #3: Better error handling for frame extraction - retry with fallback
+                    let extractionAttempts = 0;
+                    const maxExtractionAttempts = 2;
 
-                                // Normalize Input URI
-                                const inputUri = toGcsUri(segmentUrl);
-
-                                // Create Sprite Job (acting as frame extractor)
-                                const [job] = await transcoder.createJob({
-                                    parent: transcoder.locationPath(projectId, location),
-                                    job: {
-                                        outputUri,
-                                        config: {
-                                            inputs: [{ key: "input0", uri: inputUri }],
-                                            editList: [{ key: "atom0", inputs: ["input0"] }],
-                                            spriteSheets: [
-                                                {
-                                                    filePrefix: "frame_",
-                                                    startTimeOffset: { seconds: 4, nanos: 500000000 },
-                                                    endTimeOffset: { seconds: 0, nanos: 0 },
-                                                    columnCount: 1,
-                                                    rowCount: 1,
-                                                    totalCount: 1,
-                                                    quality: 100
-                                                }
-                                            ]
-                                        }
-                                    }
+                    while (extractionAttempts < maxExtractionAttempts) {
+                        try {
+                            // 1. Trigger Frame Extraction Job
+                            const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                const auth = new GoogleAuth({
+                                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
                                 });
-                                return job.name;
-                            } finally {
-                                await transcoder.close();
-                            }
-                        });
-
-                        // 4b. Poll Transcoder Job
-                        let frameDone = false;
-                        let fAttempts = 0;
-                        let finalState = 'PROCESSING';
-
-                        while (!frameDone && fAttempts < 20) {
-                            fAttempts++;
-                            await step.sleep(`wait-frame-${i}-${fAttempts}`, "2s");
-
-                            const jobState = await step.run(`check-frame-${i}-${fAttempts}`, async () => {
                                 const transcoder = new TranscoderServiceClient();
                                 try {
-                                    const [status] = await transcoder.getJob({ name: transcoderJobName });
-                                    return status.state as string;
-                                } catch (err: any) {
-                                    console.warn(`[FrameExtraction] Polling error: ${err.message}`);
-                                    return 'ERROR';
+                                    const projectId = await auth.getProjectId();
+                                    const location = 'us-central1';
+                                    const bucket = admin.storage().bucket();
+                                    const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+
+                                    // Normalize Input URI
+                                    const inputUri = toGcsUri(segmentUrl);
+
+                                    // Calculate frame extraction time dynamically
+                                    const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
+                                    const extractionTime = Math.min(
+                                        DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
+                                        videoDurationSeconds - 0.5
+                                    );
+                                    const extractionSeconds = Math.floor(extractionTime);
+                                    const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
+
+                                    // Create Sprite Job
+                                    const [job] = await transcoder.createJob({
+                                        parent: transcoder.locationPath(projectId, location),
+                                        job: {
+                                            outputUri,
+                                            config: {
+                                                inputs: [{ key: "input0", uri: inputUri }],
+                                                editList: [{ key: "atom0", inputs: ["input0"] }],
+                                                spriteSheets: [
+                                                    {
+                                                        filePrefix: "frame_",
+                                                        startTimeOffset: { seconds: extractionSeconds, nanos: extractionNanos },
+                                                        endTimeOffset: { seconds: 0, nanos: 0 },
+                                                        columnCount: 1,
+                                                        rowCount: 1,
+                                                        totalCount: 1,
+                                                        quality: 100
+                                                    }
+                                                ]
+                                            }
+                                        }
+                                    });
+                                    return job.name;
                                 } finally {
                                     await transcoder.close();
                                 }
                             });
 
-                            if (jobState === 'SUCCEEDED' || jobState === 'FAILED') {
-                                finalState = jobState;
-                                frameDone = true;
-                            }
-                        }
-
-                        if (finalState !== 'SUCCEEDED') throw new Error(`Frame extraction failed or timed out: ${finalState}`);
-
-                        // 4c. Download Frame
-                        const nextStartImage = await step.run(`download-frame-${i}`, async () => {
-                            const bucket = admin.storage().bucket();
-                            // Wait a bit for file consistency (handled by sleep loop mostly, but extra safety)
-                            await new Promise(r => setTimeout(r, 1000));
-                            const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
-
-                            if (!files || files.length === 0) {
-                                console.warn(`[LongForm] No frame generated for segment ${i}`);
-                                return undefined;
-                            }
-
-                            const frameFile = files[0];
-                            const [buffer] = await frameFile.download();
-                            return `data:image/jpeg;base64,${buffer.toString('base64')}`;
-                        });
+                            // 2. Poll for Completion using step.sleep
+                            let finalState = 'PROCESSING';
+                            for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
+                                await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
 
                         if (nextStartImage) currentStartImage = nextStartImage;
 
