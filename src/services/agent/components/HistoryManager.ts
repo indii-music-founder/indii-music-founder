@@ -11,6 +11,7 @@ import { Logger } from '@/core/logger/Logger';
  * 3. Prevention of context window saturation.
  */
 export class HistoryManager {
+    private readonly MAX_TOTAL_TURNS = 20;
     // High-fidelity turns kept in full
     private readonly MAX_RECENT_TURNS = 15;
     // Threshold before we trigger summarization logic
@@ -28,6 +29,8 @@ export class HistoryManager {
     async getRecentHistory(): Promise<AgentMessage[]> {
         const { useStore } = await import('@/core/store');
         const { agentHistory } = useStore.getState();
+        // Get the last N messages
+        return agentHistory.slice(-this.MAX_TOTAL_TURNS);
 
         // Filter out system messages and internal logs for the conversation window
         const cleanHistory = agentHistory.filter(m =>
