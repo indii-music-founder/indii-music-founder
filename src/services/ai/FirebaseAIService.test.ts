@@ -309,12 +309,20 @@ describe('FirebaseAIService', () => {
         const { getDoc } = await import('firebase/firestore');
 
         (httpsCallable as any).mockReturnValue(vi.fn().mockResolvedValue({ data: {} }));
-        (getDoc as any).mockResolvedValueOnce({
-            exists: () => true,
-            data: () => ({ status: 'pending' })
-        }).mockResolvedValueOnce({
-            exists: () => true,
-            data: () => ({ status: 'complete', videoUrl: 'http://video.mp4' })
+
+        let getDocCallCount = 0;
+        (getDoc as any).mockImplementation(() => {
+            getDocCallCount++;
+            if (getDocCallCount === 1) {
+                return Promise.resolve({
+                    exists: () => true,
+                    data: () => ({ status: 'pending' })
+                });
+            }
+            return Promise.resolve({
+                exists: () => true,
+                data: () => ({ status: 'completed', videoUrl: 'http://video.mp4' })
+            });
         });
 
         const result = await service.generateVideo({
