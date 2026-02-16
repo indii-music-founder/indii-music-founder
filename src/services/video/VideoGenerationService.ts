@@ -355,6 +355,7 @@ export class VideoGenerationService {
             jobId,
             prompts,
             orgId,
+            aspectRatio: targetAspectRatio,
             startImage: options.firstFrame,
             totalDuration: options.totalDuration,
             options: {

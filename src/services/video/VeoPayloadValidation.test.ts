@@ -52,13 +52,8 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 }));
 
 vi.mock('@/core/store', () => ({
-    useStore: (selector: any) => selector(storeState),
+    useStore: mocks.useStore
 }));
-
-// Add implementation to setCommandBarInput to update storeState
-vi.mocked(storeState.setCommandBarInput).mockImplementation((val) => {
-    storeState.commandBarInput = val;
-});
 
 vi.mock('../ai/FirebaseAIService', () => ({
     firebaseAI: mocks.firebaseAI
