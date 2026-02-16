@@ -38,6 +38,7 @@ vi.mock('@/services/firebase', () => ({
     auth: mocks.auth,
     db: {},
     functions: {},
+    functionsWest1: {}
     functionsWest1: {},
     remoteConfig: { defaultConfig: {} },
 }));
@@ -259,10 +260,8 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
 
             expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
                 startImage: startImage,
-                prompts: expect.any(Array),
-                options: expect.objectContaining({
-                    aspectRatio: '9:16'
-                })
+                aspectRatio: '9:16',
+                prompts: expect.any(Array)
             }));
         });
     });

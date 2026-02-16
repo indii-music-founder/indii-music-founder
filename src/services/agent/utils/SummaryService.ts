@@ -9,6 +9,13 @@ import { Logger } from '@/core/logger/Logger';
 export class SummaryService {
     /**
      * Summarizes a block of conversation history.
+     */
+    /**
+     * Summarizes a block of conversation history.
+     * Uses Gemini 3 Flash to compress context while preserving user preferences and facts.
+     * 
+     * @param text - The conversation history text to summarize.
+     * @returns A concise markdown-formatted summary of the conversation.
      * Uses Gemini 3 Flash to compress context while preserving user preferences and facts.
      * 
      * `@param` text - The conversation history text to summarize.

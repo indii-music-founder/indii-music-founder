@@ -26,7 +26,7 @@ export function estimateVideoCost(options: {
     generateAudio?: boolean
 }): number {
     const tier = options.model === 'fast' ? VIDEO_PRICING.FAST : VIDEO_PRICING.PRO;
-    const duration = options.durationSeconds || 5;
+    const duration = options.durationSeconds ?? 5;
     const is4K = options.resolution === '4k';
 
     let cost = duration * (is4K ? tier.perSecond4K : tier.perSecond);
