@@ -44,7 +44,6 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     functions: {},
     functionsWest1: {},
-    getFirebaseAI: vi.fn()
     getFirebaseAI: vi.fn(),
     remoteConfig: { defaultConfig: {} },
 }));

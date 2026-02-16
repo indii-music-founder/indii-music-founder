@@ -35,7 +35,6 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: mocks.currentUser },
     functions: {},
-    db: {}
     db: {},
     remoteConfig: { defaultConfig: {} },
 }));
