@@ -598,7 +598,7 @@ If the user asks you to do something that requires tools (like generating images
             if (projectId && !context.memoryContext) {
                 try {
                     console.log(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
-                    const memories = await memoryService.recallMemories(projectId, task, 5);
+                    const memories = await memoryService.retrieveRelevantMemories(projectId, task, 5);
                     if (memories && memories.length > 0) {
                         context.relevantMemories = memories.map((m: any) => m.content);
                         context.memoryContext = memories

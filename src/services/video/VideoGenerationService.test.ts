@@ -99,7 +99,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             const result = await service.generateVideo({
                 prompt: 'A cinematic shot',
                 aspectRatio: '16:9',
-                resolution: '1920x1080'
+                resolution: '1080p'
             });
 
             expect(triggerMock).toHaveBeenCalledWith(expect.objectContaining({
@@ -132,7 +132,7 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
                                     duration_seconds: 5.0,
                                     fps: 24,
                                     mime_type: 'video/mp4',
-                                    resolution: '1280x720' // 720p is typical for preview
+                                    resolution: '720p' // 720p is typical for preview
                                 }
                             }
                         })
