@@ -16,7 +16,9 @@ export const APPROVED_MODELS = {
     AUDIO_PRO: 'gemini-3-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
-    VIDEO_GEN: 'veo-3.1-generate-preview',
+    VIDEO_PRO: 'veo-3.1-generate-preview',
+    VIDEO_FAST: 'veo-3.1-fast-generate-preview',
+    VIDEO_GEN: 'veo-3.1-generate-preview', // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-3-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
@@ -36,8 +38,10 @@ export const AI_MODELS = {
         TTS: APPROVED_MODELS.AUDIO_TTS,
     },
     VIDEO: {
-        GENERATION: APPROVED_MODELS.VIDEO_GEN,
-        EDIT: APPROVED_MODELS.VIDEO_GEN
+        PRO: APPROVED_MODELS.VIDEO_PRO,
+        FAST: APPROVED_MODELS.VIDEO_FAST,
+        EDIT: APPROVED_MODELS.VIDEO_PRO,
+        GENERATION: APPROVED_MODELS.VIDEO_PRO // Backward compatibility
     },
     BROWSER: {
         AGENT: APPROVED_MODELS.BROWSER_AGENT,
@@ -96,7 +100,16 @@ export const MODEL_PRICING = {
     'gemini-3-pro-preview': { input: 2.50, output: 7.50 },
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
     'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
-    'veo-3.1-generate-preview': { perGeneration: 0.05 },
+    'veo-3.1-generate-preview': {
+        perSecond: 0.20,     // 720p/1080p Video Only
+        perSecond4K: 0.40,   // 4K Video Only
+        audioAddOn: 0.20     // Flat add-on for audio (up to 1080p)
+    },
+    'veo-3.1-fast-generate-preview': {
+        perSecond: 0.10,     // 720p/1080p Video Only
+        perSecond4K: 0.30,   // 4K Video Only
+        audioAddOn: 0.05     // Flat add-on for audio
+    },
     'gemini-2.5-pro-preview-tts': { input: 0.60, output: 4.00 },
 } as const;
 

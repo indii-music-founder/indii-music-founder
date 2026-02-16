@@ -963,7 +963,7 @@ export class FirebaseAIService {
 
                 if (jobSnap.exists()) {
                     const data = jobSnap.data();
-                    if (data?.status === 'complete' && data.videoUrl) {
+                    if (data?.status === 'completed' && data.videoUrl) {
                         return data.videoUrl;
                     }
                     if (data?.status === 'failed') {

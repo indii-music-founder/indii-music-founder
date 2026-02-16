@@ -32,6 +32,12 @@ function cosineSimilarity(a: number[], b: number[]): number {
     return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
+/**
+ * MemoryService - Handles persistent episodic and semantic memory for the indii agent.
+ * 
+ * Provides vector-based retrieval and keyword fallback for finding relevant context
+ * within a project's memory store. Uses a batcher for embedding requests to optimize performance.
+ */
 class MemoryService {
     private embeddingModel = APPROVED_MODELS.EMBEDDING_DEFAULT;
 
@@ -67,6 +73,16 @@ class MemoryService {
         }
     }
 
+    /**
+     * Store a new memory item in the project's memory collection.
+     * Automatically generates embeddings for semantic retrieval.
+     * 
+     * @param projectId - The project to associate the memory with.
+     * @param content - The data/fact to be remembered.
+     * @param type - The category of memory.
+     * @param importance - weight for retrieval (0 to 1).
+     * @param source - who provided the information.
+     */
     async saveMemory(
         projectId: string,
         content: string,

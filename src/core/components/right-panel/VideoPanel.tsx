@@ -214,16 +214,14 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                             <label className="text-[10px] font-bold text-gray-500 tracking-wider">RESOLUTION</label>
                             <div className="relative group">
                                 <select
-                                    value={studioControls.resolution || '1024x1024'}
+                                    value={studioControls.resolution || '720p'}
                                     onChange={(e) => setStudioControls({ resolution: e.target.value as VideoResolution })}
                                     data-testid="resolution-select"
-                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all"
+                                    className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none appearance-none cursor-pointer hover:border-white/20 hover:bg-black/60 transition-all font-mono"
                                 >
-                                    <option value="1024x1024" data-testid="resolution-option-1k">1K (Square)</option>
-                                    <option value="1280x720" data-testid="resolution-option-hd">HD (720p)</option>
-                                    <option value="1920x1080" data-testid="resolution-option-fhd">FHD (1080p)</option>
-                                    <option value="1080x1920">Vertical (1080x1920)</option>
-                                    <option value="720x1280">Vertical (720x1280)</option>
+                                    <option value="720p" data-testid="resolution-option-hd">HD (720p)</option>
+                                    <option value="1080p" data-testid="resolution-option-fhd">FHD (1080p)</option>
+                                    <option value="4k" data-testid="resolution-option-4k">Ultra HD (4K)</option>
                                 </select>
                                 <ChevronRight size={12} className="absolute right-3 top-3 text-gray-500 pointer-events-none group-hover:text-gray-300 transition-colors rotate-90" />
                             </div>
@@ -236,8 +234,47 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 value={studioControls.seed || ''}
                                 onChange={(e) => setStudioControls({ seed: e.target.value })}
                                 placeholder="Random"
-                                className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-gray-600"
+                                className="w-full bg-black/40 text-white text-xs p-2.5 rounded-xl border border-white/10 outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all placeholder:text-gray-600 font-mono"
                             />
+                        </div>
+                    </div>
+
+                    {/* Generation Tier & Intelligence */}
+                    <div className="space-y-4 pt-4 border-t border-white/10">
+                        <div className="flex items-center justify-between">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
+                                    <Sparkles size={12} className="text-purple-400" /> GENERATION TIER
+                                </label>
+                                <p className="text-[8px] text-gray-600 uppercase font-medium">FAST IS ~50% CHEAPER</p>
+                            </div>
+                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                                <button
+                                    onClick={() => setStudioControls({ model: 'fast' })}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'fast' ? 'bg-purple-500/20 text-purple-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                >
+                                    FAST
+                                </button>
+                                <button
+                                    onClick={() => setStudioControls({ model: 'pro' })}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                >
+                                    PRO
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 group hover:border-dept-creative/30 transition-all cursor-pointer"
+                            onClick={() => setStudioControls({ thinking: !studioControls.thinking })}>
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-dept-creative tracking-wider flex items-center gap-2">
+                                    DEEP THINKING (GEMINI 3)
+                                </label>
+                                <p className="text-[9px] text-gray-500 leading-tight">Apply advanced physics & continuity reasoning before rendering.</p>
+                            </div>
+                            <div className={`w-10 h-5 rounded-full relative transition-colors ${studioControls.thinking ? 'bg-dept-creative' : 'bg-white/10'}`}>
+                                <div className={`absolute top-1 w-3 h-3 rounded-full bg-white transition-all ${studioControls.thinking ? 'left-6' : 'left-1'}`} />
+                            </div>
                         </div>
                     </div>
 

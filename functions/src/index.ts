@@ -14,6 +14,7 @@ import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
+import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { generateThumbnail } from "./lib/image_resizing";
 
@@ -234,6 +235,14 @@ export const triggerVideoJob = functions
         await validateOrgAccess(userId, orgId);
 
         try {
+            // Calculate estimated cost
+            const estimatedCost = estimateVideoCost({
+                model: options.model,
+                durationSeconds: options.durationSeconds || options.duration,
+                resolution: options.resolution,
+                generateAudio: options.generateAudio
+            });
+
             // 1. Create Initial Job Record in Firestore (Atomic Create to prevent overwrites)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
@@ -241,6 +250,8 @@ export const triggerVideoJob = functions
                 orgId: orgId || "personal",
                 prompt: prompt,
                 status: "queued",
+                estimatedCost: estimatedCost,
+                options: options,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
@@ -314,7 +325,7 @@ export const triggerLongFormVideoJob = functions
         }
 
         // Destructure validated data
-        const { prompts, jobId, orgId, totalDuration, startImage, ...options } = validation.data;
+        const { prompts, jobId, orgId, totalDuration, startImage, options } = validation.data;
 
         // SECURITY: Verify Org Access
         await validateOrgAccess(userId, orgId);
@@ -382,6 +393,20 @@ export const triggerLongFormVideoJob = functions
             // ------------------------------------------------------------------
 
             // 4. Create Parent Job Record
+            // Calculate estimated cost for long-form (sum of segments)
+            // SENTRY FIX (PR #1200): Use DEFAULT_SEGMENT_DURATION_SECONDS (5s) instead of hardcoded 8s to prevent cost inflation.
+            const estimatedCostPerSegment = estimateVideoCost({
+                model: options.model,
+                durationSeconds: 5, // Aligned with DEFAULT_SEGMENT_DURATION_SECONDS in long_form_video.ts
+            const estimatedCostPerSegment = estimateVideoCost({
+                model: options.model,
+                durationSeconds: 8, // Assuming 8s segments for long-form
+                resolution: options.resolution,
+                generateAudio: options.generateAudio
+            });
+            const totalEstimatedCost = parseFloat((estimatedCostPerSegment * prompts.length).toFixed(4));
+
+
             // 1. Create Parent Job Record (Atomic Create)
             await admin.firestore().collection("videoJobs").doc(jobId).create({
                 id: jobId,
@@ -392,6 +417,8 @@ export const triggerLongFormVideoJob = functions
                 isLongForm: true,
                 totalSegments: prompts.length,
                 completedSegments: 0,
+                estimatedCost: totalEstimatedCost,
+                options: options,
                 createdAt: admin.firestore.FieldValue.serverTimestamp(),
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
