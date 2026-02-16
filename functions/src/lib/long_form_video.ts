@@ -40,6 +40,10 @@ export const LongFormVideoJobSchema = z.object({
     userId: z.string(),
     orgId: z.string().optional().default("personal"),
     prompts: z.array(z.string()).min(1), // Validation fixed: must have at least 1 prompt
+    totalDuration: z.preprocess(
+        (val) => (val === '' || val === null || val === undefined ? undefined : val),
+        z.coerce.number().optional(),
+    ),
     totalDuration: z.union([z.string(), z.number()]).optional(),
     startImage: z.string().optional(),
     options: z.object({

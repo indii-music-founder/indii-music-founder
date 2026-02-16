@@ -13,6 +13,16 @@ import type { AgentService } from '../AgentService';
  */
 export class HybridOrchestrator {
     private MAX_TURNS = 10;
+    private MAX_RESULT_LENGTH = 3000;
+
+    private truncate(text: any): string {
+        if (!text) return '';
+        const str = typeof text === 'string' ? text : JSON.stringify(text);
+        if (str.length > this.MAX_RESULT_LENGTH) {
+            return str.substring(0, this.MAX_RESULT_LENGTH) + '... [Result truncated]';
+        }
+        return str;
+    }
 
     /**
      * Executes a multi-turn reasoning loop (Indii Fusion Engine).
@@ -116,6 +126,7 @@ export class HybridOrchestrator {
                     try {
                         if (!service) throw new Error('AgentService instance not provided for delegation');
                         const result = await service.runAgent(decision.callAgentId, decision.task, context, traceId);
+                        history.push({ turn: currentTurn, agent: decision.callAgentId, result: this.truncate(result.text) });
                         history.push({
                             turn: currentTurn,
                             agent: decision.callAgentId,
@@ -134,6 +145,7 @@ export class HybridOrchestrator {
                     try {
                         const { KnowledgeTools } = await import('../tools/KnowledgeTools');
                         const result = await KnowledgeTools.search_knowledge({ query: decision.args?.query || sanitizedQuery }, context);
+                        history.push({ turn: currentTurn, tool: 'knowledge_base', result: this.truncate(result.data?.answer) });
                         history.push({
                             turn: currentTurn,
                             tool: 'knowledge_base',
@@ -164,6 +176,7 @@ export class HybridOrchestrator {
                             result = await BrowserTools.browser_snapshot({}, context);
                         }
 
+                        history.push({ turn: currentTurn, tool: 'browser_control', result: this.truncate(result.data || result.message) });
                         history.push({
                             turn: currentTurn,
                             tool: 'browser_control',
@@ -182,6 +195,7 @@ export class HybridOrchestrator {
                     try {
                         const { agentZeroService } = await import('../AgentZeroService');
                         const result = await agentZeroService.sendMessage(decision.task || decision.args?.query || sanitizedQuery);
+                        history.push({ turn: currentTurn, tool: 'agent_zero_deep', result: this.truncate(result.message) });
                         history.push({
                             turn: currentTurn,
                             tool: 'agent_zero_deep',

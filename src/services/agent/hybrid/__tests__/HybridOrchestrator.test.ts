@@ -75,6 +75,15 @@ describe('HybridOrchestrator Integration', () => {
     });
 
     it('should prune excessively long tool results', async () => {
+        const longData = 'x'.repeat(5000);
+
+        // Mock BrowserTools to return a very long result
+        vi.doMock('../../tools/BrowserTools', () => ({
+            BrowserTools: {
+                browser_navigate: vi.fn().mockResolvedValue({ data: longData, message: longData })
+            }
+        }));
+
         const mockResponses = [
             {
                 text: () => JSON.stringify({
@@ -101,5 +110,8 @@ describe('HybridOrchestrator Integration', () => {
         await orchestrator.execute(mockContext, "Run with long data");
 
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
+        // Verify the second call's prompt contains the truncation marker
+        const secondCallPrompt = (AI.generateContent as any).mock.calls[1][0].contents.parts[0].text;
+        expect(secondCallPrompt).toContain('Result truncated');
     });
 });
