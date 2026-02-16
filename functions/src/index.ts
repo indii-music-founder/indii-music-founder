@@ -398,9 +398,6 @@ export const triggerLongFormVideoJob = functions
             const estimatedCostPerSegment = estimateVideoCost({
                 model: options.model,
                 durationSeconds: 5, // Aligned with DEFAULT_SEGMENT_DURATION_SECONDS in long_form_video.ts
-            const estimatedCostPerSegment = estimateVideoCost({
-                model: options.model,
-                durationSeconds: 8, // Assuming 8s segments for long-form
                 resolution: options.resolution,
                 generateAudio: options.generateAudio
             });
