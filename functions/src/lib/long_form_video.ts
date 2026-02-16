@@ -496,7 +496,6 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                 currentStartImage = undefined;
                             }
                         }
-                    }
                 }
             } // This brace closes the `for (let i = 0; i < prompts.length; i++)` loop.
 
