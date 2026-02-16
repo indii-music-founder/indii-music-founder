@@ -5,7 +5,6 @@ import { MerchandiseDashboard } from './components/MerchandiseDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'framer-motion';
 import { Briefcase, CreditCard, ShoppingBag, TrendingUp } from 'lucide-react';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 export default function FinanceDashboard() {
     return (
@@ -61,21 +60,15 @@ export default function FinanceDashboard() {
                 <div className="flex-1 overflow-y-auto custom-scrollbar">
                     <div className="max-w-[1600px] mx-auto p-4 md:p-10">
                         <TabsContent value="earnings" className="mt-0 h-full outline-none">
-                            <ErrorBoundary moduleName="Earnings Dashboard">
-                                <EarningsDashboard />
-                            </ErrorBoundary>
+                            <EarningsDashboard />
                         </TabsContent>
 
                         <TabsContent value="expenses" className="mt-0 outline-none">
-                            <ErrorBoundary moduleName="Expense Tracker">
-                                <ExpenseTracker />
-                            </ErrorBoundary>
+                            <ExpenseTracker />
                         </TabsContent>
 
                         <TabsContent value="merch" className="mt-0 outline-none">
-                            <ErrorBoundary moduleName="Merchandise Store">
-                                <MerchandiseDashboard />
-                            </ErrorBoundary>
+                            <MerchandiseDashboard />
                         </TabsContent>
                     </div>
                 </div>

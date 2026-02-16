@@ -1,8 +1,7 @@
+
 import { FirestoreService } from '../FirestoreService';
 import { AI } from '../ai/AIService';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
-import { db } from '@/services/firebase';
-import { collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 
 export interface MemoryItem {
@@ -30,9 +29,7 @@ function cosineSimilarity(a: number[], b: number[]): number {
         normA += a[i] * a[i];
         normB += b[i] * b[i];
     }
-    const magnitude = Math.sqrt(normA) * Math.sqrt(normB);
-    if (magnitude === 0) return 0;
-    return dotProduct / magnitude;
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
 /**
@@ -95,19 +92,16 @@ class MemoryService {
     ): Promise<void> {
         const service = this.getService(projectId);
 
-        // Check for duplicates using efficient query
+        // Check for duplicates using vector similarity (simple dedup)
+        let existingMemories: MemoryItem[] = [];
         try {
-            const q = query(
-                collection(db, this.getCollectionPath(projectId)),
-                where('content', '==', content),
-                limit(1)
-            );
-            const snapshot = await getDocs(q);
-            if (!snapshot.empty) {
-                return;
-            }
+            existingMemories = await service.list();
         } catch (e) {
-            console.warn('[MemoryService] Failed to check for duplicates: (Non-blocking)', e);
+            console.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
+        }
+
+        if (existingMemories.some(m => m.content === content)) {
+            return;
         }
 
         // Generate embedding for the new memory
@@ -146,32 +140,11 @@ class MemoryService {
         },
         limitIdx = 5
     ): Promise<string[]> {
-        const memories = await this.recallMemories(projectId, queryOrOptions, limitIdx);
-        return memories.map(m => m.content);
-    }
-
-    /**
-     * Recalls relevant memories as full MemoryItem objects.
-     * Use this when you need metadata like type or timestamp.
-     */
-    async recallMemories(
-        projectId: string,
-        queryOrOptions: string | {
-            query: string;
-            filters?: {
-                tags?: string[];
-                types?: MemoryItem['type'][];
-                dateRange?: [number, number];
-            };
-            limit?: number;
-        },
-        limitIdx = 5
-    ): Promise<MemoryItem[]> {
         try {
             const service = this.getService(projectId);
             let memories: MemoryItem[] = [];
             try {
-                memories = await service.list();
+                memories = await service.list(); // In production, push filters to DB query if possible
             } catch (e) {
                 console.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
                 return [];
@@ -210,18 +183,29 @@ class MemoryService {
             let scored: { item: MemoryItem; score: number }[];
 
             if (hasVectorSupport) {
+                // Semantic Search + Importance + Recency
                 scored = candidates.map(m => {
                     let vectorScore = 0;
                     if (m.embedding && m.embedding.length > 0) {
                         vectorScore = cosineSimilarity(queryEmbedding, m.embedding);
                     }
+
+                    // Recency Score (Decay over 30 days)
                     const daysOld = (Date.now() - m.timestamp) / (1000 * 60 * 60 * 24);
-                    const recencyScore = 1 / (1 + 0.1 * daysOld);
+                    const recencyScore = 1 / (1 + 0.1 * daysOld); // Hyperbolic decay
+
+                    // Final Score Formula
+                    // content relevance * 0.6 + importance * 0.2 + recency * 0.2
+                    // Boost 'rule' types always
                     let totalScore = (vectorScore * 0.6) + (m.importance * 0.2) + (recencyScore * 0.2);
+
+                    // Extra boost if filter matched specifically? No, filter is hard constraint.
                     if (m.type === 'rule') totalScore += 0.15;
+
                     return { item: m, score: totalScore };
                 });
             } else {
+                // Keyword Search Fallback
                 const keywords = query.toLowerCase().split(' ').filter(w => w.length > 3);
                 scored = candidates.map(m => {
                     let matchCount = 0;
@@ -229,31 +213,40 @@ class MemoryService {
                     keywords.forEach(k => {
                         if (content.includes(k)) matchCount++;
                     });
+
                     let totalScore = matchCount > 0 ? (0.5 + Math.min(matchCount * 0.1, 0.4)) : 0;
                     if (m.type === 'rule') totalScore += 0.2;
                     return { item: m, score: totalScore };
                 });
             }
 
+            // Sort by score
             scored.sort((a, b) => b.score - a.score);
+
+            // Filter threshold
             const threshold = hasVectorSupport ? 0.6 : 0.1;
             const relevantItems = scored
                 .filter(s => s.score > threshold)
                 .slice(0, limit)
                 .map(s => s.item);
 
+            // Async: Update access stats for retrieved items (fire and forget)
             this.updateAccessStats(projectId, relevantItems);
 
+            // Fallback if nothing relevant found (Relax filters? No, strict filters should be respected)
+            // But if generic query failed, we fallback to recent rules
             if (relevantItems.length === 0 && !filters) {
                 return memories
                     .filter(m => m.type === 'rule' || m.importance > 0.8)
                     .sort((a, b) => b.timestamp - a.timestamp)
-                    .slice(0, 3);
+                    .slice(0, 3)
+                    .map(m => m.content);
             }
 
-            return relevantItems;
+            return relevantItems.map(m => m.content);
+
         } catch (error) {
-            console.error('[MemoryService] Error recalling memories:', error);
+            console.error('[MemoryService] Error retrieving memories:', error);
             return [];
         }
     }
@@ -274,7 +267,7 @@ class MemoryService {
         const service = this.getService(projectId);
         const memories = await service.list();
 
-        // 1. Filter candidates (e.g., facts older than 24h)
+        // 1. Filter candidates (e.g., accessed recently but older than 24h, not rules)
         const candidates = memories.filter(m =>
             m.type === 'fact' &&
             (Date.now() - m.timestamp > 86400000)
@@ -282,35 +275,38 @@ class MemoryService {
 
         if (candidates.length < 5) return; // Not enough to consolidate
 
+        // 2. Simple clustering or just lump together for now (naive approach)
+        // Group everything into one massive summary request for now
+
         const textToSummarize = candidates.map(c => `- ${c.content}`).join('\n');
 
         try {
             const prompt = `
-                You are a Memory Consolidation Agent.
-                
-                TASK:
-                Review the following memory fragments and consolidate them into concise, high-value summaries.
-                Discard redundant or trivial information.
-                Check against these existing summaries/rules to avoid duplication: 
-                ${memories.filter(m => m.type !== 'fact').map(m => m.content).join('\n')}
+            You are a Memory Consolidation Agent.
+            
+            TASK:
+            Review the following memory fragments and consolidate them into concise, high-value summaries.
+            Discard redundant or trivial information.
+            Check against these existing summaries/rules to avoid duplication: 
+            ${memories.filter(m => m.type !== 'fact').map(m => m.content).join('\n')}
 
-                MEMORY FRAGMENTS TO PROCESS:
-                ${textToSummarize}
-                
-                OUTPUT RULES:
-                - Return a strict JSON object.
-                - "consolidated": Array of strings (the new summary text).
-                - "idsToDelete": Array of strings (the IDs of fragments you successfully incorporated and can be removed).
-                
-                JSON FORMAT:
-                {
-                  "consolidated": ["summary 1", "summary 2"],
-                  "idsToDelete": ["id_1", "id_2"]
-                }
-                `;
+            MEMORY FRAGMENTS TO PROCESS:
+            ${textToSummarize}
+            
+            OUTPUT RULES:
+            - Return a strict JSON object.
+            - "consolidated": Array of strings (the new summary text).
+            - "idsToDelete": Array of strings (the IDs of fragments you successfully incorporated and can be removed).
+            
+            JSON FORMAT:
+            {
+              "consolidated": ["summary 1", "summary 2"],
+              "idsToDelete": ["id_1", "id_2"]
+            }
+            `;
 
             const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
+                model: AI_MODELS.TEXT.FAST, // Use fast model for background tasks
                 contents: { role: 'user', parts: [{ text: prompt }] },
                 config: {
                     responseMimeType: 'application/json'
@@ -323,6 +319,7 @@ class MemoryService {
             // 1. Delete redundant memories
             if (parsed.idsToDelete && parsed.idsToDelete.length > 0) {
                 const deletePromises = parsed.idsToDelete.map(id => {
+                    // Verify ID exists in candidates to prevent accidental deletion of wrong items
                     if (candidates.some(c => c.id === id)) {
                         return service.delete(id);
                     }
@@ -340,6 +337,7 @@ class MemoryService {
             }
 
             console.info(`[MemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries.`);
+
         } catch (e) {
             console.error('[MemoryService] Consolidation failed:', e);
         }

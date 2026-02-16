@@ -25,7 +25,7 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalValue(prompt);
         }
-    }, [prompt]);  
+    }, [prompt]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Debounce updates to parent
     useEffect(() => {

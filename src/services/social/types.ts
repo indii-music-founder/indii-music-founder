@@ -1,6 +1,5 @@
 export interface SocialPost {
     id: string;
-    userId?: string; // For Firestore security rules
     authorId: string;
     authorName: string;
     authorAvatar?: string;
@@ -61,5 +60,4 @@ export interface ScheduledPost {
     errorMessage?: string;
     postId?: string; // If posted, reference to the actual post
     authorId: string;
-    userId?: string; // For Firestore security rules
 }

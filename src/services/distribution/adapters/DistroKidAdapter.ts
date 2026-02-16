@@ -14,33 +14,6 @@ import {
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
-import { distributionStore } from '../DistributionPersistenceService';
-import { earningsService } from '../EarningsService';
-
-const VALID_RELEASE_STATUSES: Set<ReleaseStatus> = new Set([
-    'draft', 'validating', 'pending_review', 'in_review', 'approved',
-    'processing', 'delivering', 'delivered', 'live',
-    'takedown_requested', 'taken_down', 'failed', 'rejected'
-]);
-
-/**
- * Safely maps a persisted deployment status string to a valid ReleaseStatus.
- * Returns 'processing' as a sensible fallback for unrecognized values.
- */
-function mapDeploymentStatusToReleaseStatus(status: string): ReleaseStatus {
-    if (VALID_RELEASE_STATUSES.has(status as ReleaseStatus)) {
-        return status as ReleaseStatus;
-    }
-    // Map known persistence-only values that may appear from legacy data
-    switch (status) {
-        case 'submitted':       return 'in_review';
-        case 'takedown_pending': return 'takedown_requested';
-        case 'takedown_complete': return 'taken_down';
-        default:
-            console.warn(`[DistroKid] Unknown deployment status "${status}", defaulting to "processing"`);
-            return 'processing';
-    }
-}
 
 export class DistroKidAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -200,15 +173,6 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getReleaseStatus(releaseId: string): Promise<ReleaseStatus> {
-        // 1. Check persistence store for status first
-        const deployments = await distributionStore.getDeploymentsForRelease(releaseId);
-        const dkDeployment = deployments.find(d => d.distributorId === this.id);
-
-        if (dkDeployment) {
-            return mapDeploymentStatusToReleaseStatus(dkDeployment.status);
-        }
-
-        // 2. Default to live if we know it was delivered but no record found (unlikely)
         return 'live';
     }
 
@@ -220,36 +184,25 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
     }
 
     async getEarnings(releaseId: string, period: DateRange): Promise<DistributorEarnings> {
-        const isConnected = await this.isConnected();
-        if (!isConnected) {
-            throw new Error('Not connected to DistroKid');
-        }
-
-        const earnings = await earningsService.getEarnings(this.id, releaseId, period);
-
-        if (!earnings) {
-            return {
-                distributorId: 'distrokid',
-                releaseId: releaseId,
-                period: period,
-                streams: 0,
-                downloads: 0,
-                grossRevenue: 0,
-                distributorFee: 0, // 100% Payout
-                netRevenue: 0,
-                currencyCode: 'USD',
-                lastUpdated: new Date().toISOString()
-            };
-        }
-        return earnings;
+        // Production: Return 0 earnings until actual API integration is available.
+        // DO NOT generate random numbers in production.
+        return {
+            distributorId: 'distrokid',
+            releaseId: releaseId,
+            period: period,
+            streams: 0,
+            downloads: 0,
+            grossRevenue: 0,
+            distributorFee: 0, // 100% Payout
+            netRevenue: 0,
+            currencyCode: 'USD',
+            lastUpdated: new Date().toISOString()
+        };
     }
 
     async getAllEarnings(period: DateRange): Promise<DistributorEarnings[]> {
-        const isConnected = await this.isConnected();
-        if (!isConnected) {
-            throw new Error('Not connected to DistroKid');
-        }
-        return await earningsService.getAllEarnings(this.id, period);
+        // Return empty array until real implementation
+        return [];
     }
 
     async validateMetadata(metadata: ExtendedGoldenMetadata): Promise<ValidationResult> {

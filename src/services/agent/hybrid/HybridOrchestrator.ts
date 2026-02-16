@@ -194,14 +194,12 @@ export class HybridOrchestrator {
                     }
                 }
 
-                if (!decision.callAgentId && !decision.useTool && !decision.complete) {
+                if (decision.complete) {
+                    isTaskComplete = true;
+                } else if (!decision.callAgentId && !decision.useTool) {
                     // LLM provided a thought but no action, force completion if it looks like an answer
                     if (decision.answer) isTaskComplete = true;
                     else break;
-                }
-
-                if (decision.complete) {
-                    isTaskComplete = true;
                 }
 
             } catch (e: any) {

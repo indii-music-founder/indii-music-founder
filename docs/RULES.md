@@ -13,9 +13,9 @@
 
 - **Active Scanning:** Scan all output for sensitive patterns (OpenAI `sk-`, Google `AIza`, GitHub `ghp_`).
 - **Quarantine Procedure:** If a **True Secret** (Private Key, Service Account JSON, Stripe Secret) is detected:
-  1. **STOP** generation immediately.
-  2. Append the secret to `.env`.
-  3. Resume using `process.env`.
+    1. **STOP** generation immediately.
+    2. Append the secret to `.env`.
+    3. Resume using `process.env`.
 - **Firebase API Keys (`AIza*`):** These are **identifiers**, not secrets. They are safe for inclusion in code or checked-in configuration files, but must be audited for **API Restrictions** in the GCP Console.
 - **Mock Data:** Use explicit strings like `"MOCK_KEY_DO_NOT_USE"` for testing.
 
@@ -50,7 +50,7 @@
 Always import model constants from the core config:
 
 ```typescript
-import { AI_MODELS } from "@/core/config/ai-models";
+import { AI_MODELS } from '@/core/config/ai-models';
 // Use: model: AI_MODELS.TEXT.FAST
 ```
 

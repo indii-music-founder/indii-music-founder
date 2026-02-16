@@ -8,9 +8,9 @@ description: Implementation of the Brand Kit and Onboarding System
 
 ## Architecture
 
-- **UI:** `OnboardingModal.tsx` (Chat interface, "indii" agent).
-- **Logic:** `onboardingService.ts` (Gemini 3.0 Pro, file processing).
-- **State:** `store.ts` (`userProfile.brandKit`).
+* **UI:** `OnboardingModal.tsx` (Chat interface, "indii" agent).
+* **Logic:** `onboardingService.ts` (Gemini 3.0 Pro, file processing).
+* **State:** `store.ts` (`userProfile.brandKit`).
 
 ## Usage Flow
 
@@ -20,6 +20,6 @@ description: Implementation of the Brand Kit and Onboarding System
 
 ## Key Functions
 
-- `runOnboardingConversation`: Handles chat + file attachments.
-- `processFunctionCalls`: Updates state (`updateProfile`, `addImageAsset`).
-- `calculateProfileStatus`: % completion tracker.
+* `runOnboardingConversation`: Handles chat + file attachments.
+* `processFunctionCalls`: Updates state (`updateProfile`, `addImageAsset`).
+* `calculateProfileStatus`: % completion tracker.

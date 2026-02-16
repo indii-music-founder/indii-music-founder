@@ -65,20 +65,18 @@ export class CostPredictor {
      */
     static predictVideoCost(durationSeconds: number = AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS, model = APPROVED_MODELS.VIDEO_GEN): CostEstimate {
         const pricing = this.getPricing(model);
-        if (!pricing || !('perGeneration' in pricing)) {
+        if (!pricing || !('perSecond' in pricing)) {
             return this.getUnknownEstimate(model);
         }
 
-        // Veo pricing might be per-second or per-generation. 
-        // Based on ai-models.ts: { perGeneration: 0.05 }
-        const costUsd = pricing.perGeneration;
+        const costUsd = pricing.perSecond * durationSeconds;
 
         return {
             model,
-            estimatedCostUsd: costUsd,
+            estimatedCostUsd: parseFloat(costUsd.toFixed(4)),
             estimatedCredits: Math.ceil(costUsd * this.CREDIT_MULTIPLIER),
-            unit: 'generation',
-            details: `Flat rate for ${durationSeconds}s premium video synthesis.`
+            unit: 'seconds',
+            details: `Based on ${durationSeconds}s at $${pricing.perSecond}/s for premium video synthesis.`
         };
     }
 

@@ -9,7 +9,6 @@ import { AuthorityPanel } from './components/AuthorityPanel';
 import { QCPanel } from './components/QCPanel';
 import { KeysPanel } from './components/KeysPanel';
 import { TransferPanel } from './components/TransferPanel';
-import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 export default function DistributionDashboard() {
     const { distribution, subscribeToReleases } = useStore();
@@ -88,39 +87,27 @@ export default function DistributionDashboard() {
 
                     <div className="flex-1 w-full">
                         <TabsContent value="connections" className="mt-0 h-full p-0 border-none outline-none">
-                            <ErrorBoundary moduleName="Distributor Connections">
-                                <DistributorConnectionsPanel />
-                            </ErrorBoundary>
+                            <DistributorConnectionsPanel />
                         </TabsContent>
 
                         <TabsContent value="bank" className="mt-0 border-none outline-none">
-                            <ErrorBoundary moduleName="Bank Layer">
-                                <BankPanel />
-                            </ErrorBoundary>
+                            <BankPanel />
                         </TabsContent>
 
                         <TabsContent value="authority" className="mt-0 border-none outline-none">
-                            <ErrorBoundary moduleName="Authority Control">
-                                <AuthorityPanel />
-                            </ErrorBoundary>
+                            <AuthorityPanel />
                         </TabsContent>
 
                         <TabsContent value="keys" className="mt-0 border-none outline-none">
-                            <ErrorBoundary moduleName="Cryptography Keys">
-                                <KeysPanel />
-                            </ErrorBoundary>
+                            <KeysPanel />
                         </TabsContent>
 
                         <TabsContent value="brain" className="mt-0 border-none outline-none">
-                            <ErrorBoundary moduleName="QC Brain">
-                                <QCPanel />
-                            </ErrorBoundary>
+                            <QCPanel />
                         </TabsContent>
 
                         <TabsContent value="transmission" className="mt-0 border-none outline-none">
-                            <ErrorBoundary moduleName="SFTP Transmission">
-                                <TransferPanel />
-                            </ErrorBoundary>
+                            <TransferPanel />
                         </TabsContent>
 
                         <TabsContent value="releases" className="mt-0 border-none outline-none">

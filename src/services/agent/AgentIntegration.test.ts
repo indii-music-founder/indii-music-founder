@@ -1,0 +1,294 @@
+
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { AgentService } from './AgentService';
+import { agentRegistry } from './registry';
+import { useStore } from '@/core/store';
+import { AI } from '@/services/ai/AIService';
+
+// Provide safe environment defaults to avoid failing validation during tests
+vi.mock('@/config/env', () => ({
+    env: {
+        apiKey: 'test-api-key',
+        projectId: 'test-project',
+        location: 'test-location',
+        useVertex: false,
+        googleMapsApiKey: 'maps-key',
+        VITE_FUNCTIONS_URL: 'https://example.com/functions',
+        VITE_RAG_PROXY_URL: 'https://example.com/rag',
+        VITE_GOOGLE_MAPS_API_KEY: 'maps-key',
+        DEV: true,
+        skipOnboarding: true
+    }
+}));
+
+// Mock Gemini Retrieval to suppress API key warnings and network calls
+vi.mock('@/services/rag/GeminiRetrievalService', () => ({
+    GeminiRetrieval: {
+        initCorpus: vi.fn().mockResolvedValue('test-corpus'),
+        listDocuments: vi.fn().mockResolvedValue([]),
+        query: vi.fn().mockResolvedValue([]),
+        ingestText: vi.fn().mockResolvedValue(undefined),
+        createDocument: vi.fn().mockResolvedValue({ name: 'doc' })
+    }
+}));
+
+// Mock VideoTools to prevent real execution if not mocked at service level
+vi.mock('@/services/agent/tools/VideoTools', () => ({
+    VideoTools: {
+        generate_video: vi.fn().mockResolvedValue({ success: true, data: { id: 'mock-video' } }),
+        generate_motion_brush: vi.fn().mockResolvedValue({ success: true, data: { url: 'mock-url' } }),
+        batch_edit_videos: vi.fn().mockResolvedValue({ success: true }),
+        extend_video: vi.fn().mockResolvedValue({ success: true }),
+        generate_video_chain: vi.fn().mockResolvedValue({ success: true }),
+        interpolate_sequence: vi.fn().mockResolvedValue({ success: true }),
+        update_keyframe: vi.fn().mockResolvedValue({ success: true })
+    }
+}));
+
+// Mock Firebase
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    storage: {},
+    auth: {
+        currentUser: { uid: 'test-user' }
+    },
+    functions: {},
+    remoteConfig: {
+        settings: {},
+        defaultConfig: {},
+        getValue: vi.fn(),
+        getAll: vi.fn()
+    }
+}));
+
+// Mock MemoryService
+vi.mock('./MemoryService', () => ({
+    memoryService: {
+        retrieveRelevantMemories: vi.fn().mockResolvedValue([]),
+        saveMemory: vi.fn()
+    }
+}));
+
+// Mock AI Service
+vi.mock('@/services/ai/AIService', () => ({
+    AI: {
+        generateContent: vi.fn().mockResolvedValue({
+            text: () => '',
+            functionCalls: () => []
+        }),
+        generateContentStream: vi.fn(),
+        generateSpeech: vi.fn()
+    }
+}));
+
+// Mock TraceService to avoid noisy errors and Firestore dependency
+vi.mock('./observability/TraceService', () => ({
+    TraceService: {
+        startTrace: vi.fn().mockResolvedValue('test-trace-id'),
+        addStep: vi.fn().mockResolvedValue(undefined),
+        completeTrace: vi.fn().mockResolvedValue(undefined),
+        failTrace: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
+// Mock Store
+vi.mock('@/core/store', () => ({
+    useStore: {
+        getState: vi.fn(),
+        setState: vi.fn()
+    }
+}));
+
+// Mock MembershipService
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
+        recordSpend: vi.fn().mockResolvedValue(true),
+        getCurrentUserId: vi.fn().mockResolvedValue('test-user'),
+        getCurrentTier: vi.fn().mockResolvedValue('free')
+    }
+}));
+
+// Mock VideoGenerationService to prevent accidental API calls
+vi.mock('@/services/video/VideoGenerationService', () => ({
+    VideoGeneration: {
+        generateVideo: vi.fn().mockResolvedValue([{ id: 'mock-video-job', url: '', prompt: 'mock prompt' }]),
+        generateLongFormVideo: vi.fn().mockResolvedValue([{ id: 'mock-long-video-job', url: '', prompt: 'mock prompt' }]),
+        waitForJob: vi.fn().mockResolvedValue({ status: 'completed', url: 'http://mock-url' }),
+        subscribeToJob: vi.fn(() => () => { })
+    }
+}));
+
+describe('Agent Architecture Integration (Hardened)', () => {
+    let service: AgentService;
+    let mockStoreState: any;
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+
+        // Setup complex store state
+        mockStoreState = {
+            agentHistory: [],
+            projects: [{ id: 'p1', name: 'Integration Project', type: 'creative' }],
+            currentProjectId: 'p1',
+            userProfile: { brandKit: { tone: 'Professional' } },
+            addAgentMessage: vi.fn((msg) => mockStoreState.agentHistory.push(msg)),
+            updateAgentMessage: vi.fn((id, update) => {
+                const msg = mockStoreState.agentHistory.find((m: any) => m.id === id);
+                if (msg) Object.assign(msg, update);
+            })
+        };
+        vi.mocked(useStore.getState).mockReturnValue(mockStoreState);
+
+        // Provide a default streaming response for the Generalist agent
+        vi.mocked(AI.generateContentStream).mockImplementation(() => {
+            const stream = {
+                getReader: vi.fn().mockReturnValue({
+                    read: vi.fn()
+                        .mockResolvedValueOnce({ done: false, value: { text: () => '{"final_response":"Generalist fallback response"}' } })
+                        .mockResolvedValueOnce({ done: true, value: undefined }),
+                    releaseLock: vi.fn()
+                })
+            };
+
+            return Promise.resolve({
+                stream: stream as any,
+                response: Promise.resolve({
+                    text: () => '{"final_response":"Generalist fallback response"}',
+                    functionCalls: () => []
+                }) as any
+            });
+        });
+
+        service = new AgentService();
+    });
+
+    describe('End-to-End Execution Pipeline', () => {
+        it('should correctly orchestrate, execute, and return response for a specialist', async () => {
+            // 1. Mock Orchestrator Decision (JSON)
+            // 1. Mock Orchestrator Decision (JSON)
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => JSON.stringify({
+                    thought: 'Marketing task detected',
+                    callAgentId: 'marketing',
+                    task: 'Analyze market trends',
+                    complete: true
+                })
+            } as any);
+
+            // 2. Mock Specialist Execution
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'I have analyzed the market data.',
+                functionCalls: () => [],
+                usage: () => ({ totalTokenCount: 100 })
+            } as any);
+
+            await service.sendMessage('Analyze market trends');
+
+            // Verify Orchestrator was called
+            expect(AI.generateContent).toHaveBeenCalled();
+
+            // Verify message history updated
+            const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
+            expect(lastMsg.role).toBe('model');
+            expect(lastMsg.text).toBe('I have analyzed the market data.');
+        });
+
+        it('should handle tool execution cycles (Thinking -> Tool -> Response)', async () => {
+            // 1. Router Call (JSON)
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => JSON.stringify({
+                    thought: 'Finance task',
+                    callAgentId: 'finance',
+                    task: 'Check this budget',
+                    complete: true
+                })
+            } as any);
+
+            // 2. BaseAgent Execution - Iteration 1 (Tool Call)
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'Thinking...',
+                functionCalls: () => [{ name: 'analyze_budget', args: { amount: 1000, breakdown: 'Test' } }],
+                usage: () => ({ totalTokenCount: 100 })
+            } as any);
+
+            // 3. BaseAgent Execution - Iteration 2 (Final Response)
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'Budget analyzed. It looks good.',
+                functionCalls: () => [],
+                usage: () => ({ totalTokenCount: 50 })
+            } as any);
+
+            await service.sendMessage('Check this budget');
+
+            // Verify final response
+            const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
+            expect(lastMsg.text).toBe('Budget analyzed. It looks good.');
+            // Verify tool call was recorded in trace or somehow?
+            // BaseAgent currently doesn't append tool markers to text, but records them in agentResponse.
+        });
+    });
+
+    describe('State & Concurrency', () => {
+        it('should prevent concurrent agent executions', async () => {
+            vi.mocked(AI.generateContent).mockImplementation(async () => {
+                await new Promise(resolve => setTimeout(resolve, 50));
+                return {
+                    text: () => 'slow response',
+                    functionCalls: () => []
+                } as any;
+            });
+
+            const p1 = service.sendMessage('Request 1');
+            const p2 = service.sendMessage('Request 2');
+
+            await Promise.all([p1, p2]);
+
+            // Only one should have triggered the coordinator
+            expect(AI.generateContent).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('Robustness & Error Handling', () => {
+        it('should route to Generalist if Orchestrator hallucinations an invalid ID', async () => {
+            // 1. Orchestrator hallucination
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => JSON.stringify({
+                    thought: 'Hallucination',
+                    callAgentId: 'super-mega-agent-9000',
+                    task: 'Do something crazy',
+                    complete: true
+                })
+            } as any);
+
+            // 2. Generalist Fallback
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
+                text: () => 'I am generalist.'
+            } as any);
+
+            const generalistSpy = vi.spyOn(agentRegistry, 'getAsync');
+
+            await service.sendMessage('Do something crazy');
+
+            expect(generalistSpy).toHaveBeenCalledWith('generalist');
+            generalistSpy.mockRestore();
+        });
+
+        it('should gracefully handle agent execution failure', async () => {
+            // 1. Error simulation
+            vi.mocked(AI.generateContent).mockRejectedValueOnce(new Error('Simulated API Outage'));
+
+            const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
+
+            await service.sendMessage('Verify this');
+
+            const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
+            expect(lastMsg.role).toBe('model');
+            expect(lastMsg.text).toContain('encountered an issue');
+
+            consoleSpy.mockRestore();
+
+
+        });
+    });
+});

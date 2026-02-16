@@ -22,7 +22,7 @@
 - **Analysis**:
   - `PublicistService` allows: `subscribeToCampaigns`, `addCampaign`, `addContact`.
   - `PublicistAgent` tools: `write_press_release`, `generate_crisis_response`, `generate_social_post`.
-  - **GAP**: The Agent cannot _create_ a campaign or _read_ contacts to personalize the press release.
+  - **GAP**: The Agent cannot *create* a campaign or *read* contacts to personalize the press release.
   - **GAP**: `PublicistAgent.ts` lacks the `functions` implementation block, meaning even if the LLM calls the tool, nothing executes.
 - **Proposed Fix**:
   - Update `src/services/agent/definitions/PublicistAgent.ts`:
@@ -35,11 +35,11 @@
 ## Verification Plan
 
 1. **Manual Check**:
-   - Open Publicist Dashboard.
-   - Click "New Campaign" (currently inert, will add a placeholder log/toast).
+    - Open Publicist Dashboard.
+    - Click "New Campaign" (currently inert, will add a placeholder log/toast).
 2. **AI Check**:
-   - Verify `PublicistAgent` typescript compilation.
-   - Confirm `PublicistService` is correctly imported and utilized.
+    - Verify `PublicistAgent` typescript compilation.
+    - Confirm `PublicistService` is correctly imported and utilized.
 
 ## File Changes
 
