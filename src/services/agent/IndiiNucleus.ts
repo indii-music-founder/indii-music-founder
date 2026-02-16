@@ -72,6 +72,11 @@ ${showroom}
 
     /**
      * Build the full nucleus context including memories.
+     * 
+     * @param userId - The ID of the authenticated user.
+     * @param projectId - Optional project ID for memory retrieval.
+     * @param query - Optional query for determining memory relevance.
+     * @returns A promise resolving to the full NucleusContext.
      */
     async buildContext(userId: string, projectId?: string, query?: string): Promise<NucleusContext> {
         const [soul, artist, showroom, pulse] = await Promise.all([
@@ -98,6 +103,10 @@ ${showroom}
      * The unified execution path.
      * Splices DNA into Agent Zero's system prompt, sends the message,
      * and logs the interaction to the EPISODIC living file.
+     * 
+     * @param userMessage - The message from the user.
+     * @param options - Execution options (attachments, project, context).
+     * @returns A promise resolving to the execution result.
      */
     async execute(
         userMessage: string,

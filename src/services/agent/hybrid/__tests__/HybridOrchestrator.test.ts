@@ -69,8 +69,37 @@ describe('HybridOrchestrator Integration', () => {
             .mockResolvedValueOnce(mockResponses[1]);
 
         const result = await orchestrator.execute(mockContext, "Check copyright for my new song 'Detroit Ghost'");
-        
+
         expect(result).toContain("clear to proceed");
+        expect(AI.generateContent).toHaveBeenCalledTimes(2);
+    });
+
+    it('should prune excessively long tool results', async () => {
+        const mockResponses = [
+            {
+                text: () => JSON.stringify({
+                    thought: "Checking long data...",
+                    useTool: "browser_control",
+                    args: { url: "https://example.com" },
+                    answer: "Searching...",
+                    complete: false
+                })
+            },
+            {
+                text: () => JSON.stringify({
+                    thought: "Done.",
+                    answer: "Completed with long data check.",
+                    complete: true
+                })
+            }
+        ];
+
+        (AI.generateContent as any)
+            .mockResolvedValueOnce(mockResponses[0])
+            .mockResolvedValueOnce(mockResponses[1]);
+
+        await orchestrator.execute(mockContext, "Run with long data");
+
         expect(AI.generateContent).toHaveBeenCalledTimes(2);
     });
 });

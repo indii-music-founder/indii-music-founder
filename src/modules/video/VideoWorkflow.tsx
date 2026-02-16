@@ -291,6 +291,7 @@ export default function VideoWorkflow() {
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
                     generateAudio: studioControls.generateAudio,
+                    thinking: studioControls.thinking,
                     model: studioControls.model,
                     onProgress: (current, total) => {
                         // Optional: Could wire this up to a local progress update if store supports it
@@ -316,6 +317,7 @@ export default function VideoWorkflow() {
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
                     generateAudio: studioControls.generateAudio,
+                    thinking: studioControls.thinking,
                     model: studioControls.model
                 });
             }
