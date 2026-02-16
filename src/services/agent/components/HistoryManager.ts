@@ -14,12 +14,7 @@ export class HistoryManager {
     private readonly MAX_TOTAL_TURNS = 20;
     // High-fidelity turns kept in full
     private readonly MAX_RECENT_TURNS = 15;
-    // Threshold before we trigger summarization logic
-    private readonly MAX_TOTAL_TURNS = 25;
 
-    /**
-     * Retrieves the recent conversation history from the store.
-     */
     /**
      * Retrieves the recent conversation history from the store.
      * Filters for clean user/model messages.
@@ -54,10 +49,6 @@ export class HistoryManager {
         }).join('\n');
     }
 
-    /**
-     * Creates a "Compiled View" of the history.
-     * Uses a sliding window for recent messages and summarizes the middle-history.
-     */
     /**
      * Creates a "Compiled View" of the history.
      * Uses a sliding window for recent messages and summarizes history beyond the threshold.
