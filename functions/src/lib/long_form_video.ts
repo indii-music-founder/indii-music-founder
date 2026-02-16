@@ -628,7 +628,6 @@ export const stitchVideoFn = (inngestClient: any) => inngestClient.createFunctio
                 }, { merge: true });
             });
 
-            // Poll with step.sleep
             // Poll with step.sleep to avoid timeout (using constants)
             let jobStatus = "PENDING";
             let retries = 0;
