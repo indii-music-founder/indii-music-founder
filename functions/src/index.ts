@@ -394,6 +394,10 @@ export const triggerLongFormVideoJob = functions
 
             // 4. Create Parent Job Record
             // Calculate estimated cost for long-form (sum of segments)
+            // SENTRY FIX (PR #1200): Use DEFAULT_SEGMENT_DURATION_SECONDS (5s) instead of hardcoded 8s to prevent cost inflation.
+            const estimatedCostPerSegment = estimateVideoCost({
+                model: options.model,
+                durationSeconds: 5, // Aligned with DEFAULT_SEGMENT_DURATION_SECONDS in long_form_video.ts
             const estimatedCostPerSegment = estimateVideoCost({
                 model: options.model,
                 durationSeconds: 8, // Assuming 8s segments for long-form
