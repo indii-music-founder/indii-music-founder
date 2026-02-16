@@ -15,7 +15,8 @@ import { httpsCallable } from 'firebase/functions';
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'ledger-test-user' } },
     functionsWest1: {},
-    db: {}
+    db: {},
+    remoteConfig: { defaultConfig: {} },
 }));
 
 vi.mock('@/core/store', () => ({
