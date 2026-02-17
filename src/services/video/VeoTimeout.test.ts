@@ -32,7 +32,8 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    auth: mocks.auth,
+    auth: { currentUser: { uid: 'ledger-test-user' } },
+    functionsWest1: {},
     db: {},
     functions: {},
     remoteConfig: { defaultConfig: {} },
@@ -88,12 +89,12 @@ describe('Veo Timeout Handler (Lens)', () => {
                 data: () => ({ status: 'processing' })
             });
             // Never report completion
-            return () => {}; // unsubscribe mock
+            return () => { }; // unsubscribe mock
         });
 
         // Act & Assert
         const pendingPromise = service.waitForJob(jobId, timeoutMs);
-        pendingPromise.catch(() => {}); // Suppress unhandled rejection
+        pendingPromise.catch(() => { }); // Suppress unhandled rejection
 
         // Fast-forward time past the timeout
         await vi.advanceTimersByTimeAsync(timeoutMs + 100);
@@ -119,7 +120,7 @@ describe('Veo Timeout Handler (Lens)', () => {
                     })
                 });
             }, 1000);
-            return () => {};
+            return () => { };
         });
 
         // Act
@@ -140,8 +141,8 @@ describe('Veo Timeout Handler (Lens)', () => {
         mocks.doc.mockReturnValue('doc-ref');
 
         mocks.onSnapshot.mockImplementation((ref, callback) => {
-             // Simulate immediate failure
-             callback({
+            // Simulate immediate failure
+            callback({
                 exists: () => true,
                 id: jobId,
                 data: () => ({
@@ -149,7 +150,7 @@ describe('Veo Timeout Handler (Lens)', () => {
                     error: 'Safety violation: Copyrighted content'
                 })
             });
-            return () => {};
+            return () => { };
         });
 
         // Act & Assert
@@ -157,38 +158,38 @@ describe('Veo Timeout Handler (Lens)', () => {
     });
 
     it('should handle "Pro" generation duration correctly (mocked)', async () => {
-         // Arrange
-         const jobId = 'job-pro-123';
-         const timeoutMs = 60000; // 60s
-         mocks.doc.mockReturnValue('doc-ref');
+        // Arrange
+        const jobId = 'job-pro-123';
+        const timeoutMs = 60000; // 60s
+        mocks.doc.mockReturnValue('doc-ref');
 
-         mocks.onSnapshot.mockImplementation((ref, callback) => {
-             // Simulate "processing" initially
-             callback({
-                 exists: () => true,
-                 id: jobId,
-                 data: () => ({ status: 'processing' })
-             });
+        mocks.onSnapshot.mockImplementation((ref, callback) => {
+            // Simulate "processing" initially
+            callback({
+                exists: () => true,
+                id: jobId,
+                data: () => ({ status: 'processing' })
+            });
 
-             // Simulate completion after 29s (Pro speed)
-             setTimeout(() => {
-                 callback({
-                     exists: () => true,
-                     id: jobId,
-                     data: () => ({ status: 'completed', output: {} })
-                 });
-             }, 29000);
+            // Simulate completion after 29s (Pro speed)
+            setTimeout(() => {
+                callback({
+                    exists: () => true,
+                    id: jobId,
+                    data: () => ({ status: 'completed', output: {} })
+                });
+            }, 29000);
 
-             return () => {};
-         });
+            return () => { };
+        });
 
-         // Act
-         const pendingPromise = service.waitForJob(jobId, timeoutMs);
+        // Act
+        const pendingPromise = service.waitForJob(jobId, timeoutMs);
 
-         // Advance time by 30s
-         await vi.advanceTimersByTimeAsync(30000);
+        // Advance time by 30s
+        await vi.advanceTimersByTimeAsync(30000);
 
-         // Assert
-         await expect(pendingPromise).resolves.toMatchObject({ status: 'completed' });
+        // Assert
+        await expect(pendingPromise).resolves.toMatchObject({ status: 'completed' });
     });
 });

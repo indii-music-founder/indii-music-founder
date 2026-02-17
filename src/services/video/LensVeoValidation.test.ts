@@ -114,7 +114,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -149,7 +149,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -159,7 +159,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         });
 
         it('should strictly respect aspect_ratio request in metadata', async () => {
-             // Setup: Job completes with valid Veo metadata
+            // Setup: Job completes with valid Veo metadata
             mocks.doc.mockReturnValue('doc-ref');
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 setTimeout(() => {
@@ -180,7 +180,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             // Simulate request with aspect ratio
@@ -192,7 +192,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             expect(job.output.metadata.resolution).toBeDefined();
             const [w, h] = job.output.metadata.resolution.split('x').map(Number);
             const ratio = w / h;
-            expect(ratio).toBeCloseTo(16/9, 1);
+            expect(ratio).toBeCloseTo(16 / 9, 1);
         });
     });
 
@@ -213,7 +213,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         }
                     })
                 });
-                return () => {};
+                return () => { };
             });
 
             const start = Date.now();
@@ -248,7 +248,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
                 // Completed after 25s
                 setTimeout(() => {
-                     callback({
+                    callback({
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
@@ -261,7 +261,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                     });
                 }, 25000);
 
-                return () => {};
+                return () => { };
             });
 
             const start = Date.now();
@@ -289,7 +289,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 // Stays pending forever
                 callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
-                return () => {};
+                return () => { };
             });
 
             // Set a specific timeout for this test
@@ -316,7 +316,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -325,8 +325,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         });
 
         it('should handle granular SafetySettings violations without crashing', async () => {
-             // 🎥 SafetySettings Handshake
-             // Simulate a complex safety error structure that might come from Gemini
+            // 🎥 SafetySettings Handshake
+            // Simulate a complex safety error structure that might come from Gemini
             mocks.doc.mockReturnValue('doc-ref');
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 setTimeout(() => {
@@ -339,7 +339,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -350,24 +350,24 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         });
 
         it('should handle specific Google API error codes (400/429)', async () => {
-             mocks.doc.mockReturnValue('doc-ref');
-             mocks.onSnapshot.mockImplementation((ref, callback) => {
-                 setTimeout(() => {
-                     callback({
-                         exists: () => true,
-                         id: 'lens-veo-job-id',
-                         data: () => ({
-                             status: 'failed',
-                             error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
-                         })
-                     });
-                 }, 10);
-                 return () => {};
-             });
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'failed',
+                            error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
+                        })
+                    });
+                }, 10);
+                return () => { };
+            });
 
-             const jobPromise = service.waitForJob('lens-veo-job-id');
-             vi.advanceTimersByTime(20);
-             await expect(jobPromise).rejects.toThrow(/429 Too Many Requests/);
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            await expect(jobPromise).rejects.toThrow(/429 Too Many Requests/);
         });
     });
 });

@@ -341,7 +341,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
                                 data-testid="command-bar-run-btn"
                             >
-                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <><ArrowRight size={14} /></>}
+                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
                             </button>
                         </PromptInputAction>
                     </div>

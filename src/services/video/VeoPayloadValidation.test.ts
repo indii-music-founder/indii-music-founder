@@ -122,7 +122,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                 });
             }, 45000);
 
-            return () => {};
+            return () => { };
         });
 
         const pendingJob = service.waitForJob(jobId, 60000);
@@ -160,12 +160,12 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     })
                 });
             }, 2000);
-            return () => {};
+            return () => { };
         });
 
         const pendingJob = service.waitForJob(jobId);
         // Suppress unhandled rejection warning by attaching a catch
-        pendingJob.catch(() => {});
+        pendingJob.catch(() => { });
 
         await vi.advanceTimersByTimeAsync(2100);
 
@@ -195,13 +195,13 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     })
                 });
             }, 1000);
-            return () => {};
+            return () => { };
         });
 
         const pendingJob = service.waitForJob(jobId);
 
         // Suppress unhandled rejection warning by attaching a catch (wait for assertion)
-        pendingJob.catch(() => {});
+        pendingJob.catch(() => { });
 
         await vi.advanceTimersByTimeAsync(1100);
 
