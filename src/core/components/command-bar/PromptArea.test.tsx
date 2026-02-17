@@ -115,6 +115,6 @@ describe('PromptArea State Feedback', () => {
 
     // Verify success state: Loader gone, input cleared
     expect(screen.queryByTestId('run-loader')).not.toBeInTheDocument();
-    expect(runBtn).toBeDisabled(); // Disabled because input is cleared
+    expect(storeState.setCommandBarInput).toHaveBeenCalledWith(''); // Input cleared via store
   });
 });

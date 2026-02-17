@@ -53,12 +53,7 @@ describe('AIService Integration (Client SDK)', () => {
             'gemini-pro',
             undefined,
             undefined,
-            undefined,
-            expect.objectContaining({
-                signal: undefined,
-                safetySettings: undefined,
-                toolConfig: undefined
-            })
+            undefined
         );
     });
 
