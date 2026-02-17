@@ -35,6 +35,7 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'ledger-test-user' } },
     functionsWest1: {},
     db: {},
+    functions: {},
     remoteConfig: { defaultConfig: {} },
 }));
 

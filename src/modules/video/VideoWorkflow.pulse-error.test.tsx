@@ -215,6 +215,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         cleanup();
         render(<VideoWorkflow />);
 
+        expect(screen.getByText(/AI Director is framing the scene... \(10%\)/i)).toBeInTheDocument();
         expect(screen.getByText(/AI Director is framing the scene\.\.\. \(10%\)/i)).toBeInTheDocument();
 
         // Ensure subscription is active
@@ -241,7 +242,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         cleanup();
         render(<VideoWorkflow />);
 
-        expect(screen.queryByText(/AI Director is rendering your vision/i)).not.toBeInTheDocument();
+        expect(screen.queryByText(/AI Director is framing the scene/i)).not.toBeInTheDocument();
         expect(screen.getByText(/Director's Chair/i)).toBeInTheDocument();
     });
 });
