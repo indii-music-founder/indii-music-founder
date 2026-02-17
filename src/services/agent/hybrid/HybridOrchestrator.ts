@@ -7,6 +7,13 @@ import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import type { AgentService } from '../AgentService';
 
+const pruneResult = (value: unknown, maxLen: number = 3000): string => {
+    const text = typeof value === 'string' ? value : JSON.stringify(value ?? '') ?? '';
+    const text = typeof value === 'string' ? value : String(value ?? '');
+    if (!text) return '';
+    return text.length <= maxLen ? text : `${text.slice(0, maxLen)}…`;
+};
+
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
  * Merges OpenClaw's system/browser integration with Agent Zero's autonomous multi-turn reasoning.
@@ -132,6 +139,7 @@ export class HybridOrchestrator {
                             agent: decision.callAgentId,
                             result: pruneResult(result.text, 5000) // Larger limit for specialist feedback
                         });
+                        history.push({ turn: currentTurn, agent: decision.callAgentId, result: pruneResult(result.text, 5000) });
                         lastAgentResponse = result.text;
                     } catch (agentErr: any) {
                         console.error(`[indii:Hybrid] Specialist ${decision.callAgentId} failed:`, agentErr);
@@ -151,6 +159,7 @@ export class HybridOrchestrator {
                             tool: 'knowledge_base',
                             result: pruneResult(result.data?.answer || '')
                         });
+                        history.push({ turn: currentTurn, tool: 'knowledge_base', result: pruneResult(result.data?.answer, 3000) });
                         lastAgentResponse = result.data?.answer;
                     } catch (toolErr) {
                         console.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
@@ -196,6 +205,7 @@ export class HybridOrchestrator {
                             tool: 'agent_zero_deep',
                             result: pruneResult(result.message)
                         });
+                        history.push({ turn: currentTurn, tool: 'agent_zero_deep', result: pruneResult(result.message, 3000) });
                         lastAgentResponse = result.message;
                     } catch (azErr) {
                         console.error(`[indii:Hybrid] Agent Zero Container failed:`, azErr);
