@@ -279,9 +279,9 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
 
                 // 4. Extract last frame for daisychaining
                 if (i < prompts.length - 1) {
-                    // FIX #3: Better error handling for frame extraction - retry with fallback
                     let extractionAttempts = 0;
                     const maxExtractionAttempts = 2;
+                    let nextStartImage = undefined;
 
                     while (extractionAttempts < maxExtractionAttempts) {
                         try {
@@ -300,7 +300,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                     // Normalize Input URI
                                     const inputUri = toGcsUri(segmentUrl);
 
-                                    // Calculate frame extraction time dynamically
+                                    // Calculate frame extraction time
                                     const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
                                     const extractionTime = Math.min(
                                         DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
@@ -309,7 +309,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                     const extractionSeconds = Math.floor(extractionTime);
                                     const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
 
-                                    // Create Sprite Job
+                                    // Create Sprite Job for frame extraction
                                     const [job] = await transcoder.createJob({
                                         parent: transcoder.locationPath(projectId, location),
                                         job: {
@@ -337,83 +337,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                 }
                             });
 
-                            // 2. Poll for Completion using step.sleep
-                            let finalState = 'PROCESSING';
-                            for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
-                                await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
-
-                        if (nextStartImage) currentStartImage = nextStartImage;
-
-
-                    } catch (e: any) {
-                        console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, e.message);
-                        // Continue without chaining if extraction fails
-                    }
-
-                    // FIX #3: Better error handling for frame extraction - retry with fallback
-                    let extractionAttempts = 0;
-                    const maxExtractionAttempts = 2;
-
-                    while (extractionAttempts < maxExtractionAttempts) {
-                            try {
-                                // 1. Trigger Frame Extraction Job
-                                const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
-                                    const auth = new GoogleAuth({
-                                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                        try {
-                            // 1. Trigger Frame Extraction Job
-                            const jobName = await step.run(`trigger-extract-frame-${i}-attempt-${extractionAttempts}`, async () => {
-                                const auth = new GoogleAuth({
-                                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                                });
-                                const transcoder = new TranscoderServiceClient();
-                                try {
-                                    const projectId = await auth.getProjectId();
-                                    const location = 'us-central1';
-                                    const bucket = admin.storage().bucket();
-                                    const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
-
-                                    // Normalize Input URI
-                                    const inputUri = toGcsUri(segmentUrl);
-
-                                    // Calculate frame extraction time dynamically
-                                    const videoDurationSeconds = DEFAULT_SEGMENT_DURATION_SECONDS;
-                                    const extractionTime = Math.min(
-                                        DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
-                                        videoDurationSeconds - 0.5
-                                    );
-                                    const extractionSeconds = Math.floor(extractionTime);
-                                    const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
-
-                                    // Create Sprite Job
-                                    const [job] = await transcoder.createJob({
-                                        parent: transcoder.locationPath(projectId, location),
-                                        job: {
-                                            outputUri,
-                                            config: {
-                                                inputs: [{ key: "input0", uri: inputUri }],
-                                                editList: [{ key: "atom0", inputs: ["input0"] }],
-                                                spriteSheets: [
-                                                    {
-                                                        filePrefix: "frame_",
-                                                        startTimeOffset: { seconds: extractionSeconds, nanos: extractionNanos },
-                                                        endTimeOffset: { seconds: 0, nanos: 0 },
-                                                        columnCount: 1,
-                                                        rowCount: 1,
-                                                        totalCount: 1,
-                                                        quality: 100
-                                                    }
-                                                ]
-                                            }
-                                        }
-                                    });
-                                    return job.name;
-                                } finally {
-                                    await transcoder.close();
-                                }
-                            });
-
-                            // 2. Poll for Completion using step.sleep
+                            // 2. Poll for Completion
                             let finalState = 'PROCESSING';
                             for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
                                 await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
@@ -441,7 +365,7 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                             }
 
                             // 3. Download and Convert to Base64
-                            const nextStartImage = await step.run(`download-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                            nextStartImage = await step.run(`download-frame-${i}-attempt-${extractionAttempts}`, async () => {
                                 const bucket = admin.storage().bucket();
                                 const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
 
@@ -454,32 +378,20 @@ export const generateLongFormVideoFn = (inngestClient: any, geminiApiKey: any) =
                                 return `data:image/jpeg;base64,${buffer.toString('base64')}`;
                             });
 
-                            currentStartImage = nextStartImage;
-                            break; // Success - exit retry loop
+                            if (nextStartImage) {
+                                currentStartImage = nextStartImage;
+                                break; // Success
+                            }
                         } catch (e: any) {
                             extractionAttempts++;
-                            console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, e.message);
-
+                            console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed:`, e.message);
                             if (extractionAttempts >= maxExtractionAttempts) {
-                                // FIX #3: Log detailed error and continue without chaining
-                                // This prevents complete job failure while maintaining visibility
-                                console.error(`[LongForm] All frame extraction attempts failed for segment ${i}. Continuing without visual continuity.`);
-                                await step.run(`log-extraction-failure-${i}`, async () => {
-                                    await admin.firestore().collection("videoJobs").doc(jobId).set({
-                                        warnings: admin.firestore.FieldValue.arrayUnion(
-                                            `Frame extraction failed for segment ${i}: ${e.message}. Visual continuity may be affected.`
-                                        ),
-                                        updatedAt: admin.firestore.FieldValue.serverTimestamp()
-                                    }, { merge: true });
-                                });
-                                // Clear currentStartImage to prevent using stale data
-                                currentStartImage = undefined;
+                                currentStartImage = undefined; // Continue without continuity
                             }
                         }
                     }
                 }
-
-            } // This brace closes the `for (let i = 0; i < prompts.length; i++)` loop.
+            } // Close for prompts loop
 
             // All segments done, trigger stitching
             const derivedMetadata = {

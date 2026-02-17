@@ -101,7 +101,12 @@ vi.mock('firebase/firestore', () => ({
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
-vi.mock('@/services/firebase', () => ({ db: {} }));
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    remoteConfig: { defaultConfig: {} },
+    functions: {},
+    auth: { currentUser: { uid: 'test-user' } }
+}));
 
 // Helper to update store mock during test execution
 const updateStoreMock = (overrides: any) => {
@@ -179,7 +184,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         cleanup();
         render(<VideoWorkflow />);
 
-        expect(screen.getByText(/AI Director is rendering your vision \(0%\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/AI Director is framing the scene/i)).toBeInTheDocument();
         expect(VideoGeneration.subscribeToJob).toHaveBeenCalledWith(mockJobId, expect.any(Function));
 
         // 5. PROGRESS UPDATES
@@ -193,7 +198,8 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         cleanup();
         render(<VideoWorkflow />);
 
-        expect(screen.getByText(/AI Director is rendering your vision \(45%\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/AI Director is framing the scene/i)).toBeInTheDocument();
+        expect(screen.getByText(/\(45%\)/i)).toBeInTheDocument();
         expect(mockSetProgress).toHaveBeenCalledWith(45);
 
         // 6. SUCCESS STATE
