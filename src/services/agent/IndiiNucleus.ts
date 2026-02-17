@@ -122,6 +122,7 @@ ${showroom}
 </system_dna>
 `.trim();
             return `
+            return `
       ${industryProtocol}
       <system_dna>
         <soul>${soul}</soul>
