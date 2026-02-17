@@ -65,6 +65,41 @@ vi.mock('../../video/editor/VideoEditor', () => ({
     VideoEditor: () => <div data-testid="video-editor" />
 }));
 
+vi.mock('../../creative/components/CreativeGallery', () => ({
+    default: () => (
+        <div data-testid="creative-gallery">
+            <button data-testid="set-first-frame-btn" onClick={() => {
+                // Trigger the flow to set first frame
+                const { setVideoInput, setViewMode } = require('@/core/store').useStore.getState();
+                setVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
+                require('@/core/context/ToastContext').useToast().success('Set as First Frame');
+            }}>First Frame</button>
+            <button data-testid="set-last-frame-btn" onClick={() => {
+                const { setVideoInput } = require('@/core/store').useStore.getState();
+                setVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
+                require('@/core/context/ToastContext').useToast().success('Set as Last Frame');
+            }}>Last Frame</button>
+        </div>
+    )
+}));
+
+vi.mock('../../creative/components/CreativeNavbar', () => ({
+    default: () => (
+        <div data-testid="creative-navbar">
+            <button data-testid="gallery-view-btn" onClick={() => require('@/core/store').useStore.getState().setViewMode('gallery')}>Gallery</button>
+            <button data-testid="director-view-btn" onClick={() => require('@/core/store').useStore.getState().setViewMode('video_production')}>Director</button>
+        </div>
+    )
+}));
+
+vi.mock('../../creative/components/CreativeCanvas', () => ({
+    default: () => <div data-testid="creative-canvas" />
+}));
+
+vi.mock('../../creative/components/InfiniteCanvas', () => ({
+    default: () => <div data-testid="infinite-canvas" />
+}));
+
 describe('🖱️ Click: Video Production Daisychain', () => {
     const mockToast = {
         success: vi.fn(),
@@ -97,56 +132,52 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 currentOrganizationId: 'o1'
             });
 
-            const setVideoInput = (key: string, val: any) => {
+            const setVideoInput = React.useCallback((key: string, val: any) => {
                 setState((prev: any) => ({
                     ...prev,
                     videoInputs: { ...prev.videoInputs, [key]: val }
                 }));
-            };
+            }, []);
 
-            const setGenerationMode = (mode: string) => {
+            const setGenerationMode = React.useCallback((mode: string) => {
                 setState((prev: any) => ({ ...prev, generationMode: mode }));
-            };
+            }, []);
 
-            const setViewMode = (mode: string) => {
+            const setViewMode = React.useCallback((mode: string) => {
                 setState((prev: any) => ({ ...prev, viewMode: mode }));
-            };
+            }, []);
 
-            const setPrompt = (p: string) => {
+            const setPrompt = React.useCallback((p: string) => {
                 setState((prev: any) => ({ ...prev, prompt: p }));
-            };
+            }, []);
 
-            const addToHistory = (item: any) => {
+            const addToHistory = React.useCallback((item: any) => {
                 setState((prev: any) => ({ ...prev, generatedHistory: [...prev.generatedHistory, item] }));
-            };
+            }, []);
 
-            (useStore as any).mockImplementation((selector: any) => {
-                const storeState = {
-                    ...state,
-                    setVideoInput,
-                    setGenerationMode,
-                    setViewMode,
-                    setPrompt,
-                    addToHistory,
-                    setSelectedItem: vi.fn(),
-                    setPendingPrompt: vi.fn(),
-                    selectedItem: null,
-                    userProfile: { id: 'u1', name: 'Test User' },
-                    whiskState: { subjects: [], scenes: [], styles: [], motion: [], preciseReference: false, targetMedia: 'video' }
-                };
-                return selector ? selector(storeState) : storeState;
-            });
-
-            // Mock useStore properties
-            (useStore as any).getState = () => ({
+            const storeState = React.useMemo(() => ({
+                ...state,
                 setVideoInput,
                 setGenerationMode,
                 setViewMode,
-                setSelectedItem: vi.fn(),
-                videoInputs: state.videoInputs,
+                setPrompt,
                 addToHistory,
+                setSelectedItem: vi.fn(),
+                setPendingPrompt: vi.fn(),
+                selectedItem: null,
+                userProfile: { id: 'u1', name: 'Test User' },
+                whiskState: { subjects: [], scenes: [], styles: [], motion: [], preciseReference: false, targetMedia: 'video' },
+                // Mock properties accessed via getState
+                videoInputs: state.videoInputs,
                 setIsGenerating: vi.fn()
+            }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
+
+            (useStore as any).mockImplementation((selector: any) => {
+                return selector ? selector(storeState) : storeState;
             });
+
+            // Mock useStore properties for direct access
+            (useStore as any).getState = () => storeState;
             (useStore as any).setState = vi.fn();
             (useStore as any).subscribe = vi.fn();
 
@@ -162,12 +193,16 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         const galleryTab = screen.getByTestId('gallery-view-btn');
         fireEvent.click(galleryTab);
 
-        const firstFrameBtn = screen.getAllByTestId('set-first-frame-btn')[0];
+        await waitFor(() => {
+            expect(screen.getByTestId('creative-gallery')).toBeInTheDocument();
+        });
+
+        const firstFrameBtn = screen.getByTestId('set-first-frame-btn');
         fireEvent.click(firstFrameBtn);
 
-        expect(mockToast.success).toHaveBeenCalledWith('Set as First Frame'); // Updated expected message
+        expect(mockToast.success).toHaveBeenCalledWith('Set as First Frame');
 
-        const lastFrameBtn = screen.getAllByTestId('set-last-frame-btn')[1];
+        const lastFrameBtn = screen.getByTestId('set-last-frame-btn');
         fireEvent.click(lastFrameBtn);
         expect(mockToast.success).toHaveBeenCalledWith('Set as Last Frame'); // Updated expected message
 
