@@ -73,7 +73,6 @@ export const processJobUpdate = (
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The AI community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
-            const localPath = '';
 
             // Trigger background download via Electron
             // We don't await this to avoid blocking the UI update, but we log it
@@ -83,7 +82,7 @@ export const processJobUpdate = (
                         console.log('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
-                    .catch((err: any) => console.error('Failed to save to local folder:', err));
+                    .catch((err: unknown) => console.error('Failed to save to local folder:', err));
             }
 
             const newAsset = {
@@ -129,7 +128,7 @@ export default function VideoWorkflow() {
         selectedItem,
         setVideoInputs,
         whiskState
-    } = useStore(useShallow((state) => ({
+    } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
         updateHistoryItem: state.updateHistoryItem,
@@ -255,10 +254,11 @@ export default function VideoWorkflow() {
                     const filename = `veo_${jobId}.mp4`;
 
                     // Trigger background download via Electron
+                    // Trigger background download via Electron
                     if (window.electronAPI?.video?.saveAsset) {
                         window.electronAPI.video.saveAsset(data.videoUrl, filename)
                             .then((path: string) => console.log('Video saved locally to:', path))
-                            .catch((err: any) => console.error('Failed to save to local folder:', err));
+                            .catch((err: unknown) => console.error('Failed to save to local folder:', err));
                     }
 
                     const newAsset = {
@@ -387,7 +387,7 @@ export default function VideoWorkflow() {
                                     console.log('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });
                                 })
-                                .catch((err: any) => console.error('Failed to save to local folder:', err));
+                                .catch((err: unknown) => console.error('Failed to save to local folder:', err));
                         }
 
                         const newAsset = {

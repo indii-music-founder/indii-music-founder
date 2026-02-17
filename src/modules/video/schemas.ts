@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { UserProfile } from "@/types/User";
 
 export const VideoJobStatusSchema = z.enum([
     'idle', 'queued', 'processing', 'completed', 'failed', 'stitching'
@@ -43,7 +44,7 @@ export const VideoGenerationOptionsSchema = z.object({
     generateAudio: z.boolean().optional(),
     thinking: z.boolean().optional(),
     orgId: z.string().optional(),
-    userProfile: z.unknown().optional() // Complex object, keep loose for now
+    userProfile: z.custom<UserProfile>().optional() // Typed UserProfile for service compatibility
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

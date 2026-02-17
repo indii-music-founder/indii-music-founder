@@ -17,7 +17,7 @@ interface ChatOverlayProps {
     onToggleMinimize?: () => void;
 }
 
-const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
+const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) => {
     // ⚡ Bolt Optimization: Selective store subscription
     const messages = useStore(state => state.agentHistory);
     const isProcessing = useStore(state => state.isAgentProcessing);
@@ -87,7 +87,10 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
 
     // Visibility Toggles
     const toggleStealth = useCallback(() => setIsStealth(prev => !prev), []);
-    const toggleLocalMinimize = useCallback(() => setIsMinimized(prev => !prev), []);
+    const toggleLocalMinimize = useCallback(() => {
+        setIsMinimized(prev => !prev);
+        if (onToggleMinimize) onToggleMinimize();
+    }, [onToggleMinimize]);
 
     // Derived state for active agent
     const activeAgentId = useStore(state => {
@@ -201,9 +204,9 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                 {!isStealth && (
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ 
-                            opacity: 1, 
-                            scale: isMinimized ? 0.2 : 1, 
+                        animate={{
+                            opacity: 1,
+                            scale: isMinimized ? 0.2 : 1,
                             y: 0,
                             width: isMinimized ? 80 : localSize.width,
                             height: isMinimized ? 80 : localSize.height,
@@ -251,7 +254,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                 <div onPointerDown={(e) => dragControls.start(e)} className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/80 to-transparent z-20 cursor-grab active:cursor-grabbing" />
                                 <div className="relative z-30 px-6 py-5 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
                                     <div onPointerDown={(e) => dragControls.start(e)} className="absolute inset-0 z-0 cursor-grab active:cursor-grabbing" />
-                                    
+
                                     <div className="flex items-center gap-4 relative z-10 pointer-events-none">
                                         <div className="relative group pointer-events-auto">
                                             <div className={`absolute -inset-1 bg-${activeBrandColor}-500/30 rounded-full blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-500`} />
