@@ -9,6 +9,7 @@ import type { AgentService } from '../AgentService';
 
 const pruneResult = (value: unknown, maxLen: number = 3000): string => {
     const text = typeof value === 'string' ? value : JSON.stringify(value ?? '') ?? '';
+    const text = typeof value === 'string' ? value : String(value ?? '');
     if (!text) return '';
     return text.length <= maxLen ? text : `${text.slice(0, maxLen)}…`;
 };

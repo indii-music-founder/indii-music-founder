@@ -117,6 +117,15 @@ vi.mock('@google/genai', () => ({
     GoogleGenAI: class {
         models = {
             generateContent: (...args: any[]) => {
+                console.log('MOCK: GoogleGenAI.generateContent called');
+                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
+                    candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
+                    usageMetadata: { totalTokenCount: 10 },
+                    text: 'Mock response'
+                });
+            },
+            generateContentStream: (...args: any[]) => {
+                console.log('MOCK: GoogleGenAI.generateContentStream called');
                 return Promise.resolve(mockGenerateContent(...args)).then((res: any) => {
                     if (res && res.response) {
                         return {
@@ -140,6 +149,9 @@ vi.mock('@google/genai', () => ({
                 };
             }
         };
+
+        constructor() { }
+
         constructor() { }
         getGenerativeModel() {
             return {
@@ -254,10 +266,12 @@ describe('📚 Keeper: Context Integrity', () => {
 
     describe('💰 Token Budget (Quota Check)', () => {
         let aiService: FirebaseAIService;
+        let modelGenerateContent: any;
 
         beforeEach(async () => {
             vi.clearAllMocks();
 
+            modelGenerateContent = vi.fn().mockResolvedValue({
             mockGenerateContent.mockResolvedValue({
                 response: {
                     text: () => 'Response',
@@ -268,7 +282,7 @@ describe('📚 Keeper: Context Integrity', () => {
             // Mock getGenerativeModel return
             mockGetGenerativeModel.mockReturnValue({
                 model: 'gemini-test',
-                generateContent: mockGenerateContent
+                generateContent: modelGenerateContent
             });
 
             aiService = new FirebaseAIService();
@@ -298,7 +312,7 @@ describe('📚 Keeper: Context Integrity', () => {
             expect(mockCheckQuota).toHaveBeenCalledWith('test-user');
 
             // Ensure AI was NOT called
-            expect(mockGenerateContent).not.toHaveBeenCalled();
+            expect(modelGenerateContent).not.toHaveBeenCalled();
         });
 
         it('should allow request if TokenUsageService passes', async () => {
