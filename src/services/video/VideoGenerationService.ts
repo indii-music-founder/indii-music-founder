@@ -1,22 +1,18 @@
 import { firebaseAI } from '../ai/FirebaseAIService';
-import { AI } from '../ai/AIService';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-import type { ShotItem } from '@/core/store';
+import { AI_CONFIG } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
-import { extractVideoFrame } from '@/utils/video';
 import { functionsWest1 as functions, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
-import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
-import { delay } from '@/utils/async';
 import { UserProfile } from '@/modules/workflow/types';
 import { getVideoConstraints } from '../onboarding/DistributorContext';
 import { VideoGenerationOptionsSchema, VideoGenerationOptions, VideoAspectRatioSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
+import { VideoJob, VideoSafetyRating } from '@/types/video';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
@@ -45,7 +41,7 @@ export class VideoGenerationService {
             Return a concise but descriptive paragraph (max 50 words) describing the video sequence.`;
 
             return await firebaseAI.analyzeImage(analysisPrompt, image);
-        } catch (e) {
+        } catch (_e) {
             // Temporal analysis failure should not block generation
             return "";
         }
@@ -58,7 +54,7 @@ export class VideoGenerationService {
                 canGenerate: quotaCheck.allowed,
                 reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
-        } catch (e) {
+        } catch (_e) {
             // Quota check failure should not block generation on fallback
             return { canGenerate: true }; // Fallback to avoid blocking
         }
@@ -194,7 +190,7 @@ export class VideoGenerationService {
     /**
      * Subscribes to a video job status.
      */
-    subscribeToJob(jobId: string, callback: (job: any) => void): () => void {
+    subscribeToJob(jobId: string, callback: (job: VideoJob | null) => void): () => void {
         const jobRef = doc(db, 'videoJobs', jobId);
         let maxQualityLevel = 0;
 
@@ -206,7 +202,7 @@ export class VideoGenerationService {
 
         return onSnapshot(jobRef, (snapshot) => {
             if (snapshot.exists()) {
-                const data = snapshot.data();
+                const data = snapshot.data() as VideoJob;
                 const quality = data.output?.metadata?.quality;
                 const currentLevel = getQualityLevel(quality);
 
@@ -221,7 +217,7 @@ export class VideoGenerationService {
                     maxQualityLevel = currentLevel;
                 }
 
-                callback({ id: snapshot.id, ...data });
+                callback({ ...data }); // data already contains id
             } else {
                 callback(null);
             }
@@ -231,12 +227,12 @@ export class VideoGenerationService {
     /**
      * Await a job to reach a terminal state (completed or failed).
      */
-    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<any> {
+    async waitForJob(jobId: string, timeoutMs: number = AI_CONFIG.VIDEO.MAX_TIMEOUT_MS): Promise<VideoJob> {
         let unsub: (() => void) | undefined;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
         const jobPromise = new Promise((resolve, reject) => {
-            unsub = this.subscribeToJob(jobId, async (job) => {
+            unsub = this.subscribeToJob(jobId, async (job: VideoJob | null) => {
                 if (!job) return;
 
                 if (job.status === 'completed' || job.status === 'failed') {
@@ -270,7 +266,7 @@ export class VideoGenerationService {
                         // Enhanced Safety Reporting
                         let errorMsg = job.error || 'Video generation failed.';
                         if (job.safety_ratings && Array.isArray(job.safety_ratings)) {
-                            const blocked = job.safety_ratings.find((r: any) => r.blocked);
+                            const blocked = job.safety_ratings.find((r: VideoSafetyRating) => r.blocked);
                             if (blocked) {
                                 errorMsg = `Safety Violation: ${blocked.category} (${blocked.probability})`;
                             }
@@ -288,7 +284,7 @@ export class VideoGenerationService {
         });
 
         try {
-            return await Promise.race([jobPromise, timeoutPromise]);
+            return await Promise.race([jobPromise, timeoutPromise]) as VideoJob;
         } finally {
             if (unsub) unsub();
             if (timeoutId) clearTimeout(timeoutId);

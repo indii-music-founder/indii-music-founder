@@ -1,9 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { ItmspPackagingFeature } from '../../src/features/distribution/ItmspPackagingFeature';
+
+interface MockPythonBridge {
+  runScript: Mock;
+}
 
 describe('ItmspPackagingFeature', () => {
   let feature: ItmspPackagingFeature;
-  let mockPythonBridge: any;
+  let mockPythonBridge: MockPythonBridge;
 
   beforeEach(() => {
     feature = new ItmspPackagingFeature();

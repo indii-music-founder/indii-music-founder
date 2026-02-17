@@ -100,10 +100,17 @@ export interface DDEXMetadata {
     releaseId: string;
     title: string;
     artists: string[];
-    tracks: any[];
+    tracks: unknown[];
     label?: string;
     upc?: string;
     genre?: string;
+}
+
+export interface ForensicsReport {
+    status: 'PASS' | 'FAIL' | 'WARNING';
+    score: number;
+    issues?: string[];
+    details?: Record<string, unknown>;
 }
 
 export interface ValidationReport {
@@ -122,15 +129,15 @@ export interface IPCResponse<T> {
 }
 
 // Specific IPC Responses
-export interface ISRCResponse extends IPCResponse<any> {
+export interface ISRCResponse extends IPCResponse<unknown> {
     isrc?: string;
 }
 
-export interface UPCResponse extends IPCResponse<any> {
+export interface UPCResponse extends IPCResponse<unknown> {
     upc?: string;
 }
 
-export interface DDEXResponse extends IPCResponse<any> {
+export interface DDEXResponse extends IPCResponse<unknown> {
     xml?: string;
 }
 
@@ -139,7 +146,7 @@ export interface CSVResponse<T> extends IPCResponse<T> {
     csvData?: string; // For Content ID (legacy naming)
 }
 
-export interface PackageResponse extends IPCResponse<any> {
+export interface PackageResponse extends IPCResponse<unknown> {
     itmspPath?: string;
     packagePath?: string;
     files?: string[];

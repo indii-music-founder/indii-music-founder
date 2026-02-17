@@ -38,7 +38,9 @@
   },
   "include": [
     "src",
-    "src/**/*.d.ts"
+    "src/**/*.d.ts",
+    "tests",
+    "tests/**/*.ts"
   ],
   "exclude": [
     "src/_archive_legacy",

@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { audioService } from '@/services/audio/AudioService';
 
@@ -7,6 +8,35 @@ interface VoiceContextType {
     isListening: boolean;
     toggleListening: () => void;
     transcript: string;
+}
+
+interface SpeechRecognitionResult {
+    isFinal: boolean;
+    readonly length: number;
+    [index: number]: {
+        transcript: string;
+        confidence: number;
+    };
+}
+
+interface SpeechRecognitionEvent {
+    resultIndex: number;
+    results: {
+        length: number;
+        [index: number]: SpeechRecognitionResult;
+    };
+}
+
+interface SpeechRecognitionInstance {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    onstart: () => void;
+    onend: () => void;
+    onresult: (event: SpeechRecognitionEvent) => void;
+    onerror: (event: { error: string }) => void;
+    start: () => void;
+    stop: () => void;
 }
 
 const VoiceContext = createContext<VoiceContextType | undefined>(undefined);
@@ -20,7 +50,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const [isListening, setIsListening] = useState(false);
     const [transcript, setTranscript] = useState('');
-    const recognitionRef = useRef<any>(null);
+    const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
 
     const setVoiceEnabled = (enabled: boolean) => {
         setVoiceEnabledState(enabled);
@@ -35,16 +65,17 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     // Initialize Speech Recognition
     useEffect(() => {
         if (typeof window !== 'undefined') {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
             if (SpeechRecognition) {
-                const recognitionInstance = new SpeechRecognition();
+                const recognitionInstance = new SpeechRecognition() as SpeechRecognitionInstance;
                 recognitionInstance.continuous = true;
                 recognitionInstance.interimResults = true;
                 recognitionInstance.lang = 'en-US';
 
                 recognitionInstance.onstart = () => setIsListening(true);
                 recognitionInstance.onend = () => setIsListening(false);
-                recognitionInstance.onresult = (event: any) => {
+                recognitionInstance.onresult = (event) => {
                     let interimTranscript = '';
                     let finalTranscript = '';
 
@@ -58,7 +89,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     setTranscript(finalTranscript || interimTranscript);
                 };
 
-                recognitionInstance.onerror = (event: any) => {
+                recognitionInstance.onerror = (event) => {
                     console.error('Speech recognition error', event.error);
                     setIsListening(false);
                 };

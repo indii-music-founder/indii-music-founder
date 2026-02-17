@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import { BaseAgent } from '@/services/agent/BaseAgent';
-import { AgentConfig } from '@/services/agent/types';
-import { AppException } from '@/shared/types/errors';
+import { AgentConfig, ValidAgentId } from '@/services/agent/types';
 
 // ----------------------------------------------------------------------------
 // MOCKS
@@ -18,8 +17,8 @@ const { mockGenerateContentStream, mockGenerateContent, mockCheckQuota, mockTrac
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
-        generateContentStream: (...args: any[]) => mockGenerateContentStream(...args),
-        generateContent: (...args: any[]) => mockGenerateContent(...args),
+        generateContentStream: (...args: unknown[]) => mockGenerateContentStream(...args),
+        generateContent: (...args: unknown[]) => mockGenerateContent(...args),
         generateSpeech: vi.fn(),
     }
 }));
@@ -27,8 +26,8 @@ vi.mock('@/services/ai/AIService', () => ({
 // Mock TokenUsageService to verify quota checks
 vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     TokenUsageService: {
-        checkQuota: (...args: any[]) => mockCheckQuota(...args),
-        trackUsage: (...args: any[]) => mockTrackUsage(...args),
+        checkQuota: (...args: unknown[]) => mockCheckQuota(...args),
+        trackUsage: (...args: unknown[]) => mockTrackUsage(...args),
         checkRateLimit: vi.fn().mockResolvedValue(true),
     }
 }));
@@ -63,12 +62,12 @@ vi.mock('@/services/firebase', () => ({
 // We also need to mock 'firebase/ai' entirely since we are testing FirebaseAIService
 // which imports from 'firebase/ai'.
 const mockGetGenerativeModel = vi.fn().mockReturnValue({
-    generateContent: (...args: any[]) => mockGenerateContent(...args).then((res: any) => res || { response: { text: () => 'Mock response', functionCalls: () => [], usageMetadata: {} } }),
-    generateContentStream: (...args: any[]) => mockGenerateContentStream(...args) || { stream: (async function* () { yield { text: () => 'Mock' }; })(), response: Promise.resolve({}) }
+    generateContent: (...args: unknown[]) => mockGenerateContent(...args).then((res: unknown) => res || { response: { text: () => 'Mock response', functionCalls: () => [], usageMetadata: {} } }),
+    generateContentStream: (...args: unknown[]) => mockGenerateContentStream(...args) || { stream: (async function* () { yield { text: () => 'Mock' }; })(), response: Promise.resolve({}) }
 });
 
 vi.mock('firebase/ai', () => ({
-    getGenerativeModel: (...args: any[]) => mockGetGenerativeModel(...args),
+    getGenerativeModel: (...args: unknown[]) => mockGetGenerativeModel(...args),
     getLiveGenerativeModel: vi.fn(),
 }));
 
@@ -116,41 +115,25 @@ vi.mock('@/services/agent/ToolExecutionContext', () => ({
 vi.mock('@google/genai', () => ({
     GoogleGenAI: class {
         models = {
-            generateContent: (...args: any[]) => {
+            generateContent: (...args: unknown[]) => {
                 console.log('MOCK: GoogleGenAI.generateContent called');
-                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
+                return Promise.resolve(mockGenerateContent(...args)).then((res: unknown) => res || {
                     candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
                     usageMetadata: { totalTokenCount: 10 },
                     text: 'Mock response'
                 });
             },
-            generateContentStream: (...args: any[]) => {
-                console.log('MOCK: GoogleGenAI.generateContentStream called');
-                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => {
-                    if (res && res.response) {
-                        return {
-                            candidates: res.response.candidates || [],
-                            usageMetadata: res.response.usageMetadata,
-                            text: typeof res.response.text === 'function' ? res.response.text() : res.response.text,
-                            functionCalls: typeof res.response.functionCalls === 'function' ? res.response.functionCalls() : res.response.functionCalls
-                        };
-                    }
-                    return res || {
-                        candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
-                        usageMetadata: { totalTokenCount: 10 },
-                        text: 'Mock response'
-                    };
-                });
-            },
-            generateContentStream: (...args: any[]) => {
+            generateContentStream: (...args: unknown[]) => {
                 return mockGenerateContentStream(...args) || {
                     stream: (async function* () { yield { text: () => 'Mock stream token' }; })(),
-                    response: Promise.resolve({})
+                    response: Promise.resolve({
+                        text: () => 'Mock response',
+                        functionCalls: () => [],
+                        usageMetadata: { totalTokenCount: 10 }
+                    })
                 };
             }
         };
-
-        constructor() { }
 
         constructor() { }
         getGenerativeModel() {
@@ -179,7 +162,7 @@ describe('📚 Keeper: Context Integrity', () => {
 
             // Setup a basic agent
             const config: AgentConfig = {
-                id: 'keeper-test-agent' as any,
+                id: 'keeper-test-agent' as ValidAgentId,
                 name: 'Keeper Test Agent',
                 description: 'A test agent for memory verification',
                 color: '#000000',
@@ -228,7 +211,7 @@ describe('📚 Keeper: Context Integrity', () => {
             expect(mockGenerateContent).toHaveBeenCalledTimes(1);
             const callArgs = mockGenerateContent.mock.calls[0][0];
             const promptParts = callArgs.contents[0].parts;
-            const textPart = promptParts.find((p: any) => p.text && p.text.includes('# HISTORY'));
+            const textPart = promptParts.find((p: { text?: string }) => p.text && p.text.includes('# HISTORY'));
 
             expect(textPart).toBeDefined();
             const fullPrompt = textPart.text;
@@ -266,12 +249,18 @@ describe('📚 Keeper: Context Integrity', () => {
 
     describe('💰 Token Budget (Quota Check)', () => {
         let aiService: FirebaseAIService;
-        let modelGenerateContent: any;
+        let modelGenerateContent: Mock;
 
         beforeEach(async () => {
             vi.clearAllMocks();
 
             modelGenerateContent = vi.fn().mockResolvedValue({
+                response: {
+                    text: () => 'Response',
+                    usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
+                }
+            });
+
             mockGenerateContent.mockResolvedValue({
                 response: {
                     text: () => 'Response',

@@ -202,11 +202,11 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         (agentService as any).isWarmedUp = true;
 
         // Log locks
-        // @ts-ignore
+        // @ts-expect-error - testing internal state
         if (BaseAgent.executionLocks) {
-            // @ts-ignore
+            // @ts-expect-error - testing internal state
             console.log('[TEST] ExecutionLocks size:', BaseAgent.executionLocks?.size);
-            // @ts-ignore
+            // @ts-expect-error - testing internal state
             BaseAgent.executionLocks.clear();
         }
     });

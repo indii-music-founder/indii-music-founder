@@ -33,17 +33,17 @@ export const VideoGenerationOptionsSchema = z.object({
     }).optional(),
     timeOffset: z.number().optional(),
     ingredients: z.array(z.string()).optional(),
-    referenceImages: z.array(z.any()).optional(), // Veo 3.1 alias
+    referenceImages: z.array(z.unknown()).optional(), // Veo 3.1 alias
     duration: z.number().min(1).max(300).optional(), // 5 minutes max per atomic job
     durationSeconds: z.number().optional(), // Alias for consistency
     fps: z.number().int().min(1).max(60).optional(),
     cameraMovement: z.string().optional(),
     motionStrength: z.number().min(0).max(1).optional(),
-    shotList: z.array(z.any()).optional(), // Can refine later
+    shotList: z.array(z.unknown()).optional(), // Can refine later
     generateAudio: z.boolean().optional(),
     thinking: z.boolean().optional(),
     orgId: z.string().optional(),
-    userProfile: z.any().optional() // Complex object, keep loose for now
+    userProfile: z.unknown().optional() // Complex object, keep loose for now
 });
 
 export type VideoGenerationOptions = z.infer<typeof VideoGenerationOptionsSchema>;

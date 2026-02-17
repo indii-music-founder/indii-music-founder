@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { ContextPipeline } from './components/ContextPipeline';
@@ -65,12 +66,11 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 describe('Multi-Agent Architecture Tests', () => {
-    let agentService: any; // Access private members for testing
 
     beforeEach(async () => {
         vi.clearAllMocks();
         // Reset store state mock
-        (useStore.getState as any).mockReturnValue({
+        vi.mocked(useStore.getState).mockReturnValue({
             agentHistory: [],
             projects: [{ id: 'p1', name: 'Test Project', type: 'creative' }],
             currentProjectId: 'p1',
@@ -78,7 +78,7 @@ describe('Multi-Agent Architecture Tests', () => {
             currentModule: 'dashboard',
             addAgentMessage: vi.fn(),
             updateAgentMessage: vi.fn()
-        });
+        } as any);
 
         // Instantiate AgentService to trigger agent registration
         new AgentService();
@@ -97,9 +97,9 @@ describe('Multi-Agent Architecture Tests', () => {
                 { id: '1', role: 'user', text: 'Hello', timestamp: 1 },
                 { id: '2', role: 'model', text: 'Hi there', timestamp: 2 }
             ];
-            (useStore.getState as any).mockReturnValue({
+            vi.mocked(useStore.getState).mockReturnValue({
                 agentHistory: mockHistory
-            });
+            } as any);
 
             const compiledView = await historyManager.getCompiledView();
             expect(compiledView).toContain('User: Hello');
@@ -131,7 +131,7 @@ describe('Multi-Agent Architecture Tests', () => {
             expect(agent).toBeDefined();
 
             // Access protected functions via any cast for testing
-            const functions = (agent as any).functions;
+            const functions = (agent as any).functions as Record<string, (args: any) => Promise<any>>;
             expect(functions).toHaveProperty('get_project_details');
 
             // Test the tool execution - returns { success, data } structure
@@ -147,13 +147,13 @@ describe('Multi-Agent Architecture Tests', () => {
             const orchestrator = new AgentOrchestrator();
 
             // Mock LLM response for routing
-            (AI.generateContent as any).mockResolvedValueOnce({
+            vi.mocked(AI.generateContent).mockResolvedValueOnce({
                 text: () => JSON.stringify({
                     targetAgentId: 'legal',
                     confidence: 1.0,
                     reasoning: 'Request is about contracts'
                 })
-            });
+            } as any);
 
             const context = { currentModule: 'creative' }; // Even in creative module
             const agentId = await orchestrator.determineAgent(context as any, 'Draft a contract');
@@ -171,9 +171,10 @@ describe('Multi-Agent Architecture Tests', () => {
 
         it('should fallback to generalist if LLM fails', async () => {
             const orchestrator = new AgentOrchestrator();
-            (AI.generateContent as any).mockRejectedValueOnce(new Error('LLM Error'));
+            vi.mocked(AI.generateContent).mockRejectedValueOnce(new Error('LLM Error'));
 
-            const agentId = await orchestrator.determineAgent({} as any, 'Hello');
+            const context: any = {};
+            const agentId = await orchestrator.determineAgent(context, 'Hello');
             expect(agentId).toBe('generalist');
         });
     });
@@ -193,28 +194,22 @@ describe('Multi-Agent Architecture Tests', () => {
         });
 
         it('should have search_knowledge superpower on all agents', () => {
-            const driver = agentRegistry.get('driver'); // or any other agent
-            // Actually, let's test a few diverse ones
+            // Test a few diverse ones
             const testAgents = ['legal', 'video', 'finance'];
             testAgents.forEach(id => {
-                const agent: any = agentRegistry.get(id);
+                const agent = agentRegistry.get(id);
+                expect(agent).toBeDefined();
                 // BaseAgent merges superpowers into the tools sent to LLM, 
                 // but they are not stored in public .tools array directly in the class 
                 // (logic is in execute method: const allTools = [...this.tools, ...SUPERPOWER_TOOLS])
-
-                // However, we can check if the definition exists in BaseAgent's source 
-                // OR we can't easily check it on the instance without spying on execute.
-                // Wait, looking at BaseAgent.ts, SUPERPOWER_TOOLS is a file-level constant.
-                // But wait, I added search_knowledge to SUPERPOWER_TOOLS in BaseAgent.ts.
-                // The `execute` method uses it. 
 
                 // Ideally we mock AI.generateContent and ensure the tools passed in include search_knowledge.
             });
         });
 
         it('should pass superpower tools to AI when executing', async () => {
-            const agent = agentRegistry.get('marketing');
-            await agent?.execute('Research market trends');
+            const agent_marketing = agentRegistry.get('marketing');
+            await agent_marketing?.execute('Research market trends');
 
             // BaseAgent currently uses generateContent
             expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
@@ -231,18 +226,9 @@ describe('Multi-Agent Architecture Tests', () => {
 
     describe('6. Direct Delegation Verification', () => {
         it('should bypass orchestrator when forcedAgentId is provided', async () => {
-            const service = new AgentService(); // Instantiate service locally
+            const agentSvc_bypass = new AgentService(); // Instantiate service locally
             const userQuery = "Draft a contract";
-            // Force 'creative' agent even though query is clearly legal
-            // We need to mock executor.execute for this to work without real network
-            // But we can't easily access the executor instance.
-            // However, the test below shows we didn't mock executor before, so it runs real executor logic?
-            // Real executor calls agentRegistry.get().
-            // agentRegistry is real.
-            // Specialist execute calls AI.generateContent which IS mocked.
-            // So it works.
-
-            await service.sendMessage(userQuery, undefined, 'director');
+            await agentSvc_bypass.sendMessage(userQuery, undefined, 'director');
             expect(true).toBe(true);
         });
 
@@ -278,7 +264,7 @@ describe('Multi-Agent Architecture Tests', () => {
             const mockHistory: any[] = [];
 
             const updateSpy = vi.fn((id, updates) => {
-                const idx = mockHistory.findIndex(m => m.id === id);
+                const idx = mockHistory.findIndex(m => (m as { id: string }).id === id);
                 if (idx !== -1) {
                     mockHistory[idx] = { ...mockHistory[idx], ...updates };
                 }
@@ -288,7 +274,7 @@ describe('Multi-Agent Architecture Tests', () => {
                 mockHistory.push(msg);
             });
 
-            (useStore.getState as any).mockImplementation(() => ({
+            vi.mocked(useStore.getState).mockImplementation(() => ({
                 agentHistory: mockHistory,
                 addAgentMessage: addSpy,
                 updateAgentMessage: updateSpy,
@@ -297,25 +283,26 @@ describe('Multi-Agent Architecture Tests', () => {
                 projects: [{ id: 'p1', name: 'Test Project', type: 'creative' }],
                 userProfile: { brandKit: {} },
                 currentModule: 'creative'
-            }));
+            } as unknown as any));
 
-            const service = new AgentService();
+            // eslint-disable-next-line prefer-const
+            let agentSvc_thoughts = new AgentService();
             // We need to mock the executor to trigger the callback manually
             // Since executor is private, we can't replace it easily without module mocking.
             // Let's rely on internal behavior or cast to any.
 
             // Mocking execute method on the executor instance
             const executorMock = {
-                execute: vi.fn().mockImplementation(async (id, goal, ctx, onProgress) => {
+                execute: vi.fn().mockImplementation(async (_id, _goal, _ctx, onProgress) => {
                     // Trigger a thought event
                     onProgress?.({ type: 'thought', content: 'Thinking process started...' });
                     onProgress?.({ type: 'tool', content: 'Checking tools', toolName: 'test_tool' });
                     return "Final Answer";
                 })
             };
-            (service as any).executor = executorMock;
+            (agentSvc_thoughts as any).executor = executorMock;
 
-            await service.sendMessage('Test Message', undefined, 'director');
+            await agentSvc_thoughts.sendMessage('Test Message', undefined, 'director');
 
             // Verify updateAgentMessage was called with thoughts
             expect(updateSpy).toHaveBeenCalled();
@@ -323,8 +310,8 @@ describe('Multi-Agent Architecture Tests', () => {
             const calls = updateSpy.mock.calls;
             const thoughtUpdate = calls.find((c: any) => c[1].thoughts);
             expect(thoughtUpdate).toBeDefined();
-            expect(thoughtUpdate?.[1]?.thoughts?.length).toBeGreaterThan(0);
-            expect(thoughtUpdate?.[1]?.thoughts?.[0]?.text).toBe('Thinking process started...');
+            expect((thoughtUpdate?.[1] as any)?.thoughts?.length).toBeGreaterThan(0);
+            expect((thoughtUpdate?.[1] as any)?.thoughts?.[0]?.text).toBe('Thinking process started...');
         });
     });
 });
