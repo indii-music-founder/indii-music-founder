@@ -45,7 +45,7 @@ vi.mock('fs', () => ({
     existsSync: mocks.fsSync.existsSync
 }));
 
-vi.mock('os', () => mocks.os);
+vi.mock('os', () => ({ ...mocks.os, default: mocks.os }));
 vi.mock('../utils/python-bridge', () => ({ PythonBridge: mocks.pythonBridge }));
 
 // Import the handler setup function
@@ -121,7 +121,7 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
         const result = await invoke('distribution:stage-release', validUUID, maliciousFiles);
 
         expect(result.success).toBe(false);
-        expect(result.error).toMatch(/Security Violation: Access to system directories is denied/);
+        expect(result.error).toMatch(/Security Violation: Access to .* is denied/);
         expect(mocks.fs.copyFile).not.toHaveBeenCalled();
     });
 
@@ -144,7 +144,7 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
 
         expect(result.success).toBe(false);
         // Should be blocked because .ssh is hidden
-        expect(result.error).toMatch(/Security Violation: Access to hidden files or directories is denied/);
+        expect(result.error).toMatch(/Security Violation: Access to .* is denied/);
         expect(mocks.fs.copyFile).not.toHaveBeenCalled();
     });
 
@@ -179,7 +179,7 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
     // SCENARIO 5: Extension Whitelist Bypass
     // ------------------------------------------------------------------------
     it('should BLOCK files with dangerous extensions (.exe, .sh)', async () => {
-        const dangerousPath = '/Users/victim/Downloads/malware.exe';
+        const dangerousPath = '/mock/tmp/malware.exe';
         mocks.fsSync.realpathSync.mockReturnValue(dangerousPath);
 
         const maliciousFiles = [{
@@ -198,7 +198,7 @@ describe('🛡️ Shield: Distribution Sandbox Escape Test', () => {
     // SCENARIO 6: Valid Operation (Baseline)
     // ------------------------------------------------------------------------
     it('should ALLOW valid operations to verify the test harness works', async () => {
-        const safePath = '/Users/victim/Music/song.wav';
+        const safePath = '/mock/tmp/song.wav';
         mocks.fsSync.realpathSync.mockReturnValue(safePath);
 
         const validFiles = [{

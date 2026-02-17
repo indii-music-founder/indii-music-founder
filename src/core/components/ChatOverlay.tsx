@@ -277,7 +277,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
 
                                     {/* Identity Toggle */}
                                     <div className="flex items-center gap-1 bg-black/40 rounded-lg p-0.5 border border-white/5 mr-4 relative z-10 pointer-events-auto">
-                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>Manual</button>
+                                        <button onClick={() => setActiveAgentProvider('native')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'native' || activeAgentProvider === 'direct' ? `bg-${activeBrandColor}-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>Manual</button>
                                         <button onClick={() => setActiveAgentProvider('agent-zero')} className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase transition-all ${activeAgentProvider === 'agent-zero' ? `bg-purple-600 text-white shadow-sm` : 'text-gray-500 hover:text-gray-300'}`}>indii</button>
                                     </div>
 
@@ -313,6 +313,7 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose }) => {
                                         <div className="flex items-center gap-3">
                                             {isProcessing ? <><div className="flex gap-1"><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} /><div className="w-1.5 h-1.5 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} /></div><span className="text-purple-300">PROCESSING RESPONSE...</span></> : isListening ? <><div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" /><span className="text-red-300 font-bold">LISTENING...</span></> : null}
                                         </div>
+                                        {transcript && <span className="text-gray-400 truncate max-w-[200px] italic">"{transcript}"</span>}
                                     </div>
                                 )}
 

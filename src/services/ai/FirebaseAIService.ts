@@ -495,8 +495,6 @@ export class FirebaseAIService {
 
                     const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                         typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-
-                        // @ts-expect-error - options param not in typed definition but supported
                         options
                     );
 
