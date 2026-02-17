@@ -15,7 +15,13 @@ vi.mock('@/core/context/ToastContext', () => ({
 // Mock Firebase Functions
 vi.mock('@/services/firebase', () => ({
     functions: {},
-    auth: { currentUser: { uid: 'test-user' } }
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} },
+    db: {},
+    storage: {},
+    app: {},
+    messaging: {},
+    appCheck: {}
 }));
 
 // Mock useTouring hook
@@ -23,7 +29,6 @@ vi.mock('./hooks/useTouring', () => ({
     useTouring: vi.fn(),
 }));
 
-// Helper to setup the mock with default or custom values
 const setupTouringMock = (overrides = {}) => {
     const defaultValues = {
         itineraries: [],
@@ -46,6 +51,7 @@ const setupTouringMock = (overrides = {}) => {
 };
 
 vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(() => ({})),
     httpsCallable: (functionsInstance: any, name: string) => {
         console.log(`Mock httpsCallable called for: ${name}`);
         return vi.fn().mockImplementation(async (data) => {
