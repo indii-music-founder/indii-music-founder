@@ -42,7 +42,6 @@ vi.mock('firebase/firestore', () => ({
     serverTimestamp: () => 'MOCK_TIMESTAMP',
     doc: mockDoc,
     updateDoc: mockUpdateDoc,
-    getDoc: vi.fn(),
     increment: vi.fn(),
     Timestamp: {
         now: () => ({ toDate: () => new Date() })

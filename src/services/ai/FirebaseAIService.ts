@@ -494,8 +494,7 @@ export class FirebaseAIService {
                 try {
 
                     const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
-                        typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
-                        options
+                        typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt }
                     );
 
                     // Wrap the final response promise

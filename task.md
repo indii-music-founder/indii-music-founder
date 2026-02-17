@@ -123,4 +123,5 @@
 - [x] Fix: `DashboardService` - Add cache reset for tests and fix variable scope bug. <!-- id: 406 -->
 - [x] Fix: `DashboardService.sales` - Update `console.warn` assertions and test isolation. <!-- id: 407 -->
 - [x] Verification: All fixed tests pass locally. <!-- id: 403 -->
+- [x] Sync: Resolved merge conflicts and pushed fixes to `origin/main` (CI Triggered). <!-- id: 408 -->
 - [x] Gauntlet: `npm run typecheck` passes with 0 errors. <!-- id: 404 -->
