@@ -86,32 +86,33 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('@google/genai', () => ({
     GoogleGenAI: class {
         models = {
-            models = {
-                generateContent: (...args: any[]) => {
-                    console.log('MOCK: GoogleGenAI.generateContent called');
-                    return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
-                        candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
-                        usageMetadata: { totalTokenCount: 10 },
-                        text: 'Mock response'
-                    });
-                },
-                generateContentStream: (...args: any[]) => {
-                    console.log('MOCK: GoogleGenAI.generateContentStream called');
-                    return mockGenerateContentStream(...args) || {
-                        stream: (async function* () { yield { text: () => 'Mock stream token' }; })(),
-                        response: Promise.resolve({})
-                    };
-                }
-            };
-            constructor() { }
-        getGenerativeModel() {
-                return {
-                    generateContent: this.models.generateContent,
-                    generateContentStream: this.models.generateContentStream
+            generateContent: (...args: any[]) => {
+                console.log('MOCK: GoogleGenAI.generateContent called');
+                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
+                    candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
+                    usageMetadata: { totalTokenCount: 10 },
+                    text: 'Mock response'
+                });
+            },
+            generateContentStream: (...args: any[]) => {
+                console.log('MOCK: GoogleGenAI.generateContentStream called');
+                return mockGenerateContentStream(...args) || {
+                    stream: (async function* () { yield { text: () => 'Mock stream token' }; })(),
+                    response: Promise.resolve({})
                 };
             }
+        };
+
+        constructor() { }
+
+        getGenerativeModel() {
+            return {
+                generateContent: this.models.generateContent,
+                generateContentStream: this.models.generateContentStream
+            };
         }
-    }));
+    }
+}));
 
 // Import FirebaseAIService directly to test logic.
 import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
