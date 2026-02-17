@@ -11,7 +11,8 @@ const {
     mockWhere,
     mockOrderBy,
     mockDoc,
-    mockUpdateDoc
+    mockUpdateDoc,
+    mockGetDoc
 } = vi.hoisted(() => {
     return {
         mockAddDoc: vi.fn(),
@@ -22,6 +23,7 @@ const {
         mockOrderBy: vi.fn(),
         mockDoc: vi.fn(),
         mockUpdateDoc: vi.fn(),
+        mockGetDoc: vi.fn()
     }
 });
 
@@ -32,6 +34,7 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('firebase/firestore', () => ({
     addDoc: mockAddDoc,
     getDocs: mockGetDocs,
+    getDoc: mockGetDoc,
     query: mockQuery,
     collection: mockCollection,
     where: mockWhere,
@@ -121,6 +124,11 @@ describe('MarketplaceService', () => {
 
     describe('purchaseProduct', () => {
         it('should throw error as payments are disabled', async () => {
+            mockGetDoc.mockResolvedValue({
+                exists: () => true,
+                data: () => ({ inventory: 10, price: 1000 })
+            });
+
             await expect(MarketplaceService.purchaseProduct(
                 'prod-1',
                 'buyer-1',

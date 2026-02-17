@@ -105,11 +105,22 @@
 - [x] UI: Add tool execution progress feedback in ChatOverlay. **COMPLETED** (2026-01-30 - Intelligent response parsing + visual badges)
 - [x] Testing: Run full regression test suite with Electron app. **COMPLETED** (2026-01-30 - 2002/2164 tests passing, 93% pass rate)
 - [x] Deployment: Update README with Agent Zero setup instructions. **COMPLETED**
-108:
-109: ## Tasks - Image Upload & Compression Reliability (2026-02-07)
-110:
-111: - [x] Fix: Implement 30s timeout and CORS robustness in `CloudStorageService.compressImage`. <!-- id: 300 -->
-112: - [x] Fix: Re-enable Cloud Storage `smartSave` in `ImageGenerationService` with automatic local compression fallback. <!-- id: 301 -->
-113: - [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
-114: - [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
-115: - [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->
+
+## Tasks - Image Upload & Compression Reliability (2026-02-07)
+
+- [x] Fix: Implement 30s timeout and CORS robustness in `CloudStorageService.compressImage`. <!-- id: 300 -->
+- [x] Fix: Re-enable Cloud Storage `smartSave` in `ImageGenerationService` with automatic local compression fallback. <!-- id: 301 -->
+- [x] Infra: Apply browser CORS policy to Firebase Storage bucket `gs://indiios-alpha-electron/`. <!-- id: 302 -->
+- [x] Fix: Improve UID resolution in `AgentExecutor` to prevent trace submission failures (Permission Denied). <!-- id: 303 -->
+- [x] Verification: Verify successful trace creation and image upload flow in logs. <!-- id: 304 -->
+
+## Tasks - Test Stabilization (2026-02-16)
+
+- [x] Fix: `Keeper_ContextIntegrity` - Resolve "Elephant Test" truncation logic & Token Budget assertions. <!-- id: 400 -->
+- [x] Fix: `VideoDaisychain` - Correct mock stores, toast behavior, and element queries. <!-- id: 401 -->
+- [x] Refactor: Clean up unused debug logs and imports in test files. <!-- id: 402 -->
+- [x] Fix: `Keeper_AgentContext` - Correct mock call index for `mockGenerateContent` assertion. <!-- id: 405 -->
+- [x] Fix: `DashboardService` - Add cache reset for tests and fix variable scope bug. <!-- id: 406 -->
+- [x] Fix: `DashboardService.sales` - Update `console.warn` assertions and test isolation. <!-- id: 407 -->
+- [x] Verification: All fixed tests pass locally. <!-- id: 403 -->
+- [x] Gauntlet: `npm run typecheck` passes with 0 errors. <!-- id: 404 -->

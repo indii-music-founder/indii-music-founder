@@ -4,14 +4,18 @@ import { aiCache } from '../AIResponseCache';
 import 'fake-indexeddb/auto'; // Polyfill IndexedDB for JSDOM
 
 // Hoist mock
-const mockGenerateContent = vi.fn();
+const { mockGenerateContent } = vi.hoisted(() => ({
+    mockGenerateContent: vi.fn()
+}));
 
 // Mock env config to provide fake API key
 vi.mock('@/config/env', () => ({
     env: {
         apiKey: 'test-api-key-for-caching',
         VITE_API_KEY: 'test-api-key-for-caching',
-        DEV: true
+        DEV: true,
+        appCheckKey: 'test-app-check-key',
+        appCheckDebugToken: 'test-debug-token'
     },
     firebaseConfig: {
         apiKey: 'test-firebase-key',

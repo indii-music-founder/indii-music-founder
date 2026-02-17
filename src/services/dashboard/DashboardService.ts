@@ -564,4 +564,13 @@ export class DashboardService {
             return zeroState;
         }
     }
+
+    /**
+     * Resets the internal cache. Useful for testing.
+     */
+    static resetCache() {
+        this.cache.clear();
+        this.analyticsCache = null;
+        this.storageCache = null;
+    }
 }
