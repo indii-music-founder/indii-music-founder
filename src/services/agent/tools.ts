@@ -20,10 +20,12 @@ import { RoadTools } from './tools/RoadTools';
 import { SecurityTools } from './tools/SecurityTools';
 import { DevOpsTools } from './tools/DevOpsTools';
 import { DistributionTools } from './tools/DistributionTools';
+import { UniversalTools } from './tools/UniversalTools';
 import { AnyToolFunction, VALID_AGENT_IDS_LIST } from './types';
 
 export const TOOL_REGISTRY: Record<string, AnyToolFunction> = {
     ...CoreTools,
+    ...UniversalTools,
     ...DirectorTools,
     ...VideoTools,
     ...CREATIVE_TOOLS,

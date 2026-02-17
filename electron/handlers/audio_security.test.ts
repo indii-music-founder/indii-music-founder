@@ -10,9 +10,11 @@ const mocks = vi.hoisted(() => ({
     fs: {
         createReadStream: vi.fn(),
         existsSync: vi.fn(),
+        realpathSync: vi.fn(),
         default: {
             createReadStream: vi.fn(),
-            existsSync: vi.fn()
+            existsSync: vi.fn(),
+            realpathSync: vi.fn()
         }
     },
     // Mock ffmpeg
@@ -38,7 +40,8 @@ vi.mock('fluent-ffmpeg', () => ({
 vi.mock('fs', () => ({
     default: mocks.fs,
     createReadStream: mocks.fs.createReadStream,
-    existsSync: mocks.fs.existsSync
+    existsSync: mocks.fs.existsSync,
+    realpathSync: mocks.fs.realpathSync
 }));
 
 // Mock 'crypto'
@@ -74,6 +77,11 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
         vi.clearAllMocks();
         handlers = {};
 
+        // Default: realpathSync returns the input path (identity)
+        // This is sufficient for simple checks, but specific tests will override it
+        mocks.fs.realpathSync.mockImplementation((p: string) => p);
+        mocks.fs.existsSync.mockReturnValue(true);
+
         // Capture handlers
         mocks.ipcMain.handle.mockImplementation((channel: string, handler: (...args: any[]) => any) => {
             handlers[channel] = handler;
@@ -96,31 +104,36 @@ describe('🛡️ Shield: Audio Analysis Security', () => {
 
     it('should BLOCK Path Traversal attempting to analyze system files', async () => {
         const maliciousPath = '../../etc/passwd.mp3';
+        // Simulate resolving to a system path
+        mocks.fs.realpathSync.mockReturnValue('/etc/passwd.mp3');
 
         const result = await invokeHandler('audio:analyze', maliciousPath);
 
         // Expect validation error
         expect(result).toHaveProperty('success', false);
-        expect(result.error).toMatch(/Validation Error/);
+        expect(result.error).toMatch(/Validation Error|Security Violation/);
         expect(mocks.ffmpeg.ffprobe).not.toHaveBeenCalled();
     });
 
     it('should BLOCK Path Traversal with encoded characters (Basic)', async () => {
         const maliciousPath = '/tmp/../etc/shadow.wav';
+        mocks.fs.realpathSync.mockReturnValue('/etc/shadow.wav');
 
         const result = await invokeHandler('audio:analyze', maliciousPath);
 
         expect(result).toHaveProperty('success', false);
-        expect(result.error).toMatch(/Validation Error/);
+        expect(result.error).toMatch(/Validation Error|Security Violation/);
         expect(mocks.ffmpeg.ffprobe).not.toHaveBeenCalled();
     });
 
     it('should BLOCK unsupported file types (e.g. executables)', async () => {
         const maliciousPath = '/tmp/malware.exe';
+        mocks.fs.realpathSync.mockReturnValue('/tmp/malware.exe');
+
         const result = await invokeHandler('audio:analyze', maliciousPath);
 
         expect(result).toHaveProperty('success', false);
-        expect(result.error).toMatch(/Validation Error/);
+        expect(result.error).toMatch(/Validation Error|Security Violation/);
         expect(mocks.ffmpeg.ffprobe).not.toHaveBeenCalled();
     });
 

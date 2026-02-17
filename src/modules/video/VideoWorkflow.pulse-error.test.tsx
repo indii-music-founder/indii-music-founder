@@ -102,7 +102,12 @@ vi.mock('firebase/firestore', () => ({
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
-vi.mock('@/services/firebase', () => ({ db: {} }));
+vi.mock('@/services/firebase', () => ({
+    db: {},
+    remoteConfig: { defaultConfig: {} },
+    functions: {},
+    auth: { currentUser: { uid: 'test-user' } }
+}));
 
 // Helper to update store mock during test execution
 const updateStoreMock = (overrides: any) => {
