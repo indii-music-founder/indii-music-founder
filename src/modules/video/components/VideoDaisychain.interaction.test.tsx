@@ -70,14 +70,14 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
         <div data-testid="creative-gallery">
             <button data-testid="set-first-frame-btn" onClick={() => {
                 // Trigger the flow to set first frame
-                const { setVideoInput, setViewMode } = require('@/core/store').useStore.getState();
+                const { setVideoInput, setViewMode } = require('../../../core/store').useStore.getState();
                 setVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
-                require('@/core/context/ToastContext').useToast().success('Set as First Frame');
+                require('../../../core/context/ToastContext').useToast().success('Set as First Frame');
             }}>First Frame</button>
             <button data-testid="set-last-frame-btn" onClick={() => {
-                const { setVideoInput } = require('@/core/store').useStore.getState();
+                const { setVideoInput } = require('../../../core/store').useStore.getState();
                 setVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
-                require('@/core/context/ToastContext').useToast().success('Set as Last Frame');
+                require('../../../core/context/ToastContext').useToast().success('Set as Last Frame');
             }}>Last Frame</button>
         </div>
     )
@@ -86,8 +86,8 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
 vi.mock('../../creative/components/CreativeNavbar', () => ({
     default: () => (
         <div data-testid="creative-navbar">
-            <button data-testid="gallery-view-btn" onClick={() => require('@/core/store').useStore.getState().setViewMode('gallery')}>Gallery</button>
-            <button data-testid="director-view-btn" onClick={() => require('@/core/store').useStore.getState().setViewMode('video_production')}>Director</button>
+            <button data-testid="gallery-view-btn" onClick={() => require('../../../core/store').useStore.getState().setViewMode('gallery')}>Gallery</button>
+            <button data-testid="director-view-btn" onClick={() => require('../../../core/store').useStore.getState().setViewMode('video_production')}>Director</button>
         </div>
     )
 }));
@@ -200,14 +200,19 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         const firstFrameBtn = screen.getByTestId('set-first-frame-btn');
         fireEvent.click(firstFrameBtn);
 
-        // Verify store update instead of toast
-        const store = (useStore as any);
-        expect(store.getState().videoInputs.firstFrame).toEqual(expect.objectContaining({ id: 'img-1' }));
+        // Verify store update via waitFor to allow re-render
+        await waitFor(() => {
+            const state = (useStore as any).getState();
+            expect(state.videoInputs.firstFrame).toEqual(expect.objectContaining({ id: 'img-1' }));
+        });
 
         const lastFrameBtn = screen.getByTestId('set-last-frame-btn');
         fireEvent.click(lastFrameBtn);
-        // expect(mockToast.success).toHaveBeenCalledWith('Set as Last Frame');
-        expect(store.getState().videoInputs.lastFrame).toEqual(expect.objectContaining({ id: 'img-2' }));
+
+        await waitFor(() => {
+            const state = (useStore as any).getState();
+            expect(state.videoInputs.lastFrame).toEqual(expect.objectContaining({ id: 'img-2' }));
+        });
 
         // --- STEP 3: Toggle Daisy Chain ---
         const daisyToggle = screen.getByTestId('daisy-chain-toggle');
