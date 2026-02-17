@@ -250,8 +250,8 @@ export class AgentService {
 
         // Resolve Active Agent ID if not forced
         if (!agentId) {
-            const { sessions, activeSessionId } = useStore.getState();
-            const session = sessions[activeSessionId || ''];
+            const state = useStore.getState();
+            const session = state.sessions?.[state.activeSessionId || ''];
             agentId = session?.participants?.[0] || 'generalist';
         }
 
