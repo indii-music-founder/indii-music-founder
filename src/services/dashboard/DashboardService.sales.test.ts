@@ -39,8 +39,9 @@ describe('DashboardService - Sales Analytics', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Default console mocks to keep test output clean
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
-        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => { });
+        vi.spyOn(console, 'error').mockImplementation(() => { });
+        DashboardService.resetCache();
     });
 
     afterEach(() => {
@@ -100,7 +101,7 @@ describe('DashboardService - Sales Analytics', () => {
         // We can verify a specific property known to be in the fallback but not in our mock invalid data just to be sure
         // But better yet, check that it logged a warning
         expect(console.warn).toHaveBeenCalledWith(
-            "Invalid sales analytics data:",
+            "Firestore data failed schema validation:",
             expect.anything()
         );
 
@@ -122,7 +123,7 @@ describe('DashboardService - Sales Analytics', () => {
         const result = await DashboardService.getSalesAnalytics();
 
         expect(console.warn).toHaveBeenCalledWith(
-            "Failed to fetch sales analytics doc, falling back to simulation",
+            "Firestore fetch failed:",
             expect.any(Error)
         );
 

@@ -25,7 +25,8 @@ const mockHttpsCallable = vi.fn();
 vi.mock('../src/services/firebase', () => ({
     functions: {},
     db: {},
-    auth: { currentUser: { uid: 'test-user' } }
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} }
 }));
 
 vi.mock('firebase/functions', () => ({

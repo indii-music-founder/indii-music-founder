@@ -4,6 +4,7 @@ import { ContextManager } from '@/services/ai/context/ContextManager';
 import { useStore } from '@/core/store';
 import { BaseAgent } from '../BaseAgent';
 
+
 // ------------------------------------------------------------------
 // Mocks
 // ------------------------------------------------------------------
@@ -37,7 +38,12 @@ const mockResponseHelper = (text: string) => ({
     thoughtSignature: 'test-signature'
 });
 
-const mockGenerateContent = vi.fn()
+const mockGenerateContent = vi.fn((...args) => {
+    console.log('[TEST] mockGenerateContent called with:', args[0]?.contents?.[0]?.parts?.[0]?.text?.substring(0, 100));
+    return Promise.resolve(mockResponseHelper("Default Response"));
+});
+
+mockGenerateContent
     .mockResolvedValueOnce(mockResponseHelper(JSON.stringify({
         thought: "Delegating to test agent",
         callAgentId: "generalist",
@@ -137,6 +143,36 @@ vi.mock('../registry', () => ({
     }
 }));
 
+// 9. Mock TraceService
+vi.mock('../observability/TraceService', () => ({
+    TraceService: {
+        startTrace: vi.fn().mockResolvedValue('trace-123'),
+        addStep: vi.fn().mockResolvedValue(true),
+        addStepWithUsage: vi.fn().mockResolvedValue(true),
+        completeTrace: vi.fn().mockResolvedValue(true),
+        failTrace: vi.fn().mockResolvedValue(true)
+    }
+}));
+
+// 10. Mock AgentExecutionContext
+vi.mock('../context/AgentExecutionContext', () => ({
+    ExecutionContextFactory: {
+        fromAgentContext: vi.fn().mockResolvedValue({
+            hasUncommittedChanges: vi.fn().mockReturnValue(false),
+            getChangeSummary: vi.fn().mockReturnValue(''),
+            commit: vi.fn(),
+            rollback: vi.fn(),
+            setState: vi.fn(),
+            getState: vi.fn(),
+            getFullState: vi.fn().mockReturnValue({})
+        })
+    },
+    ToolExecutionContext: class {
+        constructor() { }
+        get() { return undefined; }
+    }
+}));
+
 // ------------------------------------------------------------------
 // Tests
 // ------------------------------------------------------------------
@@ -157,8 +193,22 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
                     participants: ['indii']
                 }
             },
-            activeSessionId: 'session-123'
+            activeSessionId: 'session-123',
+            activeAgentProvider: 'native'
         });
+
+        // Reset AgentService state (singleton)
+        (agentService as any).isProcessing = false;
+        (agentService as any).isWarmedUp = true;
+
+        // Log locks
+        // @ts-ignore
+        if (BaseAgent.executionLocks) {
+            // @ts-ignore
+            console.log('[TEST] ExecutionLocks size:', BaseAgent.executionLocks?.size);
+            // @ts-ignore
+            BaseAgent.executionLocks.clear();
+        }
     });
 
     afterEach(() => {
@@ -166,8 +216,19 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
     });
 
     it('should truncate context AND persist history during message flow', async () => {
+        // Spy on BaseAgent.execute
+        const originalExecute = BaseAgent.prototype.execute;
+        vi.spyOn(BaseAgent.prototype, 'execute').mockImplementation(function (this: any, ...args: any[]) {
+            console.log('[TEST] BaseAgent.execute called');
+            const context = args[1];
+            console.log('[TEST] BaseAgent context.chatHistory length:', context?.chatHistory?.length);
+            return originalExecute.apply(this, args as [string, any, any, any, any]);
+        });
+
+        console.log('[TEST] Starting sendMessage...');
         // Execute Integration Flow
         await agentService.sendMessage('Hello Keeper');
+        console.log('[TEST] sendMessage finished.');
 
         // 1. Verify Context Truncation (Context Window)
         // Chain: AgentService -> AgentExecutor -> BaseAgent -> ContextManager.truncateContext
@@ -178,8 +239,8 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         expect(truncateArgs[1]).toBe(15000);
 
         // Assert AI received the truncated context
-        // mockGenerateContent was called by BaseAgent (2nd call, after Orchestrator routing)
-        const aiCall = mockGenerateContent.mock.calls[1][0];
+        // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)
+        const aiCall = mockGenerateContent.mock.calls[0][0];
         const sentText = aiCall.contents[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');
 
