@@ -15,20 +15,12 @@ describe('Marketing Schemas', () => {
 
     describe('ScheduledPostSchema', () => {
         it('should validate scheduledTime as Date or string', () => {
-             const imageAsset = {
-                assetType: 'image' as const,
-                title: 'Test Image',
-                imageUrl: 'https://example.com/image.jpg',
-                caption: 'Test Caption'
-             };
              const data1 = {
                 id: '123',
                 platform: 'Twitter',
                 copy: 'Test',
                 status: 'PENDING',
-                scheduledTime: new Date(),
-                imageAsset,
-                day: 1
+                scheduledTime: new Date()
              };
              expect(ScheduledPostSchema.parse(data1).scheduledTime).toBeInstanceOf(Date);
 
@@ -37,9 +29,7 @@ describe('Marketing Schemas', () => {
                 platform: 'Twitter',
                 copy: 'Test',
                 status: 'PENDING',
-                scheduledTime: '2023-01-01',
-                imageAsset,
-                day: 1
+                scheduledTime: '2023-01-01'
              };
              expect(ScheduledPostSchema.parse(data2).scheduledTime).toBe('2023-01-01');
         });
