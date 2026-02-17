@@ -1,6 +1,10 @@
 // src/services/firebase.appcheck.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
+// Unmock the module under test (mocked globally in setup.ts)
+vi.unmock('@/services/firebase');
+vi.unmock('./firebase'); // Just to be safe
+
 // Hoisted mocks for proper reference tracking
 const mocks = vi.hoisted(() => ({
     initializeApp: vi.fn(() => ({ name: 'mock-app', options: {} })),

@@ -8,12 +8,16 @@ import { AppErrorCode } from '@/shared/types/errors';
 // ----------------------------------------------------------------------------
 
 // Mock the AI Service to capture prompts and simulate responses
-const mockGenerateContentStream = vi.fn();
+// Mock the AI Service to capture prompts and simulate responses
+const { mockGenerateContentStream, mockGenerateContent } = vi.hoisted(() => ({
+    mockGenerateContentStream: vi.fn(),
+    mockGenerateContent: vi.fn(),
+}));
 
 vi.mock('@/services/ai/AIService', () => ({
     AI: {
         generateContentStream: (...args: any[]) => mockGenerateContentStream(...args),
-        // Add other methods if needed by BaseAgent
+        generateContent: (...args: any[]) => mockGenerateContent(...args),
         generateSpeech: vi.fn(),
     }
 }));
@@ -26,6 +30,7 @@ vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: (...args: any[]) => mockCheckQuota(...args),
         trackUsage: (...args: any[]) => mockTrackUsage(...args),
+        checkRateLimit: vi.fn().mockResolvedValue(true),
     }
 }));
 
@@ -52,12 +57,16 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     ai: { type: 'mock-ai-instance' },
     remoteConfig: {},
-    db: {}
+    db: {},
+    getFirebaseAI: vi.fn().mockReturnValue({ type: 'mock-ai-instance' })
 }));
 
 // We also need to mock 'firebase/ai' entirely since we are testing FirebaseAIService
 // which imports from 'firebase/ai'.
-const mockGetGenerativeModel = vi.fn();
+const mockGetGenerativeModel = vi.fn().mockReturnValue({
+    generateContent: (...args: any[]) => mockGenerateContent(...args).then((res: any) => res || { response: { text: () => 'Mock response', functionCalls: () => [], usageMetadata: {} } }),
+    generateContentStream: (...args: any[]) => mockGenerateContentStream(...args) || { stream: (async function* () { yield { text: () => 'Mock' }; })(), response: Promise.resolve({}) }
+});
 
 vi.mock('firebase/ai', () => ({
     getGenerativeModel: (...args: any[]) => mockGetGenerativeModel(...args),
@@ -72,6 +81,37 @@ vi.mock('firebase/remote-config', () => ({
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn().mockReturnValue({ asString: () => 'mock-model' })
 }));
+
+// Mock Google Gen AI SDK
+vi.mock('@google/genai', () => ({
+    GoogleGenAI: class {
+        models = {
+            models = {
+                generateContent: (...args: any[]) => {
+                    console.log('MOCK: GoogleGenAI.generateContent called');
+                    return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
+                        candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
+                        usageMetadata: { totalTokenCount: 10 },
+                        text: 'Mock response'
+                    });
+                },
+                generateContentStream: (...args: any[]) => {
+                    console.log('MOCK: GoogleGenAI.generateContentStream called');
+                    return mockGenerateContentStream(...args) || {
+                        stream: (async function* () { yield { text: () => 'Mock stream token' }; })(),
+                        response: Promise.resolve({})
+                    };
+                }
+            };
+            constructor() { }
+        getGenerativeModel() {
+                return {
+                    generateContent: this.models.generateContent,
+                    generateContentStream: this.models.generateContentStream
+                };
+            }
+        }
+    }));
 
 // Import FirebaseAIService directly to test logic.
 import { FirebaseAIService } from '@/services/ai/FirebaseAIService';
