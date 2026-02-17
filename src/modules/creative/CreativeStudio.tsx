@@ -53,7 +53,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         }
     }, [initialMode, setGenerationMode]);
 
-    /*
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
         if (generationMode === 'video') {
@@ -66,7 +65,6 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
             setViewMode('gallery');
         }
     }, [generationMode, viewMode, setViewMode]);
-    */
 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {

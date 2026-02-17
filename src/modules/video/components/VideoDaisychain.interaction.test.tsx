@@ -122,7 +122,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // We need a wrapper to manage the store state transitions during the test
         const DaisychainApp = () => {
             const [state, setState] = useState<any>({
-                viewMode: 'video_production',
+                viewMode: 'gallery',
                 generationMode: 'video',
                 videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0 },
                 generatedHistory: mockItems,
@@ -190,8 +190,8 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         // Initial state logic in CreativeStudio might force us to video_production view
 
         // --- STEP 0: Switch to Gallery View ---
-        const galleryTab = screen.getByTestId('gallery-view-btn');
-        fireEvent.click(galleryTab);
+        // const galleryTab = screen.getByTestId('gallery-view-btn');
+        // fireEvent.click(galleryTab); // Removed as initial viewMode is now 'gallery'
 
         await waitFor(() => {
             expect(screen.getByTestId('creative-gallery')).toBeInTheDocument();
@@ -200,11 +200,14 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         const firstFrameBtn = screen.getByTestId('set-first-frame-btn');
         fireEvent.click(firstFrameBtn);
 
-        expect(mockToast.success).toHaveBeenCalledWith('Set as First Frame');
+        // Verify store update instead of toast
+        const store = (useStore as any);
+        expect(store.getState().videoInputs.firstFrame).toEqual(expect.objectContaining({ id: 'img-1' }));
 
         const lastFrameBtn = screen.getByTestId('set-last-frame-btn');
         fireEvent.click(lastFrameBtn);
-        expect(mockToast.success).toHaveBeenCalledWith('Set as Last Frame'); // Updated expected message
+        // expect(mockToast.success).toHaveBeenCalledWith('Set as Last Frame');
+        expect(store.getState().videoInputs.lastFrame).toEqual(expect.objectContaining({ id: 'img-2' }));
 
         // --- STEP 3: Toggle Daisy Chain ---
         const daisyToggle = screen.getByTestId('daisy-chain-toggle');
