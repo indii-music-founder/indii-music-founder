@@ -44,7 +44,13 @@ export function validateSender(event: IpcMainInvokeEvent): void {
     if (url.startsWith('indii-os:')) return;
 
     // 3. Allow Dev Server (Strict Origin Check)
-    const devServerUrl = process.env.VITE_DEV_SERVER_URL;
+    let devServerUrl = process.env.VITE_DEV_SERVER_URL;
+
+    // Fallback for unpackaged dev mode (e.g. tests)
+    if (!devServerUrl && !app.isPackaged) {
+        devServerUrl = 'http://localhost:4242';
+    }
+
     if (devServerUrl) {
         const normalizedDevUrl = devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`;
         if (url === devServerUrl || url.startsWith(normalizedDevUrl)) {
