@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '@/services/agent/BaseAgent';
 import { AgentConfig } from '@/services/agent/types';
-import { AppErrorCode } from '@/shared/types/errors';
+import { AppException } from '@/shared/types/errors';
 
 // ----------------------------------------------------------------------------
 // MOCKS
@@ -117,7 +117,6 @@ vi.mock('@google/genai', () => ({
     GoogleGenAI: class {
         models = {
             generateContent: (...args: any[]) => {
-                console.log('MOCK: GoogleGenAI.generateContent called');
                 return Promise.resolve(mockGenerateContent(...args)).then((res: any) => {
                     if (res && res.response) {
                         return {
@@ -135,7 +134,6 @@ vi.mock('@google/genai', () => ({
                 });
             },
             generateContentStream: (...args: any[]) => {
-                console.log('MOCK: GoogleGenAI.generateContentStream called');
                 return mockGenerateContentStream(...args) || {
                     stream: (async function* () { yield { text: () => 'Mock stream token' }; })(),
                     response: Promise.resolve({})
