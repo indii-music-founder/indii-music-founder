@@ -216,6 +216,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
         render(<VideoWorkflow />);
 
         expect(screen.getByText(/AI Director is framing the scene... \(10%\)/i)).toBeInTheDocument();
+        expect(screen.getByText(/AI Director is framing the scene\.\.\. \(10%\)/i)).toBeInTheDocument();
 
         // Ensure subscription is active
         expect(VideoGeneration.subscribeToJob).toHaveBeenCalledWith(mockJobId, expect.any(Function));
