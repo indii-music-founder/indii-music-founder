@@ -5,7 +5,17 @@ import CreativeStudio from '../../creative/CreativeStudio';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
-import { useVideoEditorStore } from '../store/videoEditorStore';
+
+// 🚀 Linked mocks for interaction testing
+// Vitest requires variables used in vi.mock factories to be prefixed with 'mock'
+const mockSetVideoInput = vi.fn();
+const mockSetViewMode = vi.fn();
+const mockSetGenerationMode = vi.fn();
+const mockSetPrompt = vi.fn();
+const mockAddToHistory = vi.fn();
+const mockToastSuccess = vi.fn();
+const mockToastInfo = vi.fn();
+const mockToastError = vi.fn();
 
 // Mock video editor store
 vi.mock('../store/videoEditorStore', () => {
@@ -69,15 +79,12 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
     default: () => (
         <div data-testid="creative-gallery">
             <button data-testid="set-first-frame-btn" onClick={() => {
-                // Trigger the flow to set first frame
-                const { setVideoInput, setViewMode } = require('../../../core/store').useStore.getState();
-                setVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
-                require('../../../core/context/ToastContext').useToast().success('Set as First Frame');
+                mockSetVideoInput('firstFrame', { id: 'img-1', url: 'img1.jpg' });
+                mockToastSuccess('Set as First Frame');
             }}>First Frame</button>
             <button data-testid="set-last-frame-btn" onClick={() => {
-                const { setVideoInput } = require('../../../core/store').useStore.getState();
-                setVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
-                require('../../../core/context/ToastContext').useToast().success('Set as Last Frame');
+                mockSetVideoInput('lastFrame', { id: 'img-2', url: 'img2.jpg' });
+                mockToastSuccess('Set as Last Frame');
             }}>Last Frame</button>
         </div>
     )
@@ -86,8 +93,9 @@ vi.mock('../../creative/components/CreativeGallery', () => ({
 vi.mock('../../creative/components/CreativeNavbar', () => ({
     default: () => (
         <div data-testid="creative-navbar">
-            <button data-testid="gallery-view-btn" onClick={() => require('../../../core/store').useStore.getState().setViewMode('gallery')}>Gallery</button>
-            <button data-testid="director-view-btn" onClick={() => require('../../../core/store').useStore.getState().setViewMode('video_production')}>Director</button>
+            <button data-testid="gallery-view-btn" onClick={() => mockSetViewMode('gallery')}>Gallery</button>
+            <button data-testid="director-view-btn" onClick={() => mockSetViewMode('video_production')}>Director</button>
+            <button data-testid="daisy-chain-toggle" onClick={() => mockSetVideoInput('isDaisyChain', true)}>Daisy Chain</button>
         </div>
     )
 }));
@@ -101,13 +109,6 @@ vi.mock('../../creative/components/InfiniteCanvas', () => ({
 }));
 
 describe('🖱️ Click: Video Production Daisychain', () => {
-    const mockToast = {
-        success: vi.fn(),
-        info: vi.fn(),
-        error: vi.fn(),
-        warning: vi.fn()
-    };
-
     const mockItems = [
         { id: 'img-1', url: 'img1.jpg', type: 'image', prompt: 'Start Prompt' },
         { id: 'img-2', url: 'img2.jpg', type: 'image', prompt: 'End Prompt' }
@@ -115,18 +116,28 @@ describe('🖱️ Click: Video Production Daisychain', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useToast as any).mockReturnValue(mockToast);
+        vi.mocked(useToast).mockReturnValue({
+            success: mockToastSuccess,
+            info: mockToastInfo,
+            error: mockToastError,
+            warning: vi.fn(),
+            showToast: vi.fn(),
+            loading: vi.fn(),
+            updateProgress: vi.fn(),
+            dismiss: vi.fn(),
+            promise: vi.fn()
+        } as any);
     });
 
     it('successfully completes a 5-step video production daisychain', async () => {
         // We need a wrapper to manage the store state transitions during the test
         const DaisychainApp = () => {
-            const [state, setState] = useState<any>({
-                viewMode: 'gallery',
-                generationMode: 'video',
-                videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0 },
+            const [state, setState] = useState({
+                viewMode: 'gallery' as const,
+                generationMode: 'video' as const,
+                videoInputs: { isDaisyChain: false, firstFrame: null, lastFrame: null, timeOffset: 0, ingredients: [] },
                 generatedHistory: mockItems,
-                uploadedImages: [], // <--- Added this
+                uploadedImages: [],
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
                 currentProjectId: 'p1',
                 currentOrganizationId: 'o1'
@@ -143,7 +154,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setState((prev: any) => ({ ...prev, generationMode: mode }));
             }, []);
 
-            const setViewMode = React.useCallback((mode: string) => {
+            const setViewMode = React.useCallback((mode: any) => {
                 setState((prev: any) => ({ ...prev, viewMode: mode }));
             }, []);
 
@@ -151,9 +162,16 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setState((prev: any) => ({ ...prev, prompt: p }));
             }, []);
 
-            const addToHistory = React.useCallback((item: any) => {
-                setState((prev: any) => ({ ...prev, generatedHistory: [...prev.generatedHistory, item] }));
+            const addToHistory = React.useCallback((_item: any) => {
+                // Mock add to history
             }, []);
+
+            // 🔗 Link interaction mocks to state updates
+            mockSetVideoInput.mockImplementation(setVideoInput);
+            mockSetViewMode.mockImplementation(setViewMode);
+            mockSetGenerationMode.mockImplementation(setGenerationMode);
+            mockSetPrompt.mockImplementation(setPrompt);
+            mockAddToHistory.mockImplementation(addToHistory);
 
             const storeState = React.useMemo(() => ({
                 ...state,
@@ -163,25 +181,29 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 setPrompt,
                 addToHistory,
                 setSelectedItem: vi.fn(),
-                setPendingPrompt: vi.fn(),
-                selectedItem: null,
-                userProfile: { id: 'u1', name: 'Test User' },
-                whiskState: { subjects: [], scenes: [], styles: [], motion: [], preciseReference: false, targetMedia: 'video' },
+                subscribe: vi.fn(),
+                currentProjectId: 'test-project',
+                studioControls: {
+                    resolution: '720p',
+                    aspectRatio: '16:9',
+                    duration: 4,
+                    thinking: true
+                },
                 // Mock properties accessed via getState
                 videoInputs: state.videoInputs,
-                setIsGenerating: vi.fn()
+                setIsGenerating: vi.fn(),
+                whiskState: {}
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 
+            // Sync useStore mock to this local state
             (useStore as any).mockImplementation((selector: any) => {
                 return selector ? selector(storeState) : storeState;
             });
 
             // Mock useStore properties for direct access
             (useStore as any).getState = () => storeState;
-            (useStore as any).setState = vi.fn();
-            (useStore as any).subscribe = vi.fn();
 
-            return <CreativeStudio />;
+            return <CreativeStudio initialMode="video" />;
         };
 
         render(<DaisychainApp />);
@@ -234,14 +256,14 @@ describe('🖱️ Click: Video Production Daisychain', () => {
         const genBtn = screen.getByTestId('video-generate-btn');
         fireEvent.click(genBtn);
 
-        expect(mockToast.info).toHaveBeenCalledWith('Queuing interpolation...');
+        expect(mockToastInfo).toHaveBeenCalledWith('Queuing interpolation...');
 
         await waitFor(() => {
             expect(VideoGeneration.generateVideo).toHaveBeenCalledWith(expect.objectContaining({
                 firstFrame: 'img1.jpg',
                 lastFrame: 'img2.jpg'
             }));
-            expect(mockToast.success).toHaveBeenCalledWith('Scene generated!');
+            expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
         });
     });
 });
