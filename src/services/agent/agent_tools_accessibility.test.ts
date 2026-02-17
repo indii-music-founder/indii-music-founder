@@ -46,6 +46,7 @@ vi.mock('./MemoryService', () => ({
 
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: {}
     getFirebaseAI: vi.fn().mockReturnValue({}),
     remoteConfig: { settings: {}, defaultConfig: {} },
     functions: {}

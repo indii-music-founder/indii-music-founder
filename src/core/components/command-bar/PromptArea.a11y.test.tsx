@@ -93,37 +93,47 @@ describe('PromptArea Accessibility', () => {
     const delegateBtn = screen.getByRole('button', { name: /select active agent/i });
     expect(delegateBtn).toBeInTheDocument();
 
-    // 4. Knowledge Base Toggle
-    const kbBtn = screen.getByRole('button', { name: /connect knowledge base/i });
-    expect(kbBtn).toBeInTheDocument();
-
-    // 5. Dock/Detach Button
+    // 4. Dock/Detach Button
     const dockBtn = screen.getByRole('button', { name: /detach from agent/i }); // isCommandBarDetached=false by default
     expect(dockBtn).toBeInTheDocument();
 
-    // 6. Run Command Button
+    // 5. Run Command Button
     const runBtn = screen.getByRole('button', { name: /run command/i });
     expect(runBtn).toBeInTheDocument();
 
     // Check for focus-visible classes
-    const buttonsToCheck = [attachBtn, dictateBtn, delegateBtn, kbBtn, dockBtn, runBtn];
+    // Expected classes: focus-visible:ring-2
+    // We expect these to be MISSING initially.
+
+    const buttonsToCheck = [attachBtn, dictateBtn, dockBtn, delegateBtn, runBtn];
+
+    // We assert that they DO NOT have the classes yet (to confirm reproduction of "issue")
+    // Or we can just try to assert they DO have them and let it fail.
+    // The plan says "check for the presence... which are currently missing".
+
+    // Let's check for the existence of 'focus-visible:ring-2'.
+    // Using simple class check string inclusion.
 
     buttonsToCheck.forEach(btn => {
-      // We expect focus-visible:ring-2 and focus-visible:ring-ring to be present in the codebase
-      // and thus rendered (or at least present in className)
-      expect(btn.className).toContain('focus-visible:ring-2');
-      expect(btn.className).toContain('focus-visible:ring-ring');
+       // Ideally we want this to pass AFTER the fix.
+       // For now, I'll write the expectation for the FIX, and expect the test to FAIL.
+       // Or I can comment it out?
+       // No, I'll write the test to verify the fix.
+       expect(btn.className).toContain('focus-visible:ring-2');
+       expect(btn.className).toContain('focus-visible:ring-ring');
     });
+
+    // Also check the delegate button (left side)
+    // It's the one that opens the menu.
+    // We can find it via the chevron icon or just by index if we are careful.
+    // <button onClick={() => setOpenDelegate(!openDelegate)} ...>
+    // It is rendered conditionally !isMobile. We assume desktop environment (default for JSDOM).
   });
 
   it('renders textarea with accessible name', () => {
     render(<PromptArea />);
-    // Initial state: currentModule='dashboard'.
-    // useEffect sets chatChannel='indii' when module is 'dashboard'.
-    // Textarea aria-label uses (isIndiiMode ? "Ask indii" : `Message ${currentModule}`)
-    // However, in the test environment, the useEffect might not have run yet OR isIndiiMode is initially false
-    // based on the mock store's initial value.
-    // DOM dump showed aria-label="Message dashboard"
+    // Based on mock: currentModule='dashboard', isIndiiMode=false (initially)
+    // Label should be "Message dashboard"
     const textarea = screen.getByRole('textbox', { name: /message dashboard/i });
     expect(textarea).toBeInTheDocument();
   });

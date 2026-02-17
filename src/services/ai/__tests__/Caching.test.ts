@@ -45,8 +45,8 @@ vi.mock('firebase/remote-config', () => ({
 vi.mock('../billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
-        checkRateLimit: vi.fn().mockResolvedValue(undefined),
-        trackUsage: vi.fn().mockResolvedValue(true)
+        trackUsage: vi.fn().mockResolvedValue(true),
+        checkRateLimit: vi.fn().mockResolvedValue(true)
     }
 }));
 
@@ -79,11 +79,12 @@ describe('AI Caching (Browser Environment)', () => {
         await aiCache.clear(); // Start with empty cache
 
         // Setup default mock response
+        // Note: The Google GenAI SDK (fallback client) returns a flat object with text/candidates,
+        // unlike the Firebase SDK which wraps it in a response object.
         mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => 'Fresh AI Response',
-                usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
-            }
+            text: 'Fresh AI Response',
+            candidates: [{ content: { parts: [{ text: 'Fresh AI Response' }] } }],
+            usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
         });
     });
 
@@ -98,9 +99,8 @@ describe('AI Caching (Browser Environment)', () => {
 
         // 2. Refresh Mock to return something different (to prove we don't call it)
         mockGenerateContent.mockResolvedValueOnce({
-            response: {
-                text: () => 'Different Response (Should Not Be Seen)'
-            }
+            text: 'Different Response (Should Not Be Seen)',
+            candidates: [{ content: { parts: [{ text: 'Different Response (Should Not Be Seen)' }] } }]
         });
 
         // 3. Second Call: Should hit the Cache
@@ -116,7 +116,8 @@ describe('AI Caching (Browser Environment)', () => {
         // Mock returning specific JSON
         const jsonResponse = JSON.stringify({ foo: 'bar' });
         mockGenerateContent.mockResolvedValue({
-            response: { text: () => jsonResponse }
+            text: jsonResponse,
+            candidates: [{ content: { parts: [{ text: jsonResponse }] } }]
         });
 
         // 1. First Call

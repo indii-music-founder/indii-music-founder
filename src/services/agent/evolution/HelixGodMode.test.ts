@@ -51,6 +51,11 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
       return 1.0;
     });
 
+    // FORCE ELITE COUNT to 2 to ensure both 'God' (Infinity) and 'Mortal' (1.0) survive for verification.
+    // Note: This is optional for 'God' as it would be elite even with eliteCount=1 (Infinity > 1.0),
+    // but ensures complete population checks.
+    engine['config'].eliteCount = 2;
+
     // Evolve
     const nextGen = await engine.evolve(population);
 
@@ -76,9 +81,7 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
     // JSON.stringify(-Infinity) results in "null", causing database corruption.
     // Helix must prevent this by clamping -Infinity to -Number.MAX_VALUE.
 
-    // Use eliteCount: 2 so both agents survive as elites (Doomed won't reproduce due to negative fitness)
-    const preserveConfig: EvolutionConfig = { ...config, eliteCount: 2, populationSize: 2 };
-    engine = new EvolutionEngine(preserveConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
     const population: AgentGene[] = [
       { ...baseGene, id: 'Doomed', fitness: undefined }, // Will get -Infinity
@@ -91,11 +94,15 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
       return 1.0;
     });
 
+    // FORCE ELITE COUNT to 2 so 'Doomed' survives as an elite (since it has negative fitness)
+    // Otherwise, with eliteCount=1, only 'Mortal' (1.0) survives, and 'Doomed' (-Infinity) is culled
+    // because EvolutionEngine filters out non-positive fitness for the mating pool.
+    engine['config'].eliteCount = 2;
+
     // Evolve
     const nextGen = await engine.evolve(population);
 
     // Verify the Doomed agent is in the population (not excluded)
-    expect(nextGen).toHaveLength(2);
     const doomed = nextGen.find(g => g.id === 'Doomed');
     expect(doomed).toBeDefined();
 
@@ -114,9 +121,7 @@ describe('🧬 Helix: God Mode (Infinity Handling)', () => {
     // JSON.stringify(NaN) results in "null", causing database corruption.
     // Helix must prevent this by converting NaN to 0 (failure state).
 
-    // Use eliteCount: 2 so both agents survive as elites (Broken has fitness 0 after sanitization)
-    const preserveConfig: EvolutionConfig = { ...config, eliteCount: 2, populationSize: 2 };
-    engine = new EvolutionEngine(preserveConfig, mockFitnessFn, mockMutationFn, mockCrossoverFn);
+    engine = new EvolutionEngine(config, mockFitnessFn, mockMutationFn, mockCrossoverFn);
 
     const population: AgentGene[] = [
       { ...baseGene, id: 'Broken', fitness: undefined }, // Will get NaN

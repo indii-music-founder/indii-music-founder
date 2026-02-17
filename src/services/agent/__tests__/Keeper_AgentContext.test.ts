@@ -194,7 +194,7 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
                 }
             },
             activeSessionId: 'session-123',
-            activeAgentProvider: 'native'
+            activeAgentProvider: 'native' // Ensure we use the native orchestrator flow
         });
 
         // Reset AgentService state (singleton)
@@ -240,6 +240,7 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
 
         // Assert AI received the truncated context
         // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)
+        // Note: With current mocks, Orchestrator and Coordinator are mocked out, so AI is called only ONCE by BaseAgent.
         const aiCall = mockGenerateContent.mock.calls[0][0];
         const sentText = aiCall.contents[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');
