@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '@/services/agent/BaseAgent';
 import { AgentConfig } from '@/services/agent/types';
-import { AppErrorCode } from '@/shared/types/errors';
 
 // ----------------------------------------------------------------------------
 // MOCKS
@@ -168,9 +167,9 @@ describe('📚 Keeper: Context Integrity', () => {
                 orgId: 'test-org'
             });
 
-            // 3. Inspect the call to AI.generateContentStream
-            expect(mockGenerateContentStream).toHaveBeenCalledTimes(1);
-            const callArgs = mockGenerateContentStream.mock.calls[0][0];
+            // 3. Inspect the call to AI.generateContent
+            expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+            const callArgs = mockGenerateContent.mock.calls[0][0];
             const promptParts = callArgs.contents[0].parts;
             const textPart = promptParts.find((p: any) => p.text && p.text.includes('# HISTORY'));
 
@@ -200,7 +199,7 @@ describe('📚 Keeper: Context Integrity', () => {
                 orgId: 'test-org'
             });
 
-            const callArgs = mockGenerateContentStream.mock.calls[0][0];
+            const callArgs = mockGenerateContent.mock.calls[0][0];
             const fullPrompt = callArgs.contents[0].parts[0].text;
 
             expect(fullPrompt).not.toContain('[...Older history truncated...]');
@@ -210,12 +209,12 @@ describe('📚 Keeper: Context Integrity', () => {
 
     describe('💰 Token Budget (Quota Check)', () => {
         let aiService: FirebaseAIService;
-        let mockGenerateContent: any;
+        let modelGenerateContent: any;
 
         beforeEach(async () => {
             vi.clearAllMocks();
 
-            mockGenerateContent = vi.fn().mockResolvedValue({
+            modelGenerateContent = vi.fn().mockResolvedValue({
                 response: {
                     text: () => 'Response',
                     usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
@@ -225,7 +224,7 @@ describe('📚 Keeper: Context Integrity', () => {
             // Mock getGenerativeModel return
             mockGetGenerativeModel.mockReturnValue({
                 model: 'gemini-test',
-                generateContent: mockGenerateContent
+                generateContent: modelGenerateContent
             });
 
             aiService = new FirebaseAIService();
@@ -255,7 +254,7 @@ describe('📚 Keeper: Context Integrity', () => {
             expect(mockCheckQuota).toHaveBeenCalledWith('test-user');
 
             // Ensure AI was NOT called
-            expect(mockGenerateContent).not.toHaveBeenCalled();
+            expect(modelGenerateContent).not.toHaveBeenCalled();
         });
 
         it('should allow request if TokenUsageService passes', async () => {
