@@ -15,6 +15,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 // Mock Firebase Functions
 vi.mock('@/services/firebase', () => ({
     functions: {},
+    auth: { currentUser: { uid: 'test-user' } }
 }));
 
 // Mock useTouring hook
