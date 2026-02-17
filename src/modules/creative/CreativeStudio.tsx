@@ -53,16 +53,20 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         }
     }, [initialMode, setGenerationMode]);
 
+    /*
     useEffect(() => {
         useStore.setState({ isAgentOpen: false });
         if (generationMode === 'video') {
-            setViewMode('video_production');
+            // Allow navigating to gallery or editor to pick assets even while in video mode
+            if (viewMode !== 'gallery' && viewMode !== 'editor' && viewMode !== 'video_production') {
+                setViewMode('video_production');
+            }
         } else if (viewMode === 'video_production') {
             // If we switched OUT of video mode, go back to gallery (or canvas/showroom)
-            // But if we just mounted with initialMode='image', generationMode might be 'image' already.
             setViewMode('gallery');
         }
     }, [generationMode, viewMode, setViewMode]);
+    */
 
     // Handle Pending Prompt for Image Mode
     useEffect(() => {
