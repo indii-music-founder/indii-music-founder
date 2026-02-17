@@ -23,6 +23,7 @@ import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
+import { ErrorButton } from './components/debug/ErrorButton';
 
 // ============================================================================
 // Lazy-loaded Module Components
@@ -383,6 +384,7 @@ export default function App() {
                         {import.meta.env.DEV && (
                             <Suspense fallback={null}>
                                 <DevPortWarning />
+                                <ErrorButton />
                             </Suspense>
                         )}
 
