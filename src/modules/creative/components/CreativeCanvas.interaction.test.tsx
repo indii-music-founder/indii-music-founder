@@ -32,7 +32,15 @@ vi.mock('@/services/storage/repository', () => ({
     getCanvasStateFromStorage: vi.fn().mockResolvedValue(null),
 }));
 vi.mock('../services/CanvasOperationsService', () => ({
-    canvasOps: { addRectangle: vi.fn(), addCircle: vi.fn(), addText: vi.fn(), initialize: vi.fn() }
+    canvasOps: {
+        addRectangle: vi.fn(),
+        addCircle: vi.fn(),
+        addText: vi.fn(),
+        initialize: vi.fn(),
+        dispose: vi.fn(),
+        updateBrushColor: vi.fn(),
+        setMagicFillMode: vi.fn()
+    }
 }));
 vi.mock('../services/VideoDirector', () => ({ VideoDirector: { animate: vi.fn() } }));
 vi.mock('@/services/image/EditingService', () => ({ Editing: { magicFill: vi.fn() } }));
