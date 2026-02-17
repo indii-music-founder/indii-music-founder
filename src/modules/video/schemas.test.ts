@@ -14,7 +14,7 @@ describe('Video Schemas', () => {
         });
 
         it('should validate VideoResolutionSchema', () => {
-             expect(VideoResolutionSchema.parse('1080p')).toBe('1080p');
+             expect(VideoResolutionSchema.parse('1920x1080')).toBe('1920x1080');
              expect(() => VideoResolutionSchema.parse('800x600')).toThrow();
         });
 
@@ -51,11 +51,11 @@ describe('Video Schemas', () => {
              expect(() => VideoGenerationOptionsSchema.parse({ ...base, fps: 61 })).toThrow();
         });
 
-        it('should validate ingredients as string array', () => {
+        it('should validate ingredients are urls', () => {
              const base = { prompt: 'Test' };
              expect(VideoGenerationOptionsSchema.parse({ ...base, ingredients: ['https://example.com/img.png'] }).ingredients).toHaveLength(1);
-             // ingredients is z.array(z.string()) - any strings accepted
-             expect(VideoGenerationOptionsSchema.parse({ ...base, ingredients: ['not-a-url'] }).ingredients).toHaveLength(1);
+
+             expect(() => VideoGenerationOptionsSchema.parse({ ...base, ingredients: ['not-a-url'] })).toThrow();
         });
     });
 });

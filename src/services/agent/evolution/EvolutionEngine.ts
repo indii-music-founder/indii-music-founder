@@ -37,16 +37,8 @@ export class EvolutionEngine {
       })
     );
 
-    // Helix: Sanitize fitness values BEFORE sorting to prevent -Infinity/NaN
-    // from being coerced to 0 by the || operator and lost during selection.
-    for (const gene of scoredPopulation) {
-      if (gene.fitness === Infinity) gene.fitness = Number.MAX_VALUE;
-      else if (gene.fitness === -Infinity) gene.fitness = -Number.MAX_VALUE;
-      else if (typeof gene.fitness === 'number' && Number.isNaN(gene.fitness)) gene.fitness = 0;
-    }
-
     // Sort by fitness (descending)
-    scoredPopulation.sort((a, b) => (b.fitness ?? 0) - (a.fitness ?? 0));
+    scoredPopulation.sort((a, b) => (b.fitness || 0) - (a.fitness || 0));
 
     // Helix: "Doomsday Switch"
     // If the population has reached the maximum generation, we halt evolution to prevent infinite loops.
@@ -65,7 +57,7 @@ export class EvolutionEngine {
 
     // Filter out zero-fitness agents for reproduction
     // Helix: "Fitness Validator" - a score of 0.0 kills the agent (prevents reproduction)
-    const matingPool = scoredPopulation.filter(gene => (gene.fitness ?? 0) > 0);
+    const matingPool = scoredPopulation.filter(gene => (gene.fitness || 0) > 0);
 
     // If the mating pool is empty (mass extinction), we can't breed.
     // We return whatever elites survived (or empty if no elites).
@@ -196,7 +188,7 @@ export class EvolutionEngine {
 
     for (let i = 0; i < tournamentSize - 1; i++) {
       const contender = population[Math.floor(Math.random() * population.length)];
-      if ((contender.fitness ?? 0) > (best.fitness ?? 0)) {
+      if ((contender.fitness || 0) > (best.fitness || 0)) {
         best = contender;
       }
     }

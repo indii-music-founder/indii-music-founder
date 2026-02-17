@@ -56,7 +56,15 @@ vi.mock('@/services/storage/repository', () => ({
 }));
 
 vi.mock('../services/CanvasOperationsService', () => ({
-    canvasOps: { addRectangle: vi.fn(), addCircle: vi.fn(), addText: vi.fn(), initialize: vi.fn() }
+    canvasOps: {
+        addRectangle: vi.fn(),
+        addCircle: vi.fn(),
+        addText: vi.fn(),
+        initialize: vi.fn(),
+        dispose: vi.fn(),
+        updateBrushColor: vi.fn(),
+        setMagicFillMode: vi.fn()
+    }
 }));
 
 vi.mock('../services/VideoDirector', () => ({
