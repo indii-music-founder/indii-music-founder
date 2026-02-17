@@ -1,6 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { registerVideoHandlers } from './video';
-import { ipcMain } from 'electron';
 
 // Hoisted mocks for use in vi.mock
 const mocks = vi.hoisted(() => ({
@@ -116,17 +115,13 @@ describe('🛡️ Shield: Video Handler Security Test', () => {
             });
 
             // Path Traversal Attack
-            await invoke(
+            // Should be rejected due to security policy
+            await expect(invoke(
                 'video:save-asset',
                 { senderFrame: { url: 'file:///app/index.html' } },
                 'http://example.com/video.mp4',
                 '../../../../etc/passwd'
-            );
-
-            // Should be sanitized to just 'passwd' or something safe inside the expected dir
-            expect(mocks.fs.createWriteStream).toHaveBeenCalledWith(
-                expect.not.stringContaining('../')
-            );
+            )).rejects.toThrow(/Invalid filename: Path traversal detected/);
         });
     });
 

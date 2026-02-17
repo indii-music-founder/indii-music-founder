@@ -24,6 +24,7 @@ vi.mock('../src/services/MembershipService', () => ({
 const mockHttpsCallable = vi.fn();
 vi.mock('../src/services/firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
     auth: { currentUser: { uid: 'test-user' } },
     remoteConfig: { defaultConfig: {} }
@@ -32,7 +33,8 @@ vi.mock('../src/services/firebase', () => ({
 vi.mock('firebase/functions', () => ({
     httpsCallable: (functions: any, name: string) => {
         return mockHttpsCallable;
-    }
+    },
+    getFunctions: vi.fn()
 }));
 
 // Mock UUID
@@ -49,7 +51,7 @@ describe('VideoGenerationService', () => {
     it('should generate video with correct parameters', async () => {
         const result = await VideoGeneration.generateVideo({
             prompt: 'test prompt',
-            resolution: '1920x1080',
+            resolution: '1080p',
             aspectRatio: '16:9'
         });
 
@@ -57,7 +59,7 @@ describe('VideoGenerationService', () => {
         expect(result[0].id).toBe('test-uuid');
         expect(mockHttpsCallable).toHaveBeenCalledWith({
             prompt: 'test prompt',
-            resolution: '1920x1080',
+            resolution: '1080p',
             aspectRatio: '16:9',
             orgId: 'test-org',
             jobId: 'test-uuid'
