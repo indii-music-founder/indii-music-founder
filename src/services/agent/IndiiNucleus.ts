@@ -121,6 +121,14 @@ ${showroom}
   </directive>
 </system_dna>
 `.trim();
+            return `
+      ${industryProtocol}
+      <system_dna>
+        <soul>${soul}</soul>
+        <context>${artist}</context>
+        <current_task>${showroom}</current_task>
+      </system_dna>
+    `.trim();
         } catch (error) {
             console.error('[IndiiNucleus] DNA Splicing Failed:', error);
             // Fallback: return minimal identity so agent doesn't go generic
