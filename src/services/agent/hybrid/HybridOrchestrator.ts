@@ -177,11 +177,6 @@ export class HybridOrchestrator {
                         }
 
                         history.push({ turn: currentTurn, tool: 'browser_control', result: this.truncate(result.data || result.message) });
-                        history.push({
-                            turn: currentTurn,
-                            tool: 'browser_control',
-                            result: pruneResult(result.data || result.message || '')
-                        });
                         lastAgentResponse = result.message || '';
                     } catch (toolErr) {
                         console.error(`[indii:Hybrid] Tool browser_control failed:`, toolErr);
