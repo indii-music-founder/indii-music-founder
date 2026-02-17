@@ -118,10 +118,20 @@ vi.mock('@google/genai', () => ({
         models = {
             generateContent: (...args: any[]) => {
                 console.log('MOCK: GoogleGenAI.generateContent called');
-                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => res || {
-                    candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
-                    usageMetadata: { totalTokenCount: 10 },
-                    text: 'Mock response'
+                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => {
+                    if (res && res.response) {
+                        return {
+                            candidates: res.response.candidates || [],
+                            usageMetadata: res.response.usageMetadata,
+                            text: typeof res.response.text === 'function' ? res.response.text() : res.response.text,
+                            functionCalls: typeof res.response.functionCalls === 'function' ? res.response.functionCalls() : res.response.functionCalls
+                        };
+                    }
+                    return res || {
+                        candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
+                        usageMetadata: { totalTokenCount: 10 },
+                        text: 'Mock response'
+                    };
                 });
             },
             generateContentStream: (...args: any[]) => {

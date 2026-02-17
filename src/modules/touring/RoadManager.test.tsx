@@ -13,21 +13,22 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock Firebase Functions
-vi.mock('@/services/firebase', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@/services/firebase')>();
-    return {
-        ...actual,
-        functions: {},
-        auth: { currentUser: { uid: 'test-user' } }
-    };
-});
+vi.mock('@/services/firebase', () => ({
+    functions: {},
+    auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} },
+    db: {},
+    storage: {},
+    app: {},
+    messaging: {},
+    appCheck: {}
+}));
 
 // Mock useTouring hook
 vi.mock('./hooks/useTouring', () => ({
     useTouring: vi.fn(),
 }));
 
-// Helper to setup the mock with default or custom values
 const setupTouringMock = (overrides = {}) => {
     const defaultValues = {
         itineraries: [],
@@ -49,46 +50,43 @@ const setupTouringMock = (overrides = {}) => {
     vi.mocked(useTouring).mockReturnValue({ ...defaultValues, ...overrides });
 };
 
-vi.mock('firebase/functions', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('firebase/functions')>();
-    return {
-        ...actual,
-        httpsCallable: (functionsInstance: any, name: string) => {
-            console.log(`Mock httpsCallable called for: ${name}`);
-            return vi.fn().mockImplementation(async (data) => {
-                console.log(`Mock function executed for ${name} with data:`, data);
-                if (name === 'generateItinerary') {
-                    return {
-                        data: {
-                            tourName: 'Test Tour',
-                            stops: [
-                                {
-                                    date: '2023-10-01',
-                                    city: 'New York',
-                                    venue: 'MSG',
-                                    activity: 'Show',
-                                    notes: 'Sold out'
-                                }
-                            ],
-                            totalDistance: '1000 km',
-                            estimatedBudget: '$50000'
-                        }
-                    };
-                }
-                if (name === 'checkLogistics') {
-                    return {
-                        data: {
-                            isFeasible: true,
-                            issues: [],
-                            suggestions: ['Looks good']
-                        }
-                    };
-                }
-                return { data: {} };
-            });
-        },
-    };
-});
+vi.mock('firebase/functions', () => ({
+    getFunctions: vi.fn(() => ({})),
+    httpsCallable: (functionsInstance: any, name: string) => {
+        console.log(`Mock httpsCallable called for: ${name}`);
+        return vi.fn().mockImplementation(async (data) => {
+            console.log(`Mock function executed for ${name} with data:`, data);
+            if (name === 'generateItinerary') {
+                return {
+                    data: {
+                        tourName: 'Test Tour',
+                        stops: [
+                            {
+                                date: '2023-10-01',
+                                city: 'New York',
+                                venue: 'MSG',
+                                activity: 'Show',
+                                notes: 'Sold out'
+                            }
+                        ],
+                        totalDistance: '1000 km',
+                        estimatedBudget: '$50000'
+                    }
+                };
+            }
+            if (name === 'checkLogistics') {
+                return {
+                    data: {
+                        isFeasible: true,
+                        issues: [],
+                        suggestions: ['Looks good']
+                    }
+                };
+            }
+            return { data: {} };
+        });
+    },
+}));
 
 describe('RoadManager', () => {
     beforeEach(() => {
