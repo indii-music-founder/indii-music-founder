@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MobileNav } from './MobileNav';
 import { useStore } from '@/core/store';
@@ -9,16 +9,28 @@ import { useStore } from '@/core/store';
 vi.mock('@/core/store');
 vi.mock('lucide-react', async (importOriginal) => ({
     ...(await importOriginal<typeof import('lucide-react')>()),
-    Home: () => <div data-testid="icon-home" />,
-    Layout: () => <div data-testid="icon-layout" />,
-    MessageSquare: () => <div data-testid="icon-messages" />,
-    Book: () => <div data-testid="icon-book" />,
-    MoreHorizontal: () => <div data-testid="icon-more" />,
-    Music: () => <div data-testid="icon-music" />,
-    Workflow: () => <div data-testid="icon-workflow" />,
-    Scale: () => <div data-testid="icon-scale" />,
-    DollarSign: () => <div data-testid="icon-dollar" />,
+    Menu: () => <div data-testid="icon-menu" />,
     X: () => <div data-testid="icon-x" />,
+    Layout: () => <div data-testid="icon-layout" />,
+    Briefcase: () => <div data-testid="icon-briefcase" />,
+    Users: () => <div data-testid="icon-users" />,
+    Megaphone: () => <div data-testid="icon-megaphone" />,
+    Network: () => <div data-testid="icon-network" />,
+    Mic: () => <div data-testid="icon-mic" />,
+    Palette: () => <div data-testid="icon-palette" />,
+    Film: () => <div data-testid="icon-film" />,
+    Scale: () => <div data-testid="icon-scale" />,
+    Book: () => <div data-testid="icon-book" />,
+    DollarSign: () => <div data-testid="icon-dollar" />,
+    ShoppingBag: () => <div data-testid="icon-shopping-bag" />,
+    Radio: () => <div data-testid="icon-radio" />,
+    Clock: () => <div data-testid="icon-clock" />,
+    FileText: () => <div data-testid="icon-file-text" />,
+    Globe: () => <div data-testid="icon-globe" />,
+}));
+// Mock mobile haptics
+vi.mock('@/lib/mobile', () => ({
+    haptic: vi.fn(),
 }));
 
 describe('📱 Viewport: MobileNav Responsiveness', () => {
@@ -47,79 +59,90 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
         window.dispatchEvent(new Event('resize'));
     });
 
-    it('renders primary tabs on mobile', () => {
+    it('renders FAB button initially and drawer is hidden', () => {
         render(<MobileNav />);
 
-        expect(screen.getByText('Home')).toBeInTheDocument();
-        expect(screen.getByText('Studio')).toBeInTheDocument();
-        expect(screen.getByText('Market')).toBeInTheDocument();
-        expect(screen.getByText('Brain')).toBeInTheDocument();
-        expect(screen.getByText('More')).toBeInTheDocument();
+        // Check for FAB button
+        const faButton = screen.getByLabelText('Open Navigation');
+        expect(faButton).toBeInTheDocument();
+        expect(screen.getByTestId('icon-menu')).toBeInTheDocument();
+
+        // Check drawer is NOT visible
+        expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
+        expect(screen.queryByText('Return to HQ')).not.toBeInTheDocument();
     });
 
-    it('opens overflow menu when "More" is clicked', () => {
+    it('opens drawer when FAB is clicked', async () => {
         render(<MobileNav />);
 
-        const moreButton = screen.getByText('More').closest('button');
-        fireEvent.click(moreButton!);
+        const faButton = screen.getByLabelText('Open Navigation');
+        fireEvent.click(faButton);
 
-        expect(screen.getByText('More Features')).toBeInTheDocument();
-        expect(screen.getByText('Finance')).toBeInTheDocument();
+        // Check drawer content appears
+        await waitFor(() => {
+            expect(screen.getByText('Navigation')).toBeInTheDocument();
+        });
+
+        expect(screen.getByText('Return to HQ')).toBeInTheDocument();
+        expect(screen.getByText("Manager's Office")).toBeInTheDocument();
+        expect(screen.getByText('Brand Manager')).toBeInTheDocument();
     });
 
-    it('navigates when a primary tab is clicked', () => {
+    it('navigates when an item is clicked', async () => {
         render(<MobileNav />);
 
-        const homeButton = screen.getByText('Home').closest('button');
-        fireEvent.click(homeButton!);
+        // Open drawer
+        fireEvent.click(screen.getByLabelText('Open Navigation'));
+        await waitFor(() => expect(screen.getByText('Brand Manager')).toBeInTheDocument());
 
-        expect(mockSetModule).toHaveBeenCalledWith('dashboard');
+        // Click Brand Manager
+        fireEvent.click(screen.getByText('Brand Manager'));
+
+        expect(mockSetModule).toHaveBeenCalledWith('brand');
+
+        // Drawer should close (wait for animation/state update)
+        await waitFor(() => {
+            expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
+        });
     });
 
-    it('navigates and closes overflow menu when a secondary tab is clicked', () => {
+    it('closes drawer when clicking X button', async () => {
         render(<MobileNav />);
 
-        // Open menu
-        fireEvent.click(screen.getByText('More').closest('button')!);
+        // Open drawer
+        fireEvent.click(screen.getByLabelText('Open Navigation'));
+        await waitFor(() => expect(screen.getByLabelText('Close menu')).toBeInTheDocument());
 
-        // Click Finance
-        const financeButton = screen.getByText('Finance').closest('button');
-        fireEvent.click(financeButton!);
+        // Click Close
+        fireEvent.click(screen.getByLabelText('Close menu'));
 
-        // Assert navigation
-        expect(mockSetModule).toHaveBeenCalledWith('finance');
-
-        // Assert menu closed
-        expect(screen.queryByText('More Features')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
+        });
     });
 
-    it('closes overflow menu when clicking the X button', () => {
-        render(<MobileNav />);
-
-        // Open menu
-        fireEvent.click(screen.getByText('More').closest('button')!);
-        expect(screen.getByText('More Features')).toBeInTheDocument();
-
-        // Click X (we mocked it with testid icon-x)
-        const closeButton = screen.getByTestId('icon-x').closest('button');
-        fireEvent.click(closeButton!);
-
-        expect(screen.queryByText('More Features')).not.toBeInTheDocument();
-    });
-
-    it('closes overflow menu when clicking the backdrop', () => {
+    it('closes drawer when clicking backdrop', async () => {
         const { container } = render(<MobileNav />);
 
-        // Open menu
-        fireEvent.click(screen.getByText('More').closest('button')!);
+        // Open drawer
+        fireEvent.click(screen.getByLabelText('Open Navigation'));
+        await waitFor(() => expect(screen.getByText('Navigation')).toBeInTheDocument());
 
-        // Find backdrop by class since it doesn't have a test-id or text
-        // The backdrop is the first child of the fixed container
+        // Find backdrop (it has aria-hidden=true and onclick handler)
+        // Usually backdrop is the first child in the portal or absolute overlay
+        // Looking at code: className="absolute inset-0 bg-black/60 ..."
+        // It doesn't have a stable selector other than class or aria-hidden="true" (but aria-hidden might apply to others)
+        // The implementation has aria-hidden="true".
+
+        // Let's rely on class selection for the backdrop div
+        // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
         const backdrop = container.querySelector('.bg-black\\/60');
         expect(backdrop).toBeInTheDocument();
 
         fireEvent.click(backdrop!);
 
-        expect(screen.queryByText('More Features')).not.toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.queryByText('Navigation')).not.toBeInTheDocument();
+        });
     });
 });

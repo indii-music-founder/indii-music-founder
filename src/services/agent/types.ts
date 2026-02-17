@@ -209,7 +209,7 @@ export type ToolFunctionArgs = Record<string, unknown>;
 
 export interface ToolFunctionResult {
     success: boolean;
-    data?: any;
+    data?: unknown;
     error?: string;
     message?: string;
     /** Metadata for tracing and debugging (e.g. latency, model version used) */
@@ -237,7 +237,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  */
 
 export type AnyToolFunction = (
-    args: any,
+    args: unknown,
     context?: AgentContext,
     toolContext?: ToolExecutionContext
 ) => Promise<ToolFunctionResult>;
@@ -277,7 +277,7 @@ export interface AgentResponse {
 }
 
 export type AgentProgressCallback = (event: {
-    type: 'thought' | 'tool' | 'token' | 'usage' | 'tool_result';
+    type: 'thought' | 'tool' | 'token' | 'usage' | 'tool_result' | 'instrument execution';
     content: string;
     toolName?: string;
     usage?: {

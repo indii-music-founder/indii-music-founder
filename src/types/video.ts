@@ -32,6 +32,10 @@ export interface VideoJob {
     progress: number;
     error?: string;
     output?: VideoJobOutput;
+    // Legacy/Alias support for existing UI and services
+    videoUrl?: string;
+    url?: string;
+    stitchError?: string;
     safety_ratings?: VideoSafetyRating[];
     metadata?: Record<string, unknown>;
     createdAt: string;
