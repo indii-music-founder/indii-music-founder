@@ -9,7 +9,6 @@
 
 import { messaging } from '@/services/firebase';
 import { getToken, onMessage } from 'firebase/messaging';
-import { env } from '@/config/env';
 
 export type HapticPattern = 'light' | 'medium' | 'heavy' | 'success' | 'warning' | 'error';
 
@@ -392,7 +391,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
                     // We use a dummy VAPID if none provided just to triggering the flow if possible, 
                     // though it will likely fail for FCN without correct key.
                     // Ideally we should have VITE_FIREBASE_VAPID_KEY in env.
-                    const vapidKey = (import.meta as any).env.VITE_FIREBASE_VAPID_KEY;
+                    const vapidKey = (import.meta as unknown as { env: Record<string, string> }).env.VITE_FIREBASE_VAPID_KEY;
                     if (vapidKey) {
                         const token = await getToken(messaging, { vapidKey });
                         if (token) console.log('[Notifications] Token:', token);
@@ -414,7 +413,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
 /**
  * Listen for foreground messages
  */
-export const onMessageListener = (callback: (payload: any) => void) => {
+export const onMessageListener = (callback: (payload: unknown) => void) => {
     if (!messaging) return () => { };
     try {
         return onMessage(messaging, (payload) => {
@@ -448,6 +447,14 @@ declare global {
         readonly connection?: NetworkInformation;
         readonly mozConnection?: NetworkInformation;
         readonly webkitConnection?: NetworkInformation;
+        standalone?: boolean;
+        getBattery?: () => Promise<{
+            level: number;
+            charging: boolean;
+            chargingTime: number;
+            dischargingTime: number;
+            addEventListener(type: string, listener: EventListenerOrEventListenerObject): void;
+        }>;
     }
 }
 

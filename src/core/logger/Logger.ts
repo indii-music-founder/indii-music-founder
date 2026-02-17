@@ -32,7 +32,7 @@ class LoggerService {
     /**
      * Debug logs - Only visible in Development
      */
-    debug(module: string, message: string, data?: any) {
+    debug(module: string, message: string, data?: unknown) {
         if (this.isDev) {
             console.debug(this.formatMessage(module, message), data !== undefined ? data : '');
         }
@@ -41,7 +41,7 @@ class LoggerService {
     /**
      * Info logs - General operational events
      */
-    info(module: string, message: string, data?: any) {
+    info(module: string, message: string, data?: unknown) {
         if (this.isDev) {
             console.info(this.formatMessage(module, message), data !== undefined ? data : '');
         }
@@ -52,7 +52,8 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'info',
-                data
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data: data as Record<string, any>
             });
         } catch {
             // Fail silently if Sentry not initialized
@@ -62,7 +63,7 @@ class LoggerService {
     /**
      * Warn logs - Non-critical issues
      */
-    warn(module: string, message: string, data?: any) {
+    warn(module: string, message: string, data?: unknown) {
         if (this.isDev) {
             console.warn(this.formatMessage(module, message), data !== undefined ? data : '');
         }
@@ -73,7 +74,8 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'warning',
-                data
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                data: data as Record<string, any>
             });
         } catch {
             // Fail silently
@@ -84,7 +86,7 @@ class LoggerService {
      * Error logs - Critical failures
      * Automatically captures exception in Sentry
      */
-    error(module: string, message: string, error?: any) {
+    error(module: string, message: string, error?: unknown) {
         if (this.isDev) {
             console.error(this.formatMessage(module, message), error !== undefined ? error : '');
         }
@@ -95,7 +97,8 @@ class LoggerService {
                 tags: { module },
                 extra: {
                     contextMessage: message,
-                    rawError: error
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    rawError: error as any
                 }
             });
         } catch {

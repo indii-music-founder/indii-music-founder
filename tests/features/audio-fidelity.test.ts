@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest';
 import { AudioFidelityFeature } from '../../src/features/audio/AudioFidelityFeature';
 import { spawn } from 'child_process';
 import EventEmitter from 'events';
@@ -12,13 +12,20 @@ vi.mock('child_process', () => {
   };
 });
 
+// Custom mock process type since ChildProcess is complex
+interface MockChildProcess extends EventEmitter {
+  stdout: EventEmitter;
+  stderr: EventEmitter;
+  kill: Mock;
+}
+
 describe('AudioFidelityFeature', () => {
   let feature: AudioFidelityFeature;
-  let mockSpawn: any;
+  let mockSpawn: Mock;
 
   beforeEach(() => {
     feature = new AudioFidelityFeature();
-    mockSpawn = vi.mocked(spawn);
+    mockSpawn = vi.mocked(spawn) as unknown as Mock;
     mockSpawn.mockReset();
   });
 
@@ -29,7 +36,7 @@ describe('AudioFidelityFeature', () => {
   const setupMockSpawn = (stdoutData: string, stderrData: string = '', exitCode: number = 0) => {
     const stdout = new EventEmitter();
     const stderr = new EventEmitter();
-    const child = new EventEmitter() as any;
+    const child = new EventEmitter() as unknown as MockChildProcess;
     child.stdout = stdout;
     child.stderr = stderr;
     child.kill = vi.fn();
@@ -46,10 +53,10 @@ describe('AudioFidelityFeature', () => {
   };
 
   it('should validate inputs correctly', async () => {
-    // @ts-expect-error - testing runtime validation
     const result = await feature.execute({
-      filePath: '', // Invalid
-      targetStandard: 'Invalid' // Invalid enum
+      filePath: '',
+      // @ts-expect-error - testing runtime validation
+      targetStandard: 'Invalid'
     });
 
     expect(result.success).toBe(false);

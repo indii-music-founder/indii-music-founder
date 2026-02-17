@@ -2,7 +2,7 @@ import { auth } from '@/services/firebase';
 import { TraceService } from '../observability/TraceService';
 import { agentRegistry } from '../registry';
 import { PipelineContext } from './ContextPipeline';
-import { AgentResponse } from '../types';
+import { AgentResponse, AgentProgressCallback } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
@@ -26,7 +26,7 @@ export class AgentExecutor {
         agentId: string,
         userGoal: string,
         context: PipelineContext,
-        onProgress?: (event: { type: string; content: string; toolName?: string }) => void,
+        onProgress?: AgentProgressCallback,
         signal?: AbortSignal,
         parentTraceId?: string,
         attachments?: { mimeType: string; base64: string }[]
@@ -89,7 +89,7 @@ export class AgentExecutor {
             }
 
             // Intercept progress to log trace steps
-            const interceptedOnProgress = async (event: any) => {
+            const interceptedOnProgress: AgentProgressCallback = async (event) => {
                 if (onProgress) onProgress(event);
 
                 const currentModel = agent?.id ? (AI_MODELS.TEXT.AGENT) : '';

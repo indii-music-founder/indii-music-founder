@@ -1,7 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { render, screen } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import ChatOverlay from './ChatOverlay';
-import { useStore } from '@/core/store';
 
 // --- MOCKS ---
 
@@ -45,7 +45,7 @@ vi.mock('framer-motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: any) => <div>{children}</div>,
     useDragControls: () => ({ start: vi.fn() }),
 }));
 
@@ -91,7 +91,7 @@ vi.mock('./ContractRenderer', () => ({ default: () => <div /> }));
 
 // Mock Store - hoisted
 const mockGetState = vi.fn();
-const mockUseStore = vi.fn();
+const mockUseStore = vi.fn() as any;
 // Attach getState to the hook mock
 (mockUseStore as any).getState = mockGetState;
 

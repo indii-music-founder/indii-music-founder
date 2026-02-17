@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as DistributionTypes from './distribution';
 
 export interface AuthTokenData {
@@ -33,7 +34,7 @@ export interface ElectronAPI {
     // Audio (Native Processing)
     audio: {
         analyze: (filePath: string) => Promise<AudioAnalysisResult>;
-        getMetadata: (hash: string) => Promise<any>;
+        getMetadata: (hash: string) => Promise<unknown>;
     };
 
     // Network (Main Process Fetching)
@@ -54,9 +55,10 @@ export interface ElectronAPI {
         navigateAndExtract: (url: string) => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
         performAction: (action: 'click' | 'type' | 'scroll' | 'wait', selector: string, text?: string) => Promise<{ success: boolean; error?: string }>;
         captureState: () => Promise<{ success: boolean; title?: string; url?: string; text?: string; screenshotBase64?: string; error?: string }>;
-        saveHistory: (id: string, data: any) => Promise<{ success: boolean; error?: string }>;
-        getHistory: (id: string) => Promise<{ success: boolean; data?: any; error?: string }>;
+        saveHistory: (id: string, data: unknown) => Promise<{ success: boolean; error?: string }>;
+        getHistory: (id: string) => Promise<{ success: boolean; data?: unknown; error?: string }>;
         deleteHistory: (id: string) => Promise<{ success: boolean; error?: string }>;
+        proxyZero?: (url: string, payload: unknown, headers: Record<string, string>) => Promise<{ success: boolean; status?: number; data?: unknown; error?: string }>;
     };
 
     // Video (Local Asset Management)
@@ -75,7 +77,7 @@ export interface ElectronAPI {
     // Distribution (DDEX Packaging)
     distribution: {
         stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
-        runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<any>>;
+        runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ForensicsReport>>;
         packageITMSP: (releaseId: string) => Promise<DistributionTypes.PackageResponse>;
         calculateTax: (data: DistributionTypes.TaxCalculationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
         certifyTax: (userId: string, data: DistributionTypes.TaxCertificationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
@@ -83,28 +85,28 @@ export interface ElectronAPI {
         validateMetadata: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ValidationReport>>;
         generateISRC: (options?: DistributionTypes.ISRCGenerationOptions) => Promise<DistributionTypes.ISRCResponse>;
         generateUPC: (options?: DistributionTypes.UPCGenerationOptions) => Promise<DistributionTypes.UPCResponse>;
-        registerRelease: (metadata: any, releaseId?: string) => Promise<DistributionTypes.IPCResponse<any>>;
+        registerRelease: (metadata: unknown, releaseId?: string) => Promise<DistributionTypes.IPCResponse<unknown>>;
         generateDDEX: (metadata: DistributionTypes.DDEXMetadata) => Promise<DistributionTypes.DDEXResponse>;
         generateContentIdCSV: (data: DistributionTypes.ContentIdData) => Promise<DistributionTypes.CSVResponse<DistributionTypes.ContentIdReport>>;
-        generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<any>>;
+        generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
         transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
     };
-    on: (channel: string, callback: (...args: any[]) => void) => () => void;
+    on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
 }
 
 declare global {
     interface Window {
         electronAPI?: ElectronAPI;
-        MSStream?: any; // Legacy iOS detection
+        MSStream?: unknown; // Legacy iOS detection
     }
 
     interface Navigator {
         standalone?: boolean; // iOS PWA detection
         wakeLock?: {
-            request: (type: 'screen') => Promise<any>;
+            request: (type: 'screen') => Promise<unknown>;
         };
-        getBattery?: () => Promise<any>;
+        getBattery?: () => Promise<unknown>;
     }
 }
 

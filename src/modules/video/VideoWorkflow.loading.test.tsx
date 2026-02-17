@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { render, screen, act } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import VideoWorkflow from './VideoWorkflow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
@@ -31,8 +31,8 @@ vi.mock('@/core/store', () => ({
 
 // Mock Video Editor Store
 vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({ status: 'idle', setProgress: mockSetProgress }));
+    const fn = vi.fn() as Mock & { getState: Mock };
+    fn.getState = vi.fn(() => ({ status: 'idle', setProgress: mockSetProgress }));
     return { useVideoEditorStore: fn };
 });
 
@@ -53,7 +53,7 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('../../utils/video', () => ({ extractVideoFrame: vi.fn() }));
 
 // Mock VideoGenerationService
-let subscribeCallback: ((data: any) => void) | null = null;
+let subscribeCallback: ((data: unknown) => void) | null = null;
 vi.mock('@/services/video/VideoGenerationService', () => ({
     VideoGeneration: {
         generateVideo: vi.fn(),
@@ -79,8 +79,8 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // Helper to set store state for a test
-const mockStoreState = (overrides: any) => {
-    (useVideoEditorStore as any).mockReturnValue({
+const mockStoreState = (overrides: Record<string, unknown>) => {
+    vi.mocked(useVideoEditorStore).mockReturnValue({
         jobId: overrides.jobId || null,
         status: overrides.status || 'idle',
         setJobId: mockSetJobId,
@@ -91,7 +91,7 @@ const mockStoreState = (overrides: any) => {
         setViewMode: vi.fn(),
     });
     // Ensure getState matches if needed
-    (useVideoEditorStore as any).getState.mockReturnValue({
+    (vi.mocked(useVideoEditorStore) as unknown as { getState: Mock }).getState.mockReturnValue({
         status: overrides.status || 'idle',
         setProgress: mockSetProgress
     });

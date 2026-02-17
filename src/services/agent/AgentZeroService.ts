@@ -11,7 +11,7 @@ export interface AgentZeroConfig {
 // Response interfaces
 export interface AgentZeroResponse {
     message: string; // The text response
-    tool_calls?: any[];
+    tool_calls?: unknown[];
     attachments?: string[];
 }
 
@@ -21,11 +21,18 @@ export interface HistoryItem {
     timestamp: number;
 }
 
+interface AgentZeroRawResponse {
+    response?: string;
+    message?: string;
+    attachments?: string[];
+    [key: string]: unknown;
+}
+
 export interface AgentTaskRequest {
     project_id: string;
     instruction: string;
     agent_profile?: string;
-    variables?: Record<string, any>;
+    variables?: Record<string, unknown>;
 }
 
 export interface AgentTaskResponse {
@@ -47,7 +54,7 @@ export interface ProvisionProjectRequest {
 export interface SyncProjectRequest {
     project_id: string;
     sync_type: 'metadata_update' | 'asset_refresh';
-    data: Record<string, any>;
+    data: Record<string, unknown>;
 }
 
 /**
@@ -123,8 +130,8 @@ class AgentZeroService {
                 signal: controller.signal
             });
             return response;
-        } catch (error: any) {
-            if (error.name === 'AbortError') {
+        } catch (error: unknown) {
+            if (error instanceof Error && error.name === 'AbortError') {
                 throw new Error(`Request timed out after ${timeoutMs}ms`);
             }
             throw error;
@@ -146,19 +153,21 @@ class AgentZeroService {
      * Central API caller that handles Electron Proxy vs Web Fetch.
      * Electron proxy is preferred to bypass CORS for localhost:50080.
      */
-    private async callApi(endpoint: string, payload: any, timeoutMs: number = 30000): Promise<any> {
+    private async callApi(endpoint: string, payload: unknown, timeoutMs: number = 30000): Promise<unknown> {
         const fullUrl = endpoint.startsWith('http') ? endpoint : `${this.config.baseUrl}${endpoint}`;
         const headers = this.getHeaders();
 
         // 1. Try Electron Proxy (Full CORS bypass)
-        if (typeof window !== 'undefined' && (window as any).electronAPI?.agent?.proxyZero) {
+        if (typeof window !== 'undefined' && window.electronAPI?.agent?.proxyZero) {
             console.debug(`[AgentZeroService] Using Electron Proxy for: ${fullUrl}`);
-            const result = await (window as any).electronAPI.agent.proxyZero(fullUrl, payload, headers);
+            const result = await window.electronAPI.agent.proxyZero(fullUrl, payload, headers);
 
-            if (!result.success) {
-                if (result.status === 401) throw new Error('Agent Zero: Unauthorized (Invalid Token)');
-                if (result.status === 404) throw new Error(`Agent Zero: Endpoint not found (${fullUrl})`);
-                throw new Error(result.error || `Agent Zero Proxy Error (${result.status || 'Network'})`);
+            if (!result || !result.success) {
+                const status = result?.status;
+                const error = result?.error;
+                if (status === 401) throw new Error('Agent Zero: Unauthorized (Invalid Token)');
+                if (status === 404) throw new Error(`Agent Zero: Endpoint not found (${fullUrl})`);
+                throw new Error(error || `Agent Zero Proxy Error (${status || 'Network'})`);
             }
 
             return result.data;
@@ -205,7 +214,7 @@ class AgentZeroService {
      */
     async sendMessage(message: string, attachments?: { filename: string; base64: string }[], contextId?: string, systemOverride?: string): Promise<AgentZeroResponse> {
         try {
-            const payload: any = {
+            const payload: Record<string, unknown> = {
                 message,
                 context_id: contextId,
                 ...(systemOverride && { system_override: systemOverride }),
@@ -216,7 +225,7 @@ class AgentZeroService {
             }
 
             // Using 60s timeout for LLM operations via callApi helper
-            const data = await this.callApi('/api_message', payload, 60000);
+            const data = await this.callApi('/api_message', payload, 60000) as AgentZeroRawResponse;
 
             // Apply img:// cache busting
             const processedMessage = this.processUrls(data.response || data.message || "Agent Zero: No text response.");
@@ -226,19 +235,20 @@ class AgentZeroService {
                 message: processedMessage,
                 attachments: processedAttachments
             };
-        } catch (e: any) {
+        } catch (e: unknown) {
+            const error = e as Error;
             console.error('[AgentZeroService] Send Message Failed:', {
-                message: e.message,
-                stack: e.stack,
-                cause: e.cause
+                message: error.message,
+                stack: error.stack,
+                cause: (error as { cause?: unknown }).cause
             });
 
             // Check for connection refusal (Docker container down)
-            if (e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('Proxy Error'))) {
+            if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError') || error.message.includes('Proxy Error'))) {
                 throw new Error('Agent Zero Unreachable. Is Docker container running on port 50080? (Main Process Proxy failed)');
             }
 
-            throw e;
+            throw error;
         }
     }
 
@@ -268,13 +278,13 @@ class AgentZeroService {
     async executeTask(request: AgentTaskRequest): Promise<AgentTaskResponse> {
         try {
             // Using 120s timeout for complex tasks via callApi helper
-            const data = await this.callApi('/indii_task', request, 120000);
+            const data = await this.callApi('/indii_task', request, 120000) as AgentTaskResponse;
 
-            if (data.agent_response) {
-                data.agent_response = this.processUrls(data.agent_response);
+            if (data.data?.response) {
+                data.data.response = this.processUrls(data.data.response);
             }
             return data;
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('[AgentZeroService] Execute Task Error:', e);
             throw e;
         }
@@ -284,7 +294,7 @@ class AgentZeroService {
      * Provisions a new project environment (Department/Artist).
      * Mapped to /api/provision_project
      */
-    async provisionProject(request: ProvisionProjectRequest): Promise<any> {
+    async provisionProject(request: ProvisionProjectRequest): Promise<unknown> {
         const endpoint = `${this.config.baseUrl}/provision_project`;
         try {
             const response = await this.fetchWithTimeout(
@@ -303,7 +313,7 @@ class AgentZeroService {
             }
 
             return await response.json();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('[AgentZeroService] Provision Project Error:', e);
             throw e;
         }
@@ -313,7 +323,7 @@ class AgentZeroService {
      * Synchronize state/metadata with the Agent.
      * Mapped to /api/indii_sync
      */
-    async syncProject(request: SyncProjectRequest): Promise<any> {
+    async syncProject(request: SyncProjectRequest): Promise<unknown> {
         const endpoint = `${this.config.baseUrl}/indii_sync`;
         try {
             const response = await this.fetchWithTimeout(
@@ -332,7 +342,7 @@ class AgentZeroService {
             }
 
             return await response.json();
-        } catch (e: any) {
+        } catch (e: unknown) {
             console.error('[AgentZeroService] Sync Project Error:', e);
             throw e;
         }

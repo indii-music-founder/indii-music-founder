@@ -199,7 +199,7 @@ export class DashboardService {
             };
 
             return result;
-        } catch (error) {
+        } catch (_error) {
             // Silently fail in beta production build, just return empty stats
             return { usedBytes: 0, quotaBytes: STORAGE_QUOTAS.free, percentUsed: 0 };
         }
@@ -271,7 +271,7 @@ export class DashboardService {
 
             // Duplicate items
             await Promise.all(historyItems.map(async (item) => {
-                const { id, ...data } = item;
+                const { id: _, ...data } = item;
                 await StorageService.saveItem({
                     ...data,
                     id: `copy_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // ID is usually ignored by saveItem but required by type
@@ -374,7 +374,8 @@ export class DashboardService {
             const weeklyActivity = Array(7).fill(0);
             const wordCounts: Record<string, number> = {};
 
-            for (const item of history) {
+            for (let i = 0; i < history.length; i++) {
+                const item = history[i];
                 // 1. Counts and Duration
                 if (item.type === 'image') {
                     imageCount++;
@@ -387,7 +388,8 @@ export class DashboardService {
 
                 // 2. Weekly Activity
                 // Using (item.timestamp || now) to handle missing timestamp safely
-                const daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
+                // eslint-disable-next-line prefer-const
+                let daysAgo = Math.floor((now - (item.timestamp || now)) / dayMs);
                 if (daysAgo >= 0 && daysAgo < 7) {
                     weeklyActivity[6 - daysAgo]++;
                 }
@@ -441,7 +443,7 @@ export class DashboardService {
             };
 
             return result;
-        } catch (error) {
+        } catch (_error) {
             return {
                 totalGenerations: 0,
                 totalMessages: 0,

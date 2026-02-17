@@ -11,14 +11,14 @@ import {
     ContentIdData,
     ISRCGenerationOptions,
     UPCGenerationOptions,
-    TaxCalculationData,
     TaxCertificationData,
     WaterfallData,
     WaterfallReport,
     TaxReport,
     ValidationReport,
     SFTPConfig,
-    SFTPReport
+    SFTPReport,
+    ForensicsReport
 } from '@/types/distribution';
 
 export type { DistributionTaskDocument as DistributionTask };
@@ -72,7 +72,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
     /**
      * Execute local audio forensics via Electron IPC
      */
-    async runLocalForensics(taskId: string, filePath: string): Promise<any> {
+    async runLocalForensics(taskId: string, filePath: string): Promise<ForensicsReport> {
         if (!window.electronAPI) {
             throw new Error('Electron environment required for forensics');
         }
@@ -84,7 +84,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             if (!result.success) {
                 await this.updateTask(taskId, { status: 'FAILED', error: result.error });
-                return result;
+                throw new Error(result.error || 'Forensics failed');
+            }
+
+            if (!result.report) {
+                await this.updateTask(taskId, { status: 'FAILED', error: 'Forensics report was not generated' });
+                throw new Error('Forensics report was not generated');
             }
 
             const status = result.report.status === 'PASS' ? 'COMPLETED' : 'FAILED';
