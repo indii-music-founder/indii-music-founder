@@ -15,7 +15,6 @@ import { httpsCallable } from 'firebase/functions';
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'ledger-test-user' } },
     functionsWest1: {},
-    db: {}
     db: {},
     remoteConfig: { defaultConfig: {} },
 }));
@@ -71,7 +70,7 @@ describe('VideoGenerationService (Ledger Circuit Breaker)', () => {
         // 2. Action: Attempt to generate video
         const options: any = {
             prompt: 'A cinematic shot of a ledger book closing firmly.',
-            resolution: '1920x1080',
+            resolution: '1080p',
             aspectRatio: '16:9',
             duration: 4,
             fps: 24,

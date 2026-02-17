@@ -120,8 +120,7 @@ describe('CostPredictor', () => {
 
     it('should calculate video costs', () => {
         const estimate = CostPredictor.predictVideoCost(5);
-        expect(estimate.estimatedCostUsd).toBe(0.05); // Based on model-configs.ts
-        expect(estimate.estimatedCredits).toBe(50);
+
         expect(estimate.estimatedCostUsd).toBe(1.0); // 5s * $0.20/s (perSecond pricing)
         expect(estimate.estimatedCredits).toBe(1000);
     });
