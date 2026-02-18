@@ -758,7 +758,11 @@ export class FirebaseAIService {
             systemInstruction
         );
 
-        const text = result.response.text();
+        if (!result?.response) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an invalid response structure');
+        }
+
+        const text = typeof result.response.text === 'function' ? result.response.text() : '';
         await aiCache.set(cacheKey, text, modelName, config);
         return text;
     }
@@ -832,7 +836,14 @@ export class FirebaseAIService {
             finalSystemInstruction
         );
 
-        const text = result.response.text();
+        if (!result?.response) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an invalid response structure for structured data');
+        }
+
+        const text = typeof result.response.text === 'function' ? result.response.text() : '';
+        if (!text) {
+            throw new AppException(AppErrorCode.INTERNAL_ERROR, 'AI Service returned an empty response for structured data');
+        }
         await aiCache.set(cacheKeyString, text, modelName, config);
 
         // Use the robust parser
