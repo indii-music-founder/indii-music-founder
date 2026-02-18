@@ -27,7 +27,7 @@ async function downloadFile(url: string, destinationPath: string) {
     await fs.promises.mkdir(path.dirname(destinationPath), { recursive: true });
 
     // Use stream pipeline for efficient writing
-    const stream = Readable.fromWeb(response.body as any); // Type cast for Node compatibility
+    const stream = Readable.fromWeb(response.body as unknown as import('stream/web').ReadableStream); // Type cast for Node compatibility
     const fileStream = fs.createWriteStream(destinationPath);
     await pipeline(stream, fileStream);
 }
