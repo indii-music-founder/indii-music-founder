@@ -3,8 +3,14 @@ import { AudioAnalysisService } from './AudioAnalysisService';
 
 // Polyfill Blob.arrayBuffer if missing (Node environment)
 if (typeof Blob !== 'undefined' && !Blob.prototype.arrayBuffer) {
-    Blob.prototype.arrayBuffer = async function (this: Blob) {
-        return new Response(this).arrayBuffer();
+    Blob.prototype.arrayBuffer = async function (this: any) {
+        // Fallback for missing text() and arrayBuffer()
+        if (typeof this.text === 'function') {
+            const text = await this.text();
+            return new TextEncoder().encode(text).buffer;
+        }
+        // Last resort for very limited mocks
+        return new Uint8Array(0).buffer;
     };
 }
 

@@ -365,7 +365,7 @@ export class FirebaseAIService {
                 })();
 
                 // Track Usage (Unified for both modes)
-                if (userId && result.response.usageMetadata) {
+                if (userId && result?.response?.usageMetadata) {
                     await TokenUsageService.trackUsage(
                         userId,
                         modelName,
@@ -640,6 +640,20 @@ export class FirebaseAIService {
             });
             const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
             const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
+            // Track usage for fallback mode
+            if (userId && lastChunk?.usageMetadata) {
+                try {
+                    await TokenUsageService.trackUsage(
+                        userId,
+                        modelName,
+                        lastChunk.usageMetadata.promptTokenCount || 0,
+                        lastChunk.usageMetadata.candidatesTokenCount || 0
+                    );
+                } catch {
+                    // Failed to track stream usage (non-critical)
+                }
+            }
 
             return {
                 response: {
@@ -958,7 +972,7 @@ export class FirebaseAIService {
                 const jobRef = doc(db, 'videoJobs', jobId);
                 const jobSnap = await getDoc(jobRef);
 
-                if (jobSnap.exists()) {
+                if (jobSnap && jobSnap.exists()) {
                     const data = jobSnap.data();
                     if (data?.status === 'completed' && data.videoUrl) {
                         return data.videoUrl;
