@@ -314,7 +314,7 @@ describe('FirebaseAIService', () => {
             data: () => ({ status: 'pending' })
         }).mockResolvedValueOnce({
             exists: () => true,
-            data: () => ({ status: 'complete', videoUrl: 'http://video.mp4' })
+            data: () => ({ status: 'completed', videoUrl: 'http://video.mp4' })
         });
 
         const result = await service.generateVideo({

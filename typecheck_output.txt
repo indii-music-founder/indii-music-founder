@@ -1,0 +1,751 @@
+
+> indii-os@0.1.0-beta.2 typecheck
+> tsc --noEmit
+
+src/modules/creative/tools.ts(13,5): error TS2322: Type 'ToolFunction<{ query?: string | undefined; limit?: number | undefined; type?: "video" | "image" | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query?: string | undefined; limit?: number | undefined; type?: "video" | "image" | undefined; }'.
+src/modules/finance/components/ExpenseTracker.tsx(76,56): error TS2339: Property 'raw_data' does not exist on type '{}'.
+src/modules/finance/components/RevenueProjections.tsx(28,32): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/PublicistAgent.test.ts(39,16): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/PublicistAgent.test.ts(48,16): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/PublicistAgent.test.ts(83,16): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/PublicistAgent.test.ts(84,16): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/PublicistAgent.test.ts(85,16): error TS18046: 'result.data' is of type 'unknown'.
+src/modules/publicist/tools.ts(56,5): error TS2322: Type 'ToolFunction<{ headline: string; company_name: string; key_points: string[]; contact_info: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ headline: string; company_name: string; key_points: string[]; contact_info: string; }'.
+src/modules/publicist/tools.ts(87,5): error TS2322: Type 'ToolFunction<{ issue: string; sentiment: string; platform: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ issue: string; sentiment: string; platform: string; }'.
+src/modules/publicist/tools.ts(115,5): error TS2322: Type 'ToolFunction<{ action: "list" | "add" | "remove"; contact?: any; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: "list" | "add" | "remove"; contact?: any; }'.
+src/modules/publicist/tools.ts(128,5): error TS2322: Type 'ToolFunction<{ outlet: string; angle: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ outlet: string; angle: string; }'.
+src/modules/publicist/tools.ts(139,5): error TS2322: Type 'ToolFunction<{ trackTitle: string; artistName: string; releaseDate: string; musicalStyle: string[]; targetAudience: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ trackTitle: string; artistName: string; releaseDate: string; musicalStyle: string[]; targetAudience: string; }'.
+src/services/agent/BaseAgent.ts(215,13): error TS2322: Type '({ projectId }: { projectId: any; }, _context: AgentContext | undefined, toolContext?: ToolExecutionContext | undefined) => Promise<{ success: false; error: string; data?: undefined; } | { ...; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters '__0' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ projectId: any; }'.
+src/services/agent/BaseAgent.ts(305,13): error TS2322: Type '(args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => Promise<{ success: true; data: { taskId: string; }; message: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/services/agent/BaseAgent.ts(317,13): error TS2322: Type '(args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => Promise<{ success: true; data: { taskId: string; }; message: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/services/agent/BaseAgent.ts(329,13): error TS2322: Type '(args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => Promise<{ success: true; message: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/services/agent/BaseAgent.ts(338,13): error TS2322: Type '(args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => Promise<{ success: true; message: string; } | { success: false; message: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'Record<string, unknown>'.
+src/services/agent/definitions/BrandAgent.ts(42,9): error TS2322: Type '(args: { goal: string; content: string; }) => Promise<{ success: true; data: { critique: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ goal: string; content: string; }'.
+src/services/agent/definitions/BrandAgent.ts(55,9): error TS2322: Type '(args: { content: string; type: string; }) => Promise<{ success: true; data: { analysis: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ content: string; type: string; }'.
+src/services/agent/definitions/BrandAgent.ts(68,9): error TS2322: Type '(args: { name: string; values: string[]; }) => Promise<{ success: true; data: { guidelines: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ name: string; values: string[]; }'.
+src/services/agent/definitions/BrandAgent.ts(84,9): error TS2322: Type '(args: { assets: string[]; }) => Promise<{ success: true; data: { message: string; results: ({ asset: string; analysis: string; error?: undefined; } | { asset: string; error: string; analysis?: undefined; })[]; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ assets: string[]; }'.
+src/services/agent/definitions/BrandAgent.ts(103,9): error TS2322: Type '(args: { uploadedAudioIndex: number; }) => Promise<{ success: true; data: { analysis: AudioIntelligenceProfile; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ uploadedAudioIndex: number; }'.
+src/services/agent/definitions/DevOpsAgent.ts(36,9): error TS2322: Type '(args: { cluster_id: string; }) => Promise<{ success: true; data: unknown; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ cluster_id: string; }'.
+src/services/agent/definitions/DevOpsAgent.ts(40,9): error TS2322: Type '(args: { deployment: string; replicas: number; }) => Promise<{ success: true; data: { message: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ deployment: string; replicas: number; }'.
+src/services/agent/definitions/DevOpsAgent.ts(48,9): error TS2322: Type '(args: { service_name: string; }) => Promise<{ success: true; data: { logs: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; }'.
+src/services/agent/definitions/FinanceAgent.ts(38,9): error TS2322: Type '(args: { amount: number; breakdown: string; }) => Promise<{ success: true; data: { status: string; efficiency_rating: string; dividend_saved: number; notes: string; timestamp: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ amount: number; breakdown: string; }'.
+src/services/agent/definitions/FinanceAgent.ts(52,9): error TS2322: Type '(args: { trackTitle: string; hasISRC: boolean; hasSplits: boolean; }) => Promise<{ success: true; data: { status: string; potential_loss: string; advice: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ trackTitle: string; hasISRC: boolean; hasSplits: boolean; }'.
+src/services/agent/definitions/FinanceAgent.ts(63,9): error TS2322: Type '(args: { query: string; }) => Promise<{ success: true; data: { answer: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/definitions/FinanceAgent.ts(79,9): error TS2322: Type '(args: { image_data: string; mime_type: string; }) => Promise<{ success: true; data: { receipt_data: unknown; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ image_data: string; mime_type: string; }'.
+src/services/agent/definitions/FinanceAgent.ts(92,9): error TS2322: Type '(args: { trackTitle: string; distributor: string; }) => Promise<{ success: true; data: { status: string; advice: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ trackTitle: string; distributor: string; }'.
+src/services/agent/definitions/LegalAgent.ts(39,9): error TS2322: Type '(args: { isCover: boolean; hasSamples: boolean; aiGenerated: boolean; }) => Promise<{ success: true; data: { status: string; message: string; risks?: undefined; advice?: undefined; }; } | { success: true; data: { ...; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ isCover: boolean; hasSamples: boolean; aiGenerated: boolean; }'.
+src/services/agent/definitions/LicensingAgent.ts(19,9): error TS2322: Type '(args: { title: string; artist: string; usage: string; url?: string; }) => Promise<{ success: true; data: { requestId: string; status: "pending" | "available" | "restricted"; title: string; artist: string; quote: string; notes: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ title: string; artist: string; usage: string; url?: string | undefined; }'.
+src/services/agent/definitions/LicensingAgent.ts(61,9): error TS2322: Type '(args: { file_data: string; mime_type: string; }) => Promise<{ success: true; data: { summary: string; next_steps: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ file_data: string; mime_type: string; }'.
+src/services/agent/definitions/LicensingAgent.ts(129,9): error TS2322: Type '(args: { type: string; parties: string[]; terms: string; }) => Promise<{ success: true; data: { contract: any; contractId: any; message: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ type: string; parties: string[]; terms: string; }'.
+src/services/agent/definitions/LicensingAgent.ts(144,35): error TS18046: 'toolResult.data' is of type 'unknown'.
+src/services/agent/definitions/LicensingAgent.ts(145,37): error TS18046: 'toolResult.data' is of type 'unknown'.
+src/services/agent/definitions/MarketingAgent.ts(42,9): error TS2322: Type '(args: { product: string; goal: string; }) => Promise<{ success: true; data: { brief: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ product: string; goal: string; }'.
+src/services/agent/definitions/MarketingAgent.ts(61,9): error TS2322: Type '(args: { platform: string; }) => Promise<{ success: true; data: { analysis: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ platform: string; }'.
+src/services/agent/definitions/MarketingAgent.ts(77,9): error TS2322: Type '(args: { posts: any[]; }) => Promise<{ success: true; data: { status: string; scheduled_count: number; platform_response: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ posts: any[]; }'.
+src/services/agent/definitions/MarketingAgent.ts(90,9): error TS2322: Type '(args: { campaignId: string; }) => Promise<{ success: true; data: unknown; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ campaignId: string; }'.
+src/services/agent/definitions/MarketingAgent.ts(99,9): error TS2322: Type '(args: { uploadedAudioIndex: number; }) => Promise<{ success: true; data: { insight: string; suggested_one_liner: string; keywords: string[]; technical: AudioFeatures; }; error?: undefined; } | { ...; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ uploadedAudioIndex: number; }'.
+src/services/agent/definitions/PublicistAgent.ts(55,8): error TS2345: Argument of type '(args: { userId: string; title: string; artist: string; type: "Album" | "Single" | "Tour"; focus: string; }) => Promise<{ success: true; data: { message: string; status: string; }; error?: undefined; } | { ...; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ userId: string; title: string; artist: string; type: "Single" | "Album" | "Tour"; focus: string; }'.
+src/services/agent/definitions/PublicistAgent.ts(98,8): error TS2345: Argument of type '(args: { headline: string; company_name: string; key_points?: string[]; contact_info?: string; }) => Promise<{ success: true; data: { generated_content: string; validation: { is_complete: boolean; missing_fields: string[]; word_count: number; }; }; error?: undefined; } | { ...; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ headline: string; company_name: string; key_points?: string[] | undefined; contact_info?: string | undefined; }'.
+src/services/agent/definitions/PublicistAgent.ts(145,8): error TS2345: Argument of type '(args: { issue: string; sentiment?: string; platform?: string; }) => Promise<{ success: true; data: { strategy: string; draft_response: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ issue: string; sentiment?: string | undefined; platform?: string | undefined; }'.
+src/services/agent/definitions/PublicistAgent.ts(184,8): error TS2345: Argument of type '(args: { platform: string; topic: string; tone?: string; }) => Promise<{ success: true; data: { post_text: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ platform: string; topic: string; tone?: string | undefined; }'.
+src/services/agent/definitions/PublicistAgent.ts(220,8): error TS2345: Argument of type '(args: { prompt: string; style?: string; aspect_ratio?: string; }) => Promise<{ success: true; data: { message: string; task_payload: { prompt: string; style?: string; aspect_ratio?: string; }; }; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; style?: string | undefined; aspect_ratio?: string | undefined; }'.
+src/services/agent/definitions/PublicistAgent.ts(245,8): error TS2345: Argument of type '(args: { action: string; url?: string; selector?: string; text?: string; }) => Promise<{ success: true; data: { message: string; payload: { action: string; url?: string; selector?: string; text?: string; }; }; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: string; url?: string | undefined; selector?: string | undefined; text?: string | undefined; }'.
+src/services/agent/definitions/PublicistAgent.ts(267,8): error TS2345: Argument of type '(args: { action: string; service: string; }) => Promise<{ success: true; data: { message: string; payload: { action: string; service: string; }; }; }>' is not assignable to parameter of type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: string; service: string; }'.
+src/services/agent/definitions/PublishingAgent.ts(41,9): error TS2322: Type '(args: { title: string; writers: string[]; split: string; }) => Promise<{ success: true; data: any; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ title: string; writers: string[]; split: string; }'.
+src/services/agent/definitions/PublishingAgent.ts(52,9): error TS2322: Type '(args: { file_data: string; mime_type: string; }) => Promise<{ success: true; data: { summary: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ file_data: string; mime_type: string; }'.
+src/services/agent/definitions/PublishingAgent.ts(57,9): error TS2322: Type '(args: { releaseId: string; assets: any; }) => Promise<{ success: true; data: any; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ releaseId: string; assets: any; }'.
+src/services/agent/definitions/RoadAgent.ts(40,9): error TS2322: Type '(args: { start_location: string; end_location: string; stops: string[]; }) => Promise<{ success: true; data: { route_plan: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ start_location: string; end_location: string; stops: string[]; }'.
+src/services/agent/definitions/RoadAgent.ts(62,9): error TS2322: Type '(args: { duration_days: number; crew_size: number; }) => Promise<{ success: true; data: unknown; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ duration_days: number; crew_size: number; }'.
+src/services/agent/definitions/RoadAgent.ts(75,9): error TS2322: Type '(args: { query: string; }) => Promise<{ success: true; data: { results: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/definitions/SecurityAgent.ts(26,9): error TS2322: Type '(args: { userId: string; }) => Promise<{ success: true; data: unknown; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ userId: string; }'.
+src/services/agent/definitions/SecurityAgent.ts(35,9): error TS2322: Type '(args: { text: string; }) => Promise<{ success: true; data: { scan_result: string; }; error?: undefined; } | { success: false; error: any; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ text: string; }'.
+src/services/agent/definitions/SecurityAgent.ts(47,9): error TS2322: Type '(args: { api_name: string; }) => Promise<{ success: true; data: unknown; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ api_name: string; }'.
+src/services/agent/definitions/SecurityAgent.ts(52,9): error TS2322: Type '(args: { service_name: string; }) => Promise<{ success: true; data: { message: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; }'.
+src/services/agent/definitions/SocialAgent.ts(40,9): error TS2322: Type '(args: { topic: string; }) => Promise<{ success: true; data: unknown; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ topic: string; }'.
+src/services/agent/definitions/SocialAgent.ts(49,9): error TS2322: Type '(args: { platform: string; topic: string; tone?: string; }) => Promise<{ success: true; data: { content: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ platform: string; topic: string; tone?: string | undefined; }'.
+src/services/agent/definitions/SocialAgent.ts(54,9): error TS2322: Type '(args: { releaseDate: string; campaignTitle: string; durationWeeks: number; }) => Promise<{ success: true; data: { calendar: string; }; error?: undefined; } | { success: false; error: string; data?: undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ releaseDate: string; campaignTitle: string; durationWeeks: number; }'.
+src/services/agent/definitions/SocialAgent.ts(73,9): error TS2322: Type '(args: { platform: string; content: string; scheduleTime: string; }) => Promise<{ success: true; data: { status: string; platform: string; scheduled_for: string; message: string; }; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ platform: string; content: string; scheduleTime: string; }'.
+src/services/agent/FinanceIntegration.test.ts(12,16): error TS18046: 'data' is of type 'unknown'.
+src/services/agent/FinanceIntegration.test.ts(13,16): error TS18046: 'data' is of type 'unknown'.
+src/services/agent/FinanceIntegration.test.ts(14,16): error TS18046: 'data' is of type 'unknown'.
+src/services/agent/hybrid/HybridOrchestrator.ts(155,62): error TS2339: Property 'answer' does not exist on type '{}'.
+src/services/agent/hybrid/HybridOrchestrator.ts(157,58): error TS2339: Property 'answer' does not exist on type '{}'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(52,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(53,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(85,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(86,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(101,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/AgentTools.test.ts(102,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/BigQueryTools.test.ts(47,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/BigQueryTools.test.ts(48,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/BigQueryTools.test.ts(108,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(51,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(52,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(63,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(64,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(73,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(90,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/CoreTools.test.ts(91,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/DevOpsTools.test.ts(51,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/DevOpsTools.test.ts(80,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(143,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(146,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(149,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(151,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(162,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/FinanceTools.test.ts(163,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/LegalTools.test.ts(29,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/LegalTools.test.ts(30,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/LegalTools.test.ts(43,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(67,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(68,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(69,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(88,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(89,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(109,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MapsTools.test.ts(110,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MarketingTools.test.ts(41,16): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/MarketingTools.test.ts(42,16): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/MarketingTools.test.ts(44,36): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/MarketingTools.test.ts(45,37): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(57,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(58,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(91,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(124,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(125,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(139,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(140,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(160,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(161,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(162,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(177,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(186,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/MemoryTools.test.ts(207,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/NarrativeTools.test.ts(84,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/ProjectTools.test.ts(74,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/RoadTools.test.ts(32,16): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/RoadTools.test.ts(33,16): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/RoadTools.test.ts(34,16): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(65,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(71,31): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(72,32): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(98,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(107,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(108,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(109,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(115,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(121,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(129,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(130,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(131,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(137,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(138,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(139,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(140,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(141,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(149,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(150,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(151,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(152,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(153,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(161,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(162,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(168,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(169,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(177,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(178,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(179,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(185,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(186,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(197,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(198,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(207,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/SecurityTools.test.ts(208,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/StandardGrammar.test.ts(64,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/StandardGrammar.test.ts(93,20): error TS18046: 'parsed' is of type 'unknown'.
+src/services/agent/tools/__tests__/StandardGrammar.test.ts(116,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(33,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(34,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(35,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(44,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(45,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(46,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(54,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(55,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(56,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(73,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(74,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(82,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(83,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(91,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(92,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(100,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/StorageTools.test.ts(101,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/VideoTools.test.ts(126,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/VideoTools.test.ts(223,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/VideoTools.test.ts(254,20): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/__tests__/VideoTools.whisk.test.ts(93,16): error TS18046: 'result.data' is of type 'unknown'.
+src/services/agent/tools/AnalysisTools.ts(9,5): error TS2322: Type 'ToolFunction<{ file_data: string; mime_type: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ file_data: string; mime_type: string; }'.
+src/services/agent/tools/BigQueryTools.ts(36,5): error TS2322: Type 'ToolFunction<{ query: string; projectId?: string | undefined; maxResults?: number | undefined; useLegacySql?: boolean | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; projectId?: string | undefined; maxResults?: number | undefined; useLegacySql?: boolean | undefined; }'.
+src/services/agent/tools/BigQueryTools.ts(64,5): error TS2322: Type 'ToolFunction<{ table_id: string; dataset_id: string; projectId?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ table_id: string; dataset_id: string; projectId?: string | undefined; }'.
+src/services/agent/tools/BigQueryTools.ts(85,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/BrandTools.ts(36,5): error TS2322: Type 'ToolFunction<{ goal: string; content: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ goal: string; content: string; }'.
+src/services/agent/tools/BrandTools.ts(57,5): error TS2322: Type 'ToolFunction<{ content: string; brand_guidelines?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ content: string; brand_guidelines?: string | undefined; }'.
+src/services/agent/tools/BrandTools.ts(79,5): error TS2322: Type 'ToolFunction<{ name: string; values: string[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ name: string; values: string[]; }'.
+src/services/agent/tools/BrandTools.ts(97,5): error TS2322: Type 'ToolFunction<{ assets: string[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ assets: string[]; }'.
+src/services/agent/tools/BrowserTools.ts(12,5): error TS2322: Type 'ToolFunction<{ url: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ url: string; }'.
+src/services/agent/tools/BrowserTools.ts(46,5): error TS2322: Type 'ToolFunction<{ action: "type" | "click" | "scroll" | "wait"; selector: string; text?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: "type" | "click" | "scroll" | "wait"; selector: string; text?: string | undefined; }'.
+src/services/agent/tools/BrowserTools.ts(75,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/CoreTools.ts(18,5): error TS2322: Type 'ToolFunction<{ targetAgentId: string; task: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ targetAgentId: string; task: string; }'.
+src/services/agent/tools/CoreTools.ts(56,5): error TS2322: Type 'ToolFunction<{ content: string; type?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ content: string; type?: string | undefined; }'.
+src/services/agent/tools/CoreTools.ts(84,5): error TS2322: Type 'ToolFunction<{ mode: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ mode: string; }'.
+src/services/agent/tools/CoreTools.ts(103,5): error TS2322: Type 'ToolFunction<{ text: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ text: string; }'.
+src/services/agent/tools/DevOpsTools.ts(68,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/DevOpsTools.ts(86,5): error TS2322: Type 'ToolFunction<{ cluster_id: string; projectId?: string | undefined; location?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ cluster_id: string; projectId?: string | undefined; location?: string | undefined; }'.
+src/services/agent/tools/DevOpsTools.ts(103,5): error TS2322: Type 'ToolFunction<{ cluster_id: string; nodePoolName: string; nodeCount: number; projectId?: string | undefined; location?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ cluster_id: string; nodePoolName: string; nodeCount: number; projectId?: string | undefined; location?: string | undefined; }'.
+src/services/agent/tools/DevOpsTools.ts(152,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/DevOpsTools.ts(170,5): error TS2322: Type 'ToolFunction<{ instance_name: string; zone: string; projectId?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ instance_name: string; zone: string; projectId?: string | undefined; }'.
+src/services/agent/tools/DirectorTools.ts(98,5): error TS2322: Type 'ToolFunction<GenerateImageArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'GenerateImageArgs'.
+src/services/agent/tools/DirectorTools.ts(215,5): error TS2322: Type 'ToolFunction<{ prompt: string; imageIndices?: number[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; imageIndices?: number[] | undefined; }'.
+src/services/agent/tools/DirectorTools.ts(284,5): error TS2322: Type 'ToolFunction<{ productType: string; scenePrompt: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ productType: string; scenePrompt: string; }'.
+src/services/agent/tools/DirectorTools.ts(294,5): error TS2322: Type 'ToolFunction<GenerateHighResAssetArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'GenerateHighResAssetArgs'.
+src/services/agent/tools/DirectorTools.ts(328,5): error TS2322: Type 'ToolFunction<{ prompt: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; }'.
+src/services/agent/tools/DirectorTools.ts(369,5): error TS2322: Type 'ToolFunction<ExtractGridFrameArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ExtractGridFrameArgs'.
+src/services/agent/tools/DirectorTools.ts(415,5): error TS2322: Type 'ToolFunction<SetEntityAnchorArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'SetEntityAnchorArgs'.
+src/services/agent/tools/DirectorTools.ts(442,5): error TS2322: Type 'ToolFunction<{ uploadedAudioIndex: number; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ uploadedAudioIndex: number; }'.
+src/services/agent/tools/DistributionTools.test.ts(49,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(50,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(51,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(69,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(70,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(71,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(87,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(88,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(89,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(105,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(106,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(122,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(138,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(158,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(159,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(160,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(176,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(177,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(193,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(194,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(208,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(209,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(222,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(223,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(236,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(237,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(249,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.test.ts(250,20): error TS18046: 'parsed.data' is of type 'unknown'.
+src/services/agent/tools/DistributionTools.ts(527,5): error TS2322: Type 'ToolFunction<{ title: string; artist: string; upc: string; isrc: string; label?: string | undefined; releaseType?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ title: string; artist: string; upc: string; isrc: string; label?: string | undefined; releaseType?: string | undefined; }'.
+src/services/agent/tools/DistributionTools.ts(528,5): error TS2322: Type 'ToolFunction<{ filePath: string; checkAtmos?: boolean | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ filePath: string; checkAtmos?: boolean | undefined; }'.
+src/services/agent/tools/DistributionTools.ts(529,5): error TS2322: Type 'ToolFunction<{ trackTitle: string; artist: string; year?: number | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ trackTitle: string; artist: string; year?: number | undefined; }'.
+src/services/agent/tools/DistributionTools.ts(530,5): error TS2322: Type 'ToolFunction<{ userId: string; isUsPerson: boolean; isEntity?: boolean | undefined; country: string; tin: string; signedUnderPerjury: boolean; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ userId: string; isUsPerson: boolean; isEntity?: boolean | undefined; country: string; tin: string; signedUnderPerjury: boolean; }'.
+src/services/agent/tools/DistributionTools.ts(531,5): error TS2322: Type 'ToolFunction<{ grossRevenue: number; isrc?: string | undefined; indiiFeePercent?: number | undefined; recoupableExpenses?: number | undefined; splits: { name: string; email?: string | undefined; percentage: number; role?: string | undefined; }[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ grossRevenue: number; isrc?: string | undefined; indiiFeePercent?: number | undefined; recoupableExpenses?: number | undefined; splits: { name: string; email?: string | undefined; percentage: number; role?: string | undefined; }[]; }'.
+src/services/agent/tools/DistributionTools.ts(532,5): error TS2322: Type 'ToolFunction<{ title: string; artist: string; artworkUrl?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ title: string; artist: string; artworkUrl?: string | undefined; }'.
+src/services/agent/tools/DistributionTools.ts(533,5): error TS2322: Type 'ToolFunction<{ works: { title: string; writer_last: string; writer_first: string; writer_ipi?: string | undefined; }[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ works: { title: string; writer_last: string; writer_first: string; writer_ipi?: string | undefined; }[]; }'.
+src/services/agent/tools/DistributionTools.ts(534,5): error TS2322: Type 'ToolFunction<{ total_tracks: number; has_isrcs: boolean; has_upcs: boolean; exclusive_rights: boolean; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ total_tracks: number; has_isrcs: boolean; has_upcs: boolean; exclusive_rights: boolean; }'.
+src/services/agent/tools/FinanceTools.ts(6,5): error TS2322: Type 'ToolFunction<{ image_data: string; mime_type: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ image_data: string; mime_type: string; }'.
+src/services/agent/tools/FinanceTools.ts(41,5): error TS2322: Type 'ToolFunction<{ trackTitle: string; distributor: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ trackTitle: string; distributor: string; }'.
+src/services/agent/tools/FinanceTools.ts(58,5): error TS2322: Type 'ToolFunction<{ currentStreams: number; platform: string; rightsHolderSplit: number; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ currentStreams: number; platform: string; rightsHolderSplit: number; }'.
+src/services/agent/tools/KnowledgeTools.ts(9,5): error TS2322: Type 'ToolFunction<{ query: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/tools/KnowledgeTools.ts(43,5): error TS2322: Type 'ToolFunction<{ query: string; maxResults?: number | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; maxResults?: number | undefined; }'.
+src/services/agent/tools/KnowledgeTools.ts(80,5): error TS2322: Type 'ToolFunction<{ documentName: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ documentName: string; }'.
+src/services/agent/tools/LegalTools.ts(13,5): error TS2322: Type 'ToolFunction<{ type: string; parties: string[]; terms: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ type: string; parties: string[]; terms: string; }'.
+src/services/agent/tools/LegalTools.ts(71,5): error TS2322: Type 'ToolFunction<{ parties: string[]; purpose: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ parties: string[]; purpose: string; }'.
+src/services/agent/tools/MapsTools.ts(42,5): error TS2322: Type 'ToolFunction<{ query: string; type?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; type?: string | undefined; }'.
+src/services/agent/tools/MapsTools.ts(74,5): error TS2322: Type 'ToolFunction<{ place_id: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ place_id: string; }'.
+src/services/agent/tools/MapsTools.ts(100,5): error TS2322: Type 'ToolFunction<{ origins: string[]; destinations: string[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ origins: string[]; destinations: string[]; }'.
+src/services/agent/tools/MarketingTools.ts(46,5): error TS2322: Type 'ToolFunction<{ product: string; goal: string; budget?: string | undefined; duration?: string | undefined; assetIds?: string[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ product: string; goal: string; budget?: string | undefined; duration?: string | undefined; assetIds?: string[] | undefined; }'.
+src/services/agent/tools/MarketingTools.ts(81,5): error TS2322: Type 'ToolFunction<{ genre: string; similar_artists?: string[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ genre: string; similar_artists?: string[] | undefined; }'.
+src/services/agent/tools/MarketingTools.ts(95,5): error TS2322: Type 'ToolFunction<{ campaign_start: string; platforms: string[]; frequency: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ campaign_start: string; platforms: string[]; frequency: string; }'.
+src/services/agent/tools/MarketingTools.ts(131,5): error TS2322: Type 'ToolFunction<{ campaignId: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ campaignId: string; }'.
+src/services/agent/tools/MarketingTools.ts(141,5): error TS2322: Type 'ToolFunction<{ uploadedAudioIndex: number; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ uploadedAudioIndex: number; }'.
+src/services/agent/tools/MemoryTools.ts(13,5): error TS2322: Type 'ToolFunction<{ content: string; type?: "summary" | "fact" | "rule" | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ content: string; type?: "summary" | "fact" | "rule" | undefined; }'.
+src/services/agent/tools/MemoryTools.ts(37,5): error TS2322: Type 'ToolFunction<{ query: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/tools/MemoryTools.ts(55,5): error TS2322: Type 'ToolFunction<{ goal: string; content: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ goal: string; content: string; }'.
+src/services/agent/tools/MemoryTools.ts(80,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/NarrativeTools.ts(10,5): error TS2322: Type 'ToolFunction<{ synopsis: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ synopsis: string; }'.
+src/services/agent/tools/NavigationTools.ts(7,5): error TS2322: Type 'ToolFunction<{ module: "dashboard" | "creative" | "video" | "legal" | "marketing" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | "finance" | ... 11 more ... | "debug"; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ module: "dashboard" | "creative" | "video" | "legal" | "marketing" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | "finance" | ... 11 more ... | "debug"; }'.
+src/services/agent/tools/OrganizationTools.ts(9,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/OrganizationTools.ts(29,5): error TS2322: Type 'ToolFunction<{ orgId: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ orgId: string; }'.
+src/services/agent/tools/OrganizationTools.ts(67,5): error TS2322: Type 'ToolFunction<{ name: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ name: string; }'.
+src/services/agent/tools/OrganizationTools.ts(100,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/ProducerTools.ts(11,5): error TS2322: Type 'ToolFunction<{ date: string; location: string; cast: string[]; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ date: string; location: string; cast: string[]; }'.
+src/services/agent/tools/ProducerTools.ts(56,5): error TS2322: Type 'ToolFunction<{ script: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ script: string; }'.
+src/services/agent/tools/ProjectTools.ts(8,5): error TS2322: Type 'ToolFunction<{ name: string; type: "dashboard" | "creative" | "video" | "legal" | "marketing" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | ... 12 more ... | "debug"; orgId?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ name: string; type: "dashboard" | "creative" | "video" | "legal" | "marketing" | "workflow" | "knowledge" | "road" | "social" | "brand" | "campaign" | "publicist" | "publishing" | ... 12 more ... | "debug"; orgId?: string | undefined; }'.
+src/services/agent/tools/ProjectTools.ts(33,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/ProjectTools.ts(60,5): error TS2322: Type 'ToolFunction<{ projectId: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ projectId: string; }'.
+src/services/agent/tools/PublicistTools.ts(47,5): error TS2322: Type 'ToolFunction<{ topic: string; angle?: string | undefined; quotes_from?: string[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ topic: string; angle?: string | undefined; quotes_from?: string[] | undefined; }'.
+src/services/agent/tools/PublicistTools.ts(65,5): error TS2322: Type 'ToolFunction<{ situation: string; tone?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ situation: string; tone?: string | undefined; }'.
+src/services/agent/tools/PublicistTools.ts(82,5): error TS2322: Type 'ToolFunction<{ story_summary: string; recipient_type?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ story_summary: string; recipient_type?: string | undefined; }'.
+src/services/agent/tools/RoadTools.ts(41,5): error TS2322: Type 'ToolFunction<{ locations?: string[] | undefined; start_location?: string | undefined; end_location?: string | undefined; stops?: string[] | undefined; timeframe?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ locations?: string[] | undefined; start_location?: string | undefined; end_location?: string | undefined; stops?: string[] | undefined; timeframe?: string | undefined; }'.
+src/services/agent/tools/RoadTools.ts(66,5): error TS2322: Type 'ToolFunction<{ days?: number | undefined; crew?: number | undefined; crew_size?: number | undefined; duration_days?: number | undefined; accommodation_level?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ days?: number | undefined; crew?: number | undefined; crew_size?: number | undefined; duration_days?: number | undefined; accommodation_level?: string | undefined; }'.
+src/services/agent/tools/RoadTools.ts(105,5): error TS2322: Type 'ToolFunction<{ route?: any; city?: string | undefined; date?: string | undefined; venue?: string | undefined; show_time?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ route?: any; city?: string | undefined; date?: string | undefined; venue?: string | undefined; show_time?: string | undefined; }'.
+src/services/agent/tools/RoadTools.ts(122,5): error TS2322: Type 'ToolFunction<{ item: string; date: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ item: string; date: string; }'.
+src/services/agent/tools/ScreenwriterTools.ts(11,3): error TS2322: Type 'ToolFunction<{ text: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ text: string; }'.
+src/services/agent/tools/ScreenwriterTools.ts(46,3): error TS2322: Type 'ToolFunction<{ script: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ script: string; }'.
+src/services/agent/tools/SecurityTools.ts(67,5): error TS2322: Type 'ToolFunction<{ api_name: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ api_name: string; }'.
+src/services/agent/tools/SecurityTools.ts(98,5): error TS2322: Type 'ToolFunction<{ text: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ text: string; }'.
+src/services/agent/tools/SecurityTools.ts(111,5): error TS2322: Type 'ToolFunction<{ service_name: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; }'.
+src/services/agent/tools/SecurityTools.ts(123,5): error TS2322: Type 'ToolFunction<{ service_name: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; }'.
+src/services/agent/tools/SecurityTools.ts(134,5): error TS2322: Type 'ToolFunction<{ service_name: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; }'.
+src/services/agent/tools/SecurityTools.ts(146,5): error TS2322: Type 'ToolFunction<{ service_name: string; workload_type: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ service_name: string; workload_type: string; }'.
+src/services/agent/tools/SecurityTools.ts(162,5): error TS2322: Type 'ToolFunction<{ project_id?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ project_id?: string | undefined; }'.
+src/services/agent/tools/SecurityTools.ts(217,5): error TS2322: Type 'ToolFunction<{ scope: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ scope: string; }'.
+src/services/agent/tools/SecurityTools.ts(232,5): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/SocialTools.ts(12,5): error TS2322: Type 'ToolFunction<{ platform: string; topic: string; tone?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ platform: string; topic: string; tone?: string | undefined; }'.
+src/services/agent/tools/StorageTools.ts(6,5): error TS2322: Type 'ToolFunction<{ limit?: number | undefined; type?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ limit?: number | undefined; type?: string | undefined; }'.
+src/services/agent/tools/StorageTools.ts(22,5): error TS2322: Type 'ToolFunction<{ query: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/tools/UniversalTools.ts(16,5): error TS2322: Type 'ToolFunction<{ action: string; url?: string | undefined; selector?: string | undefined; text?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: string; url?: string | undefined; selector?: string | undefined; text?: string | undefined; }'.
+src/services/agent/tools/UniversalTools.ts(40,5): error TS2322: Type 'ToolFunction<{ prompt: string; aspect_ratio?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; aspect_ratio?: string | undefined; }'.
+src/services/agent/tools/UniversalTools.ts(51,5): error TS2322: Type 'ToolFunction<{ action: string; service: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ action: string; service: string; }'.
+src/services/agent/tools/UniversalTools.ts(63,5): error TS2322: Type 'ToolFunction<{ amount: number; vendor: string; reason: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ amount: number; vendor: string; reason: string; }'.
+src/services/agent/tools/UniversalTools.ts(72,5): error TS2322: Type 'ToolFunction<{ query: string; society?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; society?: string | undefined; }'.
+src/services/agent/tools/UniversalTools.ts(83,5): error TS2322: Type 'ToolFunction<{ query: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; }'.
+src/services/agent/tools/UserMemoryTools.ts(25,3): error TS2322: Type 'ToolFunction<{ content: string; category?: MemoryCategory | undefined; importance?: MemoryImportance | undefined; tags?: string[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ content: string; category?: MemoryCategory | undefined; importance?: MemoryImportance | undefined; tags?: string[] | undefined; }'.
+src/services/agent/tools/UserMemoryTools.ts(81,3): error TS2322: Type 'ToolFunction<{ query: string; categories?: MemoryCategory[] | undefined; importance?: MemoryImportance[] | undefined; tags?: string[] | undefined; limit?: number | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ query: string; categories?: MemoryCategory[] | undefined; importance?: MemoryImportance[] | undefined; tags?: string[] | undefined; limit?: number | undefined; }'.
+src/services/agent/tools/UserMemoryTools.ts(135,3): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/UserMemoryTools.ts(178,3): error TS2322: Type 'ToolFunction<{ categories?: MemoryCategory[] | undefined; isActive?: boolean | undefined; limit?: number | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ categories?: MemoryCategory[] | undefined; isActive?: boolean | undefined; limit?: number | undefined; }'.
+src/services/agent/tools/UserMemoryTools.ts(226,3): error TS2322: Type 'ToolFunction<{ memoryId: string; content?: string | undefined; category?: MemoryCategory | undefined; importance?: MemoryImportance | undefined; tags?: string[] | undefined; isActive?: boolean | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ memoryId: string; content?: string | undefined; category?: MemoryCategory | undefined; importance?: MemoryImportance | undefined; tags?: string[] | undefined; isActive?: boolean | undefined; }'.
+src/services/agent/tools/UserMemoryTools.ts(271,3): error TS2322: Type 'ToolFunction<{ memoryId: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ memoryId: string; }'.
+src/services/agent/tools/UserMemoryTools.ts(301,3): error TS2322: Type 'ToolFunction<{ memoryId: string; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ memoryId: string; }'.
+src/services/agent/tools/UserMemoryTools.ts(331,3): error TS2322: Type 'ToolFunction<{ days?: number | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ days?: number | undefined; }'.
+src/services/agent/tools/UserMemoryTools.ts(370,3): error TS2322: Type 'ToolFunction<ToolFunctionArgs>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type 'ToolFunctionArgs'.
+src/services/agent/tools/VideoTools.ts(61,5): error TS2322: Type 'ToolFunction<{ prompt: string; image?: string | undefined; duration?: number | undefined; aspectRatio?: string | undefined; resolution?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; image?: string | undefined; duration?: number | undefined; aspectRatio?: string | undefined; resolution?: string | undefined; }'.
+src/services/agent/tools/VideoTools.ts(130,17): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/agent/tools/VideoTools.ts(152,5): error TS2322: Type 'ToolFunction<{ image: string; mask: string; prompt?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ image: string; mask: string; prompt?: string | undefined; }'.
+src/services/agent/tools/VideoTools.ts(185,5): error TS2322: Type 'ToolFunction<{ prompt: string; videoIndices?: number[] | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; videoIndices?: number[] | undefined; }'.
+src/services/agent/tools/VideoTools.ts(246,5): error TS2322: Type 'ToolFunction<{ videoUrl: string; prompt: string; direction: "end" | "start"; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ videoUrl: string; prompt: string; direction: "end" | "start"; }'.
+src/services/agent/tools/VideoTools.ts(276,17): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/agent/tools/VideoTools.ts(297,5): error TS2322: Type 'ToolFunction<{ clipId: string; property: "x" | "y" | "scale" | "opacity" | "rotation"; frame: number; value: number; easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ clipId: string; property: "x" | "y" | "scale" | "opacity" | "rotation"; frame: number; value: number; easing?: "linear" | "easeIn" | "easeOut" | "easeInOut" | undefined; }'.
+src/services/agent/tools/VideoTools.ts(321,5): error TS2322: Type 'ToolFunction<{ prompt: string; startImage: string; totalDuration: number; aspectRatio?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ prompt: string; startImage: string; totalDuration: number; aspectRatio?: string | undefined; }'.
+src/services/agent/tools/VideoTools.ts(372,5): error TS2322: Type 'ToolFunction<{ firstFrame: string; lastFrame: string; prompt?: string | undefined; }>' is not assignable to type 'AnyToolFunction'.
+  Types of parameters 'args' and 'args' are incompatible.
+    Type 'unknown' is not assignable to type '{ firstFrame: string; lastFrame: string; prompt?: string | undefined; }'.
+src/services/agent/tools/VideoTools.ts(388,17): error TS2322: Type 'string | undefined' is not assignable to type 'string'.
+  Type 'undefined' is not assignable to type 'string'.
+src/services/video/__tests__/LensVideoVerification.test.ts(99,20): error TS18048: 'job.metadata' is possibly 'undefined'.
+src/services/video/__tests__/LensVideoVerification.test.ts(100,20): error TS18048: 'job.metadata' is possibly 'undefined'.
+src/services/video/__tests__/LensVideoVerification.test.ts(101,20): error TS18048: 'job.metadata' is possibly 'undefined'.
+src/services/video/__tests__/VeoGenerationPipeline.test.ts(121,16): error TS18048: 'result.metadata' is possibly 'undefined'.
+src/services/video/__tests__/VeoGenerationPipeline.test.ts(122,16): error TS18048: 'result.metadata' is possibly 'undefined'.
+src/services/video/__tests__/VeoGenerationPipeline.test.ts(123,40): error TS18048: 'result.metadata' is possibly 'undefined'.
+src/services/video/__tests__/VideoGenerationService.test.ts(132,20): error TS18048: 'job.metadata' is possibly 'undefined'.
+src/services/video/__tests__/VideoGenerationService.test.ts(133,20): error TS18048: 'job.metadata' is possibly 'undefined'.
+src/services/video/LensVeoAssetIntegrity.test.ts(184,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoAssetIntegrity.test.ts(184,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoAssetIntegrity.test.ts(185,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoAssetIntegrity.test.ts(185,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(111,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(111,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(112,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(112,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(113,40): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(113,40): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(149,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(149,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(150,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(150,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(234,25): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoCompliance.test.ts(234,25): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(153,16): error TS18048: 'flashResult.output' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(154,16): error TS18048: 'flashResult.output' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(154,16): error TS18048: 'flashResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(157,16): error TS18048: 'proResult.output' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(158,16): error TS18048: 'proResult.output' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(158,16): error TS18048: 'proResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(159,16): error TS18048: 'proResult.output' is possibly 'undefined'.
+src/services/video/LensVeoFlashProRace.test.ts(159,16): error TS18048: 'proResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(196,16): error TS18048: 'jobResult.output' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(196,16): error TS18048: 'jobResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(197,16): error TS18048: 'jobResult.output' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(197,16): error TS18048: 'jobResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(198,16): error TS18048: 'jobResult.output' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(198,16): error TS18048: 'jobResult.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoResilience.test.ts(199,16): error TS18048: 'jobResult.output' is possibly 'undefined'.
+src/services/video/LensVeoSafety.test.ts(181,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(194,16): error TS18048: 'resultB.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(196,16): error TS18048: 'resultB.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(196,16): error TS18048: 'resultB.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(197,16): error TS18048: 'resultB.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(197,16): error TS18048: 'resultB.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(227,16): error TS18048: 'resultA.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(228,16): error TS18048: 'resultA.output' is possibly 'undefined'.
+src/services/video/LensVeoSubscriptionRace.test.ts(228,16): error TS18048: 'resultA.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(125,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(126,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(126,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(127,44): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(127,44): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(128,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(128,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(192,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(192,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(193,28): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(193,28): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(193,28): error TS18046: 'job.output.metadata.resolution' is of type 'unknown'.
+src/services/video/LensVeoValidation.test.ts(279,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/LensVeoValidation.test.ts(279,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(118,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(119,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(119,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(120,44): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(120,44): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(121,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(121,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(237,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoCompliance.test.ts(237,20): error TS18048: 'job.output.metadata' is possibly 'undefined'.
+src/services/video/VeoIntegration.test.ts(142,16): error TS18048: 'job.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(138,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(141,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(141,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(142,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(142,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(143,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(143,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(144,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VeoPayloadValidation.test.ts(144,16): error TS18048: 'result.output.metadata' is possibly 'undefined'.
+src/services/video/VeoTimeout.test.ts(135,16): error TS18048: 'result.output' is possibly 'undefined'.
+src/services/video/VideoGenerationService.test.ts(148,20): error TS18048: 'job.output' is possibly 'undefined'.
+src/tests/features/video-gen.test.ts(110,14): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/LegalTools.test.ts(48,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/LegalTools.test.ts(49,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/LegalTools.test.ts(87,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/LegalTools.test.ts(88,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/VideoTools.test.ts(58,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/VideoTools.test.ts(83,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/VideoTools.test.ts(159,20): error TS18046: 'result.data' is of type 'unknown'.
+tests/features/VideoTools.test.ts(239,20): error TS18046: 'result.data' is of type 'unknown'.

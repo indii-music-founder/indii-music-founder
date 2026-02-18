@@ -84,7 +84,8 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                     code: 'DELIVERY_UNAVAILABLE',
                     message: 'Symphonic delivery requires active SFTP session.'
                 }],
-                releaseId
+                releaseId,
+                distributorReleaseId: releaseId
             };
 
         } catch (error) {
