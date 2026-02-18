@@ -60,8 +60,8 @@ vi.mock('lucide-react', async (importOriginal) => ({
 }));
 
 // Mock motion to filter out motion specific props like layoutId
-vi.mock('motion', async () => {
-    const actual = await vi.importActual('motion');
+vi.mock('motion/react', async () => {
+    const actual = await vi.importActual('motion/react');
     return {
         ...actual,
         motion: {

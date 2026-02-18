@@ -5,7 +5,7 @@
  */
 
 import React, { useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { AlertTriangle, Clock, Zap, X, Check, Loader2 } from 'lucide-react';
 
 interface ApprovalRequest {

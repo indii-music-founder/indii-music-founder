@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { ShoppingBag, Palette, Ruler, Truck, DollarSign, Calculator, Loader2, ExternalLink, Zap, Package } from 'lucide-react';
 import { MerchTheme } from '@/modules/merchandise/themes';
 import { MerchandiseService } from '@/services/merchandise/MerchandiseService';

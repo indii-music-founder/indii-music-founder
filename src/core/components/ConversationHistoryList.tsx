@@ -2,7 +2,7 @@ import React, { useMemo, memo } from 'react';
 import { useStore } from '@/core/store';
 import { formatSmartDate, cn } from '@/lib/utils';
 import { MessageSquare, Calendar, Trash2, X } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import type { ConversationSession } from '@/core/store/slices/agentSlice';
 
 const HistoryItem = memo(({

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Film, Sliders, Image as ImageIcon, ChevronRight, Video, Settings, Plus, Move, Loader2, Sparkles } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
 import { z } from 'zod';

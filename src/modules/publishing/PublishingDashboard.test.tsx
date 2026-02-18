@@ -75,7 +75,7 @@ vi.mock('./components/PublishingSkeleton', () => ({
 }));
 
 // Mock motion to avoid animation issues in tests
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
         button: ({ children, ...props }: any) => <button {...props}>{children}</button>,

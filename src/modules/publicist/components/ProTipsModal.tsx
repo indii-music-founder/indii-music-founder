@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Sparkles, Lightbulb } from 'lucide-react';
 
 interface ProTipsModalProps {

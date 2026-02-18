@@ -7,7 +7,7 @@ import { Send, ZoomIn, ZoomOut, Maximize, ArrowLeft, Layers, Palette, Sparkles }
 import { useToast } from '../../core/context/ToastContext';
 import { DesignToolbar } from './components/DesignToolbar';
 import { LayerPanel } from './components/LayerPanel';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 // Mock types for state
 interface Layer {

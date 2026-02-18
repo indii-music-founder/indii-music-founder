@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Wine, Coffee, Apple, Droplet, Check, Plus, Trash2, Loader2, ListTodo } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useRider } from '../hooks/useRider';
 import { RiderItem } from '../types';
 

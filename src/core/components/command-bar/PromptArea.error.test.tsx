@@ -34,7 +34,7 @@ vi.mock('@/services/ai/VoiceService', () => ({
 }));
 
 // Mock Framer Motion
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },

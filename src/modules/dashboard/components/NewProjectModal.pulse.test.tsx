@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import NewProjectModal from './NewProjectModal';
 
 // Mock motion
-vi.mock("motion", () => ({
+vi.mock("motion/react", () => ({
   motion: {
     div: ({ children, className, ...props }: any) => (
       <div className={className} {...props}>

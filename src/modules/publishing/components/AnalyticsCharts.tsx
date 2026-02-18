@@ -11,7 +11,7 @@ import {
     Bar,
     Cell
 } from 'recharts';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { Loader2, TrendingUp, Music, DollarSign } from 'lucide-react';
 
 interface TimeSeriesDataPoint {

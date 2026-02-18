@@ -1,7 +1,7 @@
 import React from 'react';
 import { CheckCircle, Receipt } from 'lucide-react';
 import { Expense } from '@/services/finance/FinanceService';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 interface ExpenseItemProps {
     expense: Expense;

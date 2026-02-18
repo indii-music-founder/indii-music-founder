@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Minimize2, RefreshCw, Bot, GripHorizontal, ExternalLink, Maximize2, Database, Bell } from 'lucide-react';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useStore, AgentMessage } from '@/core/store';
@@ -8,7 +8,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
 import { requestNotificationPermission } from '@/lib/mobile';
 import { MessageItem } from './chat/ChatMessage';
-import { useDragControls } from 'motion';
+import { useDragControls } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 
 interface ChatOverlayProps {

@@ -3,7 +3,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { Toast, ToastMessage } from './Toast';
 
 // Mock motion
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
             <div className={className} {...props}>{children}</div>

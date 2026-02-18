@@ -1,6 +1,6 @@
 import React, { ReactNode } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 // --- Generic Properties Panel Container ---
 

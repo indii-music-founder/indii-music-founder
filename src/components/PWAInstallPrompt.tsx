@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Download, X } from 'lucide-react';
 import { initPWAInstall, showPWAInstall, canInstallPWA, isStandalone, haptic } from '@/lib/mobile';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 /**
  * PWA Install Prompt

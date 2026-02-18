@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useToast } from '@/core/context/ToastContext';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     Search, Filter, Plus, MoreHorizontal,
     Circle, CheckCircle2, AlertCircle, Clock,

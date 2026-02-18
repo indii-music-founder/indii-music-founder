@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { X, Sparkles, AlertCircle } from 'lucide-react';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 

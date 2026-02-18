@@ -1,6 +1,6 @@
 import React from 'react';
 import { MousePointer, Type, Image as ImageIcon, Box, Sparkles } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 interface DesignToolbarProps {
     activeTool: string;

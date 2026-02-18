@@ -15,7 +15,7 @@ vi.mock('./EarningsTable', () => ({
     EarningsTable: () => <div data-testid="earnings-table">Earnings Table</div>
 }));
 
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },

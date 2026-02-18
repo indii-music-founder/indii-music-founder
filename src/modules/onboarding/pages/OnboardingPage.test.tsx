@@ -45,7 +45,7 @@ vi.mock('@/services/onboarding/onboardingService', () => ({
 }));
 
 // Mock Framer Motion to avoid animation delays
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
     },

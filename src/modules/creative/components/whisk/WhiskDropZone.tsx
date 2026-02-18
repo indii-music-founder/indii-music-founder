@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Plus, Trash2, Edit3, Image as ImageIcon, Check, Wand2, Loader2, ChevronDown, ChevronUp, Lock } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { WhiskItem, WhiskCategory } from '@/core/store/slices/creativeSlice';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';

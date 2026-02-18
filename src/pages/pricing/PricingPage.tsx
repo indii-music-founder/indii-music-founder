@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Check, Zap, Crown, ArrowRight, Loader2, X } from 'lucide-react';
 import { TIER_CONFIGS, SubscriptionTier, calculateYearlySavings } from '@/services/subscription/SubscriptionTier';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';

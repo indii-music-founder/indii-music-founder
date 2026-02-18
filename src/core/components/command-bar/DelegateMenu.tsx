@@ -1,5 +1,5 @@
 import React, { memo, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export interface DelegateMenuProps {
     isOpen: boolean;

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
-import { AnimatePresence } from 'motion';
+import { AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
 import { events } from '../events';

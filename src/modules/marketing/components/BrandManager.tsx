@@ -15,7 +15,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { AI } from '@/services/ai/AIService';
 import { db } from '@/services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
 import { TourMap } from '@/modules/touring/components/TourMap';

@@ -7,7 +7,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import type { ModuleId } from '@/core/constants';
 import { getColorForModule } from '@/core/theme/moduleColors';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 import { voiceService } from '@/services/ai/VoiceService';
 import { cn } from '@/lib/utils';

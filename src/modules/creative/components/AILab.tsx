@@ -16,7 +16,7 @@ import {
     Target,
     ArrowRight
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function AILab() {
     const {

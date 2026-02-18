@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { Sparkles, Camera, Image as ImageIcon } from 'lucide-react';
 import { MerchTheme } from '@/modules/merchandise/themes';
 

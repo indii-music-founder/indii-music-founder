@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, Loader2, RefreshCw, Calculator } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
 

@@ -146,7 +146,7 @@ vi.mock('@/core/components/command-bar/AttachmentList', () => ({
     )
 }));
 
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, className, drag, dragMomentum, ...props }: any) => (
             <div
