@@ -16,10 +16,10 @@ vi.mock('lucide-react', async (importOriginal) => ({
   Loader2: () => <div data-testid="icon-loader">Loader2</div>,
 }));
 
-// Mock framer-motion/motion
+// Mock motion/motion
 vi.mock('motion/react', () => ({
   motion: {
-    // Correctly filtering out framer-motion props to avoid React warnings
+    // Correctly filtering out motion props to avoid React warnings
     div: ({ children, whileHover, animate, initial, exit, transition, ...props }: any) => <div {...props}>{children}</div>,
     span: ({ children, whileHover, animate, initial, exit, transition, ...props }: any) => <span {...props}>{children}</span>,
   },

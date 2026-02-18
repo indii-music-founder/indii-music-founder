@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { Disc, Calendar, BarChart2, Radio, Send } from 'lucide-react';
 import { Campaign } from '../types';
 

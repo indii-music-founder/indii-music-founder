@@ -77,7 +77,6 @@
     "ffprobe-static": "^3.1.0",
     "firebase": "^12.7.0",
     "fluent-ffmpeg": "^2.1.3",
-    "framer-motion": "^12.23.26",
     "genkit": "^1.26.0",
     "inngest": "^3.46.0",
     "jszip": "^3.10.1",

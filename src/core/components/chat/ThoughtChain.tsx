@@ -1,5 +1,5 @@
 import React, { memo, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { ChevronDown } from 'lucide-react';
 import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AgentThought } from '@/core/store';

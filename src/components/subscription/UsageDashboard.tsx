@@ -3,7 +3,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { AlertCircle, ArrowUpRight, RefreshCw, Loader2 } from 'lucide-react';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { UsageStats, UsageWarning, UsageWarningLevel } from '@/services/subscription/types';

@@ -64,8 +64,8 @@ vi.mock('react-virtuoso', () => ({
     ),
 }));
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
+// Mock motion
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
         span: ({ children, className, ...props }: any) => <span className={className} {...props}>{children}</span>,

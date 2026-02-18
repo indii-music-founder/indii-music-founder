@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { LicenseRequest } from '@/services/licensing/types';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 

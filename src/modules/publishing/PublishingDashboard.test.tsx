@@ -74,8 +74,8 @@ vi.mock('./components/PublishingSkeleton', () => ({
     PublishingSkeleton: () => <div data-testid="publishing-skeleton">Loading...</div>
 }));
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
+// Mock motion to avoid animation issues in tests
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
         button: ({ children, ...props }: any) => <button {...props}>{children}</button>,

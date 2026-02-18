@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { WifiOff, AlertTriangle, RefreshCw } from 'lucide-react';
 import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 

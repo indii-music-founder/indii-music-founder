@@ -2,7 +2,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import FileUpload from './file-upload';
 
-// Mock framer-motion/motion to ensure children render immediately
+// Mock motion/motion to ensure children render immediately
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,

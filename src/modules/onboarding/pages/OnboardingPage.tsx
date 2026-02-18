@@ -5,7 +5,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { Send, CheckCircle, Circle, Sparkles, Paperclip, FileText, Trash2, ArrowRight, Menu, X, ChevronRight, Lightbulb, Zap, BookOpen, Music, Image, FileCheck, Clock, DollarSign, Pencil, RefreshCw, Check, Loader2 } from 'lucide-react';
 import { getDistributorRequirements } from '@/services/onboarding/distributorRequirements';
 import { onboardingAnalytics } from '@/services/onboarding/onboardingAnalytics';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import type { ConversationFile } from '@/modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
 

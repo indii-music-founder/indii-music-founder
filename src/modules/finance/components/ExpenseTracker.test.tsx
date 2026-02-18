@@ -24,7 +24,7 @@ vi.mock('@/services/storage/repository', () => ({
   saveProfileToStorage: vi.fn()
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     button: ({ children, ...props }: any) => <button {...props}>{children}</button>,

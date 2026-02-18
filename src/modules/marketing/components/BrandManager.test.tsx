@@ -58,8 +58,8 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 // Mock Framer Motion to avoid animation issues in tests
-vi.mock('framer-motion', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('framer-motion')>();
+vi.mock('motion', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('motion')>();
     return {
         ...actual,
         AnimatePresence: ({ children }: any) => <>{children}</>,

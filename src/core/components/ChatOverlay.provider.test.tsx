@@ -13,7 +13,7 @@ vi.mock('@/core/context/VoiceContext', () => ({
 vi.mock('@/services/agent/registry', () => ({ agentRegistry: { getAll: () => [] } }));
 vi.mock('@/services/ai/VoiceService', () => ({ voiceService: { speak: vi.fn(), stopSpeaking: vi.fn() } }));
 vi.mock('./command-bar/PromptArea', () => ({ PromptArea: () => <div /> }));
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: { div: ({ children }: any) => <div>{children}</div>, button: ({ children, className, onClick }: any) => <button className={className} onClick={onClick}>{children}</button> },
     AnimatePresence: ({ children }: any) => <>{children}</>,
     useDragControls: () => ({ start: vi.fn() }),

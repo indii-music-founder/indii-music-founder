@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { Check, Search, UserPlus, X, Sparkles, Loader2, AlertCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 
 export const AgentSelector = ({ onClose }: { onClose: () => void }) => {
     const activeSessionId = useStore(state => state.activeSessionId);

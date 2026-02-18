@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { X, Loader2, Megaphone, Mic2, Disc, MapPin, DollarSign } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
 

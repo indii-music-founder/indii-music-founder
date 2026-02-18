@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/re
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import NewProjectModal from './NewProjectModal';
 
-// Mock framer-motion
-vi.mock("framer-motion", () => ({
+// Mock motion
+vi.mock("motion", () => ({
   motion: {
     div: ({ children, className, ...props }: any) => (
       <div className={className} {...props}>

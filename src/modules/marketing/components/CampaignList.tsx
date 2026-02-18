@@ -2,7 +2,7 @@ import React from 'react';
 import { CampaignAsset } from '../types';
 import CampaignCard from './CampaignCard';
 import { Plus, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 
 // Fix for React 19 type mismatch - using components directly
 // const PlusIcon = Plus as any;

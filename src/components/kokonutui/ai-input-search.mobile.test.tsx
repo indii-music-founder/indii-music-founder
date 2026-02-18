@@ -11,7 +11,7 @@ vi.mock('lucide-react', async (importOriginal) => ({
   Loader2: () => <div data-testid="icon-loader">Loader2</div>,
 }));
 
-// Mock framer-motion/motion
+// Mock motion/motion
 vi.mock('motion/react', () => ({
   motion: {
     div: ({ children, whileHover, animate, initial, exit, transition, ...props }: any) => <div {...props}>{children}</div>,

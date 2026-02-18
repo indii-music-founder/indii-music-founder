@@ -26,7 +26,7 @@ vi.mock('./command-bar/PromptArea', () => ({
 }));
 
 // Mock Framer Motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, drag, dragControls, dragListener, dragMomentum, dragElastic, ...props }: any) => <div className={className} {...props}>{children}</div>,
         button: ({ children, onClick, className, ...props }: any) => <button onClick={onClick} className={className} {...props}>{children}</button>,

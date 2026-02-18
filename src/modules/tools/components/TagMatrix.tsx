@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Search, Plus, X, Tag as TagIcon } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 
 interface TagMatrixProps {
     tags: string[];

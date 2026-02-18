@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { Box, Play, Sparkles, MessageSquare, Music, Video, Image as ImageIcon, GitBranch, ShieldAlert, GripHorizontal } from 'lucide-react';
-import { motion, useDragControls } from 'framer-motion';
+import { motion, useDragControls } from 'motion';
 
 export default function NodePanel() {
     const controls = useDragControls();

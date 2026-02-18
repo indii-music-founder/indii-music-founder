@@ -3,7 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { BiometricService } from '@/services/security/BiometricService';
 import { Lock, Fingerprint, ScanFace } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 
 interface BiometricGateProps {
     children: React.ReactNode;

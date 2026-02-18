@@ -34,7 +34,7 @@ vi.mock('react-virtuoso', () => ({
     VirtuosoHandle: {},
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
         button: ({ children, className, onClick, ...props }: any) => <button className={className} onClick={onClick} {...props}>{children}</button>,

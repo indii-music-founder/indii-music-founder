@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import AgentWorkspace from './components/AgentWorkspace';
 
 export default function Dashboard() {

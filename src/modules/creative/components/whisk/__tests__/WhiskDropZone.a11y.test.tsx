@@ -14,8 +14,8 @@ expect.extend(matchers);
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 vi.mock('@/services/image/ImageGenerationService');
-vi.mock('framer-motion', async () => {
-    const actual = await vi.importActual('framer-motion');
+vi.mock('motion', async () => {
+    const actual = await vi.importActual('motion');
     return {
         ...actual,
         AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,

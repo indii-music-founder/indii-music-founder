@@ -13,10 +13,10 @@ vi.mock('@/core/store', () => ({
     })
 }));
 
-// Mock framer-motion to spy on list items
+// Mock motion to spy on list items
 const LiSpy = vi.fn(({ children, ...props }: any) => <li {...props}>{children}</li>);
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: {
         li: (props: any) => LiSpy(props),
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,

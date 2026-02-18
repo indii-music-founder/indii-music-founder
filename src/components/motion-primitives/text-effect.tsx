@@ -7,7 +7,7 @@ import {
   type Transition,
   type Variant,
   type Variants,
-} from 'framer-motion';
+} from 'motion';
 import React from 'react';
 
 export type PresetType = 'blur' | 'fade-in-blur' | 'scale' | 'fade' | 'slide';

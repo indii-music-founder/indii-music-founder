@@ -8,7 +8,7 @@ expect.extend(toHaveNoViolations);
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: {
         li: ({ children, className, ...props }: any) => <li className={className} {...props}>{children}</li>,
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
