@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
 import { onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 
 // -----------------------------------------------------------------------------
 // Mocks
@@ -118,9 +117,9 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
         expect(result.url).toContain('signed-url.mp4'); // Mocked Signed URL
 
         // Metadata Contract
-        expect(result.metadata.duration_seconds).toBeGreaterThan(0);
-        expect(result.metadata.mime_type).toBe('video/mp4');
-        expect([24, 30, 60]).toContain(result.metadata.fps);
+        expect((result.metadata as any)!.duration_seconds).toBeGreaterThan(0);
+        expect((result.metadata as any)!.mime_type).toBe('video/mp4');
+        expect([24, 30, 60]).toContain((result.metadata as any)!.fps);
     });
 
     // ✅ Requirement: Verify the "SafetySettings" handshake

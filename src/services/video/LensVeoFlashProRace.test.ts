@@ -68,17 +68,8 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         // Robust mock for onSnapshot that allows triggering specific job updates
         mocks.doc.mockImplementation((db, collection, jobId) => `doc-ref-${jobId}`);
         mocks.onSnapshot.mockImplementation((ref, callback) => {
-            // ref is like "doc-ref-job-id-..."
-            // We need to map the callback to the jobId.
-            // In the mock above, we returned `doc-ref-${jobId}`.
-            // Let's assume the test triggers callbacks manually via a helper,
-            // or we store them by the stringified ref.
-
-            // For simplicity, let's assume we can map the ref string back to the ID or just store it.
-            // Since `waitForJob` creates a listener on a specific doc.
             const refStr = ref.toString();
             snapshotCallbacks[refStr] = callback;
-
             return vi.fn(); // Unsubscribe mock
         });
     });
@@ -88,25 +79,14 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
     });
 
     it('should correctly resolve concurrent "Flash" and "Pro" jobs without cross-contamination', async () => {
-        // Scenario:
-        // 1. User starts Pro job (slow) -> Job ID: 'job-pro'
-        // 2. User starts Flash job (fast) -> Job ID: 'job-flash'
-        // 3. Flash completes first.
-        // 4. Pro completes later.
-        // 5. Ensure Pro promise resolves with Pro data, Flash with Flash data.
-
         const proJobId = 'job-pro';
         const flashJobId = 'job-flash';
 
-        // Start waiting for both
         const proPromise = service.waitForJob(proJobId, 60000);
         const flashPromise = service.waitForJob(flashJobId, 10000);
 
-        // Advance timers a bit to ensure listeners are attached
         await vi.advanceTimersByTimeAsync(100);
 
-        // Trigger Flash Completion (Fast)
-        // We need to find the callback for flashJobId
         const flashCallback = snapshotCallbacks[`doc-ref-${flashJobId}`];
         expect(flashCallback).toBeDefined();
 
@@ -126,11 +106,9 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         });
 
-        // Trigger Pro Completion (Slow)
         const proCallback = snapshotCallbacks[`doc-ref-${proJobId}`];
         expect(proCallback).toBeDefined();
 
-        // Let's say Pro completes *after* Flash
         proCallback({
             exists: () => true,
             id: proJobId,
@@ -149,14 +127,12 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
 
         const [flashResult, proResult] = await Promise.all([flashPromise, proPromise]);
 
-        // Verify Flash Result
-        expect(flashResult.output.url).toBe('http://veo-flash.mp4');
-        expect(flashResult.output.metadata.duration_seconds).toBe(4.0);
+        expect(flashResult.output!.url).toBe('http://veo-flash.mp4');
+        expect((flashResult.output!.metadata as any)!.duration_seconds).toBe(4.0);
 
-        // Verify Pro Result
-        expect(proResult.output.url).toBe('http://veo-pro.mp4');
-        expect(proResult.output.metadata.duration_seconds).toBe(10.0);
-        expect(proResult.output.metadata.fps).toBe(60);
+        expect(proResult.output!.url).toBe('http://veo-pro.mp4');
+        expect((proResult.output!.metadata as any)!.duration_seconds).toBe(10.0);
+        expect((proResult.output!.metadata as any)!.fps).toBe(60);
     });
 
     it('should ignore "Flash" update if "Pro" update has already been processed for the same job', () => {
@@ -168,7 +144,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
         expect(internalCallback).toBeDefined();
 
-        // 1. Emit Pro Update (High Quality)
         internalCallback({
             exists: () => true,
             id: jobId,
@@ -198,7 +173,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         }));
 
-        // 2. Emit Flash Update (Low Quality) - Late Arrival
         internalCallback({
             exists: () => true,
             id: jobId,
@@ -216,7 +190,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         });
 
-        // Should NOT be called again
         expect(callbackSpy).toHaveBeenCalledTimes(1);
     });
 
@@ -229,7 +202,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
         const internalCallback = snapshotCallbacks[`doc-ref-${jobId}`];
         expect(internalCallback).toBeDefined();
 
-        // 1. Emit Flash Update
         internalCallback({
             exists: () => true,
             id: jobId,
@@ -259,7 +231,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         }));
 
-        // 2. Emit Pro Update
         internalCallback({
             exists: () => true,
             id: jobId,
@@ -277,7 +248,6 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             })
         });
 
-        // Should be called again (upgrade)
         expect(callbackSpy).toHaveBeenCalledTimes(2);
         expect(callbackSpy).toHaveBeenLastCalledWith(expect.objectContaining({
             output: expect.objectContaining({

@@ -122,10 +122,10 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const job = await jobPromise;
 
             // 🔍 Lens Audit: Metadata is the contract
-            expect(job.output.metadata).toBeDefined();
-            expect(job.output.metadata.duration_seconds).toBeGreaterThan(0);
-            expect([24, 30, 60]).toContain(job.output.metadata.fps);
-            expect(job.output.metadata.mime_type).toBe('video/mp4');
+            expect(job.output!.metadata).toBeDefined();
+            expect(job.output!.metadata!.duration_seconds).toBeGreaterThan(0);
+            expect([24, 30, 60]).toContain(job.output!.metadata!.fps);
+            expect(job.output!.metadata!.mime_type).toBe('video/mp4');
         });
 
         it('should fail validation if MIME type is not video/mp4 (MIME Type Guard)', async () => {
@@ -189,8 +189,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const job = await jobPromise;
 
             // 16:9 check
-            expect(job.output.metadata.resolution).toBeDefined();
-            const [w, h] = job.output.metadata.resolution.split('x').map(Number);
+            expect(job.output!.metadata!.resolution).toBeDefined();
+            const [w, h] = (job.output!.metadata!.resolution as string).split('x').map(Number);
             const ratio = w / h;
             expect(ratio).toBeCloseTo(16 / 9, 1);
         });
@@ -276,7 +276,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const duration = Date.now() - start;
 
             expect(job.status).toBe('completed');
-            expect(job.output.metadata.model).toBe('veo-3.1-pro');
+            expect(job.output!.metadata!.model).toBe('veo-3.1-pro');
             expect(duration).toBeGreaterThanOrEqual(25000);
             expect(duration).toBeLessThan(30000); // "Pro < 30s" boundary
         });

@@ -4,7 +4,6 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { SafetyRatingSchema } from '@/modules/video/schemas';
 
 // Hoisted mocks must be defined before imports
 const mocks = vi.hoisted(() => ({
@@ -193,9 +192,9 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
         const jobResult = await waitPromise;
 
         // 5. Assert: Metadata Integrity (The "Contract")
-        expect(jobResult.output.metadata.mime_type).toBe('video/mp4');
-        expect(jobResult.output.metadata.duration_seconds).toBe(5.0);
-        expect(jobResult.output.metadata.fps).toBe(30);
-        expect(jobResult.output.url).toBe('https://veo.google.com/generated-video.mp4');
+        expect(jobResult.output!.metadata!.mime_type).toBe('video/mp4');
+        expect((jobResult.output!.metadata as any)!.duration_seconds).toBe(5.0);
+        expect((jobResult.output!.metadata as any)!.fps).toBe(30);
+        expect(jobResult.output!.url).toBe('https://veo.google.com/generated-video.mp4');
     });
 });

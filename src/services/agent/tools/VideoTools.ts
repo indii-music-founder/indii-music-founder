@@ -127,7 +127,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             let finalUrl = videoJob.url;
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                finalUrl = completedJob.videoUrl;
+                finalUrl = completedJob.videoUrl || '';
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();
@@ -273,7 +273,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             let finalUrl = videoJob.url;
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                finalUrl = completedJob.videoUrl;
+                finalUrl = completedJob.videoUrl || '';
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();
@@ -385,7 +385,7 @@ export const VideoTools: Record<string, AnyToolFunction> = {
 
             if (!finalUrl) {
                 const completedJob = await VideoGeneration.waitForJob(videoJob.id);
-                finalUrl = completedJob.videoUrl;
+                finalUrl = completedJob.videoUrl || '';
             }
 
             const { addToHistory, currentProjectId } = useStore.getState();

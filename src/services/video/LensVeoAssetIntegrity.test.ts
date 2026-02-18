@@ -80,12 +80,6 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
     });
 
     it('should propagate updated signed URLs (Refresh Token Flow) without resetting quality state', async () => {
-        // Scenario:
-        // 1. Job completes with "Pro" quality and URL A (expiring in 1 hour).
-        // 2. User stays on page.
-        // 3. Backend refreshes the URL to URL B (still "Pro" quality).
-        // 4. Service MUST propagate this update to the subscriber.
-
         mocks.doc.mockReturnValue('doc-ref');
         const updates: any[] = [];
 
@@ -139,19 +133,14 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
 
         expect(updates).toHaveLength(2);
 
-        // Assert Integrity of First URL
-        expect(updates[0].output.url).toBe('https://storage.googleapis.com/veo/video-expiring-soon.mp4');
-        expect(updates[0].output.metadata.quality).toBe('pro');
+        expect(updates[0].output!.url).toBe('https://storage.googleapis.com/veo/video-expiring-soon.mp4');
+        expect((updates[0].output!.metadata as any)!.quality).toBe('pro');
 
-        // Assert Integrity of Refreshed URL
-        expect(updates[1].output.url).toBe('https://storage.googleapis.com/veo/video-refreshed.mp4');
-        expect(updates[1].output.metadata.quality).toBe('pro');
+        expect(updates[1].output!.url).toBe('https://storage.googleapis.com/veo/video-refreshed.mp4');
+        expect((updates[1].output!.metadata as any)!.quality).toBe('pro');
     });
 
     it('should handle massive metadata payloads without blocking (Simulated)', async () => {
-        // Scenario: Veo 3.1 returns a massive JSON description or debug data in metadata.
-        // We simulate a 4MB payload in the metadata.
-
         const massivePayload = 'x'.repeat(4 * 1024 * 1024); // 4MB string
 
         mocks.doc.mockReturnValue('doc-ref');
@@ -181,15 +170,12 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
 
         const result = await jobPromise;
 
-        expect(result.output.metadata.debug_logs).toHaveLength(4194304);
-        expect(result.output.metadata.mime_type).toBe('video/mp4');
+        expect((result.output!.metadata as any)!.debug_logs).toHaveLength(4194304);
+        expect(result.output!.metadata!.mime_type).toBe('video/mp4');
     });
 
     it('should reject job if video URL returns 404 (Asset Integrity Guard)', async () => {
-        // Scenario: Veo reports success, but the asset is missing (404)
         mocks.doc.mockReturnValue('doc-ref');
-
-        // Mock fetch to return 404
         fetchMock.mockResolvedValue({ ok: false, status: 404 });
 
         mocks.onSnapshot.mockImplementation((ref, callback) => {
@@ -212,9 +198,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
         const jobPromise = service.waitForJob('job-ghost', 2000);
         vi.advanceTimersByTime(200);
 
-        // We expect the integrity check (fetch) to fail the job
         await expect(jobPromise).rejects.toThrow("Asset Integrity Failure: Video URL is unreachable (404).");
-
         expect(fetchMock).toHaveBeenCalledWith('https://veo.google.com/ghost.mp4', { method: 'HEAD' });
     });
 

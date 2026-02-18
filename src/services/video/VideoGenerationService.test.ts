@@ -145,7 +145,11 @@ describe('VideoGenerationService (Veo 3.1 Pipeline)', () => {
             const job = await service.waitForJob('job-123');
 
             expect(job.status).toBe('completed');
-            expect(job.output.metadata).toEqual(expect.objectContaining({
+            expect(job.output!.metadata).toBeDefined();
+            expect((job.output!.metadata as any)!.duration_seconds).toBeGreaterThan(0);
+            expect([24, 30, 60]).toContain((job.output!.metadata as any)!.fps);
+            expect(job.output!.metadata!.mime_type).toBe('video/mp4');
+            expect(job.output!.metadata).toEqual(expect.objectContaining({
                 duration_seconds: 5.0,
                 fps: 24,
                 mime_type: 'video/mp4'
