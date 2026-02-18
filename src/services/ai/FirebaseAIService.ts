@@ -104,8 +104,8 @@ interface BatchEmbedContentsResponse {
 
 // Interface for GenerativeModel with batching support
 interface ExtendedGenerativeModel extends GenerativeModel {
-    batchEmbedContents?: (request: { requests: { content: Content }[] }): Promise<BatchEmbedContentsResponse>;
-    embedContent?: (request: { content: Content }): Promise<{ embedding: { values: number[] } }>;
+    batchEmbedContents?: any;
+    embedContent?: any;
 }
 
 // Duplicates removed
