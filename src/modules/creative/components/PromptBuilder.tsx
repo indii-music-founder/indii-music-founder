@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useCallback, memo, useId } from 'react';
 import { STUDIO_TAGS } from '@/modules/creative/constants';
 import { ChevronDown, ChevronRight, Sparkles } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useStore } from '@/core/store';
 
 interface PromptBuilderProps {

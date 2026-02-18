@@ -83,8 +83,8 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock Framer Motion
-vi.mock('motion', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('motion')>();
+vi.mock('motion/react', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('motion/react')>();
     const MotionComponent = ({ children, layout, layoutId, whileHover, whileTap, initial, animate, exit, transition, ...props }: any) => {
         return React.createElement('div', props, children);
     };

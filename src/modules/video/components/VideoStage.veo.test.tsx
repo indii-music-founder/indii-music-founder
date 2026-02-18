@@ -5,7 +5,7 @@ import { VideoStage } from './VideoStage';
 import { HistoryItem } from '@/core/store';
 
 // Mock motion
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },

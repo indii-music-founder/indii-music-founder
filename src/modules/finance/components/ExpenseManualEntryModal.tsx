@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { X, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { Expense } from '@/services/finance/FinanceService';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ExpenseManualEntryModalProps {
     onClose: () => void;

@@ -1,7 +1,7 @@
 import React from 'react';
 import { MerchandiseAnalytics } from './MerchandiseAnalytics';
 import { MerchTable } from './MerchTable';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { ShoppingBag, TrendingUp, Package, DollarSign } from 'lucide-react';
 
 export const MerchandiseDashboard: React.FC = () => {

@@ -3,7 +3,7 @@ import { EarningsDashboard } from './components/EarningsDashboard';
 import { ExpenseTracker } from './components/ExpenseTracker';
 import { MerchandiseDashboard } from './components/MerchandiseDashboard';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { Briefcase, CreditCard, ShoppingBag, TrendingUp } from 'lucide-react';
 
 export default function FinanceDashboard() {

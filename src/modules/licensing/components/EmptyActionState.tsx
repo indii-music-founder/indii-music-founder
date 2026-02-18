@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { ArrowRight, LucideIcon, PlusCircle } from 'lucide-react';
 
 interface EmptyActionStateProps {

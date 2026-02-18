@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { DistributorId, IDistributorAdapter } from '@/services/distribution/types/distributor';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import { X, Lock, Save, Loader2, AlertCircle, Globe, Terminal, ShieldCheck, ChevronRight } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ConnectDistributorModalProps {
     isOpen: boolean;

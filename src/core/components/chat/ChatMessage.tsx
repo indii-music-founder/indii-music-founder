@@ -1,5 +1,5 @@
 import React, { memo, useMemo } from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Bot } from 'lucide-react';

@@ -1,7 +1,7 @@
 import React from 'react';
 import { useStore } from '@/core/store';
 import { AlertTriangle, ExternalLink, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const ApiKeyErrorModal = () => {
     const { apiKeyError, setApiKeyError } = useStore();

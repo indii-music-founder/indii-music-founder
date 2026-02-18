@@ -4,7 +4,7 @@ import { vi } from "vitest";
 import React from "react";
 
 // Mock motion to avoid animation issues in tests
-vi.mock("motion", () => ({
+vi.mock("motion/react", () => ({
   motion: {
     div: ({ children, className, ...props }: React.ComponentProps<"div">) => (
       <div className={className} {...props}>

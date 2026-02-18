@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { X, Clock, User, Phone, Save, Plus, Trash2, Calendar } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface ScheduleItem {
     time: string;

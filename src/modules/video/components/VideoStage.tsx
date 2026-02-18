@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 import { Sparkles, Video } from 'lucide-react';
 import { HistoryItem } from '@/core/store';
 import { CreativeSlice } from '@/core/store/slices/creativeSlice';

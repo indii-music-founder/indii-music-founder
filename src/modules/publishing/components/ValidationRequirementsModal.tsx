@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { X, Check, AlertCircle, Music, Image as ImageIcon, Layout, Clock, DollarSign, Info } from 'lucide-react';
 import type { DistributorId, DistributorRequirements } from '@/services/distribution/types/distributor';
 

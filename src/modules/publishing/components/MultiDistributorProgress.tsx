@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import {
     Loader2, CheckCircle2, XCircle, Clock,
     ArrowRight, AlertCircle, RefreshCw, X

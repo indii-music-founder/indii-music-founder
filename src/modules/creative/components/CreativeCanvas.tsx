@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Brush, Wand2 } from 'lucide-react';
 import { useStore, HistoryItem } from '@/core/store';
 import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { useToast } from '@/core/context/ToastContext';
 import { CanvasHeader } from './CanvasHeader';
 import { CanvasToolbar } from './CanvasToolbar';

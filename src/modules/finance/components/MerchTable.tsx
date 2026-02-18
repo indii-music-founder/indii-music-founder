@@ -5,7 +5,7 @@ import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
 import { UserService } from '@/services/UserService';
 import { useToast } from '@/core/context/ToastContext';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface MerchTableProps {
     isDashboardView?: boolean;

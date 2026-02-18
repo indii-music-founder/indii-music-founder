@@ -1,7 +1,7 @@
 import React from 'react';
 import { CampaignAsset, CampaignStatus } from '../types';
 import { Calendar, MoreHorizontal, ChevronRight, Activity } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 // Fix for React 19 type mismatch with Lucide
 const CalendarIcon = Calendar as React.FC<{ size?: number; className?: string }>;

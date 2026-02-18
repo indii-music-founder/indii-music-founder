@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Building2, Check, Plus, ChevronDown, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 
 export const OrganizationSelector = () => {
     const { organizations, currentOrganizationId, setOrganization, addOrganization } = useStore();

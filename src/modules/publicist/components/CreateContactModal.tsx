@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { User, Star, X, Loader2 } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';

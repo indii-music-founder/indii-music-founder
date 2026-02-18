@@ -9,7 +9,7 @@ import {
     History,
     Target
 } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 interface MarketingSidebarProps {
     activeTab: string;

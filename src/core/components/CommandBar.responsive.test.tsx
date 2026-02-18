@@ -42,7 +42,7 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>
     },

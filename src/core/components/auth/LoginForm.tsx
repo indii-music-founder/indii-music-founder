@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { Loader2, Mail, Lock, LogIn, Chrome, User } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 export default function LoginForm() {
     const { loginWithGoogle, loginWithEmail, loginAsGuest, authLoading, authError } = useStore();

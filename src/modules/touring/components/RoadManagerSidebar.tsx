@@ -1,6 +1,6 @@
 import React from 'react';
 import { Map, Truck, Coffee, Settings, ChevronRight } from 'lucide-react';
-import { motion } from 'motion';
+import { motion } from 'motion/react';
 
 interface RoadManagerSidebarProps {
     activeTab: 'planning' | 'on-the-road' | 'rider';

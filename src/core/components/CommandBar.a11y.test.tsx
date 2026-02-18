@@ -62,7 +62,7 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
-vi.mock('motion', () => ({
+vi.mock('motion/react', () => ({
     motion: {
         div: React.forwardRef(({ children, className, ...props }: any, ref: any) => (
             <div ref={ref} className={className} {...props}>{children}</div>

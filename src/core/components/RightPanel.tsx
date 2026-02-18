@@ -6,7 +6,7 @@ import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { getColorForModule } from '@/core/theme/moduleColors';
 
 export default function RightPanel() {

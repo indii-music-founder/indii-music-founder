@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { motion, AnimatePresence } from 'motion';
+import { motion, AnimatePresence } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 
 function CommandBar() {
