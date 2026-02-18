@@ -7,10 +7,14 @@
 import * as Sentry from '@sentry/react';
 
 export function initSentry(): void {
-    // Only initialize in production builds
-    if (import.meta.env.DEV) {
-        console.log('[Sentry] Skipped - Development mode');
+    // Only initialize in production builds unless debug flag is set
+    if (import.meta.env.DEV && !import.meta.env.VITE_DEBUG_SENTRY) {
+        console.warn('[Sentry] Skipped in Development Mode. Set VITE_DEBUG_SENTRY=true to enable.');
         return;
+    }
+
+    if (import.meta.env.DEV) {
+        console.warn('[Sentry] Initializing in Development Mode for testing purposes.');
     }
 
     const dsn = import.meta.env.VITE_SENTRY_DSN || "https://70a3cd3c32290fe54f43c227f6a058a3@o4510109129244672.ingest.us.sentry.io/4510318323040256";
@@ -32,11 +36,11 @@ export function initSentry(): void {
                 }),
             ],
 
-            // Performance Monitoring - sample 10% of transactions
-            tracesSampleRate: 0.1,
+            // Performance Monitoring - sample 100% of transactions for testing
+            tracesSampleRate: 1.0,
 
-            // Session Replay - 10% of sessions, 100% on error
-            replaysSessionSampleRate: 0.1,
+            // Session Replay - 100% of sessions for testing
+            replaysSessionSampleRate: 1.0,
             replaysOnErrorSampleRate: 1.0,
 
             // Scrub sensitive data before sending
