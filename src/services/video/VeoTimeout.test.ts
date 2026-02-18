@@ -3,7 +3,6 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGenerationService } from './VideoGenerationService';
-import { delay } from '@/utils/async';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
@@ -132,7 +131,7 @@ describe('Veo Timeout Handler (Lens)', () => {
         // Assert
         const result = await pendingPromise;
         expect(result.status).toBe('completed');
-        expect(result.output.url).toBe('https://veo.generated/video.mp4');
+        expect(result.output!.url).toBe('https://veo.generated/video.mp4');
     });
 
     it('should reject immediately if Veo generation fails', async () => {

@@ -107,7 +107,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -115,10 +115,10 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const job = await jobPromise;
 
             // 🔍 Lens Audit: Metadata is the contract
-            expect(job.output.metadata).toBeDefined();
-            expect(job.output.metadata.duration_seconds).toBeGreaterThan(0);
-            expect([24, 30, 60]).toContain(job.output.metadata.fps);
-            expect(job.output.metadata.mime_type).toBe('video/mp4');
+            expect(job.output!.metadata).toBeDefined();
+            expect((job.output!.metadata as any).duration_seconds).toBeGreaterThan(0);
+            expect([24, 30, 60]).toContain((job.output!.metadata as any).fps);
+            expect(job.output!.metadata!.mime_type).toBe('video/mp4');
         });
 
         it('should fail validation if MIME type is not video/mp4 (MIME Type Guard)', async () => {
@@ -142,7 +142,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -171,7 +171,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         }
                     })
                 });
-                return () => {};
+                return () => { };
             });
 
             const start = Date.now();
@@ -206,7 +206,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
 
                 // Completed after 25s
                 setTimeout(() => {
-                     callback({
+                    callback({
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
@@ -219,7 +219,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                     });
                 }, 25000);
 
-                return () => {};
+                return () => { };
             });
 
             const start = Date.now();
@@ -234,7 +234,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             const duration = Date.now() - start;
 
             expect(job.status).toBe('completed');
-            expect(job.output.metadata.model).toBe('veo-3.1-pro');
+            expect(job.output!.metadata!.model).toBe('veo-3.1-pro');
             expect(duration).toBeGreaterThanOrEqual(25000);
             expect(duration).toBeLessThan(30000); // "Pro < 30s" boundary
         });
@@ -287,7 +287,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                     });
                 }, 1000);
 
-                return () => {};
+                return () => { };
             });
 
             const updates: any[] = [];
@@ -303,18 +303,18 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             expect(updates.length).toBe(2);
 
             // First update: Flash
-            expect(updates[0].output.metadata.model).toBe('veo-3.1-flash');
-            expect(updates[0].output.url).toBe('https://mock.url/flash.mp4');
-            expect(updates[0].output.metadata.mime_type).toBe('video/mp4');
-            expect(updates[0].output.metadata.duration_seconds).toBe(4.0);
-            expect(updates[0].output.metadata.fps).toBe(24);
+            expect(updates[0].output!.metadata!.model).toBe('veo-3.1-flash');
+            expect(updates[0].output!.url).toBe('https://mock.url/flash.mp4');
+            expect(updates[0].output!.metadata!.mime_type).toBe('video/mp4');
+            expect(updates[0].output!.metadata!.duration_seconds).toBe(4.0);
+            expect(updates[0].output!.metadata!.fps).toBe(24);
 
             // Second update: Pro (Upgrade)
-            expect(updates[1].output.metadata.model).toBe('veo-3.1-pro');
-            expect(updates[1].output.url).toBe('https://mock.url/pro.mp4');
-            expect(updates[1].output.metadata.mime_type).toBe('video/mp4');
-            expect(updates[1].output.metadata.duration_seconds).toBe(4.0);
-            expect(updates[1].output.metadata.fps).toBe(30);
+            expect(updates[1].output!.metadata!.model).toBe('veo-3.1-pro');
+            expect(updates[1].output!.url).toBe('https://mock.url/pro.mp4');
+            expect(updates[1].output!.metadata!.mime_type).toBe('video/mp4');
+            expect(updates[1].output!.metadata!.duration_seconds).toBe(4.0);
+            expect(updates[1].output!.metadata!.fps).toBe(30);
         });
     });
 
@@ -325,7 +325,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 // Stays pending forever
                 callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
-                return () => {};
+                return () => { };
             });
 
             // Set a specific timeout for this test
@@ -352,7 +352,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         })
                     });
                 }, 10);
-                return () => {};
+                return () => { };
             });
 
             const jobPromise = service.waitForJob('lens-veo-job-id');
@@ -361,24 +361,24 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         });
 
         it('should handle specific Google API error codes (400/429)', async () => {
-             mocks.doc.mockReturnValue('doc-ref');
-             mocks.onSnapshot.mockImplementation((ref, callback) => {
-                 setTimeout(() => {
-                     callback({
-                         exists: () => true,
-                         id: 'lens-veo-job-id',
-                         data: () => ({
-                             status: 'failed',
-                             error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
-                         })
-                     });
-                 }, 10);
-                 return () => {};
-             });
+            mocks.doc.mockReturnValue('doc-ref');
+            mocks.onSnapshot.mockImplementation((ref, callback) => {
+                setTimeout(() => {
+                    callback({
+                        exists: () => true,
+                        id: 'lens-veo-job-id',
+                        data: () => ({
+                            status: 'failed',
+                            error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
+                        })
+                    });
+                }, 10);
+                return () => { };
+            });
 
-             const jobPromise = service.waitForJob('lens-veo-job-id');
-             vi.advanceTimersByTime(20);
-             await expect(jobPromise).rejects.toThrow(/429 Too Many Requests/);
+            const jobPromise = service.waitForJob('lens-veo-job-id');
+            vi.advanceTimersByTime(20);
+            await expect(jobPromise).rejects.toThrow(/429 Too Many Requests/);
         });
     });
 });

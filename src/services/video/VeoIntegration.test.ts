@@ -139,7 +139,7 @@ describe('Veo 3.1 Integration Pipeline', () => {
         const job = await service.waitForJob('job-uuid-123');
 
         // Assert
-        expect(job.output.metadata).toEqual({
+        expect(job.output!.metadata).toEqual({
             duration_seconds: 4.0,
             fps: 30,
             mime_type: 'video/mp4'

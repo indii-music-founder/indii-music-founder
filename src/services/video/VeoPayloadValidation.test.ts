@@ -132,16 +132,11 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
 
         const result = await pendingJob;
 
-        // ASSERTIONS
-        // 1. Contract Integrity
-        expect(result.output).toBeDefined();
-        expect(result.output.metadata).toBeDefined();
-
-        // 2. Veo 3.1 Specifics
-        expect(result.output.metadata.mime_type).toBe('video/mp4');
-        expect(result.output.metadata.fps).toBe(30);
-        expect(result.output.metadata.resolution).toBe('1280x720');
-        expect(result.output.metadata.duration_seconds).toBeGreaterThan(0);
+        // 🔍 Lens Assertions (Metadata as Contract)
+        expect(result.output!.url).toBe('https://storage.googleapis.com/bucket/video.mp4');
+        expect(result.output!.metadata!.fps).toBe(30);
+        expect(result.output!.metadata!.resolution).toBe('1280x720');
+        expect(result.output!.metadata!.duration_seconds).toBeGreaterThan(0);
     });
 
     it('should handle "SafetySettings" rejection gracefully', async () => {

@@ -108,9 +108,9 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         const duration = Date.now() - start;
 
         expect(duration).toBeLessThan(2000);
-        expect(result.output.metadata.mime_type).toBe('video/mp4');
-        expect(result.output.metadata.duration_seconds).toBe(4.0);
-        expect([24, 30, 60]).toContain(result.output.metadata.fps);
+        expect(result.output!.metadata!.mime_type).toBe('video/mp4');
+        expect(result.output!.metadata!.duration_seconds).toBe(4.0);
+        expect([24, 30, 60]).toContain(result.output!.metadata!.fps);
     });
 
     it('should generate "Pro" video within 30 seconds (simulated) and verify high-fidelity metadata', async () => {
@@ -146,8 +146,8 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         const duration = Date.now() - start;
 
         expect(duration).toBeLessThan(30000);
-        expect(result.output.metadata.mime_type).toBe('video/mp4');
-        expect(result.output.metadata.fps).toBe(60);
+        expect(result.output!.metadata!.mime_type).toBe('video/mp4');
+        expect(result.output!.metadata!.fps).toBe(60);
     });
 
     it('should enforce MIME Type Guard: Reject non-video assets', async () => {
@@ -231,7 +231,7 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
             unsub = service.subscribeToJob('job-id-upgrade', (job) => {
                 if (job && job.status === 'completed') {
                     updates.push(job);
-                    if (job.output.metadata.quality === 'pro') {
+                    if (job.output!.metadata!.quality === 'pro') {
                         resolve();
                     }
                 }
@@ -243,8 +243,8 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
         if (unsub) unsub();
 
         expect(updates).toHaveLength(2);
-        expect(updates[0].output.url).toBe('http://flash.mp4');
-        expect(updates[1].output.url).toBe('http://pro.mp4');
+        expect(updates[0].output!.url).toBe('http://flash.mp4');
+        expect(updates[1].output!.url).toBe('http://pro.mp4');
     });
 
     it('should handle SafetySettings violation gracefully', async () => {
@@ -327,7 +327,7 @@ describe('Lens 🎥 - Veo 3.1 Compliance & Integrity Checks', () => {
 
         // Current behavior (FAIL): updates = [Pro, Flash]
         // Desired behavior (PASS): updates = [Pro]
-        const urls = updates.map(u => u.output.url);
+        const urls = updates.map(u => u.output!.url);
         expect(urls).toEqual(['http://pro.mp4']);
     });
 });

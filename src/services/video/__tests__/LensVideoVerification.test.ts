@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { VideoGeneration } from '../VideoGenerationService';
 import { onSnapshot } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
 
 // Mock dependencies
 vi.mock('../../ai/FirebaseAIService', () => ({
@@ -96,9 +95,9 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
             const job = await jobPromise;
 
             expect(job.status).toBe('completed');
-            expect(job.metadata.fps).toBe(24);
-            expect(job.metadata.mime_type).toBe('video/mp4');
-            expect(job.metadata.duration_seconds).toBe(5.0);
+            expect(job.metadata!.fps).toBe(24);
+            expect(job.metadata!.mime_type).toBe('video/mp4');
+            expect(job.metadata!.duration_seconds).toBe(5.0);
             // Verify URL is present (Lens philosophy: A 404 is a critical failure, here we ensure we get a URL)
             expect(job.url).toBeDefined();
         });
@@ -119,7 +118,6 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 return vi.fn();
             });
 
-            const start = Date.now();
             const jobPromise = VideoGeneration.waitForJob(mockJobId, 2000); // 2s timeout
 
             vi.advanceTimersByTime(510);

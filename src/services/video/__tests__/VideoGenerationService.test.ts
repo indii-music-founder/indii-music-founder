@@ -129,8 +129,8 @@ describe('VideoGenerationService', () => {
 
             expect(job.status).toBe('completed');
             expect(job.url).toBe(mockVeoMetadata.url);
-            expect(job.metadata.fps).toBe(24);
-            expect(job.metadata.mime_type).toBe('video/mp4');
+            expect((job.metadata as any).fps).toBe(24);
+            expect((job.metadata as any).mime_type).toBe('video/mp4');
         });
 
         it('should reject when job status is failed (SafetySettings)', async () => {

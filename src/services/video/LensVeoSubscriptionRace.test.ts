@@ -191,10 +191,10 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         }
 
         const resultB = await promiseB;
-        expect(resultB.output.url).toBe('url-b');
+        expect(resultB.output!.url).toBe('url-b');
         // Assert Veo 3.1 Metadata
-        expect(resultB.output.metadata.fps).toBe(24);
-        expect(resultB.output.metadata.mime_type).toBe('video/mp4');
+        expect((resultB.output!.metadata as any)!.fps).toBe(24);
+        expect((resultB.output!.metadata as any)!.mime_type).toBe('video/mp4');
 
         // Job A is still pending. Ensure B's completion didn't resolve A.
 
@@ -224,7 +224,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
         }
 
         const resultA = await promiseA;
-        expect(resultA.output.url).toBe('url-a');
-        expect(resultA.output.metadata.duration_seconds).toBe(60.0);
+        expect(resultA.output!.url).toBe('url-a');
+        expect((resultA.output!.metadata as any)!.duration_seconds).toBe(60.0);
     });
 });

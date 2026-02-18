@@ -178,7 +178,7 @@ describe('Lens 🎥 - Veo Safety & Integrity', () => {
         vi.advanceTimersByTime(1000);
 
         const result = await jobPromise;
-        expect(result.output.url).toBe(validUrl);
+        expect(result.output!.url).toBe(validUrl);
         expect(global.fetch).toHaveBeenCalledWith(validUrl, expect.objectContaining({ method: 'HEAD' }));
     });
 });

@@ -209,7 +209,7 @@ export type ToolFunctionArgs = Record<string, unknown>;
 
 export interface ToolFunctionResult {
     success: boolean;
-    data?: unknown;
+    data?: any;
     error?: string;
     message?: string;
     /** Metadata for tracing and debugging (e.g. latency, model version used) */
@@ -237,7 +237,7 @@ export type ToolFunction<TArgs extends ToolFunctionArgs = ToolFunctionArgs> = (
  */
 
 export type AnyToolFunction = (
-    args: unknown,
+    args: any,
     context?: AgentContext,
     toolContext?: ToolExecutionContext
 ) => Promise<ToolFunctionResult>;
