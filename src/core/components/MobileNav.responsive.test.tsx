@@ -135,7 +135,6 @@ describe('📱 Viewport: MobileNav Responsiveness', () => {
         // The implementation has aria-hidden="true".
 
         // Let's rely on class selection for the backdrop div
-        // eslint-disable-next-line testing-library/no-container, testing-library/no-node-access
         const backdrop = container.querySelector('.bg-black\\/60');
         expect(backdrop).toBeInTheDocument();
 

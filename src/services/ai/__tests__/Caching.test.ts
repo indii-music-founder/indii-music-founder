@@ -82,9 +82,11 @@ describe('AI Caching (Browser Environment)', () => {
         // Note: The Google GenAI SDK (fallback client) returns a flat object with text/candidates,
         // unlike the Firebase SDK which wraps it in a response object.
         mockGenerateContent.mockResolvedValue({
-            text: 'Fresh AI Response',
-            candidates: [{ content: { parts: [{ text: 'Fresh AI Response' }] } }],
-            usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
+            response: {
+                text: () => 'Fresh AI Response',
+                candidates: [{ content: { parts: [{ text: 'Fresh AI Response' }] } }],
+                usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10 }
+            }
         });
     });
 
@@ -99,8 +101,10 @@ describe('AI Caching (Browser Environment)', () => {
 
         // 2. Refresh Mock to return something different (to prove we don't call it)
         mockGenerateContent.mockResolvedValueOnce({
-            text: 'Different Response (Should Not Be Seen)',
-            candidates: [{ content: { parts: [{ text: 'Different Response (Should Not Be Seen)' }] } }]
+            response: {
+                text: () => 'Different Response (Should Not Be Seen)',
+                candidates: [{ content: { parts: [{ text: 'Different Response (Should Not Be Seen)' }] } }]
+            }
         });
 
         // 3. Second Call: Should hit the Cache
@@ -116,8 +120,10 @@ describe('AI Caching (Browser Environment)', () => {
         // Mock returning specific JSON
         const jsonResponse = JSON.stringify({ foo: 'bar' });
         mockGenerateContent.mockResolvedValue({
-            text: jsonResponse,
-            candidates: [{ content: { parts: [{ text: jsonResponse }] } }]
+            response: {
+                text: () => jsonResponse,
+                candidates: [{ content: { parts: [{ text: jsonResponse }] } }]
+            }
         });
 
         // 1. First Call
