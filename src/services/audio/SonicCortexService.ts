@@ -63,19 +63,28 @@ export class SonicCortexService {
                 }
             };
 
-            const response = await AI.generateContent({
-                contents: [{ role: 'user', parts: [audioPart, { text: prompt }] }],
-                model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
-                systemInstruction,
-                config: {
-                    responseMimeType: 'application/json'
-                } as any
+            // Add a 30s timeout guard to prevent UI deadlocks (Infinite Spinner)
+            const timeoutPromise = new Promise<null>((_, reject) => {
+                setTimeout(() => reject(new Error('Sonic Cortex Timeout: Reasoning delayed')), 30000);
             });
 
-            const text = response.text();
-            if (!text) throw new Error('Empty response from Sonic Cortex');
+            const contentPromise = (async () => {
+                const response = await AI.generateContent({
+                    contents: [{ role: 'user', parts: [audioPart, { text: prompt }] }],
+                    model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
+                    systemInstruction,
+                    config: {
+                        responseMimeType: 'application/json'
+                    } as any
+                });
 
-            return AI.parseJSON<SonicDescription>(text) as SonicDescription;
+                const text = response.text();
+                if (!text) throw new Error('Empty response from Sonic Cortex');
+
+                return AI.parseJSON<SonicDescription>(text) as SonicDescription;
+            })();
+
+            return await Promise.race([contentPromise, timeoutPromise]) as SonicDescription;
 
         } catch (error) {
             logger.error('[SonicCortex] Reasoning Failure:', error);
