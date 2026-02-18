@@ -6,7 +6,7 @@ import FileUpload from './file-upload';
 
 expect.extend(toHaveNoViolations);
 
-// Mock framer-motion to avoid animation complexity and jsdom issues
+// Mock motion to avoid animation complexity and jsdom issues
 vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,

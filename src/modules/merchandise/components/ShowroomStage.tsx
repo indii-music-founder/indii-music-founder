@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { Play, Camera, Loader2, Sparkles } from 'lucide-react';
 
 interface ShowroomStageProps {

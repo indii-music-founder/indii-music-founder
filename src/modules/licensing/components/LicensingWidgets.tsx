@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { CreditCard, TrendingUp, Users, ArrowUpRight } from 'lucide-react';
 
 import { License, LicenseRequest } from '@/services/licensing/types';

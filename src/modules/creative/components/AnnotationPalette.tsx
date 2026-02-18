@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { Edit2, Settings, Check } from 'lucide-react';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
 

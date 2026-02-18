@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'motion';
 import { cn } from '@/lib/utils';
 
 interface ThreeDCardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -21,7 +21,7 @@ export const ThreeDCard = ({
     onClick,
     'aria-label': ariaLabel,
     style,
-    // Exclude conflicting props that framer-motion handles differently
+    // Exclude conflicting props that motion handles differently
     onDrag,
     onDragStart,
     onDragEnd,

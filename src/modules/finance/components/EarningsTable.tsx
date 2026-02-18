@@ -8,7 +8,7 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { ReleaseEarnings } from '@/services/revenue/schema';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 
 interface EarningsTableProps {
     data: ReleaseEarnings[];

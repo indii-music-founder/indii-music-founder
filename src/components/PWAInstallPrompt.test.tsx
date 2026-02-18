@@ -16,8 +16,8 @@ vi.mock('@/lib/mobile', () => ({
     haptic: vi.fn(),
 }));
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
+// Mock motion
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },

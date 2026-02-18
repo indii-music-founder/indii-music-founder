@@ -1,6 +1,6 @@
 import React from 'react';
 import { useStore } from '@/core/store';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { CheckCircle, AlertCircle } from 'lucide-react';
 import QuickActions from './QuickActions';
 import { WorkspaceCanvas } from './WorkspaceCanvas';

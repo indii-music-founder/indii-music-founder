@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useEarnings } from '../hooks/useEarnings';
 import { EarningsBreakdown } from './EarningsBreakdown';
 import { Loader2, DollarSign, Globe, TrendingUp, Download, PieChart } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 
 // Compute default period outside component to satisfy react-compiler purity rules
 const DEFAULT_PERIOD = (() => {

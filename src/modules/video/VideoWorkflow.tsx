@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import { WhiskService } from '../../services/WhiskService';
-// Removed unused imports from framer-motion and lucide-react as they are now in VideoStage
+// Removed unused imports from motion and lucide-react as they are now in VideoStage
 import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 

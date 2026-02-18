@@ -56,8 +56,8 @@ vi.mock('react-virtuoso', async () => {
 });
 
 // Mock Framer Motion
-vi.mock('framer-motion', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('framer-motion')>();
+vi.mock('motion', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('motion')>();
     return {
         ...actual,
         motion: {

@@ -3,8 +3,8 @@ import NewProjectModal from "./NewProjectModal";
 import { vi } from "vitest";
 import React from "react";
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock("framer-motion", () => ({
+// Mock motion to avoid animation issues in tests
+vi.mock("motion", () => ({
   motion: {
     div: ({ children, className, ...props }: React.ComponentProps<"div">) => (
       <div className={className} {...props}>

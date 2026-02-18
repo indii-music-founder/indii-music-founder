@@ -1,5 +1,5 @@
 import React, { useState, useId } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { ChevronRight, FileJson } from 'lucide-react';
 import { cn } from '@/lib/utils';
 

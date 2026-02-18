@@ -4,8 +4,8 @@ import { describe, it, expect, vi } from 'vitest';
 import { VideoStage } from './VideoStage';
 import { HistoryItem } from '@/core/store';
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
+// Mock motion
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },

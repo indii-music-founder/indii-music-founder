@@ -15,7 +15,7 @@ vi.mock('@/hooks/use-auto-resize-textarea', () => ({
     }),
 }));
 
-// Mock framer-motion to avoid animation complexity
+// Mock motion to avoid animation complexity
 vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,

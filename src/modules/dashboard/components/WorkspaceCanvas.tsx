@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { useStore } from '@/core/store';
 
 export const WorkspaceCanvas = () => {

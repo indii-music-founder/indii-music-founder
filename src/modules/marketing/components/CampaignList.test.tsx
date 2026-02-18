@@ -4,8 +4,8 @@ import { vi, describe, it, expect } from 'vitest';
 import CampaignList from './CampaignList';
 import { CampaignAsset, CampaignStatus } from '../types';
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
+// Mock motion to avoid animation issues in tests
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, onClick }: any) => (
             <div className={className} onClick={onClick}>

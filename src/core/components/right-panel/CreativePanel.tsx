@@ -8,7 +8,7 @@ import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/s
 import { WhiskDropZone } from '@/modules/creative/components/whisk/WhiskDropZone';
 import WhiskPresetStyles from '@/modules/creative/components/whisk/WhiskPresetStyles';
 import { Sparkles, Image as ImageIcon, Film, ImagePlay } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;

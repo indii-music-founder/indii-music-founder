@@ -2,7 +2,7 @@ import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import FileUpload from './file-upload';
 
-// Mock framer-motion to skip animations
+// Mock motion to skip animations
 vi.mock('motion/react', () => ({
     AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     motion: {

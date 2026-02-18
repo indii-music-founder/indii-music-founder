@@ -6,7 +6,7 @@ import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';
 import { RevenueProjections } from './RevenueProjections';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { TrendingUp, Music, Globe, DollarSign, ArrowUpRight } from 'lucide-react';
 
 const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (

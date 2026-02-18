@@ -59,9 +59,9 @@ vi.mock('lucide-react', async (importOriginal) => ({
     Zap: (props: any) => <div data-testid="icon-zap" {...props} />,
 }));
 
-// Mock motion to filter out framer-motion specific props like layoutId
-vi.mock('framer-motion', async () => {
-    const actual = await vi.importActual('framer-motion');
+// Mock motion to filter out motion specific props like layoutId
+vi.mock('motion', async () => {
+    const actual = await vi.importActual('motion');
     return {
         ...actual,
         motion: {

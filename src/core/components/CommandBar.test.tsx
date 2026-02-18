@@ -59,7 +59,7 @@ vi.mock('../theme/moduleColors', () => ({
     }),
 }));
 
-vi.mock('framer-motion', () => ({
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div className={className} {...props}>{children}</div>
     },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion } from 'motion';
 import { Music, Edit2, Trash2, CheckSquare, ExternalLink, Globe, Clock, AlertCircle } from 'lucide-react';
 import { ClientReleaseRecord } from '@/modules/publishing/hooks/useReleases';
 import { DDEXReleaseRecord } from '@/services/metadata/types';

@@ -12,7 +12,7 @@ vi.mock('@/core/context/ToastContext');
 vi.mock('@/services/image/ImageGenerationService');
 
 describe('WhiskDropZone', () => {
-    // Silence window.scrollTo not implemented error from framer-motion in jsdom
+    // Silence window.scrollTo not implemented error from motion in jsdom
     beforeAll(() => {
         window.scrollTo = vi.fn();
     });

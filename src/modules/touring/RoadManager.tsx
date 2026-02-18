@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence } from 'motion';
 import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';

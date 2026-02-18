@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
-import { motion, AnimatePresence, PanInfo } from 'framer-motion';
+import { motion, AnimatePresence, PanInfo } from 'motion';
 
 interface NavItem {
     id: ModuleId;

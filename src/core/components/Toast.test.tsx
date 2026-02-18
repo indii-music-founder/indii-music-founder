@@ -2,8 +2,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Toast, ToastMessage } from './Toast';
 
-// Mock framer-motion
-vi.mock('framer-motion', () => ({
+// Mock motion
+vi.mock('motion', () => ({
     motion: {
         div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
             <div className={className} {...props}>{children}</div>

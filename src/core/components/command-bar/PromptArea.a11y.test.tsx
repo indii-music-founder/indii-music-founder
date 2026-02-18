@@ -54,8 +54,8 @@ vi.mock('@/core/store', () => ({
   }),
 }));
 
-// Mock framer-motion to avoid animation issues in tests
-vi.mock('framer-motion', () => ({
+// Mock motion to avoid animation issues in tests
+vi.mock('motion', () => ({
   motion: {
     div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
   },
