@@ -96,14 +96,34 @@ export interface UPCGenerationOptions {
     type?: 'ALBUM' | 'SINGLE' | 'EP';
 }
 
+export interface DDEXTrack {
+    isrc: string;
+    title: string;
+    artist?: string;
+    artists?: string[];
+    duration?: number; // In seconds
+    explicit?: boolean;
+    filename?: string;
+    file_hash?: string; // MD5 hash
+    genre?: string;
+    label?: string;
+    sample_rate?: number;
+    bit_depth?: number;
+    channels?: number;
+    codec?: string;
+    [key: string]: unknown;
+}
+
 export interface DDEXMetadata {
     releaseId: string;
     title: string;
-    artists: string[];
-    tracks: unknown[];
+    artist?: string;
+    artists?: string[];
+    tracks: DDEXTrack[];
     label?: string;
     upc?: string;
     genre?: string;
+    release_date?: string; // YYYY-MM-DD
 }
 
 export interface ForensicsReport {

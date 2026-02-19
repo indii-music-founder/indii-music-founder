@@ -111,7 +111,7 @@ class DDEXGenerator:
         ref_title = self._create_element(sr, "ReferenceTitle")
         self._create_element(
             ref_title, "TitleText", track.get(
-                "title", "Untitled"))
+                "title", track.get("track_title", "Untitled")))
 
         # Resource Reference (internal identifier)
         self._create_element(sr, "ResourceReference", f"A{track_num}")
@@ -132,12 +132,14 @@ class DDEXGenerator:
             details_list, "Title", TitleType="FormalTitle")
         self._create_element(
             title_elem, "TitleText", track.get(
-                "title", "Untitled"))
+                "title", track.get("track_title", "Untitled")))
 
         # Display Artist
-        artist_name = track.get(
-            "artist", track.get(
-                "primary_artist", "Unknown Artist"))
+        artist_name = track.get("artist") or track.get("artist_name") or track.get("primary_artist")
+        if not artist_name and track.get("artists") and isinstance(track.get("artists"), list):
+             artist_name = track.get("artists")[0]
+        artist_name = artist_name or "Unknown Artist"
+
         artist = self._create_element(
             details_list, "DisplayArtist", SequenceNumber="1")
         party_name = self._create_element(artist, "PartyName")
@@ -236,31 +238,25 @@ class DDEXGenerator:
         self._create_element(details, "TerritoryCode", "Worldwide")
 
         # Display Artist Name
+        artist_name = release_data.get("artist") or release_data.get("primary_artist")
+        if not artist_name and release_data.get("artists") and isinstance(release_data.get("artists"), list):
+             artist_name = release_data.get("artists")[0]
+        artist_name = artist_name or "Unknown Artist"
+
         artist_elem = self._create_element(details, "DisplayArtistName")
-        self._create_element(
-            artist_elem,
-            "FullName",
-            release_data.get(
-                "artist",
-                "Unknown Artist"))
+        self._create_element(artist_elem, "FullName", artist_name)
 
         # Release Title
+        release_title = release_data.get("title") or release_data.get("album_title") or "Untitled Release"
         title_elem = self._create_element(
             details, "Title", TitleType="FormalTitle")
-        self._create_element(
-            title_elem,
-            "TitleText",
-            release_data.get(
-                "album_title",
-                "Untitled Release"))
+        self._create_element(title_elem, "TitleText", release_title)
 
         # Display Artist
         display_artist = self._create_element(
             details, "DisplayArtist", SequenceNumber="1")
         party_name = self._create_element(display_artist, "PartyName")
-        self._create_element(
-            party_name, "FullName", release_data.get(
-                "artist", "Unknown Artist"))
+        self._create_element(party_name, "FullName", artist_name)
         artist_role = self._create_element(display_artist, "ArtistRole")
         self._create_element(artist_role, "MainArtist")
 
