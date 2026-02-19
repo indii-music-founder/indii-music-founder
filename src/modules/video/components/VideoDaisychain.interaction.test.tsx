@@ -17,6 +17,21 @@ const mockToastSuccess = vi.fn();
 const mockToastInfo = vi.fn();
 const mockToastError = vi.fn();
 
+vi.mock('motion/react', () => ({
+    motion: new Proxy({}, {
+        get: (_target, property: string) => {
+            if (property === 'div') {
+                return ({ children, ...props }: any) => <div {...props}>{children}</div>;
+            }
+            if (property === 'button') {
+                return ({ children, ...props }: any) => <button {...props}>{children}</button>;
+            }
+            return ({ children, ...props }: any) => React.createElement(property, props, children);
+        }
+    }),
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 // Mock video editor store
 vi.mock('../store/videoEditorStore', () => {
     const mockData = {
@@ -46,7 +61,16 @@ vi.mock('@/core/store', () => {
         setViewMode: vi.fn(),
         setSelectedItem: vi.fn(),
         addToHistory: vi.fn(),
-        setIsGenerating: vi.fn()
+        setIsGenerating: vi.fn(),
+        generatedHistory: [],
+        whiskState: {
+            subjects: [],
+            scenes: [],
+            styles: [],
+            motion: [],
+            preciseReference: false
+        },
+        studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 }
     }));
     (mockStore as any).subscribe = vi.fn();
     return { useStore: mockStore };
@@ -140,7 +164,14 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 uploadedImages: [],
                 studioControls: { resolution: '1K', aspectRatio: '16:9', duration: 4, fps: 24 },
                 currentProjectId: 'p1',
-                currentOrganizationId: 'o1'
+                currentOrganizationId: 'o1',
+                whiskState: {
+                    subjects: [],
+                    scenes: [],
+                    styles: [],
+                    motion: [],
+                    preciseReference: false
+                }
             });
 
             const setVideoInput = React.useCallback((key: string, val: any) => {
@@ -192,7 +223,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 // Mock properties accessed via getState
                 videoInputs: state.videoInputs,
                 setIsGenerating: vi.fn(),
-                whiskState: {}
+                whiskState: state.whiskState
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 
             // Sync useStore mock to this local state

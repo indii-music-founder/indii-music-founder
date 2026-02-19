@@ -23,7 +23,7 @@ vi.mock('@/services/ai/AIService', () => ({
     }
 }));
 
-// Mock TokenUsageService to verify quota checks
+// TokenUsageService is mocked using the hoisted variables to allow assertion in tests
 vi.mock('@/services/ai/billing/TokenUsageService', () => ({
     TokenUsageService: {
         checkQuota: (...args: unknown[]) => mockCheckQuota(...args),
@@ -62,7 +62,19 @@ vi.mock('@/services/firebase', () => ({
 // We also need to mock 'firebase/ai' entirely since we are testing FirebaseAIService
 // which imports from 'firebase/ai'.
 const mockGetGenerativeModel = vi.fn().mockReturnValue({
-    generateContent: (...args: unknown[]) => mockGenerateContent(...args).then((res: unknown) => res || { response: { text: () => 'Mock response', functionCalls: () => [], usageMetadata: {} } }),
+    generateContent: (...args: unknown[]) => mockGenerateContent(...args).then((res: any) => {
+        // If the mock already returns a wrapped response, use it
+        if (res?.response) return res;
+        // Otherwise wrap it for firebase/ai format
+        const flatRes = res || { text: 'Mock response', usageMetadata: {} };
+        return {
+            response: {
+                text: typeof flatRes.text === 'function' ? flatRes.text : () => flatRes.text || 'Mock response',
+                functionCalls: () => flatRes.functionCalls || [],
+                usageMetadata: flatRes.usageMetadata || {}
+            }
+        };
+    }),
     generateContentStream: (...args: unknown[]) => mockGenerateContentStream(...args) || { stream: (async function* () { yield { text: () => 'Mock' }; })(), response: Promise.resolve({}) }
 });
 
@@ -117,10 +129,20 @@ vi.mock('@google/genai', () => ({
         models = {
             generateContent: (...args: unknown[]) => {
                 console.log('MOCK: GoogleGenAI.generateContent called');
-                return Promise.resolve(mockGenerateContent(...args)).then((res: unknown) => res || {
-                    candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
-                    usageMetadata: { totalTokenCount: 10 },
-                    text: 'Mock response'
+                return Promise.resolve(mockGenerateContent(...args)).then((res: any) => {
+                    // If the mock is wrapped, unwrap it for google/genai format
+                    if (res?.response) {
+                        return {
+                            candidates: res.response.candidates || [{ content: { parts: [{ text: res.response.text?.() || 'Mock response' }], role: 'model' } }],
+                            usageMetadata: res.response.usageMetadata || { totalTokenCount: 10 },
+                            text: res.response.text?.() || 'Mock response'
+                        };
+                    }
+                    return res || {
+                        candidates: [{ content: { parts: [{ text: 'Mock response' }], role: 'model' } }],
+                        usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 },
+                        text: 'Mock response'
+                    };
                 });
             },
             generateContentStream: (...args: unknown[]) => {
@@ -255,17 +277,13 @@ describe('📚 Keeper: Context Integrity', () => {
             vi.clearAllMocks();
 
             modelGenerateContent = vi.fn().mockResolvedValue({
-                response: {
-                    text: () => 'Response',
-                    usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
-                }
+                text: 'Response',
+                usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
             });
 
             mockGenerateContent.mockResolvedValue({
-                response: {
-                    text: () => 'Response',
-                    usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
-                }
+                text: 'Response',
+                usageMetadata: { promptTokenCount: 5, candidatesTokenCount: 5 }
             });
 
             // Mock getGenerativeModel return

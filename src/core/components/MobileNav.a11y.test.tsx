@@ -15,6 +15,12 @@ vi.mock('@/core/store');
 vi.mock('@/lib/mobile', () => ({
     haptic: vi.fn(),
 }));
+vi.mock('motion/react', () => ({
+    motion: {
+        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
 
 // Mock lucide icons to avoid rendering issues and keep DOM clean
 vi.mock('lucide-react', async (importOriginal) => ({
