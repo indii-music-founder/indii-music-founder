@@ -52,9 +52,10 @@ const DistributionDashboard = lazy(() => import('../modules/distribution/Distrib
 const FilePreview = lazy(() => import('../modules/files/FilePreview'));
 const MerchStudio = lazy(() => import('../modules/merchandise/MerchStudio'));
 const AudioAnalyzer = lazy(() => import('../modules/tools/AudioAnalyzer'));
-const ObservabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
+const ObserverabilityDashboard = lazy(() => import('../modules/observability/ObservabilityDashboard'));
 const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
+const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
 
 
 
@@ -90,6 +91,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'observability': ObservabilityDashboard,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,
+    'investor': InvestorPortal,
 };
 
 // ============================================================================

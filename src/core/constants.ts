@@ -28,13 +28,14 @@ export const MODULE_IDS = [
     'audio-analyzer',
     'observability',
     'history',
-    'debug'
+    'debug',
+    'investor'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
 
 // Modules that hide the sidebar and command bar
-export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding'];
+export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor'];
 
 // ============================================================================
 // Type Guard
