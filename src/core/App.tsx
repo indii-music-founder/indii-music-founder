@@ -88,7 +88,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'audio-analyzer': AudioAnalyzer,
-    'observability': ObservabilityDashboard,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
