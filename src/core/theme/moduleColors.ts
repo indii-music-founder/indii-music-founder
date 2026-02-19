@@ -68,6 +68,7 @@ export const departmentCssVars = {
     dashboard: '--color-dept-default',
     'select-org': '--color-dept-default',
     debug: '--color-dept-default',
+    investor: '--color-dept-distribution', // Investor portal shares Distribution
 } as const;
 
 /**
@@ -347,6 +348,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-red-400',
         hoverBg: 'hover:bg-red-500/5',
         cssVar: '--color-dept-default',
+    },
+    investor: {
+        text: 'text-dept-distribution',
+        bg: 'bg-dept-distribution/10',
+        border: 'border-dept-distribution',
+        ring: 'focus-within:ring-dept-distribution/50',
+        hoverText: 'hover:text-dept-distribution',
+        hoverBg: 'hover:bg-dept-distribution/5',
+        cssVar: '--color-dept-distribution',
     }
 };
 
