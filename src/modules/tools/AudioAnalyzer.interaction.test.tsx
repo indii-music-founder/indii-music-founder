@@ -7,6 +7,28 @@ import React from 'react';
 
 // --- Mocks ---
 
+vi.mock('motion/react', () => ({
+    motion: new Proxy({}, {
+        get: (_target, property: string) => {
+            if (property === 'div') {
+                return ({ children, ...props }: any) => <div {...props}>{children}</div>;
+            }
+            // Add other common tags used in tests
+            return ({ children, ...props }: any) => React.createElement(property, props, children);
+        }
+    }),
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
+vi.mock('@/services/audio/SonicCortexService', () => ({
+    sonicCortexService: {
+        describeSoul: vi.fn().mockResolvedValue({
+            description: 'A vibrant mock track',
+            suggestedKeywords: ['Energetic', 'Punchy']
+        }),
+    },
+}));
+
 vi.mock('wavesurfer.js', () => ({
     default: {
         create: vi.fn(() => ({

@@ -365,6 +365,7 @@ export class FirebaseAIService {
                 })();
 
                 // Track Usage (Unified for both modes)
+                console.log('[DEBUG-TEST] rawGenerateContent:', { userId, hasUsage: !!result?.response?.usageMetadata, usage: result?.response?.usageMetadata });
                 if (userId && result?.response?.usageMetadata) {
                     await TokenUsageService.trackUsage(
                         userId,
@@ -1064,7 +1065,7 @@ export class FirebaseAIService {
                 if (typeof modelExtended.batchEmbedContents === 'function') {
                     const requests = contents.map(c => ({ content: c }));
                     const result = await modelExtended.batchEmbedContents({ requests });
-                    return result.embeddings.map((e) => e.values);
+                    return result.embeddings.map((e: { values: number[] }) => e.values);
                 } else {
                     // Polyfill: Run in parallel
                     const modelWithEmbed = modelCallback as unknown as { embedContent: (req: unknown) => Promise<{ embedding: { values: number[] } }> };
