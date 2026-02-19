@@ -43,10 +43,23 @@ export class MerlinService {
     private async generatePackage(release: DDEXReleaseRecord): Promise<string> {
         const metadata: DDEXMetadata = {
             releaseId: release.id,
-            title: release.metadata.releaseTitle || 'Untitled Release',
+            title: release.metadata.releaseTitle || release.metadata.trackTitle || 'Untitled Release',
+            artist: release.metadata.artistName,
             artists: [release.metadata.artistName],
-            tracks: [],
-            // ... map other fields as needed
+            tracks: release.metadata.tracks?.map(t => ({
+                isrc: t.isrc,
+                title: t.title,
+                duration: t.duration,
+                explicit: t.explicit,
+                filename: t.filename,
+                file_hash: t.fileHash,
+                genre: release.metadata.genre,
+                label: release.metadata.label
+            })) || [],
+            label: release.metadata.label,
+            upc: release.metadata.upc,
+            genre: release.metadata.genre,
+            release_date: release.metadata.releaseDate
         };
 
         const xml = await distributionService.generateDDEX(metadata);
