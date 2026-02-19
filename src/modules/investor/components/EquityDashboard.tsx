@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { TrendingUp, PieChart, Download, DollarSign, Users, Activity } from 'lucide-react';
+import { TrendingUp, PieChart, Download, DollarSign, Users, Activity, Radio, UploadCloud, MessageSquare } from 'lucide-react';
 
 interface EquityDashboardProps {
     architect: {
@@ -13,8 +13,9 @@ interface EquityDashboardProps {
 export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
     return (
         <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
+            initial={{ filter: 'blur(20px)', opacity: 0, scale: 0.98 }}
+            animate={{ filter: 'blur(0px)', opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
             className="p-4 md:p-8 max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-12 gap-8 h-full bg-[#0a0a0a] text-[#e0e0e0] font-mono relative"
         >
             {/* Blueprint Grid Background */}
@@ -28,22 +29,36 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
             {/* Header / ID Card (Elevated Brutalism) */}
             <div className="md:col-span-12 border-2 border-[#ff3366] bg-black p-6 flex flex-col md:flex-row justify-between items-start md:items-center relative overflow-hidden group">
                 {/* Dopamine Shimmer */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff3366]/10 to-transparent -translate-x-full group-hover:animate-shimmer" />
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#ff3366]/10 to-transparent -translate-x-full group-hover:animate-shimmer pointer-events-none" />
 
-                <div className="relative z-10">
-                    <h1 className="text-4xl md:text-5xl font-black text-white mb-2 uppercase tracking-tighter mix-blend-difference">
-                        DETROIT 8 <span className="text-[#ff3366]">OPS_CENTER</span>
-                    </h1>
-                    <div className="flex flex-wrap gap-4 text-xs md:text-sm font-bold text-[#ff3366] uppercase tracking-widest">
-                        <span className="bg-[#ff3366]/20 px-2 py-1">ID: {architect.name}</span>
-                        <span className="bg-[#ff3366]/20 px-2 py-1">ROLE: {architect.role}</span>
-                        <span className="bg-[#ff3366]/20 px-2 py-1">CLEARANCE: {architect.clearance}</span>
+                <div className="relative z-10 flex flex-col md:flex-row gap-6 w-full justify-between items-start md:items-center">
+                    <div>
+                        <div className="flex items-center gap-3 mb-2">
+                            <h1 className="text-4xl md:text-5xl font-black text-white uppercase tracking-tighter mix-blend-difference drop-shadow-[0_0_10px_rgba(255,51,102,0.8)]">
+                                DETROIT 8 <span className="text-[#ff3366]">OPS_CENTER</span>
+                            </h1>
+                            {/* Merlin Infrastructure Status Light */}
+                            <div className="flex items-center gap-2 bg-[#1a1a1a] px-4 py-2 border border-[#00ff66]/50 group-hover:border-[#00ff66] transition-colors shadow-[0_0_15px_rgba(0,255,102,0.2)]">
+                                <span className="relative flex h-3 w-3">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00ff66] opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-3 w-3 bg-[#00ff66] drop-shadow-[0_0_8px_rgba(0,255,102,1)]"></span>
+                                </span>
+                                <span className="text-[10px] font-bold tracking-widest text-[#00ff66] uppercase">
+                                    <DecodeText text="Merlin Link: ACTIVE" delay={1500} />
+                                </span>
+                            </div>
+                        </div>
+                        <div className="flex flex-wrap gap-4 text-xs md:text-sm font-bold text-[#ff3366] uppercase tracking-widest">
+                            <span className="bg-[#ff3366]/20 px-2 py-1">ID: {architect.name}</span>
+                            <span className="bg-[#ff3366]/20 px-2 py-1">ROLE: {architect.role}</span>
+                            <span className="bg-[#ff3366]/20 px-2 py-1">CLEARANCE: {architect.clearance}</span>
+                        </div>
                     </div>
+                    <button className="relative z-10 px-6 py-3 bg-[#00ff66] text-black font-black uppercase text-sm tracking-widest hover:bg-white hover:text-black transition-colors transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_#ff3366] active:translate-y-0 active:shadow-none flex items-center gap-2">
+                        <Download className="w-4 h-4" />
+                        [ DL_DOSSIER ]
+                    </button>
                 </div>
-                <button className="relative z-10 mt-6 md:mt-0 px-6 py-3 bg-[#00ff66] text-black font-black uppercase text-sm tracking-widest hover:bg-white hover:text-black transition-colors transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_#ff3366] active:translate-y-0 active:shadow-none flex items-center gap-2">
-                    <Download className="w-4 h-4" />
-                    [ DL_DOSSIER ]
-                </button>
             </div>
 
             {/* Main Stats - The "Big Numbers" */}
@@ -123,8 +138,80 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                 </div>
             </div>
 
+            {/* Priority Node Access & Direct Communication */}
+            <div className="md:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
+
+                {/* Priority Node - Distribution Interface */}
+                <div className="border-2 border-[#1a1a1a] p-6 hover:border-[#00ff66] transition-colors relative group overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#00ff66]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    {/* Scanline effect for terminal */}
+                    <div className="absolute left-0 right-0 h-1 bg-[#00ff66]/20 shadow-[0_0_15px_#00ff66] z-0 animate-scanline opacity-0 group-hover:opacity-50 pointer-events-none" />
+
+                    <h3 className="text-sm font-bold font-mono tracking-widest text-[#00ff66] mb-6 flex items-center gap-2 drop-shadow-[0_0_5px_rgba(0,255,102,0.5)]">
+                        <UploadCloud className="w-5 h-5" />
+                        PRIORITY NODE // DISTRIBUTION
+                    </h3>
+                    <div className="space-y-4 relative z-10">
+                        <p className="text-xs text-[#8b949e]">
+                            <DecodeText text="Your Lifetime Utility Node is active. Generate ISRC codes and push direct-to-DSP via Merlin." delay={500} />
+                        </p>
+
+                        <div className="p-4 border border-[#00ff66]/30 bg-black/80 shadow-[inset_0_0_20px_rgba(0,255,102,0.05)]">
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="text-xs font-bold text-white">UPC:</span>
+                                <span className="text-xs font-mono text-[#00ff66] drop-shadow-[0_0_5px_rgba(0,255,102,0.8)]">
+                                    <DecodeText text="123456789012" delay={2000} />
+                                </span>
+                            </div>
+                            <div className="flex justify-between items-center mb-4">
+                                <span className="text-xs font-bold text-white">LATEST ISRC:</span>
+                                <span className="text-xs font-mono text-[#00ff66] drop-shadow-[0_0_5px_rgba(0,255,102,0.8)]">
+                                    <DecodeText text="QMZ422600001" delay={2500} />
+                                </span>
+                            </div>
+
+                            <motion.button
+                                whileHover={{ scale: 1.02, boxShadow: "0 0 15px rgba(0, 255, 102, 0.4)" }}
+                                whileTap={{ scale: 0.98 }}
+                                className="w-full py-3 border-2 border-[#00ff66] text-[#00ff66] font-bold text-xs uppercase tracking-widest hover:bg-[#00ff66] hover:text-black transition-all duration-300 relative overflow-hidden group/btn"
+                            >
+                                <span className="relative z-10">PUSH TO MERLIN NETWORK</span>
+                                <div className="absolute inset-0 bg-[#00ff66] opacity-0 group-hover/btn:opacity-100 transition-opacity" />
+                            </motion.button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Strategic Advisor (Ghost Advisory) Chat */}
+                <div className="border-2 border-[#1a1a1a] p-6 hover:border-[#ff3366] transition-colors relative group flex flex-col h-full">
+                    <div className="absolute inset-0 bg-gradient-to-br from-[#ff3366]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                    <h3 className="text-sm font-bold font-mono tracking-widest text-[#ff3366] mb-6 flex items-center gap-2">
+                        <MessageSquare className="w-5 h-5" />
+                        GHOST ADVISORY // STRATEGIC LINK
+                    </h3>
+                    <div className="flex-1 space-y-4 relative z-10 overflow-y-auto min-h-[150px] mb-4 pr-2 custom-scrollbar">
+                        <div className="text-xs text-[#e0e0e0] opacity-50 italic">Secure channel established. Connected to Agent: Index.</div>
+                        <div className="bg-[#1a1a1a] p-3 text-sm text-white font-mono border-l-2 border-[#ff3366]">
+                            <span className="text-[#ff3366] font-bold mr-2">INDEX:</span>
+                            Reviewing the Paxahau integration metrics. Are we clear to authorize the API bridge?
+                        </div>
+                    </div>
+                    <div className="relative z-10 mt-auto flex gap-2">
+                        <input
+                            type="text"
+                            placeholder="TRANSMIT DIRECTIVE..."
+                            className="flex-1 bg-transparent border-b-2 border-[#1a1a1a] focus:border-[#ff3366] outline-none text-sm font-mono pb-2 text-white placeholder:text-[#8b949e] transition-colors"
+                        />
+                        <button className="text-[#ff3366] font-bold text-xs uppercase tracking-widest hover:text-white transition-colors flex items-center gap-1">
+                            <Radio className="w-4 h-4" /> SEND
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
             {/* Recent Activity / Feed */}
-            <div className="md:col-span-12 border-t-2 border-[#1a1a1a] pt-6 relative">
+            <div className="md:col-span-12 border-t-2 border-[#1a1a1a] pt-6 relative mt-4">
                 {/* Dopamine line */}
                 <div className="absolute top-0 left-0 w-1/4 h-[2px] bg-[#00ff66] shadow-[0_0_10px_#00ff66]" />
 
@@ -174,3 +261,40 @@ const LogEntry = ({ time, msg, highlight }: any) => (
         <span className="text-sm">{msg}</span>
     </div>
 );
+
+const DecodeText = ({ text, delay }: { text: string; delay: number }) => {
+    const [visibleText, setVisibleText] = React.useState('');
+    const [started, setStarted] = React.useState(false);
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => setStarted(true), delay);
+        return () => clearTimeout(timer);
+    }, [delay]);
+
+    React.useEffect(() => {
+        if (!started) return;
+
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*<>[]{}';
+        let iteration = 0;
+
+        const interval = setInterval(() => {
+            setVisibleText(text.split('').map((letter, index) => {
+                if (index < iteration) {
+                    return text[index];
+                }
+                return chars[Math.floor(Math.random() * chars.length)];
+            }).join(''));
+
+            if (iteration >= text.length) {
+                clearInterval(interval);
+            }
+            iteration += 1 / 2; // Decodes somewhat fast
+        }, 30);
+
+        return () => clearInterval(interval);
+    }, [text, started]);
+
+    if (!started) return <span className="invisible">{text}</span>;
+
+    return <span>{visibleText}</span>;
+};
