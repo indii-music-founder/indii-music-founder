@@ -10,6 +10,7 @@ import { FileNode } from '@/services/FileSystemService';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
 import { FileTreeNode } from './FileTreeNode';
+import { processForKnowledgeBase } from '@/services/rag/ragService';
 
 interface ResourceTreeProps {
     className?: string;
@@ -95,6 +96,18 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 try {
                     const downloadUrl = await StorageService.uploadFile(file, storagePath);
 
+                    // TRIGGER INDEXING IMMEDIATELY
+                    // We don't await this to keep the UI snappy, but we trigger it now.
+                    processForKnowledgeBase(file, file.name, {
+                        projectId: currentProjectId,
+                        type: file.type,
+                        size: file.size.toString()
+                    }).then(() => {
+                        toast.success(`Indexed ${file.name} for AI search`);
+                    }).catch(err => {
+                        console.error("Indexing failed for", file.name, err);
+                    });
+
                     await createFileNode(
                         file.name,
                         parentId,
@@ -172,7 +185,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
     const handleRenameSubmit = useCallback(async (id: string, newName: string) => {
         if (newName && newName.trim() !== "") {
             // Store's renameNode typically makes an API call, it's safe to call.
-             await renameNode(id, newName.trim());
+            await renameNode(id, newName.trim());
         }
         setEditingNodeId(null);
     }, [renameNode]);

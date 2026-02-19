@@ -8,33 +8,45 @@
 ## COMPLETED FIXES (6 of 16)
 
 ### 1. ✅ TEST_MODE Authentication Bypass Fixed
+
 **File:** `src/core/store/slices/authSlice.ts` (lines 62-94)
+
 - Added `import.meta.env.DEV` and `VITE_ALLOW_TEST_MODE` checks
 - Production builds now cannot be bypassed via localStorage
 
 ### 2. ✅ TEST_MODE Block Added to main.tsx
+
 **File:** `src/main.tsx` (lines 13-18)
+
 - Defense-in-depth: removes TEST_MODE from localStorage in production
 - Also added Sentry initialization import
 
 ### 3. ✅ CORS Misconfiguration Fixed
+
 **File:** `functions/src/index.ts` (lines 58-105)
+
 - Changed from `origin: true` (allow all) to whitelist
 - Only allows: indiios-studio.web.app, indiios-v-1-1.web.app, studio.indiios.com, indiios.com, app://. (Electron)
 - Localhost only allowed when FUNCTIONS_EMULATOR=true
 
 ### 4. ✅ App Check Hard Fail in Production
+
 **File:** `src/services/firebase.ts` (lines 58-90)
+
 - Now throws error and shows user-facing message if App Check key missing in production
 - No longer silently continues without security
 
 ### 5. ✅ Firebase Internals Exposure Fixed
+
 **File:** `src/services/firebase.ts` (lines 109-119)
+
 - Changed from `window.location.hostname === 'localhost'` (spoofable) to `import.meta.env.DEV && VITE_EXPOSE_INTERNALS === 'true'`
 - Now requires explicit env flag in dev builds only
 
 ### 6. ✅ Sentry Error Tracking File Created
+
 **File:** `src/lib/sentry.ts` (NEW FILE)
+
 - Complete Sentry initialization with production-only activation
 - Configured with error filtering, replay, and PII scrubbing
 
@@ -42,30 +54,30 @@
 
 ## REMAINING FIXES (10 of 16)
 
-### 7. 🔲 Add Security Headers to firebase.json
+### 7. ✅ Add Security Headers to firebase.json (PARTIAL)
+
 **File:** `firebase.json`
 
-**Add to BOTH hosting targets (landing and app):**
+**Status:** Updated `connect-src` to allow Sentry and Firestore (Critical Fix for Neon Horizon).
+**Remaining:** Full header set needs strict review.
+
 ```json
 "headers": [
   {
     "source": "**",
     "headers": [
-      { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://apis.google.com https://www.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*.googleapis.com https://*.googleusercontent.com; connect-src 'self' https://*.googleapis.com https://*.cloudfunctions.net wss://*.firebaseio.com; frame-src 'self' https://accounts.google.com https://*.firebaseapp.com;" },
-      { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
-      { "key": "X-Content-Type-Options", "value": "nosniff" },
-      { "key": "X-XSS-Protection", "value": "1; mode=block" },
-      { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-      { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
+      { "key": "Content-Security-Policy", "value": "default-src 'self'; ... connect-src 'self' https://*.sentry.io https://firestore.googleapis.com ..." }
     ]
   }
 ]
 ```
 
 ### 8. 🔲 Update deploy.yml with Inngest Secrets
+
 **File:** `.github/workflows/deploy.yml`
 
 **Add after line 105 (after studio deploy):**
+
 ```yaml
       - name: Deploy Cloud Functions
         run: |
@@ -77,14 +89,17 @@
 ```
 
 **GitHub Secrets to add:**
+
 - INNGEST_EVENT_KEY
 - INNGEST_SIGNING_KEY
 - VITE_SENTRY_DSN
 
 ### 9. 🔲 Fix Error Stack Exposure in ErrorBoundary
+
 **File:** `src/core/components/ErrorBoundary.tsx`
 
 Find the error display section and wrap with dev check:
+
 ```typescript
 const isDev = import.meta.env.DEV;
 const errorId = crypto.randomUUID().slice(0, 8);
@@ -103,9 +118,11 @@ const errorId = crypto.randomUUID().slice(0, 8);
 ```
 
 ### 10. 🔲 Fix Silent Error Swallowing in VideoGenerationService
+
 **File:** `src/services/video/VideoGenerationService.ts`
 
 Find `catch (e) { return { canGenerate: true }; }` and change to:
+
 ```typescript
 catch (e) {
     console.error('[VideoGeneration] Quota check failed:', e);
@@ -117,9 +134,11 @@ catch (e) {
 ```
 
 ### 11. 🔲 Fix Unsafe JSON.parse in MemoryTools
+
 **File:** `src/services/agent/tools/MemoryTools.ts` (around line 55)
 
 Wrap JSON.parse in try-catch:
+
 ```typescript
 let verification;
 try {
@@ -131,6 +150,7 @@ try {
 ```
 
 ### 12. 🔲 Create Rate Limiting Middleware
+
 **New File:** `functions/src/middleware/rateLimiter.ts`
 
 ```typescript
@@ -175,14 +195,17 @@ export function withRateLimit<T>(
 ```
 
 ### 13. 🔲 Fix Node Version Mismatch
+
 **File:** `.github/workflows/build.yml` (line 19)
 
 Change `node-version: '20.x'` to `node-version: '22.x'`
 
 ### 14. 🔲 Fix Duplicate Firestore Rules
+
 **File:** `firestore.rules`
 
 Remove duplicate rules at lines 116-118, 250-251, 262-264. Keep only ONE of each:
+
 ```javascript
 match /organizations/{orgId} {
     allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
@@ -193,11 +216,13 @@ match /organizations/{orgId} {
 ```
 
 ### 15. 🔲 Enable Skipped RateLimiter Tests
+
 **File:** `src/services/ai/RateLimiter.test.ts` (lines 48-62)
 
 Change `it.skip` to `it` and fix timer mocking.
 
 ### 16. 🔲 Run Tests and Build
+
 ```bash
 npm run build
 npm run test
@@ -209,6 +234,7 @@ npm run lint
 ## ENVIRONMENT VARIABLES TO ADD
 
 Add to `.env.template`:
+
 ```bash
 VITE_ALLOW_TEST_MODE=false
 VITE_EXPOSE_INTERNALS=false

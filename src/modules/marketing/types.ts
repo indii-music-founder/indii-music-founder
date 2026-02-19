@@ -33,6 +33,7 @@ export interface CampaignAsset {
     durationDays: number;
     startDate: string;
     endDate?: string;
+    budget?: number;
     posts: ScheduledPost[];
     status: CampaignStatus;
     attachedAssets?: string[];

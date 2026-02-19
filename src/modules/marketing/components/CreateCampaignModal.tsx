@@ -17,6 +17,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
     const [description, setDescription] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [endDate, setEndDate] = useState('');
+    const [budget, setBudget] = useState('');
     const [platform, setPlatform] = useState('Instagram');
     const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -85,6 +86,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                 description,
                 startDate,
                 endDate,
+                budget: budget ? parseFloat(budget) : 0,
                 durationDays: 30, // Default for now
                 status: CampaignStatus.PENDING,
                 posts: []
@@ -136,7 +138,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                             value={title}
                             onChange={(e) => {
                                 setTitle(e.target.value);
-                                if (errors.title) setErrors({...errors, title: ''});
+                                if (errors.title) setErrors({ ...errors, title: '' });
                                 if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
                             }}
                             placeholder="e.g., Summer Single Release"
@@ -185,7 +187,7 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     value={startDate}
                                     onChange={(e) => {
                                         setStartDate(e.target.value);
-                                        if (errors.startDate) setErrors({...errors, startDate: ''});
+                                        if (errors.startDate) setErrors({ ...errors, startDate: '' });
                                         if (errors.startDate) setErrors(prev => ({ ...prev, startDate: '' }));
                                     }}
                                     className={cn(
@@ -219,6 +221,24 @@ export default function CreateCampaignModal({ onClose, onSave }: Props) {
                                     data-testid="campaign-end-date-input"
                                 />
                             </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label htmlFor="campaign-budget" className="block text-sm font-medium text-gray-400 mb-1">Budget (USD)</label>
+                        <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-gray-500">$</span>
+                            <input
+                                id="campaign-budget"
+                                type="number"
+                                min="0"
+                                step="100"
+                                value={budget}
+                                onChange={(e) => setBudget(e.target.value)}
+                                placeholder="5000"
+                                className="w-full bg-bg-dark border border-gray-700 rounded-lg p-2.5 pl-8 text-white focus:border-blue-500 outline-none transition-all"
+                                data-testid="campaign-budget-input"
+                            />
                         </div>
                     </div>
 
