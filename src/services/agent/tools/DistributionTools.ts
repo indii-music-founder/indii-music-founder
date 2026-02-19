@@ -49,11 +49,11 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                     // Minimal track mock to satisfy type
                     title,
                     isrc,
-                    duration: '00:00:00',
+                    duration: 0,
                     resourceId: `res-${isrc}`,
                     artistNames: [artist]
                 }],
-                label,
+                label: label,
                 genre: 'Pop'
             });
 

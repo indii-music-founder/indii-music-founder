@@ -46,17 +46,17 @@ export class MerlinService {
             title: release.metadata.releaseTitle || release.metadata.trackTitle || 'Untitled Release',
             artist: release.metadata.artistName,
             artists: [release.metadata.artistName],
-            tracks: release.metadata.tracks?.map(t => ({
-                isrc: t.isrc,
-                title: t.title,
-                duration: t.duration,
-                explicit: t.explicit,
-                filename: t.filename,
-                file_hash: t.fileHash,
-                genre: release.metadata.genre,
-                label: release.metadata.label
+            tracks: release.metadata.tracks?.map((t: any) => ({
+                isrc: t.isrc || '',
+                title: t.trackTitle || '',
+                duration: t.durationSeconds || 0, // Fallback to 0 if not yet computed in ExtendedGoldenMetadata
+                explicit: t.explicit || false,
+                filename: '', // File info handled separately by asset upload stage
+                file_hash: '',
+                genre: t.genre || release.metadata.genre || '',
+                label: t.labelName || release.metadata.labelName || ''
             })) || [],
-            label: release.metadata.label,
+            label: release.metadata.labelName || '',
             upc: release.metadata.upc,
             genre: release.metadata.genre,
             release_date: release.metadata.releaseDate
