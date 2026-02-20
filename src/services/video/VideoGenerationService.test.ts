@@ -45,6 +45,7 @@ vi.mock('@/services/firebase', () => ({
 // Handle dynamic import used in VideoGenerationService
 vi.mock('../firebase', () => ({
     functions: {},
+    functionsWest1: {},
     db: {},
     auth: mocks.auth
 }));
