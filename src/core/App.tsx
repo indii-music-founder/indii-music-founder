@@ -56,6 +56,7 @@ const ObserverabilityDashboard = lazy(() => import('../modules/observability/Obs
 const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'));
 const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
 const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
+const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
 
 
 
@@ -91,6 +92,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
+    'capture': GhostCapture,
 };
 
 // ============================================================================

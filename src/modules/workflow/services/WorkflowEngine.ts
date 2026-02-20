@@ -24,9 +24,9 @@ export class WorkflowEngine {
     private executionQueue: ExecutionTask[] = [];
     private results: Map<string, unknown> = new Map(); // Store results by Node ID
     private isRunning: boolean = false;
-    private setNodes: (nodes: CustomNode[]) => void;
+    private setNodes: (nodes: CustomNode[] | ((nodes: CustomNode[]) => CustomNode[])) => void;
 
-    constructor(nodes: CustomNode[], edges: CustomEdge[], setNodes: (nodes: CustomNode[]) => void) {
+    constructor(nodes: CustomNode[], edges: CustomEdge[], setNodes: (nodes: CustomNode[] | ((nodes: CustomNode[]) => CustomNode[])) => void) {
         this.nodes = nodes;
         this.edges = edges;
         this.setNodes = setNodes;
@@ -217,17 +217,15 @@ export class WorkflowEngine {
     }
 
     private updateNodeStatus(nodeId: string, status: Status, result?: unknown) {
-        // We need to update the store's state. 
-        // Since we passed setNodes in constructor, we can use it.
-        // However, we need the *latest* nodes to avoid overwriting.
-        // This is a bit tricky with the current setup. 
-        // Ideally, we'd dispatch an action. For now, let's assume we can update the local reference and call setNodes.
-
-        this.nodes = this.nodes.map(n =>
-            n.id === nodeId
-                ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : (n.data as any).result } }
-                : n
-        );
-        this.setNodes([...this.nodes]); // Trigger React update
+        this.setNodes((currentNodes) => {
+            const updatedNodes = currentNodes.map(n =>
+                n.id === nodeId
+                    ? { ...n, data: { ...n.data, status, result: result !== undefined ? result : (n.data as any).result } }
+                    : n
+            );
+            // Keep local reference in sync for workflow queue resolution logic
+            this.nodes = updatedNodes;
+            return updatedNodes;
+        });
     }
 }

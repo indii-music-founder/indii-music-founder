@@ -29,13 +29,14 @@ export const MODULE_IDS = [
     'observability',
     'history',
     'debug',
-    'investor'
+    'investor',
+    'capture'
 ] as const;
 
 export type ModuleId = typeof MODULE_IDS[number];
 
 // Modules that hide the sidebar and command bar
-export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor'];
+export const STANDALONE_MODULES: ModuleId[] = ['select-org', 'onboarding', 'investor', 'capture'];
 
 // ============================================================================
 // Type Guard
