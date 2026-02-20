@@ -63,75 +63,8 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     loginAsGuest: async () => {
-        // Allow guest login if DEV
-        if (import.meta.env.DEV) {
-            const mockUser = {
-                uid: 'guest-user-123',
-                email: 'guest@indiios.com',
-                displayName: 'Guest Artist',
-                emailVerified: true,
-                isAnonymous: true,
-                metadata: {},
-                providerData: [],
-                refreshToken: '',
-                tenantId: null,
-                delete: async () => { },
-                getIdToken: async () => 'mock-token',
-                getIdTokenResult: async () => ({
-                    token: 'mock-token',
-                    signInProvider: 'custom',
-                    claims: {},
-                    authTime: Date.now().toString(),
-                    issuedAtTime: Date.now().toString(),
-                    expirationTime: (Date.now() + 3600000).toString(),
-                }),
-                reload: async () => { },
-                toJSON: () => ({}),
-            } as unknown as User;
-
-            set({ user: mockUser, authLoading: false });
-        } else {
-            console.error('Guest login is currently disabled.');
-        }
         // SECURE: Guest login is disabled to enforce real authentication
-        // ONLY permitted in DEV for testing/demo purposes
-        if (!import.meta.env.DEV) {
-            console.error('Guest login is disabled in production.');
-            return;
-        }
-
-        // Create a mock Firebase User object
-        const mockUser = {
-            uid: 'guest-123',
-            email: 'guest@indiios.com',
-            displayName: 'Guest User',
-            emailVerified: true,
-            isAnonymous: true,
-            metadata: {
-                creationTime: new Date().toISOString(),
-                lastSignInTime: new Date().toISOString(),
-            },
-            providerData: [],
-            refreshToken: '',
-            tenantId: null,
-            delete: async () => {},
-            getIdToken: async () => 'mock-token',
-            getIdTokenResult: async () => ({
-                authTime: new Date().toISOString(),
-                expirationTime: new Date().toISOString(),
-                issuedAtTime: new Date().toISOString(),
-                signInProvider: 'custom',
-                signInSecondFactor: null,
-                token: 'mock-token',
-                claims: {}
-            }),
-            reload: async () => {},
-            toJSON: () => ({}),
-            phoneNumber: null,
-            photoURL: null,
-        } as unknown as User;
-
-        set({ user: mockUser, authLoading: false, authError: null });
+        throw new Error('Guest login is disabled. Please sign in with a real Google or Email account.');
     },
 
     logout: async () => {

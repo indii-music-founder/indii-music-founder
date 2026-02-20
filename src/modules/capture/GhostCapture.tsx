@@ -2,9 +2,10 @@ import React, { useState, useRef } from 'react';
 import { Camera, Upload, X, ScanLine, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-// --- CLAYMORPHISM STYLES ---
-// Using soft inset shadows and bright highlights to create tactile, 3D buttons.
-const clayButtonStyles = "relative overflow-hidden bg-gray-800 text-white rounded-3xl p-6 flex flex-col items-center justify-center gap-3 transition-transform hover:scale-105 active:scale-95 shadow-[8px_8px_16px_#0a0f16,-8px_-8px_16px_#263346,inset_2px_2px_4px_rgba(255,255,255,0.1)]";
+// --- TACTILE "SOVEREIGN" STYLES ---
+// Toned down "Claymorphism" to align with the main app's sleek, dark 'Glass' theme.
+// We use a subtle inner shadow and border to maintain the tactile touch target.
+const clayButtonStyles = "relative overflow-hidden bg-card/60 backdrop-blur-md border border-white/5 text-white rounded-3xl p-6 flex flex-col items-center justify-center gap-3 transition-all hover:bg-card/80 active:scale-95 shadow-lg shadow-black/50 hover:shadow-[inset_0_2px_10px_rgba(255,255,255,0.05)]";
 
 export default function GhostCapture() {
     const [imagePreview, setImagePreview] = useState<string | null>(null);
