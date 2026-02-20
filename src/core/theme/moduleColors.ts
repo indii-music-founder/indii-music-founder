@@ -357,6 +357,15 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-distribution',
         hoverBg: 'hover:bg-dept-distribution/5',
         cssVar: '--color-dept-distribution',
+    },
+    capture: {
+        text: 'text-teal-400',
+        bg: 'bg-teal-500/10',
+        border: 'border-teal-500',
+        ring: 'focus-within:ring-teal-500/50',
+        hoverText: 'hover:text-teal-300',
+        hoverBg: 'hover:bg-teal-500/5',
+        cssVar: '--color-dept-creative',
     }
 };
 
