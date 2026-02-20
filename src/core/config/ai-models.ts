@@ -9,17 +9,17 @@ import { z } from 'zod';
 
 // Approved model categories and IDs
 export const APPROVED_MODELS = {
-    TEXT_AGENT: 'gemini-3-pro-preview',
+    TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
     IMAGE_GEN: 'gemini-3-pro-image-preview',
     IMAGE_FAST: 'gemini-3-pro-image-preview',
-    AUDIO_PRO: 'gemini-3-pro-preview',
+    AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
     VIDEO_FAST: 'veo-3.1-fast-generate-preview',
     VIDEO_GEN: 'veo-3.1-generate-preview', // Alias for backward compatibility
-    BROWSER_AGENT: 'gemini-3-pro-preview',
+    BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
 
@@ -97,7 +97,7 @@ export const AI_CONFIG = {
  * - Flash: $30.00 / 1M Output
  */
 export const MODEL_PRICING = {
-    'gemini-3-pro-preview': { input: 2.50, output: 7.50 },
+    'gemini-3.1-pro-preview': { input: 2.50, output: 7.50 },
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
     'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
     'veo-3.1-generate-preview': {
