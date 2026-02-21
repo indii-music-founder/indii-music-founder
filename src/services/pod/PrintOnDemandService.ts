@@ -156,22 +156,70 @@ class PrintfulProvider implements IPODProvider {
             throw new Error('Printful API key not configured. Set VITE_PRINTFUL_API_KEY in your environment.');
         }
 
-        const response = await fetch(`${this.baseUrl}${endpoint}`, {
-            ...options,
-            headers: {
-                'Authorization': `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-                ...options.headers
+        const maxRetries = 3;
+        let attempt = 0;
+
+        while (attempt < maxRetries) {
+            const response = await fetch(`${this.baseUrl}${endpoint}`, {
+                ...options,
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json',
+                    ...options.headers
+                }
+            });
+
+            if (!response.ok) {
+                const { status } = response;
+                const errorBody = await response.json().catch(() => ({ message: response.statusText }));
+                const message = errorBody?.error?.message || errorBody?.message || response.statusText;
+
+                // 429 Too Many Requests & 5xx transient errors → retry with backoff
+                if (status === 429 || status === 502 || status === 503 || status === 504) {
+                    attempt++;
+                    if (attempt >= maxRetries) {
+                        const label = status === 429 ? 'Rate limited' : `Server error (${status})`;
+                        throw new Error(`Printful API ${label} after ${maxRetries} retries: ${message}`);
+                    }
+                    const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+                    console.warn(`[Printful] ${status} on ${endpoint}. Retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                    await new Promise(resolve => setTimeout(resolve, waitMs));
+                    continue;
+                }
+
+                // 413 Payload Too Large → design file is too big
+                if (status === 413) {
+                    throw new Error(`Printful API error: Design file too large. Please reduce image size and try again. (413 Payload Too Large)`);
+                }
+
+                // 422 Unprocessable Entity → validation issue on Printful's side
+                if (status === 422) {
+                    throw new Error(`Printful API validation error (422): ${message}. Check that all required fields are present and valid.`);
+                }
+
+                // 401 Unauthorized → bad API key
+                if (status === 401) {
+                    throw new Error(`Printful API authentication failed (401): Invalid API key. Please check VITE_PRINTFUL_API_KEY.`);
+                }
+
+                // 403 Forbidden → insufficient permissions
+                if (status === 403) {
+                    throw new Error(`Printful API permission denied (403): ${message}. Check API key scope.`);
+                }
+
+                // 404 Not Found → resource doesn't exist
+                if (status === 404) {
+                    throw new Error(`Printful API resource not found (404): ${endpoint} - ${message}`);
+                }
+
+                // Generic fallback for all other 4xx/5xx
+                throw new Error(`Printful API error (${status}): ${message}`);
             }
-        });
 
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({ message: response.statusText }));
-            throw new Error(`Printful API error: ${error.message || response.statusText}`);
+            const data = await response.json();
+            return data.result;
         }
-
-        const data = await response.json();
-        return data.result;
+        throw new Error('Printful API request failed after retries');
     }
 
     async getProducts(): Promise<PODProduct[]> {
