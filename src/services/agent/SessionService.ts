@@ -3,7 +3,8 @@ import { FirestoreService } from '../FirestoreService';
 import type { ConversationSession } from '@/core/store/slices/agentSlice'; // Direct import to avoid circular dep risks? Or from index?
 import { OrganizationService } from '../OrganizationService';
 import { auth } from '../firebase';
-import { where, orderBy, limit, Timestamp } from 'firebase/firestore';
+import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe } from 'firebase/firestore';
+import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
 
 // Define the Firestore document shape (handling timestamps)
@@ -96,6 +97,41 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
             createdAt: d.createdAt.toMillis(),
             updatedAt: d.updatedAt.toMillis()
         }));
+    }
+
+    subscribeToSessions(
+        onUpdate: (sessions: ConversationSession[]) => void,
+        onError: (error: Error) => void
+    ): Unsubscribe {
+        const orgId = OrganizationService.getCurrentOrgId() || 'personal';
+        const userId = auth.currentUser?.uid;
+
+        if (!userId) {
+            onUpdate([]);
+            return () => { };
+        }
+
+        const constraints = [
+            where('orgId', '==', orgId),
+            where('userId', '==', userId),
+            orderBy('updatedAt', 'desc'),
+            limit(50)
+        ];
+
+        const q = query(collection(db, 'sessions'), ...constraints);
+
+        return onSnapshot(q, (snapshot) => {
+            const sessions = snapshot.docs.map(doc => {
+                const d = doc.data() as SessionDocument;
+                return {
+                    ...d,
+                    id: doc.id,
+                    createdAt: d.createdAt.toMillis(),
+                    updatedAt: d.updatedAt.toMillis()
+                } as ConversationSession;
+            });
+            onUpdate(sessions);
+        }, onError);
     }
 }
 

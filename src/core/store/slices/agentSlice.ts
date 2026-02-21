@@ -58,6 +58,7 @@ export interface AgentSlice {
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
+    sessionsListenerUnsubscribe: (() => void) | null;
 
     // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
     chatChannel: 'indii' | 'agent';
@@ -117,6 +118,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentHistory: [],
     sessions: {},
     activeSessionId: null,
+    sessionsListenerUnsubscribe: null,
     availableAgents: [],
     isLoadingAgents: false,
     agentsError: null,
@@ -347,28 +349,46 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     loadSessions: async () => {
         const { sessionService } = await import('@/services/agent/SessionService');
-        const sessions = await sessionService.getSessionsForUser();
-        const sessionMap: Record<string, ConversationSession> = {};
 
-        sessions.forEach(s => {
-            // Ensure messages is always an array
-            if (!s.messages) s.messages = [];
-            sessionMap[s.id] = s;
-        });
+        // Clean up existing listener if any
+        const currentUnsubscribe = get().sessionsListenerUnsubscribe;
+        if (currentUnsubscribe) currentUnsubscribe();
 
-        set(state => {
-            // If we already have an active session, keep it, otherwise set latest
-            let activeId = state.activeSessionId;
-            if (!activeId && sessions.length > 0) {
-                activeId = sessions[0].id; // Most recent due to sort
-            }
+        try {
+            const unsubscribe = sessionService.subscribeToSessions((sessions) => {
+                const sessionMap: Record<string, ConversationSession> = {};
 
-            return {
-                sessions: sessionMap,
-                activeSessionId: activeId,
-                agentHistory: activeId ? sessionMap[activeId].messages : []
-            };
-        });
+                sessions.forEach(s => {
+                    // Ensure messages is always an array
+                    if (!s.messages) s.messages = [];
+                    sessionMap[s.id] = s;
+                });
+
+                set(state => {
+                    // If we already have an active session, keep it, otherwise set latest
+                    let activeId = state.activeSessionId;
+
+                    // If the active session was deleted remotely, fallback to the most recent one
+                    if (activeId && !sessionMap[activeId] && sessions.length > 0) {
+                        activeId = sessions[0].id;
+                    } else if (!activeId && sessions.length > 0) {
+                        activeId = sessions[0].id; // Most recent due to sort
+                    }
+
+                    return {
+                        sessions: sessionMap,
+                        activeSessionId: activeId,
+                        agentHistory: activeId && sessionMap[activeId] ? sessionMap[activeId].messages : []
+                    };
+                });
+            }, (error) => {
+                console.error('[AgentSlice] Sessions subscription error:', error);
+            });
+
+            set({ sessionsListenerUnsubscribe: unsubscribe });
+        } catch (error) {
+            console.error('[AgentSlice] Failed to initialize sessions subscription:', error);
+        }
     },
 
     loadAgents: async () => {

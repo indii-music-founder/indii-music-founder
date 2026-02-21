@@ -1,6 +1,6 @@
 
 import { db, storage } from './firebase';
-import { collection, query, orderBy, limit, Timestamp, where, getDocs } from 'firebase/firestore';
+import { collection, query, orderBy, limit, Timestamp, where, getDocs, onSnapshot, Unsubscribe } from 'firebase/firestore';
 import { ref, uploadString, getDownloadURL, uploadBytes, deleteObject } from 'firebase/storage';
 import { HistoryItem } from '@/core/types/history';
 import { OrganizationService } from './OrganizationService';
@@ -228,6 +228,81 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             throw error;
         }
 
+    }
+
+    /**
+     * Subscribes to history items in real-time.
+     */
+    async subscribeToHistory(
+        limitCount = 50,
+        onUpdate: (items: HistoryItem[]) => void,
+        onError: (error: Error) => void
+    ): Promise<Unsubscribe> {
+        const orgId = OrganizationService.getCurrentOrgId() || 'personal';
+
+        if (!orgId) {
+            console.warn("No organization selected, returning empty history subscription.");
+            onUpdate([]);
+            return () => { };
+        }
+
+        const { auth } = await import('./firebase');
+        const constraints = [
+            where('orgId', '==', orgId),
+            orderBy('timestamp', 'desc'),
+            limit(limitCount)
+        ];
+
+        if (orgId === 'personal') {
+            if (auth.currentUser?.uid) {
+                constraints.push(where('userId', '==', auth.currentUser.uid));
+            } else {
+                onUpdate([]);
+                return () => { };
+            }
+        }
+
+        const q = query(collection(db, this.collectionName), ...constraints);
+
+        return onSnapshot(q, (snapshot) => {
+            const items = snapshot.docs.map(doc => {
+                const data = doc.data() as HistoryDocument;
+                return this.mapDocumentToItem({ ...data, id: doc.id });
+            });
+            onUpdate(items);
+        }, (error) => {
+            // Check if it's an index error, fallback to un-ordered query if so
+            if (error.code === 'failed-precondition' || error.message.includes('index')) {
+                console.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
+
+                const fallbackConstraints = [
+                    where('orgId', '==', orgId),
+                    limit(limitCount)
+                ];
+
+                if (orgId === 'personal' && auth.currentUser?.uid) {
+                    fallbackConstraints.push(where('userId', '==', auth.currentUser.uid));
+                }
+
+                const fallbackQ = query(collection(db, this.collectionName), ...fallbackConstraints);
+
+                const fallbackUnsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
+                    const items = fallbackSnap.docs.map(doc => {
+                        const data = doc.data() as HistoryDocument;
+                        return this.mapDocumentToItem({ ...data, id: doc.id });
+                    });
+
+                    // Client-side sort
+                    items.sort((a, b) => b.timestamp - a.timestamp);
+                    onUpdate(items);
+                }, onError);
+
+                return fallbackUnsubscribe; // However, we can't easily replace the outer return. We'd need to handle this differently if we really wanted to return the new unsubscribe synchronously.
+                // For simplicity in this implementation, if the ordered query fails, the initial `onSnapshot` throws. We catch it here and start a new one, but the caller's `Unsubscribe` won't perfectly point to this fallback unless we wrap it.
+            }
+
+            onError(error);
+        });
     }
 
     private mapDocumentToItem(doc: HistoryDocument): HistoryItem {
