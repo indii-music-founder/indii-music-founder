@@ -164,6 +164,11 @@ service cloud.firestore {
         allow create, delete: if isOwner(followerId);
       }
 
+      // Legal: contracts subcollection (user-scoped)
+      match /contracts/{contractId} {
+        allow read, write: if isOwner(userId);
+      }
+
       // User Stats subcollection
       match /stats/{statId} {
         allow read, write: if isOwner(userId);
@@ -525,6 +530,54 @@ service cloud.firestore {
     // Allow users to query their own tracks globally (e.g., via search/aggregation)
     match /{path=**}/analyzed_tracks/{trackId} {
       allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // SECURITY: FRAUD DETECTION (user-scoped)
+    // ========================================
+
+    match /fraud_alerts/{alertId} {
+      // Users can only read their own fraud alerts
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      // Users can create fraud alerts for themselves
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+      // Users can update/delete their own alerts; admins can clear
+      allow update, delete: if (isAuthenticated() && resource.data.userId == request.auth.uid) || isAdmin();
+    }
+
+    match /content_rules/{ruleId} {
+      // Authenticated users can read known infringement rules (for content scanning)
+      allow read: if isAuthenticated();
+      // Only admins can write content rules
+      allow write: if isAdmin();
+    }
+
+    // ========================================
+    // MERCHANDISE REQUESTS (user-scoped)
+    // ========================================
+
+    match /manufacture_requests/{requestId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /sample_requests/{requestId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /mockup_generations/{generationId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // AGENT: PROACTIVE TASKS (user-scoped)
+    // ========================================
+
+    match /proactive_tasks/{taskId} {
+      allow read, update, delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
     }
 
     // ========================================
