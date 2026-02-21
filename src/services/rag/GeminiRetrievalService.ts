@@ -371,9 +371,22 @@ export class GeminiRetrievalService {
             ...(tools ? { tools } : {})
         };
 
+        // Build auth headers matching the main fetch() method to avoid 403 on ragProxy
+        const streamHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+        try {
+            const { auth } = await import('@/services/firebase');
+            const currentUser = auth.currentUser;
+            if (currentUser) {
+                const idToken = await currentUser.getIdToken();
+                streamHeaders['Authorization'] = `Bearer ${idToken}`;
+            }
+        } catch (e) {
+            console.warn('[GeminiRetrieval] streamQuery: Could not get auth token:', e);
+        }
+
         const response = await fetch(`${this.baseUrl}/models/${targetModel}:streamGenerateContent`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: streamHeaders,
             body: JSON.stringify(body)
         });
 
