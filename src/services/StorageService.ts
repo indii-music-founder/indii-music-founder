@@ -262,7 +262,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
             }
         }
 
-        const q = query(collection(db, this.collectionName), ...constraints);
+        const q = query(this.collection, ...constraints);
 
         return onSnapshot(q, (snapshot) => {
             const items = snapshot.docs.map(doc => {
@@ -284,7 +284,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     fallbackConstraints.push(where('userId', '==', auth.currentUser.uid));
                 }
 
-                const fallbackQ = query(collection(db, this.collectionName), ...fallbackConstraints);
+                const fallbackQ = query(this.collection, ...fallbackConstraints);
 
                 const fallbackUnsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
                     const items = fallbackSnap.docs.map(doc => {
