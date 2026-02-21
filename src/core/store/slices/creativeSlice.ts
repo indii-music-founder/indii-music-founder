@@ -58,6 +58,7 @@ export interface WhiskState {
 export interface CreativeSlice {
     // History
     generatedHistory: HistoryItem[];
+    historyListenerUnsubscribe: (() => void) | null;
     addToHistory: (item: HistoryItem) => void;
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
@@ -156,6 +157,7 @@ export interface CreativeSlice {
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     generatedHistory: [],
+    historyListenerUnsubscribe: null,
     addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
@@ -177,64 +179,72 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         const { StorageService } = await import('@/services/StorageService');
 
         return new Promise<void>((resolve) => {
-            // bypass auth check for Ground Zero
-            StorageService.loadHistory()
-                .then(history => {
-                    set((state) => {
-                        // Merge logic: If an item exists locally with a full data URI, 
-                        // and Firestore has a placeholder, keep the local one.
-                        // Bolt Optimization: Use Map for O(1) lookups instead of O(N) array search
-                        // This reduces complexity from O(N*M) to O(N+M)
-                        // Bolt Optimization: Use Map for O(N) merging instead of O(N*M)
-                        // Map key: ID, value: HistoryItem
-                        const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
 
-                        history.forEach(remItem => {
-                            const localItem = historyMap.get(remItem.id);
+            // Clean up existing listener if any
+            const currentUnsubscribe = get().historyListenerUnsubscribe;
+            if (currentUnsubscribe) currentUnsubscribe();
 
-                            if (localItem) {
-                                // If local has data:uri and remote has placeholder, don't overwrite the URL
-                                if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
-                                    historyMap.set(remItem.id, { ...remItem, url: localItem.url });
+            (async () => {
+                try {
+                    // Subscribe to real-time updates
+                    const unsubscribe = await StorageService.subscribeToHistory(50, (history) => {
+                        set((state) => {
+                            // Merge logic: If an item exists locally with a full data URI, 
+                            // and remote has a placeholder, keep the local one.
+                            const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
+
+                            history.forEach(remItem => {
+                                const localItem = historyMap.get(remItem.id);
+
+                                if (localItem && localItem.url) {
+                                    if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                        historyMap.set(remItem.id, { ...remItem, url: localItem.url });
+                                    } else {
+                                        historyMap.set(remItem.id, remItem);
+                                    }
                                 } else {
                                     historyMap.set(remItem.id, remItem);
                                 }
-                            } else {
-                                historyMap.set(remItem.id, remItem);
-                            }
-                        });
+                            });
 
-                        // Convert back to array and sort by timestamp (newest first)
-                        const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+                            const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
-                        // Bolt Optimization: Filter in a single pass O(N) instead of 3 passes O(3N)
-                        const generated: HistoryItem[] = [];
-                        const uploadedImages: HistoryItem[] = [];
-                        const uploadedAudio: HistoryItem[] = [];
+                            const generated: HistoryItem[] = [];
+                            const uploadedImages: HistoryItem[] = [];
+                            const uploadedAudio: HistoryItem[] = [];
 
-                        for (const item of mergedHistory) {
-                            if (item.origin !== 'uploaded') {
-                                generated.push(item);
-                            } else {
-                                if (item.type === 'image') {
-                                    uploadedImages.push(item);
-                                } else if (item.type === 'music') {
-                                    uploadedAudio.push(item);
+                            for (const item of mergedHistory) {
+                                if (item.origin !== 'uploaded') {
+                                    generated.push(item);
+                                } else {
+                                    if (item.type === 'image') {
+                                        uploadedImages.push(item);
+                                    } else if (item.type === 'music') {
+                                        uploadedAudio.push(item);
+                                    }
                                 }
                             }
-                        }
 
-                        return {
-                            generatedHistory: generated,
-                            uploadedImages: uploadedImages,
-                            uploadedAudio: uploadedAudio
-                        };
+                            return {
+                                generatedHistory: generated,
+                                uploadedImages: uploadedImages,
+                                uploadedAudio: uploadedAudio
+                            };
+                        });
+
+                        // Resolve the initialization promise after the first snapshot
+                        resolve();
+                    }, (error) => {
+                        console.error('[CreativeSlice] History subscription error:', error);
+                        resolve(); // Resolve anyway to unblock UI
                     });
+
+                    set({ historyListenerUnsubscribe: unsubscribe });
+                } catch (err) {
+                    console.error('[CreativeSlice] Failed to initialize history subscription:', err);
                     resolve();
-                })
-                .catch(() => {
-                    resolve();
-                });
+                }
+            })();
         });
     },
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => {
