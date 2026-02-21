@@ -60,6 +60,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             }, 0);
             return () => clearTimeout(timer);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userProfile]);
 
     const handleCreatePost = async () => {
@@ -102,8 +103,8 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
 
                     <div className="flex gap-4">
                         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-500 flex-shrink-0 relative overflow-hidden text-white flex items-center justify-center font-bold">
-                            {userProfile?.avatarUrl ? (
-                                <img src={userProfile.avatarUrl} alt="Me" className="w-full h-full object-cover" />
+                            {userProfile?.photoURL ? (
+                                <img src={userProfile.photoURL} alt="Me" className="w-full h-full object-cover" />
                             ) : (
                                 <span>{userProfile?.id?.substring(0, 1).toUpperCase() || 'U'}</span>
                             )}
