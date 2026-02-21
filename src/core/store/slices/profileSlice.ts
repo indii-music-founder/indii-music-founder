@@ -14,6 +14,7 @@ export interface ProfileSlice {
     currentOrganizationId: string;
     organizations: Organization[];
     userProfile: UserProfile;
+    profileListenerUnsubscribe: (() => void) | null;
     setOrganization: (id: string) => void;
     addOrganization: (org: Organization) => void;
     setUserProfile: (profile: UserProfile) => void;
@@ -76,6 +77,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         { id: 'org-default', name: 'HQ', plan: 'enterprise', members: ['guest'] }
     ],
     userProfile: DEFAULT_USER_PROFILE,
+    profileListenerUnsubscribe: null,
     // Auth state delegated to AuthSlice
     setOrganization: (id) => {
         localStorage.setItem('currentOrgId', id);
@@ -161,11 +163,38 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 set({ userProfile: newProfile });
                 await saveProfileToStorage(newProfile);
             }
+
+            // Set up real-time listener for the user profile
+            const currentUnsubscribe = get().profileListenerUnsubscribe;
+            if (currentUnsubscribe) {
+                currentUnsubscribe();
+            }
+
+            try {
+                const { db } = await import('@/services/firebase');
+                const { doc, onSnapshot } = await import('firebase/firestore');
+
+                const userRef = doc(db, 'users', uid);
+                const unsubscribe = onSnapshot(userRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        const cloudProfile = docSnap.data() as UserProfile;
+                        set({ userProfile: cloudProfile });
+                    }
+                }, (error) => {
+                    console.error('[Profile] Real-time listener error:', error);
+                });
+
+                set({ profileListenerUnsubscribe: unsubscribe });
+            } catch (err) {
+                console.error('[Profile] Failed to initialize real-time listener:', err);
+            }
         } catch (err) {
             console.error('[Profile] Failed to load profile:', err);
         }
     },
     logout: async () => {
+        const unsubscribe = get().profileListenerUnsubscribe;
+        if (unsubscribe) unsubscribe();
         console.info('[System] Logout requested - resetting session state...');
         // In a no-auth world, "logout" might just reset preferences or switch to a guest profile.
         // For now, we just reload the page to clear transient state
