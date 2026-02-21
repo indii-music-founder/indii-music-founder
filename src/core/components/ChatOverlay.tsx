@@ -146,12 +146,12 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                 <MessageItem
                     key={msg.id}
                     msg={msg}
-                    avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : undefined}
+                    avatarUrl={msg.role === 'model' ? getAgentAvatar(activeAgentId || '') : (userProfile?.photoURL || undefined)}
                     agentIdentity={msgIdentity}
                 />
             </div>
         );
-    }, [chatChannel, activeAgent, activeAgentId, getAgentAvatar]);
+    }, [chatChannel, activeAgent, activeAgentId, getAgentAvatar, userProfile?.photoURL]);
 
     // Auto-scroll
     useEffect(() => {

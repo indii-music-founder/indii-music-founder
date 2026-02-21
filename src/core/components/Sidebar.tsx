@@ -153,10 +153,14 @@ export default function Sidebar() {
             {/* User Profile Section */}
             <div className="p-4 border-t border-white/5 mt-auto">
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-bold text-white">
-                            S
-                        </span>
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {userProfile?.photoURL ? (
+                            <img src={userProfile.photoURL} alt="User avatar" className="w-full h-full object-cover" />
+                        ) : (
+                            <span className="text-xs font-bold text-white">
+                                {userProfile?.displayName ? userProfile.displayName.charAt(0).toUpperCase() : 'S'}
+                            </span>
+                        )}
                     </div>
                     {isSidebarOpen && (
                         <div className="flex-1 min-w-0">
