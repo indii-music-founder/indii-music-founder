@@ -783,7 +783,9 @@ export const ragProxy = functions
                 const allowedPrefixes = [
                     '/v1beta/files',
                     '/v1beta/models',
-                    '/upload/v1beta/files'
+                    '/upload/v1beta/files',
+                    '/v1beta/fileSearchStores', // RAG: File Search Store management (create, list, importFile)
+                    '/v1beta/operations'         // RAG: Async operation polling for importFile completions
                 ];
 
                 // 2. BLOCK LIST ALL FILES (Privacy / Anti-IDOR)
