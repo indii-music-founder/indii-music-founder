@@ -6,7 +6,7 @@ import { HistoryItem } from '@/core/types/history';
 // Mock StorageService
 vi.mock('@/services/StorageService', () => ({
     StorageService: {
-        loadHistory: vi.fn(),
+        subscribeToHistory: vi.fn(),
         saveItem: vi.fn().mockResolvedValue(true),
         removeItem: vi.fn().mockResolvedValue(true)
     }
@@ -34,7 +34,7 @@ describe('CreativeSlice - initializeHistory', () => {
         // Reset storage mock
         const { StorageService } = await import('@/services/StorageService');
         mockStorageService = StorageService;
-        (mockStorageService.loadHistory as any).mockReset();
+        (mockStorageService.subscribeToHistory as any).mockReset();
     });
 
     it('should correctly merge remote history with local history preserving data URIs', async () => {
@@ -73,7 +73,10 @@ describe('CreativeSlice - initializeHistory', () => {
             origin: 'generated'
         };
 
-        (mockStorageService.loadHistory as any).mockResolvedValue([remoteItem1, remoteItem2]);
+        (mockStorageService.subscribeToHistory as any).mockImplementation((limit: number, cb: any) => {
+            cb([remoteItem1, remoteItem2]);
+            return Promise.resolve(vi.fn());
+        });
 
         // Run initialization
         await slice.initializeHistory();
@@ -121,7 +124,10 @@ describe('CreativeSlice - initializeHistory', () => {
             origin: 'generated'
         };
 
-        (mockStorageService.loadHistory as any).mockResolvedValue([remoteItem]);
+        (mockStorageService.subscribeToHistory as any).mockImplementation((limit: number, cb: any) => {
+            cb([remoteItem]);
+            return Promise.resolve(vi.fn());
+        });
 
         await slice.initializeHistory();
 
@@ -171,12 +177,15 @@ describe('CreativeSlice - initializeHistory', () => {
             origin: 'uploaded'
         };
 
-        (mockStorageService.loadHistory as any).mockResolvedValue([
-            generatedItem,
-            uploadedImageItem,
-            uploadedAudioItem,
-            otherUploadedItem
-        ]);
+        (mockStorageService.subscribeToHistory as any).mockImplementation((limit: number, cb: any) => {
+            cb([
+                generatedItem,
+                uploadedImageItem,
+                uploadedAudioItem,
+                otherUploadedItem
+            ]);
+            return Promise.resolve(vi.fn());
+        });
 
         await slice.initializeHistory();
 
