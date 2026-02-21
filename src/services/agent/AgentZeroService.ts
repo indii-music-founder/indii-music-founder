@@ -174,6 +174,11 @@ class AgentZeroService {
         }
 
         // 2. Fallback to standard fetch (Web mode)
+        if (typeof window !== 'undefined' && window.location.protocol === 'https:' &&
+            (fullUrl.includes('localhost') || fullUrl.includes('127.0.0.1'))) {
+            throw new Error('Agent Zero: Cannot connect to local agent from secure cloud environment (Mixed Content). Please use the desktop app or a local development server.');
+        }
+
         console.debug(`[AgentZeroService] Using Native Fetch for: ${fullUrl}`);
         const response = await this.fetchWithTimeout(
             fullUrl,
