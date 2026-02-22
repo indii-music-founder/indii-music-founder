@@ -1,3 +1,6 @@
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import json
 from python.helpers.tool import Tool, Response
 from python.config.ai_models import AIConfig
@@ -52,7 +55,25 @@ class RecoupmentCalculator(Tool):
             }}
             """
             
-            response = client.models.generate_content(
+            
+
+            
+                        _rl = RateLimiter()
+
+            
+                        wait_time = _rl.wait_time("gemini")
+
+            
+                        if wait_time > 0:
+
+            
+                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+
+            
+                            await asyncio.sleep(wait_time)
+
+            
+            esponse = client.models.generate_content(
                 model=model_id,
                 contents=[prompt],
                 config=types.GenerateContentConfig(
@@ -61,7 +82,13 @@ class RecoupmentCalculator(Tool):
                 )
             )
             
-            gen_data = json.loads(response.text)
+            try:
+            
+                gen_data = json.loads(response.text)
+            
+            except json.JSONDecodeError:
+            
+                gen_data = {"raw_text": response.text, "error": "Failed to parse JSON"}
             
             return Response(
                 message=f"Recoupment calculated. Requires {int(artist_streams_to_recoup):,} streams to clear ${advance_amount_usd} advance.",

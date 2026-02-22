@@ -23,7 +23,8 @@ vi.mock('firebase/functions', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-    functions: {}
+    functions: {},
+    functionsWest1: {}
 }));
 
 // Mock complex sub-components to focus on integration logic

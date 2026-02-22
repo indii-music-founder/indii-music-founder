@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
-import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence } from 'firebase/auth';
+import { getAuth, initializeAuth, browserLocalPersistence, browserSessionPersistence, indexedDBLocalPersistence } from 'firebase/auth';
 import { getAI, VertexAIBackend, AI } from 'firebase/ai';
 
 import { firebaseConfig, env } from '@/config/env';
@@ -102,9 +102,9 @@ if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true
 }
 
 // Use initializeAuth to ensure persistence is correctly configured for Electron
-// This fixes potential hangs where default persistence (IndexedDB) might fail silently
+// HINT: Added indexedDBLocalPersistence to fix Bug M1 where localStorage full causes silent auth drop.
 export const auth = initializeAuth(app, {
-    persistence: [browserLocalPersistence, browserSessionPersistence]
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence]
 });
 
 // Initialize Remote Config

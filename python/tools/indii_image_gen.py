@@ -1,3 +1,6 @@
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import os
 import time
 from python.helpers.tool import Tool, Response
@@ -25,7 +28,19 @@ class IndiiImageGen(Tool):
             self.set_progress(f"Generating image with {model_id}...")
 
             # 3. Call Imagen API
-            response = client.models.generate_images(
+            
+
+                        _rl = RateLimiter()
+
+                        wait_time = _rl.wait_time("gemini")
+
+                        if wait_time > 0:
+
+                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+
+                            await asyncio.sleep(wait_time)
+
+            esponse = client.models.generate_images(
                 model=model_id,
                 prompt=enriched_prompt,
                 config=types.GenerateImagesConfig(
@@ -58,15 +73,15 @@ class IndiiImageGen(Tool):
             # Vector A: Inline Chat (Markdown)
             # Vector B: Tool Result (Metadata for UI thumbnails)
             return Response(
-                message=f"**Gemini Image Generation Complete.**
+                message=f"""**Gemini Image Generation Complete.**
 
-![Generated Image]({protocol_path})",
+![Generated Image]({protocol_path})""",
                 break_loop=False,
                 additional={"visual": protocol_path}
             )
 
         except Exception as e:
             import traceback
-            error_msg = f"Image Generation Failed: {str(e)}
-{traceback.format_exc()}"
+            error_msg = f"""Image Generation Failed: {str(e)}
+{traceback.format_exc()}"""
             return Response(message=error_msg, break_loop=False)

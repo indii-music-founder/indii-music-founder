@@ -13,6 +13,7 @@ interface CacheEntry<T> {
 
 export class CacheService {
   private cache: Map<string, CacheEntry<any>> = new Map();
+  private timeouts: Map<string, NodeJS.Timeout> = new Map();
   private defaultTTL = 5 * 60 * 1000; // 5 minutes default TTL
 
   /**
@@ -25,10 +26,18 @@ export class CacheService {
       ttl
     });
 
+    // Clear any existing timeout
+    if (this.timeouts.has(key)) {
+      clearTimeout(this.timeouts.get(key));
+    }
+
     // Auto-expire entry after TTL
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       this.cache.delete(key);
+      this.timeouts.delete(key);
     }, ttl);
+
+    this.timeouts.set(key, timeout);
   }
 
   /**
@@ -40,7 +49,7 @@ export class CacheService {
 
     const now = Date.now();
     if (now - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
+      this.invalidate(key);
       return null;
     }
 
@@ -56,7 +65,7 @@ export class CacheService {
 
     const now = Date.now();
     if (now - entry.timestamp > entry.ttl) {
-      this.cache.delete(key);
+      this.invalidate(key);
       return false;
     }
 
@@ -67,6 +76,10 @@ export class CacheService {
    * Invalidate a specific cache entry
    */
   invalidate(key: string): void {
+    if (this.timeouts.has(key)) {
+      clearTimeout(this.timeouts.get(key));
+      this.timeouts.delete(key);
+    }
     this.cache.delete(key);
   }
 

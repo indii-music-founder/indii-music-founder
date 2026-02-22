@@ -70,6 +70,11 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     logout: async () => {
         try {
             await signOut(auth);
+
+            // ST9: Clear cache on logout to prevent stale data cross-contamination
+            const { cacheService } = await import('@/services/cache/CacheService');
+            cacheService.clear();
+
             set({ user: null });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Logout failed';

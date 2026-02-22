@@ -22,7 +22,7 @@ export const trackUsage = onCall(async (request) => {
 
   // Validate userId matches auth
   if (userId && userId !== request.auth.uid) {
-    throw new Error('Unauthorized: userId mismatch');
+    throw new (await import('firebase-functions/v2/https')).HttpsError('permission-denied', 'Unauthorized: userId mismatch');
   }
 
   const effectiveUserId = userId || request.auth.uid;
@@ -77,7 +77,6 @@ export const trackUsage = onCall(async (request) => {
     return { success: true };
   } catch (error) {
     console.error('[trackUsage] Error:', error);
-    // Don't throw - return a soft failure to prevent agent abort
-    return { success: false, error: String(error), skipped: true };
+    throw new (await import('firebase-functions/v2/https')).HttpsError('internal', 'Internal error during usage tracking', String(error));
   }
 });

@@ -12,6 +12,9 @@ class RateLimiter:
         "ascap.com": 5,
         "bmi.com": 5,
         "spotify.com": 20,
+        "indii_video_gen": 3,
+        "indii_image_gen": 10,
+        "gemini": 15,
         "default": 10
     }
     

@@ -16,26 +16,30 @@ class CredentialVault:
     VAULT_PATH = os.path.join(os.getcwd(), "secure_vault.enc")
     
     def __init__(self, master_key_material: str):
-        # Derive a strong key from the user's biometric token (material)
-        salt = b'indii_static_salt' # In prod, read this from the file header
+        self.master_key_material = master_key_material
+
+    def _get_cipher(self, salt: bytes):
         kdf = PBKDF2HMAC(
             algorithm=hashes.SHA256(),
             length=32,
             salt=salt,
             iterations=480000,
         )
-        key = base64.urlsafe_b64encode(kdf.derive(master_key_material.encode()))
-        self.cipher = Fernet(key)
+        key = base64.urlsafe_b64encode(kdf.derive(self.master_key_material.encode()))
+        return Fernet(key)
 
     def save_credentials(self, service: str, data: dict):
         """Encrypts and saves credentials to the vault."""
         vault_data = self._load_vault()
         vault_data[service] = data
         
+        salt = os.urandom(16)
+        cipher = self._get_cipher(salt)
+        
         # Encrypt the entire vault blob
-        encrypted = self.cipher.encrypt(json.dumps(vault_data).encode())
+        encrypted = cipher.encrypt(json.dumps(vault_data).encode())
         with open(self.VAULT_PATH, "wb") as f:
-            f.write(encrypted)
+            f.write(salt + encrypted)
             
     def get_credentials(self, service: str):
         """Decrypts and retrieves credentials for a specific service."""
@@ -47,10 +51,15 @@ class CredentialVault:
             return {}
         
         with open(self.VAULT_PATH, "rb") as f:
-            encrypted = f.read()
+            data = f.read()
+            if len(data) < 16:
+                return {}
+            salt = data[:16]
+            encrypted = data[16:]
             
         try:
-            decrypted = self.cipher.decrypt(encrypted)
+            cipher = self._get_cipher(salt)
+            decrypted = cipher.decrypt(encrypted)
             return json.loads(decrypted)
         except Exception:
             # If decryption fails, the key (biometric token) was wrong

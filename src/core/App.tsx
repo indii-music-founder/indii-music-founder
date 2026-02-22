@@ -24,6 +24,9 @@ import { useURLSync } from '@/hooks/useURLSync';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { ErrorButton } from './components/debug/ErrorButton';
+import { cleanupLocalStorage } from '@/lib/storageHealth';
+
+cleanupLocalStorage();
 
 // ============================================================================
 // Lazy-loaded Module Components

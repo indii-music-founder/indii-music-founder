@@ -65,34 +65,9 @@ registerRoute(
         ],
     })
 );
-// Background Sync for API mutations (POST, PUT, DELETE)
-const bgSyncPlugin = new BackgroundSyncPlugin('offline-queue', {
-    maxRetentionTime: 24 * 60, // Retry for ups to 24 Hours (in minutes)
-});
-
-registerRoute(
-    /\/api\/.*/,
-    new NetworkOnly({
-        plugins: [bgSyncPlugin],
-    }),
-    'POST'
-);
-
-registerRoute(
-    /\/api\/.*/,
-    new NetworkOnly({
-        plugins: [bgSyncPlugin],
-    }),
-    'PUT'
-);
-
-registerRoute(
-    /\/api\/.*/,
-    new NetworkOnly({
-        plugins: [bgSyncPlugin],
-    }),
-    'DELETE'
-);
+// Removed Background Sync for generic API mutations.
+// Firestore handles its own offline persistence and sync for data mutations.
+// Using BackgroundSyncPlugin for /api/ conflicts with Firestore's built-in offline support.
 
 // Share Target Handler
 // Intercepts POST requests from other apps sharing content
@@ -124,6 +99,20 @@ registerRoute(
                 url,
                 timestamp: Date.now(),
             });
+
+            // Pruning mechanism: Remove items older than 24 hours
+            const tx = db.transaction('shared-items', 'readwrite');
+            const store = tx.objectStore('shared-items');
+            let cursor = await store.openCursor();
+            const oneDayAgo = Date.now() - (24 * 60 * 60 * 1000);
+
+            while (cursor) {
+                if (cursor.value.timestamp < oneDayAgo) {
+                    await cursor.delete();
+                }
+                cursor = await cursor.continue();
+            }
+            await tx.done;
 
             // Redirect back to the app with a query param indicating a share action
             return Response.redirect('/?action=share-target', 303);

@@ -101,9 +101,11 @@ class AuthBroker(ApiHandler):
                 del self._handle_registry[handle]
                 return {"error": "Handle expired"}
 
+            # PY8: Inject secret into env vars instead of returning in response
+            os.environ[entry["secret_id"]] = entry["secret"]
             return {
                 "status": "success",
-                "secret": entry["secret"]
+                "message": f"Secret injected into environment as {entry['secret_id']}"
             }
 
         elif action == "zeroize_session":

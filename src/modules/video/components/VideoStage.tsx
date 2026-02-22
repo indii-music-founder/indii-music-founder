@@ -140,7 +140,7 @@ export const VideoStage = React.memo<VideoStageProps>(({
                                 src={activeVideo.url}
                                 controls
                                 className="max-h-full max-w-full rounded-lg shadow-2xl border border-white/10"
-                                poster={activeVideo.url} // Note: poster expects an image URL. If activeVideo.url is video, this might fail or be ignored.
+                                poster={undefined} // H4 Fix: Do not use video URL as an image poster
                                 preload="metadata" // ⚡ Bolt Optimization: efficient loading
                                 onError={handleVideoError}
                                 data-testid="video-player"

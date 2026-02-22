@@ -1,3 +1,6 @@
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import json
 from python.helpers.tool import Tool, Response
 from python.config.ai_models import AIConfig
@@ -42,7 +45,19 @@ class ContractAnalyzer(Tool):
                 
                 Extract these fields accurately based ONLY on the provided PDF text. If a field is not present, mark it "Not specified".
                 """
-                response = client.models.generate_content(
+                
+
+                            _rl = RateLimiter()
+
+                            wait_time = _rl.wait_time("gemini")
+
+                            if wait_time > 0:
+
+                                self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+
+                                await asyncio.sleep(wait_time)
+
+                esponse = client.models.generate_content(
                     model=model_id,
                     contents=[
                         types.Part.from_bytes(data=asset_data, mime_type=mime_type),

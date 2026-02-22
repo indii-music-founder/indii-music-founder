@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, waitFor } from '@testing-library/react';
+import { renderHook, waitFor, act } from '@testing-library/react';
 import * as fabric from 'fabric';
 import { useAutoSave } from './useAutoSave';
 import { useStore } from '@/core/store';
@@ -68,7 +68,7 @@ describe('useAutoSave', () => {
         expect(result.current.error).toBeNull();
     });
 
-    it('should derive activeOrg from organizations array', () => {
+    it('should derive activeOrg from organizations array', async () => {
         const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
@@ -76,7 +76,9 @@ describe('useAutoSave', () => {
         );
 
         // Manually trigger save to check if activeOrg is properly derived
-        result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         // Should not warn about missing org since it should be derived correctly
         expect(consoleWarnSpy).not.toHaveBeenCalledWith(
@@ -94,7 +96,9 @@ describe('useAutoSave', () => {
             useAutoSave(null, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             expect.stringContaining('Auto-save skipped'),
@@ -118,7 +122,9 @@ describe('useAutoSave', () => {
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             expect.stringContaining('Auto-save skipped'),
@@ -142,7 +148,9 @@ describe('useAutoSave', () => {
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             expect.stringContaining('Auto-save skipped'),
@@ -167,7 +175,9 @@ describe('useAutoSave', () => {
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         expect(consoleWarnSpy).toHaveBeenCalledWith(
             expect.stringContaining('Auto-save skipped'),
@@ -192,7 +202,9 @@ describe('useAutoSave', () => {
         const rect = new fabric.Rect({ width: 100, height: 100 });
         mockCanvas.add(rect);
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         // Wait for save to complete
         await waitFor(() => {
@@ -228,14 +240,18 @@ describe('useAutoSave', () => {
         );
 
         // First save
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
         await waitFor(() => expect(result.current.isSaving).toBe(false));
 
         const firstSaveCall = vi.mocked(mockSetDoc).mock.calls[0][1];
         expect(firstSaveCall).toHaveProperty('createdAt');
 
         // Second save
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
         await waitFor(() => expect(result.current.isSaving).toBe(false));
 
         const secondSaveCall = vi.mocked(mockSetDoc).mock.calls[1][1] as any;
@@ -253,7 +269,9 @@ describe('useAutoSave', () => {
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         await waitFor(() => {
             expect(result.current.error).toBe(errorMessage);
@@ -275,7 +293,9 @@ describe('useAutoSave', () => {
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
         );
 
-        await result.current.saveDesign();
+        await act(async () => {
+            await result.current.saveDesign();
+        });
 
         await waitFor(() => {
             expect(consoleLogSpy).toHaveBeenCalledWith(

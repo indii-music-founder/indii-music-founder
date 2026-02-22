@@ -247,6 +247,13 @@ class SceneExtensionServiceImpl {
      * Uses canvas to capture the final frame
      */
     private async extractLastFrame(videoUri: string): Promise<{ mimeType: string; data: string }> {
+        try {
+            const headRes = await fetch(videoUri, { method: 'HEAD' });
+            if (!headRes.ok) throw new Error(`Video URL unreachable or CORS failed: ${headRes.status}`);
+        } catch (e) {
+            throw new Error(`Failed CORS pre-check for video: ${e instanceof Error ? e.message : String(e)}`);
+        }
+
         return new Promise((resolve, reject) => {
             const video = document.createElement('video');
             video.crossOrigin = 'anonymous';
@@ -305,7 +312,7 @@ class SceneExtensionServiceImpl {
             const isLastSegment = i === numSegments - 1;
             const remainingDuration = totalDuration - (i * segmentDuration);
             const duration = isLastSegment
-                ? Math.min(segmentDuration, remainingDuration)
+                ? remainingDuration
                 : segmentDuration;
 
             segments.push({

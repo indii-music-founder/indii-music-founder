@@ -44,10 +44,27 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     })));
     const toast = useToast();
 
+    const getEstimatedCost = () => {
+        let basePerSec = studioControls.model === 'pro' ? 0.20 : 0.10;
+        if (studioControls.resolution === '4k') {
+            basePerSec *= 2;
+        }
+        return (studioControls.duration * basePerSec).toFixed(2);
+    };
+
     const handleRender = async () => {
         if (!prompt.trim()) {
             toast.error("Please enter a video description");
             return;
+        }
+
+        const isLongForm = studioControls.duration > 8;
+        const is4K = studioControls.resolution === '4k';
+        const cost = getEstimatedCost();
+
+        if (isLongForm || is4K) {
+            const confirmed = window.confirm(`Estimated cost for this generation is $${cost}.\nProceed with rendering?`);
+            if (!confirmed) return;
         }
 
         setIsGenerating(true);
@@ -65,7 +82,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     generateAudio: studioControls.generateAudio,
                     model: studioControls.model,
-                    firstFrame: undefined // Logic handled in service if needed
+                    firstFrame: videoInputs.firstFrame?.url // H6 Fix: Wire up firstFrame
                 });
             } else {
                 // Trigger Single Shot
@@ -102,11 +119,13 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         });
                     });
                     useVideoEditorStore.getState().setStatus('completed');
+                    useVideoEditorStore.getState().setProgress(0);
                     toast.success("Scene generated!");
                 } else {
                     // Asynchronous background job
                     useVideoEditorStore.getState().setJobId(firstResult.id);
                     useVideoEditorStore.getState().setStatus('processing');
+                    useVideoEditorStore.getState().setProgress(0);
                     toast.success("Generation queued in background!");
                 }
             }
@@ -114,6 +133,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             console.error("Video generation failed:", e);
             toast.error("Video generation failed");
             useVideoEditorStore.getState().setStatus('failed');
+            useVideoEditorStore.getState().setProgress(0);
         } finally {
             setIsGenerating(false);
         }
@@ -392,11 +412,16 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                 onChange={(e) => setStudioControls({ duration: parseInt(e.target.value) })}
                                 className="w-full h-1 bg-white/10 rounded-lg appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:bg-blue-500 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:transition-all hover:[&::-webkit-slider-thumb]:scale-125"
                             />
-                            {studioControls.duration > 8 && (
-                                <p className="text-[10px] text-purple-400 flex items-center gap-1">
-                                    <Sparkles size={10} /> Long-form generation enabled
+                            <div className="flex justify-between items-center mt-1">
+                                {studioControls.duration > 8 ? (
+                                    <p className="text-[10px] text-purple-400 flex items-center gap-1">
+                                        <Sparkles size={10} /> Long-form generation enabled
+                                    </p>
+                                ) : <div />}
+                                <p className="text-[10px] text-green-400 font-mono">
+                                    Est: ${getEstimatedCost()}
                                 </p>
-                            )}
+                            </div>
                         </div>
                     </div>
 

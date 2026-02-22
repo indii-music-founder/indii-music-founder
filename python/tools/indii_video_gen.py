@@ -9,6 +9,9 @@ class IndiiVideoGen(Tool):
     Executes high-fidelity video generation via Gemini (Veo 3.1).
     Strictly follows the OS-as-Tool Persistence Rule and img:// Protocol Bridge.
     """
+    
+    _session_count = 0
+    _last_call_time = 0
 
     async def execute(self, **kwargs) -> Response:
         self.set_progress("Initializing Veo 3.1 synthesis...")
@@ -16,7 +19,27 @@ class IndiiVideoGen(Tool):
         try:
             prompt = kwargs.get("prompt", "")
             image_path = kwargs.get("image_path", "")
-            duration = kwargs.get("duration", 4) 
+            duration = int(kwargs.get("duration", 4))
+            
+            # Guardrails (Bug C1)
+            if duration not in [4, 6, 8]:
+                return Response(message="Error: Duration must be 4, 6, or 8 seconds.", break_loop=False)
+            
+            now = time.time()
+            time_since_last = now - IndiiVideoGen._last_call_time
+            if time_since_last < 30:
+                wait_secs = int(30 - time_since_last)
+                return Response(message=f"Error: Rate limit exceeded. Please wait {wait_secs} seconds.", break_loop=False)
+            
+            if IndiiVideoGen._session_count >= 3:
+                return Response(message="Error: Maximum of 3 videos per session reached to prevent credit burn.", break_loop=False)
+            
+            IndiiVideoGen._last_call_time = now
+            IndiiVideoGen._session_count += 1
+            
+            # Cost estimation logging
+            estimated_cost = duration * 0.20
+            self.set_progress(f"Estimated cost for {duration}s video: ${estimated_cost:.2f}")
             
             # 1. API Call Setup
             from google import genai

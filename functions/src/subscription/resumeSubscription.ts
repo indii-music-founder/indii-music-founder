@@ -4,7 +4,7 @@
  * Resumes a cancelled subscription (if it hasn't been cancelled yet).
  */
 
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, mapStripeStatus } from '../stripe/config';
 
@@ -56,8 +56,8 @@ export const resumeSubscription = onCall(async (request) => {
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[resumeSubscription] Error:', error);
-    throw new Error('Failed to resume subscription');
+    throw new HttpsError('internal', error.message || 'Failed to resume subscription');
   }
 });

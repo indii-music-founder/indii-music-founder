@@ -1,3 +1,8 @@
+
+from python.helpers.files import safe_path
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import os
 import json
 from python.helpers.tool import Tool, Response
@@ -30,14 +35,32 @@ class IndiiAudioEar(Tool):
 
             # Upload file
             self.set_progress(f"Uploading {os.path.basename(file_path)}...")
-            uploaded_file = client.files.upload(file=file_path)
+            uploaded_file = client.files.upload(file=safe_path(file_path))
             
             self.set_progress("Analyzing audio tokens (BPM, Key, Mood)...")
             
             # Model selection: gemini-3-pro-preview for high-thinking multimodal analysis.
             model_id = "gemini-3-pro-preview" 
             
-            response = client.models.generate_content(
+            
+ 
+            
+                        _rl = RateLimiter()
+ 
+            
+                        wait_time = _rl.wait_time("gemini")
+ 
+            
+                        if wait_time > 0:
+ 
+            
+                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+ 
+            
+                            await asyncio.sleep(wait_time)
+ 
+            
+            esponse = client.models.generate_content(
                 model=model_id,
                 contents=[
                     uploaded_file,

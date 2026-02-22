@@ -1,3 +1,6 @@
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import os
 import json
 from python.helpers.tool import Tool, Response
@@ -48,7 +51,25 @@ class IndiiOracle(Tool):
             Return JSON format.
             """
 
-            response = client.models.generate_content(
+            
+
+
+                        _rl = RateLimiter()
+
+
+                        wait_time = _rl.wait_time("gemini")
+
+
+                        if wait_time > 0:
+
+
+                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+
+
+                            await asyncio.sleep(wait_time)
+
+
+            esponse = client.models.generate_content(
                 model=model_id,
                 contents=[
                     types.Part.from_bytes(data=asset_data, mime_type=mime_type),

@@ -1,3 +1,8 @@
+
+from python.helpers.files import safe_path
+
+from python.helpers.rate_limiter import RateLimiter
+import asyncio
 import json
 import os
 from python.helpers.tool import Tool, Response
@@ -23,7 +28,7 @@ class AudioFidelityAuditor(Tool):
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
             
             self.set_progress("Uploading audio to Gemini for spectrum analysis...")
-            uploaded_file = client.files.upload(file=file_path)
+            uploaded_file = client.files.upload(file=safe_path(file_path))
             
             # Note: We use Gemini 3 Pro for complex reasoning over audio
             model_id = "gemini-3-pro-preview" # Using specific multimodal model
@@ -53,7 +58,19 @@ class AudioFidelityAuditor(Tool):
             """
             
             self.set_progress("Running deep audio fidelity analysis...")
-            response = client.models.generate_content(
+            
+
+                        _rl = RateLimiter()
+
+                        wait_time = _rl.wait_time("gemini")
+
+                        if wait_time > 0:
+
+                            self.set_progress(f"Rate limiting: waiting {wait_time:.1f}s")
+
+                            await asyncio.sleep(wait_time)
+
+            esponse = client.models.generate_content(
                 model=model_id,
                 contents=[uploaded_file, prompt],
                 config=types.GenerateContentConfig(
@@ -62,7 +79,13 @@ class AudioFidelityAuditor(Tool):
                 )
             )
             
-            result = json.loads(response.text)
+            try:
+            
+                result = json.loads(response.text)
+            
+            except json.JSONDecodeError:
+            
+                result = {"raw_text": response.text, "error": "Failed to parse JSON"}
             
             return Response(
                 message=f"Audio Fidelity Audit Complete for {os.path.basename(file_path)}",

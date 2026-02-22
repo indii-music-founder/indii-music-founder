@@ -82,8 +82,13 @@ export const processJobUpdate = (
                         console.log('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
-                    .catch((err: unknown) => console.error('Failed to save to local folder:', err));
+                    .catch((err: unknown) => {
+                        console.error('Failed to save to local folder:', err);
+                        deps.toast.error('Failed to save video to local disk.');
+                    });
             }
+
+            const metadata = data.output?.metadata || data.metadata;
 
             const newAsset = {
                 id: currentJobId,
@@ -94,7 +99,7 @@ export const processJobUpdate = (
                 timestamp: Date.now(),
                 projectId: deps.currentProjectId || 'default',
                 orgId: deps.currentOrganizationId,
-                meta: data.metadata ? JSON.stringify(data.metadata) : undefined
+                meta: metadata ? JSON.stringify(metadata) : undefined
             };
             deps.addToHistory(newAsset);
             deps.setActiveVideo(newAsset);
@@ -191,7 +196,6 @@ export default function VideoWorkflow() {
     useEffect(() => {
 
         if (pendingPrompt) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
             setPrompt(pendingPrompt);
             setPendingPrompt(null);
@@ -209,13 +213,12 @@ export default function VideoWorkflow() {
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [viewMode, setViewMode]);
+    }, [viewMode, setViewMode, toast]);
 
     // Set initial active video
     useEffect(() => {
 
         if (selectedItem?.type === 'video') {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
@@ -229,61 +232,6 @@ export default function VideoWorkflow() {
         if (!jobId) return;
 
         const unsubscribe = VideoGeneration.subscribeToJob(jobId, (data) => {
-            if (data) {
-                const newStatus = data.status;
-
-                // Check current status to avoid unnecessary updates
-                const currentStatus = useVideoEditorStore.getState().status;
-                if (newStatus && newStatus !== currentStatus) {
-                    // Start of type guard
-                    if (['idle', 'queued', 'processing', 'completed', 'failed', 'stitching'].includes(newStatus)) {
-                        setJobStatus(newStatus as 'idle' | 'queued' | 'processing' | 'completed' | 'failed' | 'stitching');
-                    }
-                }
-
-                if (data.progress !== undefined) {
-                    setJobProgress(data.progress);
-                    useVideoEditorStore.getState().setProgress(data.progress);
-                }
-
-                if (newStatus === 'completed' && data.videoUrl) {
-                    // Extract metadata from Veo 3.1 output (enforcing contract)
-                    const metadata = data.output?.metadata || data.metadata;
-
-                    // ⚡ Automatic Local Save (Veo 3.1 Requirement)
-                    const filename = `veo_${jobId}.mp4`;
-
-                    // Trigger background download via Electron
-                    // Trigger background download via Electron
-                    if (window.electronAPI?.video?.saveAsset) {
-                        window.electronAPI.video.saveAsset(data.videoUrl, filename)
-                            .then((path: string) => console.log('Video saved locally to:', path))
-                            .catch((err: unknown) => console.error('Failed to save to local folder:', err));
-                    }
-
-                    const newAsset = {
-                        id: jobId,
-                        url: data.videoUrl,
-                        prompt: data.prompt || localPromptRef.current,
-                        type: 'video' as const,
-                        timestamp: Date.now(),
-                        projectId: currentProjectId || 'default',
-                        orgId: currentOrganizationId,
-                        meta: metadata ? JSON.stringify(metadata) : undefined
-                    };
-                    addToHistory(newAsset);
-                    setActiveVideo(newAsset);
-                    toast.success('Scene generated!');
-                    setJobId(null);
-                    setJobStatus('idle');
-                    useVideoEditorStore.getState().setProgress(0);
-                } else if (newStatus === 'failed') {
-                    toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
-                    setJobId(null);
-                    setJobStatus('failed');
-                    useVideoEditorStore.getState().setProgress(0);
-                }
-            }
             processJobUpdate(data, jobId, {
                 currentProjectId,
                 currentOrganizationId,
@@ -294,17 +242,21 @@ export default function VideoWorkflow() {
                 setJobId,
                 setJobStatus,
                 setJobProgress: (p) => {
-                    setJobProgress(p);
-                    useVideoEditorStore.getState().setProgress(p);
+                    setTimeout(() => {
+                        useVideoEditorStore.getState().setProgress(p);
+                        setJobProgress(p);
+                    }, 0); // H10 Fix: Avoid state cascade
                 },
                 toast,
-                resetEditorProgress: () => useVideoEditorStore.getState().setProgress(0),
+                resetEditorProgress: () => {
+                    setTimeout(() => useVideoEditorStore.getState().setProgress(0), 100); // H9 Fix: Delay reset
+                },
                 getCurrentStatus: () => useVideoEditorStore.getState().status
             });
         });
 
         return () => { if (unsubscribe) unsubscribe(); };
-    }, [jobId, addToHistory, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
+    }, [jobId, addToHistory, updateHistoryItem, toast, setJobId, setJobStatus, currentOrganizationId, currentProjectId, setActiveVideo, setJobProgress]);
 
     const handleGenerate = async (promptOverride?: string) => {
         setJobStatus('queued');

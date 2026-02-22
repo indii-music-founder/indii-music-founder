@@ -4,7 +4,7 @@
  * Cancels subscription at the end of current billing period.
  */
 
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, mapStripeStatus } from '../stripe/config';
 
@@ -36,6 +36,11 @@ export const cancelSubscription = onCall(async (request) => {
       throw new Error('No active subscription found');
     }
 
+    if (subscription.cancelAtPeriodEnd) {
+      console.log(`[cancelSubscription] Subscription for ${userId} already set to cancel.`);
+      return { success: true };
+    }
+
     // Cancel at period end in Stripe
     const stripeSubscription = await stripe.subscriptions.update(stripeSubscriptionId, {
       cancel_at_period_end: true
@@ -49,8 +54,8 @@ export const cancelSubscription = onCall(async (request) => {
     });
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('[cancelSubscription] Error:', error);
-    throw new Error('Failed to cancel subscription');
+    throw new HttpsError('internal', error.message || 'Failed to cancel subscription');
   }
 });
