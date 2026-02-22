@@ -64,14 +64,16 @@ export const VideoStage = React.memo<VideoStageProps>(({
         }
 
         return () => clearInterval(interval);
-    }, [jobStatus, jobProgress, PROGRESS_MESSAGES.length, displayProgress]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- adding displayProgress causes interval clearing loop
+    }, [jobStatus, jobProgress, PROGRESS_MESSAGES.length]);
 
     // Ensure displayProgress jumps to real progress if it's significant
     React.useEffect(() => {
         if (jobProgress > displayProgress) {
             setDisplayProgress(jobProgress);
         }
-    }, [jobProgress, displayProgress]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- only sync when jobProgress changes
+    }, [jobProgress]);
 
     React.useEffect(() => {
         setVideoError(null);

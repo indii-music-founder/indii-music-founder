@@ -192,14 +192,15 @@ export default function VideoWorkflow() {
         return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || h.projectId === currentProjectId));
     }, [generatedHistory, currentProjectId]);
 
-    // Sync pending prompt — deferred to avoid cascading renders (react-hooks/set-state-in-effect)
+    // Sync pending prompt
     useEffect(() => {
         if (pendingPrompt) {
-            queueMicrotask(() => {
-                setLocalPrompt(pendingPrompt);
-                setPrompt(pendingPrompt);
-                setPendingPrompt(null);
-            });
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setLocalPrompt(pendingPrompt);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setPrompt(pendingPrompt);
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setPendingPrompt(null);
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
@@ -216,14 +217,16 @@ export default function VideoWorkflow() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [viewMode, setViewMode, toast]);
 
-    // Set initial active video — deferred to avoid cascading renders (react-hooks/set-state-in-effect)
+    // Set initial active video
     useEffect(() => {
         if (selectedItem?.type === 'video') {
-            queueMicrotask(() => setActiveVideo(selectedItem));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
             const recent = generatedHistory.find(h => h.type === 'video');
-            if (recent) queueMicrotask(() => setActiveVideo(recent));
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            if (recent) setActiveVideo(recent);
         }
     }, [selectedItem, generatedHistory, activeVideo]);
 

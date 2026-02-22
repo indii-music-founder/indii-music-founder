@@ -1137,7 +1137,7 @@ export const requestAccountDeletion = functions
  * Returns service status and basic diagnostics.
  */
 export const healthCheck = functions
-    .runWith({ timeoutSeconds: 10, memory: "128MB" })
+    .runWith({ timeoutSeconds: 60, memory: "256MB" })
     .https.onRequest(async (_req, res) => {
         const status: Record<string, unknown> = {
             status: "ok",
