@@ -2,9 +2,10 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { SchemaType } from 'firebase/ai';
 import { AI } from '@/services/ai/AIService';
 import { useStore, HistoryItem } from '@/core/store';
-import { functions } from '@/services/firebase';
+import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { agentZeroService } from '@/services/agent/AgentZeroService';
 
 export class VideoDirector {
     static async processGeneratedVideo(uri: string, prompt: string, enableDirectorsCut = false, isRetry = false): Promise<string | null> {
@@ -120,21 +121,22 @@ export class VideoDirector {
     /**
      * Trigger video generation from an image using Veo
      */
-    static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string }> {
-        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
-
+    static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string; video_url?: string }> {
         const payload: any = {
             jobId: crypto.randomUUID(),
             prompt: item.prompt || 'Animate this scene',
             model: AI_MODELS.VIDEO.GENERATION,
+            aspectRatio: '16:9', // Top level for Python API
             options: {
-                aspectRatio: '16:9'
+                aspectRatio: '16:9' // For Cloud Function
             }
         };
 
+        let imageBytes = '';
         if (item.url.startsWith('data:')) {
             const parts = item.url.split(',');
             const mimeType = parts[0].split(':')[1].split(';')[0];
+            imageBytes = parts[1];
             payload.image = {
                 imageBytes: parts[1],
                 mimeType: mimeType
@@ -147,8 +149,42 @@ export class VideoDirector {
                     referenceType: "ASSET"
                 }
             ];
+            payload.imageBytes = item.url; // Use URL as identifier for local if needed
         }
 
+        // --- Rewiring: Use local Python API in Electron ---
+        if (typeof window !== 'undefined' && window.electronAPI) {
+            console.log('[VideoDirector] Rewiring to local Python API for animation...');
+            try {
+                const apiPayload = {
+                    ...payload,
+                    imageBytes: imageBytes || item.url,
+                    prompt: payload.prompt,
+                    aspectRatio: '16:9',
+                    duration: 4
+                };
+
+                const response = await agentZeroService.callApi('/video_gen', apiPayload) as any;
+
+                if (response.status === 'ok' || response.success) {
+                    return {
+                        success: true,
+                        video_url: response.video_url
+                    };
+                } else {
+                    return {
+                        success: false,
+                        error: response.error || 'Local video generation failed'
+                    };
+                }
+            } catch (err: any) {
+                console.error('[VideoDirector] Local API Error:', err);
+                // Fallback to Cloud Function if local API fails
+            }
+        }
+
+        // --- Standard Path: Cloud Function ---
+        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
         const response = await triggerVideoJob(payload);
         return response.data as { success: boolean; error?: string };
     }

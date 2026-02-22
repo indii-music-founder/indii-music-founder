@@ -7,7 +7,9 @@
  * Usage: npx ts-node scripts/seed-test-user.ts
  */
 
-import * as admin from 'firebase-admin';
+import { initializeApp, applicationDefault } from 'firebase-admin/app';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getAuth } from 'firebase-admin/auth';
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { fileURLToPath } from 'url';
@@ -19,18 +21,17 @@ const __dirname = dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 // Initialize Firebase Admin using Application Default Credentials
-// This works when logged in via `firebase login` or `gcloud auth application-default login`
 const projectId = process.env.VITE_FIREBASE_PROJECT_ID || 'indiios-studio';
 
-admin.initializeApp({
-    credential: admin.credential.applicationDefault(),
+initializeApp({
+    credential: applicationDefault(),
     projectId: projectId,
 });
 
 console.log(`🔥 Using Firebase project: ${projectId}`);
 
-const db = admin.firestore();
-const auth = admin.auth();
+const db = getFirestore();
+const auth = getAuth();
 
 const TEST_USER_EMAIL = 'marcus.deep@test.indiios.com';
 const TEST_USER_PASSWORD = 'Test1234!';
@@ -85,8 +86,8 @@ async function seedTestUser() {
                     themes: 'Detroit, Concrete, Noir',
                 }
             },
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         });
         console.log('   ✅ Created user profile document');
     } else {
@@ -104,8 +105,8 @@ async function seedTestUser() {
             name: 'Rex Chrome Studio',
             members: [uid],
             ownerId: uid,
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         });
         console.log('   ✅ Created organization:', orgId);
     } else {
@@ -113,7 +114,7 @@ async function seedTestUser() {
         const orgData = orgDoc.data();
         if (orgData && !orgData.members?.includes(uid)) {
             await orgRef.update({
-                members: admin.firestore.FieldValue.arrayUnion(uid),
+                members: FieldValue.arrayUnion(uid),
             });
             console.log('   ✅ Added user to existing organization members');
         } else {
@@ -134,8 +135,8 @@ async function seedTestUser() {
             ownerId: uid,
             type: 'single',
             status: 'draft',
-            createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+            createdAt: FieldValue.serverTimestamp(),
+            updatedAt: FieldValue.serverTimestamp(),
         });
         console.log('   ✅ Created project: Black Kitty');
     } else {

@@ -15,7 +15,7 @@ const {
 } = vi.hoisted(() => {
     return {
         mockGetDocs: vi.fn(),
-        mockAddDoc: vi.fn(),
+        mockAddDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
         mockCollection: vi.fn(),
         mockQuery: vi.fn(),
         mockWhere: vi.fn(),
@@ -142,22 +142,22 @@ describe('VenueScoutService', () => {
         });
 
         it('should handle invalid Firestore data gracefully', async () => {
-             // 1. _ensureSeeded call
-             mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
+            // 1. _ensureSeeded call
+            mockGetDocs.mockResolvedValueOnce({ empty: false, docs: [{}] });
 
-             // 2. searchVenues query call: return mixed valid/invalid data
-             mockGetDocs.mockResolvedValueOnce({
-                 docs: [
-                     { id: '1', data: () => MOCK_VENUE_A },
-                     { id: '3', data: () => ({ name: 'Invalid Venue', city: 'Nashville' }) } // Missing required fields like capacity, genres, status
-                 ]
-             });
+            // 2. searchVenues query call: return mixed valid/invalid data
+            mockGetDocs.mockResolvedValueOnce({
+                docs: [
+                    { id: '1', data: () => MOCK_VENUE_A },
+                    { id: '3', data: () => ({ name: 'Invalid Venue', city: 'Nashville' }) } // Missing required fields like capacity, genres, status
+                ]
+            });
 
-             const results = await VenueScoutService.searchVenues('Nashville', 'Rock');
+            const results = await VenueScoutService.searchVenues('Nashville', 'Rock');
 
-             // Should only return the valid one
-             expect(results).toHaveLength(1);
-             expect(results[0].name).toBe('Venue A');
+            // Should only return the valid one
+            expect(results).toHaveLength(1);
+            expect(results[0].name).toBe('Venue A');
         });
 
         it('should fallback to seed data on Firestore error', async () => {

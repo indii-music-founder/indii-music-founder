@@ -119,7 +119,6 @@ const updateStoreMock = (overrides: any) => {
 
 describe('Pulse: Video Workflow Long Form Generation', () => {
     beforeEach(() => {
-        vi.useFakeTimers();
         vi.clearAllMocks();
         subscribeCallback = null;
         resolveGeneratePromise = null;
@@ -131,8 +130,6 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
     });
 
     afterEach(() => {
-        vi.runOnlyPendingTimers();
-        vi.useRealTimers();
         cleanup();
     });
 
@@ -196,8 +193,8 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
             if (subscribeCallback) {
                 subscribeCallback({ status: 'processing', progress: 45 });
             }
-            vi.runOnlyPendingTimers();
         });
+        await new Promise(resolve => setTimeout(resolve, 0));
 
         cleanup();
         render(<VideoWorkflow />);
@@ -212,8 +209,8 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
             if (subscribeCallback) {
                 subscribeCallback({ status: 'completed', videoUrl, prompt: 'A long cinematic journey' });
             }
-            vi.runOnlyPendingTimers();
         });
+        await new Promise(resolve => setTimeout(resolve, 150));
 
         expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
         expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({

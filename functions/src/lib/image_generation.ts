@@ -27,22 +27,30 @@ class GeminiImageService {
     private handleApiError(error: any, context: string): never {
         console.error(`[GeminiImageService:${context}] Error:`, error);
 
-        const message = error.message || "Unknown Gemini API error";
-        const status = error.status || (error.response?.status);
-        const errorData = error.response?.data;
+        let message = error.message || "Unknown Gemini API error";
+        let status = error.status;
 
-        console.error(`[GeminiImageService:${context}] Full Error Payload:`, JSON.stringify(errorData, null, 2));
+        // Handle fetch errors where we manually added status to the error message
+        if (!status && message.includes("Vertex AI Image Edit API Error:")) {
+            const match = message.match(/Error: (\d+)/);
+            if (match) status = parseInt(match[1]);
+        }
+
+        console.error(`[GeminiImageService:${context}] Extracted Status: ${status} | Message: ${message}`);
 
         if (status === 400 || message.includes("400")) {
-            throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}${errorData ? ` - Details: ${JSON.stringify(errorData)}` : ""}`);
+            throw new functions.https.HttpsError("invalid-argument", `Gemini API Request Error: ${message}`);
         }
         if (status === 401 || status === 403 || message.includes("401") || message.includes("403")) {
             throw new functions.https.HttpsError("permission-denied", `Gemini API Authentication Error: ${message}`);
         }
+        if (status === 404 || message.includes("404")) {
+            throw new functions.https.HttpsError("not-found", `Gemini API Resource Not Found: ${message}`);
+        }
         if (status === 429 || message.includes("429")) {
             throw new functions.https.HttpsError("resource-exhausted", "Gemini API rate limit exceeded. Please try again later.");
         }
-        if (status === 504 || message.includes("deadline") || error.name === 'AbortError') {
+        if (status === 504 || status === 503 || message.includes("deadline") || error.name === 'AbortError') {
             throw new functions.https.HttpsError("deadline-exceeded", "Gemini API timed out during generation. The model may be overloaded.");
         }
 

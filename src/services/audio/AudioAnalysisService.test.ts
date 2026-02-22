@@ -65,7 +65,7 @@ vi.mock('@/services/music/MusicLibraryService', () => ({
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
-    addDoc: vi.fn(),
+    addDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
     serverTimestamp: vi.fn()
 }));
 

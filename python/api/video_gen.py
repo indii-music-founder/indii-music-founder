@@ -39,9 +39,25 @@ class VideoGenRoute(ApiHandler):
         if not prompt:
             return {"error": "Prompt is required", "status": "error"}
 
-        aspect_ratio = input_data.get("aspect_ratio", "16:9")
-        duration = min(int(input_data.get("duration", 8)), 30)
-        start_image_url = input_data.get("start_image_url")
+        # Handle various field names (frontend uses aspectRatio, API uses aspect_ratio)
+        aspect_ratio = input_data.get("aspect_ratio") or input_data.get("aspectRatio") or "16:9"
+        
+        # Handle duration (frontend might send duration or durationSeconds)
+        duration = input_data.get("duration") or input_data.get("durationSeconds") or 4
+        try:
+            duration = min(int(duration), 30)
+        except:
+            duration = 4
+
+        # Handle images (Frontend sends image object with imageBytes)
+        image_bytes = None
+        image_data_obj = input_data.get("image")
+        if isinstance(image_data_obj, dict):
+            image_bytes = image_data_obj.get("imageBytes")
+        
+        if not image_bytes:
+            image_bytes = input_data.get("image_bytes") or input_data.get("imageBytes")
+
         model = input_data.get("model", "veo-3.1-generate-preview")
 
         try:
@@ -54,26 +70,35 @@ class VideoGenRoute(ApiHandler):
                 prompt=prompt,
                 aspect_ratio=aspect_ratio,
                 duration=duration,
-                start_image_url=start_image_url,
+                image_bytes=image_bytes,
                 model=model
             )
 
+            if isinstance(result, dict) and result.get("status") == "error":
+                 return result
+
+            # Tool returns a Response object
+            visual_path = result.additional.get("visual") if hasattr(result, "additional") else None
+
             return {
                 "status": "ok",
-                "video_url": result.get("video_url"),
-                "operation_name": result.get("operation_name"),
+                "success": True,
+                "video_url": visual_path,
+                "operation_name": result.additional.get("operation_name") if hasattr(result, "additional") else None,
                 "metadata": {
                     "model": model,
                     "prompt_snippet": prompt[:100],
                     "aspect_ratio": aspect_ratio,
                     "duration": duration,
-                    "is_ai_generated": True
+                    "is_ai_generated": True,
+                    "local": True
                 }
             }
 
         except Exception as e:
             return {
                 "status": "error",
+                "success": False,
                 "error": str(e),
                 "error_type": type(e).__name__
             }

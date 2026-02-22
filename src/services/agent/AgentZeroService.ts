@@ -153,7 +153,7 @@ class AgentZeroService {
      * Central API caller that handles Electron Proxy vs Web Fetch.
      * Electron proxy is preferred to bypass CORS for localhost:50080.
      */
-    private async callApi(endpoint: string, payload: unknown, timeoutMs: number = 30000): Promise<unknown> {
+    public async callApi(endpoint: string, payload: unknown, timeoutMs: number = 30000): Promise<any> {
         const fullUrl = endpoint.startsWith('http') ? endpoint : `${this.config.baseUrl}${endpoint}`;
         const headers = this.getHeaders();
 
