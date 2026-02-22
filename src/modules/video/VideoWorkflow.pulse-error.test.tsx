@@ -120,6 +120,7 @@ const updateStoreMock = (overrides: any) => {
 
 describe('Pulse: Video Workflow Error Handling', () => {
     beforeEach(() => {
+        vi.useFakeTimers();
         vi.clearAllMocks();
         subscribeCallback = null;
         resolveGeneratePromise = null;
@@ -132,6 +133,8 @@ describe('Pulse: Video Workflow Error Handling', () => {
     });
 
     afterEach(() => {
+        vi.runOnlyPendingTimers();
+        vi.useRealTimers();
         cleanup();
     });
 
@@ -227,6 +230,7 @@ describe('Pulse: Video Workflow Error Handling', () => {
             if (subscribeCallback) {
                 subscribeCallback({ status: 'failed', stitchError: failureReason });
             }
+            vi.runOnlyPendingTimers();
         });
 
         // 3. Assert Error Feedback

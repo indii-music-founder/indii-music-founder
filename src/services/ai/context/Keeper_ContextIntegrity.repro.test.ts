@@ -50,7 +50,8 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
-        trackUsage: vi.fn().mockResolvedValue(true)
+        trackUsage: vi.fn().mockResolvedValue(true),
+        recordSpend: vi.fn().mockResolvedValue(true)
     }
 }));
 
@@ -74,6 +75,8 @@ describe('📚 Keeper: Context Integrity', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Clear static execution locks to prevent inter-test timeouts
+        (BaseAgent as any).executionLocks.clear();
         mockSaveHistory = vi.fn().mockResolvedValue({ success: true });
 
         // 2. Mock Electron API (Persistence) - Add to existing window instead of replacing it

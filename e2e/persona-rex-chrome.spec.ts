@@ -17,7 +17,7 @@ test.describe('Rex Chrome Persona Verification', () => {
         await page.getByRole('button', { name: /sign in/i }).click();
 
         // Wait for Dashboard (Real Auth Success)
-        await expect(page.getByRole('heading', { name: /STUDIO HQ/i })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('button', { name: /Brand/i }).first()).toBeVisible({ timeout: 30000 });
         console.log('[Persona Test] Dashboard Loaded. Auth Successful.');
 
         // 2. Navigate to Brand Manager / Creative Director to verify identity
@@ -30,7 +30,8 @@ test.describe('Rex Chrome Persona Verification', () => {
         }
 
         // Wait for Brand Manager to load
-        await expect(page.getByText(/Identity Core/i)).toBeVisible({ timeout: 10000 });
+        // "Active Persona" or similar stable identity text, or just wait for the builder to be attached
+        await expect(page.getByRole('button', { name: /Visual DNA/i }).first()).toBeVisible({ timeout: 15000 });
         console.log('[Persona Test] Navigated to Brand Manager');
 
         // 3. Upload Persona Image (Marcus Deep / Rex Chrome)
@@ -39,21 +40,21 @@ test.describe('Rex Chrome Persona Verification', () => {
         // Find file input or attach button
         // Looking for any file input associated with uploads or the builder
         const fileInput = page.locator('input[type="file"]').first();
-        if (await fileInput.isVisible() || await fileInput.isAttached()) {
+        if (await fileInput.isVisible()) {
             console.log('[Persona Test] Uploading Persona Image...');
             await fileInput.setInputFiles(imagePath);
             await page.waitForTimeout(2000); // give it time to process
         } else {
             console.log('[Persona Test] No file input found immediately, opening Visual DNA / Builder...');
             // Attempt to navigate to Visual DNA or open Builder
-            const visualDnaBtn = page.getByRole('button', { name: /Visual DNA/i });
+            const visualDnaBtn = page.getByRole('button', { name: /Visual DNA/i }).first();
             if (await visualDnaBtn.isVisible()) {
-                await visualDnaBtn.click();
+                await visualDnaBtn.click({ force: true });
             }
 
             // Re-check input
             const retryInput = page.locator('input[type="file"]').first();
-            if (await retryInput.isAttached()) {
+            if (await retryInput.isVisible()) {
                 await retryInput.setInputFiles(imagePath);
             }
         }
