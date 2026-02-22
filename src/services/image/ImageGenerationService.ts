@@ -1,8 +1,15 @@
-import { AI } from '../ai/AIService';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
+import { firebaseAI } from '../ai/FirebaseAIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
+import { agentZeroService } from '@/services/agent/AgentZeroService';
 import { env } from '@/config/env';
+
+declare global {
+    interface Window {
+        electronAPI?: any;
+    }
+}
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
@@ -57,15 +64,15 @@ export class ImageGenerationService {
             const distributorContext = getDistributorPromptContext(options.userProfile);
 
             // Prepend distributor requirements to ensure proper sizing
-            prompt = `[COVER ART REQUIREMENTS: Generate a ${constraints.width}x${constraints.height}px square image. ${constraints.colorMode} color mode only.]\n\n${prompt}`;
+            prompt = `[COVER ART REQUIREMENTS: Generate a ${constraints.width}x${constraints.height}px square image.${constraints.colorMode} color mode only.]\n\n${prompt} `;
 
             // Add project context if not already provided
             if (!options.projectContext) {
-                options.projectContext = `\n\n${distributorContext}`;
+                options.projectContext = `\n\n${distributorContext} `;
             }
         }
 
-        return prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt}` : '');
+        return prompt + (options.projectContext || '') + (options.negativePrompt ? ` --negative_prompt: ${options.negativePrompt} ` : '');
     }
 
     /**
@@ -148,7 +155,7 @@ export class ImageGenerationService {
                 if (!img.bytesBase64Encoded) return null;
 
                 const mimeType = img.mimeType || 'image/png';
-                const dataUri = `data:${mimeType};base64,${img.bytesBase64Encoded}`;
+                const dataUri = `data:${mimeType}; base64, ${img.bytesBase64Encoded} `;
                 const id = crypto.randomUUID();
 
                 let finalUrl = dataUri;
@@ -277,6 +284,23 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
+            // Call local Python API if in Electron
+            if (window.electronAPI) {
+                try {
+                    const localResult = await agentZeroService.callApi('/image_edit', {
+                        prompt: options.prompt || 'Create a cinematic remix.',
+                        image: options.contentImage?.data || '',
+                        model: AI_MODELS.IMAGE.GENERATION
+                    });
+
+                    if (localResult?.success && (localResult.url || localResult.data?.url)) {
+                        return { url: localResult.url || localResult.data?.url };
+                    }
+                } catch (localError) {
+                    console.warn("[ImageGenerationService] Local remix failed, falling back to Cloud Function:", localError);
+                }
+            }
+
             // Use Cloud Function for image editing (properly uses REST API)
             const editImage = httpsCallable(functions, 'editImage');
 
@@ -303,22 +327,22 @@ export class ImageGenerationService {
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
         try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: {
+            const response = await firebaseAI.generateContent(
+                [{
                     role: 'user',
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.data } },
-                        { text: `Analyze this image. Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" }` }
+                        { text: `Analyze this image.Return JSON: { "prompt_desc": "Visual description", "style_context": "Artistic style, camera, lighting tags", "negative_prompt": "What to avoid" } ` }
                     ]
-                },
-                config: {
+                }],
+                AI_MODELS.TEXT.FAST,
+                {
                     responseMimeType: 'application/json',
                     ...AI_CONFIG.THINKING.LOW
                 }
-            });
+            );
 
-            return AI.parseJSON(response.text());
+            return firebaseAI.parseJSON(response.response.text());
         } catch (e) {
             console.error("Style Extraction Error:", e);
             throw e;
@@ -345,7 +369,7 @@ export class ImageGenerationService {
                     }
 
                     const result = await generateImage({
-                        prompt: `Render this content image in the artistic style of the reference image. Maintain the composition and subject from content, apply colors, textures, and mood from style. ${options.prompt || 'Restyle'}`,
+                        prompt: `Render this content image in the artistic style of the reference image.Maintain the composition and subject from content, apply colors, textures, and mood from style.${options.prompt || 'Restyle'} `,
                         // Gemini 3 Pro Image is currently Text-to-Image only.
                         // Passing input images causes INVALID_ARGUMENT (400).
                         aspectRatio
@@ -360,8 +384,8 @@ export class ImageGenerationService {
                         const mimeType = data.images[0].mimeType || 'image/png';
                         return {
                             id: crypto.randomUUID(),
-                            url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}`,
-                            prompt: `Batch Style: ${options.prompt || "Restyle"}`
+                            url: `data:${mimeType}; base64, ${data.images[0].bytesBase64Encoded} `,
+                            prompt: `Batch Style: ${options.prompt || "Restyle"} `
                         };
                     }
                     return null;
@@ -417,24 +441,24 @@ export class ImageGenerationService {
             // Flash is specifically optimized for fast multimodal analysis
             // Use Pro (Agent) model for better multimodal stability and auth reliability
             // Flash (Text) can sometimes trigger 403s on preview endpoints
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: [{
+            const response = await firebaseAI.generateContent(
+                [{
                     role: 'user',
                     parts: [
                         { text: promptMap[category] },
                         { inlineData: { mimeType: image.mimeType || 'image/png', data: image.data } }
                     ]
                 }],
-                config: {
+                AI_MODELS.TEXT.FAST,
+                {
                     ...AI_CONFIG.THINKING.LOW
                 }
-            });
-            const responseText = response.text();
+            );
+            const responseText = response.response.text();
 
             return responseText.trim();
         } catch (e) {
-            console.error(`Captioning Error (${category}):`, e);
+            console.error(`Captioning Error(${category}): `, e);
             return "Visual reference"; // Fallback
         }
     }

@@ -4,6 +4,13 @@ import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { PromptBuilder } from './PromptBuilderService';
+import { agentZeroService } from '@/services/agent/AgentZeroService';
+
+declare global {
+    interface Window {
+        electronAPI?: any;
+    }
+}
 
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
@@ -75,6 +82,30 @@ export class EditingService {
         // Selection Logic:
         const useHighFidelity = options.model === 'pro' || options.forceHighFidelity || !!options.decoratedImage;
         const modelId = useHighFidelity ? AI_MODELS.IMAGE.GENERATION : AI_MODELS.IMAGE.FAST;
+
+        // Call local Python API if in Electron
+        if (window.electronAPI) {
+            try {
+                const localResult = await agentZeroService.callApi('/image_edit', {
+                    prompt: structuredPrompt,
+                    image: options.image.data,
+                    mask: options.mask?.data,
+                    model: modelId
+                });
+
+                if (localResult?.success && (localResult.url || localResult.data?.url)) {
+                    const url = localResult.url || localResult.data?.url;
+                    return {
+                        id: crypto.randomUUID(),
+                        url: url,
+                        prompt: `Edit (Local): ${options.prompt}`,
+                        thoughtSignature: options.thoughtSignature
+                    };
+                }
+            } catch (localError) {
+                console.warn("[EditingService] Local edit failed, falling back to Cloud Function:", localError);
+            }
+        }
 
         // Call backend with Dual-View payload
         const result = await this.withRetry(() => editImageFn({

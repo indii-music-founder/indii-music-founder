@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 
-const STUDIO_URL = 'https://indiios-studio.web.app';
+const STUDIO_URL = 'http://localhost:4242';
 const TEST_USER_EMAIL = 'marcus.deep@test.indiios.com';
 const TEST_USER_PASSWORD = 'Test1234!';
 

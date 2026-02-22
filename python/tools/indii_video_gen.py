@@ -19,6 +19,7 @@ class IndiiVideoGen(Tool):
         try:
             prompt = kwargs.get("prompt", "")
             image_path = kwargs.get("image_path", "")
+            image_bytes_base64 = kwargs.get("image_bytes", "")
             duration = int(kwargs.get("duration", 4))
             
             # Guardrails (Bug C1)
@@ -44,12 +45,13 @@ class IndiiVideoGen(Tool):
             # 1. API Call Setup
             from google import genai
             from google.genai import types
+            import base64
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
             model_id = AIConfig.VIDEO_GEN 
 
-            if not prompt and not image_path:
+            if not prompt and not image_path and not image_bytes_base64:
                 return Response(message="Error: Prompt or Source Image required for video synthesis.", break_loop=False)
 
             self.set_progress(f"Submitting video request to {model_id}...")
@@ -64,9 +66,14 @@ class IndiiVideoGen(Tool):
                 with open(image_path, "rb") as f:
                     image_data = f.read()
                 image = types.Image(image_bytes=image_data, mime_type="image/png")
+                source = types.GenerateVideosSource(prompt=prompt, image=image)
+            elif image_bytes_base64:
+                # Handle potential base64 prefix
+                if "," in image_bytes_base64:
+                    image_bytes_base64 = image_bytes_base64.split(",")[1]
                 
-                # If we have both, image-to-video takes the image in 'image' kwarg and prompt in 'prompt' kwarg.
-                # However the latest SDK recommends using source=GenerateVideosSource(image=..., prompt=...)
+                image_data = base64.b64decode(image_bytes_base64)
+                image = types.Image(image_bytes=image_data, mime_type="image/png")
                 source = types.GenerateVideosSource(prompt=prompt, image=image)
 
             operation = client.models.generate_videos(

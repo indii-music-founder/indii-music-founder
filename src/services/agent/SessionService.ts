@@ -63,7 +63,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
 
         // KEEPER: Dual Write for Electron Local Persistence (Forget)
         if (window.electronAPI?.agent?.deleteHistory) {
-            window.electronAPI.agent.deleteHistory(id).catch(err => {
+            window.electronAPI.agent.deleteHistory(id).catch((err: any) => {
                 console.error('[SessionService] Failed to delete local history:', err);
             });
         }
@@ -72,7 +72,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
     private saveToLocal(id: string, data: any) {
         if (window.electronAPI?.agent?.saveHistory) {
             // Fire and forget (or await if strict consistency needed)
-            window.electronAPI.agent.saveHistory(id, data).catch(err => {
+            window.electronAPI.agent.saveHistory(id, data).catch((err: any) => {
                 console.error('[SessionService] Failed to save to local history:', err);
             });
         }
