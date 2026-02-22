@@ -22,6 +22,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
         if (!targetId) return;
         loadProfile();
         checkFollowStatus();
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- loadProfile/checkFollowStatus are not stable; only re-run when targetId changes
     }, [targetId]);
 
     const loadProfile = async () => {

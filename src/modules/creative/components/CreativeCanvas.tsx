@@ -72,7 +72,7 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             // Sync magicFillPrompt to the active color's definition when switching colors
             setMagicFillPrompt(definitions[activeColor.id] || '');
         }
-    }, [activeColor, isMagicFillMode]);
+    }, [activeColor, isMagicFillMode, definitions]);
 
     // Handle prompt change from header
     const handlePromptChange = (val: string) => {

@@ -61,6 +61,7 @@ export const useMerchandise = () => {
             mounted = false;
             clearTimeout(timer);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- isCatalogLoading is mutated inside this effect
     }, []);
 
     // Subscribe to user's products

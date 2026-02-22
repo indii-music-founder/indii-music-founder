@@ -80,7 +80,7 @@ export const useAutoSave = (
         } finally {
             setIsSaving(false);
         }
-    }, [canvas, user, currentOrganizationId, organizations, currentProjectId, designName, designId, lastSaved]);
+    }, [canvas, user, currentOrganizationId, currentProjectId, designName, designId, lastSaved, activeOrg]);
 
     // Auto-save interval
     useEffect(() => {

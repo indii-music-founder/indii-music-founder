@@ -31,7 +31,7 @@ class RecursiveAgent extends BaseAgent {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
         const executor = new AgentExecutor();
         // Simulate recursion
@@ -52,7 +52,7 @@ class FailingAgent extends BaseAgent {
         });
     }
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]): Promise<any> {
         throw new Error('Intentional Failure');
     }
@@ -70,7 +70,7 @@ class ParentAgent extends BaseAgent {
             tools: []
         });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
         const executor = new AgentExecutor();
         return executor.execute('child', task, context);

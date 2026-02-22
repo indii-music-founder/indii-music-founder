@@ -17,9 +17,8 @@ export function useReleases(orgId: string | undefined) {
 
     useEffect(() => {
         if (!orgId) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             if (releases.length > 0) setReleases([]);
-             
+
             if (loading) setLoading(false);
             return;
         }
@@ -56,6 +55,7 @@ export function useReleases(orgId: string | undefined) {
         return () => {
             unsubscribe();
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- loading and releases are mutated inside; adding them causes infinite loops
     }, [orgId]);
 
     const deleteRelease = useCallback(async (releaseId: string) => {

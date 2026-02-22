@@ -34,14 +34,15 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
         }
     }, []);
 
+    const streamRef = useRef<MediaStream | null>(null);
+
     React.useEffect(() => {
         startCamera();
+        const currentStreamRef = streamRef;
         return () => {
-            if (stream) {
-                stream.getTracks().forEach(track => track.stop());
-            }
+            currentStreamRef.current?.getTracks().forEach(track => track.stop());
         };
-    }, []);
+    }, [startCamera]);
 
     const handleCapture = () => {
         if (videoRef.current && canvasRef.current) {

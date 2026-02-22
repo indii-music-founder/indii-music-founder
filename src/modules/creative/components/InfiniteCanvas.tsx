@@ -43,11 +43,13 @@ export default function InfiniteCanvas() {
         window.addEventListener('resize', resize);
         resize();
         return () => window.removeEventListener('resize', resize);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     // Draw Loop - only for Store/Tool changes
     useEffect(() => {
         requestDraw();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [canvasImages, selectedCanvasImageId, tool]);
 
     const requestDraw = () => {

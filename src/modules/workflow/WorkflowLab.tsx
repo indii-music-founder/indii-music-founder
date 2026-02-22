@@ -77,7 +77,8 @@ export default function WorkflowLab() {
                 }
             }
         }
-    }, []); // Run once on mount
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally runs only on mount to load drafts
+    }, []);
 
     // Save draft on change
     useEffect(() => {

@@ -64,14 +64,14 @@ export const VideoStage = React.memo<VideoStageProps>(({
         }
 
         return () => clearInterval(interval);
-    }, [jobStatus, jobProgress, PROGRESS_MESSAGES.length]);
+    }, [jobStatus, jobProgress, PROGRESS_MESSAGES.length, displayProgress]);
 
     // Ensure displayProgress jumps to real progress if it's significant
     React.useEffect(() => {
         if (jobProgress > displayProgress) {
             setDisplayProgress(jobProgress);
         }
-    }, [jobProgress]);
+    }, [jobProgress, displayProgress]);
 
     React.useEffect(() => {
         setVideoError(null);
