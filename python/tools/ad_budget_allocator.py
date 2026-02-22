@@ -5,11 +5,11 @@ from python.config.ai_models import AIConfig
 class AdBudgetAllocator(Tool):
     """
     Marketing Executive Tool.
-    Takes a specified budget and allocates it optimally across ad platforms (Meta, TikTok).
+    Distributes an ad budget optimally across Meta and TikTok based on goals.
     """
 
-    async def execute(self, total_budget_usd: float, campaign_goal: str, target_audience: str) -> Response:
-        self.set_progress(f"Allocating ${total_budget_usd} ad budget for: {campaign_goal}")
+    async def execute(self, total_budget_usd: float, primary_goal: str = "Spotify Conversions") -> Response:
+        self.set_progress(f"Allocating ${total_budget_usd} ad budget for {primary_goal}")
         
         try:
             from google import genai
@@ -17,30 +17,28 @@ class AdBudgetAllocator(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Text Generation / Routing
+            model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Digital Advertising Strategist.
-            Allocate an ad budget across Meta (IG/FB) and TikTok for an upcoming music release campaign.
+            You are the indiiOS Marketing Executive.
+            Allocate a digital ad budget optimally across Meta (IG/FB) and TikTok.
             
             Total Budget: ${total_budget_usd}
-            Campaign Goal (e.g., Pre-saves, Spotify conversions, Video Views): {campaign_goal}
-            Target Audience: {target_audience}
+            Primary Goal: {primary_goal}
             
             Rules:
-            1. Output a sensible split based on current industry best practices for the specified goal. (e.g., TikTok is better for raw views/awareness, Meta is better for hard conversions like pre-saves).
-            2. Provide a 1-sentence rationale for the split.
-            3. Suggest exactly 3 distinct ad creatives or "hooks" to test.
+            1. Base your distribution on current music marketing trends.
+            2. Meta is usually better for direct Spotify conversions, TikTok is better for sheer awareness/virality.
+            3. Break the budget into specific ad-sets (e.g., Lookalike Audiences, Retargeting).
             
             Return ONLY a JSON object:
             {{
-              "allocation": {{
-                "meta_usd": 0,
-                "tiktok_usd": 0,
-                "youtube_shorts_usd": 0
-              }},
-              "rationale": "...",
-              "suggested_hooks": ["Hook 1...", "Hook 2...", "Hook 3..."]
+              "meta_allocation_usd": 600,
+              "tiktok_allocation_usd": 400,
+              "strategy_breakdown": [
+                {{"platform": "Meta", "campaign_type": "Retargeting", "amount": 200, "rationale": "Hit warm leads who engaged with recent posts"}}
+              ],
+              "expected_return_cpa": "$0.50 per click"
             }}
             """
             
@@ -49,13 +47,13 @@ class AdBudgetAllocator(Tool):
                 contents=[prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.2 # Needs to be logical and grounded
+                    temperature=0.2
                 )
             )
             
             return Response(
-                message=f"Ad budget of ${total_budget_usd} allocated successfully.",
-                additional={"ad_strategy": json.loads(response.text)}
+                message=f"Ad budget of ${total_budget_usd} allocated effectively.",
+                additional={"allocation": json.loads(response.text)}
             )
 
         except Exception as e:
