@@ -5,11 +5,11 @@ from python.config.ai_models import AIConfig
 class PreSaveFunnelArchitect(Tool):
     """
     Marketing Executive Tool.
-    Generates the structural JSON definition for a high-converting pre-save landing page.
+    Generates HTML/CSS/JS for a tailored pre-save landing page.
     """
 
-    async def execute(self, artist_name: str, release_title: str, incentive: str = "Exclusive behind-the-scenes video") -> Response:
-        self.set_progress(f"Architecting Pre-Save Funnel for: {release_title}")
+    async def execute(self, artist_name: str, single_title: str, release_date: str, cover_art_url: str) -> Response:
+        self.set_progress(f"Architecting Pre-Save Funnel for '{single_title}'")
         
         try:
             from google import genai
@@ -17,33 +17,27 @@ class PreSaveFunnelArchitect(Tool):
             
             api_key = AIConfig.get_api_key()
             client = genai.Client(api_key=api_key, http_options={'api_version': AIConfig.DEFAULT_API_VERSION})
-            model_id = AIConfig.TEXT_FAST # Text/JSON generation
+            model_id = AIConfig.TEXT_FAST
             
             prompt = f"""
-            You are the indiiOS Web Funnel Architect.
-            Generate the structural configuration for a high-converting Pre-Save landing page.
+            You are the indiiOS Marketing Executive.
+            Generate the HTML and inline CSS for a modern, conversion-optimized pre-save landing page.
             
-            Artist Name: {artist_name}
-            Release Title: {release_title}
-            Fan Incentive (Bribe to pre-save): {incentive}
+            Artist: {artist_name}
+            Single: {single_title}
+            Release Date: {release_date}
+            Cover Art URL: {cover_art_url}
             
             Rules:
-            1. Create punchy, urgent headline and subheadline copy.
-            2. Define the call-to-action (CTA) button text.
-            3. Ensure the incentive is front and center to maximize conversion rate.
+            1. Create a sleek dark-mode design with modern typography.
+            2. Include buttons for "Pre-Save on Spotify" and "Pre-Add on Apple Music".
+            3. Include an email capture form for "Join the VIP Newsletter".
             
-            Return ONLY a JSON object representing the page structure:
+            Return ONLY a JSON object:
             {{
-              "page_title": "...",
-              "seo_description": "...",
-              "hero_section": {{
-                "headline": "...",
-                "subheadline": "...",
-                "cta_button_primary": "Pre-Save on Spotify",
-                "cta_button_secondary": "Pre-Add on Apple Music"
-              }},
-              "incentive_banner": "...",
-              "bg_color_hex_suggestion": "#000000"
+              "funnel_id": "presave_campaign_123",
+              "html_content": "<!DOCTYPE html><html>...",
+              "recommendations": "Advice on driving traffic to this funnel via TikTok"
             }}
             """
             
@@ -52,13 +46,13 @@ class PreSaveFunnelArchitect(Tool):
                 contents=[prompt],
                 config=types.GenerateContentConfig(
                     response_mime_type="application/json",
-                    temperature=0.6 # Marketing copy
+                    temperature=0.2
                 )
             )
             
             return Response(
-                message=f"Pre-Save funnel architected for '{release_title}'",
-                additional={"funnel_config": json.loads(response.text)}
+                message=f"Pre-save funnel HTML generated for '{single_title}'.",
+                additional={"funnel_data": json.loads(response.text)}
             )
 
         except Exception as e:
