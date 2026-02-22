@@ -13,6 +13,7 @@ export interface ToolCall {
     name: string;
     args: string;
     timestamp: number;
+    cost?: number;
 }
 
 export interface LoopDetectionResult {
@@ -30,10 +31,23 @@ export class LoopDetector {
      */
     recordToolCall(name: string, args: Record<string, unknown>): void {
         const argsStr = JSON.stringify(args);
+
+        // Estimate cost for expensive tools to prevent unmonitored credit burn (Bug C4)
+        let cost = 0;
+        if (name === 'generate_video' || name === 'indii_video_gen') {
+            const duration = typeof args.duration === 'number' ? args.duration : 4;
+            cost = duration * 0.20; // Approx $0.20 per second for 720p
+        } else if (name === 'generate_image' || name === 'indii_image_gen') {
+            cost = 0.04;
+        } else if (name === 'generate_audio' || name === 'indii_audio_gen') {
+            cost = 0.10;
+        }
+
         this.toolCallHistory.push({
             name,
             args: argsStr,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            cost
         });
 
         // Keep history bounded
@@ -113,7 +127,22 @@ export class LoopDetector {
             }
         }
 
-        // Check 6 & 7: Removed to allow multi-turn generation workflows.
+        // Check 6: Cumulative Cost Safety Limit (Bug C4)
+        let cumulativeCost = 0;
+        for (const call of this.toolCallHistory) {
+            cumulativeCost += call.cost || 0;
+        }
+
+        const MAX_SESSION_COST_LIMIT = 5.00; // $5 limit per agent session for anti-burn
+        if (cumulativeCost >= MAX_SESSION_COST_LIMIT) {
+            return {
+                isLoop: true,
+                reason: `Cumulative tool cost ($${cumulativeCost.toFixed(2)}) exceeded session safety limit ($${MAX_SESSION_COST_LIMIT.toFixed(2)})`,
+                pattern: 'Cost limit exceeded'
+            };
+        }
+
+        // Check 7: Removed to allow multi-turn generation workflows.
         // Standard loop counters (Check 1-4) will catch actual runaways.
 
         return { isLoop: false };

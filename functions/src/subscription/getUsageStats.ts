@@ -4,8 +4,8 @@
  * Retrieves usage statistics for the current billing period.
  */
 
-import { onCall } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getFirestore, FieldPath } from 'firebase-admin/firestore';
 import { UsageStats, SubscriptionTier } from '../shared/subscription/types';
 import { TIER_CONFIGS } from '../shared/subscription/SubscriptionTier';
 
@@ -89,9 +89,10 @@ export const getUsageStats = onCall(async (request) => {
     const projectsCreated = projectsSnapshot.size;
 
     // Get team members count
+    const teamMembersField = new FieldPath('members', userId);
     const teamSnapshot = await db
       .collection('organizations')
-      .where(`members.${userId}`, '!=', null)
+      .where(teamMembersField, '!=', null)
       .get();
     const teamMembersUsed = teamSnapshot.size;
 
@@ -121,8 +122,8 @@ export const getUsageStats = onCall(async (request) => {
     };
 
     return stats;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[getUsageStats] Error:', error);
-    throw new Error('Failed to retrieve usage statistics');
+    throw new HttpsError('internal', error.message || 'Failed to retrieve usage statistics');
   }
 });

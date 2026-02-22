@@ -16,26 +16,26 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
 }) => {
     // ⚡ Bolt Optimization: Local state to prevent parent re-renders on every keystroke
     const [localValue, setLocalValue] = useState(prompt);
+    const lastEmitted = React.useRef(prompt);
 
     // Sync from parent (e.g. pendingPrompt or history)
     useEffect(() => {
-        // Only update if prompt is significantly different to avoid cursor jumping if we were to support partial updates
-        // But since this is a full sync, it's fine.
-        if (prompt !== localValue) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
+        if (prompt !== lastEmitted.current && prompt !== localValue) {
             setLocalValue(prompt);
+            lastEmitted.current = prompt; // Sync ref manually
         }
-    }, [prompt]); // eslint-disable-line react-hooks/exhaustive-deps
+    }, [prompt, localValue]);
 
     // Debounce updates to parent
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (localValue !== prompt) {
+            if (localValue !== lastEmitted.current) {
+                lastEmitted.current = localValue;
                 onPromptChange(localValue);
             }
         }, 300);
         return () => clearTimeout(timer);
-    }, [localValue, onPromptChange, prompt]);
+    }, [localValue, onPromptChange]);
 
     const handleGenerate = () => {
         onGenerate(localValue);

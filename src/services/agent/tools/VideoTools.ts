@@ -111,6 +111,12 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             }
         }
 
+        const { subscriptionService } = await import('@/services/subscription/SubscriptionService');
+        const quotaCheck = await subscriptionService.canPerformAction('generateVideo', finalDuration || 4);
+        if (!quotaCheck.allowed) {
+            return toolError(`Quota exceeded: ${quotaCheck.reason || 'Insufficient funds or limits reached.'}`, 'QUOTA_EXCEEDED');
+        }
+
         const results = await VideoGeneration.generateVideo({
             prompt: finalPrompt,
             firstFrame: args.image,

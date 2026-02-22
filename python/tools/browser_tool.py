@@ -1,12 +1,12 @@
 from python.helpers.tool import Tool, Response
 try:
-    from python.helpers.browser import Browser
+    from python.helpers.browser import BrowserHelper as Browser
 except ImportError:
     # Fallback for when running from root context vs package context
     import sys
     import os
     sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-    from python.helpers.browser import Browser
+    from python.helpers.browser import BrowserHelper as Browser
 import os
 
 class BrowserTool(Tool):

@@ -382,6 +382,20 @@
         }
       ],
       "queryScope": "COLLECTION_GROUP"
+    },
+    {
+      "collectionGroup": "usage",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION"
     }
   ]
 }

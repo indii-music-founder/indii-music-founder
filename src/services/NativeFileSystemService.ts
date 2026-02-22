@@ -40,7 +40,12 @@ class NativeFileSystemService {
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(IDB_DB_NAME, 1);
 
-      request.onerror = () => reject(request.error);
+      request.onerror = () => {
+        if (request.error?.name === 'QuotaExceededError') {
+          console.error('[FileSystem] IndexedDB Quota Exceeded. Please free up space.');
+        }
+        reject(request.error);
+      };
       request.onsuccess = () => {
         this.db = request.result;
         resolve(this.db);

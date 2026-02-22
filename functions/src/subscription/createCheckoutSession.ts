@@ -4,7 +4,7 @@
  * Creates a Stripe checkout session for subscription purchase or upgrade.
  */
 
-import { onCall } from 'firebase-functions/v2/https';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe, getPriceId } from '../stripe/config';
 import Stripe from 'stripe';
@@ -38,7 +38,7 @@ export const createCheckoutSession = onCall(async (request) => {
         const customer = await stripe.customers.create({
           email: customerEmail || request.auth?.token?.email,
           metadata: { userId }
-        });
+        }, { idempotencyKey: `create_customer_${userId}` });
         stripeCustomerId = customer.id;
 
         // Update subscription with Stripe customer ID
@@ -49,7 +49,7 @@ export const createCheckoutSession = onCall(async (request) => {
       const customer = await stripe.customers.create({
         email: customerEmail || request.auth?.token?.email,
         metadata: { userId }
-      });
+      }, { idempotencyKey: `create_customer_${userId}` });
       stripeCustomerId = customer.id;
     }
 
@@ -96,8 +96,8 @@ export const createCheckoutSession = onCall(async (request) => {
     };
 
     return response;
-  } catch (error) {
+  } catch (error: any) {
     console.error('[createCheckoutSession] Error:', error);
-    throw new Error('Failed to create checkout session');
+    throw new HttpsError('internal', error.message || 'Failed to create checkout session');
   }
 });

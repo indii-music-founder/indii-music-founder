@@ -47,6 +47,7 @@ interface QueuedSave {
 }
 
 const QUEUE_KEY = 'indiiOS_pendingMetadataSaves';
+const MAX_QUEUE_SIZE = 10;
 
 /**
  * MetadataPersistenceService - Centralized service for reliable metadata persistence
@@ -99,6 +100,12 @@ class MetadataPersistenceService {
         try {
             const existing = localStorage.getItem(QUEUE_KEY);
             const queue: QueuedSave[] = existing ? JSON.parse(existing) : [];
+
+            // Cap queue size to prevent localStorage overflow
+            if (queue.length >= MAX_QUEUE_SIZE) {
+                queue.shift(); // Drop oldest item
+            }
+
             queue.push(item);
             localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
             console.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);

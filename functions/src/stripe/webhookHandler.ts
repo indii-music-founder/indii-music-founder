@@ -5,7 +5,7 @@
  */
 
 import { onRequest } from 'firebase-functions/v2/https';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
@@ -62,49 +62,51 @@ async function handleCheckoutCompleted(event: Stripe.Event): Promise<void> {
 }
 
 /**
+ * Helper to update subscription by Stripe customer ID using a transaction.
+ * Throws an error if the customer is not found so Stripe can retry later.
+ */
+async function updateSubscriptionByCustomer(
+  stripeCustomerId: string,
+  callerName: string,
+  updateData: Partial<LocalSubscription>
+): Promise<void> {
+  const db = getFirestore();
+
+  await db.runTransaction(async (tx) => {
+    const snapshot = await tx.get(
+      db.collection('subscriptions').where('stripeCustomerId', '==', stripeCustomerId).limit(1)
+    );
+
+    if (snapshot.empty) {
+      throw new Error(`[${callerName}] No user found for customer ${stripeCustomerId}. Retrying expected.`);
+    }
+
+    const docRef = snapshot.docs[0].ref;
+    tx.update(docRef, { ...updateData, updatedAt: Date.now() });
+    console.log(`[${callerName}] Updated subscription for user ${snapshot.docs[0].id}`);
+  });
+}
+
+/**
  * Handle customer.subscription.created event
  */
 async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
-
-  const tier = mapStripeTierToSubscriptionTier(
-    subscription.items.data[0]?.price.product as string
-  );
+  const tier = mapStripeTierToSubscriptionTier(subscription.items.data[0]?.price.product as string);
 
   if (!tier) {
     console.error('[handleSubscriptionCreated] Unknown tier');
     return;
   }
 
-  const stripeCustomerId = subscription.customer as string;
-
-  // Find user by Stripe customer ID
-  const db = getFirestore();
-  const snapshot = await db
-    .collection('subscriptions')
-    .where('stripeCustomerId', '==', stripeCustomerId)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    console.error('[handleSubscriptionCreated] No user found for customer', stripeCustomerId);
-    return;
-  }
-
-  const userId = snapshot.docs[0].id;
-  const now = Date.now();
-
-  await snapshot.docs[0].ref.update({
+  await updateSubscriptionByCustomer(subscription.customer as string, 'handleSubscriptionCreated', {
     tier,
     status: mapStripeStatus((subscription as any).status),
     currentPeriodStart: (subscription as any).current_period_start * 1000,
     currentPeriodEnd: (subscription as any).current_period_end * 1000,
     cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
-    stripeSubscriptionId: subscription.id,
-    updatedAt: now
+    stripeSubscriptionId: subscription.id
   });
-
-  console.log(`[handleSubscriptionCreated] Updated subscription for user ${userId}`);
 }
 
 /**
@@ -112,42 +114,20 @@ async function handleSubscriptionCreated(event: Stripe.Event): Promise<void> {
  */
 async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
-
-  const tier = mapStripeTierToSubscriptionTier(
-    subscription.items.data[0]?.price.product as string
-  );
+  const tier = mapStripeTierToSubscriptionTier(subscription.items.data[0]?.price.product as string);
 
   if (!tier) {
     console.error('[handleSubscriptionUpdated] Unknown tier');
     return;
   }
 
-  const stripeCustomerId = subscription.customer as string;
-
-  const db = getFirestore();
-  const snapshot = await db
-    .collection('subscriptions')
-    .where('stripeCustomerId', '==', stripeCustomerId)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    console.error('[handleSubscriptionUpdated] No user found for customer', stripeCustomerId);
-    return;
-  }
-
-  const userId = snapshot.docs[0].id;
-
-  await snapshot.docs[0].ref.update({
+  await updateSubscriptionByCustomer(subscription.customer as string, 'handleSubscriptionUpdated', {
     tier,
     status: mapStripeStatus((subscription as any).status),
     currentPeriodStart: (subscription as any).current_period_start * 1000,
     currentPeriodEnd: (subscription as any).current_period_end * 1000,
-    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end,
-    updatedAt: Date.now()
+    cancelAtPeriodEnd: (subscription as any).cancel_at_period_end
   });
-
-  console.log(`[handleSubscriptionUpdated] Updated subscription for user ${userId}`);
 }
 
 /**
@@ -155,34 +135,15 @@ async function handleSubscriptionUpdated(event: Stripe.Event): Promise<void> {
  */
 async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
   const subscription = event.data.object as Stripe.Subscription;
-  const stripeCustomerId = subscription.customer as string;
 
-  const db = getFirestore();
-  const snapshot = await db
-    .collection('subscriptions')
-    .where('stripeCustomerId', '==', stripeCustomerId)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    console.error('[handleSubscriptionDeleted] No user found for customer', stripeCustomerId);
-    return;
-  }
-
-  const userId = snapshot.docs[0].id;
-
-  // Downgrade to free tier
-  await snapshot.docs[0].ref.update({
+  await updateSubscriptionByCustomer(subscription.customer as string, 'handleSubscriptionDeleted', {
     tier: SubscriptionTier.FREE,
     status: 'active',
     currentPeriodStart: Date.now(),
     currentPeriodEnd: Date.now() + 30 * 24 * 60 * 60 * 1000,
     cancelAtPeriodEnd: false,
-    stripeSubscriptionId: null,
-    updatedAt: Date.now()
+    stripeSubscriptionId: FieldValue.delete() as any
   });
-
-  console.log(`[handleSubscriptionDeleted] Downgraded user ${userId} to free tier`);
 }
 
 /**
@@ -190,35 +151,20 @@ async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
  */
 async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
+  if (!invoice.customer) return;
 
-  if (!invoice.customer) {
-    return;
-  }
-
-  const db = getFirestore();
-  const snapshot = await db
-    .collection('subscriptions')
-    .where('stripeCustomerId', '==', invoice.customer as string)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return;
-  }
-
-  const userId = snapshot.docs[0].id;
-
-  // Update billing period end
+  let currentPeriodEnd = undefined;
   if ((invoice as any).subscription) {
     const subscription = await stripe.subscriptions.retrieve((invoice as any).subscription as string);
-    await snapshot.docs[0].ref.update({
-      currentPeriodEnd: (subscription as any).current_period_end * 1000,
-      status: 'active',
-      updatedAt: Date.now()
-    });
+    currentPeriodEnd = (subscription as any).current_period_end * 1000;
   }
 
-  console.log(`[handleInvoicePaid] Processed payment for user ${userId}`);
+  const updateData: Partial<LocalSubscription> = { status: 'active' };
+  if (currentPeriodEnd) {
+    updateData.currentPeriodEnd = currentPeriodEnd;
+  }
+
+  await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaid', updateData);
 }
 
 /**
@@ -226,31 +172,11 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
  */
 async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
+  if (!invoice.customer) return;
 
-  if (!invoice.customer) {
-    return;
-  }
-
-  const db = getFirestore();
-  const snapshot = await db
-    .collection('subscriptions')
-    .where('stripeCustomerId', '==', invoice.customer as string)
-    .limit(1)
-    .get();
-
-  if (snapshot.empty) {
-    return;
-  }
-
-  const userId = snapshot.docs[0].id;
-
-  // Update status to past_due
-  await snapshot.docs[0].ref.update({
-    status: 'past_due',
-    updatedAt: Date.now()
+  await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaymentFailed', {
+    status: 'past_due'
   });
-
-  console.log(`[handleInvoicePaymentFailed] Payment failed for user ${userId}`);
 }
 
 /**

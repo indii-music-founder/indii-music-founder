@@ -264,7 +264,10 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
         const q = query(this.collection, ...constraints);
 
-        return onSnapshot(q, (snapshot) => {
+        let unsubscribe: Unsubscribe | null = null;
+        let isUnsubscribed = false;
+
+        const originalUnsubscribe = onSnapshot(q, (snapshot) => {
             const items = snapshot.docs.map(doc => {
                 const data = doc.data() as HistoryDocument;
                 return this.mapDocumentToItem({ ...data, id: doc.id });
@@ -286,7 +289,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
                 const fallbackQ = query(this.collection, ...fallbackConstraints);
 
-                const fallbackUnsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
+                unsubscribe = onSnapshot(fallbackQ, (fallbackSnap) => {
                     const items = fallbackSnap.docs.map(doc => {
                         const data = doc.data() as HistoryDocument;
                         return this.mapDocumentToItem({ ...data, id: doc.id });
@@ -297,12 +300,24 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     onUpdate(items);
                 }, onError);
 
-                return fallbackUnsubscribe; // However, we can't easily replace the outer return. We'd need to handle this differently if we really wanted to return the new unsubscribe synchronously.
-                // For simplicity in this implementation, if the ordered query fails, the initial `onSnapshot` throws. We catch it here and start a new one, but the caller's `Unsubscribe` won't perfectly point to this fallback unless we wrap it.
+                // If user called the wrapper's unsubscribe before fallback finished attaching
+                if (isUnsubscribed && unsubscribe) {
+                    unsubscribe();
+                }
+            } else {
+                if (onError) onError(error);
             }
-
-            onError(error);
         });
+
+        // If fallback hasn't happened yet, set inner to original
+        if (!unsubscribe) {
+            unsubscribe = originalUnsubscribe;
+        }
+
+        return () => {
+            isUnsubscribed = true;
+            if (unsubscribe) unsubscribe();
+        };
     }
 
     private mapDocumentToItem(doc: HistoryDocument): HistoryItem {

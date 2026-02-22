@@ -8,9 +8,13 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
     async ({ event, step }: any) => {
         const { jobId, prompt, userId, options } = event.data;
         const isThinking = options?.thinking === true;
-        const finalPrompt = isThinking
+        let finalPrompt = isThinking
             ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${prompt}`
             : prompt;
+
+        if (finalPrompt.length > 500) {
+            finalPrompt = finalPrompt.substring(0, 500);
+        }
 
         console.log(`[Inngest] Starting video generation for Job: ${jobId} (Thinking: ${isThinking})`);
 
@@ -239,7 +243,13 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                         }
                     });
 
-                    if (!statusResponse.ok) return null;
+                    if (!statusResponse.ok) {
+                        if (statusResponse.status >= 400 && statusResponse.status < 500) {
+                            const errorText = await statusResponse.text();
+                            throw new Error(`Vertex AI API Error: ${statusResponse.status} ${errorText}`);
+                        }
+                        return null;
+                    }
 
                     const statusData = await statusResponse.json();
                     if (statusData.done) return statusData;

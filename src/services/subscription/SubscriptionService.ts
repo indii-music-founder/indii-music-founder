@@ -144,12 +144,20 @@ export class SubscriptionService {
   ): Promise<QuotaCheckResult> {
     // GOD MODE: Bypass for Builder
     if (auth.currentUser?.email === 'the.walking.agency.det@gmail.com') {
+      if (action === 'generateVideo' && amount > 120) {
+        console.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
+        return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
+      }
       return { allowed: true };
     }
 
     const targetUserId = userId || auth.currentUser?.uid;
 
     if (!targetUserId) {
+      if (action === 'generateVideo' || action === 'generateImage') {
+        console.warn(`[SubscriptionService] Blocked unauthenticated AI generation (${action})`);
+        return { allowed: false, reason: 'Authentication required for AI generation.' };
+      }
       // DEMO MODE: Allow limited actions for unauthenticated users
       // This enables the demo experience without blocking on auth
       console.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
