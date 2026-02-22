@@ -332,8 +332,26 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
         setPendingPrompt(item.prompt);
         try {
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
-            const [mimeType, b64] = item.url.split(',');
-            const pureMime = mimeType.split(':')[1].split(';')[0];
+            let pureMime: string;
+            let b64: string;
+
+            if (item.url.startsWith('data:')) {
+                // Data URI — parse directly
+                const [header, data] = item.url.split(',');
+                pureMime = header.split(':')[1].split(';')[0];
+                b64 = data;
+            } else {
+                // Remote URL (Firebase Storage, CDN, etc.) — fetch → blob → base64
+                const res = await fetch(item.url);
+                const blob = await res.blob();
+                pureMime = blob.type || 'image/png';
+                b64 = await new Promise<string>((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve((reader.result as string).replace(/^data:.*;base64,/, ''));
+                    reader.readAsDataURL(blob);
+                });
+            }
+
             const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, 'subject');
             const { updateWhiskItem } = useStore.getState();
             updateWhiskItem('subject', whiskId, { aiCaption: caption });

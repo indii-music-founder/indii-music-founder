@@ -102,11 +102,21 @@ describe('♿ MobileNav Accessibility', () => {
         await user.click(fab);
         const closeButton = await screen.findByRole('button', { name: /close menu/i });
 
-        // Expect focus to be inside the modal (ideally on the close button or first element)
+        // Flush requestAnimationFrame so closeButtonRef.current.focus() runs
+        await act(async () => {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        });
+
+        // Expect focus to be inside the modal on the close button
         expect(document.activeElement).toBe(closeButton);
 
         // Close menu
         await user.click(closeButton);
+
+        // Flush rAF again for focus-return to FAB
+        await act(async () => {
+            await new Promise(resolve => requestAnimationFrame(resolve));
+        });
 
         // Expect focus to return to FAB
         expect(document.activeElement).toBe(fab);
