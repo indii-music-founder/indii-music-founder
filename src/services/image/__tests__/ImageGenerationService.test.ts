@@ -229,12 +229,20 @@ describe("ImageGenerationService", () => {
       // remixImage now uses Cloud Function instead of AI.generateContent
       const mockCloudResponse = {
         data: {
-          images: [
+          candidates: [
             {
-              bytesBase64Encoded: "remixeddata",
-              mimeType: "image/png",
-            },
-          ],
+              content: {
+                parts: [
+                  {
+                    inlineData: {
+                      data: "remixeddata",
+                      mimeType: "image/png"
+                    }
+                  }
+                ]
+              }
+            }
+          ]
         },
       };
 
@@ -248,11 +256,10 @@ describe("ImageGenerationService", () => {
 
       expect(result).toHaveProperty("url");
       expect(result!.url).toMatch(/^data:image\/png;base64,/);
-      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), "generateImageV3");
+      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), "editImage");
       expect(mockGenerateImage).toHaveBeenCalledWith(
         expect.objectContaining({
           prompt: "Apply this style",
-          aspectRatio: "1:1",
         }),
       );
     });

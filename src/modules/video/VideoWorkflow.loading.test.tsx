@@ -99,8 +99,14 @@ const mockStoreState = (overrides: Record<string, unknown>) => {
 
 describe('VideoWorkflow UI States', () => {
     beforeEach(() => {
+        vi.useFakeTimers();
         vi.clearAllMocks();
         subscribeCallback = null;
+    });
+
+    afterEach(() => {
+        vi.runOnlyPendingTimers();
+        vi.useRealTimers();
     });
 
     it('renders the "Director\'s Chair" empty state when idle', () => {
@@ -156,6 +162,7 @@ describe('VideoWorkflow UI States', () => {
         // Simulate failure
         act(() => {
             subscribeCallback!({ status: 'failed', stitchError: 'Something went wrong' });
+            vi.runOnlyPendingTimers();
         });
 
         // Verify Error Toast
@@ -179,6 +186,7 @@ describe('VideoWorkflow UI States', () => {
         const mockVideoUrl = 'https://example.com/video.mp4';
         act(() => {
             subscribeCallback!({ status: 'completed', videoUrl: mockVideoUrl, prompt: 'Test Prompt' });
+            vi.runOnlyPendingTimers();
         });
 
         // Verify Success Toast

@@ -285,7 +285,26 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                                 className="relative group/att"
                             >
                                 <div className="absolute inset-0 bg-purple-500/20 blur opacity-0 group-hover/att:opacity-100 transition-opacity rounded-xl"></div>
-                                <img src={att.base64} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
+                                {att.mimeType && !att.mimeType.startsWith('image/') ? (
+                                    <div className="w-24 h-24 rounded-xl border border-white/10 shadow-lg relative z-10 flex flex-col items-center justify-center bg-gray-900/50 p-2 text-center overflow-hidden">
+                                        <div className="flex-1 flex items-center justify-center">
+                                            {att.mimeType.startsWith('audio/') ? (
+                                                <svg className="w-8 h-8 text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" />
+                                                </svg>
+                                            ) : (
+                                                <svg className="w-8 h-8 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                                </svg>
+                                            )}
+                                        </div>
+                                        <div className="text-[9px] text-gray-400 font-mono tracking-tighter truncate w-full uppercase mt-1">
+                                            {att.mimeType.split('/')[1] || 'FILE'}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <img src={att.base64} className="w-24 h-24 object-cover rounded-xl border border-white/10 shadow-lg relative z-10" alt="attachment" />
+                                )}
                             </motion.div>
                         ))}
                     </div>

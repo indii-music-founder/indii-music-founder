@@ -55,7 +55,8 @@ export class VideoGenerationService {
                 reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
         } catch (_e) {
-            return { canGenerate: false, reason: 'Quota service unavailable — try again later' };
+            // Fail open: Fallback strategy when Quota service fails is to allow generation
+            return { canGenerate: true };
         }
     }
 
