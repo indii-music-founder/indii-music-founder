@@ -157,8 +157,7 @@ export class ImageGenerationService {
                     const { useStore } = await import('@/core/store');
                     const userId = useStore.getState().userProfile?.id;
 
-                    // eslint-disable-next-line no-constant-condition
-                    if (userId && false) { // TEMPORARY: Disable Cloud Storage to bypass CORS/Bucket issues
+                    if (userId) { // Re-enabled Cloud Storage
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
                         const saved = await CloudStorageService.smartSave(dataUri, id, userId);
                         finalUrl = saved.url;
@@ -278,24 +277,22 @@ export class ImageGenerationService {
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         try {
-            // Use Cloud Function for image generation (properly uses REST API)
-            const generateImage = httpsCallable(functions, 'generateImageV3');
+            // Use Cloud Function for image editing (properly uses REST API)
+            const editImage = httpsCallable(functions, 'editImage');
 
-            const result = await generateImage({
-                // Gemini 3 Pro Image is currently Text-to-Image only. 
-                // We rely on the high-fidelity caption (options.prompt) describing the inputs.
+            const result = await editImage({
                 prompt: options.prompt || 'Create a cinematic remix.',
-                aspectRatio: '1:1'
+                image: options.contentImage?.data || '',
+                imageMimeType: options.contentImage?.mimeType || 'image/png',
             });
 
-            interface GenerateImageResponse {
-                images: Array<{ bytesBase64Encoded?: string; mimeType?: string }>;
-            }
-            const data = result.data as GenerateImageResponse;
+            // The backend returns it in a candidates array for frontend compatibility
+            const data = result.data as any;
 
-            if (data.images?.[0]?.bytesBase64Encoded) {
-                const mimeType = data.images[0].mimeType || 'image/png';
-                return { url: `data:${mimeType};base64,${data.images[0].bytesBase64Encoded}` };
+            if (data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
+                const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType || 'image/png';
+                const base64 = data.candidates[0].content.parts[0].inlineData.data;
+                return { url: `data:${mimeType};base64,${base64}` };
             }
             return null;
         } catch (e) {

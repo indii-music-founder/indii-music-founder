@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import * as admin from "firebase-admin";
 import { GoogleAuth } from "google-auth-library";
 import { z } from "zod";
@@ -121,7 +120,7 @@ const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
  * Uses Veo to generate each segment. If a startImage is provided (or extracted
  * from previous segment), it uses it for continuity.
  */
-export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: string) => inngestClient.createFunction(
+export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) => inngestClient.createFunction(
     { id: "generate-long-form-video" },
     { event: "video/long_form.requested" },
     async ({ event, step }: any) => {
@@ -146,9 +145,13 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: strin
             for (let i = 0; i < prompts.length; i++) {
                 const segmentId = `${jobId}_seg_${i}`;
                 const rawPrompt = prompts[i];
-                const segmentPrompt = isThinking
+                let segmentPrompt = isThinking
                     ? `[Think CINEMATIC PHYSICS & CONTINUITY]: ${rawPrompt}`
                     : rawPrompt;
+
+                if (segmentPrompt.length > 500) {
+                    segmentPrompt = segmentPrompt.substring(0, 500);
+                }
 
                 // 1. Trigger Video Generation (Vertex AI)
                 const operationName = await step.run(`trigger-segment-${i}`, async () => {
@@ -231,6 +234,10 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: strin
                             }
                         );
                         if (!statusResponse.ok) {
+                            if (statusResponse.status >= 400 && statusResponse.status < 500) {
+                                const errorText = await statusResponse.text();
+                                throw new Error(`Vertex AI API Error: ${statusResponse.status} ${errorText}`);
+                            }
                             return { done: false };
                         }
                         return await statusResponse.json();
@@ -361,14 +368,16 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: strin
                                     return undefined;
                                 }
 
+                                files.sort((a, b) => a.name.localeCompare(b.name));
                                 const frameFile = files[0];
                                 const [buffer] = await frameFile.download();
                                 return `data:image/jpeg;base64,${buffer.toString('base64')}`;
                             });
                         }
                     } catch (e: unknown) {
-                        console.warn(`[LongForm] Frame extraction failed for segment ${i}:`, (e as Error).message);
-                        currentStartImage = undefined;
+                        const errorMsg = (e as Error).message;
+                        console.error(`[LongForm] Frame extraction failed for segment ${i}:`, errorMsg);
+                        throw new Error(`Frame extraction failed, breaking continuity: ${errorMsg}`);
                     }
                 }
             } // end prompts loop

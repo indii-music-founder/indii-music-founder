@@ -113,8 +113,8 @@ class GeminiImageService {
      * Advanced Instruction-Based Editing (Dual-View / Ghost Mask)
      */
     async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string; aiMetadata: any; aiGenerationInfo: any }> {
-        const client = this.getClient();
-        const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION; // Prefer Pro for editing fidelity
+        const { GoogleAuth } = await import("google-auth-library");
+        const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION === 'gemini-3-pro-image-preview' ? 'imagen-3.0-capability-001' : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
         try {
             console.log(`[GeminiImageService:edit] Model: ${modelId} | Instruction: "${data.prompt.substring(0, 50)}..."`);
@@ -124,8 +124,7 @@ class GeminiImageService {
                     referenceId: 0,
                     referenceType: "REFERENCE_TYPE_RAW",
                     referenceImage: {
-                        imageBytes: data.image,
-                        mimeType: data.imageMimeType || "image/png"
+                        bytesBase64Encoded: data.image
                     }
                 }
             ];
@@ -135,39 +134,72 @@ class GeminiImageService {
                     referenceId: 1,
                     referenceType: "REFERENCE_TYPE_MASK",
                     referenceImage: {
-                        imageBytes: data.mask,
-                        mimeType: "image/png"
-                    },
-                    config: {
-                        maskMode: "MASK_MODE_USER_PROVIDED"
+                        bytesBase64Encoded: data.mask
                     }
                 });
             }
 
-            const result = await client.models.editImage({
-                model: modelId === 'gemini-3-pro-image-preview' ? 'imagen-3.0-capability-001' : modelId,
-                prompt: data.prompt,
-                referenceImages,
-                config: {
-                    editMode: (data.mask ? 'EDIT_MODE_INPAINT_INSERTION' : 'EDIT_MODE_CONTROLLED_EDITING') as any,
-                    numberOfImages: 1,
-                    aspectRatio: data.aspectRatio || "1:1"
+            // Using pure REST API to Vertex AI instead of Node SDK to bypass 'toReferenceImageAPI' class validation bugs
+            const auth = new GoogleAuth({
+                scopes: ['https://www.googleapis.com/auth/cloud-platform']
+            });
+            const client = await auth.getClient();
+            const projectId = await auth.getProjectId();
+            const accessToken = await client.getAccessToken();
+
+            const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predict`;
+
+            const requestBody = {
+                instances: [
+                    {
+                        prompt: data.prompt,
+                        referenceImages
+                    }
+                ],
+                parameters: {
+                    sampleCount: 1,
+                    editConfig: {
+                        editMode: data.mask ? "EDIT_MODE_INPAINT_INSERTION" : "EDIT_MODE_CONTROLLED_EDITING",
+                        numberOfImages: 1,
+                        aspectRatio: data.aspectRatio || "1:1"
+                    }
                 }
+            };
+
+            const response = await fetch(endpoint, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${accessToken.token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
             });
 
-            if (!result.generatedImages || result.generatedImages.length === 0) {
+            if (!response.ok) {
+                let errorText = await response.text();
+                try {
+                    const parsedError = JSON.parse(errorText);
+                    errorText = parsedError.error?.message || errorText;
+                } catch (e) { /* ignore JSON parse error */ }
+                console.error(`[GeminiImageService:edit] Vertex REST API Error: ${response.status} ${errorText}`);
+                throw new Error(`Vertex AI Image Edit API Error: ${response.status} ${errorText}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.predictions || result.predictions.length === 0) {
                 throw new Error("No images returned from Gemini Edit API");
             }
 
-            const genImg = result.generatedImages[0];
+            const genImg = result.predictions[0];
 
-            if (!genImg.image) {
+            if (!genImg.bytesBase64Encoded) {
                 throw new Error("Generated image object is missing from Gemini response");
             }
 
             return {
-                base64: genImg.image.imageBytes as string,
-                mimeType: genImg.image.mimeType || "image/png",
+                base64: genImg.bytesBase64Encoded,
+                mimeType: genImg.mimeType || "image/png",
                 thoughtSignature: undefined, // Not provided by editImage response
                 aiMetadata: {
                     toolName: modelId,
@@ -178,14 +210,12 @@ class GeminiImageService {
                 },
                 aiGenerationInfo: {
                     isFullyAIGenerated: false,
-                    isPartiallyAIGenerated: true,
-                    aiToolsUsed: [modelId],
-                    humanContributionDescription: `Edited via indiiOS Concept Art Node. Original human-provided image modified using instruction: "${data.prompt.substring(0, 100)}..."`
+                    baseModel: modelId,
+                    generatorType: "cloud_function"
                 }
             };
-
-        } catch (error) {
-            this.handleApiError(error, "edit");
+        } catch (error: any) {
+            return this.handleApiError(error, "edit");
         }
     }
 }
