@@ -115,7 +115,7 @@ export default function DirectGenerationTab() {
         } finally {
             setIsGenerating(false);
         }
-    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt]);
+    }, [localPrompt, mode, studioControls, whiskState, addToHistory, currentProjectId, toast, setPrompt, setSelectedItem]);
 
     return (
         <div className="flex flex-col h-full w-full bg-background text-foreground">

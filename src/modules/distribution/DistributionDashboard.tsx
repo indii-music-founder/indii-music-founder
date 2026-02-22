@@ -17,7 +17,7 @@ export default function DistributionDashboard() {
     useEffect(() => {
         const unsubscribe = subscribeToReleases();
         return () => unsubscribe();
-    }, []);
+    }, [subscribeToReleases]);
 
     return (
         <div className="min-h-screen bg-background text-white">

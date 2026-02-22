@@ -82,7 +82,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         } else {
             if (chatChannel !== 'agent') setChatChannel('agent');
         }
-    }, [currentModule, setChatChannel]);
+    }, [currentModule, setChatChannel, chatChannel]);
 
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);

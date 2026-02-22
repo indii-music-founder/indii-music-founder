@@ -8,7 +8,6 @@ import { vi } from 'vitest';
 const mockSetModule = vi.fn();
 
 vi.mock('@/core/store', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useStore: (selector: any) => {
         // Mock implementation of the selector
         const state = {

@@ -35,9 +35,9 @@ vi.mock('../core/store', () => {
 
     const useStoreMock = vi.fn(() => mockState);
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (useStoreMock as any).setState = vi.fn();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     (useStoreMock as any).getState = vi.fn(() => mockState);
 
     return {
@@ -52,7 +52,7 @@ vi.mock('../modules/dashboard/Dashboard', () => ({
 
 // Mock ErrorBoundary to just render children so errors bubble up
 vi.mock('../core/components/ErrorBoundary', () => ({
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     ErrorBoundary: ({ children }: any) => <>{children}</>
 }));
 

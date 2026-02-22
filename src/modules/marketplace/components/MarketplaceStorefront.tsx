@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Product } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
@@ -19,13 +19,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
     const [loading, setLoading] = useState(true);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-    useEffect(() => {
-        if (targetId) {
-            loadProducts();
-        }
-    }, [targetId]);
-
-    const loadProducts = async () => {
+    const loadProducts = useCallback(async () => {
         if (!targetId) return;
         setLoading(true);
         try {
@@ -36,7 +30,13 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
         } finally {
             setLoading(false);
         }
-    };
+    }, [targetId]);
+
+    useEffect(() => {
+        if (targetId) {
+            loadProducts();
+        }
+    }, [targetId, loadProducts]);
 
     const isOwner = currentUser?.id === targetId;
 

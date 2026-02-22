@@ -212,24 +212,23 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         }
     }, [setSelectedItem, setViewMode]);
 
-    // Filter items based on search query
-    const filteredUploadedImages = (searchQuery
-        ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedImages) || [];
-
-    const filteredUploadedAudio = (searchQuery
-        ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : uploadedAudio) || [];
-
-    const filteredGenerated = (searchQuery
-        ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
-        : generatedHistory) || [];
-
     // Combine all items and sort by timestamp (newest first)
-    // ⚡ Bolt Optimization: Memoize allItems to prevent expensive sort on every render
+    // ⚡ Bolt Optimization: Memoize allItems and compute filtered arrays inside the callback
     const allItems = useMemo(() => {
+        const filteredUploadedImages = (searchQuery
+            ? uploadedImages?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : uploadedImages) || [];
+
+        const filteredUploadedAudio = (searchQuery
+            ? uploadedAudio?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : uploadedAudio) || [];
+
+        const filteredGenerated = (searchQuery
+            ? generatedHistory?.filter(item => item.prompt?.toLowerCase().includes(searchQuery.toLowerCase()))
+            : generatedHistory) || [];
+
         return [...filteredUploadedImages, ...filteredUploadedAudio, ...filteredGenerated].sort((a, b) => b.timestamp - a.timestamp);
-    }, [filteredUploadedImages, filteredUploadedAudio, filteredGenerated]);
+    }, [uploadedImages, uploadedAudio, generatedHistory, searchQuery]);
 
     const handleFileUpload = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files;

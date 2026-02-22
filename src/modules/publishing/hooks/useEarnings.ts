@@ -12,7 +12,7 @@ export function useEarnings(period: { startDate: string; endDate: string }) {
         } finally {
             setLocalLoading(false);
         }
-    }, [fetchEarnings, period.startDate, period.endDate]);
+    }, [fetchEarnings, period]);
 
     useEffect(() => {
         if (!finance.earningsSummary && !finance.loading) {

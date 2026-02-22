@@ -275,6 +275,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 setError('Failed to initialize canvas');
             });
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- snapToGrid is read at event time, not at effect setup
     }, [onCanvasReady, handleSelectionChange, emitLayersChange, onRequestDelete, convertFabricToCanvasObject]);
 
     // Responsive canvas sizing

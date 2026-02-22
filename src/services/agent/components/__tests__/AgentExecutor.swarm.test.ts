@@ -28,7 +28,7 @@ class MockAgent extends BaseAgent {
             tools: []
         });
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     async execute(task: string, context?: any, onProgress?: any, signal?: AbortSignal, attachments?: any[]) {
         return { text: 'success', toolCalls: [], thoughts: [] } as any;
     }

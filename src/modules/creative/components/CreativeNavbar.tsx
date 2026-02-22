@@ -9,7 +9,6 @@ import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
 
 export default function CreativeNavbar(props: CreativeNavbarProps) {
