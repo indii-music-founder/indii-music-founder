@@ -42,7 +42,7 @@ const db = admin.firestore();
 const bucket = admin.storage().bucket();
 const auth = admin.auth();
 
-const TEST_USER_EMAIL = 'marcus.deep@test.indiios.com';
+const TEST_USER_EMAIL = 'the.walking.agency.det@gmail.com';
 
 // ─────────────────────────────────────────────
 // Persona images to upload
@@ -50,6 +50,7 @@ const TEST_USER_EMAIL = 'marcus.deep@test.indiios.com';
 const PERSONA_DIR = resolve(__dirname, '../cypress/fixtures/persona');
 
 const PERSONA_IMAGES = [
+    // ── Marcus Deep (analog synths / producer) ──────────────────────────────
     {
         file: '1_establishing_transit.png',
         subject: 'Marcus Deep',
@@ -84,6 +85,43 @@ const PERSONA_IMAGES = [
         category: 'portrait',
         description: 'Marcus Deep — clean daylight selfie',
         tags: ['marcus-deep', 'portrait', 'selfie', 'daylight'],
+    },
+
+    // ── Max Crownwood (dark industrial hip-hop) ──────────────────────────────
+    {
+        file: 'max_1_establishing_transit.png',
+        subject: 'Max Crownwood',
+        category: 'lifestyle',
+        description: 'Max Crownwood on transit with his equipment case — noir Detroit atmosphere',
+        tags: ['max-crownwood', 'transit', 'lifestyle', 'noir'],
+    },
+    {
+        file: 'max_2_raw_portrait.png',
+        subject: 'Max Crownwood',
+        category: 'portrait',
+        description: 'Max Crownwood — raw industrial street portrait against Detroit brick',
+        tags: ['max-crownwood', 'portrait', 'street', 'noir'],
+    },
+    {
+        file: 'max_3_studio_session.png',
+        subject: 'Max Crownwood',
+        category: 'studio',
+        description: 'Max Crownwood deep in session on his MPC and 808 — Detroit home studio',
+        tags: ['max-crownwood', 'studio', 'mpc', '808', 'hip-hop'],
+    },
+    {
+        file: 'max_4_live_gig.png',
+        subject: 'Max Crownwood',
+        category: 'live',
+        description: 'Max Crownwood performing live at an intimate underground Detroit venue',
+        tags: ['max-crownwood', 'live', 'gig', 'underground'],
+    },
+    {
+        file: 'max_5_clean_selfie.png',
+        subject: 'Max Crownwood',
+        category: 'portrait',
+        description: 'Max Crownwood — street selfie in Detroit',
+        tags: ['max-crownwood', 'portrait', 'selfie', 'detroit'],
     },
 ];
 
@@ -133,10 +171,9 @@ async function uploadPersonaAssets() {
             continue;
         }
 
-        // Check if already uploaded by checking tags match
-        const alreadyExists = existingImages.some((existing) =>
-            existing.tags?.includes('marcus-deep') &&
-            existing.description === img.description
+        // Check if already uploaded by matching description exactly
+        const alreadyExists = existingImages.some(
+            (existing) => existing.description === img.description
         );
 
         if (alreadyExists) {
