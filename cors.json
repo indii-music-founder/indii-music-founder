@@ -5,14 +5,17 @@
         ],
         "method": [
             "GET",
-            "PUT",
-            "POST",
-            "DELETE",
             "HEAD",
             "OPTIONS"
         ],
         "responseHeader": [
-            "*"
+            "Content-Type",
+            "Content-Length",
+            "Content-Disposition",
+            "Content-Encoding",
+            "Accept-Ranges",
+            "Range",
+            "X-GUploader-UploadID"
         ],
         "maxAgeSeconds": 3600
     }
