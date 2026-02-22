@@ -52,7 +52,6 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'info',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 data: data as Record<string, any>
             });
         } catch {
@@ -74,7 +73,6 @@ class LoggerService {
                 category: module,
                 message: message,
                 level: 'warning',
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 data: data as Record<string, any>
             });
         } catch {
@@ -97,7 +95,6 @@ class LoggerService {
                 tags: { module },
                 extra: {
                     contextMessage: message,
-                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                     rawError: error as any
                 }
             });

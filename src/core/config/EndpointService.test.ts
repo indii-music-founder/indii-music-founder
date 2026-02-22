@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+// EndpointService Test Suite
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { EndpointService } from './EndpointService';
 import { env } from '@/config/env';

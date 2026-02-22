@@ -14,6 +14,6 @@ export function cleanupLocalStorage() {
             localStorage.removeItem('indiiOS_pendingMetadataSaves');
         }
     } catch { /* already broken, try removing anyway */
-        try { localStorage.removeItem('indiiOS_pendingMetadataSaves'); } catch { }
+        try { localStorage.removeItem('indiiOS_pendingMetadataSaves'); } catch { /* ignore removal failure */ }
     }
 }

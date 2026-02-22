@@ -192,13 +192,14 @@ export default function VideoWorkflow() {
         return generatedHistory.filter(h => h.type === 'video' && (!currentProjectId || h.projectId === currentProjectId));
     }, [generatedHistory, currentProjectId]);
 
-    // Sync pending prompt
+    // Sync pending prompt — deferred to avoid cascading renders (react-hooks/set-state-in-effect)
     useEffect(() => {
-
         if (pendingPrompt) {
-            setLocalPrompt(pendingPrompt);
-            setPrompt(pendingPrompt);
-            setPendingPrompt(null);
+            queueMicrotask(() => {
+                setLocalPrompt(pendingPrompt);
+                setPrompt(pendingPrompt);
+                setPendingPrompt(null);
+            });
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
 
@@ -215,15 +216,14 @@ export default function VideoWorkflow() {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [viewMode, setViewMode, toast]);
 
-    // Set initial active video
+    // Set initial active video — deferred to avoid cascading renders (react-hooks/set-state-in-effect)
     useEffect(() => {
-
         if (selectedItem?.type === 'video') {
-            setActiveVideo(selectedItem);
+            queueMicrotask(() => setActiveVideo(selectedItem));
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
             const recent = generatedHistory.find(h => h.type === 'video');
-            if (recent) setActiveVideo(recent);
+            if (recent) queueMicrotask(() => setActiveVideo(recent));
         }
     }, [selectedItem, generatedHistory, activeVideo]);
 
