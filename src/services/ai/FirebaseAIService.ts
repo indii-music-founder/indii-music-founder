@@ -310,12 +310,40 @@ export class FirebaseAIService {
                 // Validate & Sanitize
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
 
+                // Auto-detect high-fidelity media requirements for audio payloads
+                let hasAudio = false;
+                const contentsToCheck = Array.isArray(sanitizedPrompt)
+                    ? sanitizedPrompt
+                    : [{ parts: [{ text: sanitizedPrompt as string }] }];
+
+                for (const c of contentsToCheck as Content[]) {
+                    if (c.parts) {
+                        for (const p of c.parts) {
+                            if ('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) {
+                                hasAudio = true;
+                                break;
+                            }
+                            if ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/')) {
+                                hasAudio = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasAudio) break;
+                }
+
+                // Inject explicit support for High Fidelity reasoning if AUDIO payload detected
+                const enrichedConfig = config ? { ...config } : {};
+                if (hasAudio && !enrichedConfig.mediaResolution) {
+                    enrichedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
+                }
+
                 const result = await (async () => {
                     // ============================================================
                     // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                     // ============================================================
                     if (this.useFallbackMode && this.fallbackClient) {
-                        return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
+                        return this.generateWithFallback(sanitizedPrompt, modelName, enrichedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
                     }
 
                     // ============================================================
@@ -334,7 +362,7 @@ export class FirebaseAIService {
 
                     const modelOptions: any = {
                         model: modelName,
-                        generationConfig: config,
+                        generationConfig: enrichedConfig,
                         systemInstruction,
                         tools,
                         toolConfig: options?.toolConfig,
@@ -456,11 +484,38 @@ export class FirebaseAIService {
                 const modelName = this.getModelName(modelOverride);
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
 
+                // Auto-detect high-fidelity media requirements for audio payloads
+                let hasAudio = false;
+                const contentsToCheck = Array.isArray(sanitizedPrompt)
+                    ? sanitizedPrompt
+                    : [{ parts: [{ text: sanitizedPrompt as string }] }];
+
+                for (const c of contentsToCheck as Content[]) {
+                    if (c.parts) {
+                        for (const p of c.parts) {
+                            if ('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) {
+                                hasAudio = true;
+                                break;
+                            }
+                            if ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/')) {
+                                hasAudio = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (hasAudio) break;
+                }
+
+                const enrichedConfig = config ? { ...config } : {};
+                if (hasAudio && !enrichedConfig.mediaResolution) {
+                    enrichedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
+                }
+
                 // ============================================================
                 // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
                 // ============================================================
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options);
+                    return this.streamWithFallback(sanitizedPrompt, modelName, enrichedConfig, systemInstruction, tools, options);
                 }
 
                 // ============================================================
@@ -479,7 +534,7 @@ export class FirebaseAIService {
 
                 const modelOptions: any = {
                     model: modelName,
-                    generationConfig: config,
+                    generationConfig: enrichedConfig,
                     systemInstruction,
                     tools,
                     toolConfig: options?.toolConfig,
