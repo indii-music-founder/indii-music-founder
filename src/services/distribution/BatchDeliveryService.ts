@@ -1,4 +1,4 @@
-import path from 'path';
+// path is dynamically imported inside createBatchDirectory to avoid Vite web-build externalization
 import { DDEX_CONFIG } from '@/core/config/ddex';
 
 /**
@@ -62,8 +62,9 @@ export class BatchDeliveryService {
     releasePackages: string[], // Paths to individual release folders
     outputDir: string
   ): Promise<string> {
-    // Dynamic import fs
+    // Dynamic import fs and path (Node-only, Electron context)
     const fs = await import('fs');
+    const path = await import('path');
 
     const batchDir = path.join(outputDir, `Batch_${batchId}`);
     if (!fs.existsSync(batchDir)) {

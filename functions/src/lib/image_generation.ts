@@ -50,60 +50,136 @@ class GeminiImageService {
     }
 
     /**
-     * Core Text-to-Image Generation (Gemini 3 Pro Image)
+     * Core Text-to-Image Generation
+     * 
+     * 'fast' model → Gemini multimodal generateContent with IMAGE modality (instant, no aspect ratio control)
+     * 'pro' model  → Vertex AI Imagen REST API (proper aspect ratio, seed control, higher fidelity)
      */
     async generate(data: any): Promise<{ images: any[]; aiMetadata: any; aiGenerationInfo: any }> {
-        const client = this.getClient();
-        const modelId = data.model === 'fast'
+        const isFast = data.model === 'fast';
+        const modelId = isFast
             ? FUNCTION_AI_MODELS.IMAGE.FAST
             : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-        console.log(`[GeminiImageService:generate] Model: ${modelId} | Prompt: "${data.prompt.substring(0, 50)}..."`);
+        console.log(`[GeminiImageService:generate] Mode: ${isFast ? 'fast (Gemini)' : 'pro (Imagen)'} | Prompt: "${data.prompt.substring(0, 50)}..."`);
 
         try {
-            const result = await client.models.generateContent({
-                model: modelId,
-                contents: [{ role: "user", parts: [{ text: data.prompt }] }],
-                config: {
-                    candidateCount: data.count || 1,
-                    responseModalities: ["IMAGE"],
-                    ...(data.aspectRatio ? { imageConfig: { aspectRatio: data.aspectRatio } } : {}),
-                    ...(data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
-                } as any
-            });
+            if (isFast) {
+                // --- Fast Path: Gemini Multimodal (sub-second, no aspect ratio control) ---
+                const client = this.getClient();
+                const result = await client.models.generateContent({
+                    model: modelId,
+                    contents: [{ role: "user", parts: [{ text: data.prompt }] }],
+                    config: {
+                        candidateCount: data.count || 1,
+                        responseModalities: ["IMAGE"],
+                        ...(data.useGrounding ? { groundingConfig: { searchGrounding: { enableSearch: true } } } : {})
+                    } as any
+                });
 
-            if (!result.candidates || result.candidates.length === 0) {
-                throw new Error("No candidates returned from Gemini API");
-            }
+                if (!result.candidates || result.candidates.length === 0) {
+                    throw new Error("No candidates returned from Gemini API");
+                }
 
-            const images = result.candidates![0].content!.parts!
-                .filter(p => !!p.inlineData)
-                .map(p => ({
-                    bytesBase64Encoded: p.inlineData!.data as string,
-                    mimeType: p.inlineData!.mimeType || "image/png"
+                const images = result.candidates![0].content!.parts!
+                    .filter(p => !!p.inlineData)
+                    .map(p => ({
+                        bytesBase64Encoded: p.inlineData!.data as string,
+                        mimeType: p.inlineData!.mimeType || "image/png"
+                    }));
+
+                if (images.length === 0) {
+                    throw new Error("No image data found in candidates");
+                }
+
+                return {
+                    images,
+                    aiMetadata: {
+                        toolName: modelId,
+                        generationType: 'text-to-image',
+                        isAIGenerated: true,
+                        timestamp: new Date().toISOString(),
+                        promptSnippet: data.prompt.substring(0, 100)
+                    },
+                    aiGenerationInfo: {
+                        isFullyAIGenerated: true,
+                        isPartiallyAIGenerated: false,
+                        aiToolsUsed: [modelId],
+                        humanContributionDescription: `Generated via indiiOS using prompt: "${data.prompt.substring(0, 100)}..."`
+                    }
+                };
+            } else {
+                // --- Pro Path: Vertex AI Imagen REST API (full aspect ratio, seed, personGeneration) ---
+                const { GoogleAuth } = await import("google-auth-library");
+                const imagenModel = "imagen-3.0-generate-001";
+
+                const auth = new GoogleAuth({
+                    scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                });
+                const client = await auth.getClient();
+                const projectId = await auth.getProjectId();
+                const accessToken = await client.getAccessToken();
+
+                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${imagenModel}:predict`;
+
+                const requestBody = {
+                    instances: [
+                        { prompt: data.prompt }
+                    ],
+                    parameters: {
+                        sampleCount: Math.min(data.count || 1, 4),
+                        aspectRatio: data.aspectRatio || "1:1",
+                        personGeneration: "allow_adult",
+                        addWatermark: false
+                    }
+                };
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${accessToken.token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+
+                if (!response.ok) {
+                    let errorText = await response.text();
+                    try {
+                        const parsedError = JSON.parse(errorText);
+                        errorText = parsedError.error?.message || errorText;
+                    } catch (_e) { /* ignore JSON parse error */ }
+                    throw new Error(`Vertex AI Imagen API Error: ${response.status} ${errorText}`);
+                }
+
+                const result = await response.json();
+
+                if (!result.predictions || result.predictions.length === 0) {
+                    throw new Error("No images returned from Imagen API");
+                }
+
+                const images = result.predictions.map((p: any) => ({
+                    bytesBase64Encoded: p.bytesBase64Encoded,
+                    mimeType: p.mimeType || "image/png"
                 }));
 
-            if (images.length === 0) {
-                throw new Error("No image data found in candidates");
+                return {
+                    images,
+                    aiMetadata: {
+                        toolName: imagenModel,
+                        generationType: 'text-to-image',
+                        isAIGenerated: true,
+                        timestamp: new Date().toISOString(),
+                        promptSnippet: data.prompt.substring(0, 100)
+                    },
+                    aiGenerationInfo: {
+                        isFullyAIGenerated: true,
+                        isPartiallyAIGenerated: false,
+                        aiToolsUsed: [imagenModel],
+                        humanContributionDescription: `Generated via indiiOS Imagen Pro using prompt: "${data.prompt.substring(0, 100)}..."`
+                    }
+                };
             }
-
-            return {
-                images,
-                aiMetadata: {
-                    toolName: modelId,
-                    generationType: 'text-to-image',
-                    isAIGenerated: true,
-                    timestamp: new Date().toISOString(),
-                    promptSnippet: data.prompt.substring(0, 100)
-                },
-                aiGenerationInfo: {
-                    isFullyAIGenerated: true,
-                    isPartiallyAIGenerated: false,
-                    aiToolsUsed: [modelId],
-                    humanContributionDescription: `Generated via indiiOS Concept Art Node using prompt: "${data.prompt.substring(0, 100)}..."`
-                }
-            };
-
         } catch (error) {
             this.handleApiError(error, "generate");
         }

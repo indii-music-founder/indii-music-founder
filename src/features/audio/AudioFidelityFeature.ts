@@ -1,6 +1,4 @@
 import { z } from 'zod';
-import { spawn } from 'child_process';
-import path from 'path';
 
 // Schema for input validation
 export const AudioFidelitySchema = z.object({
@@ -56,7 +54,9 @@ export class AudioFidelityFeature {
 
     const { filePath, targetStandard, pythonPath } = validation.data;
 
-    // 2. Resolve script path
+    // 2. Dynamic import Node modules (Electron-only, avoids Vite bundling)
+    const { spawn } = await import('child_process');
+    const path = await import('path');
     const scriptPath = path.resolve(process.cwd(), 'execution/audio/audio_fidelity_audit.py');
 
     // 3. Execution

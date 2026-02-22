@@ -163,6 +163,16 @@ export default defineConfig({
       },
     },
     rollupOptions: {
+      // Suppress warnings for Node.js builtins used in Electron-only code paths
+      external: ['child_process', 'fs', 'path', 'util', 'crypto'],
+      onwarn(warning, warn) {
+        // Suppress CIRCULAR_DEPENDENCY and MODULE_LEVEL_DIRECTIVE warnings from third-party libs
+        if (warning.code === 'CIRCULAR_DEPENDENCY') return;
+        if (warning.code === 'MODULE_LEVEL_DIRECTIVE') return;
+        // Suppress externalized module warnings from essentia.js (third-party, can't fix)
+        if (warning.message?.includes('essentia')) return;
+        warn(warning);
+      },
       output: {
         manualChunks: {
           'vendor-react': ['react', 'react-dom', 'framer-motion', 'reactflow', 'zustand'],

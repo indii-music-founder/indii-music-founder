@@ -49,7 +49,7 @@ async function seedTestUser() {
             const newUser = await auth.createUser({
                 email: TEST_USER_EMAIL,
                 password: TEST_USER_PASSWORD,
-                displayName: 'Marcus Deep',
+                displayName: 'Marcus Deep (Rex Chrome)',
                 emailVerified: true,
             });
             uid = newUser.uid;
@@ -70,6 +70,21 @@ async function seedTestUser() {
             displayName: 'Marcus Deep',
             role: 'artist',
             onboarded: true,
+            brandKit: {
+                colors: ['#000000', '#222222', '#ff0000'],
+                fonts: 'Inter',
+                brandDescription: 'Rex Chrome — a Detroit electronic duo. Marcus Deep handles the analog synths, Max Crownwood brings the dark industrial hip-hop. Deep Detroit Tech. Aesthetic is noir, concrete, and industrial.',
+                referenceImages: [],
+                brandAssets: [],
+                releaseDetails: {
+                    title: 'Black Kitty',
+                    type: 'Single',
+                    artists: 'Rex Chrome',
+                    genre: 'Deep Detroit Tech',
+                    mood: 'Industrial, Dark',
+                    themes: 'Detroit, Concrete, Noir',
+                }
+            },
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
             updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
@@ -86,7 +101,7 @@ async function seedTestUser() {
     if (!orgDoc.exists) {
         await orgRef.set({
             id: orgId,
-            name: 'Marcus Deep Studio',
+            name: 'Rex Chrome Studio',
             members: [uid],
             ownerId: uid,
             createdAt: admin.firestore.FieldValue.serverTimestamp(),
