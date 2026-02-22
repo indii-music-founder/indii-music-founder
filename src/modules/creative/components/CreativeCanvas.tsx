@@ -341,15 +341,11 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
                 pureMime = header.split(':')[1].split(';')[0];
                 b64 = data;
             } else {
-                // Remote URL (Firebase Storage, CDN, etc.) — fetch → blob → base64
-                const res = await fetch(item.url);
-                const blob = await res.blob();
-                pureMime = blob.type || 'image/png';
-                b64 = await new Promise<string>((resolve) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => resolve((reader.result as string).replace(/^data:.*;base64,/, ''));
-                    reader.readAsDataURL(blob);
-                });
+                // Remote URL (Firebase Storage, CDN, etc.) — CORS-safe fetch with fallbacks
+                const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
+                const result = await fetchAsBase64(item.url);
+                pureMime = result.mimeType;
+                b64 = result.base64;
             }
 
             const caption = await ImageGeneration.captionImage({ mimeType: pureMime, data: b64 }, 'subject');
@@ -372,22 +368,20 @@ export default function CreativeCanvas({ item, onClose, onSendToWorkflow, onRefi
             const { ImageGeneration } = await import('@/services/image/ImageGenerationService');
             // Remove unused import if not needed, or keep if CloudStorageService is used elsewhere
 
-            // 1. Get Base64 & Mime
-            const res = await fetch(item.url);
-            const blob = await res.blob();
-            // Use the blob's actual type, default to png if missing
-            const mimeType = blob.type || 'image/png';
+            // 1. Get Base64 & Mime — CORS-safe with fallback strategies
+            const { fetchAsBase64 } = await import('@/services/storage/safeStorageFetch');
+            let mimeType: string;
+            let seedBase64: string;
 
-            const seedBase64 = await new Promise<string>((resolve) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result as string;
-                    // Robustly strip ALL data headers: data:image/xxx;base64,
-                    const base64Clean = result.replace(/^data:.*;base64,/, '');
-                    resolve(base64Clean);
-                };
-                reader.readAsDataURL(blob);
-            });
+            if (item.url.startsWith('data:')) {
+                const [header, data] = item.url.split(',');
+                mimeType = header.split(':')[1].split(';')[0];
+                seedBase64 = data;
+            } else {
+                const result = await fetchAsBase64(item.url);
+                mimeType = result.mimeType;
+                seedBase64 = result.base64;
+            }
 
             // 2. Analyze
             const climaxDescription = await ImageGeneration.captionImage(
