@@ -68,7 +68,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
 }));
 
 vi.mock('../services/VideoDirector', () => ({
-    VideoDirector: { animate: vi.fn() }
+    VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) }
 }));
 
 vi.mock('@/services/image/EditingService', () => ({

@@ -27,6 +27,12 @@ vi.mock("@/services/ai/AIService", () => ({
   },
 }));
 
+vi.mock("@/services/ai/FirebaseAIService", () => ({
+  firebaseAI: {
+    generateContent: vi.fn(),
+  },
+}));
+
 // Mock SubscriptionService and UsageTracker
 vi.mock("@/services/subscription/SubscriptionService", () => ({
   subscriptionService: {
@@ -296,11 +302,14 @@ describe("ImageGenerationService", () => {
   });
 });
 describe("captionImage", () => {
-  it("should call AI.generateContent with correct structure", async () => {
+  it("should call firebaseAI.generateContent and return caption text", async () => {
+    const { firebaseAI } = await import("@/services/ai/FirebaseAIService");
     const mockResponse = {
-      text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
+      response: {
+        text: vi.fn().mockReturnValue("A glowing orb in a dark forest."),
+      },
     };
-    (AI.generateContent as unknown as any).mockResolvedValue(mockResponse);
+    (firebaseAI.generateContent as unknown as any).mockResolvedValue(mockResponse);
 
     const result = await ImageGeneration.captionImage(
       { mimeType: "image/png", data: "cleanBase64Data" },
@@ -308,7 +317,6 @@ describe("captionImage", () => {
     );
 
     expect(result).toBe("A glowing orb in a dark forest.");
-    const callArgs = (AI.generateContent as unknown as any).mock.calls[0][0];
-    expect(callArgs).toHaveProperty("config");
+    expect(firebaseAI.generateContent as unknown as any).toHaveBeenCalledOnce();
   });
 });

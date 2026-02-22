@@ -42,7 +42,7 @@ vi.mock('../services/CanvasOperationsService', () => ({
         setMagicFillMode: vi.fn()
     }
 }));
-vi.mock('../services/VideoDirector', () => ({ VideoDirector: { animate: vi.fn() } }));
+vi.mock('../services/VideoDirector', () => ({ VideoDirector: { triggerAnimation: vi.fn().mockResolvedValue({ success: true }) } }));
 vi.mock('@/services/image/EditingService', () => ({ Editing: { magicFill: vi.fn() } }));
 
 describe('🖱️ Click: Creative Studio Daisychain', () => {

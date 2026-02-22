@@ -118,74 +118,72 @@ export class VideoDirector {
         });
     }
 
+
     /**
      * Trigger video generation from an image using Veo
      */
     static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string; video_url?: string }> {
-        const payload: any = {
-            jobId: crypto.randomUUID(),
-            prompt: item.prompt || 'Animate this scene',
-            model: AI_MODELS.VIDEO.GENERATION,
-            aspectRatio: '16:9', // Top level for Python API
-            options: {
-                aspectRatio: '16:9' // For Cloud Function
-            }
-        };
+        const jobId = crypto.randomUUID();
+        const prompt = item.prompt || 'Animate this scene';
 
-        let imageBytes = '';
-        if (item.url.startsWith('data:')) {
-            const parts = item.url.split(',');
-            const mimeType = parts[0].split(':')[1].split(';')[0];
-            imageBytes = parts[1];
-            payload.image = {
-                imageBytes: parts[1],
-                mimeType: mimeType
-            };
-        } else {
-            // Assume it's a URI
-            payload.referenceImages = [
-                {
-                    image: { uri: item.url },
-                    referenceType: "ASSET"
-                }
-            ];
-            payload.imageBytes = item.url; // Use URL as identifier for local if needed
-        }
-
-        // --- Rewiring: Use local Python API in Electron ---
-        if (typeof window !== 'undefined' && window.electronAPI) {
-            console.log('[VideoDirector] Rewiring to local Python API for animation...');
+        // --- Electron Path: Delegate to local Python API (Agent Zero sidecar) ---
+        if (typeof window !== 'undefined' && (window as any).electronAPI) {
+            console.log('[VideoDirector] Routing animation to local Python API...');
             try {
+                let imageBytes = '';
+                if (item.url.startsWith('data:')) {
+                    imageBytes = item.url.split(',')[1];
+                }
+
                 const apiPayload = {
-                    ...payload,
+                    jobId,
+                    prompt,
                     imageBytes: imageBytes || item.url,
-                    prompt: payload.prompt,
                     aspectRatio: '16:9',
-                    duration: 4
+                    duration: 4,
+                    model: AI_MODELS.VIDEO.GENERATION,
                 };
 
                 const response = await agentZeroService.callApi('/video_gen', apiPayload) as any;
 
                 if (response.status === 'ok' || response.success) {
-                    return {
-                        success: true,
-                        video_url: response.video_url
-                    };
-                } else {
-                    return {
-                        success: false,
-                        error: response.error || 'Local video generation failed'
-                    };
+                    return { success: true, video_url: response.video_url };
                 }
+                return { success: false, error: response.error || 'Local video generation failed' };
             } catch (err: any) {
                 console.error('[VideoDirector] Local API Error:', err);
-                // Fallback to Cloud Function if local API fails
+                // Surface the error — do NOT silently fall through to Cloud Function
+                // The Cloud Function payload shape is incompatible with animation requests
+                return { success: false, error: `Sidecar unavailable: ${err.message || 'Connection refused'}` };
             }
         }
 
-        // --- Standard Path: Cloud Function ---
-        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
-        const response = await triggerVideoJob(payload);
-        return response.data as { success: boolean; error?: string };
+        // --- Web Path: Cloud Function (triggerVideoJob) ---
+        // Build a payload that satisfies VideoJobSchema
+        const cloudPayload: any = {
+            jobId,
+            prompt,
+            model: AI_MODELS.VIDEO.GENERATION,
+            options: { aspectRatio: '16:9' },
+        };
+
+        if (item.url.startsWith('data:')) {
+            const parts = item.url.split(',');
+            cloudPayload.image = {
+                imageBytes: parts[1],
+                mimeType: parts[0].split(':')[1].split(';')[0],
+            };
+        } else {
+            cloudPayload.referenceImageUri = item.url;
+        }
+
+        try {
+            const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+            const response = await triggerVideoJob(cloudPayload);
+            return response.data as { success: boolean; error?: string };
+        } catch (err: any) {
+            console.error('[VideoDirector] Cloud Function Error:', err);
+            return { success: false, error: err.message || 'Video generation failed' };
+        }
     }
 }
