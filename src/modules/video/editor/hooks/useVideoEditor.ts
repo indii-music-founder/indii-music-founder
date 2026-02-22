@@ -1,7 +1,7 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
 import { PlayerRef } from '@remotion/player';
 import { httpsCallable } from 'firebase/functions';
-import { functions } from '@/services/firebase';
+import { functionsWest1 } from '@/services/firebase';
 import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoEditorStore';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { useToast } from '@/core/context/ToastContext';
@@ -95,7 +95,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setIsExporting(true);
         toast.info('Starting cloud export... This may take a while.');
         try {
-            const render = httpsCallable(functions, 'renderVideo');
+            const render = httpsCallable(functionsWest1, 'renderVideo');
             const result = await render({ compositionId: project.id, inputProps: { project } });
             const data = result.data as { renderId?: string; success?: boolean; url?: string; error?: string };
             if (data.renderId || data.success) toast.success('Cloud render started successfully!');

@@ -6,9 +6,11 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
 import { z } from 'zod';
 import { useStore } from '../../store';
+import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 interface VideoPanelProps {
@@ -18,8 +20,28 @@ interface VideoPanelProps {
 export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
     const [activeTab, setActiveTab] = useState('create');
     const [isGenerating, setIsGenerating] = useState(false);
-    // Use global prompt state instead of local
-    const { addToHistory, updateHistoryItem, currentProjectId, studioControls, setStudioControls, prompt, videoInputs, setVideoInput, currentOrganizationId } = useStore();
+
+    const {
+        addToHistory,
+        updateHistoryItem,
+        currentProjectId,
+        studioControls,
+        setStudioControls,
+        prompt,
+        videoInputs,
+        setVideoInput,
+        currentOrganizationId
+    } = useStore(useShallow(state => ({
+        addToHistory: state.addToHistory,
+        updateHistoryItem: state.updateHistoryItem,
+        currentProjectId: state.currentProjectId,
+        studioControls: state.studioControls,
+        setStudioControls: state.setStudioControls,
+        prompt: state.prompt,
+        videoInputs: state.videoInputs,
+        setVideoInput: state.setVideoInput,
+        currentOrganizationId: state.currentOrganizationId
+    })));
     const toast = useToast();
 
     const handleRender = async () => {
@@ -66,37 +88,32 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
             }
 
             if (results.length > 0) {
-                results.forEach(res => {
-                    addToHistory({
-                        id: res.id,
-                        url: res.url,
-                        prompt: res.prompt,
-                        type: 'video',
-                        timestamp: Date.now(),
-                        projectId: currentProjectId
+                const firstResult = results[0];
+                if (firstResult.url) {
+                    // Synchronous return
+                    results.forEach(res => {
+                        addToHistory({
+                            id: res.id,
+                            url: res.url,
+                            prompt: res.prompt,
+                            type: 'video',
+                            timestamp: Date.now(),
+                            projectId: currentProjectId
+                        });
                     });
-
-                    // Subscribe to real-time updates for this job
-                    const unsub = VideoGeneration.subscribeToJob(res.id, (job) => {
-                        if (job) {
-                            if (job.status === 'completed' && job.videoUrl) {
-                                console.log(`[VideoPanel] Job ${res.id} completed. Updating URL.`);
-                                updateHistoryItem(res.id, { url: job.videoUrl });
-                                toast.success("Video generation completed!");
-                                unsub();
-                            } else if (job.status === 'failed') {
-                                console.error(`[VideoPanel] Job ${res.id} failed:`, job.error);
-                                toast.error(`Video generation failed: ${job.error}`);
-                                unsub();
-                            }
-                        }
-                    });
-                });
-                toast.success("Video generation started!");
+                    useVideoEditorStore.getState().setStatus('completed');
+                    toast.success("Scene generated!");
+                } else {
+                    // Asynchronous background job
+                    useVideoEditorStore.getState().setJobId(firstResult.id);
+                    useVideoEditorStore.getState().setStatus('processing');
+                    toast.success("Generation queued in background!");
+                }
             }
         } catch (e) {
             console.error("Video generation failed:", e);
             toast.error("Video generation failed");
+            useVideoEditorStore.getState().setStatus('failed');
         } finally {
             setIsGenerating(false);
         }

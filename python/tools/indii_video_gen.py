@@ -31,26 +31,42 @@ class IndiiVideoGen(Tool):
 
             self.set_progress(f"Submitting video request to {model_id}...")
             
-            # 2. Build Multi-Modal Payload
-            contents = []
+            # 2. Call Veo API
+            self.set_progress(f"Submitting video request to {model_id}...")
+            
+            # Use source object for prompt/image
+            source = types.GenerateVideosSource(prompt=prompt) if prompt else None
+            
             if image_path:
                 with open(image_path, "rb") as f:
                     image_data = f.read()
-                contents.append(types.Part.from_bytes(data=image_data, mime_type="image/png"))
-            
-            if prompt:
-                contents.append(prompt)
+                image = types.Image(image_bytes=image_data, mime_type="image/png")
+                
+                # If we have both, image-to-video takes the image in 'image' kwarg and prompt in 'prompt' kwarg.
+                # However the latest SDK recommends using source=GenerateVideosSource(image=..., prompt=...)
+                source = types.GenerateVideosSource(prompt=prompt, image=image)
 
-            # 3. Call Veo API
-            response = client.models.generate_videos(
+            operation = client.models.generate_videos(
                 model=model_id,
-                prompt=prompt,
+                source=source,
                 config=types.GenerateVideosConfig(
                     duration_seconds=duration,
                 )
             )
 
-            if not response.generated_videos:
+            self.set_progress("Veo 3.1 synthesizing video frames (this may take 1-2 minutes)...")
+            
+            while not getattr(operation, 'done', False):
+                await asyncio.sleep(5)
+                operation = client.operations.get(operation=operation)
+                
+            if getattr(operation, 'error', None):
+                return Response(message=f"Error: Veo API generation failed: {operation.error}", break_loop=False)
+
+            # Check both response and result attributes based on SDK version
+            result = getattr(operation, 'response', None) or getattr(operation, 'result', None)
+            
+            if not result or not getattr(result, 'generated_videos', None):
                 return Response(message="Error: Veo API returned no video data.", break_loop=False)
 
             # 4. Persistence Rule (Physicality First)
@@ -61,14 +77,28 @@ class IndiiVideoGen(Tool):
 
             # Blueprint Path: /a0/usr/projects/{project_id}/assets/video/
             assets_dir = f"/a0/usr/projects/{project_id}/assets/video"
+            if not os.path.exists("/a0"):
+                assets_dir = f"/tmp/indiiOS/projects/{project_id}/assets/video"
             os.makedirs(assets_dir, exist_ok=True)
 
-            video_data = response.generated_videos[0].video.video_bytes
             filename = f"gen_{int(time.time())}.mp4"
             abs_path = os.path.join(assets_dir, filename)
 
-            with open(abs_path, "wb") as f:
-                f.write(video_data)
+            video_obj = result.generated_videos[0].video
+            video_data = getattr(video_obj, 'video_bytes', None)
+            video_uri = getattr(video_obj, 'uri', None)
+
+            if video_data:
+                with open(abs_path, "wb") as f:
+                    f.write(video_data)
+            elif video_uri:
+                import urllib.request
+                self.set_progress(f"Downloading high-fidelity video asset from Veo...")
+                req = urllib.request.Request(video_uri, headers={'x-goog-api-key': api_key})
+                with urllib.request.urlopen(req) as response_stream, open(abs_path, 'wb') as out_file:
+                    out_file.write(response_stream.read())
+            else:
+                return Response(message="Error: Veo API returned no video bytes and no URI.", break_loop=False)
 
             # 5. Protocol Bridge (The Magic String)
             # UI handles video files via the img:// protocol as well for unified rendering

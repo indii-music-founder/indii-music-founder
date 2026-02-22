@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Wand2, History, ChevronRight, ChevronDown, Sliders, Zap, Brain, Layers, Video } from 'lucide-react';
 import CreativeGallery from '../../../modules/creative/components/CreativeGallery';
 import { useStore } from '../../store';
+import { useShallow } from 'zustand/react/shallow';
+import { StoreState } from '../../store';
 import { useToast } from '@/core/context/ToastContext';
 import { z } from 'zod';
 import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/schemas';
@@ -23,7 +25,19 @@ export default function CreativePanel({ toggleRightPanel }: CreativePanelProps) 
         studioControls, setStudioControls,
         whiskState, addWhiskItem, removeWhiskItem, toggleWhiskItem, updateWhiskItem, setPreciseReference, setTargetMedia,
         videoInputs, setVideoInput
-    } = useStore();
+    } = useStore(useShallow((state: StoreState) => ({
+        studioControls: state.studioControls,
+        setStudioControls: state.setStudioControls,
+        whiskState: state.whiskState,
+        addWhiskItem: state.addWhiskItem,
+        removeWhiskItem: state.removeWhiskItem,
+        toggleWhiskItem: state.toggleWhiskItem,
+        updateWhiskItem: state.updateWhiskItem,
+        setPreciseReference: state.setPreciseReference,
+        setTargetMedia: state.setTargetMedia,
+        videoInputs: state.videoInputs,
+        setVideoInput: state.setVideoInput
+    })));
     const toast = useToast();
 
 
