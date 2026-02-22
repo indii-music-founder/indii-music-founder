@@ -121,12 +121,35 @@ export class VideoDirector {
      * Trigger video generation from an image using Veo
      */
     static async triggerAnimation(item: HistoryItem): Promise<{ success: boolean; error?: string }> {
-        const triggerVideoGeneration = httpsCallable(functions, 'triggerVideoGeneration');
-        const response = await triggerVideoGeneration({
-            image: item.url,
+        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+
+        const payload: any = {
+            jobId: crypto.randomUUID(),
             prompt: item.prompt || 'Animate this scene',
-            model: AI_MODELS.VIDEO.GENERATION
-        });
+            model: AI_MODELS.VIDEO.GENERATION,
+            options: {
+                aspectRatio: '16:9'
+            }
+        };
+
+        if (item.url.startsWith('data:')) {
+            const parts = item.url.split(',');
+            const mimeType = parts[0].split(':')[1].split(';')[0];
+            payload.image = {
+                imageBytes: parts[1],
+                mimeType: mimeType
+            };
+        } else {
+            // Assume it's a URI
+            payload.referenceImages = [
+                {
+                    image: { uri: item.url },
+                    referenceType: "ASSET"
+                }
+            ];
+        }
+
+        const response = await triggerVideoJob(payload);
         return response.data as { success: boolean; error?: string };
     }
 }
