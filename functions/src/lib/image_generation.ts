@@ -27,7 +27,7 @@ class GeminiImageService {
     private handleApiError(error: any, context: string): never {
         console.error(`[GeminiImageService:${context}] Error:`, error);
 
-        let message = error.message || "Unknown Gemini API error";
+        const message = error.message || "Unknown Gemini API error";
         let status = error.status;
 
         // Handle fetch errors where we manually added status to the error message
