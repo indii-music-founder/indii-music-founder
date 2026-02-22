@@ -68,7 +68,6 @@ const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
 // ============================================================================
 
 // Use flexible type to accommodate different component prop signatures
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<React.ComponentType<any>>>> = {
     'dashboard': Dashboard,
     'creative': CreativeStudio,
@@ -171,7 +170,7 @@ function ChatOverlayWrapper() {
         if (isAgentOpen && isRightPanelOpen) {
             toggleRightPanel();
         }
-    }, [isAgentOpen]);
+    }, [isAgentOpen, isRightPanelOpen, toggleRightPanel]);
 
     if (!isAgentOpen) return null;
 

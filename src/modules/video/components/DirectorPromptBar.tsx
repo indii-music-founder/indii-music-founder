@@ -18,11 +18,13 @@ export const DirectorPromptBar: React.FC<DirectorPromptBarProps> = ({
     const [localValue, setLocalValue] = useState(prompt);
     const lastEmitted = React.useRef(prompt);
 
-    // Sync from parent (e.g. pendingPrompt or history)
+    // Sync from parent (e.g. pendingPrompt or history) — deferred to avoid cascading renders
     useEffect(() => {
         if (prompt !== lastEmitted.current && prompt !== localValue) {
-            setLocalValue(prompt);
-            lastEmitted.current = prompt; // Sync ref manually
+            queueMicrotask(() => {
+                setLocalValue(prompt);
+                lastEmitted.current = prompt; // Sync ref manually
+            });
         }
     }, [prompt, localValue]);
 
