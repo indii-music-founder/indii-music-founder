@@ -30,6 +30,7 @@ export default defineConfig({
       'firestore.rules.test.ts',
       'storage.rules.test.ts',
       'A2UI/**',
+      '**/.claude/**',
     ]
   },
 });

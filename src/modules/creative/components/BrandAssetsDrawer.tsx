@@ -62,7 +62,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 newAssets.push({ url: downloadUrl, description: file.name });
                 newUploadedImages.push({
                     id: assetId,
-                    type: 'image',
+                    type: 'image' as const,
                     url: downloadUrl,
                     prompt: file.name,
                     timestamp,
@@ -74,7 +74,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 updateBrandKit({
                     brandAssets: [...(userProfile?.brandKit?.brandAssets || []), ...newAssets]
                 });
-                newUploadedImages.forEach(img => addUploadedImage(img));
+                newUploadedImages.forEach(img => addUploadedImage(img as any));
                 toast.success(`${files.length} asset(s) uploaded`);
             }
         } catch (error) {

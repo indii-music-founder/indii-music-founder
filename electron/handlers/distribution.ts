@@ -11,6 +11,7 @@ import { accessControlService } from '../security/AccessControlService';
 import { z } from 'zod';
 
 import { PythonBridge } from '../utils/python-bridge';
+import { AgentSupervisor } from '../utils/AgentSupervisor';
 
 interface StagedFile {
     type: 'content' | 'path';
@@ -122,7 +123,7 @@ export const setupDistributionHandlers = () => {
             const validatedPath = validateSafeAudioPath(absolutePath);
 
             // Execute Python Script
-            const report = await PythonBridge.runScript('audio', 'audio_forensics.py', [validatedPath]);
+            const report = await AgentSupervisor.execute('audio', 'audio_forensics.py', [validatedPath], { timeoutMs: 60000 });
             return { success: true, report };
 
         } catch (error) {
@@ -148,12 +149,12 @@ export const setupDistributionHandlers = () => {
 
             // Execute Python Script
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'package_itmsp.py', [
+            const report = await AgentSupervisor.execute('distribution', 'package_itmsp.py', [
                 releaseId,
                 stagingPath,
                 '--storage-path',
                 storagePath
-            ]);
+            ], { timeoutMs: 120000 });
 
             return {
                 success: report.status === 'PASS',
@@ -174,13 +175,13 @@ export const setupDistributionHandlers = () => {
             const { userId, amount } = data || {};
             if (!userId || amount === undefined) throw new Error('Missing userId or amount');
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', [
+            const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'calculate',
                 userId,
                 String(amount),
                 '--storage-path',
                 storagePath
-            ]);
+            ], { timeoutMs: 30000 });
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -191,13 +192,13 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'tax_withholding_engine.py', [
+            const report = await AgentSupervisor.execute('distribution', 'tax_withholding_engine.py', [
                 'certify',
                 userId,
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [2]); // Redact JSON data
+            ], { timeoutMs: 30000 }, undefined, {}, [2]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -208,11 +209,11 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('finance', 'waterfall_payout.py', [
+            const report = await AgentSupervisor.execute('finance', 'waterfall_payout.py', [
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [0]); // Redact JSON data
+            ], { timeoutMs: 60000 }, undefined, {}, [0]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -223,11 +224,11 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'qc_validator.py', [
+            const report = await AgentSupervisor.execute('distribution', 'qc_validator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [0]); // Redact metadata
+            ], { timeoutMs: 60000 }, undefined, {}, [0]); // Redact metadata
             return { success: report.valid, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -245,7 +246,7 @@ export const setupDistributionHandlers = () => {
                 sensitiveIndices = [1];
             }
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
+            const report = await AgentSupervisor.execute('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
             return { success: true, isrc: report.isrc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -266,11 +267,11 @@ export const setupDistributionHandlers = () => {
             // We should ideally wrap the Python script output in JSON.
             // But for now, let's pass the raw string if it's CSV.
             const storagePath = getStoragePath();
-            const result = await PythonBridge.runScript('distribution', 'content_id_csv_generator.py', [
+            const result = await AgentSupervisor.execute('distribution', 'content_id_csv_generator.py', [
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [0]); // Redact JSON data
+            ], { timeoutMs: 30000 }, undefined, {}, [0]); // Redact JSON data
 
             // If result is a string (CSV content), wrap it. If it's an object (report), return it.
             if (typeof result === 'string') {
@@ -293,7 +294,7 @@ export const setupDistributionHandlers = () => {
                 sensitiveIndices = [1];
             }
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
+            const report = await AgentSupervisor.execute('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
             return { success: process.env.NODE_ENV !== 'production' || !!report.upc, upc: report.upc, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -308,7 +309,7 @@ export const setupDistributionHandlers = () => {
             const sensitiveIndices = [1];
             if (releaseId) args.push(releaseId);
             args.push('--storage-path', storagePath);
-            const report = await PythonBridge.runScript('distribution', 'isrc_manager.py', args, undefined, {}, sensitiveIndices);
+            const report = await AgentSupervisor.execute('distribution', 'isrc_manager.py', args, { timeoutMs: 30000 }, undefined, {}, sensitiveIndices);
             return { success: true, release: report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -319,11 +320,11 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const result = await PythonBridge.runScript('distribution', 'ddex_generator.py', [
+            const result = await AgentSupervisor.execute('distribution', 'ddex_generator.py', [
                 JSON.stringify(metadata),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [0]); // Redact metadata
+            ], { timeoutMs: 90000 }, undefined, {}, [0]); // Redact metadata
             // Enhanced ddex_generator returns JSON with xml field
             if (typeof result === 'object' && result.xml) {
                 return { success: result.status === 'SUCCESS', xml: result.xml, report: result };
@@ -339,12 +340,12 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', [
+            const report = await AgentSupervisor.execute('distribution', 'keys_manager.py', [
                 'bwarm',
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [1]); // Redact JSON data
+            ], { timeoutMs: 30000 }, undefined, {}, [1]); // Redact JSON data
             return { success: report.status === 'SUCCESS', csv: report.csv, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -355,12 +356,12 @@ export const setupDistributionHandlers = () => {
         try {
             validateSender(event);
             const storagePath = getStoragePath();
-            const report = await PythonBridge.runScript('distribution', 'keys_manager.py', [
+            const report = await AgentSupervisor.execute('distribution', 'keys_manager.py', [
                 'merlin_check',
                 JSON.stringify(data),
                 '--storage-path',
                 storagePath
-            ], undefined, {}, [1]); // Redact JSON data
+            ], { timeoutMs: 30000 }, undefined, {}, [1]); // Redact JSON data
             return { success: true, report };
         } catch (error) {
             return { success: false, error: error instanceof Error ? error.message : String(error) };
@@ -418,10 +419,11 @@ export const setupDistributionHandlers = () => {
             if (port) args.push('--port', String(port));
             // Note: Password/Key are now passed via env vars, not CLI args
 
-            const report = await PythonBridge.runScript(
+            const report = await AgentSupervisor.execute(
                 'distribution',
                 scriptName,
                 args,
+                { timeoutMs: 300000, retries: 1 }, // 5 mins timeout for large uploads + retry
                 (progress, log) => {
                     if (progress >= 0) {
                         event.sender.send('distribution:transmit-progress', { progress });
