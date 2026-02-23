@@ -5,7 +5,8 @@ export type EventType =
     | 'DEPARTMENT_REQUEST'
     | 'SYSTEM_ALERT'
     | 'TASK_COMPLETED'
-    | 'TASK_FAILED';
+    | 'TASK_FAILED'
+    | 'ASSET_FINALIZED';
 
 export interface AgentActionEvent {
     agentId: string;

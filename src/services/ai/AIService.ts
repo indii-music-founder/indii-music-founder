@@ -1,134 +1,28 @@
-import { Schema, Tool } from 'firebase/ai';
+import { Schema } from 'firebase/ai';
 import {
     Content,
-    ContentPart,
-    TextPart,
-    InlineDataPart,
-    FunctionCallPart,
-    FunctionResponsePart,
     GenerateContentResponse,
-    GenerateVideoRequest,
-    GenerateVideoResponse,
-    GenerateImageRequest,
-    GenerateImageResponse,
-    GenerateSpeechResponse,
-    GenerationConfig,
-    ToolConfig,
-    WrappedResponse,
-    Candidate,
-    GenerateContentOptions,
-    GenerateStreamOptions,
     GenerateVideoOptions,
     GenerateImageOptions,
     EmbedContentOptions,
+    Candidate,
+    WrappedResponse,
+    GenerateContentOptions,
     StreamChunk,
-    RetryableError,
-    UsageMetadata
+    GenerateSpeechResponse
 } from '@/shared/types/ai.dto';
-import { AppErrorCode, AppException } from '@/shared/types/errors';
-import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
-// import { trace } from '../agent/observability/TraceService';
-import { RateLimiter } from './RateLimiter';
-import { delay as asyncDelay } from '@/utils/async';
-import { logger } from '@/utils/logger';
-import { firebaseAI } from './FirebaseAIService';
-import { AIResponseCache } from './context/AIResponseCache';
-
-const responseCache = new AIResponseCache();
-
-// ============================================================================
-// Helper Functions
-// ============================================================================
+import { GenAI } from './GenAI';
 
 /**
- * Removes markdown code block wrappers from JSON strings
+ * @deprecated Use GenAI facade instead: `import { GenAI } from '@/services/ai/GenAI'`
+ * 
+ * Legacy AIService wrapper for backward compatibility during migration.
+ * All methods now delegate to GenAI (FirebaseAIService).
  */
-function cleanJSON(text: string): string {
-    return text.replace(/```json\n|\n```/g, '').replace(/```/g, '').trim();
-}
-
-/**
- * Type guard to check if a content part is a TextPart
- */
-function isTextPart(part: ContentPart): part is TextPart {
-    return 'text' in part;
-}
-
-/**
- * Type guard to check if a content part is a FunctionCallPart
- */
-function isFunctionCallPart(part: ContentPart): part is FunctionCallPart {
-    return 'functionCall' in part;
-}
-
-/**
- * Wraps raw API response to provide consistent accessor methods
- */
-function wrapResponse(rawResponse: GenerateContentResponse): WrappedResponse {
-    let thoughtSignature: string | undefined;
-
-    // Extract thoughtSignature from the first part of the first candidate if available
-    if (rawResponse.candidates && rawResponse.candidates.length > 0) {
-        const candidate = rawResponse.candidates[0];
-        if (candidate.content?.parts && candidate.content.parts.length > 0) {
-            const part = candidate.content.parts[0];
-            if ('thoughtSignature' in part) {
-                thoughtSignature = part.thoughtSignature;
-            }
-        }
-    }
-
-    return {
-        response: rawResponse,
-        thoughtSignature,
-        text: (): string => {
-            const candidates = rawResponse.candidates;
-            if (candidates && candidates.length > 0) {
-                const candidate = candidates[0];
-                if (candidate.content?.parts?.length > 0) {
-                    const firstPart = candidate.content.parts[0];
-                    if (isTextPart(firstPart)) {
-                        return firstPart.text;
-                    }
-                }
-            }
-            return '';
-        },
-        functionCalls: (): FunctionCallPart['functionCall'][] => {
-            const candidates = rawResponse.candidates;
-            if (candidates && candidates.length > 0) {
-                const candidate = candidates[0];
-                if (candidate.content?.parts) {
-                    return candidate.content.parts
-                        .filter(isFunctionCallPart)
-                        .map((p) => p.functionCall);
-                }
-            }
-            return [];
-        },
-        usage: (): UsageMetadata | undefined => {
-            return rawResponse.usageMetadata;
-        }
-    };
-}
-
-// ============================================================================
-// AIService Class
-// ============================================================================
-
 export class AIService {
-    // Note: AIService delegates generation to FirebaseAIService (Client SDK),
-    // which handles Auth and App Check.
-    private cache: AIResponseCache;
     private static instance: AIService;
-    private activeRequests: Map<string, Promise<WrappedResponse>> = new Map();
 
-    // Default: 60 RPM (adjust based on quota)
-    private rateLimiter: RateLimiter = new RateLimiter(60);
-
-    private constructor() {
-        this.cache = new AIResponseCache();
-    }
+    private constructor() { }
 
     public static getInstance(): AIService {
         if (!AIService.instance) {
@@ -137,411 +31,93 @@ export class AIService {
         return AIService.instance;
     }
 
-    /**
-     * HIGH LEVEL: Generate text using client-side SDK
-     */
+    /** @deprecated Use GenAI.generateText */
     async generateText(prompt: string, thinkingBudget?: number, systemInstruction?: string): Promise<string> {
-        return this.withRetry(() => firebaseAI.generateText(prompt, thinkingBudget, systemInstruction));
+        return GenAI.generateText(prompt, thinkingBudget, systemInstruction);
     }
 
-    /**
-     * HIGH LEVEL: Generate structured data using client-side SDK
-     */
+    /** @deprecated Use GenAI.generateStructuredData */
     async generateStructuredData<T>(prompt: string | any[], schema: Schema, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
-        return this.withRetry(() => firebaseAI.generateStructuredData<T>(prompt, schema, thinkingBudget, systemInstruction));
+        return GenAI.generateStructuredData<T>(prompt, schema, thinkingBudget, systemInstruction);
     }
 
-    /**
-     * Generates content using the Google Gemini model.
-     * Includes caching, retries, request coalescing, and rate limiting.
-     */
-    generateContent(prompt: string | any, options: GenerateContentOptions = {}): Promise<WrappedResponse> {
-        // If first argument is an object and not a string/array, treat it as options
-        if (typeof prompt === 'object' && prompt !== null && !Array.isArray(prompt)) {
-            options = { ...prompt, ...options };
+    /** @deprecated Use GenAI.generateContent */
+    async generateContent(prompt: string | any, options: GenerateContentOptions = {}): Promise<WrappedResponse> {
+        // Handle legacy positional arguments if prompt is a string
+        if (typeof prompt === 'string' && !options.contents) {
+            options.contents = [{ role: 'user', parts: [{ text: prompt }] }];
         }
 
-        // Ensure model is set
-        const model = options.model || AI_MODELS.TEXT.AGENT;
+        const result = await GenAI.generateContent(
+            (options.contents || prompt) as string | Content[],
+            options.model,
+            options.config,
+            options.systemInstruction,
+            options.tools as any,
+            options
+        );
 
-        // Handle prompt argument if provided (legacy support & convenience)
-        let contents = options.contents;
-        if (typeof prompt === 'string' && prompt.length > 0) {
-            if (!contents) {
-                contents = [{ role: 'user', parts: [{ text: prompt }] }];
-            }
-        }
-        // If contents is still undefined, look at prompt as 'any' maybe? 
-        // But for typing safety we expect contents to be populated if prompt is not string.
-        if (!contents) {
-            contents = [];
-        }
-        if (!Array.isArray(contents)) {
-            contents = [contents];
-        }
-
-        // Update options with resolved contents for cache key generation
-        const effectiveOptions = { ...options, model, contents };
-
-        // 0. Cache Check
-        const cacheKey = this.cache.generateKey(effectiveOptions);
-        if (!options.skipCache) {
-            const cached = this.cache.get(cacheKey);
-            if (cached) {
-                return Promise.resolve(wrapResponse(cached));
-            }
-        }
-
-        // 1. Request Coalescing
-        if (options.cache !== false && cacheKey && this.activeRequests.has(cacheKey)) {
-            return this.activeRequests.get(cacheKey)!;
-        }
-
-        // Define the Async Operation
-        const executeRequest = async (): Promise<WrappedResponse> => {
-            // 2. Rate Limiting Acquisition
-            await this.rateLimiter.acquire(30000);
-
-            return this.withRetry(async () => {
-                // Default timeout: 60s (can be disabled with infinity or customized)
-                const timeoutMs = options.timeout ?? 60000;
-                const signal = options.signal;
-
-                const generateOp = async (retryOnAuthError = true): Promise<WrappedResponse> => {
-                    try {
-                        // Inject thoughtSignature if present (Critical for Gemini 3 function calling)
-                        if (options.thoughtSignature && contents && (contents as Content[]).length > 0) {
-                            const validContents = contents as Content[];
-                            const lastContent = validContents[validContents.length - 1];
-                            if (lastContent.parts.length > 0) {
-                                const lastPart = lastContent.parts[lastContent.parts.length - 1];
-                                if ('text' in lastPart || 'inlineData' in lastPart || 'functionCall' in lastPart || 'functionResponse' in lastPart) {
-                                    (lastPart as TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart).thoughtSignature = options.thoughtSignature;
-                                }
-                            }
-                        }
-
-                        const result = await firebaseAI.generateContent(
-                            contents as Content[], // asserted from above logic
-                            model,
-                            options.config,
-                            options.systemInstruction,
-                            options.tools as unknown as Tool[],
-                            {
-                                signal,
-                                safetySettings: options.safetySettings,
-                                toolConfig: options.toolConfig
-                            }
-                        );
-
-                        // Map firebase/ai candidate to legacy Candidate
-                        const mappedCandidates: Candidate[] = (result.response.candidates || []).map(c => ({
-                            content: {
-                                role: 'model',
-                                parts: (c.content?.parts || []).map(p => {
-                                    if ('text' in p) {
-                                        return {
-                                            text: p.text || '',
-                                            thoughtSignature: 'thoughtSignature' in p ? (p as { thoughtSignature: string }).thoughtSignature : undefined
-                                        } as TextPart;
-                                    }
-                                    if ('functionCall' in p) {
-                                        return {
-                                            functionCall: p.functionCall as { name: string; args: Record<string, unknown> },
-                                            thoughtSignature: 'thoughtSignature' in p ? (p as { thoughtSignature: string }).thoughtSignature : undefined
-                                        } as FunctionCallPart;
-                                    }
-                                    return { text: '' } as TextPart;
-                                })
-                            },
-                            finishReason: (c.finishReason as unknown as 'STOP' | 'MAX_TOKENS' | 'SAFETY' | 'RECITATION' | 'OTHER') || 'STOP',
-                            index: c.index || 0
-                        }));
-
-                        if (options.cache !== false && cacheKey) {
-                            // Default TTL or from options if added later
-                            this.cache.set(cacheKey, result.response as unknown as GenerateContentResponse, options.cacheTTL);
-                        }
-
-                        return wrapResponse({
-                            candidates: mappedCandidates
-                        });
-
-                    } catch (error: any) {
-                        // 🛡️ SELF-HEALING: Handle 403 Forbidden (App Check/Referrer Failures)
-                        if (retryOnAuthError && (error?.message?.includes('403') || error?.status === 403 || error?.code === 403)) {
-                            logger.warn('[AIService] 403 Forbidden detected. Activating Self-Healing (Fallback Mode)...');
-                            try {
-                                await firebaseAI.initializeFallbackMode();
-                                return generateOp(false); // Retry once with new mode
-                            } catch (fallbackErr) {
-                                logger.error('[AIService] Self-Healing failed:', fallbackErr);
-                                // Fall through to standard error handling
-                            }
-                        }
-
-                        // Pass through retryable errors to be handled by withRetry
-                        if (
-                            error?.code === 'resource-exhausted' ||
-                            error?.code === 'unavailable' ||
-                            error?.message?.includes('429') ||
-                            error?.message?.includes('503')
-                        ) {
-                            throw error;
-                        }
-
-                        const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-                        logger.error('[AIService] Generate Content Failed:', err.message);
-                        throw err;
-                    }
-                };
-
-                // Implement Race between Generation, Timeout, and AbortSignal
-                // Use proper cleanup to prevent memory leaks and race conditions
-                let timeoutId: ReturnType<typeof setTimeout> | undefined;
-                let abortHandler: (() => void) | undefined;
-
-                const cleanup = () => {
-                    if (timeoutId) clearTimeout(timeoutId);
-                    if (abortHandler && signal) {
-                        signal.removeEventListener('abort', abortHandler);
-                    }
-                };
-
-                // Check if already aborted before starting
-                if (signal?.aborted) {
-                    return Promise.reject(new AppException(AppErrorCode.CANCELLED, 'AI Request was already cancelled'));
-                }
-
-                // Create timeout promise
-                const timeoutPromise = new Promise<never>((_, reject) => {
-                    timeoutId = setTimeout(() => {
-                        cleanup();
-                        reject(new AppException(AppErrorCode.TIMEOUT, `AI Request timed out after ${timeoutMs}ms`));
-                    }, timeoutMs);
-                });
-
-                // Create abort promise if signal provided
-                const abortPromise = signal ? new Promise<never>((_, reject) => {
-                    abortHandler = () => {
-                        cleanup();
-                        reject(new AppException(AppErrorCode.CANCELLED, 'AI Request cancelled by user'));
-                    };
-                    signal.addEventListener('abort', abortHandler);
-                }) : null;
-
-                // Race the generation against timeout and abort
-                const racers: Promise<WrappedResponse | never>[] = [generateOp(), timeoutPromise];
-                if (abortPromise) racers.push(abortPromise);
-
-                try {
-                    const result = await Promise.race(racers);
-                    cleanup();
-                    return result;
-                } catch (err: any) {
-                    cleanup();
-                    // Handle abort-related errors from Firebase SDK
-                    if (err?.message?.includes('aborted') || err?.name === 'AbortError') {
-                        throw new AppException(AppErrorCode.CANCELLED, 'AI Request was cancelled');
-                    }
-                    throw err;
-                }
-            });
+        // Map back to legacy WrappedResponse
+        return {
+            response: result.response as unknown as GenerateContentResponse,
+            text: () => result.response.text(),
+            functionCalls: () => {
+                const parts = result.response.candidates?.[0]?.content?.parts || [];
+                return parts
+                    .filter(p => 'functionCall' in p)
+                    .map(p => (p as any).functionCall);
+            },
+            usage: () => result.response.usageMetadata
         };
-
-        const requestPromise = executeRequest();
-
-        if (options.cache !== false && cacheKey) {
-            this.activeRequests.set(cacheKey, requestPromise);
-            // Cleanup pending request after completion (success or error)
-            requestPromise.finally(() => {
-                if (this.activeRequests.get(cacheKey) === requestPromise) {
-                    this.activeRequests.delete(cacheKey);
-                }
-            }).catch(() => {
-                // Ignore errors in the cleanup chain as they are handled by the caller
-            });
-        }
-
-        return requestPromise;
     }
 
-
-    /**
-     * Retry logic with exponential backoff for transient errors
-     */
-    private async withRetry<T>(
-        operation: () => Promise<T>,
-        retries = 3,
-        delay = 1000
-    ): Promise<T> {
-        try {
-            return await operation();
-        } catch (error) {
-            const err = error as RetryableError;
-            const errorMessage = err.message ?? '';
-
-            const isRetryable =
-                err.code === 'resource-exhausted' ||
-                err.code === 'unavailable' ||
-                errorMessage.includes('QUOTA_EXCEEDED') ||
-                errorMessage.includes('503') ||
-                errorMessage.includes('429') ||
-                // Abort errors from Firebase SDK are often transient and retryable
-                errorMessage.includes('aborted') ||
-                errorMessage.includes('signal is aborted');
-
-            if (retries > 0 && isRetryable) {
-                console.warn(`[AIService] Operation failed, retrying in ${delay}ms... (${retries} attempts left)`);
-                await asyncDelay(delay);
-                return this.withRetry(operation, retries - 1, delay * 2);
-            }
-            throw error;
-        }
-    }
-
-    /**
-     * Generate content with streaming response
-     */
+    /** @deprecated Use GenAI.generateContentStream */
     async generateContentStream(options: GenerateContentOptions): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
-        try {
-            await this.rateLimiter.acquire();
+        const result = await GenAI.generateContentStream(
+            options.contents as Content[],
+            options.model,
+            options.config,
+            options.systemInstruction,
+            options.tools as any,
+            options
+        );
 
-            const contents = Array.isArray(options.contents) ? [...options.contents] : (options.contents ? [options.contents] : []);
-            const tools = options.tools ?? [];
-
-            // Inject thoughtSignature if present
-            if (options.thoughtSignature && contents.length > 0) {
-                const lastContent = contents[contents.length - 1];
-                if (lastContent.parts.length > 0) {
-                    const lastPart = lastContent.parts[lastContent.parts.length - 1];
-                    if ('text' in lastPart || 'inlineData' in lastPart || 'functionCall' in lastPart || 'functionResponse' in lastPart) {
-                        (lastPart as TextPart | InlineDataPart | FunctionCallPart | FunctionResponsePart).thoughtSignature = options.thoughtSignature;
-                    }
-                }
-            }
-
-            return await firebaseAI.generateContentStream(
-                contents as Content[],
-                options.model,
-                options.config,
-                options.systemInstruction,
-                tools as unknown as Tool[],
-                {
-                    signal: options.signal,
-                    safetySettings: options.safetySettings,
-                    toolConfig: options.toolConfig
-                }
-            );
-        } catch (error: any) {
-            // Handle abort errors gracefully
-            if (error?.message?.includes('aborted') || error?.name === 'AbortError') {
-                throw new AppException(AppErrorCode.CANCELLED, 'Streaming request was cancelled');
-            }
-            logger.error('[AIService] Stream Response Error:', error);
-            throw AppException.fromError(error, AppErrorCode.NETWORK_ERROR);
-        }
+        return result;
     }
 
-    /**
-     * Generate video using Vertex AI backend (via unified FirebaseAIService)
-     */
+    /** @deprecated Use GenAI.generateVideo */
     async generateVideo(options: GenerateVideoOptions): Promise<string> {
-        try {
-            return await this.withRetry(() => firebaseAI.generateVideo(options));
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            logger.error('[AIService] Video Gen Error:', err.message);
-            throw err;
-        }
+        return GenAI.generateVideo(options);
     }
 
-    /**
-     * Generate image using backend function
-     */
+    /** @deprecated Use GenAI.generateImage */
     async generateImage(options: GenerateImageOptions): Promise<string> {
-        try {
-            return await this.withRetry(() => firebaseAI.generateImage(
-                options.prompt,
-                options.model,
-                options.config as Record<string, unknown>
-            ));
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            logger.error('[AIService] Image Gen Error:', err.message);
-            throw err;
-        }
+        return GenAI.generateImage(options);
     }
 
-    /**
-     * MULTIMODAL: Analyze an image (base64 or URL).
-     * Now unified to use FirebaseAIService for consistency.
-     */
-    async analyzeImage(
-        prompt: string,
-        imageBase64: string,
-        mimeType: string = 'image/jpeg'
-    ): Promise<string> {
-        return this.withRetry(() => firebaseAI.analyzeImage(prompt, imageBase64, mimeType));
+    /** @deprecated Use GenAI.analyzeImage */
+    async analyzeImage(prompt: string, imageBase64: string, mimeType: string = 'image/jpeg'): Promise<string> {
+        return GenAI.analyzeImage(prompt, imageBase64, mimeType);
     }
 
-    /**
-     * Generate speech from text using TTS
-     */
+    /** @deprecated Use GenAI.generateSpeech */
     async generateSpeech(text: string, voice?: string, modelOverride?: string): Promise<GenerateSpeechResponse> {
-        try {
-            return await this.withRetry(() => firebaseAI.generateSpeech(text, voice, modelOverride));
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            logger.error('[AIService] Speech Gen Error:', err.message);
-            throw err;
-        }
+        return GenAI.generateSpeech(text, voice, modelOverride);
     }
 
-    /**
-     * Generate embeddings for content
-     */
+    /** @deprecated Use GenAI.embedContent */
     async embedContent(options: EmbedContentOptions): Promise<{ values: number[] }> {
-        try {
-            return await this.withRetry(() => firebaseAI.embedContent({
-                model: options.model,
-                content: options.content
-            }));
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                `Embed Content Failed: ${err.message}`
-            );
-        }
+        return GenAI.embedContent(options);
     }
 
-    /**
-     * BATCHING: Embed multiple documents in parallel
-     */
+    /** @deprecated Use GenAI.batchEmbedContents */
     async batchEmbedContents(contents: Content[], model?: string): Promise<number[][]> {
-        try {
-            return await this.withRetry(() => firebaseAI.batchEmbedContents(contents, model));
-        } catch (error) {
-            const err = AppException.fromError(error, AppErrorCode.INTERNAL_ERROR);
-            throw new AppException(
-                AppErrorCode.INTERNAL_ERROR,
-                `Batch Embed Content Failed: ${err.message}`
-            );
-        }
+        return GenAI.batchEmbedContents(contents, model);
     }
 
-    /**
-     * Parse JSON from AI response, handling markdown code blocks
-     */
+    /** @deprecated Use GenAI.parseJSON */
     parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
-        if (!text) return {};
-        try {
-            return JSON.parse(cleanJSON(text)) as T;
-        } catch {
-            logger.error('[AIService] Failed to parse JSON:', text);
-            return {};
-        }
+        return GenAI.parseJSON<T>(text);
     }
 }
 

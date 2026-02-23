@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { audioService } from '@/services/audio/AudioService';
 
 export class VoiceService {
@@ -67,7 +67,7 @@ export class VoiceService {
         audioService.stop();
 
         try {
-            const response = await AI.generateSpeech(text, voiceName || 'Kore');
+            const response = await GenAI.generateSpeech(text, voiceName || 'Kore');
             await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
         } catch {
             this.fallbackSpeak(text);

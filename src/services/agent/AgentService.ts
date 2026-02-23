@@ -11,7 +11,7 @@ import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
 import { agentZeroService } from './AgentZeroService';
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 /**
@@ -447,7 +447,7 @@ If the user asks you to do something that requires tools (like generating images
         ];
 
         try {
-            const { stream } = await firebaseAI.generateContentStream(
+            const { stream } = await GenAI.generateContentStream(
                 contents,
                 AI_MODELS.TEXT.FAST,
                 undefined,

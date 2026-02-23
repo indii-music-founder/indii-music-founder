@@ -1,6 +1,6 @@
 import { HybridOrchestrator } from '../HybridOrchestrator';
 import { AgentContext } from '../../types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { TraceService } from '../../observability/TraceService';
 
 vi.mock('@/services/firebase', () => ({
@@ -10,8 +10,8 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     storage: {}
 }));
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn()
     }
 }));
@@ -47,31 +47,35 @@ describe('HybridOrchestrator Integration', () => {
     it('should handle multi-turn reasoning to completion', async () => {
         const mockResponses = [
             {
-                text: () => JSON.stringify({
-                    thought: "I need to check the copyright office for this artist.",
-                    useTool: "browser_control",
-                    args: { url: "https://publicrecords.copyright.gov/" },
-                    answer: "Searching the Copyright Office...",
-                    complete: false
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        thought: "I need to check the copyright office for this artist.",
+                        useTool: "browser_control",
+                        args: { url: "https://publicrecords.copyright.gov/" },
+                        answer: "Searching the Copyright Office...",
+                        complete: false
+                    })
+                }
             },
             {
-                text: () => JSON.stringify({
-                    thought: "Search complete. No existing registrations found.",
-                    answer: "I've checked the records. You are clear to proceed with registration.",
-                    complete: true
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        thought: "Search complete. No existing registrations found.",
+                        answer: "I've checked the records. You are clear to proceed with registration.",
+                        complete: true
+                    })
+                }
             }
         ];
 
-        (AI.generateContent as any)
+        (GenAI.generateContent as any)
             .mockResolvedValueOnce(mockResponses[0])
             .mockResolvedValueOnce(mockResponses[1]);
 
         const result = await orchestrator.execute(mockContext, "Check copyright for my new song 'Detroit Ghost'");
 
         expect(result).toContain("clear to proceed");
-        expect(AI.generateContent).toHaveBeenCalledTimes(2);
+        expect(GenAI.generateContent).toHaveBeenCalledTimes(2);
     });
 
     it('should prune excessively long tool results', async () => {
@@ -86,32 +90,36 @@ describe('HybridOrchestrator Integration', () => {
 
         const mockResponses = [
             {
-                text: () => JSON.stringify({
-                    thought: "Checking long data...",
-                    useTool: "browser_control",
-                    args: { url: "https://example.com" },
-                    answer: "Searching...",
-                    complete: false
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        thought: "Checking long data...",
+                        useTool: "browser_control",
+                        args: { url: "https://example.com" },
+                        answer: "Searching...",
+                        complete: false
+                    })
+                }
             },
             {
-                text: () => JSON.stringify({
-                    thought: "Done.",
-                    answer: "Completed with long data check.",
-                    complete: true
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        thought: "Done.",
+                        answer: "Completed with long data check.",
+                        complete: true
+                    })
+                }
             }
         ];
 
-        (AI.generateContent as any)
+        (GenAI.generateContent as any)
             .mockResolvedValueOnce(mockResponses[0])
             .mockResolvedValueOnce(mockResponses[1]);
 
         await orchestrator.execute(mockContext, "Run with long data");
 
-        expect(AI.generateContent).toHaveBeenCalledTimes(2);
+        expect(GenAI.generateContent).toHaveBeenCalledTimes(2);
         // Verify the second call's prompt contains the truncation marker
-        const secondCallPrompt = (AI.generateContent as any).mock.calls[1][0].contents.parts[0].text;
+        const secondCallPrompt = (GenAI.generateContent as any).mock.calls[1][0][0].text;
         expect(secondCallPrompt).toContain('Result truncated');
     });
 });

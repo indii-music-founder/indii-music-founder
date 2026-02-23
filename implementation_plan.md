@@ -1,53 +1,85 @@
-# Implementation Plan - Video Keyframe Architect & UX Polish
+# Sprint 3 — Architectural Hardening & UX Implementation Plan
 
-## 1. UX Improvement: Explicit Analysis State
+## User Review Required
 
-- **Goal**: Clarify to the user *exactly* what the AI is doing (`Analyzing Scene` -> `Predicting Climax` -> `Synthesizing Image`).
-- **Files**: `src/modules/creative/components/CreativeCanvas.tsx`
-- **Change**: [DONE]
+> [!IMPORTANT]
+> This sprint involves merging `AIService` into `FirebaseAIService` and introducing a unified `GenAI` facade. Existing `import { AI }` will still work via an alias, but new code should transition to `GenAI`.
 
-## 2. API Hardening: Fix Vision Analysis (400 Error)
+---
 
-- **Goal**: Resolve the `Invalid Argument` error in `ImageGenerationService.captionImage`.
-- **Files**: `src/services/image/ImageGenerationService.ts`
-- **Fix**: [DONE]
+## Proposed Changes
 
-## 3. Dual-View Pipeline (Gemini 3 Image Editing)
+### 1 — AI Service Consolidation
 
-- **Goal**: Implement high-fidelity and high-speed image editing workflows.
-- **Workflow A (Pro)**: Multimodal reasoning with Binary Mask + Source Image using `gemini-3-pro-image-preview`.
-- **Workflow B (Flash)**: Fast inpainting with Binary Mask + Source Image using `gemini-2.5-flash-image`.
-- **Ghost Export**: Fabric.js utility to extract pure black/white masks without UI flickering.
-- **File API**: Automatic fallback to Gemini File API for images >15MB to bypass payload limits.
+Unify redundant AI services into a single high-performance engine.
 
-## 4. Verification
+#### [MODIFY] [FirebaseAIService.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/ai/FirebaseAIService.ts)
 
-- **Manual**: Run `npm run typecheck` and `npm run build:studio`.
-- [x] Browser: Verify Magic Fill with "High Fidelity" toggle ON and OFF.
+- absorb `RateLimiter` logic from `AIService`.
+- absorb `AIResponseCache` integration.
+- Standardize on `rawGenerateContent` as the core primitive.
+- Ensure all legacy `AIService` methods have equivalent or better implementations here.
 
-## 5. AI Verification & Persistence Hardening
+#### [NEW] [GenAI.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/ai/GenAI.ts)
 
-- **Goal**: Ensure production reliability for AI services and Metadata saving.
-- **Problem**: `AI Verification Failed` due to missing `VITE_FIREBASE_API_KEY` in prod env & `react-hot-toast` circular deps.
-- **Solution (AI)**:
-  - [x] Implement Fallback Mode in `FirebaseAIService.ts`.
-  - [x] Add env var fallback (`VITE_API_KEY`) in `env.ts`.
-  - [x] Improve error messaging for Fallback failures.
-- **Solution (Persistence)**:
-  - [x] Create `MetadataPersistenceService` (Lazy singleton).
-  - [x] Use `EventBus` ('SYSTEM_ALERT') for UI feedback.
-  - [x] Add Offline Queue support (indexedDB).
-40:
-41: ## 6. Image Upload Stability & Tracing Resolution
-42:
-43: - **Goal**: Resolve background hangs during image compression and prevent "Permission Denied" errors during trace persistence.
-44: - **Fix (Compression)**:
-45:   - [x] Add 30s timeout safety to `CloudStorageService.compressImage`.
-46:   - [x] Enforce `crossOrigin = 'anonymous'` for all image loads to prevent tainted canvas SecurityErrors.
-47: - **Fix (Persistence)**:
-48:   - [x] Re-enable `smartSave` in `ImageGenerationService` with robust try/catch fallback.
-49:   - [x] Fallback to local high-compression if Cloud Storage fails (avoids 1MB Firestore limit).
-50: - **Fix (Tracing)**:
-51:   - [x] Resolve UID asynchronously from `useStore` in `AgentExecutor` if `auth.currentUser` is null.
-52: - **Infra**:
-53:   - [x] Applied CORS policy to `gs://indiios-alpha-electron/` bucket.
+- Export `GenAI` as the canonical instance of `FirebaseAIService`.
+- Provide a unified interface for text, image captioning, and structured data.
+
+#### [MODIFY] [AIService.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/ai/AIService.ts)
+
+- Mark class as `@deprecated`.
+- Refactor to be a thin wrapper around `GenAI`.
+- Maintain public API for backward compatibility.
+
+---
+
+### 2 — Sidecar Health Monitor (Electron)
+
+#### [NEW] [sidecarSlice.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/store/slices/sidecarSlice.ts)
+
+- State for `status: 'online' | 'offline' | 'checking'`.
+- Actions for `setStatus` and `triggerRestart`.
+
+#### [NEW] [SidecarStatus.tsx](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/SidecarStatus.tsx)
+
+- Visual badge (Online: Green, Offline: Red).
+- "Restart Sidecar" button that triggers IPC.
+
+#### [MODIFY] [main.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/electron/main.ts)
+
+- Add 30s interval `fetch('http://localhost:50080/health')`.
+- Notify renderer via IPC on status change.
+- Add `sidecar:restart` IPC handler to spawn/check Docker.
+
+---
+
+### 3 — Offline Persistence Queue UX
+
+#### [NEW] [syncSlice.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/store/slices/syncSlice.ts)
+
+- Track `pendingCount` and `lastSyncError`.
+
+#### [NEW] [SyncStatus.tsx](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/core/components/SyncStatus.tsx)
+
+- Render in footer bar.
+- Show "Synced", "Syncing (N)", or "Sync Error".
+
+#### [MODIFY] [MetadataPersistenceService.ts](file:///Volumes/X%20SSD%202025/Users/narrowchannel/Desktop/indiiOS-Alpha-Electron/src/services/persistence/MetadataPersistenceService.ts)
+
+- Emit events to `EventBus` when queue changes.
+- Sync these events to `syncSlice`.
+
+---
+
+## Verification Plan
+
+### Automated Tests
+
+- `npm test src/services/ai/FirebaseAIService.test.ts`
+- `npm run test:e2e e2e/sidecar-health.spec.ts` (Mocked IPC)
+
+### Manual Verification
+
+- Stop Docker container → Verify Red badge in sidebar.
+- Start Docker → Verify badge turns Green.
+- Go offline → Simulate persistence failure → Verify sync counter increases.

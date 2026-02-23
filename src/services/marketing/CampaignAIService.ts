@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 // useStore removed
 import {
@@ -96,7 +96,7 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         };
 
         try {
-            const result = await AI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<GeneratedCampaignPlan>(prompt, schema as any);
 
             // Validate and clean up the result
             return {
@@ -212,7 +212,7 @@ Ensure all versions respect the platform's character limit.
         };
 
         try {
-            const result = await AI.generateStructuredData<PostEnhancement>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<PostEnhancement>(prompt, schema as any);
 
             return {
                 enhancedCopy: result.enhancedCopy || post.copy,
@@ -270,10 +270,7 @@ Ensure all versions respect the platform's character limit.
                     ? await this.enhanceImagePrompt(post.imageAsset.caption)
                     : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-                const base64 = await AI.generateImage({
-                    model: AI_MODELS.IMAGE.GENERATION,
-                    prompt: imagePrompt
-                });
+                const base64 = await GenAI.generateImage(imagePrompt, AI_MODELS.IMAGE.GENERATION);
 
                 updatedPosts.set(post.id, {
                     ...post,
@@ -315,10 +312,7 @@ Ensure all versions respect the platform's character limit.
                 ? await this.enhanceImagePrompt(post.imageAsset.caption)
                 : await this.generateImagePromptFromCopy(post.copy, post.platform);
 
-            const base64 = await AI.generateImage({
-                model: AI_MODELS.IMAGE.GENERATION,
-                prompt: imagePrompt
-            });
+            const base64 = await GenAI.generateImage(imagePrompt, AI_MODELS.IMAGE.GENERATION);
 
             return `data:image/png;base64,${base64}`;
         } catch (error) {
@@ -349,7 +343,7 @@ Return ONLY the image prompt, no explanation or formatting.
 `;
 
         try {
-            return await AI.generateText(prompt);
+            return await GenAI.generateText(prompt);
         } catch (error) {
             return `Modern, visually striking social media graphic for ${platform}`;
         }
@@ -480,7 +474,7 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
         };
 
         try {
-            const result = await AI.generateStructuredData<EngagementPrediction>(prompt, schema as any);
+            const result = await GenAI.generateStructuredData<EngagementPrediction>(prompt, schema as any);
 
             return {
                 overallScore: result.overallScore || 50,

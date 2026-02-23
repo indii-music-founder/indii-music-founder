@@ -1,5 +1,5 @@
 
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { JSONSchemaObject } from '@/services/agent/instruments/InstrumentTypes';
 
@@ -66,7 +66,7 @@ export class LicenseScannerService {
                 required: ['licenseType', 'requiresAttribution', 'canMonetize', 'termsSummary']
             } satisfies JSONSchemaObject;
 
-            const analysis = await AI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
+            const analysis = await GenAI.generateStructuredData<LicenseAnalysis>(prompt, schema as any);
             return analysis;
 
         } catch (error) {

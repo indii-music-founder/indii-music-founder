@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { logger } from '@/utils/logger';
 import { AppException, AppErrorCode } from '@/shared/types/errors';
@@ -69,19 +69,19 @@ export class SonicCortexService {
             });
 
             const contentPromise = (async () => {
-                const response = await AI.generateContent({
-                    contents: [{ role: 'user', parts: [audioPart, { text: prompt }] }],
-                    model: AI_MODELS.TEXT.AGENT, // Ensure this maps to Gemini 3 Pro
-                    systemInstruction,
-                    config: {
+                const response = await GenAI.generateContent(
+                    [{ role: 'user', parts: [audioPart, { text: prompt }] }],
+                    AI_MODELS.TEXT.AGENT,
+                    {
                         responseMimeType: 'application/json'
-                    } as any
-                });
+                    },
+                    systemInstruction
+                );
 
-                const text = response.text();
+                const text = response.response.text();
                 if (!text) throw new Error('Empty response from Sonic Cortex');
 
-                return AI.parseJSON<SonicDescription>(text) as SonicDescription;
+                return GenAI.parseJSON<SonicDescription>(text) as SonicDescription;
             })();
 
             return await Promise.race([contentPromise, timeoutPromise]) as SonicDescription;

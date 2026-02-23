@@ -222,10 +222,18 @@ function useAppInitialization() {
             proactiveService.start();
         });
 
+        // Initialize Asset Observer (Priority 34)
+        import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
+            assetObserver.initialize();
+        });
+
         return () => {
             unsubscribe();
             import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
                 proactiveService.dispose();
+            });
+            import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
+                assetObserver.stop();
             });
         };
     }, [initializeAuthListener]);
