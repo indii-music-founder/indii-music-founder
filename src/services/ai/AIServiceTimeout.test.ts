@@ -90,6 +90,6 @@ describe('AIService Timeout & Cancellation', () => {
         });
 
         const result = await requestPromise;
-        expect(result.text()).toBe('Response');
+        expect(result.response.text()).toBe('Response');
     });
 });
