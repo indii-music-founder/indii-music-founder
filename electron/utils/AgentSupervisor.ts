@@ -43,7 +43,7 @@ export class AgentSupervisor {
 
             try {
                 // Execute with timeout wrapper
-                let result = await this.executeWithTimeout<T>(
+                const result = await this.executeWithTimeout<T>(
                     category,
                     scriptName,
                     args,
@@ -74,6 +74,20 @@ export class AgentSupervisor {
         }
 
         throw new Error(`[AgentSupervisor] Script ${scriptName} failed after ${maxRetries + 1} attempts. Last error: ${lastError?.message}`);
+    }
+
+    /**
+     * Drop-in replacement for PythonBridge.runScript with supervisor benefits.
+     */
+    static async runScript<T>(
+        category: string,
+        scriptName: string,
+        args: string[] = [],
+        onProgress?: (progress: number, log?: string) => void,
+        env: NodeJS.ProcessEnv = {},
+        sensitiveArgsIndices: number[] = []
+    ): Promise<T> {
+        return this.execute(category, scriptName, args, {}, onProgress, env, sensitiveArgsIndices);
     }
 
     private static executeWithTimeout<T>(

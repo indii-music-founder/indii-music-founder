@@ -54,6 +54,8 @@ const storeState = vi.hoisted(() => ({
   setCommandBarAttachments: vi.fn(),
   activeAgentProvider: undefined,
   setActiveAgentProvider: vi.fn(),
+  isRightPanelOpen: false,
+  toggleRightPanel: vi.fn(),
   isKnowledgeBaseEnabled: false,
   setKnowledgeBaseEnabled: vi.fn(),
 }));

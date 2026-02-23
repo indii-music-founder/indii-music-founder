@@ -56,6 +56,8 @@ describe('PromptArea Error Resilience', () => {
       setModule: (mod: any) => set({ currentModule: mod }),
       toggleAgentWindow: vi.fn(),
       isAgentOpen: true,
+      isRightPanelOpen: true,
+      toggleRightPanel: vi.fn(),
       chatChannel: 'indii', // dashboard defaults to indii
       setChatChannel: (channel: any) => set({ chatChannel: channel }),
       isCommandBarDetached: false,

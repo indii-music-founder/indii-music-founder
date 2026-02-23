@@ -54,65 +54,41 @@ export class AudioFidelityFeature {
 
     const { filePath, targetStandard, pythonPath } = validation.data;
 
-    // 2. Dynamic import Node modules (Electron-only, avoids Vite bundling)
-    const { spawn } = await import('child_process');
+    // 2. Path resolution
     const path = await import('path');
-    const scriptPath = path.resolve(process.cwd(), 'execution/audio/audio_fidelity_audit.py');
+    // NOTE: In a hybrid app, we import from the electron utils if in Node context
+    // This assumes the feature is executing in the main process as per its design note.
+    const { AgentSupervisor } = await import('../../../electron/utils/AgentSupervisor');
 
-    // 3. Execution
-    return new Promise((resolve) => {
-      const child = spawn(pythonPath, [scriptPath, filePath, targetStandard]);
+    const scriptName = 'audio_fidelity_audit.py';
 
-      let stdout = '';
-      let stderr = '';
+    // 3. Execution via AgentSupervisor
+    try {
+      const result = await AgentSupervisor.runScript<any>(
+        'audio',
+        scriptName,
+        [filePath, targetStandard],
+        undefined, // onProgress
+        { PYTHON_PATH: pythonPath } as any // env
+      );
 
-      child.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-
-      child.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-
-      child.on('error', (err) => {
-        resolve({
+      if (result.error) {
+        return {
           success: false,
-          error: `Process Execution Error: ${err.message}`
-        });
-      });
+          error: result.error
+        };
+      }
 
-      child.on('close', (code) => {
-        if (code !== 0) {
-          resolve({
-            success: false,
-            error: `Script failed with code ${code}. Stderr: ${stderr.trim()}`
-          });
-          return;
-        }
-
-        try {
-          // The script prints JSON to stdout
-          const result = JSON.parse(stdout.trim());
-
-          if (result.error) {
-            resolve({
-              success: false,
-              error: result.error
-            });
-          } else {
-            resolve({
-              success: true,
-              data: result
-            });
-          }
-        } catch (e) {
-          const err = e as Error;
-          resolve({
-            success: false,
-            error: `Failed to parse script output: ${err.message}. Raw output: ${stdout}`
-          });
-        }
-      });
-    });
+      return {
+        success: true,
+        data: result
+      };
+    } catch (e) {
+      const err = e as Error;
+      return {
+        success: false,
+        error: `Audio Fidelity Audit failed: ${err.message}`
+      };
+    }
   }
 }
