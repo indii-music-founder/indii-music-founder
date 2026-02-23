@@ -4,6 +4,7 @@ import { useStore } from '@/core/store';
 import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
+import { StorageService } from '@/services/StorageService';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -47,27 +48,40 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
     };
 
     const processFiles = async (files: File[]) => {
-        for (const file of files) {
-            const reader = new FileReader();
-            reader.onload = () => {
-                const base64Url = reader.result as string;
-                const newAsset = { url: base64Url, description: file.name };
-                updateBrandKit({
-                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), newAsset]
-                });
-                addUploadedImage({
-                    id: crypto.randomUUID(),
+        setIsGenerating(true);
+        try {
+            const newAssets = [];
+            const newUploadedImages = [];
+            const timestamp = Date.now();
+
+            for (const file of files) {
+                const assetId = crypto.randomUUID();
+                const path = `users/${userProfile?.id || 'guest'}/brand_assets/${assetId}`;
+                const downloadUrl = await StorageService.uploadFile(file, path);
+
+                newAssets.push({ url: downloadUrl, description: file.name });
+                newUploadedImages.push({
+                    id: assetId,
                     type: 'image',
-                    url: base64Url,
+                    url: downloadUrl,
                     prompt: file.name,
-                    timestamp: Date.now(),
+                    timestamp,
                     projectId: currentProjectId
                 });
-            };
-            reader.readAsDataURL(file);
-        }
-        if (files.length > 0) {
-            toast.success(`${files.length} asset(s) uploaded`);
+            }
+
+            if (newAssets.length > 0) {
+                updateBrandKit({
+                    brandAssets: [...(userProfile?.brandKit?.brandAssets || []), ...newAssets]
+                });
+                newUploadedImages.forEach(img => addUploadedImage(img));
+                toast.success(`${files.length} asset(s) uploaded`);
+            }
+        } catch (error) {
+            console.error("Upload failed layout:", error);
+            toast.error("Failed to upload assets");
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -106,8 +120,16 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
             if (part && part.inlineData) {
                 const base64Url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
 
+                // Convert Base64 string to Blob
+                const res = await fetch(base64Url);
+                const blob = await res.blob();
+
+                const assetId = crypto.randomUUID();
+                const path = `users/${userProfile?.id || 'guest'}/brand_assets/${assetId}`;
+                const downloadUrl = await StorageService.uploadFile(blob, path);
+
                 const newAsset = {
-                    url: base64Url,
+                    url: downloadUrl,
                     description: prompt
                 };
 
@@ -116,9 +138,9 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 });
 
                 addUploadedImage({
-                    id: crypto.randomUUID(),
+                    id: assetId,
                     type: 'image',
-                    url: base64Url,
+                    url: downloadUrl,
                     prompt: prompt,
                     timestamp: Date.now(),
                     projectId: currentProjectId

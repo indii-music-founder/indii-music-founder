@@ -8,19 +8,45 @@ import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import ConversationHistoryList from './ConversationHistoryList';
 
 export default function RightPanel() {
-    const { currentModule, setModule, isRightPanelOpen, toggleRightPanel } = useStore(
+    const { currentModule, setModule, isRightPanelOpen, toggleRightPanel, isAgentOpen, toggleAgentWindow } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isRightPanelOpen: state.isRightPanelOpen,
-            toggleRightPanel: state.toggleRightPanel
+            toggleRightPanel: state.toggleRightPanel,
+            isAgentOpen: state.isAgentOpen,
+            toggleAgentWindow: state.toggleAgentWindow
         }))
     );
 
     // Placeholder content based on module
     const renderContent = () => {
+        // High priority: if the agent is open, show the chat overlay inside the right panel
+        if (isAgentOpen) {
+            return (
+                <div className="flex flex-col h-full bg-bg-dark border-l border-white/10 relative">
+                    <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                            <h3 className="font-medium text-sm text-gray-200">Chat with indii</h3>
+                        </div>
+                        <button
+                            onClick={toggleAgentWindow}
+                            className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                        >
+                            <ChevronRight size={16} />
+                        </button>
+                    </div>
+                    <div className="flex-1 overflow-hidden relative">
+                        <ConversationHistoryList />
+                    </div>
+                </div>
+            );
+        }
+
         switch (currentModule) {
             case 'creative':
                 return <CreativePanel toggleRightPanel={toggleRightPanel} />;
