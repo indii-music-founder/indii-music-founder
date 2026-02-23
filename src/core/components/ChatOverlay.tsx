@@ -289,10 +289,10 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
 
                                     {/* Action Buttons */}
                                     <div className="flex items-center gap-1 relative z-10">
-                                        <button onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title={isCommandBarDetached ? "Dock Input" : "Detach Input"}><Maximize2 size={18} /></button>
-                                        <button onClick={toggleLocalMinimize} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" aria-label="Minimize chat"><Minimize2 size={18} /></button>
-                                        <button onClick={toggleStealth} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title="Stealth Mode"><Bot size={18} className="opacity-50" /></button>
-                                        <button onClick={onClose} className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400" aria-label="Close Agent"><X size={18} /></button>
+                                        <button data-testid="detach-input-btn" onClick={() => setCommandBarDetached(!isCommandBarDetached)} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title={isCommandBarDetached ? "Dock Input" : "Detach Input"}><Maximize2 size={18} /></button>
+                                        <button data-testid="minimize-chat-btn" onClick={toggleLocalMinimize} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" aria-label="Minimize chat"><Minimize2 size={18} /></button>
+                                        <button data-testid="stealth-mode-btn" onClick={toggleStealth} className="p-2.5 hover:bg-white/10 rounded-xl transition-all duration-200 text-gray-400 hover:text-white" title="Stealth Mode"><Bot size={18} className="opacity-50" /></button>
+                                        <button data-testid="close-chat-btn" onClick={onClose} className="p-2.5 hover:bg-red-500/20 hover:text-red-400 rounded-xl transition-all duration-200 text-gray-400" aria-label="Close Agent"><X size={18} /></button>
                                     </div>
                                 </div>
 

@@ -292,7 +292,10 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         };
     }),
 
-    toggleAgentWindow: () => set((state) => ({ isAgentOpen: !state.isAgentOpen })),
+    toggleAgentWindow: () => set((state: any) => ({
+        isAgentOpen: !state.isAgentOpen,
+        isRightPanelOpen: !state.isAgentOpen // Open RightPanel when agent opens, close when it closes
+    })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
     setCommandBarInput: (input) => set({ commandBarInput: input }),
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
