@@ -4,9 +4,14 @@ import { useStore } from '@/core/store';
 import { motion } from 'motion/react';
 import { Bot, Cpu, Clock, Sparkles } from 'lucide-react';
 
-/* ── Reuse the same chat primitives as ChatOverlay ────────────────── */
+/* ── Chat primitives (same ones ChatOverlay uses) ─────────────────── */
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
+
+/* ── Side-panel widgets ───────────────────────────────────────────── */
+import AssetSpotlight from './AssetSpotlight';
+import RecentProjects from './RecentProjects';
+import ActivityFeed from './ActivityFeed';
 
 // ─── Stable session start ────────────────────────────────────────────
 const SESSION_START = Date.now();
@@ -29,7 +34,7 @@ function useUptime(startMs: number) {
 }
 
 /* ================================================================== */
-/*  AgentWorkspace — Flat chat interface (HQ page)                     */
+/*  AgentWorkspace — HQ: center chat + side widget panels              */
 /* ================================================================== */
 export default function AgentWorkspace() {
     const {
@@ -47,76 +52,89 @@ export default function AgentWorkspace() {
     const uptime = useUptime(SESSION_START);
     const chatEndRef = useRef<HTMLDivElement>(null);
 
-    /* ── auto-scroll on new messages ──────────────────────────────── */
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [agentHistory.length]);
 
     return (
-        <div className="h-full flex flex-col max-w-4xl mx-auto">
-            {/* Header bar */}
-            <div className="flex items-center justify-between px-4 py-3 flex-shrink-0">
-                <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                        <Bot size={16} className="text-white" />
+        <div className="h-full flex">
+            {/* ── LEFT PANEL — Projects & Activity ─────────────────── */}
+            <aside className="hidden xl:flex w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <RecentProjects />
+                <ActivityFeed />
+            </aside>
+
+            {/* ── CENTER — Flat chat ──────────────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <div className="flex items-center justify-between px-4 py-3 border-b border-white/5 flex-shrink-0">
+                    <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                            <Bot size={16} className="text-white" />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-bold text-white leading-none">indii</h2>
+                            <p className="text-[10px] text-gray-500 mt-0.5">
+                                {isAgentProcessing ? 'Thinking…' : 'Ready to help'}
+                            </p>
+                        </div>
                     </div>
-                    <div>
-                        <h2 className="text-sm font-bold text-white leading-none">indii</h2>
-                        <p className="text-[10px] text-gray-500 mt-0.5">
-                            {isAgentProcessing ? 'Thinking…' : 'Ready to help'}
-                        </p>
+                    <div className="flex gap-2">
+                        <StatusPill icon={<Cpu size={10} />} label="Active" dot="bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
+                        <StatusPill icon={<Clock size={10} />} label={uptime} dot="bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.5)]" />
                     </div>
                 </div>
-                <div className="flex gap-2">
-                    <StatusPill icon={<Cpu size={10} />} label="Active" dot="bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.6)]" />
-                    <StatusPill icon={<Clock size={10} />} label={uptime} dot="bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.5)]" />
+
+                {/* Messages */}
+                <div className="flex-1 overflow-y-auto px-4 py-4">
+                    {agentHistory.length === 0 ? (
+                        <EmptyState />
+                    ) : (
+                        <div className="max-w-3xl mx-auto space-y-1">
+                            {agentHistory.map((msg) => (
+                                <MessageItem
+                                    key={msg.id}
+                                    msg={msg}
+                                    avatarUrl={msg.role === 'user' ? (userProfile?.photoURL ?? undefined) : undefined}
+                                />
+                            ))}
+                            {isAgentProcessing && (
+                                <div className="flex items-center gap-2 px-3 py-2 text-gray-500 text-xs">
+                                    <motion.div
+                                        animate={{ rotate: 360 }}
+                                        transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                                    >
+                                        <Sparkles size={14} className="text-purple-400" />
+                                    </motion.div>
+                                    indii is thinking…
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    <div ref={chatEndRef} />
+                </div>
+
+                {/* Prompt — pinned bottom */}
+                <div className="flex-shrink-0 border-t border-white/5 p-3">
+                    <PromptArea className="max-w-3xl mx-auto" />
                 </div>
             </div>
 
-            {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-4 py-4">
-                {agentHistory.length === 0 ? (
-                    <EmptyState />
-                ) : (
-                    <div className="space-y-1">
-                        {agentHistory.map((msg) => (
-                            <MessageItem
-                                key={msg.id}
-                                msg={msg}
-                                avatarUrl={msg.role === 'user' ? (userProfile?.photoURL ?? undefined) : undefined}
-                            />
-                        ))}
-                        {isAgentProcessing && (
-                            <div className="flex items-center gap-2 px-3 py-2 text-gray-500 text-xs">
-                                <motion.div
-                                    animate={{ rotate: 360 }}
-                                    transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
-                                >
-                                    <Sparkles size={14} className="text-purple-400" />
-                                </motion.div>
-                                indii is thinking…
-                            </div>
-                        )}
-                    </div>
-                )}
-                <div ref={chatEndRef} />
-            </div>
-
-            {/* Prompt area — pinned to bottom */}
-            <div className="flex-shrink-0 border-t border-white/5 p-3">
-                <PromptArea className="max-w-3xl mx-auto" />
-            </div>
+            {/* ── RIGHT PANEL — Creations ─────────────────────────── */}
+            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <AssetSpotlight />
+            </aside>
         </div>
     );
 }
 
 /* ================================================================== */
-/*  EmptyState — shown when conversation hasn't started                */
+/*  EmptyState                                                          */
 /* ================================================================== */
 function EmptyState() {
     const suggestions = [
         { text: 'Generate album cover art', emoji: '🎨' },
-        { text: 'Write a press release for my single', emoji: '📝' },
+        { text: 'Write a press release', emoji: '📝' },
         { text: 'Help me plan a tour', emoji: '🗺️' },
         { text: 'Review my distribution strategy', emoji: '📊' },
     ];
