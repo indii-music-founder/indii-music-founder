@@ -1,22 +1,30 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CreativeCanvas from './CreativeCanvas';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 
+import { createMockStore } from '@/test/utils';
+
 // Mock dependencies
-const mockToast = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
-vi.mock('@/core/context/ToastContext', () => ({ useToast: () => mockToast }));
+const defaultStoreState = createMockStore({
+    updateHistoryItem: vi.fn(),
+    setActiveReferenceImage: vi.fn(),
+    uploadedImages: [],
+    addUploadedImage: vi.fn(),
+    currentProjectId: 'test-project',
+    generatedHistory: [],
+});
+
 vi.mock('@/core/store', () => ({
-    useStore: vi.fn(() => ({
-        updateHistoryItem: vi.fn(),
-        setActiveReferenceImage: vi.fn(),
-        uploadedImages: [],
-        addUploadedImage: vi.fn(),
-        currentProjectId: 'test-project',
-        generatedHistory: [],
-    }))
+    useStore: vi.fn((selector) => {
+        if (typeof selector === 'function') {
+            return selector(defaultStoreState);
+        }
+        return defaultStoreState;
+    })
 }));
+
 vi.mock('fabric', () => ({
     Canvas: vi.fn().mockImplementation(() => ({
         dispose: vi.fn(), add: vi.fn(), renderAll: vi.fn(),
