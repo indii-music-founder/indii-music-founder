@@ -57,9 +57,9 @@ export default function AgentWorkspace() {
     }, [agentHistory.length]);
 
     return (
-        <div className="h-full flex">
+        <div className="absolute inset-0 flex">
             {/* ── LEFT PANEL — Projects & Activity ─────────────────── */}
-            <aside className="hidden xl:flex w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
                 <RecentProjects />
                 <ActivityFeed />
             </aside>
