@@ -155,12 +155,13 @@ function LoadingFallback() {
  * while the app uses isAgentOpen from the store. This wrapper connects them.
  */
 function ChatOverlayWrapper() {
-    const { isAgentOpen, toggleAgentWindow, isRightPanelOpen, toggleRightPanel } = useStore(
+    const { isAgentOpen, toggleAgentWindow, isRightPanelOpen, toggleRightPanel, currentModule } = useStore(
         useShallow(state => ({
             isAgentOpen: state.isAgentOpen,
             toggleAgentWindow: state.toggleAgentWindow,
             isRightPanelOpen: state.isRightPanelOpen,
-            toggleRightPanel: state.toggleRightPanel
+            toggleRightPanel: state.toggleRightPanel,
+            currentModule: state.currentModule,
         }))
     );
     const [isMinimized, setIsMinimized] = useState(false);
@@ -172,7 +173,8 @@ function ChatOverlayWrapper() {
         }
     }, [isAgentOpen, isRightPanelOpen, toggleRightPanel]);
 
-    if (!isAgentOpen) return null;
+    // HQ page already has a flat chat interface — suppress the floating overlay there
+    if (!isAgentOpen || currentModule === 'agent') return null;
 
     return (
         <ChatOverlay
