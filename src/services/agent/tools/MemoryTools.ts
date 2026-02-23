@@ -53,7 +53,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
     }),
 
     verify_output: wrapTool('verify_output', async (args: { goal: string, content: string }) => {
-        const { AI } = await import('@/services/ai/AIService'); // Lazy load to avoid cycle
+        const { GenAI } = await import('@/services/ai/GenAI'); // Lazy load to avoid cycle
         const prompt = `
         Verify if the following content meets the goal:
         Goal: ${args.goal}
@@ -62,13 +62,13 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         Return JSON: { score: number (1-10), pass: boolean, reason: string }
         `;
 
-        const response = await AI.generateContent({
-            model: 'gemini-3-pro-preview',
-            contents: [{ parts: [{ text: prompt }] }],
-            config: { responseMimeType: 'application/json' }
-        });
+        const response = await GenAI.rawGenerateContent(
+            [{ role: 'user', parts: [{ text: prompt }] }],
+            'gemini-3-pro-preview',
+            { responseMimeType: 'application/json' }
+        ) as any;
 
-        const text = response.text();
+        const text = response.text?.() || response.response?.text?.() || '{}';
         const verification = JSON.parse(text);
 
         return {

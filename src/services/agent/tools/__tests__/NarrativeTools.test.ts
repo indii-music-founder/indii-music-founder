@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach, type Mock } from 'vitest';
 import { NarrativeTools } from '../NarrativeTools';
 import { DirectorTools } from '../DirectorTools';
 import { VideoTools } from '../VideoTools';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { useStore } from '@/core/store';
 
 // Mock dependencies
@@ -15,8 +15,8 @@ vi.mock('@/services/ai/FirebaseAIService', () => ({
     }
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateVideo: vi.fn()
     }

@@ -2,7 +2,7 @@ import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
 // import { TOOL_REGISTRY, BASE_TOOLS } from '../tools';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState } from '@/core/store/slices/creativeSlice';
@@ -416,9 +416,8 @@ CURRENT REQUEST: ${task}
                 // DEBUG: Log tool declarations being sent to model
                 const toolCount = this.tools?.[0]?.functionDeclarations?.length || 0;
 
-                const { stream, response: responsePromise } = await AI.generateContentStream({
-                    model: AI_MODELS.TEXT.AGENT,
-                    contents: [{
+                const { stream, response: responsePromise } = await AI.generateContentStream(
+                    [{
                         role: 'user',
                         parts: [
                             { text: iterations === 1 ? fullPrompt : `Continue. Previous output: ${accumulatedResponse.substring(0, 500)}` },
@@ -427,12 +426,14 @@ CURRENT REQUEST: ${task}
                             }))
                         ]
                     }],
-                    config: {
+                    AI_MODELS.TEXT.AGENT,
+                    {
                         ...AI_CONFIG.THINKING.HIGH
                     },
-                    tools: this.tools as any,
-                    signal
-                });
+                    undefined,
+                    this.tools as any,
+                    { signal }
+                );
 
                 // Consume stream for tokens
                 const streamIterator = {

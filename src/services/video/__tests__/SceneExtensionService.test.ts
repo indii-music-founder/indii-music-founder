@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { SceneExtensionService } from '../SceneExtensionService';
-import { AI } from '../../ai/AIService';
+import { GenAI as AI } from '../../ai/GenAI';
 import { MembershipService } from '../../MembershipService';
 
 // Mock dependencies
-vi.mock('../../ai/AIService', () => ({
-    AI: {
+vi.mock('../../ai/GenAI', () => ({
+    GenAI: {
         generateVideo: vi.fn(),
     },
 }));

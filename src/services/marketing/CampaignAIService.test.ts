@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { CampaignAI, CampaignAIService } from './CampaignAIService';
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { CampaignStatus, Platform } from '@/modules/marketing/types';
 
 // Mock AIService
-vi.mock('../ai/AIService', () => ({
-    AI: {
+vi.mock('../ai/GenAI', () => ({
+    GenAI: {
         generateStructuredData: vi.fn(),
         generateImage: vi.fn(),
         generateText: vi.fn()

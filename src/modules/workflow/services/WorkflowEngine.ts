@@ -1,6 +1,6 @@
 import { CustomNode, CustomEdge, NodeData, DepartmentNodeData, LogicNodeData, InputNodeData, OutputNodeData, Status, SavedWorkflow } from '../types';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -138,7 +138,7 @@ export class WorkflowEngine {
                 const mimeType = header.split(':')[1].split(';')[0];
 
                 contents = [{
-                    role: 'user',
+                    role: 'user' as const,
                     parts: [
                         { inlineData: { mimeType, data: base64Data } },
                         { text: "Write marketing copy for this visual asset." }
@@ -146,16 +146,16 @@ export class WorkflowEngine {
                 }];
             } else {
                 contents = [{
-                    role: 'user',
+                    role: 'user' as const,
                     parts: [{ text: `Write marketing copy for: ${prompt}` }]
                 }];
             }
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT, // Both modes use the Pro Agent model
-                contents
-            });
-            return response.text();
+            const response = await AI.generateContent(
+                contents,
+                AI_MODELS.TEXT.AGENT // Both modes use the Pro Agent model
+            );
+            return response.response.text();
         } else if (data.departmentName === 'Knowledge Base') {
             // RAG / Knowledge Base
             const { runAgenticWorkflow } = await import('@/services/rag/ragService');

@@ -4,7 +4,7 @@ import { useStore } from '@/core/store';
 import { Megaphone, Copy, Image as ImageIcon, Loader2, Wand2, Upload } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { AI_MODELS } from '@/core/config/ai-models';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { SocialService } from '@/services/social/SocialService';
 import AIEnhancePostModal from './AIEnhancePostModal';
 import { ScheduledPost, CampaignStatus } from '../types';

@@ -29,13 +29,13 @@ vi.mock('firebase/firestore', () => ({
     }
 }));
 
-// 1. Mock AI Service
-// 1. Mock AI Service
+// 1. Mock GenAI Service
 const mockResponseHelper = (text: string) => ({
-    text: () => text,
-    usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
-    functionCalls: () => [],
-    thoughtSignature: 'test-signature'
+    response: {
+        text: () => text,
+        candidates: [{ content: { parts: [{ text }] } }],
+        usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }
+    }
 });
 
 const mockGenerateContent = vi.fn((...args) => {
@@ -57,11 +57,9 @@ mockGenerateContent
         complete: true
     })));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
-        getGenerativeModel: () => ({ generateContent: mockGenerateContent }),
-        generateSpeech: vi.fn()
     }
 }));
 
@@ -242,7 +240,7 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
         // mockGenerateContent was called by BaseAgent (1st call, as Orchestrator routing is mocked/skipped)
         // Note: With current mocks, Orchestrator and Coordinator are mocked out, so AI is called only ONCE by BaseAgent.
         const aiCall = mockGenerateContent.mock.calls[0][0];
-        const sentText = aiCall.contents[0].parts[0].text;
+        const sentText = aiCall[0].parts[0].text;
         expect(sentText).toContain('TRUNCATED');
 
         // 2. Verify Persistence (Local Storage)

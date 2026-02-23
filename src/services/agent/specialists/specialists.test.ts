@@ -32,16 +32,18 @@ vi.mock('@/services/firebase', () => ({
     storage: {}
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
-            text: () => 'Mock Response',
-            functionCalls: () => [],
-            usage: () => ({
-                promptTokenCount: 10,
-                candidatesTokenCount: 20,
-                totalTokenCount: 30
-            })
+            response: {
+                text: () => 'Mock Response',
+                functionCalls: () => [],
+                usage: () => ({
+                    promptTokenCount: 10,
+                    candidatesTokenCount: 20,
+                    totalTokenCount: 30
+                })
+            }
         }),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: (async function* () {
@@ -88,14 +90,13 @@ describe('Specialist Agents Connection', () => {
         const brandAgent = await agentRegistry.getAsync('brand');
         if (!brandAgent) throw new Error('Brand agent not found');
 
-        // We can't easily inspect the private/protected execution logic without spying on AI.generateContent
+        // We can't easily inspect the private/protected execution logic without spying on GenAI.generateContent
         // But we can check if the tools are being passed correctly
 
-        const { AI } = await import('@/services/ai/AIService');
+        const { GenAI } = await import('@/services/ai/GenAI');
         await brandAgent.execute('Test Task', {});
 
-        const callArgs = (AI.generateContent as any).mock.calls[0][0];
-        const tools = callArgs.tools;
+        const tools = (GenAI.generateContent as any).mock.calls[0]?.[4] || []; // safe access
 
         // Create a flat list of all function declarations from all tool objects
         const allFunctionDeclarations = tools.flatMap((t: any) => t.functionDeclarations || []);

@@ -2,10 +2,13 @@
 import { calculateProfileStatus, processFunctionCalls, runOnboardingConversation, OnboardingTools, determinePhase } from './onboardingService';
 import type { UserProfile, ConversationFile } from '../../modules/workflow/types';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 
 // Mock AI Service
-vi.mock('../ai/AIService', () => ({
+vi.mock('../ai/GenAI', () => ({
+    GenAI: {
+        generateContent: vi.fn()
+    },
     AI: {
         generateContent: vi.fn()
     }
@@ -249,8 +252,23 @@ describe('onboardingService', () => {
 
         it('should call AI service and return text and tools', async () => {
             const mockResponse = {
-                text: () => 'Hello',
-                functionCalls: () => [{ name: 'updateProfile', args: { bio: 'Hi' } }]
+                response: {
+                    text: () => 'Hello',
+                    functionCalls: () => {
+                        const parts = mockResponse.response.candidates[0].content.parts;
+                        return parts
+                            .filter((p: any) => 'functionCall' in p)
+                            .map((p: any) => p.functionCall);
+                    },
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { text: 'Hello' },
+                                { functionCall: { name: 'updateProfile', args: { bio: 'Hi' } } }
+                            ]
+                        }
+                    }]
+                }
             };
             (AI.generateContent as unknown as ReturnType<typeof vi.fn>).mockResolvedValue(mockResponse);
 

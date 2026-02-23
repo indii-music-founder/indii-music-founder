@@ -3,7 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { agentRegistry } from './registry';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Provide safe environment defaults to avoid failing validation during tests
 vi.mock('@/config/env', () => ({
@@ -53,6 +53,14 @@ vi.mock('@/services/audio/AudioIntelligenceService', () => ({
     }
 }));
 
+// Mock MembershipService (required for BaseAgent budget checks)
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100 }),
+        recordSpend: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
     db: {},
@@ -79,11 +87,13 @@ vi.mock('./MemoryService', () => ({
 }));
 
 // Mock AI Service
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
-            text: () => '',
-            functionCalls: () => []
+            response: {
+                text: () => '',
+                functionCalls: () => []
+            }
         }),
         generateContentStream: vi.fn(),
         generateSpeech: vi.fn()
@@ -179,25 +189,23 @@ describe('Agent Architecture Integration (Hardened)', () => {
             // Force specialist execution (BaseAgent uses AI.generateContent)
             mockStoreState.sessions['s1'].participants = ['marketing'];
 
-            // 1. Mock Specialist Execution
-            // Router mock removed because WorkflowCoordinator uses heuristics
+            // 1. Mock Specialist Execution (WorkflowCoordinator bypasses LLM routing for 'Analyze...')
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => 'I have analyzed the market data.',
-                functionCalls: () => [],
-                usage: () => ({ totalTokenCount: 100 })
-            } as any);
-
-            // 2. Mock Specialist Execution
-            vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => 'I have analyzed the market data.',
-                functionCalls: () => [],
-                usage: () => ({ totalTokenCount: 100 })
+                response: {
+                    text: () => 'I have analyzed the market data.',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'I have analyzed the market data.' }]
+                        }
+                    }],
+                    usageMetadata: { totalTokenCount: 100 }
+                }
             } as any);
 
             await service.sendMessage('Analyze market trends');
 
-            // Verify Orchestrator was called
-            expect(AI.generateContent).toHaveBeenCalled();
+            // Verify Specialist was called (only once, no orchestrator call)
+            expect(AI.generateContent).toHaveBeenCalledTimes(1);
 
             // Verify message history updated
             const lastMsg = mockStoreState.agentHistory[mockStoreState.agentHistory.length - 1];
@@ -298,17 +306,21 @@ describe('Agent Architecture Integration (Hardened)', () => {
         it('should route to Generalist if Orchestrator hallucinations an invalid ID', async () => {
             // 1. Orchestrator hallucination
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => JSON.stringify({
-                    thought: 'Hallucination',
-                    callAgentId: 'super-mega-agent-9000',
-                    task: 'Do something crazy',
-                    complete: true
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        thought: 'Hallucination',
+                        callAgentId: 'super-mega-agent-9000',
+                        task: 'Do something crazy',
+                        complete: true
+                    })
+                }
             } as any);
 
             // 2. Generalist Fallback
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => 'I am generalist.'
+                response: {
+                    text: () => 'I am generalist.'
+                }
             } as any);
 
             const generalistSpy = vi.spyOn(agentRegistry, 'getAsync');

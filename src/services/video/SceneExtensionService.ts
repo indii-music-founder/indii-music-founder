@@ -7,7 +7,7 @@
  * - Respects MembershipService tier quotas
  */
 
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';

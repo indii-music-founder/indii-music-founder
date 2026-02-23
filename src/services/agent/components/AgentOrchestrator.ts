@@ -1,5 +1,5 @@
 import { AgentContext } from '../types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
@@ -80,16 +80,16 @@ export class AgentOrchestrator {
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                config: {
+            const res = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: prompt }] }],
+                AI_MODELS.TEXT.FAST,
+                {
                     ...AI_CONFIG.THINKING.LOW,
                     responseMimeType: 'application/json'
                 }
-            });
+            );
 
-            const textResponse = res.text() || '{}';
+            const textResponse = res.response.text() || '{}';
             let parsedResponse: { targetAgentId: string; confidence: number; reasoning: string };
 
             try {

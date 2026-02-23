@@ -1,13 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AgentOrchestrator } from '../components/AgentOrchestrator';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { agentRegistry } from '../registry';
 import { TraceService } from '../observability/TraceService';
 import type { AgentContext } from '../types';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn()
     }
 }));
@@ -62,11 +62,13 @@ describe('AgentOrchestrator', () => {
     describe('determineAgent', () => {
         const mockRouting = (agentId: string, confidence = 1.0) => {
             vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => JSON.stringify({
-                    targetAgentId: agentId,
-                    confidence,
-                    reasoning: `Routing to ${agentId}`
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        targetAgentId: agentId,
+                        confidence,
+                        reasoning: `Routing to ${agentId}`
+                    })
+                }
             } as any);
         };
 
@@ -149,7 +151,9 @@ describe('AgentOrchestrator', () => {
 
         it('handles empty response gracefully', async () => {
             vi.mocked(AI.generateContent).mockResolvedValue({
-                text: () => ''
+                response: {
+                    text: () => ''
+                }
             } as any);
 
             const result = await orchestrator.determineAgent(
@@ -202,15 +206,17 @@ describe('AgentOrchestrator', () => {
             );
 
             expect(AI.generateContent).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    contents: expect.objectContaining({
+                expect.arrayContaining([
+                    expect.objectContaining({
                         parts: expect.arrayContaining([
                             expect.objectContaining({
                                 text: expect.stringContaining('My Album')
                             })
                         ])
                     })
-                })
+                ]),
+                expect.any(String),
+                expect.any(Object)
             );
         });
 
@@ -223,15 +229,17 @@ describe('AgentOrchestrator', () => {
             );
 
             expect(AI.generateContent).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    contents: expect.objectContaining({
+                expect.arrayContaining([
+                    expect.objectContaining({
                         parts: expect.arrayContaining([
                             expect.objectContaining({
                                 text: expect.stringContaining('Draft a publishing contract')
                             })
                         ])
                     })
-                })
+                ]),
+                expect.any(String),
+                expect.any(Object)
             );
         });
 

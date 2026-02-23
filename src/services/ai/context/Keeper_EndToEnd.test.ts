@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
-        onAuthStateChanged: vi.fn(() => () => {})
+        onAuthStateChanged: vi.fn(() => () => { })
     },
     db: {},
     storage: {},
@@ -27,11 +27,11 @@ vi.mock('firebase/auth', async (importOriginal) => {
     return {
         getAuth: vi.fn(() => ({
             currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
-            onAuthStateChanged: vi.fn(() => () => {})
+            onAuthStateChanged: vi.fn(() => () => { })
         })),
         initializeAuth: vi.fn(() => ({
             currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
-            onAuthStateChanged: vi.fn(() => () => {})
+            onAuthStateChanged: vi.fn(() => () => { })
         })),
         onAuthStateChanged: vi.fn(),
         browserLocalPersistence: {},
@@ -121,14 +121,15 @@ vi.mock('@/services/MembershipService', () => ({
 
 // Mock AI Service (Capture Prompts)
 const mockGenerateContent = vi.fn().mockResolvedValue({
-    text: () => 'I have processed the context.',
-    usage: () => ({ promptTokenCount: 500, candidatesTokenCount: 10, totalTokenCount: 510 }),
-    functionCalls: () => [],
-    thoughtSignature: 'keeper-thought'
+    response: {
+        text: () => 'I have processed the context.',
+        candidates: [{ content: { parts: [{ text: 'I have processed the context.' }] } }],
+        usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 10, totalTokenCount: 510 }
+    }
 });
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
             generateContent: mockGenerateContent
@@ -211,7 +212,7 @@ describe('📚 Keeper: End-to-End Context & Persistence', () => {
         const aiCallArgs = mockGenerateContent.mock.calls[0][0];
 
         // Extract the prompt parts
-        const promptText = aiCallArgs.contents[0].parts[0].text;
+        const promptText = aiCallArgs[0].parts[0].text;
 
         // Check 3.1: System Prompt must be present (Mission)
         expect(promptText).toContain('You are Keeper. You never forget.');

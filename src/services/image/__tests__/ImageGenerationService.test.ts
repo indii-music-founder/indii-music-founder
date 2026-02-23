@@ -3,7 +3,7 @@ import { ImageGeneration } from "../ImageGenerationService";
 import { functions } from "@/services/firebase";
 import { httpsCallable } from "firebase/functions";
 
-import { AI } from "@/services/ai/AIService";
+import { GenAI as AI } from "@/services/ai/GenAI";
 
 // Mock Firebase functions
 vi.mock("@/services/firebase", () => ({
@@ -20,8 +20,8 @@ vi.mock("firebase/functions", () => ({
   httpsCallable: vi.fn(),
 }));
 
-vi.mock("@/services/ai/AIService", () => ({
-  AI: {
+vi.mock("@/services/ai/GenAI", () => ({
+  GenAI: {
     generateContent: vi.fn(),
     parseJSON: vi.fn(),
   },

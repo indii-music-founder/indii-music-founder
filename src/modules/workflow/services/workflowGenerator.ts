@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { NODE_REGISTRY, LOGIC_REGISTRY } from './nodeRegistry';
 import type { SavedWorkflow } from '../types';
 import { Status } from '../types';

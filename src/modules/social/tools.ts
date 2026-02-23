@@ -1,4 +1,4 @@
-import { AI } from '../../services/ai/AIService';
+import { GenAI as AI } from '../../services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema, SchemaType } from 'firebase/ai';
 
@@ -19,11 +19,11 @@ export const SOCIAL_TOOLS = {
         `;
 
         try {
-            const res = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: { role: 'user', parts: [{ text: prompt }] }
-            });
-            return res.text() || "Failed to generate copy.";
+            const res = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: prompt }] }],
+                AI_MODELS.TEXT.AGENT
+            );
+            return res.response.text() || "Failed to generate copy.";
         } catch (e) {
             return "Error generating copy.";
         }

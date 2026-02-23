@@ -28,6 +28,13 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     }
 }));
 
+// Subscription Mock
+vi.mock('@/services/subscription/SubscriptionService', () => ({
+    subscriptionService: {
+        canPerformAction: vi.fn().mockResolvedValue({ allowed: true })
+    }
+}));
+
 // Store Mock
 const mockGetState = vi.fn();
 
@@ -145,8 +152,8 @@ describe('VideoTools - Whisk Integration', () => {
     });
 
     it('should not use WhiskService if targetMedia is strictly "audio"', async () => {
-         // Mock state with audio-only whiskState
-         mockGetState.mockReturnValue({
+        // Mock state with audio-only whiskState
+        mockGetState.mockReturnValue({
             userProfile: mockUserProfile,
             addAgentMessage: mockAddAgentMessage,
             currentProjectId: 'proj-audio',

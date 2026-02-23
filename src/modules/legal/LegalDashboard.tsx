@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
 
@@ -67,16 +67,14 @@ Return a JSON response with the following structure:
 Only return valid JSON.
 `;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: { role: 'user', parts: [{ text: `Contract Content:\n${content}` }] },
-                systemInstruction: systemPrompt,
-                config: {
-                    response_mime_type: 'application/json'
-                }
-            });
+            const response = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: `Contract Content:\n${content}` }] }],
+                AI_MODELS.TEXT.FAST,
+                { responseMimeType: 'application/json' },
+                systemPrompt
+            );
 
-            const data = JSON.parse(response.text());
+            const data = JSON.parse(response.response.text());
 
             setAnalysisResult({
                 score: data.score || 0,

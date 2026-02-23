@@ -3,7 +3,11 @@ import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
+    },
     AI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
@@ -46,13 +50,18 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITHOUT usage method gracefully', async () => {
-        const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContent)
+        const aiMock = await import('@/services/ai/GenAI');
+        vi.mocked(aiMock.GenAI.generateContent)
             .mockResolvedValueOnce({
-                text: () => 'Response content',
-                functionCalls: () => [], // No function calls, so it returns immediately
-                usage: () => undefined
-                // Intentionally OMITTING usage object return
+                response: {
+                    text: () => 'Response content',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'Response content' }]
+                        }
+                    }],
+                    usageMetadata: undefined
+                }
             } as any);
 
         const response = await agent.execute('Task');
@@ -61,16 +70,22 @@ describe('BaseAgent Usage Defenses', () => {
     });
 
     it('should handle response WITH usage method', async () => {
-        const aiMock = await import('@/services/ai/AIService');
-        vi.mocked(aiMock.AI.generateContent)
+        const aiMock = await import('@/services/ai/GenAI');
+        vi.mocked(aiMock.GenAI.generateContent)
             .mockResolvedValueOnce({
-                text: () => 'Response content',
-                functionCalls: () => [],
-                usage: () => ({
-                    promptTokenCount: 10,
-                    candidatesTokenCount: 20,
-                    totalTokenCount: 30
-                })
+                response: {
+                    text: () => 'Response content',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'Response content' }]
+                        }
+                    }],
+                    usageMetadata: {
+                        promptTokenCount: 10,
+                        candidatesTokenCount: 20,
+                        totalTokenCount: 30
+                    }
+                }
             } as any);
 
         const response = await agent.execute('Task');

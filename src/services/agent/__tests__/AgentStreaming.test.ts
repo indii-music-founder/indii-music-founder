@@ -1,12 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import { AI } from '../../ai/AIService';
+import { GenAI as AI } from '../../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
 
 // Mock the entire AI service
-vi.mock('../../ai/AIService', () => ({
-    AI: {
+vi.mock('../../ai/GenAI', () => ({
+    GenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }

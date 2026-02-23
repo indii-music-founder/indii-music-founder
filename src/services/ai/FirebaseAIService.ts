@@ -585,9 +585,10 @@ export class FirebaseAIService {
                             try {
                                 for await (const chunk of result.stream) {
                                     chunks.push(chunk);
-                                    const chunkText = chunk.candidates?.[0]?.content?.parts?.[0] && 'text' in chunk.candidates[0].content.parts[0]
-                                        ? (chunk.candidates[0].content.parts[0] as any).text
-                                        : '';
+                                    const part = chunk.candidates?.[0]?.content?.parts?.[0] || chunk;
+                                    const chunkText = typeof (part as any).text === 'function'
+                                        ? (part as any).text()
+                                        : ((part as any).text || '');
                                     finalText += chunkText;
 
                                     const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
@@ -787,7 +788,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string }
     ): Promise<GenerateContentResult> {
         // [DEBUG] Log payload for deep diagnosis
         try {

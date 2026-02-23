@@ -57,19 +57,26 @@ export class AgentTestHarness {
      * @param text The text response to return.
      */
     public mockGenAIResponse(text: string) {
-        const responseCtx = {
-            text: () => text,
-            functionCalls: () => []
+        const mockResult = {
+            response: {
+                text: () => text,
+                candidates: [{
+                    content: {
+                        parts: [{ text }]
+                    }
+                }],
+                usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
+            }
         };
 
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(responseCtx as any);
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as any);
 
         if (GenAI.generateContentStream) {
             (GenAI.generateContentStream as unknown as MockInstance).mockResolvedValue({
                 stream: (async function* () {
                     yield { text: () => text };
                 })(),
-                response: Promise.resolve(responseCtx)
+                response: Promise.resolve(mockResult)
             } as any);
         }
     }
@@ -79,13 +86,19 @@ export class AgentTestHarness {
      * @param toolCalls Array of tool calls (name + args)
      */
     public mockGenAIToolCall(toolCalls: { name: string, args: Record<string, any> }[]) {
-        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue({
-            text: () => '',
-            functionCalls: () => toolCalls.map(tc => ({
-                name: tc.name,
-                args: tc.args
-            }))
-        } as any);
+        const mockResult = {
+            response: {
+                text: () => '',
+                candidates: [{
+                    content: {
+                        parts: toolCalls.map(tc => ({ functionCall: tc }))
+                    }
+                }],
+                usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 10, totalTokenCount: 20 }
+            }
+        };
+
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(mockResult as any);
     }
 
     /**

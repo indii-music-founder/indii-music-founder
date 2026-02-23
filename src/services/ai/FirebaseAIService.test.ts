@@ -123,7 +123,16 @@ describe('FirebaseAIService', () => {
         });
 
         mockGenerateContentStream.mockResolvedValue({
-            stream: (async function* () { yield { text: () => 'Stream' }; })()
+            stream: (async function* () {
+                yield {
+                    text: () => 'Stream',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'Stream' }]
+                        }
+                    }]
+                };
+            })()
         });
     });
 
@@ -279,8 +288,9 @@ describe('FirebaseAIService', () => {
         const { stream } = await service.generateContentStream('Stream me');
         const reader = stream.getReader();
         const { value } = await reader.read();
-        // Expect "Stream" (Standard Mode due to mock env)
-        expect(value?.text()).toBe('Stream');
+        // Expect "Stream"
+        const text = typeof value?.text === 'function' ? value.text() : value?.text;
+        expect(text).toBe('Stream');
     });
 
     it('should falling back if bootstrap fails (Resilience)', async () => {

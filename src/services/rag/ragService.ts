@@ -1,4 +1,4 @@
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';

@@ -1,4 +1,4 @@
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';
@@ -65,19 +65,21 @@ export class VideoService {
     async generateMotionBrush(image: { mimeType: string; data: string }, mask: { mimeType: string; data: string }): Promise<string | null> {
         try {
             // Step 1: Plan Motion
-            const analysisRes = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: {
-                    role: 'user',
-                    parts: [
-                        { inlineData: { mimeType: image.mimeType, data: image.data } },
-                        { inlineData: { mimeType: 'image/png', data: mask.data } },
-                        { text: "Describe masked area motion prompt. JSON: {video_prompt}" }
-                    ]
-                },
-                config: { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
-            });
-            const plan = AI.parseJSON(analysisRes.text());
+            const analysisRes = await AI.generateContent(
+                [
+                    {
+                        role: 'user',
+                        parts: [
+                            { inlineData: { mimeType: image.mimeType, data: image.data } },
+                            { inlineData: { mimeType: 'image/png', data: mask.data } },
+                            { text: "Describe masked area motion prompt. JSON: {video_prompt}" }
+                        ]
+                    }
+                ],
+                AI_MODELS.TEXT.AGENT,
+                { responseMimeType: 'application/json', ...AI_CONFIG.THINKING.HIGH }
+            );
+            const plan = AI.parseJSON(analysisRes.response.text());
 
             // Step 2: Generate Video (with retry for rate limiting)
             const videoPrompt = typeof plan.video_prompt === 'string' ? plan.video_prompt : "Animate";

@@ -5,8 +5,8 @@ import { AgentConfig, ToolDefinition } from './types';
 import { MembershipService } from '@/services/MembershipService';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
@@ -72,7 +72,7 @@ describe('BaseAgent Cost Circuit Breaker', () => {
     });
 
     it('🛑 should stop execution when budget is exceeded (Cost Circuit Breaker)', async () => {
-        const { AI } = await import('@/services/ai/AIService');
+        const { GenAI: AI } = await import('@/services/ai/GenAI');
 
         // Setup: Agent wants to run 5 iterations
         // 1. First iteration: Uses 0.10. Budget OK. -> Calls Tool "dummy_tool"
@@ -90,21 +90,45 @@ describe('BaseAgent Cost Circuit Breaker', () => {
 
         (AI.generateContent as any)
             .mockResolvedValueOnce({ // Iteration 1
-                text: () => 'I need to use a tool.',
-                functionCalls: () => [dummyToolCall1],
-                usage: () => ({ totalTokenCount: 1000 })
-            })
+                response: {
+                    text: () => 'I need to use a tool.',
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { text: 'I need to use a tool.' },
+                                { functionCall: dummyToolCall1 }
+                            ]
+                        }
+                    }],
+                    usageMetadata: { promptTokenCount: 500, candidatesTokenCount: 500, totalTokenCount: 1000 }
+                }
+            } as any)
             .mockResolvedValueOnce({ // Iteration 2
-                text: () => 'I need to use another tool.',
-                functionCalls: () => [dummyToolCall2],
-                usage: () => ({ totalTokenCount: 5000 })
-            })
+                response: {
+                    text: () => 'I need to use another tool.',
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { text: 'I need to use another tool.' },
+                                { functionCall: dummyToolCall2 }
+                            ]
+                        }
+                    }],
+                    usageMetadata: { promptTokenCount: 2500, candidatesTokenCount: 2500, totalTokenCount: 5000 }
+                }
+            } as any)
             // Iteration 3: AI should NOT be called.
             .mockResolvedValue({
-                text: () => 'This should not be reached.',
-                functionCalls: () => [],
-                usage: () => ({ totalTokenCount: 1000 })
-            });
+                response: {
+                    text: () => 'This should not be reached.',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'This should not be reached.' }]
+                        }
+                    }],
+                    usageMetadata: { totalTokenCount: 1000 }
+                }
+            } as any);
 
         // Mock Budget Check
         // Iteration 1 check: Allowed

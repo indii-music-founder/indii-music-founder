@@ -17,16 +17,20 @@ vi.mock('@/services/agent/MemoryService', () => ({
     }
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
-        generateContent: vi.fn()
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        rawGenerateContent: vi.fn().mockResolvedValue({
+            response: {
+                text: () => '{"score": 8, "reason": "Good", "pass": true}'
+            }
+        })
     }
 }));
 
 import { MemoryTools } from '../MemoryTools';
 import { useStore } from '@/core/store';
 import { memoryService } from '@/services/agent/MemoryService';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 describe('MemoryTools', () => {
     const mockStoreState = {
@@ -194,8 +198,12 @@ describe('MemoryTools', () => {
                 reason: 'Content meets the goal well',
                 pass: true
             };
-            (AI.generateContent as any).mockResolvedValue({
-                text: () => JSON.stringify(mockVerification)
+            (AI.rawGenerateContent as any).mockResolvedValue({
+                response: {
+                    text: () => JSON.stringify(mockVerification),
+                    candidates: [],
+                    usageMetadata: {}
+                }
             });
 
             const result = await MemoryTools.verify_output({
@@ -205,19 +213,28 @@ describe('MemoryTools', () => {
 
             expect(result.success).toBe(true);
             expect(result.data.verification.score).toBe(8);
-            expect(AI.generateContent).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    model: 'gemini-3-pro-preview',
-                    config: expect.objectContaining({
-                        responseMimeType: 'application/json'
+            expect(AI.rawGenerateContent).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        parts: expect.arrayContaining([
+                            expect.objectContaining({ text: expect.any(String) })
+                        ])
                     })
+                ]),
+                'gemini-3-pro-preview',
+                expect.objectContaining({
+                    responseMimeType: 'application/json'
                 })
             );
         });
 
         it('should include goal and content in prompt', async () => {
-            (AI.generateContent as any).mockResolvedValue({
-                text: () => '{"score": 7, "pass": true}'
+            (AI.rawGenerateContent as any).mockResolvedValue({
+                response: {
+                    text: () => '{"score": 7, "pass": true}',
+                    candidates: [],
+                    usageMetadata: {}
+                }
             });
 
             await MemoryTools.verify_output({
@@ -225,14 +242,14 @@ describe('MemoryTools', () => {
                 content: 'Test Content'
             });
 
-            const callArgs = (AI.generateContent as any).mock.calls[0][0];
-            const promptText = callArgs.contents[0].parts[0].text;
+            const callArgs = (AI.rawGenerateContent as any).mock.calls[0][0];
+            const promptText = callArgs[0].parts[0].text;
             expect(promptText).toContain('Test Goal');
             expect(promptText).toContain('Test Content');
         });
 
         it('should handle verification errors', async () => {
-            (AI.generateContent as any).mockRejectedValue(new Error('API unavailable'));
+            (AI.rawGenerateContent as any).mockRejectedValue(new Error('API unavailable'));
 
             const result = await MemoryTools.verify_output({
                 goal: 'Goal',
@@ -244,7 +261,7 @@ describe('MemoryTools', () => {
         });
 
         it('should handle unknown errors', async () => {
-            (AI.generateContent as any).mockRejectedValue('Unknown error type');
+            (AI.rawGenerateContent as any).mockRejectedValue('Unknown error type');
 
             const result = await MemoryTools.verify_output({
                 goal: 'Goal',

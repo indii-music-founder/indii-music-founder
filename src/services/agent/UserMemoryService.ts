@@ -6,7 +6,7 @@
  */
 
 import { FirestoreService } from '../FirestoreService';
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { Timestamp } from 'firebase/firestore';
@@ -427,11 +427,11 @@ Be specific and actionable. Avoid generic statements.
 
     let summary = '';
     try {
-      const result = await AI.generateContent({
-        model: AI_MODELS.TEXT.FAST,
-        contents: { role: 'user', parts: [{ text: summaryPrompt }] },
-      });
-      summary = result.text() || 'No summary available';
+      const result = await AI.generateContent(
+        [{ role: 'user', parts: [{ text: summaryPrompt }] }],
+        AI_MODELS.TEXT.FAST
+      );
+      summary = result.response.text() || 'No summary available';
     } catch (error) {
       console.error('[UserMemoryService] Failed to generate summary:', error);
       summary = 'Unable to generate summary';
@@ -617,13 +617,13 @@ JSON FORMAT:
 }
       `.trim();
 
-      const result = await AI.generateContent({
-        model: AI_MODELS.TEXT.FAST,
-        contents: { role: 'user', parts: [{ text: prompt }] },
-        config: { responseMimeType: 'application/json' },
-      });
+      const result = await AI.generateContent(
+        [{ role: 'user', parts: [{ text: prompt }] }],
+        AI_MODELS.TEXT.FAST,
+        { responseMimeType: 'application/json' }
+      );
 
-      const responseText = result.text() || '{}';
+      const responseText = result.response.text() || '{}';
       const parsed = JSON.parse(responseText) as { consolidated: string[]; idsToDelete: string[] };
 
       // Delete redundant memories

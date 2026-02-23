@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // --- MOCKS ---
 
@@ -32,8 +32,8 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // 3. Mock AI Service
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateContentStream: vi.fn()
     }

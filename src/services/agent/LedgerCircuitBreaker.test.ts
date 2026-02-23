@@ -3,14 +3,17 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { BaseAgent } from './BaseAgent';
 import { AgentConfig } from './types';
 import { MembershipService } from '@/services/MembershipService';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateSpeech: vi.fn(),
         generateImage: vi.fn()
+    },
+    AI: {
+        generateContent: vi.fn()
     },
     AI_MODELS: {
         TEXT: { AGENT: 'gemini-3-pro-preview' }
@@ -121,18 +124,33 @@ describe('Ledger Circuit Breaker (Integration)', () => {
 
         (AI.generateContent as any)
             .mockResolvedValueOnce({ // Iteration 1
-                text: () => 'I am spending a lot of tokens!',
-                functionCalls: () => [dummyToolCall],
-                usage: () => ({
-                    promptTokenCount: 1000000, // 1M input tokens ($1.25)
-                    candidatesTokenCount: 0,
-                    totalTokenCount: 1000000
-                })
+                response: {
+                    text: () => 'I am spending a lot of tokens!',
+                    candidates: [{
+                        content: {
+                            parts: [
+                                { text: 'I am spending a lot of tokens!' },
+                                { functionCall: dummyToolCall }
+                            ]
+                        }
+                    }],
+                    usageMetadata: {
+                        promptTokenCount: 1000000, // 1M input tokens ($2.50 for pro)
+                        candidatesTokenCount: 0,
+                        totalTokenCount: 1000000
+                    }
+                }
             })
             .mockResolvedValueOnce({ // Iteration 2 (Should NOT be reached)
-                text: () => 'I should not be running.',
-                functionCalls: () => [],
-                usage: () => ({ totalTokenCount: 100 })
+                response: {
+                    text: () => 'I should not be running.',
+                    candidates: [{
+                        content: {
+                            parts: [{ text: 'I should not be running.' }]
+                        }
+                    }],
+                    usageMetadata: { totalTokenCount: 100 }
+                }
             });
 
         // Execute

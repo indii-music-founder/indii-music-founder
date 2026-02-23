@@ -31,8 +31,8 @@ vi.mock('@/core/store', () => ({
 }));
 
 // Mock AI Service
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateStructuredData: vi.fn().mockResolvedValue({
             isConsistent: true,
             score: 95,
