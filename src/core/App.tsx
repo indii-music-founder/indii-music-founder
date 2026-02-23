@@ -15,7 +15,7 @@ import { ApprovalModal } from './components/ApprovalModal';
 import { BiometricGate } from './components/auth/BiometricGate';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
-import ChatOverlay from './components/ChatOverlay';
+
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
@@ -149,41 +149,6 @@ function LoadingFallback() {
     );
 }
 
-/**
- * ChatOverlayWrapper - Bridges store state to ChatOverlay props
- * The refactored ChatOverlay requires explicit onClose/onToggleMinimize props,
- * while the app uses isAgentOpen from the store. This wrapper connects them.
- */
-function ChatOverlayWrapper() {
-    const { isAgentOpen, toggleAgentWindow, isRightPanelOpen, toggleRightPanel, currentModule } = useStore(
-        useShallow(state => ({
-            isAgentOpen: state.isAgentOpen,
-            toggleAgentWindow: state.toggleAgentWindow,
-            isRightPanelOpen: state.isRightPanelOpen,
-            toggleRightPanel: state.toggleRightPanel,
-            currentModule: state.currentModule,
-        }))
-    );
-    const [isMinimized, setIsMinimized] = useState(false);
-
-    // Platinum Polish: Auto-close right panel when agent opens to prevent UI overlap
-    useEffect(() => {
-        if (isAgentOpen && isRightPanelOpen) {
-            toggleRightPanel();
-        }
-    }, [isAgentOpen, isRightPanelOpen, toggleRightPanel]);
-
-    // HQ page already has a flat chat interface — suppress the floating overlay there
-    if (!isAgentOpen || currentModule === 'agent') return null;
-
-    return (
-        <ChatOverlay
-            onClose={toggleAgentWindow}
-            isMinimized={isMinimized}
-            onToggleMinimize={() => setIsMinimized(!isMinimized)}
-        />
-    );
-}
 
 function DevPortWarning() {
     const port = window.location.port;
@@ -376,7 +341,7 @@ export default function App() {
                                         </ErrorBoundary>
                                     </div>
 
-                                    {showChrome && <ChatOverlayWrapper />}
+
                                 </main>
 
                                 {/* Right Panel - Hidden for standalone modules and mobile */}

@@ -16,12 +16,8 @@ function CommandBar() {
     // HQ page (agent module) has its own inline PromptArea — hide this global one
     if (currentModule === 'agent') return null;
 
-    // In docked mode, if the chat overlay is open, we hide this standalone bar
-    // because it's rendered inside ChatOverlay.
-    if (!isCommandBarDetached && isAgentOpen) return null;
-
-    // We show the bar if it's detached OR if the chat window is closed.
-    const shouldShow = isCommandBarDetached || !isAgentOpen;
+    // We show the standalone bar always now since ChatOverlay is removed.
+    const shouldShow = true;
 
     return (
         <AnimatePresence>

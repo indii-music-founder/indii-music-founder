@@ -1,10 +1,11 @@
-import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@/test/utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import AgentDashboard from './AgentDashboard';
 import { VenueScoutService } from '../services/VenueScoutService';
 
 // --- MOCKS ---
+
+import { createMockStore } from '@/test/utils';
 
 // Mock VenueScoutService
 vi.mock('../services/VenueScoutService', () => ({
@@ -13,37 +14,59 @@ vi.mock('../services/VenueScoutService', () => ({
     }
 }));
 
-// Mock Store using vi.hoisted to prevent ReferenceErrors
-const { mockStoreState, mockSetScanning, mockAddVenue } = vi.hoisted(() => {
+const { mockSetScanning, mockAddVenue, defaultStoreState } = vi.hoisted(() => {
     const mockSetScanning = vi.fn();
     const mockAddVenue = vi.fn();
+
+    // We cannot use createMockStore directly inside vi.hoisted if it's imported
+    // because vi.hoisted runs BEFORE imports. So we construct the object manually
+    // or we must define the mock completely inside.
+    const defaultStoreState = {
+        venues: [],
+        isScanning: false,
+        setScanning: mockSetScanning,
+        addVenue: mockAddVenue,
+        userProfile: null,
+        currentModuleId: 'dashboard',
+        showCommandBar: false,
+        updateProfile: vi.fn(),
+        setModule: vi.fn(),
+        toggleCommandBar: vi.fn(),
+        addToast: vi.fn(),
+    };
+
+    return { mockSetScanning, mockAddVenue, defaultStoreState };
+});
+
+vi.mock('@/core/store', async (importOriginal) => {
+    // We can access imports dynamically inside the factory if we need to,
+    // or just rely on the fact that vi.mock runs after hoisted. 
+    // The issue was `createMockStore` imported at the top level is undefined 
+    // inside hoisted.
+
+    // Instead of using createMockStore here which causes TDZ issues if imported
+    // we just use the raw defaultStoreState from hoisted.
     return {
-        mockStoreState: {
-            venues: [],
-            isScanning: false,
-            setScanning: mockSetScanning,
-            addVenue: mockAddVenue,
-        },
-        mockSetScanning,
-        mockAddVenue
+        useStore: vi.fn((selector) => {
+            if (typeof selector === 'function') {
+                return selector(defaultStoreState);
+            }
+            return defaultStoreState;
+        })
     };
 });
 
-vi.mock('../store/AgentStore', () => ({
-    useAgentStore: () => mockStoreState
-}));
+
 
 // Mock Child Components to verify props
-// We use simple function returns or React.createElement to avoid JSX scope issues in factory if needed,
-// but usually standard JSX works if React is in scope (which it isn't inside factory usually).
-// However, the previous test passed with JSX. We'll stick to what works but ensure imports are safe.
-// To be safe against "React is not defined" in hoisted mocks:
-const MockScoutMapVisualization = vi.fn(({ status }) => (
-    <div data-testid="mock-map-viz">Map Status: {status}</div>
-));
+const MockScoutMapVisualizationContent = vi.fn();
+const MockScoutMapVisualization = (props: any) => {
+    MockScoutMapVisualizationContent(props);
+    return <div data-testid="mock-map-viz">Map Status: {props.status}</div>;
+};
 
 vi.mock('./ScoutMapVisualization', () => ({
-    ScoutMapVisualization: (props: any) => MockScoutMapVisualization(props)
+    ScoutMapVisualization: (props: any) => <MockScoutMapVisualization {...props} />
 }));
 
 vi.mock('./VenueCard', () => ({
@@ -86,8 +109,8 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         // Reset mutable state
-        mockStoreState.venues = [];
-        mockStoreState.isScanning = false;
+        defaultStoreState.venues = [];
+        defaultStoreState.isScanning = false;
         // Mocks are cleared but implementations remain if set in hoisted?
         // vi.fn() instances are reused. clearAllMocks clears their calls.
     });
@@ -121,7 +144,7 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
         // 3. Trigger Action
         // Update mock store when setScanning is called
         mockSetScanning.mockImplementation((val) => {
-            mockStoreState.isScanning = val;
+            defaultStoreState.isScanning = val;
         });
 
         fireEvent.click(deployBtn);
@@ -130,14 +153,14 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
 
         // Wait for first status update
         await waitFor(() => {
-            expect(MockScoutMapVisualization).toHaveBeenCalledWith(
+            expect(MockScoutMapVisualizationContent).toHaveBeenCalledWith(
                 expect.objectContaining({ status: 'Scanning sector 7...' })
             );
         });
 
         // Wait for second status update
         await waitFor(() => {
-            expect(MockScoutMapVisualization).toHaveBeenCalledWith(
+            expect(MockScoutMapVisualizationContent).toHaveBeenCalledWith(
                 expect.objectContaining({ status: ' analyzing capacity...' })
             );
         });
@@ -159,7 +182,7 @@ describe('👁️ Pixel: AgentDashboard AI Interaction', () => {
         const deployBtn = screen.getByTestId('deploy-scout-btn');
 
         mockSetScanning.mockImplementation((val) => {
-            mockStoreState.isScanning = val;
+            defaultStoreState.isScanning = val;
         });
 
         fireEvent.click(deployBtn);
