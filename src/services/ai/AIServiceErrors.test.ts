@@ -47,7 +47,7 @@ describe('AIService Integration (Client SDK)', () => {
             contents: [{ role: 'user', parts: [{ text: 'Hi' }] }]
         });
 
-        expect(result.text()).toBe('Hello World');
+        expect(result.response.text()).toBe('Hello World');
         expect(firebaseAI.generateContent).toHaveBeenCalledWith(
             expect.arrayContaining([{ role: 'user', parts: [{ text: 'Hi' }] }]),
             'gemini-pro',
@@ -55,9 +55,7 @@ describe('AIService Integration (Client SDK)', () => {
             undefined,
             undefined,
             expect.objectContaining({
-                signal: undefined,
-                safetySettings: undefined,
-                toolConfig: undefined
+                signal: expect.any(AbortSignal),
             })
         );
     });

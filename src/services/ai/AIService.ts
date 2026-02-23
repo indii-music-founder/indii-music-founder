@@ -1,5 +1,6 @@
 import { GenAI } from './GenAI';
-import type { GenerateContentResult, Content, GenerationConfig, Tool, SafetySetting, ToolConfig } from '@google/generative-ai';
+import type { GenerateContentResult } from 'firebase/ai';
+import type { Content, GenerationConfig, Tool, SafetySetting, ToolConfig } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 /**
@@ -64,7 +65,7 @@ export class AIService {
                 p_model,
                 p_config,
                 p_systemInstruction,
-                p_tools,
+                p_tools as any, // Cast: ai.dto.Tool → firebase/ai.Tool structural equivalence
                 { ...options, signal: internalSignal }
             );
 
