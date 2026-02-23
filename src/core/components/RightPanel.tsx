@@ -8,7 +8,7 @@ import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
 import { getColorForModule } from '@/core/theme/moduleColors';
-import ConversationHistoryList from './ConversationHistoryList';
+import { ConversationHistoryList } from './ConversationHistoryList';
 
 export default function RightPanel() {
     const { currentModule, setModule, isRightPanelOpen, toggleRightPanel, isAgentOpen, toggleAgentWindow } = useStore(
@@ -41,7 +41,7 @@ export default function RightPanel() {
                         </button>
                     </div>
                     <div className="flex-1 overflow-hidden relative">
-                        <ConversationHistoryList />
+                        <ConversationHistoryList onClose={toggleRightPanel} />
                     </div>
                 </div>
             );

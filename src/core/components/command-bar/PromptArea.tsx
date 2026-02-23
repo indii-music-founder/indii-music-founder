@@ -40,6 +40,8 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         setModule,
         toggleAgentWindow,
         isAgentOpen,
+        isRightPanelOpen,
+        toggleRightPanel,
         chatChannel,
         setChatChannel,
         isCommandBarDetached,
