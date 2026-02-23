@@ -18,8 +18,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({ text: () => 'Mock AI Response' }),
         generateContentStream: vi.fn(),
         parseJSON: vi.fn()

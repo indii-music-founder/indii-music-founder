@@ -1,4 +1,4 @@
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_CONFIG, AI_MODELS } from '@/core/config/ai-models';
 import { ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument, BrandKit, ReleaseDetails, SocialLinks } from '@/modules/workflow/types';
@@ -555,30 +555,30 @@ ALWAYS preserve what they're NOT changing.`;
     }
 
     try {
-        const response = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: contents,
-            systemInstruction,
-            tools: [{
-                functionDeclarations: [
-                    updateProfileFunction,
-                    addImageAssetFunction,
-                    addTextAssetToKnowledgeBaseFunction,
-                    generateProfileSectionFunction,
-                    finishOnboardingFunction,
-                    askMultipleChoiceFunction,
-                    shareInsightFunction,
-                    suggestCreativeDirectionFunction,
-                    shareDistributorInfoFunction,
-                ]
-            }],
-            config: {
+        const response = await AI.generateContent(
+            contents,
+            AI_MODELS.TEXT.AGENT,
+            {
+                systemInstruction,
+                tools: [{
+                    functionDeclarations: [
+                        updateProfileFunction,
+                        addImageAssetFunction,
+                        addTextAssetToKnowledgeBaseFunction,
+                        generateProfileSectionFunction,
+                        finishOnboardingFunction,
+                        askMultipleChoiceFunction,
+                        shareInsightFunction,
+                        suggestCreativeDirectionFunction,
+                        shareDistributorInfoFunction,
+                    ]
+                }],
                 ...AI_CONFIG.THINKING.HIGH,
-            },
-        });
+            }
+        );
 
-        const text = response.text() || "";
-        const functionCalls = response.functionCalls();
+        const text = response.response.text() || "";
+        const functionCalls = (response.response.functionCalls?.() as { name: string; args: Record<string, unknown>; }[] | undefined);
 
         return {
             text,
@@ -941,13 +941,13 @@ export function generateEmptyResponseFallback(): string {
 export async function generateSection(section: 'bio' | 'brand_description' | 'creative_preferences', userInput: string): Promise<string> {
     const systemPrompt = `You are a professional copywriter specializing in the music industry. Write a compelling, concise, and professional piece of content for the specified section. The tone should be authentic and engaging. Do not add any extra conversational text, just return the content.`;
 
-    const response = await AI.generateContent({
-        model: AI_MODELS.TEXT.AGENT,
-        contents: { role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] },
-        systemInstruction: systemPrompt,
-        config: {
+    const response = await AI.generateContent(
+        [{ role: 'user', parts: [{ text: `User Input: "${userInput}"\n\nWrite the ${section}.` }] }],
+        AI_MODELS.TEXT.AGENT,
+        {
+            systemInstruction: systemPrompt,
             ...AI_CONFIG.THINKING.HIGH,
-        },
-    });
-    return response.text().trim() || "";
+        }
+    );
+    return response.response.text().trim() || "";
 }

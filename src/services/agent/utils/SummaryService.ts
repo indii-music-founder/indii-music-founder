@@ -1,4 +1,4 @@
-import { AI } from '../../ai/AIService';
+import { GenAI as AI } from '../../ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { Logger } from '@/core/logger/Logger';
 
@@ -49,16 +49,16 @@ export class SummaryService {
             
             SUMMARY:`;
 
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST,
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                config: {
+            const response = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: prompt }] }],
+                AI_MODELS.TEXT.FAST,
+                {
                     ...AI_CONFIG.THINKING.LOW,
                     maxOutputTokens: 512
                 }
-            });
+            );
 
-            const summary = response.text().trim();
+            const summary = response.response.text().trim();
             Logger.info('SummaryService', 'Summary generated successfully.');
             return summary;
         } catch (error) {

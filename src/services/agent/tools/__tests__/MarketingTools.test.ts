@@ -1,7 +1,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { MarketingTools } from '../MarketingTools';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { MarketingService } from '@/services/marketing/MarketingService';
 
 import { firebaseAI } from '@/services/ai/FirebaseAIService';

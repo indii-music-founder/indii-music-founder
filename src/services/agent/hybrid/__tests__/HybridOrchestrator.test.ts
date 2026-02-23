@@ -118,8 +118,9 @@ describe('HybridOrchestrator Integration', () => {
         await orchestrator.execute(mockContext, "Run with long data");
 
         expect(GenAI.generateContent).toHaveBeenCalledTimes(2);
+        console.log("MOCK CALLS:", JSON.stringify((GenAI.generateContent as any).mock.calls, null, 2));
         // Verify the second call's prompt contains the truncation marker
-        const secondCallPrompt = (GenAI.generateContent as any).mock.calls[1][0][0].text;
-        expect(secondCallPrompt).toContain('Result truncated');
+        const secondCallPrompt = (GenAI.generateContent as any).mock.calls[1][0][0].parts[0].text;
+        expect(secondCallPrompt || '').toContain('Result truncated');
     });
 });

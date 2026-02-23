@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 export const LEGAL_TOOLS = {
@@ -11,11 +11,11 @@ export const LEGAL_TOOLS = {
         
         OUTPUT FORMAT: Markdown.
         `;
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Analysis failed.";
+        const res = await AI.generateContent(
+            prompt,
+            AI_MODELS.TEXT.AGENT
+        );
+        return res.response.text() || "Analysis failed.";
     },
     check_compliance: async (args: { region: string }) => {
         const prompt = `
@@ -23,11 +23,11 @@ export const LEGAL_TOOLS = {
         TASK: Check regulatory compliance requirements for region: ${args.region}.
         OUTPUT: Brief summary of key regulations.
         `;
-        const res = await AI.generateContent({
-            model: AI_MODELS.TEXT.AGENT,
-            contents: { role: 'user', parts: [{ text: prompt }] }
-        });
-        return res.text() || "Compliance check failed.";
+        const res = await AI.generateContent(
+            prompt,
+            AI_MODELS.TEXT.AGENT
+        );
+        return res.response.text() || "Compliance check failed.";
     }
 };
 

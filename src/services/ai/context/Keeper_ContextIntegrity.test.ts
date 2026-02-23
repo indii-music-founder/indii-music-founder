@@ -11,7 +11,7 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 vi.mock('@/services/firebase', () => ({
     auth: {
         currentUser: { uid: 'keeper-test-user' },
-        onAuthStateChanged: vi.fn(() => () => {})
+        onAuthStateChanged: vi.fn(() => () => { })
     },
     db: {},
     storage: {},
@@ -26,8 +26,8 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => {}) })),
-    initializeAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => {}) })),
+    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
+    initializeAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
     onAuthStateChanged: vi.fn(),
     browserLocalPersistence: {},
     browserSessionPersistence: {},
@@ -65,8 +65,8 @@ const mockGenerateContent = vi.fn().mockResolvedValue({
     functionCalls: () => []
 });
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
             generateContent: mockGenerateContent
@@ -126,7 +126,7 @@ describe('📚 Keeper: Context Integrity', () => {
         const callArgs = mockGenerateContent.mock.calls[0][0];
 
         // Extract the text passed to the model
-        const sentPrompt = callArgs.contents[0].parts[0].text;
+        const sentPrompt = callArgs[0].parts[0].text;
 
         // We want to ensure we are NOT just getting the tail end of a string (naive slice)
         // but a structured reconstruction or at least that the "HISTORY" section contains structured messages.

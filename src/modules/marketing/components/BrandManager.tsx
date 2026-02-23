@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { SocialLinks, BrandAsset } from '@/types/User';
 import { useToast } from '@/core/context/ToastContext';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { db } from '@/services/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'motion/react';

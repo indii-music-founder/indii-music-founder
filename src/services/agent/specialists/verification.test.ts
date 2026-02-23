@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { agentRegistry } from '../registry';
 import { AGENT_CONFIGS } from '../agentConfig';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 vi.mock('@/core/store', () => ({
@@ -26,8 +26,8 @@ vi.mock('@/core/store', () => ({
     }
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
             text: () => 'Mock Agent Response',
             functionCalls: () => [],

@@ -1,4 +1,4 @@
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 
 export interface AgentAction {
@@ -72,27 +72,29 @@ export class BrowserAgentDriver {
                 `;
 
                 // Call AI
-                const response = await AI.generateContent({
-                    model: AI_MODELS.BROWSER.AGENT,
-                    contents: {
-                        role: 'user',
-                        parts: [
-                            { text: prompt },
-                            {
-                                inlineData: {
-                                    mimeType: 'image/jpeg',
-                                    data: currentState.screenshotBase64 || ''
+                const response = await AI.generateContent(
+                    [
+                        {
+                            role: 'user',
+                            parts: [
+                                { text: prompt },
+                                {
+                                    inlineData: {
+                                        mimeType: 'image/jpeg',
+                                        data: currentState.screenshotBase64 || ''
+                                    }
                                 }
-                            }
-                        ]
-                    },
-                    config: {
+                            ]
+                        }
+                    ],
+                    AI_MODELS.BROWSER.AGENT,
+                    {
                         responseMimeType: 'application/json',
                         temperature: 0.0 // Precise actions
                     }
-                });
+                );
 
-                const plan = AI.parseJSON(response.text()) as AgentAction;
+                const plan = AI.parseJSON(response.response.text()) as AgentAction;
                 logs.push(`[Driver] AI Thought: ${plan.thought}`);
                 logs.push(`[Driver] AI Action: ${plan.action} ${plan.params?.selector || ''}`);
 

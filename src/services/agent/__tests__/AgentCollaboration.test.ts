@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import { AI } from '../../ai/AIService';
-import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
+import { GenAI } from '../../ai/GenAI';
+import { StreamChunk } from '@/shared/types/ai.dto';
 import { agentService } from '../AgentService';
 
-vi.mock('../../ai/AIService', () => ({
-    AI: {
+vi.mock('../../ai/GenAI', () => ({
+    GenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
     }
@@ -68,21 +68,23 @@ describe('Agent Collaboration', () => {
     });
 
     it('should delegate a task using delegate_task', async () => {
-        const mockToolCallResponse: WrappedResponse = {
-            response: {} as any,
-            text: () => 'Delegating...',
-            functionCalls: () => [{ name: 'delegate_task', args: { targetAgentId: 'marketing', task: 'Create a plan' } }],
-            usage: () => undefined
+        const mockToolCallResponse = {
+            response: {
+                text: () => 'Delegating...',
+                candidates: [{ content: { parts: [{ functionCall: { name: 'delegate_task', args: { targetAgentId: 'marketing', task: 'Create a plan' } } }] } }],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+            }
         };
 
-        const mockFinalResponse: WrappedResponse = {
-            response: {} as any,
-            text: () => 'Here is the marketing plan.',
-            functionCalls: () => [],
-            usage: () => undefined
+        const mockFinalResponse = {
+            response: {
+                text: () => 'Here is the marketing plan.',
+                candidates: [{ content: { parts: [{ text: 'Here is the marketing plan.' }] } }],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+            }
         };
 
-        const generateContentSpy = (AI.generateContent as any);
+        const generateContentSpy = (GenAI.generateContent as any);
         generateContentSpy
             .mockResolvedValueOnce(mockToolCallResponse) // 1. Decide to delegate
             .mockResolvedValueOnce(mockFinalResponse);   // 2. Report result
@@ -107,29 +109,37 @@ describe('Agent Collaboration', () => {
     });
 
     it('should consult multiple experts in parallel using consult_experts', async () => {
-        const mockToolCallResponse: WrappedResponse = {
-            response: {} as any,
-            text: () => 'Consulting experts...',
-            functionCalls: () => [{
-                name: 'consult_experts',
-                args: {
-                    consultations: [
-                        { targetAgentId: 'producer', task: 'Analyze audio' },
-                        { targetAgentId: 'marketing', task: 'Draft tweet' }
-                    ]
-                }
-            }],
-            usage: () => undefined
+        const mockToolCallResponse = {
+            response: {
+                text: () => 'Consulting experts...',
+                candidates: [{
+                    content: {
+                        parts: [{
+                            functionCall: {
+                                name: 'consult_experts',
+                                args: {
+                                    consultations: [
+                                        { targetAgentId: 'producer', task: 'Analyze audio' },
+                                        { targetAgentId: 'marketing', task: 'Draft tweet' }
+                                    ]
+                                }
+                            }
+                        }]
+                    }
+                }],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+            }
         };
 
-        const mockFinalResponse: WrappedResponse = {
-            response: {} as any,
-            text: () => 'Experts have spoken.',
-            functionCalls: () => [],
-            usage: () => undefined
+        const mockFinalResponse = {
+            response: {
+                text: () => 'Experts have spoken.',
+                candidates: [{ content: { parts: [{ text: 'Experts have spoken.' }] } }],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+            }
         };
 
-        const generateContentSpy = (AI.generateContent as any);
+        const generateContentSpy = (GenAI.generateContent as any);
         generateContentSpy
             .mockResolvedValueOnce(mockToolCallResponse)
             .mockResolvedValueOnce(mockFinalResponse);

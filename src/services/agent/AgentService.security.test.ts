@@ -2,7 +2,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // --- MOCKS ---
 
@@ -33,8 +33,8 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 // 3. Mock AI Service
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateContentStream: vi.fn()
     }
@@ -157,18 +157,20 @@ describe('🛡️ Shield: Agent PII Security Test', () => {
         // We verify that the call arguments contain the redacted text.
         const calls = vi.mocked(AI.generateContent).mock.calls;
         const orchestratorCall = calls.find(args => {
-            const content = args[0]?.contents;
-            // Depending on implementation, contents might be an object or array.
-            // Check the text parts.
-            if (content && content.parts && content.parts[0]?.text) {
-                return content.parts[0].text.includes("USER REQUEST:");
+            const contentArray = args[0] as any[]; // First arg is Content[]
+            if (Array.isArray(contentArray) && contentArray.length > 0) {
+                const parts = contentArray[0]?.parts;
+                if (parts && parts[0]?.text) {
+                    return parts[0].text.includes("USER REQUEST:");
+                }
             }
             return false;
         });
 
         // If orchestrator was called
         if (orchestratorCall) {
-            const promptText = orchestratorCall[0].contents.parts[0].text;
+            const contentArray = orchestratorCall[0] as any[];
+            const promptText = contentArray[0].parts[0].text;
             expect(promptText).toContain(expectedRedacted);
             expect(promptText).not.toContain("4111 1111 1111 1111");
         } else {

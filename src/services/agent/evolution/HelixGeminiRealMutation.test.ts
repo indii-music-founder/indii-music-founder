@@ -1,20 +1,21 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EvolutionEngine } from './EvolutionEngine';
 import { AgentGene, EvolutionConfig } from './types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
-// Mock AIService
-vi.mock('@/services/ai/AIService', () => ({
-  AI: {
-    generateText: vi.fn()
+// Mock GenAI
+vi.mock('@/services/ai/GenAI', () => ({
+  GenAI: {
+    generateText: vi.fn(),
+    generateContent: vi.fn()
   }
 }));
 
 // Real-like Gemini Mutation Function
 // This function constructs a prompt and calls AI.generateText, mimicking the real application logic.
 const geminiMutationFn = async (gene: AgentGene): Promise<AgentGene> => {
-    // 1. Construct Mutation Prompt
-    const mutationPrompt = `
+  // 1. Construct Mutation Prompt
+  const mutationPrompt = `
       You are an Evolutionary Mutation Engine powered by Gemini 3 Pro.
       Your task is to mutate the following agent's system prompt and parameters to improve its fitness.
 
@@ -25,22 +26,22 @@ const geminiMutationFn = async (gene: AgentGene): Promise<AgentGene> => {
       Do not add markdown formatting.
     `;
 
-    // 2. Call Gemini (Mocked)
-    // We use a high temperature to encourage diversity, as per Helix philosophy.
-    const responseText = await AI.generateText(mutationPrompt, 0.9);
+  // 2. Call Gemini (Mocked)
+  // We use a high temperature to encourage diversity, as per Helix philosophy.
+  const responseText = await AI.generateText(mutationPrompt, 0.9);
 
-    // 3. Parse and Apply
-    try {
-        const mutation = JSON.parse(responseText);
-        return {
-            ...gene,
-            systemPrompt: mutation.systemPrompt,
-            parameters: { ...gene.parameters, ...mutation.parameters }
-        };
-    } catch (e) {
-        // Fallback or re-throw (EvolutionEngine handles retries)
-        throw new Error("Gemini produced invalid JSON");
-    }
+  // 3. Parse and Apply
+  try {
+    const mutation = JSON.parse(responseText);
+    return {
+      ...gene,
+      systemPrompt: mutation.systemPrompt,
+      parameters: { ...gene.parameters, ...mutation.parameters }
+    };
+  } catch (e) {
+    // Fallback or re-throw (EvolutionEngine handles retries)
+    throw new Error("Gemini produced invalid JSON");
+  }
 };
 
 describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
@@ -74,8 +75,8 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
     // 1. Setup Mock Response from Gemini 3 Pro
     // This is the "Predictable 'Mutated String'" requested.
     const mockedMutationResponse = JSON.stringify({
-        systemPrompt: "Original Prompt [MUTATED BY GEMINI 3 PRO]",
-        parameters: { temperature: 0.99, thinkingBudget: 4000 }
+      systemPrompt: "Original Prompt [MUTATED BY GEMINI 3 PRO]",
+      parameters: { temperature: 0.99, thinkingBudget: 4000 }
     });
 
     vi.mocked(AI.generateText).mockResolvedValue(mockedMutationResponse);
@@ -85,18 +86,18 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
 
     // 3. Setup Population
     const population: AgentGene[] = [
-        { ...mockGene, id: 'elite-1', fitness: 100 },
-        { ...mockGene, id: 'elite-2', fitness: 90 },
-        { ...mockGene, id: 'weak-1', fitness: 10 }
+      { ...mockGene, id: 'elite-1', fitness: 100 },
+      { ...mockGene, id: 'elite-2', fitness: 90 },
+      { ...mockGene, id: 'weak-1', fitness: 10 }
     ];
 
     // 4. Initialize Engine with the "Real" Mutation Function
     const mockFitnessFn = vi.fn().mockImplementation(async (g) => g.fitness || 0);
     const mockCrossoverFn = vi.fn().mockImplementation(async (p1, p2) => ({
-        ...p1,
-        id: 'child',
-        systemPrompt: p1.systemPrompt,
-        parameters: p1.parameters
+      ...p1,
+      id: 'child',
+      systemPrompt: p1.systemPrompt,
+      parameters: p1.parameters
     }));
 
     engine = new EvolutionEngine(config, mockFitnessFn, geminiMutationFn, mockCrossoverFn);
@@ -115,8 +116,8 @@ describe('🧬 Helix: Gemini 3 Pro Real Mutation Loop', () => {
 
     // Assert the prompt passed to Gemini contained the original prompt
     expect(AI.generateText).toHaveBeenCalledWith(
-        expect.stringContaining('Original Prompt'),
-        0.9 // Temperature check
+      expect.stringContaining('Original Prompt'),
+      0.9 // Temperature check
     );
 
     // Assert the offspring has the mutated phenotype from the mocked response

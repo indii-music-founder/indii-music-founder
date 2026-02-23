@@ -1,11 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './GeneralistAgent';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/services/ai/AIService');
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
+    }
+}));
 
 describe('GeneralistAgent', () => {
     let agent: GeneralistAgent;
@@ -92,7 +97,7 @@ describe('GeneralistAgent', () => {
 
         // Verify the prompt contains the injected data
         const callArgs: any = generateSpy.mock.calls[0]?.[0];
-        const promptText = callArgs?.contents?.[0]?.parts?.find((p: any) => p.text?.includes('BRAND CONTEXT'))?.text;
+        const promptText = callArgs?.[0]?.parts?.find((p: any) => p.text?.includes('BRAND CONTEXT'))?.text;
 
         expect(promptText).toBeDefined();
         expect(promptText).toContain('Identity: Test Bio');

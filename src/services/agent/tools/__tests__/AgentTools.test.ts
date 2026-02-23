@@ -3,11 +3,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BrandTools } from '../BrandTools';
 import { MarketingTools } from '../MarketingTools';
 import { RoadTools } from '../RoadTools';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock the AI service (for Marketing/RoadTools)
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         generateStructuredData: vi.fn(),
         parseJSON: vi.fn((str) => JSON.parse(str))

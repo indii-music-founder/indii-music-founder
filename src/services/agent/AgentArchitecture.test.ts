@@ -1,19 +1,21 @@
- 
+
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentService } from './AgentService';
 import { ContextPipeline } from './components/ContextPipeline';
 import { AgentOrchestrator } from './components/AgentOrchestrator';
 import { HistoryManager } from './components/HistoryManager';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { agentRegistry } from './registry';
 
 // Mock dependencies
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn().mockResolvedValue({
-            text: () => "Mock Response",
-            functionCalls: () => []
+            response: {
+                text: () => "Mock Response",
+                functionCalls: () => []
+            }
         }),
         generateContentStream: vi.fn().mockResolvedValue({
             stream: {
@@ -148,25 +150,30 @@ describe('Multi-Agent Architecture Tests', () => {
 
             // Mock LLM response for routing
             vi.mocked(AI.generateContent).mockResolvedValueOnce({
-                text: () => JSON.stringify({
-                    targetAgentId: 'legal',
-                    confidence: 1.0,
-                    reasoning: 'Request is about contracts'
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        targetAgentId: 'legal',
+                        confidence: 1.0,
+                        reasoning: 'Request is about contracts'
+                    })
+                }
             } as any);
 
             const context = { currentModule: 'creative' }; // Even in creative module
             const agentId = await orchestrator.determineAgent(context as any, 'Draft a contract');
 
             expect(agentId).toBe('legal');
-            expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-                contents: expect.objectContaining({
-                    role: 'user',
-                    parts: expect.arrayContaining([
-                        expect.objectContaining({ text: expect.stringContaining('Draft a contract') })
-                    ])
-                })
-            }));
+            expect(AI.generateContent).toHaveBeenCalledWith(
+                expect.arrayContaining([
+                    expect.objectContaining({
+                        parts: expect.arrayContaining([
+                            expect.objectContaining({ text: expect.stringContaining('Draft a contract') })
+                        ])
+                    })
+                ]),
+                expect.any(String), // model
+                expect.any(Object)  // config
+            );
         });
 
         it('should fallback to generalist if LLM fails', async () => {
@@ -212,15 +219,22 @@ describe('Multi-Agent Architecture Tests', () => {
             await agent_marketing?.execute('Research market trends');
 
             // BaseAgent currently uses generateContent
-            expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-                tools: expect.arrayContaining([
+            // BaseAgent currently uses generateContent with positional arguments:
+            // contents, model, config, systemInstruction, tools, options
+            expect(AI.generateContent).toHaveBeenCalledWith(
+                expect.any(Array),  // contents
+                expect.any(String), // model
+                expect.any(Object), // config
+                undefined,          // systemInstruction
+                expect.arrayContaining([
                     expect.objectContaining({
                         functionDeclarations: expect.arrayContaining([
                             expect.objectContaining({ name: 'recall_memories' })
                         ])
                     })
-                ])
-            }));
+                ]),
+                expect.any(Object)  // options
+            );
         });
     });
 

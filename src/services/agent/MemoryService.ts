@@ -1,6 +1,6 @@
 
 import { FirestoreService } from '../FirestoreService';
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 
@@ -305,15 +305,13 @@ class MemoryService {
             }
             `;
 
-            const result = await AI.generateContent({
-                model: AI_MODELS.TEXT.FAST, // Use fast model for background tasks
-                contents: { role: 'user', parts: [{ text: prompt }] },
-                config: {
-                    responseMimeType: 'application/json'
-                }
-            });
+            const result = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: prompt }] }],
+                AI_MODELS.TEXT.FAST,
+                { responseMimeType: 'application/json' }
+            );
 
-            const responseText = result.text() || '{}';
+            const responseText = result.response.text() || '{}';
             const parsed = JSON.parse(responseText) as { consolidated: string[], idsToDelete: string[] };
 
             // 1. Delete redundant memories

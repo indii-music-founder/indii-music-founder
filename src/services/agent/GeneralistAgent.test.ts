@@ -8,12 +8,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { GeneralistAgent } from './specialists/GeneralistAgent';
 import { useStore } from '@/core/store';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { TOOL_REGISTRY } from './tools';
 
 // Mock dependencies
 vi.mock('@/core/store');
-vi.mock('@/services/ai/AIService');
+vi.mock('@/services/ai/GenAI');
 vi.mock('./tools', () => ({
     TOOL_REGISTRY: {
         test_tool: vi.fn().mockResolvedValue('Tool executed successfully'),

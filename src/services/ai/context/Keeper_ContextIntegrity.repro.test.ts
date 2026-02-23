@@ -10,9 +10,11 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 // 1. Hoist the mock function so it can be used inside vi.mock factory
 const { mockGenerateContent } = vi.hoisted(() => ({
     mockGenerateContent: vi.fn().mockResolvedValue({
-        text: () => 'I remember.',
-        usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
-        functionCalls: () => []
+        response: {
+            text: () => 'I remember.',
+            candidates: [{ content: { parts: [{ text: 'I remember.' }] } }],
+            usageMetadata: { promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }
+        }
     })
 }));
 
@@ -55,9 +57,9 @@ vi.mock('@/services/MembershipService', () => ({
     }
 }));
 
-// Mock AIService
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+// Mock GenAI
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
             generateContent: mockGenerateContent
@@ -134,10 +136,10 @@ describe('📚 Keeper: Context Integrity', () => {
 
         // 3. Assert Context Integrity
         expect(mockGenerateContent).toHaveBeenCalled();
-        const callArgs = mockGenerateContent.mock.calls[0][0];
+        const callArgs = mockGenerateContent.mock.calls[0];
 
-        // Extract the text passed to the model
-        const sentPrompt = callArgs.contents[0].parts[0].text;
+        // Extract the text passed to the model. First arg is contents array.
+        const sentPrompt = callArgs[0][0].parts[0].text;
 
         // Verify we are NOT using naive slicing
         expect(sentPrompt).not.toContain('[...Older history truncated...]');

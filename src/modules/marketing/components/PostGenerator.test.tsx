@@ -4,7 +4,7 @@ import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import PostGenerator from './PostGenerator';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // --- Mocks ---
 
@@ -42,8 +42,8 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock AI Service
-vi.mock('@/services/ai/AIService', () => ({
-  AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+  GenAI: {
     generateStructuredData: vi.fn(),
     generateImage: vi.fn()
   }

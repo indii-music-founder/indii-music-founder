@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SOCIAL_TOOLS } from './tools';
-import { AI } from '../../services/ai/AIService';
+import { GenAI as AI } from '../../services/ai/GenAI';
 import { SchemaType } from 'firebase/ai';
 
 // Mock AIService
-vi.mock('../../services/ai/AIService', () => ({
-    AI: {
+vi.mock('../../services/ai/GenAI', () => ({
+    GenAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn()
     }

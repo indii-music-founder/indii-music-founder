@@ -200,16 +200,17 @@ export class WhiskService {
      */
     static async generateInspiration(category: 'subject' | 'scene' | 'style' | 'motion'): Promise<string[]> {
         try {
-            const { AI } = await import('@/services/ai/AIService');
+            const { GenAI: AI } = await import('@/services/ai/GenAI');
 
-            const { stream } = await AI.generateContentStream({
-                contents: [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
-                systemInstruction: INSPIRATION_SYSTEM_PROMPTS[category],
-                config: {
+            const { stream } = await AI.generateContentStream(
+                [{ role: 'user', parts: [{ text: 'Generate inspiration ideas now.' }] }],
+                undefined, // Default model configuration will be applied by GenAI facade
+                {
                     temperature: 1.0,
                     maxOutputTokens: 500,
-                }
-            });
+                },
+                INSPIRATION_SYSTEM_PROMPTS[category]
+            );
 
             // Consume stream to get full response
             let fullText = '';

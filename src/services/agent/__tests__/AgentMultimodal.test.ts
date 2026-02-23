@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { BaseAgent } from '../BaseAgent';
-import { AI } from '../../ai/AIService';
-import { WrappedResponse, StreamChunk } from '@/shared/types/ai.dto';
+import { GenAI } from '../../ai/GenAI';
+import { StreamChunk } from '@/shared/types/ai.dto';
 
 // Mock AI
-vi.mock('../../ai/AIService', () => ({
+vi.mock('../../ai/GenAI', () => ({
+    GenAI: {
+        generateContentStream: vi.fn(),
+        generateContent: vi.fn()
+    },
     AI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
@@ -56,14 +60,15 @@ describe('Agent Multimodal Support', () => {
     });
 
     it('should include attachments in AI requests', async () => {
-        const mockResponse: WrappedResponse = {
-            response: {} as any,
-            text: () => 'I see a red car.',
-            functionCalls: () => [],
-            usage: () => undefined
+        const mockResponse = {
+            response: {
+                text: () => 'I see a red car.',
+                candidates: [{ content: { parts: [{ text: 'I see a red car.' }] } }],
+                usageMetadata: { promptTokenCount: 1, candidatesTokenCount: 1, totalTokenCount: 2 }
+            }
         };
 
-        (AI.generateContent as any).mockResolvedValue(mockResponse);
+        (GenAI.generateContent as any).mockResolvedValue(mockResponse);
 
         const attachments = [
             { mimeType: 'image/jpeg', base64: 'base64-data-here' }
@@ -72,8 +77,8 @@ describe('Agent Multimodal Support', () => {
         const result = await agent.execute('What is in this image?', {}, undefined, undefined, attachments);
 
         // Verify AI call contains the image part
-        expect(AI.generateContent).toHaveBeenCalledWith(expect.objectContaining({
-            contents: [
+        expect(GenAI.generateContent).toHaveBeenCalledWith(
+            expect.arrayContaining([
                 expect.objectContaining({
                     parts: expect.arrayContaining([
                         expect.objectContaining({ text: expect.stringContaining('What is in this image?') }),
@@ -85,8 +90,13 @@ describe('Agent Multimodal Support', () => {
                         })
                     ])
                 })
-            ]
-        }));
+            ]),
+            expect.any(String), // model
+            expect.any(Object), // config
+            undefined,          // systemInstruction (passed as undefined in BaseAgent)
+            expect.any(Array),  // tools
+            expect.any(Object)  // options
+        );
 
         expect(result.text).toBe('I see a red car.');
     });

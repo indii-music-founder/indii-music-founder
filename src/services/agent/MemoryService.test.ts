@@ -4,11 +4,22 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 // The instance uses the class internally.
 import { memoryService, MemoryItem } from './MemoryService';
 import { FirestoreService } from '../FirestoreService';
-import { AI } from '../ai/AIService';
+import { GenAI as AI } from '../ai/GenAI';
 
 // Mock dependencies
 vi.mock('../FirestoreService');
-vi.mock('../ai/AIService');
+vi.mock('../ai/GenAI', () => ({
+    GenAI: {
+        generateContent: vi.fn(),
+        embedContent: vi.fn(),
+        batchEmbedContents: vi.fn()
+    },
+    AI: {
+        generateContent: vi.fn(),
+        embedContent: vi.fn(),
+        batchEmbedContents: vi.fn()
+    }
+}));
 
 // Mock RequestBatcher to bypass async queue
 vi.mock('@/utils/RequestBatcher', () => {
@@ -212,10 +223,22 @@ describe('MemoryService', () => {
 
             // Mock AI response
             (AI.generateContent as any).mockResolvedValue({
-                text: () => JSON.stringify({
-                    consolidated: ['Summary of facts'],
-                    idsToDelete: ['old-0', 'old-1']
-                })
+                response: {
+                    text: () => JSON.stringify({
+                        consolidated: ['Summary of facts'],
+                        idsToDelete: ['old-0', 'old-1']
+                    }),
+                    candidates: [{
+                        content: {
+                            parts: [{
+                                text: JSON.stringify({
+                                    consolidated: ['Summary of facts'],
+                                    idsToDelete: ['old-0', 'old-1']
+                                })
+                            }]
+                        }
+                    }]
+                }
             });
 
             await memoryService.consolidateMemories('p1');

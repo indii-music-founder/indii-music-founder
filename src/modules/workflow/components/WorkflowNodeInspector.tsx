@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { X, Sparkles, Save, Loader2 } from 'lucide-react';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { isTextPart } from '@/shared/types/ai.dto';
 import { AI_MODELS } from '@/core/config/ai-models';
 
@@ -34,12 +34,12 @@ export default function WorkflowNodeInspector() {
         if (!aiInstruction.trim()) return;
         setIsGenerating(true);
         try {
-            const response = await AI.generateContent({
-                model: AI_MODELS.TEXT.AGENT,
-                contents: [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }]
-            });
+            const response = await AI.generateContent(
+                [{ role: 'user', parts: [{ text: `Refine this prompt based on the instruction: "${aiInstruction}". \n\nCurrent Prompt: "${prompt}"\n\nReturn ONLY the refined prompt text.` }] }],
+                AI_MODELS.TEXT.AGENT
+            );
             const part = response.response.candidates?.[0]?.content?.parts?.[0];
-            const newPrompt = (part && isTextPart(part)) ? part.text : prompt;
+            const newPrompt = (part && 'text' in part && typeof part.text === 'string') ? part.text : prompt;
             setPrompt(newPrompt);
             setAiInstruction('');
         } catch (e) {

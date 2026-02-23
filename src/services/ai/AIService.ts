@@ -1,124 +1,64 @@
-import { Schema } from 'firebase/ai';
-import {
-    Content,
-    GenerateContentResponse,
-    GenerateVideoOptions,
-    GenerateImageOptions,
-    EmbedContentOptions,
-    Candidate,
-    WrappedResponse,
-    GenerateContentOptions,
-    StreamChunk,
-    GenerateSpeechResponse
-} from '@/shared/types/ai.dto';
 import { GenAI } from './GenAI';
+import type { GenerateContentResult, Content, GenerationConfig, Tool, SafetySetting, ToolConfig } from '@google/generative-ai';
 
 /**
- * @deprecated Use GenAI facade instead: `import { GenAI } from '@/services/ai/GenAI'`
- * 
- * Legacy AIService wrapper for backward compatibility during migration.
- * All methods now delegate to GenAI (FirebaseAIService).
+ * @deprecated Use GenAI instead. This is a compatibility wrapper for legacy code and tests.
  */
 export class AIService {
-    private static instance: AIService;
+    /**
+     * Legacy generateContent supporting both positional and object-based parameters.
+     */
+    async generateContent(
+        promptOrOptions: string | Content[] | { model?: string, contents: any, timeout?: number, signal?: AbortSignal, config?: GenerationConfig, systemInstruction?: string, tools?: Tool[] },
+        modelOverride?: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[],
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig, thoughtSignature?: string }
+    ): Promise<GenerateContentResult> {
+        console.warn('[indiiOS:DEPRECATED] AIService.generateContent is deprecated. Use GenAI.generateContent instead.');
 
-    private constructor() { }
-
-    public static getInstance(): AIService {
-        if (!AIService.instance) {
-            AIService.instance = new AIService();
-        }
-        return AIService.instance;
-    }
-
-    /** @deprecated Use GenAI.generateText */
-    async generateText(prompt: string, thinkingBudget?: number, systemInstruction?: string): Promise<string> {
-        return GenAI.generateText(prompt, thinkingBudget, systemInstruction);
-    }
-
-    /** @deprecated Use GenAI.generateStructuredData */
-    async generateStructuredData<T>(prompt: string | any[], schema: Schema, thinkingBudget?: number, systemInstruction?: string): Promise<T> {
-        return GenAI.generateStructuredData<T>(prompt, schema, thinkingBudget, systemInstruction);
-    }
-
-    /** @deprecated Use GenAI.generateContent */
-    async generateContent(prompt: string | any, options: GenerateContentOptions = {}): Promise<WrappedResponse> {
-        // Handle legacy positional arguments if prompt is a string
-        if (typeof prompt === 'string' && !options.contents) {
-            options.contents = [{ role: 'user', parts: [{ text: prompt }] }];
+        if (typeof promptOrOptions === 'object' && !Array.isArray(promptOrOptions) && (promptOrOptions as any).contents) {
+            const opts = promptOrOptions as any;
+            return GenAI.generateContent(
+                opts.contents,
+                opts.model || modelOverride,
+                opts.config || config,
+                opts.systemInstruction || systemInstruction,
+                opts.tools || tools,
+                { signal: opts.signal || options?.signal, ...options }
+            );
         }
 
-        const result = await GenAI.generateContent(
-            (options.contents || prompt) as string | Content[],
-            options.model,
-            options.config,
-            options.systemInstruction,
-            options.tools as any,
-            options
-        );
-
-        // Map back to legacy WrappedResponse
-        return {
-            response: result.response as unknown as GenerateContentResponse,
-            text: () => result.response.text(),
-            functionCalls: () => {
-                const parts = result.response.candidates?.[0]?.content?.parts || [];
-                return parts
-                    .filter(p => 'functionCall' in p)
-                    .map(p => (p as any).functionCall);
-            },
-            usage: () => result.response.usageMetadata
-        };
+        return GenAI.generateContent(promptOrOptions as any, modelOverride, config, systemInstruction, tools, options);
     }
 
-    /** @deprecated Use GenAI.generateContentStream */
-    async generateContentStream(options: GenerateContentOptions): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
-        const result = await GenAI.generateContentStream(
-            options.contents as Content[],
-            options.model,
-            options.config,
-            options.systemInstruction,
-            options.tools as any,
-            options
-        );
-
-        return result;
+    /**
+     * Static wrapper for convenience.
+     */
+    static async generateContent(
+        prompt: any,
+        modelOverride?: string,
+        config?: GenerationConfig,
+        systemInstruction?: string,
+        tools?: Tool[],
+        options?: any
+    ): Promise<GenerateContentResult> {
+        return new AIService().generateContent(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 
-    /** @deprecated Use GenAI.generateVideo */
-    async generateVideo(options: GenerateVideoOptions): Promise<string> {
-        return GenAI.generateVideo(options);
-    }
-
-    /** @deprecated Use GenAI.generateImage */
-    async generateImage(options: GenerateImageOptions): Promise<string> {
-        return GenAI.generateImage(options);
-    }
-
-    /** @deprecated Use GenAI.analyzeImage */
-    async analyzeImage(prompt: string, imageBase64: string, mimeType: string = 'image/jpeg'): Promise<string> {
-        return GenAI.analyzeImage(prompt, imageBase64, mimeType);
-    }
-
-    /** @deprecated Use GenAI.generateSpeech */
-    async generateSpeech(text: string, voice?: string, modelOverride?: string): Promise<GenerateSpeechResponse> {
-        return GenAI.generateSpeech(text, voice, modelOverride);
-    }
-
-    /** @deprecated Use GenAI.embedContent */
-    async embedContent(options: EmbedContentOptions): Promise<{ values: number[] }> {
-        return GenAI.embedContent(options);
-    }
-
-    /** @deprecated Use GenAI.batchEmbedContents */
-    async batchEmbedContents(contents: Content[], model?: string): Promise<number[][]> {
-        return GenAI.batchEmbedContents(contents, model);
-    }
-
-    /** @deprecated Use GenAI.parseJSON */
-    parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
-        return GenAI.parseJSON<T>(text);
+    async generateContentStream(
+        prompt: any,
+        modelOverride?: string,
+        config?: any,
+        systemInstruction?: string,
+        tools?: any[],
+        options?: any
+    ) {
+        console.warn('[indiiOS:DEPRECATED] AIService.generateContentStream is deprecated. Use GenAI.generateContentStream instead.');
+        return GenAI.generateContentStream(prompt, modelOverride, config, systemInstruction, tools, options);
     }
 }
 
-export const AI = AIService.getInstance();
+export const AI = AIService;
+export default AIService;

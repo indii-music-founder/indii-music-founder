@@ -2,16 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createAgent } from './AgentBuilder';
 import { AgentTestHarness } from './test/AgentTestHarness';
 import { PromptService } from './PromptService';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 
 // Mock global dependencies
 vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
+    remoteConfig: { defaultConfig: {} },
+    functions: {},
+    storage: {},
     db: {}
 }));
 
-vi.mock('@/services/ai/AIService', () => ({
-    AI: {
+vi.mock('@/services/ai/GenAI', () => ({
+    GenAI: {
         generateContent: vi.fn(),
         embedContent: vi.fn(),
         generateContentStream: vi.fn()
@@ -57,7 +60,7 @@ describe('Agent SDK Integration', () => {
         const harness = new AgentTestHarness(agentConfig);
 
         // Mock AI to respond "Echo: hi"
-        harness.mockAIResponse('Echo: hi');
+        harness.mockGenAIResponse('Echo: hi');
 
         const result = await harness.run('Say hi');
 
@@ -82,22 +85,31 @@ describe('Agent SDK Integration', () => {
         const harness = new AgentTestHarness(agentConfig);
 
         // Mock sequence for generateContent (Tool Call -> Final Result)
-        const aiSpy = vi.mocked(AI.generateContent);
+        const { GenAI } = await import('@/services/ai/GenAI');
+        const aiSpy = vi.mocked(GenAI.generateContent);
 
         // 1. First call: AI requests tool execution
         aiSpy.mockResolvedValueOnce({
-            response: {} as any,
-            text: () => 'Thinking...',
-            functionCalls: () => [{ name: 'testTool', args: {} }],
-            usage: () => ({})
+            response: {
+                text: () => 'Thinking...',
+                candidates: [{
+                    content: {
+                        parts: [{ functionCall: { name: 'testTool', args: {} } }]
+                    }
+                }],
+                usageMetadata: {}
+            }
         } as any);
 
         // 2. Second call: AI sees tool result and finishes
         aiSpy.mockResolvedValueOnce({
-            response: {} as any,
-            text: () => 'Task completed successfully',
-            functionCalls: () => [],
-            usage: () => ({})
+            response: {
+                text: () => 'Task completed successfully',
+                candidates: [{
+                    content: { parts: [{ text: 'Task completed successfully' }] }
+                }],
+                usageMetadata: {}
+            }
         } as any);
 
         const result = await harness.run('Do work');

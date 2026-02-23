@@ -628,10 +628,9 @@ ${task}
                 iterations++;
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
-                const response = await GenAI.generateContent({
-                    model: AI_MODELS.TEXT.AGENT,
-                    contents: [{
-                        role: 'user',
+                const result = await GenAI.generateContent(
+                    [{ // contents
+                        role: 'user' as const,
                         parts: [
                             { text: fullPrompt },
                             ...(attachments || []).map(a => ({
@@ -639,10 +638,37 @@ ${task}
                             }))
                         ]
                     }],
-                    config: { ...AI_CONFIG.THINKING.LOW },
-                    tools: allTools as Tool[],
-                    thoughtSignature: currentThoughtSignature
-                });
+                    AI_MODELS.TEXT.AGENT, // modelOverride
+                    { ...AI_CONFIG.THINKING.LOW }, // config
+                    undefined, // systemInstruction
+                    allTools as any, // tools
+                    { thoughtSignature: currentThoughtSignature } // options
+                );
+
+                // Wrap the raw result into a WrappedResponse-like shape for downstream use
+                const response = {
+                    text: () => result.response?.text?.() || '',
+                    functionCalls: () => {
+                        // Support mocked results that provide a direct functionCalls helper (common in tests)
+                        if (result.response && typeof (result.response as any).functionCalls === 'function') {
+                            return (result.response as any).functionCalls();
+                        }
+
+                        const parts = result.response?.candidates?.[0]?.content?.parts || [];
+                        return parts
+                            .filter((p: any) => 'functionCall' in p)
+                            .map((p: any) => (p as any).functionCall);
+                    },
+                    usage: () => result.response?.usageMetadata,
+                    thoughtSignature: (() => {
+                        // Extract thoughtSignature from the last part of the response
+                        const parts = result.response?.candidates?.[0]?.content?.parts || [];
+                        for (const p of parts) {
+                            if ((p as any).thoughtSignature) return (p as any).thoughtSignature;
+                        }
+                        return undefined;
+                    })()
+                };
 
                 // Transfer thought signature for function calling continuity
                 if (response.thoughtSignature) {
@@ -650,7 +676,7 @@ ${task}
                 }
 
                 // LEDGER: Record Spend based on Token Usage
-                const usage = response.usage?.() as any;
+                const usage = response.usage?.();
                 if (usage && context?.userId) {
                     const pricing = MODEL_PRICING[AI_MODELS.TEXT.AGENT];
                     // Ensure we are using a text model pricing schema (input/output)

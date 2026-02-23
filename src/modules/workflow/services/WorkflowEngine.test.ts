@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { WorkflowEngine } from './WorkflowEngine';
 import { CustomNode, CustomEdge, Status } from '../types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 
 // Mock dependencies
@@ -12,7 +12,7 @@ vi.mock('@/core/store', () => ({
         })
     }
 }));
-vi.mock('@/services/ai/AIService');
+vi.mock('@/services/ai/GenAI');
 vi.mock('@/services/image/ImageGenerationService');
 vi.mock('@/services/rag/ragService', () => ({
     runAgenticWorkflow: vi.fn().mockResolvedValue({
