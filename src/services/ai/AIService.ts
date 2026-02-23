@@ -1,5 +1,6 @@
 import { GenAI } from './GenAI';
-import type { GenerateContentResult, Content, GenerationConfig, Tool, SafetySetting, ToolConfig } from '@google/generative-ai';
+import type { GenerateContentResult } from 'firebase/ai';
+import type { Content, GenerationConfig, Tool, SafetySetting, ToolConfig } from '@/shared/types/ai.dto';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
 /**
@@ -73,12 +74,21 @@ export class AIService {
             };
 
             const resultPromise = GenAI.generateContent(
+<<<<<<< claude/quizzical-mclaren
+                p_contents,
+                p_model,
+                p_config,
+                p_systemInstruction,
+                p_tools as any, // Cast: ai.dto.Tool → firebase/ai.Tool structural equivalence
+                { ...options, signal: internalSignal }
+=======
                 p_contents as any,
                 p_model as any,
                 p_config as any,
                 p_systemInstruction as any,
                 p_tools as any,
                 exactOptions
+>>>>>>> main
             );
 
             // 3. Race against timeout
