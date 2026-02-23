@@ -8,7 +8,7 @@ import { Virtuoso, VirtuosoHandle } from 'react-virtuoso';
 import { agentRegistry } from '@/services/agent/registry';
 import { requestNotificationPermission } from '@/lib/mobile';
 import { MessageItem } from './chat/ChatMessage';
-import { useDragControls } from 'motion/react';
+import { useDragControls, useMotionValue } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 
 interface ChatOverlayProps {
@@ -33,6 +33,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
     const setKnowledgeBaseEnabled = useStore(state => state.setKnowledgeBaseEnabled);
 
     const dragControls = useDragControls();
+    const dragX = useMotionValue(0);
+    const dragY = useMotionValue(0);
 
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
@@ -203,15 +205,14 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
             <AnimatePresence mode="wait">
                 {!isStealth && (
                     <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                        initial={{ opacity: 0, scale: 0.95 }}
                         animate={{
                             opacity: 1,
                             scale: isMinimized ? 0.2 : 1,
-                            y: 0,
                             width: isMinimized ? 80 : localSize.width,
                             height: isMinimized ? 80 : localSize.height,
                         }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
                         drag={isDesktop}
                         dragControls={dragControls}
@@ -219,6 +220,8 @@ const ChatOverlay: React.FC<ChatOverlayProps> = ({ onClose, onToggleMinimize }) 
                         dragMomentum={false}
                         dragElastic={0}
                         style={isDesktop ? {
+                            x: dragX,
+                            y: dragY,
                             bottom: 32,
                             right: 32,
                             position: 'fixed'
