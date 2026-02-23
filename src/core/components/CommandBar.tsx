@@ -5,14 +5,18 @@ import { motion, AnimatePresence } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 
 function CommandBar() {
-    const { isCommandBarDetached, isAgentOpen } = useStore(
+    const { isCommandBarDetached, isAgentOpen, currentModule } = useStore(
         useShallow(state => ({
             isCommandBarDetached: state.isCommandBarDetached,
-            isAgentOpen: state.isAgentOpen
+            isAgentOpen: state.isAgentOpen,
+            currentModule: state.currentModule,
         }))
     );
 
-    // In docked mode, if the chat overlay is open, we hide this standalone bar 
+    // HQ page (agent module) has its own inline PromptArea — hide this global one
+    if (currentModule === 'agent') return null;
+
+    // In docked mode, if the chat overlay is open, we hide this standalone bar
     // because it's rendered inside ChatOverlay.
     if (!isCommandBarDetached && isAgentOpen) return null;
 
