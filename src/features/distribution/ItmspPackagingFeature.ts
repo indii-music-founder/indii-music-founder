@@ -32,12 +32,12 @@ export interface ItmspPackagingResult {
 export class ItmspPackagingFeature {
 
   /**
-   * Executes the ITMSP packaging process using PythonBridge.
+   * Executes the ITMSP packaging process using PythonBridge or AgentSupervisor.
    * @param options The packaging options (releaseId, stagingPath)
-   * @param pythonBridge Instance of PythonBridge from electron/utils/python-bridge
+   * @param runner Instance of PythonBridge or AgentSupervisor from electron/utils
    * @returns Standardized result object
    */
-  async execute(options: ItmspPackagingOptions, pythonBridge: any): Promise<ItmspPackagingResult> {
+  async execute(options: ItmspPackagingOptions, runner: any): Promise<ItmspPackagingResult> {
     // 1. Validation
     const validation = ItmspPackagingSchema.safeParse(options);
     if (!validation.success) {
@@ -49,15 +49,17 @@ export class ItmspPackagingFeature {
 
     const { releaseId, stagingPath } = validation.data;
 
-    // 2. Execute using PythonBridge
-    // PythonBridge correctly resolves script paths for both dev and production
+    // 2. Execute using the provided runner
     try {
-      const result = await pythonBridge.runScript(
+      // AgentSupervisor.runScript will throw if status === 'error' or parsing fails.
+      // It returns output.data for strict schema scripts, or raw JSON for legacy.
+      const result = await runner.runScript(
         'distribution',
         'package_itmsp.py',
         [releaseId, stagingPath]
       );
 
+      // Handle both legacy format (status: FAIL) and supervisor-validated format
       if (result.status === 'FAIL' || result.error) {
         return {
           success: false,
