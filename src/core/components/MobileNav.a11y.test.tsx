@@ -19,7 +19,7 @@ vi.mock('motion/react', () => ({
     motion: {
         div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
     },
-    AnimatePresence: ({ children }: any) => <>{children}</>,
+    AnimatePresence: ({ children }: any) => children,
 }));
 
 // Mock lucide icons to avoid rendering issues and keep DOM clean

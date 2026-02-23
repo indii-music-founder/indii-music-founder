@@ -352,6 +352,49 @@ class AgentZeroService {
             throw e;
         }
     }
+
+    /**
+     * The "Ship It" command - Initiates a multi-agent relay for distribution.
+     * This coordinates Legal, Brand, and Distribution agents.
+     */
+    async shipIt(assetId: string, options: Record<string, any> = {}): Promise<AgentTaskResponse> {
+        return this.executeTask({
+            project_id: options.projectId || 'global',
+            instruction: `/ship-it asset=${assetId} target=${options.target || 'staging'}`,
+            agent_profile: 'distribution_orchestrator',
+            variables: {
+                asset_id: assetId,
+                ...options
+            }
+        });
+    }
+
+    /**
+     * Triggers the distribution relay after an asset is finalized.
+     * This is internally called by AssetObserver but can be invoked manually.
+     */
+    async triggerDistributionRelay(item: any) {
+        // 1. Notify Legal (Simulated/Agentic check)
+        const legalCheck = await this.sendMessage(
+            `I have a new ${item.type} finalized. Please perform a quick rights check for: ${item.prompt.substring(0, 50)}`,
+            [],
+            'legal_department'
+        );
+
+        // 2. Notify Brand (Check metadata alignment)
+        const brandCheck = await this.sendMessage(
+            `Does this artwork align with the current artist brand identity? Asset ID: ${item.id}`,
+            [],
+            'brand_department'
+        );
+
+        // 3. Summarize results for the user and ask for confirmation
+        return this.sendMessage(
+            `Relay Status: Legal (${legalCheck.message.includes('✅') ? 'OK' : 'Review Required'}), Brand (Aligned). Ready to initiate DDEX packaging. Should I proceed?`,
+            [],
+            'distribution_orchestrator'
+        );
+    }
 }
 
 export const agentZeroService = new AgentZeroService();

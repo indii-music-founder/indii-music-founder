@@ -337,7 +337,7 @@ export class BaseAgent implements SpecializedAgent {
             },
             speak: async (args: Record<string, unknown>, _context?: AgentContext, _toolContext?: ToolExecutionContext) => {
                 const { text, voice } = args as { text: string; voice?: string };
-                const { AI } = await import('@/services/ai/AIService');
+                const { GenAI } = await import('@/services/ai/GenAI');
                 const { audioService } = await import('@/services/audio/AudioService');
 
                 const VOICE_MAP: Record<string, string> = {
@@ -351,7 +351,7 @@ export class BaseAgent implements SpecializedAgent {
                 const selectedVoice = voice || VOICE_MAP[this.id.toLowerCase()] || 'Kore';
 
                 try {
-                    const response = await AI.generateSpeech(text, selectedVoice);
+                    const response = await GenAI.generateSpeech(text, selectedVoice);
                     await audioService.play(response.audio.inlineData.data, response.audio.inlineData.mimeType);
                     return {
                         success: true,
@@ -448,7 +448,7 @@ export class BaseAgent implements SpecializedAgent {
      */
     private async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
-        const { AI } = await import('@/services/ai/AIService');
+        const { GenAI } = await import('@/services/ai/GenAI');
 
         // Report thinking start
         onProgress?.({ type: 'thought', content: `Analyzing request: "${task.substring(0, 50)}..."` });
@@ -628,7 +628,7 @@ ${task}
                 iterations++;
                 onProgress?.({ type: 'thought', content: iterations === 1 ? 'Generating response...' : 'Processing tool result...' });
 
-                const response = await AI.generateContent({
+                const response = await GenAI.generateContent({
                     model: AI_MODELS.TEXT.AGENT,
                     contents: [{
                         role: 'user',

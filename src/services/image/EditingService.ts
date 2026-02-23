@@ -1,4 +1,4 @@
-import { firebaseAI } from '../ai/FirebaseAIService';
+import { GenAI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -289,7 +289,7 @@ export class EditingService {
         parts.push({ text: `Combine these references. ${sanitizedPrompt} ${sanitizedContext}` });
 
         // Use rawGenerateContent with image model and responseModalities
-        const response = await firebaseAI.rawGenerateContent(
+        const response = await GenAI.rawGenerateContent(
             [{ role: 'user', parts }],
             AI_MODELS.IMAGE.GENERATION,
             { responseModalities: ['IMAGE'] }
@@ -336,7 +336,7 @@ export class EditingService {
             required: ['scenes']
         };
 
-        const plan = await firebaseAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
+        const plan = await GenAI.generateStructuredData<{ scenes: string[] }>(plannerPrompt, planSchema);
         const scenes = plan.scenes || [];
         while (scenes.length < options.count) scenes.push(`${sanitizedPrompt} (${options.timeDeltaLabel} Sequence)`);
 
@@ -346,7 +346,7 @@ export class EditingService {
         for (let i = 0; i < options.count; i++) {
             // Step 2: Analyze Context (if prev image exists)
             if (previousImage) {
-                visualContext = await firebaseAI.analyzeImage(
+                visualContext = await GenAI.analyzeImage(
                     `You are a Visual Physics Engine. Analyze the scene. Return a concise visual description to guide the next frame generation.`,
                     previousImage.data,
                     previousImage.mimeType
@@ -364,7 +364,7 @@ export class EditingService {
             parts.push({ text: promptText });
 
             // Use rawGenerateContent with image model and responseModalities
-            const response = await firebaseAI.rawGenerateContent(
+            const response = await GenAI.rawGenerateContent(
                 [{ role: 'user', parts }],
                 AI_MODELS.IMAGE.GENERATION,
                 { responseModalities: ['IMAGE'] }

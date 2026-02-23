@@ -1,7 +1,7 @@
 import { vi, MockInstance } from 'vitest';
 import { BaseAgent } from '../../BaseAgent';
 import { AgentConfig, AgentContext } from '../../types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { TraceService } from '../../observability/TraceService';
 
 /**
@@ -39,13 +39,13 @@ export class AgentTestHarness {
         vi.spyOn(TraceService, 'completeTrace').mockResolvedValue(undefined);
         vi.spyOn(TraceService, 'failTrace').mockResolvedValue(undefined);
 
-        // Spy on AI if not already mocked
-        if (!vi.isMockFunction(AI.generateContent)) {
-            vi.spyOn(AI, 'generateContent');
+        // Spy on GenAI if not already mocked
+        if (!vi.isMockFunction(GenAI.generateContent)) {
+            vi.spyOn(GenAI, 'generateContent');
         }
-        if (!vi.isMockFunction(AI.generateContentStream)) {
+        if (!vi.isMockFunction(GenAI.generateContentStream)) {
             try {
-                vi.spyOn(AI, 'generateContentStream');
+                vi.spyOn(GenAI, 'generateContentStream');
             } catch (e) {
                 // Ignore if it fails (already mocked or property descriptor issue)
             }
@@ -53,19 +53,19 @@ export class AgentTestHarness {
     }
 
     /**
-     * Mocks the next response from AI.generateContent.
+     * Mocks the next response from GenAI.generateContent.
      * @param text The text response to return.
      */
-    public mockAIResponse(text: string) {
+    public mockGenAIResponse(text: string) {
         const responseCtx = {
             text: () => text,
             functionCalls: () => []
         };
 
-        (AI.generateContent as unknown as MockInstance).mockResolvedValue(responseCtx as any);
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue(responseCtx as any);
 
-        if (AI.generateContentStream) {
-            (AI.generateContentStream as unknown as MockInstance).mockResolvedValue({
+        if (GenAI.generateContentStream) {
+            (GenAI.generateContentStream as unknown as MockInstance).mockResolvedValue({
                 stream: (async function* () {
                     yield { text: () => text };
                 })(),
@@ -75,11 +75,11 @@ export class AgentTestHarness {
     }
 
     /**
-     * Mocks an AI response that triggers tool calls.
+     * Mocks an GenAI response that triggers tool calls.
      * @param toolCalls Array of tool calls (name + args)
      */
-    public mockAIToolCall(toolCalls: { name: string, args: Record<string, any> }[]) {
-        (AI.generateContent as unknown as MockInstance).mockResolvedValue({
+    public mockGenAIToolCall(toolCalls: { name: string, args: Record<string, any> }[]) {
+        (GenAI.generateContent as unknown as MockInstance).mockResolvedValue({
             text: () => '',
             functionCalls: () => toolCalls.map(tc => ({
                 name: tc.name,

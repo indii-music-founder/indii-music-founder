@@ -1,6 +1,5 @@
-import { firebaseAI } from '@/services/ai/FirebaseAIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { SchemaType } from 'firebase/ai';
-import { AI } from '@/services/ai/AIService';
 import { useStore, HistoryItem } from '@/core/store';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
@@ -50,7 +49,7 @@ export class VideoDirector {
 
                 // Cast schema to unknown then specific Schema type if needed, or rely on loose matching if allowed.
                 // FirebaseAIService expects Record<string, any> or Schema.
-                const feedback = await firebaseAI.generateStructuredData<DirectorFeedback>(
+                const feedback = await GenAI.generateStructuredData<DirectorFeedback>(
                     [
                         { inlineData: { mimeType: 'image/jpeg', data: frameBase64.split(',')[1] } },
                         { text: critiquePrompt }

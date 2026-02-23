@@ -1,5 +1,5 @@
 import { AgentContext } from '../types';
-import { AI } from '@/services/ai/AIService';
+import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { TraceService } from '../observability/TraceService';
 import { auth } from '@/services/firebase';
@@ -105,16 +105,16 @@ export class HybridOrchestrator {
             }`;
 
             try {
-                const res = await AI.generateContent({
-                    model: AI_MODELS.TEXT.AGENT, // Uses the Thinking model
-                    contents: { role: 'user', parts: [{ text: prompt }] },
-                    config: {
+                const res = await GenAI.generateContent(
+                    [{ role: 'user', parts: [{ text: prompt }] }],
+                    AI_MODELS.TEXT.AGENT,
+                    {
                         ...AI_CONFIG.THINKING.LOW,
                         responseMimeType: 'application/json'
                     }
-                });
+                );
 
-                const decision = JSON.parse(res.text() || '{}');
+                const decision = JSON.parse(res.response.text() || '{}');
                 lastAgentResponse = decision.answer || lastAgentResponse;
 
                 await TraceService.addStep(traceId, 'routing', { turn: `turn-${currentTurn}`, ...decision });

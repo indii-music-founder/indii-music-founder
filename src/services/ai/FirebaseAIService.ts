@@ -51,6 +51,7 @@ import { aiCache } from './AIResponseCache';
 import { generateSecureId } from '@/utils/security';
 import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
+import { RateLimiter } from './RateLimiter';
 
 // ============================================================================
 // App Check Detection & Fallback Mode
@@ -118,10 +119,15 @@ export interface ChatMessage {
 export class FirebaseAIService {
     private model: ExtendedGenerativeModel | null = null;
     private isInitialized = false;
+    private defaultConfig: GenerationConfig = {};
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
+    private fallbackClient: any = null;
     private useFallbackMode = false;
-    private fallbackClient: GoogleGenAI | null = null;
+    private activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
+
+    // Default: 60 RPM (adjust based on quota)
+    private rateLimiter: RateLimiter = new RateLimiter(60);
 
     // Circuit Breakers
     private contentBreaker = new CircuitBreaker(BREAKER_CONFIGS.CONTENT_GENERATION);
@@ -292,120 +298,154 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, cachedContent?: string, safetySettings?: any[], toolConfig?: any }
+        options?: {
+            signal?: AbortSignal;
+            cachedContent?: string;
+            safetySettings?: any[];
+            toolConfig?: any;
+            thoughtSignature?: string;
+            skipCache?: boolean;
+        }
     ): Promise<GenerateContentResult> {
-        // Wrap in retry logic (internal retries for 503/429/Transient Aborts)
-        return this.contentBreaker.execute(async () => {
-            return this.withRetry(async () => {
-                await this.ensureInitialized();
+        const modelName = this.getModelName(modelOverride);
+        const mergedConfig = { ...this.defaultConfig, ...config };
 
-                // Rate Limit Check
-                const userId = auth.currentUser?.uid;
-                if (userId) {
-                    await TokenUsageService.checkQuota(userId);
-                    await TokenUsageService.checkRateLimit(userId);
-                }
+        // 1. Request Coalescing & Cache Key
+        // Create a lean key that avoids stringifying large binary data
+        const leanPrompt = Array.isArray(prompt)
+            ? prompt.map(p => ({
+                ...p,
+                parts: p.parts.map(part => 'inlineData' in part ? { ...part, inlineData: { ...part.inlineData, data: '[REDACTED]' } } : part)
+            }))
+            : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
 
-                const modelName = this.getModelName(modelOverride);
-                // Validate & Sanitize
-                const sanitizedPrompt = this.sanitizePrompt(prompt);
+        const cacheKey = JSON.stringify({ leanPrompt, modelName, config: mergedConfig, systemInstruction });
 
-                // Auto-detect high-fidelity media requirements for audio payloads
-                let hasAudio = false;
-                const contentsToCheck = Array.isArray(sanitizedPrompt)
-                    ? sanitizedPrompt
-                    : [{ parts: [{ text: sanitizedPrompt as string }] }];
+        if (!options?.skipCache && this.activeRequests.has(cacheKey)) {
+            // logger.debug(`[FirebaseAIService] Coalescing request for ${modelName}`);
+            return this.activeRequests.get(cacheKey)!;
+        }
 
-                for (const c of contentsToCheck as Content[]) {
-                    if (c.parts) {
-                        for (const p of c.parts) {
-                            if ('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) {
-                                hasAudio = true;
-                                break;
-                            }
-                            if ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/')) {
-                                hasAudio = true;
-                                break;
-                            }
-                        }
-                    }
-                    if (hasAudio) break;
-                }
+        const executeRequest = async (): Promise<GenerateContentResult> => {
+            // 2. Rate Limiting (Client Side)
+            await this.rateLimiter.acquire(30000);
 
-                // Inject explicit support for High Fidelity reasoning if AUDIO payload detected
-                const enrichedConfig = config ? { ...config } : {};
-                if (hasAudio && !enrichedConfig.mediaResolution) {
-                    enrichedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
-                }
+            return this.contentBreaker.execute(async () => {
+                return this.withRetry(async () => {
+                    await this.ensureInitialized();
 
-                const result = await (async () => {
-                    // ============================================================
-                    // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
-                    // ============================================================
-                    if (this.useFallbackMode && this.fallbackClient) {
-                        return this.generateWithFallback(sanitizedPrompt, modelName, enrichedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
+                    // 3. Quota & Rate Limit (Backend)
+                    const userId = auth.currentUser?.uid;
+                    if (userId) {
+                        await TokenUsageService.checkQuota(userId);
+                        await TokenUsageService.checkRateLimit(userId);
                     }
 
-                    // ============================================================
-                    // NORMAL MODE: Use Firebase AI SDK with App Check
-                    // ============================================================
+                    // 4. Sanitize & Prepare Prompt
+                    const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-                    // 1. Check for Cached Content if systemInstruction is large
-                    let cachedContent = options?.cachedContent;
-                    if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
-                        const hash = CachedContextService.generateHash(systemInstruction, tools);
-                        const existingCache = await CachedContextService.findCache(hash);
-                        if (existingCache) {
-                            cachedContent = existingCache;
+                    // 5. Inject thoughtSignature if present (Critical for Gemini 3 function calling)
+                    if (options?.thoughtSignature && Array.isArray(sanitizedPrompt) && sanitizedPrompt.length > 0) {
+                        const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
+                        if (lastContent.parts.length > 0) {
+                            const lastPartIdx = lastContent.parts.length - 1;
+                            (lastContent.parts[lastPartIdx] as any).thoughtSignature = options.thoughtSignature;
                         }
                     }
 
-                    const modelOptions: any = {
-                        model: modelName,
-                        generationConfig: enrichedConfig,
-                        systemInstruction,
-                        tools,
-                        toolConfig: options?.toolConfig,
-                        safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
-                    };
+                    // 6. Auto-detect high-fidelity media requirements for audio payloads
+                    let hasAudio = false;
+                    const contentsToCheck = Array.isArray(sanitizedPrompt)
+                        ? sanitizedPrompt
+                        : [{ parts: [{ text: sanitizedPrompt as string }] }];
 
-                    // Inject cachedContent if supported/available
-                    if (cachedContent) {
-                        modelOptions.cachedContent = cachedContent;
+                    for (const c of contentsToCheck as Content[]) {
+                        if (c.parts) {
+                            for (const p of c.parts) {
+                                if (('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) ||
+                                    ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/'))) {
+                                    hasAudio = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (hasAudio) break;
                     }
 
-                    const modelOptionsFinal: any = { ...modelOptions };
-                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptionsFinal);
-                    try {
-                        return await modelCallback.generateContent(
-                            typeof sanitizedPrompt === 'string'
-                                ? sanitizedPrompt
-                                : { contents: sanitizedPrompt }
+                    if (hasAudio && !mergedConfig.mediaResolution) {
+                        mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH' as any;
+                    }
+
+                    // 7. Normal vs Fallback Generation
+                    const result = await (async () => {
+                        // FALLBACK MODE
+                        if (this.useFallbackMode && this.fallbackClient) {
+                            return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
+                        }
+
+                        // NORMAL MODE
+                        let cachedContent = options?.cachedContent;
+                        if (!cachedContent && systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
+                            const hash = CachedContextService.generateHash(systemInstruction, tools);
+                            const existingCache = await CachedContextService.findCache(hash);
+                            if (existingCache) {
+                                cachedContent = existingCache;
+                            }
+                        }
+
+                        const modelOptions: any = {
+                            model: modelName,
+                            generationConfig: mergedConfig as unknown as Record<string, unknown>,
+                            systemInstruction,
+                            tools: tools as any,
+                            toolConfig: options?.toolConfig,
+                            safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
+                        };
+
+                        if (cachedContent) {
+                            modelOptions.cachedContent = cachedContent;
+                        }
+
+                        const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+                        try {
+                            return await modelCallback.generateContent(
+                                typeof sanitizedPrompt === 'string'
+                                    ? sanitizedPrompt
+                                    : { contents: sanitizedPrompt }
+                            );
+                        } catch (error) {
+                            if (isAppCheckError(error) && !this.useFallbackMode) {
+                                await this.triggerGlobalFallback();
+                                return this.generateWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
+                            }
+                            throw this.handleError(error);
+                        }
+                    })();
+
+                    // 8. Track Usage
+                    if (userId && result?.response?.usageMetadata) {
+                        await TokenUsageService.trackUsage(
+                            userId,
+                            modelName,
+                            result.response.usageMetadata.promptTokenCount || 0,
+                            result.response.usageMetadata.candidatesTokenCount || 0
                         );
-                    } catch (error) {
-                        // If we hit an App Check error during normal mode, switch to fallback
-                        if (isAppCheckError(error) && !this.useFallbackMode) {
-                            await this.triggerGlobalFallback();
-                            return this.generateWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools, options?.safetySettings, options?.toolConfig, { signal: options?.signal });
-                        }
-                        throw this.handleError(error);
                     }
-                })();
 
-                // Track Usage (Unified for both modes)
-                console.log('[DEBUG-TEST] rawGenerateContent:', { userId, hasUsage: !!result?.response?.usageMetadata, usage: result?.response?.usageMetadata });
-                if (userId && result?.response?.usageMetadata) {
-                    await TokenUsageService.trackUsage(
-                        userId,
-                        modelName,
-                        result.response.usageMetadata.promptTokenCount || 0,
-                        result.response.usageMetadata.candidatesTokenCount || 0
-                    );
-                }
+                    return result;
+                }, 3, 1000, options?.signal);
+            });
+        };
 
-                return result;
-            }, 3, 1000, options?.signal); // Pass signal to withRetry
-        });
+        const requestPromise = executeRequest();
+        this.activeRequests.set(cacheKey, requestPromise);
+        requestPromise.finally(() => {
+            if (this.activeRequests.get(cacheKey) === requestPromise) {
+                this.activeRequests.delete(cacheKey);
+            }
+        }).catch(() => { });
+
+        return requestPromise;
     }
 
     /**
@@ -468,62 +508,46 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
-    ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
+        options?: {
+            signal?: AbortSignal;
+            safetySettings?: any[];
+            toolConfig?: any;
+            thoughtSignature?: string;
+        }
+    ): Promise<{ stream: ReadableStream<StreamChunk>; response: Promise<WrappedResponse> }> {
+        const modelName = this.getModelName(modelOverride);
+        const mergedConfig = { ...this.defaultConfig, ...config };
+
         return this.contentBreaker.execute(async () => {
             return this.withRetry(async () => {
                 await this.ensureInitialized();
 
-                // Rate Limit Check
+                // 1. Quota & Rate Limit (Backend)
                 const userId = auth.currentUser?.uid;
                 if (userId) {
                     await TokenUsageService.checkQuota(userId);
                     await TokenUsageService.checkRateLimit(userId);
                 }
 
-                const modelName = this.getModelName(modelOverride);
+                // 2. Sanitize & Prepare Prompt
                 const sanitizedPrompt = this.sanitizePrompt(prompt);
 
-                // Auto-detect high-fidelity media requirements for audio payloads
-                let hasAudio = false;
-                const contentsToCheck = Array.isArray(sanitizedPrompt)
-                    ? sanitizedPrompt
-                    : [{ parts: [{ text: sanitizedPrompt as string }] }];
-
-                for (const c of contentsToCheck as Content[]) {
-                    if (c.parts) {
-                        for (const p of c.parts) {
-                            if ('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) {
-                                hasAudio = true;
-                                break;
-                            }
-                            if ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/')) {
-                                hasAudio = true;
-                                break;
-                            }
-                        }
+                // 3. Inject thoughtSignature if present
+                if (options?.thoughtSignature && Array.isArray(sanitizedPrompt) && sanitizedPrompt.length > 0) {
+                    const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
+                    if (lastContent.parts.length > 0) {
+                        const lastPartIdx = lastContent.parts.length - 1;
+                        (lastContent.parts[lastPartIdx] as any).thoughtSignature = options.thoughtSignature;
                     }
-                    if (hasAudio) break;
                 }
 
-                const enrichedConfig = config ? { ...config } : {};
-                if (hasAudio && !enrichedConfig.mediaResolution) {
-                    enrichedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
-                }
-
-                // ============================================================
-                // FALLBACK MODE: Use direct Gemini SDK when App Check unavailable
-                // ============================================================
+                // 4. Case analysis for Normal vs Fallback
                 if (this.useFallbackMode && this.fallbackClient) {
-                    return this.streamWithFallback(sanitizedPrompt, modelName, enrichedConfig, systemInstruction, tools, options);
+                    return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools);
                 }
 
-                // ============================================================
-                // NORMAL MODE: Use Firebase AI SDK with App Check
-                // ============================================================
-
-                // 1. Check for Cached Content if systemInstruction is large
-                let cachedContent: string | undefined;
+                // Normal Mode setup
+                let cachedContent: any = undefined;
                 if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
                     const hash = CachedContextService.generateHash(systemInstruction, tools);
                     const existingCache = await CachedContextService.findCache(hash);
@@ -534,7 +558,7 @@ export class FirebaseAIService {
 
                 const modelOptions: any = {
                     model: modelName,
-                    generationConfig: enrichedConfig,
+                    generationConfig: mergedConfig,
                     systemInstruction,
                     tools,
                     toolConfig: options?.toolConfig,
@@ -548,10 +572,44 @@ export class FirebaseAIService {
                 const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
 
                 try {
-
                     const result: GenerateContentStreamResult = await modelCallback.generateContentStream(
                         typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt }
                     );
+
+                    // Accumulate chunks for the final WrappedResponse
+                    let finalText = '';
+                    const chunks: any[] = [];
+
+                    const transformedStream = new ReadableStream<StreamChunk>({
+                        async start(controller) {
+                            try {
+                                for await (const chunk of result.stream) {
+                                    chunks.push(chunk);
+                                    const chunkText = chunk.candidates?.[0]?.content?.parts?.[0] && 'text' in chunk.candidates[0].content.parts[0]
+                                        ? (chunk.candidates[0].content.parts[0] as any).text
+                                        : '';
+                                    finalText += chunkText;
+
+                                    const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                                    const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+
+                                    controller.enqueue({
+                                        text: () => chunkText,
+                                        thoughtSignature,
+                                        functionCalls: () => {
+                                            const parts = chunk.candidates?.[0]?.content?.parts || [];
+                                            return parts
+                                                .filter(p => 'functionCall' in p)
+                                                .map(p => (p as any).functionCall);
+                                        }
+                                    });
+                                }
+                                controller.close();
+                            } catch (e) {
+                                controller.error(e);
+                            }
+                        }
+                    });
 
                     // Wrap the final response promise
                     const wrappedResponsePromise = result.response.then(async (aggResult) => {
@@ -564,53 +622,41 @@ export class FirebaseAIService {
                                     aggResult.usageMetadata.promptTokenCount || 0,
                                     aggResult.usageMetadata.candidatesTokenCount || 0
                                 );
-                            } catch {
-                                // Failed to track stream usage (non-critical)
+                            } catch (e) {
+                                console.warn('[FirebaseAIService] Failed to track usage for stream:', e);
                             }
                         }
+
+                        // Extract thoughtSignature from first chunk if available
+                        const firstWithSignature = chunks.find(c => {
+                            const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
+                            return part && 'thoughtSignature' in part && (part as any).thoughtSignature;
+                        });
+                        const signature = firstWithSignature?.candidates?.[0]?.content?.parts?.[0]?.thoughtSignature;
 
                         return {
                             response: aggResult as unknown as GenerateContentResponse,
-                            text: () => aggResult.text?.() ?? '',
+                            text: () => finalText,
                             functionCalls: () => {
-                                const part = aggResult.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                                return part ? [part.functionCall] : [];
+                                const parts = aggResult.candidates?.[0]?.content?.parts || [];
+                                return parts
+                                    .filter(p => 'functionCall' in p)
+                                    .map(p => (p as any).functionCall);
                             },
-                            usage: () => aggResult.usageMetadata
+                            usage: () => aggResult.usageMetadata,
+                            thoughtSignature: signature
                         };
                     });
 
-                    const stream = new ReadableStream<StreamChunk>({
-                        async start(controller) {
-                            try {
-                                for await (const chunk of result.stream) {
-                                    controller.enqueue({
-                                        text: () => {
-                                            try { return chunk.text(); } catch { return ''; }
-                                        },
-                                        functionCalls: () => {
-                                            const part = chunk.candidates?.[0]?.content?.parts?.find((p): p is FunctionCallPart => 'functionCall' in p);
-                                            return part ? [part.functionCall] : [];
-                                        }
-                                    });
-                                }
-                                controller.close();
-                            } catch (streamError) {
-                                controller.error(streamError);
-                            }
-                        }
-                    });
-
-                    return { stream, response: wrappedResponsePromise };
+                    return { stream: transformedStream, response: wrappedResponsePromise };
                 } catch (error) {
-                    // If we hit an App Check error during normal mode, switch to fallback
                     if (isAppCheckError(error) && !this.useFallbackMode) {
                         await this.triggerGlobalFallback();
-                        return this.streamWithFallback(sanitizedPrompt, modelName, config, systemInstruction, tools);
+                        return this.streamWithFallback(sanitizedPrompt, modelName, mergedConfig, systemInstruction, tools, options);
                     }
                     throw this.handleError(error);
                 }
-            }, 3, 1000, options?.signal); // Pass signal to withRetry
+            }, 3, 1000, options?.signal);
         });
     }
 
@@ -978,6 +1024,52 @@ export class FirebaseAIService {
     }
 
     /**
+     * MULTIMODAL: Caption an image.
+     */
+    async captionImage(image: string | ArrayBuffer, prompt: string = 'Describe this image in detail...'): Promise<string> {
+        const base64 = typeof image === 'string' ? image : Buffer.from(image).toString('base64');
+        const content: Content[] = [{
+            role: 'user',
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: 'image/png', data: base64 } }
+            ]
+        }];
+        const result = await this.rawGenerateContent(content);
+        return result.response.text();
+    }
+
+    /**
+     * HIGH LEVEL: Analyze audio content
+     */
+    async analyzeAudio(audio: string | ArrayBuffer, prompt: string = 'Analyze this audio content in detail...'): Promise<string> {
+        const base64 = typeof audio === 'string' ? audio : Buffer.from(audio).toString('base64');
+        const content: Content[] = [{
+            role: 'user',
+            parts: [
+                { text: prompt },
+                { inlineData: { mimeType: 'audio/mpeg', data: base64 } }
+            ]
+        }];
+        const result = await this.rawGenerateContent(content);
+        return result.response.text();
+    }
+
+    /**
+     * UTILITY: Parse JSON from AI response, handling markdown code blocks
+     */
+    parseJSON<T = Record<string, unknown>>(text: string | undefined): T | Record<string, never> {
+        if (!text) return {};
+        try {
+            const cleaned = text.replace(/```json\n?|```/g, '').trim();
+            return JSON.parse(cleaned) as T;
+        } catch {
+            logger.error('[FirebaseAIService] Failed to parse JSON:', text);
+            return {} as any;
+        }
+    }
+
+    /**
      * ADVANCED: Live API for real-time bi-directional communication.
      * NOTE: Live API is not available in fallback mode (requires Firebase AI SDK with App Check)
      */
@@ -1146,9 +1238,21 @@ export class FirebaseAIService {
     /**
      * HIGH LEVEL: Generate image using backend proxy
      */
-    async generateImage(prompt: string, model: string = 'gemini-3-pro-image-preview', config?: Record<string, unknown>): Promise<string> {
+    async generateImage(promptOrOptions: string | GenerateImageOptions, modelOverride?: string, configOverride?: any): Promise<string> {
         return this.mediaBreaker.execute(async () => {
             await this.ensureInitialized();
+
+            let prompt: string;
+            let model = modelOverride || 'gemini-3-pro-image-preview';
+            let config = configOverride;
+
+            if (typeof promptOrOptions === 'object' && 'prompt' in promptOrOptions) {
+                prompt = promptOrOptions.prompt;
+                model = promptOrOptions.model || model;
+                config = (promptOrOptions.config as any) || config;
+            } else {
+                prompt = promptOrOptions as string;
+            }
 
             // 1. Setup Tools (Enable Google Search for grounding by default, aka "Nano Banana Pro" logic)
             const tools: Tool[] = [{ googleSearch: {} }];
@@ -1363,18 +1467,6 @@ export class FirebaseAIService {
         });
     }
 
-    /**
-     * HIGH LEVEL: Parse JSON from AI response
-     */
-    public parseJSON<T = unknown>(text: string | undefined): T | Record<string, never> {
-        if (!text) return {};
-        const clean = text.replace(/```json\n ?| ```/g, '').trim();
-        try {
-            return JSON.parse(clean);
-        } catch {
-            return {} as T; // Best effort
-        }
-    }
 
     private async ensureInitialized() {
         if (!this.isInitialized) {
