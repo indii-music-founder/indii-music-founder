@@ -48,10 +48,20 @@ describe('AIService Timeout & Cancellation', () => {
     it('should throw CANCELLED error when signal is aborted', async () => {
         const controller = new AbortController();
 
-        // Mock a request that never completes unless we abort it
-        vi.mocked(firebaseAI.generateContent).mockImplementation(async () => {
-            await new Promise(resolve => setTimeout(resolve, 500));
-            return {} as any;
+        // Mock a request that waits long enough for abort to fire, and respects abort
+        vi.mocked(firebaseAI.generateContent).mockImplementation(async (_p, _m, _c, _s, _t, opts) => {
+            const signal = (opts as any)?.signal;
+            return new Promise((_resolve, reject) => {
+                const timer = setTimeout(() => _resolve({} as any), 500);
+                if (signal) {
+                    signal.addEventListener('abort', () => {
+                        clearTimeout(timer);
+                        const err = new Error('The operation was aborted');
+                        err.name = 'AbortError';
+                        reject(err);
+                    });
+                }
+            });
         });
 
         const requestPromise = aiService.generateContent({
@@ -60,7 +70,8 @@ describe('AIService Timeout & Cancellation', () => {
             signal: controller.signal
         });
 
-        // Trigger the abort immediately
+        // Trigger the abort after a tick so the listener is registered
+        await new Promise(r => setTimeout(r, 5));
         controller.abort();
 
         await expect(requestPromise).rejects.toThrowError(
@@ -79,7 +90,8 @@ describe('AIService Timeout & Cancellation', () => {
                         finishReason: 'STOP',
                         index: 0
                     }
-                ]
+                ],
+                text: () => 'Response'
             }
         } as any);
 
