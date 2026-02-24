@@ -61,7 +61,7 @@ export default function SocialDashboard() {
     const startDay = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
 
     const campaigns = scheduledPosts.map(p => ({
-        day: new Date(p.scheduledTime || Date.now()).getDate(),
+        day: p.scheduledTime ? new Date(p.scheduledTime).getDate() : now.getDate(),
         title: p.copy.substring(0, 20) + "...",
         type: "social",
         platform: p.platform

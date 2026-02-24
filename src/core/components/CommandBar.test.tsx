@@ -221,10 +221,10 @@ describe('CommandBar', () => {
         expect(activeBtn).toBeInTheDocument();
 
         // Verify placeholder
-        expect(screen.getByPlaceholderText('Ask indii to orchestrate...')).toBeInTheDocument();
+        expect(screen.getByPlaceholderText('Launch a campaign, audit security, or ask anything...')).toBeInTheDocument();
 
         // Test sending message in Indii mode
-        const input = screen.getByPlaceholderText('Ask indii to orchestrate...');
+        const input = screen.getByPlaceholderText('Launch a campaign, audit security, or ask anything...');
         fireEvent.change(input, { target: { value: 'Hello Indii' } });
         const submitButton = screen.getByTestId('command-bar-run-btn');
         fireEvent.click(submitButton);
@@ -253,7 +253,7 @@ describe('CommandBar', () => {
     it('sends a message when form is submitted', async () => {
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText('Ask indii to orchestrate...');
+        const input = screen.getByPlaceholderText('Launch a campaign, audit security, or ask anything...');
         fireEvent.change(input, { target: { value: 'Hello agent' } });
 
         const submitButton = document.querySelector('button[aria-label="Run command"]');

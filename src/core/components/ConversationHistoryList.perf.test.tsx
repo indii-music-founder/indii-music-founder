@@ -36,6 +36,8 @@ describe('ConversationHistoryList Performance', () => {
             activeSessionId: 's1',
             setActiveSession: vi.fn(),
             deleteSession: vi.fn(),
+            updateSessionTitle: vi.fn(),
+            setRightPanelView: vi.fn(),
         };
     });
 
