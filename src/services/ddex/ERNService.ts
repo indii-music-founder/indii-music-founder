@@ -4,6 +4,7 @@ import type { ERNMessage } from './types/ern';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import type { ReleaseAssets } from '@/services/distribution/types/distributor';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { IdentifierService } from '@/services/identity/IdentifierService';
 
 /**
  * ERN Service
@@ -25,9 +26,24 @@ export class ERNService {
             const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.generic;
             const recipientPartyId = distributor.ddexPartyId;
             const timestamp = new Date().toISOString();
-            // Removed unused variable releaseId which was causing lint warning
 
-            // Use the Mapper to generate a complete ERN object
+            // 1. Auto-assign identifiers if missing
+            const currentYear = new Date().getFullYear() % 100;
+            const sequence = Math.floor(Math.random() * 90000) + 10000; // Simulated sequence for now
+
+            if (!metadata.isrc) {
+                metadata.isrc = IdentifierService.generateISRC(currentYear, sequence);
+                console.log(`[ERNService] Auto-assigned ISRC: ${metadata.isrc}`);
+            }
+
+            if (metadata.releaseType !== 'Single' && !metadata.upc) {
+                // Using a random 11-digit string for simulation as we don't have a UPC sequence store yet
+                const randomPayload = Math.random().toString().slice(2, 13).padStart(11, '0');
+                metadata.upc = IdentifierService.generateUPC(randomPayload);
+                console.log(`[ERNService] Auto-assigned UPC: ${metadata.upc}`);
+            }
+
+            // 2. Use the Mapper to generate a complete ERN object
             const ern = ERNMapper.mapMetadataToERN(metadata, {
                 messageId: `MSG-${Date.now()}`,
                 sender: {

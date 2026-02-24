@@ -507,18 +507,20 @@ export class BaseAgent implements SpecializedAgent {
             // Convert AgentMessage[] to Content[] for ContextManager
             const contentHistory = context.chatHistory.map(msg => ({
                 role: (msg.role === 'model' || msg.role === 'system' ? 'model' : 'user') as 'model' | 'user',
-                parts: [{ text: msg.text }]
+                parts: msg.attachments && msg.attachments.length > 0
+                    ? [{ text: msg.text || '' }, ...msg.attachments.map(a => ({ inlineData: { mimeType: a.mimeType, data: a.base64 } }))]
+                    : [{ text: msg.text || '' }]
             }));
 
             // Truncate to safe token limit (e.g. 15k tokens reserved for history out of 32k/1M context)
-            // Keeping it relatively tight to save cost/latency, though models support more.
             const SAFE_TOKEN_LIMIT = 15000;
             const truncated = ContextManager.truncateContext(contentHistory, SAFE_TOKEN_LIMIT);
 
             // Reconstruct string for the prompt
             safeHistory = truncated.map(c => {
-                const text = c.parts.map(p => 'text' in p ? p.text : '').join('');
-                return `${c.role.toUpperCase()}: ${text}`;
+                const role = c.role === 'model' ? 'Assistant' : 'User';
+                const text = c.parts.map(p => 'text' in p ? p.text : '[Attachment]').join(' ');
+                return `${role}: ${text}`;
             }).join('\n\n');
         } else {
             // Fallback: Naive slicing if no structured history is available

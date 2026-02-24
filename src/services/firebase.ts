@@ -90,7 +90,10 @@ export const functionsWest1 = getFunctions(app, 'us-west1'); // Regional (us-wes
 
 // Connect to Functions emulator in development (when running locally)
 // Production builds skip this entirely - they call deployed Cloud Functions
-if (import.meta.env.DEV && import.meta.env.VITE_USE_FUNCTIONS_EMULATOR === 'true' && typeof window !== 'undefined') {
+const isDev = env.DEV;
+const useEmulator = env.VITE_USE_FUNCTIONS_EMULATOR === 'true';
+
+if (isDev && useEmulator && typeof window !== 'undefined') {
     try {
         connectFunctionsEmulator(functions, '127.0.0.1', 5001);
         connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
@@ -193,7 +196,7 @@ declare global {
 
 // SECURE: Only expose Firebase internals in development builds with explicit env flag
 // Never expose based on runtime hostname check (can be spoofed)
-if (import.meta.env.DEV && import.meta.env.VITE_EXPOSE_INTERNALS === 'true' && typeof window !== 'undefined') {
+if (env.DEV && env.VITE_EXPOSE_INTERNALS === 'true' && typeof window !== 'undefined') {
     console.log("[App] Exposing Firebase Internals for E2E (DEV ONLY)");
     window.db = db;
     window.firebaseInternals = { doc, setDoc };

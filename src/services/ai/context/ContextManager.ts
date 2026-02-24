@@ -17,8 +17,13 @@ export class ContextManager {
         let total = 0;
         for (const c of arr) {
             for (const part of c.parts) {
-                if ('text' in part && typeof part.text === 'string') {
+                if ('text' in part && part.text) {
                     total += this.estimateTokens(part.text);
+                } else if ('inlineData' in part) {
+                    // Standard buffer for multimodal data (Images are usually ~258 tokens, but we use a safety margin)
+                    total += 500;
+                } else if ('functionCall' in part || 'functionResponse' in part) {
+                    total += 100; // Buffer for tool usage
                 }
             }
         }
@@ -46,9 +51,14 @@ export class ContextManager {
         const MIN_RECENT_MESSAGES = 2; // Keep at least last user/model exchange
         const KEEP_FIRST_MESSAGE = true; // Try to keep the very first message (context anchor)
 
+        // Safety valve for the loop
+        const MAX_ITERATIONS = 1000;
+        let iterations = 0;
+
         // While over budget and we have more than the absolute minimum partial context
         // We stop if we are down to just the recent messages
-        while (currentTokens > maxTokens && truncated.length > MIN_RECENT_MESSAGES) {
+        while (currentTokens > maxTokens && truncated.length > MIN_RECENT_MESSAGES && iterations < MAX_ITERATIONS) {
+            iterations++;
 
             // Determine which index to remove
             // If we want to keep the first message, and we have enough messages to drop from middle...
@@ -73,7 +83,7 @@ export class ContextManager {
         }
 
         if (currentTokens > maxTokens) {
-            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) even after aggressive truncation. Recent messages are too large.`);
+            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) even after aggressive truncation after ${iterations} iterations. Recent messages are too large.`);
         }
 
         return truncated;

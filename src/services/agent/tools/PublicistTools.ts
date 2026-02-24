@@ -44,13 +44,15 @@ const PitchStorySchema = z.object({
 // --- Tools Implementation ---
 
 export const PublicistTools: Record<string, AnyToolFunction> = {
-    write_press_release: wrapTool('write_press_release', async ({ topic, angle, quotes_from }: { topic: string; angle?: string; quotes_from?: string[] }) => {
+    write_press_release: wrapTool('write_press_release', async ({ topic, angle, quotes_from, generate_pdf = false }: { topic: string; angle?: string; quotes_from?: string[]; generate_pdf?: boolean }) => {
         const schema = zodToJsonSchema(WritePressReleaseSchema);
         const prompt = `
         You are a Senior Publicist. Write a Press Release.
         Topic: ${topic}
         ${angle ? `Angle: ${angle}` : ''}
         ${quotes_from ? `Include quotes from: ${quotes_from.join(', ')}` : ''}
+        
+        Provide the response in a structured format suitable for a press release.
         `;
 
         const data = await firebaseAI.generateStructuredData(
@@ -59,7 +61,20 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
         );
 
         const validated = WritePressReleaseSchema.parse(data);
-        return toolSuccess(validated, `Press release generated: ${validated.headline}`);
+
+        let pdfResult = null;
+        if (generate_pdf && (window as any).electronAPI?.publicist) {
+            try {
+                pdfResult = await (window as any).electronAPI.publicist.generatePdf(validated);
+            } catch (err) {
+                console.error('[PublicistTools] PDF generation failed:', err);
+            }
+        }
+
+        return toolSuccess({
+            ...validated,
+            pdf: pdfResult
+        }, `Press release generated: ${validated.headline}${pdfResult?.success ? ' (PDF Created)' : ''}`);
     }),
 
     generate_crisis_response: wrapTool('generate_crisis_response', async ({ situation, tone }: { situation: string; tone?: string }) => {

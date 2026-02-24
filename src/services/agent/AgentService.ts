@@ -10,6 +10,7 @@ import { memoryService } from './MemoryService';
 import { agentRegistry } from './registry';
 
 import { coordinator } from './WorkflowCoordinator';
+import { orchestrationService } from './OrchestrationService';
 import { agentZeroService } from './AgentZeroService';
 import { GenAI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -82,7 +83,20 @@ export class AgentService {
             attachments
         };
         const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
         useStore.getState().addAgentMessage(userMsg);
+
+        // Tier 2: Index user message for semantic recall (Episodic Indexing)
+        if (state.currentProjectId && state.activeSessionId && redactedText.length > 10) {
+            memoryService.saveMemory(
+                state.currentProjectId,
+                redactedText,
+                'session_message',
+                0.4,
+                'user',
+                state.activeSessionId
+            ).catch(err => console.warn('[AgentService] Failed to index user message:', err));
+        }
 
         try {
             // 1. Resolve Context
@@ -218,7 +232,23 @@ export class AgentService {
             return;
         }
 
-        // 2. Use Coordinator
+        // 2. Use Orchestration for "Master Workflows" (Multi-Agent)
+        const orchestratedResult = await orchestrationService.executeOrchestratedWorkflow(text, context);
+        if (orchestratedResult) {
+            updateAgentMessage(responseId, {
+                text: orchestratedResult,
+                thoughts: [{
+                    id: uuidv4(),
+                    text: "Executed Multi-Agent Orchestration Flow",
+                    timestamp: Date.now(),
+                    type: 'logic',
+                    toolName: 'Orchestration Service'
+                }]
+            });
+            return;
+        }
+
+        // 3. Use Coordinator for Fast Path
         let coordinatorResult: string;
         if (forcedAgentId) {
             coordinatorResult = 'DELEGATED_TO_AGENT';
@@ -301,6 +331,19 @@ export class AgentService {
                 text: result.text,
                 thoughtSignature: result.thoughtSignature
             });
+
+            // Tier 2: Index model response for semantic recall
+            const state = useStore.getState();
+            if (state.currentProjectId && state.activeSessionId && result.text.length > 20) {
+                memoryService.saveMemory(
+                    state.currentProjectId,
+                    result.text,
+                    'session_message',
+                    0.4,
+                    'agent',
+                    state.activeSessionId
+                ).catch(err => console.warn('[AgentService] Failed to index agent response:', err));
+            }
         } else {
             updateAgentMessage(responseId, {
                 thoughtSignature: result?.thoughtSignature

@@ -63,7 +63,16 @@ export default function Sidebar() {
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
-                            onClick={() => setModule(item.id)}
+                            onClick={() => {
+                                if (item.id === 'history') {
+                                    useStore.setState({
+                                        isAgentOpen: true,
+                                        rightPanelView: 'archives'
+                                    });
+                                    return;
+                                }
+                                setModule(item.id);
+                            }}
                             style={{ '--dept-color': `var(${colors.cssVar})` } as React.CSSProperties}
                             className={`
                                 w-full flex items-center gap-3 px-4 py-2 text-sm

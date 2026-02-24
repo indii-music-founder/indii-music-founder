@@ -177,7 +177,11 @@ export class ERNMapper {
                 soundRecordingDetails: {
                     soundRecordingType: 'MusicalWorkSoundRecording',
                     isInstrumental: track.isInstrumental || false,
-                    languageOfPerformance: track.language
+                    languageOfPerformance: track.language,
+                    lyrics: track.lyrics ? {
+                        lyricsText: track.lyrics,
+                        isExplicit: track.explicit
+                    } : undefined
                 }
             };
 
@@ -349,8 +353,8 @@ export class ERNMapper {
         // Fallback: If no deal types were added (e.g. no channels specified), default to Streaming + Download
         // This ensures backward compatibility if distributionChannels is missing or empty
         if (deals.length === 0) {
-             addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
-             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
+            addDeal('SubscriptionModel', 'OnDemandStream', 'Stream');
+            addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
         return deals;

@@ -14,7 +14,8 @@ function CommandBar() {
     );
 
     // HQ page (agent module) has its own inline PromptArea — hide this global one
-    if (currentModule === 'agent') return null;
+    // Also hide if RightPanel (isAgentOpen) is showing its own unified prompt
+    if (currentModule === 'agent' || isAgentOpen) return null;
 
     // We show the standalone bar always now since ChatOverlay is removed.
     const shouldShow = true;

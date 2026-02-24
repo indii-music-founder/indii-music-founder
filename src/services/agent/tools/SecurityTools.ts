@@ -5,7 +5,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { delay } from '@/utils/async';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/services/firebase';
-import { wrapTool, toolSuccess } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { generateSecureId } from '@/utils/security';
 
@@ -109,15 +109,20 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
     }),
 
     rotate_credentials: wrapTool('rotate_credentials', async ({ service_name }: { service_name: string }) => {
-        await delay(500);
-        const newKeyId = generateSecureId('key', 9);
-        return toolSuccess({
-            service: service_name,
-            action: 'rotate_credentials',
-            status: 'SUCCESS',
-            new_key_id: newKeyId,
-            timestamp: new Date().toISOString()
-        }, `Credentials rotated successfully for ${service_name}. New Key ID: ${newKeyId}`);
+        if (!(window as any).electronAPI?.security) {
+            return toolError("Security bridge unavailable.", "IPC_ERROR");
+        }
+
+        try {
+            const result = await (window as any).electronAPI.security.rotateCredentials({ serviceName: service_name });
+            if (!result.success) {
+                return toolError(result.error || "Rotation failed", "ROTATION_FAILED");
+            }
+
+            return toolSuccess(result, `Credentials for ${service_name} rotated successfully in the vault.`);
+        } catch (error: any) {
+            return toolError(`Failed to bridge to security vault: ${error.message}`, "BRIDGE_ERROR");
+        }
     }),
 
     verify_zero_touch_prod: wrapTool('verify_zero_touch_prod', async ({ service_name }: { service_name: string }) => {
@@ -215,18 +220,20 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
     }),
 
     scan_for_vulnerabilities: wrapTool('scan_for_vulnerabilities', async ({ scope }: { scope: string }) => {
-        const schema = zodToJsonSchema(VulnerabilityScanSchema);
-        const prompt = `
-        You are a Security Analyst. Perform a Vulnerability Scan on: ${scope}.
-        Check for: Exposed API Keys, Weak Passwords, Unencrypted Data, Outdated Dependencies.
-        `;
+        if (!(window as any).electronAPI?.security) {
+            return toolError("Security bridge unavailable.", "IPC_ERROR");
+        }
 
-        const data = await firebaseAI.generateStructuredData(
-            [{ text: prompt }],
-            schema as any
-        );
-        const validated = VulnerabilityScanSchema.parse(data);
-        return toolSuccess(validated, `Vulnerability scan completed for ${scope}. Risk score: ${validated.score}`);
+        try {
+            const result = await (window as any).electronAPI.security.scanVulnerabilities({ scope });
+            if (!result.success) {
+                return toolError(result.error || "Scan failed", "SCAN_FAILED");
+            }
+
+            return toolSuccess(result.scan, `Vulnerability scan completed for ${scope}. Score: ${result.scan.score}`);
+        } catch (error: any) {
+            return toolError(`Failed to bridge to security scanner: ${error.message}`, "BRIDGE_ERROR");
+        }
     }),
 
     generate_security_report: wrapTool('generate_security_report', async () => {

@@ -7,8 +7,9 @@ import { RequestBatcher } from '@/utils/RequestBatcher';
 export interface MemoryItem {
     id: string;
     projectId: string;
+    sessionId?: string; // Optional: link to a specific chat session for episodic memory
     content: string;
-    type: 'fact' | 'summary' | 'rule' | 'preference';
+    type: 'fact' | 'summary' | 'rule' | 'preference' | 'session_message';
     importance: number; // 0 to 1
     accessCount: number;
     lastAccessed: number;
@@ -88,7 +89,8 @@ class MemoryService {
         content: string,
         type: MemoryItem['type'] = 'fact',
         importance = 0.5,
-        source: MemoryItem['source'] = 'user'
+        source: MemoryItem['source'] = 'user',
+        sessionId?: string
     ): Promise<void> {
         const service = this.getService(projectId);
 
@@ -109,6 +111,7 @@ class MemoryService {
 
         const item: Omit<MemoryItem, 'id'> = {
             projectId,
+            sessionId,
             content,
             type,
             importance,
@@ -135,6 +138,7 @@ class MemoryService {
                 tags?: string[];
                 types?: MemoryItem['type'][];
                 dateRange?: [number, number]; // timestamps
+                sessionId?: string;
             };
             limit?: number;
         },
@@ -170,6 +174,7 @@ class MemoryService {
                     if (filters.dateRange) {
                         if (m.timestamp < filters.dateRange[0] || m.timestamp > filters.dateRange[1]) return false;
                     }
+                    if (filters.sessionId && m.sessionId !== filters.sessionId) return false;
                     return true;
                 });
             }

@@ -60,6 +60,8 @@ mockGenerateContent
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
+        batchEmbedContents: vi.fn((texts: string[]) => Promise.resolve(Array(texts.length).fill(Array(768).fill(0)))),
+        embedContent: vi.fn().mockResolvedValue({ values: Array(768).fill(0) })
     }
 }));
 

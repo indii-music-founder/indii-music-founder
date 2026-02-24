@@ -60,26 +60,26 @@ export const FetchUrlSchema = z.string().url().refine((url) => {
             // It IS an IP address (v4 or v6)
 
             if (ipVersion === 4) {
-                 if (PRIVATE_IP_RANGES_V4.some(regex => regex.test(cleanHostname))) {
-                     return false;
-                 }
+                if (PRIVATE_IP_RANGES_V4.some(regex => regex.test(cleanHostname))) {
+                    return false;
+                }
             }
 
             if (ipVersion === 6) {
-                 // Check the raw hostname (with brackets potentially) against regexes that handle them
-                 // OR check cleanHostname. Our regexes allow optional brackets.
-                 if (PRIVATE_IP_RANGES_V6.some(regex => regex.test(hostname))) {
-                     return false;
-                 }
+                // Check the raw hostname (with brackets potentially) against regexes that handle them
+                // OR check cleanHostname. Our regexes allow optional brackets.
+                if (PRIVATE_IP_RANGES_V6.some(regex => regex.test(hostname))) {
+                    return false;
+                }
             }
 
             // Extra safety for things that look like IPs but might sneak through regex
-             if (cleanHostname.startsWith('0') && cleanHostname !== '0.0.0.0') return false;
+            if (cleanHostname.startsWith('0') && cleanHostname !== '0.0.0.0') return false;
         } else {
-             // It is a DOMAIN name (e.g. example.com, 10.com)
-             // However, some malformed IPs might fail isIP but be interpreted as IPs by libraries.
-             // We trust validateSafeUrlAsync (DNS resolution) to catch those later.
-             // But we can check for common "IP-like" bypasses that are definitely not valid domains.
+            // It is a DOMAIN name (e.g. example.com, 10.com)
+            // However, some malformed IPs might fail isIP but be interpreted as IPs by libraries.
+            // We trust validateSafeUrlAsync (DNS resolution) to catch those later.
+            // But we can check for common "IP-like" bypasses that are definitely not valid domains.
         }
 
         return true;
@@ -151,3 +151,13 @@ export const AgentHistorySaveSchema = z.object({
 });
 
 export const AgentHistoryIdSchema = z.string().min(1);
+
+export const BrandConsistencySchema = z.object({
+    assetPath: z.string().min(1).refine(path => {
+        // Prevent basic traversal
+        if (path.includes('..')) return false;
+        // Check for image/video extensions
+        return /\.(png|jpg|jpeg|webp|mp4|mov)$/i.test(path);
+    }, { message: "Invalid asset path (Traversal detected or unsupported extension)" }),
+    brandKit: z.record(z.any())
+});
