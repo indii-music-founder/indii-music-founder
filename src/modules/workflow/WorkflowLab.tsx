@@ -5,7 +5,11 @@ import WorkflowGeneratorModal from './components/WorkflowGeneratorModal';
 import WorkflowTemplateModal from './components/WorkflowTemplateModal';
 import WorkflowLoadModal from './components/WorkflowLoadModal';
 import { useStore } from '../../core/store';
-import { Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen } from 'lucide-react';
+import {
+    Play, Loader2, GitBranch, Sparkles, LayoutTemplate, Save, FolderOpen,
+    Cpu, Zap, Clock, Music, Image, Mail, Filter, Webhook,
+    HelpCircle, BookOpen, MessageSquare, Settings
+} from 'lucide-react';
 import { WorkflowEngine } from './services/WorkflowEngine';
 import { WORKFLOW_TEMPLATES } from './services/workflowTemplates';
 import { v4 as uuidv4 } from 'uuid';
@@ -13,6 +17,17 @@ import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+
+/* ================================================================== */
+/*  Workflow Lab — Three-Panel Layout                                   */
+/*                                                                     */
+/*  ┌──────────┬───────────────────────────┬──────────────┐            */
+/*  │  LEFT    │    CENTER                 │   RIGHT      │            */
+/*  │  Controls│    Node Editor            │   Node Lib   │            */
+/*  │  Actions │    (React Flow)           │   Inspector  │            */
+/*  │  Save    │                           │   Help       │            */
+/*  └──────────┴───────────────────────────┴──────────────┘            */
+/* ================================================================== */
 
 export default function WorkflowLab() {
     // Hooks must be called unconditionally before early returns
@@ -167,7 +182,6 @@ export default function WorkflowLab() {
                 viewport
             );
             setCurrentWorkflowId(id);
-            // alert("Workflow saved successfully!"); // Removed alert for smoother experience
         } catch (error) {
             console.error("Failed to save workflow:", error);
             alert(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -201,9 +215,9 @@ export default function WorkflowLab() {
 
     return (
         <ModuleErrorBoundary moduleName="Workflow Lab">
-            <div className="flex h-full bg-[#0f0f0f]">
-                {/* Sidebar */}
-                <div className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col">
+            <div className="absolute inset-0 flex bg-[#0f0f0f]">
+                {/* ── LEFT PANEL — Controls & Actions ────── */}
+                <div className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
                     <div className="p-4 border-b border-gray-800">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
                             <GitBranch className="text-purple-500" /> Workflow Lab
@@ -277,13 +291,28 @@ export default function WorkflowLab() {
                         </button>
                     </div>
 
+                    {/* Saved Workflows Quick List */}
+                    <div className="flex-1 overflow-y-auto px-4 py-3">
+                        <SavedWorkflowsWidget
+                            savedWorkflows={savedWorkflows}
+                            onLoad={handleLoadSavedWorkflow}
+                            currentWorkflowId={currentWorkflowId}
+                        />
+                    </div>
                 </div>
 
-                {/* Main Canvas Area */}
-                <div className="flex-1 relative">
+                {/* ── CENTER — Node Editor Canvas ────────────────────── */}
+                <div className="flex-1 relative min-w-0">
                     <WorkflowEditor />
                     <NodePanel />
                 </div>
+
+                {/* ── RIGHT PANEL — Node Library & Inspector ─────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-[#0f0f0f]">
+                    <NodeLibraryPanel />
+                    <NodeInspectorPanel nodes={nodes} />
+                    <HelpDocsPanel />
+                </aside>
 
                 {/* Generator Modal */}
                 {showGenerator && (
@@ -314,5 +343,145 @@ export default function WorkflowLab() {
                 )}
             </div>
         </ModuleErrorBoundary>
+    );
+}
+
+/* ================================================================== */
+/*  Left Panel Widgets                                                  */
+/* ================================================================== */
+
+function SavedWorkflowsWidget({
+    savedWorkflows,
+    onLoad,
+    currentWorkflowId,
+}: {
+    savedWorkflows: SavedWorkflow[];
+    onLoad: (workflow: SavedWorkflow) => void;
+    currentWorkflowId?: string;
+}) {
+    if (savedWorkflows.length === 0) return null;
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Recent Workflows</h3>
+            <div className="space-y-1">
+                {savedWorkflows.slice(0, 5).map((w) => (
+                    <button
+                        key={w.id}
+                        onClick={() => onLoad(w)}
+                        className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${
+                            w.id === currentWorkflowId
+                                ? 'bg-purple-500/10 text-purple-400'
+                                : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
+                        }`}
+                    >
+                        <GitBranch size={12} className="flex-shrink-0" />
+                        <span className="truncate">{w.name}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Right Panel Widgets                                                 */
+/* ================================================================== */
+
+function NodeLibraryPanel() {
+    const nodeTypes = [
+        { name: 'AI Generate', icon: Sparkles, category: 'AI', color: 'text-purple-400' },
+        { name: 'Process Audio', icon: Music, category: 'Audio', color: 'text-blue-400' },
+        { name: 'Generate Image', icon: Image, category: 'AI', color: 'text-pink-400' },
+        { name: 'Send Email', icon: Mail, category: 'Action', color: 'text-green-400' },
+        { name: 'Filter', icon: Filter, category: 'Logic', color: 'text-yellow-400' },
+        { name: 'Webhook', icon: Webhook, category: 'Integration', color: 'text-orange-400' },
+        { name: 'Delay', icon: Clock, category: 'Flow', color: 'text-cyan-400' },
+        { name: 'Transform', icon: Cpu, category: 'Data', color: 'text-emerald-400' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <Zap size={10} /> Node Library
+            </h3>
+            <div className="space-y-1">
+                {nodeTypes.map((n) => (
+                    <div
+                        key={n.name}
+                        className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-grab"
+                        draggable
+                    >
+                        <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                            <n.icon size={12} className={n.color} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-300 truncate">{n.name}</p>
+                            <p className="text-[10px] text-gray-600">{n.category}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; data?: { label?: string; status?: string }; type?: string }> }) {
+    const selectedCount = nodes.length;
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <Settings size={10} /> Inspector
+            </h3>
+            <div className="space-y-2">
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
+                    <span className="text-[11px] text-gray-400">Total Nodes</span>
+                    <span className="text-xs font-bold text-purple-400">{selectedCount}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
+                    <span className="text-[11px] text-gray-400">Status</span>
+                    <span className="text-xs font-bold text-green-400">
+                        {selectedCount > 0 ? 'Ready' : 'Empty'}
+                    </span>
+                </div>
+                {nodes.slice(0, 4).map((n) => (
+                    <div key={n.id} className="flex items-center gap-2 py-1.5 px-2 rounded-lg bg-white/[0.01]">
+                        <Cpu size={10} className="text-gray-600 flex-shrink-0" />
+                        <span className="text-[11px] text-gray-400 truncate">{n.data?.label || n.type || n.id}</span>
+                    </div>
+                ))}
+                {nodes.length > 4 && (
+                    <p className="text-[10px] text-gray-600 px-2">+{nodes.length - 4} more nodes</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function HelpDocsPanel() {
+    const links = [
+        { label: 'Getting Started', icon: BookOpen, desc: 'Learn the basics' },
+        { label: 'Node Reference', icon: HelpCircle, desc: 'All node types' },
+        { label: 'Community', icon: MessageSquare, desc: 'Ask questions' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-purple-500/5 border border-purple-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-purple-400 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <HelpCircle size={10} /> Help & Docs
+            </h3>
+            <div className="space-y-1">
+                {links.map((l) => (
+                    <div key={l.label} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                        <l.icon size={12} className="text-purple-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-gray-300">{l.label}</p>
+                            <p className="text-[10px] text-gray-600">{l.desc}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
     );
 }

@@ -1,15 +1,45 @@
 import React, { useCallback } from 'react';
-import { MerchLayout } from './components/Layout';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { MerchCard } from './components/MerchCard';
 import { MerchButton } from './components/MerchButton';
-import { TrendingUp, ShoppingBag, DollarSign, Plus, ArrowRight, Loader2 } from 'lucide-react';
+import {
+    TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
+    LayoutGrid, PenTool, Package, Settings, LogOut,
+    Palette, Truck, BarChart3, Sparkles, Star
+} from 'lucide-react';
 
-import { useNavigate } from 'react-router-dom';
 import { useMerchandise } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
 import { RecentDesignItem } from './components/RecentDesignItem';
 import { formatCurrency } from '@/lib/utils';
+
+/* ================================================================== */
+/*  Merch Dashboard — Three-Panel Layout                               */
+/*                                                                     */
+/*  ┌──────────┬───────────────────────────┬──────────────┐            */
+/*  │  LEFT    │    CENTER                 │   RIGHT      │            */
+/*  │  Merch   │    Stats + Products       │   Templates  │            */
+/*  │  Nav     │    (workspace)            │   POD Status │            */
+/*  │  Stats   │                           │   Analytics  │            */
+/*  └──────────┴───────────────────────────┴──────────────┘            */
+/* ================================================================== */
+
+const MerchNavItem = ({ to, icon, children, exact }: { to: string; icon: React.ReactNode; children: React.ReactNode; exact?: boolean }) => (
+    <NavLink
+        to={to}
+        end={exact}
+        className={({ isActive }: { isActive: boolean }) => `
+            flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+            ${isActive
+                ? 'bg-[#FFE135]/10 text-[#FFE135] shadow-[0_0_10px_rgba(255,225,53,0.1)] border border-[#FFE135]/20'
+                : 'text-neutral-400 hover:text-white hover:bg-white/5'}
+        `}
+    >
+        {icon}
+        {children}
+    </NavLink>
+);
 
 export default function MerchDashboard() {
     const navigate = useNavigate();
@@ -22,123 +52,160 @@ export default function MerchDashboard() {
 
     if (loading) {
         return (
-            <MerchLayout>
-                <div className="flex items-center justify-center h-[calc(100vh-100px)]" data-testid="merch-dashboard-loading">
-                    <Loader2 className="w-10 h-10 text-[#FFE135] animate-spin" />
-                </div>
-            </MerchLayout>
+            <div className="absolute inset-0 flex items-center justify-center bg-[#050505]" data-testid="merch-dashboard-loading">
+                <Loader2 className="w-10 h-10 text-[#FFE135] animate-spin" />
+            </div>
         );
     }
 
     if (error) {
         return (
-            <MerchLayout>
-                <div className="flex items-center justify-center h-[calc(100vh-100px)] flex-col gap-4" data-testid="merch-dashboard-error">
-                    <p className="text-red-500 font-bold" data-testid="merch-error-message">Failed to load dashboard data.</p>
-                    <p className="text-neutral-400">{error}</p>
-                </div>
-            </MerchLayout>
+            <div className="absolute inset-0 flex items-center justify-center bg-[#050505] flex-col gap-4" data-testid="merch-dashboard-error">
+                <p className="text-red-500 font-bold" data-testid="merch-error-message">Failed to load dashboard data.</p>
+                <p className="text-neutral-400">{error}</p>
+            </div>
         );
     }
 
     return (
-        <MerchLayout>
-            <div className="max-w-7xl mx-auto space-y-8" data-testid="merch-dashboard-content">
-
-                {/* Header */}
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
-                        <p className="text-neutral-400">Your merchandise empire is thriving.</p>
+        <div className="absolute inset-0 flex bg-[#050505] text-white font-sans">
+            {/* ── LEFT PANEL — Merch Sidebar + Stats ────── */}
+            <aside className="hidden lg:flex w-64 flex-col border-r border-white/5 bg-black/50 backdrop-blur-xl flex-shrink-0 z-20">
+                {/* Brand */}
+                <div className="p-6 flex items-center gap-3">
+                    <div className="w-8 h-8 bg-[#FFE135] rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(255,225,53,0.3)]">
+                        <span className="text-black font-black text-lg">M</span>
                     </div>
-                    <MerchButton
-                        onClick={handleDesignClick}
-                        glow size="lg"
-                        className="rounded-full"
-                        data-testid="new-design-btn"
-                    >
-                        <Plus size={18} />
-                        New Design
-                    </MerchButton>
+                    <div>
+                        <h1 className="font-bold text-lg tracking-tight leading-none">Merch<span className="text-[#FFE135]">Pro</span></h1>
+                        <span className="text-[10px] text-neutral-500 uppercase tracking-widest font-mono">Merch OS</span>
+                    </div>
                 </div>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <StatsCard
-                        title="Total Revenue"
-                        value={formatCurrency(stats.totalRevenue)}
-                        change={`+${stats.revenueChange}%`}
-                        icon={<DollarSign className="text-[#FFE135]" />}
-                    />
-                    <StatsCard
-                        title="Units Sold"
-                        value={stats.unitsSold.toString()}
-                        change={`+${stats.unitsChange}%`}
-                        icon={<ShoppingBag className="text-[#FFE135]" />}
-                    />
-                    <StatsCard
-                        title="Conversion Rate"
-                        value={`${stats.conversionRate}%`}
-                        change="+1.1%"
-                        icon={<TrendingUp className="text-[#FFE135]" />}
-                    />
+                {/* Nav */}
+                <nav className="px-4 py-2 space-y-1">
+                    <MerchNavItem to="/merch" icon={<LayoutGrid size={18} />} exact>Dashboard</MerchNavItem>
+                    <MerchNavItem to="/merch/design" icon={<PenTool size={18} />}>Designer</MerchNavItem>
+                    <MerchNavItem to="/merch/catalog" icon={<Package size={18} />}>Catalog</MerchNavItem>
+                    <div className="pt-4 pb-2">
+                        <div className="h-px bg-white/5 mx-2" />
+                    </div>
+                    <MerchNavItem to="/merch/settings" icon={<Settings size={18} />}>Settings</MerchNavItem>
+                </nav>
+
+                {/* Store Stats Widget */}
+                <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
+                    <StoreStatsWidget stats={stats} />
+                    <TrendingProductsWidget topSellingProducts={topSellingProducts} />
+                    <NewDesignsWidget products={products} onDesignClick={handleDesignClick} />
                 </div>
 
-                {/* Creative Health (Performance Metrics) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <MerchCard className="p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <span className="text-6xl">📈</span>
-                        </div>
-                        <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2" data-testid="trend-score-title">Trend Score</h3>
-                            <div className="flex items-end gap-2 mb-2">
-                                <span className="text-4xl font-black text-[#FFE135]">94</span>
-                                <span className="text-sm text-neutral-400 mb-1">/ 100</span>
-                            </div>
-                            <div className="w-full bg-white/10 rounded-full h-2 mb-2">
-                                <div className="bg-[#FFE135] h-2 rounded-full" style={{ width: '94%' }} />
-                            </div>
-                            <p className="text-xs text-neutral-500">Your designs are trending fresh. 2 new viral signals detected.</p>
-                        </div>
-                    </MerchCard>
+                <div className="p-4 border-t border-white/5">
+                    <button className="flex items-center gap-3 text-neutral-500 hover:text-white transition-colors w-full px-4 py-2 text-sm font-medium rounded-lg hover:bg-white/5">
+                        <LogOut size={18} />
+                        <span>Exit Studio</span>
+                    </button>
+                </div>
+            </aside>
 
-                    <MerchCard className="p-6 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 p-4 opacity-10">
-                            <span className="text-6xl">⚡️</span>
+            {/* ── CENTER — Dashboard Workspace ────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+                {/* Background Blobs */}
+                <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#FFE135]/5 rounded-full blur-[120px] pointer-events-none" />
+                <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-lime-400/5 rounded-full blur-[120px] pointer-events-none" />
+
+                <div className="flex-1 overflow-y-auto p-8 relative z-10" data-testid="merch-dashboard-content">
+                    {/* Header */}
+                    <div className="flex items-center justify-between mb-8">
+                        <div>
+                            <h2 className="text-3xl font-bold text-white mb-1">Morning, {userProfile?.displayName?.split(' ')[0] || 'Chief'}</h2>
+                            <p className="text-neutral-400">Your merchandise empire is thriving.</p>
                         </div>
-                        <div className="relative z-10">
-                            <h3 className="text-lg font-bold text-white mb-2" data-testid="production-performance-title">Production Velocity</h3>
-                            <div className="flex items-end gap-2 mb-2">
-                                <span className="text-4xl font-black text-green-400">+12%</span>
-                                <span className="text-sm text-neutral-400 mb-1">vs last week</span>
+                        <MerchButton
+                            onClick={handleDesignClick}
+                            glow size="lg"
+                            className="rounded-full"
+                            data-testid="new-design-btn"
+                        >
+                            <Plus size={18} />
+                            New Design
+                        </MerchButton>
+                    </div>
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <StatsCard
+                            title="Total Revenue"
+                            value={formatCurrency(stats.totalRevenue)}
+                            change={`+${stats.revenueChange}%`}
+                            icon={<DollarSign className="text-[#FFE135]" />}
+                        />
+                        <StatsCard
+                            title="Units Sold"
+                            value={stats.unitsSold.toString()}
+                            change={`+${stats.unitsChange}%`}
+                            icon={<ShoppingBag className="text-[#FFE135]" />}
+                        />
+                        <StatsCard
+                            title="Conversion Rate"
+                            value={`${stats.conversionRate ?? 0}%`}
+                            change="+1.1%"
+                            icon={<TrendingUp className="text-[#FFE135]" />}
+                        />
+                    </div>
+
+                    {/* Creative Health */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                        <MerchCard className="p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <span className="text-6xl">📈</span>
                             </div>
-                            <div className="flex gap-1 h-2 mb-2">
-                                <div className="flex-1 bg-green-500/20 rounded-full overflow-hidden">
-                                    <div className="h-full bg-green-500 w-[70%]" />
+                            <div className="relative z-10">
+                                <h3 className="text-lg font-bold text-white mb-2" data-testid="trend-score-title">Trend Score</h3>
+                                <div className="flex items-end gap-2 mb-2">
+                                    <span className="text-4xl font-black text-[#FFE135]">94</span>
+                                    <span className="text-sm text-neutral-400 mb-1">/ 100</span>
                                 </div>
+                                <div className="w-full bg-white/10 rounded-full h-2 mb-2">
+                                    <div className="bg-[#FFE135] h-2 rounded-full" style={{ width: '94%' }} />
+                                </div>
+                                <p className="text-xs text-neutral-500">Your designs are trending fresh. 2 new viral signals detected.</p>
                             </div>
-                            <p className="text-xs text-neutral-500">Production efficiency is up. Global logistics optimal.</p>
-                        </div>
-                    </MerchCard>
-                </div>
+                        </MerchCard>
 
-                {/* Main Sections */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <MerchCard className="p-6 relative overflow-hidden">
+                            <div className="absolute top-0 right-0 p-4 opacity-10">
+                                <span className="text-6xl">⚡️</span>
+                            </div>
+                            <div className="relative z-10">
+                                <h3 className="text-lg font-bold text-white mb-2" data-testid="production-performance-title">Production Velocity</h3>
+                                <div className="flex items-end gap-2 mb-2">
+                                    <span className="text-4xl font-black text-green-400">+12%</span>
+                                    <span className="text-sm text-neutral-400 mb-1">vs last week</span>
+                                </div>
+                                <div className="flex gap-1 h-2 mb-2">
+                                    <div className="flex-1 bg-green-500/20 rounded-full overflow-hidden">
+                                        <div className="h-full bg-green-500 w-[70%]" />
+                                    </div>
+                                </div>
+                                <p className="text-xs text-neutral-500">Production efficiency is up. Global logistics optimal.</p>
+                            </div>
+                        </MerchCard>
+                    </div>
 
-                    {/* Top Sellers */}
-                    <div className="lg:col-span-2 space-y-6">
-                        <div className="flex items-center justify-between">
+                    {/* Top Performing Products (full width in center) */}
+                    <div className="mb-8">
+                        <div className="flex items-center justify-between mb-4">
                             <h3 className="text-xl font-bold text-white">Top Performing Products</h3>
                             <button className="text-xs text-[#FFE135] hover:underline">View All</button>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                             {topSellingProducts.length > 0 ? (
                                 topSellingProducts.map((product) => (
                                     <TopSellingProductItem key={product.id} product={product} />
                                 ))
                             ) : (
-                                <div className="col-span-2 p-8 text-center border border-dashed border-white/10 rounded-lg">
+                                <div className="col-span-full p-8 text-center border border-dashed border-white/10 rounded-lg">
                                     <p className="text-neutral-500 mb-4">No sales yet. Time to market!</p>
                                     <MerchButton size="sm" variant="outline" onClick={handleDesignClick}>
                                         Start Selling
@@ -147,42 +214,25 @@ export default function MerchDashboard() {
                             )}
                         </div>
                     </div>
-
-                    {/* Recent Designs */}
-                    <div className="space-y-6">
-                        <div className="flex items-center justify-between">
-                            <h3 className="text-xl font-bold text-white">Fresh Prints</h3>
-                            <button className="text-xs text-[#FFE135] hover:underline">Drafts</button>
-                        </div>
-                        <div className="space-y-4">
-                            {products.slice(0, 3).map((product) => (
-                                <RecentDesignItem
-                                    key={product.id}
-                                    product={product}
-                                    onClick={handleDesignClick}
-                                />
-                            ))}
-                            {products.length === 0 && (
-                                <p className="text-neutral-500 text-sm">No products created yet.</p>
-                            )}
-                        </div>
-
-                        <MerchCard className="p-6 bg-gradient-to-br from-[#FFE135]/10 to-transparent border-[#FFE135]/20">
-                            <h4 className="font-bold text-[#FFE135] mb-2">Campaign Ready?</h4>
-                            <p className="text-xs text-neutral-400 mb-4">You have {products.length} approved designs ready for production.</p>
-                            <MerchButton size="sm" variant="outline" className="w-full">
-                                <Plus size={16} />
-                                Launch Campaign
-                            </MerchButton>
-                        </MerchCard>
-                    </div>
                 </div>
             </div>
-        </MerchLayout>
+
+            {/* ── RIGHT PANEL — Templates & Analytics ─────────────── */}
+            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <DesignTemplatesPanel />
+                <PODPartnerStatusPanel />
+                <ConversionFunnelPanel stats={stats} />
+                <CampaignReadyPanel products={products} />
+            </aside>
+        </div>
     );
 }
 
-function StatsCard({ title, value, change, icon }: { title: string, value: string, change: string, icon: React.ReactNode }) {
+/* ================================================================== */
+/*  Stats Card                                                          */
+/* ================================================================== */
+
+function StatsCard({ title, value, change, icon }: { title: string; value: string; change: string; icon: React.ReactNode }) {
     return (
         <MerchCard className="p-6">
             <div className="flex items-start justify-between mb-4">
@@ -196,5 +246,182 @@ function StatsCard({ title, value, change, icon }: { title: string, value: strin
                 <h3 className="text-3xl font-black text-white">{value}</h3>
             </div>
         </MerchCard>
-    )
+    );
+}
+
+/* ================================================================== */
+/*  Left Panel Widgets                                                  */
+/* ================================================================== */
+
+function StoreStatsWidget({ stats }: { stats: { totalRevenue: number; unitsSold: number; conversionRate: number | null } }) {
+    const items = [
+        { label: 'Revenue', value: formatCurrency(stats.totalRevenue), color: 'text-[#FFE135]' },
+        { label: 'Units Sold', value: stats.unitsSold.toString(), color: 'text-green-400' },
+        { label: 'Conversion', value: `${stats.conversionRate ?? 0}%`, color: 'text-purple-400' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1">Store Stats</h3>
+            <div className="space-y-2">
+                {items.map((s) => (
+                    <div key={s.label} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
+                        <span className="text-[11px] text-neutral-400">{s.label}</span>
+                        <span className={`text-xs font-bold ${s.color}`}>{s.value}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function TrendingProductsWidget({ topSellingProducts }: { topSellingProducts: Array<{ id: string; title?: string; revenue: number }> }) {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <TrendingUp size={10} /> Top Sellers
+            </h3>
+            <div className="space-y-1">
+                {topSellingProducts.slice(0, 3).map((p, i) => (
+                    <div key={p.id} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors">
+                        <span className="text-[10px] font-bold text-[#FFE135] w-4">#{i + 1}</span>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-neutral-300 truncate">{p.title || 'Untitled'}</p>
+                            <p className="text-[10px] text-neutral-600">{formatCurrency(p.revenue)}</p>
+                        </div>
+                    </div>
+                ))}
+                {topSellingProducts.length === 0 && (
+                    <p className="text-[11px] text-neutral-600 px-2">No sales data yet</p>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function NewDesignsWidget({ products, onDesignClick }: { products: Array<{ id: string; title?: string; category?: string }>; onDesignClick: () => void }) {
+    const pending = products.filter(p => p.category === 'standard');
+    return (
+        <div className="rounded-xl bg-[#FFE135]/5 border border-[#FFE135]/10 p-3">
+            <h3 className="text-[10px] font-bold text-[#FFE135] uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <Sparkles size={10} /> New Designs
+            </h3>
+            <p className="text-[11px] text-neutral-400 px-1 mb-2">
+                {pending.length > 0 ? `${pending.length} designs awaiting review` : 'All designs approved'}
+            </p>
+            <button
+                onClick={onDesignClick}
+                className="w-full text-xs font-bold text-[#FFE135] py-1.5 rounded-lg bg-[#FFE135]/10 hover:bg-[#FFE135]/20 transition-colors"
+            >
+                + Create Design
+            </button>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Right Panel Widgets                                                 */
+/* ================================================================== */
+
+function DesignTemplatesPanel() {
+    const templates = [
+        { name: 'Album Art Tee', category: 'Apparel', icon: Palette },
+        { name: 'Vinyl Mockup', category: 'Music', icon: Star },
+        { name: 'Festival Poster', category: 'Print', icon: BarChart3 },
+        { name: 'Sticker Pack', category: 'Accessories', icon: Sparkles },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1">Design Templates</h3>
+            <div className="space-y-1">
+                {templates.map((t) => (
+                    <div key={t.name} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
+                        <div className="w-7 h-7 rounded-lg bg-[#FFE135]/10 flex items-center justify-center flex-shrink-0">
+                            <t.icon size={12} className="text-[#FFE135]" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs text-neutral-300 truncate">{t.name}</p>
+                            <p className="text-[10px] text-neutral-600">{t.category}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function PODPartnerStatusPanel() {
+    const partners = [
+        { name: 'Printful', status: 'connected', latency: '1.2s' },
+        { name: 'Printify', status: 'connected', latency: '0.8s' },
+        { name: 'Gooten', status: 'pending', latency: '—' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <Truck size={10} /> POD Partners
+            </h3>
+            <div className="space-y-2">
+                {partners.map((p) => (
+                    <div key={p.name} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
+                        <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${p.status === 'connected' ? 'bg-green-400' : 'bg-yellow-400'}`} />
+                            <span className="text-xs text-neutral-300">{p.name}</span>
+                        </div>
+                        <span className="text-[10px] text-neutral-600">{p.latency}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ConversionFunnelPanel({ stats }: { stats: { conversionRate: number | null; unitsSold: number } }) {
+    const stages = [
+        { label: 'Page Views', value: '12,847', pct: 100 },
+        { label: 'Add to Cart', value: '2,156', pct: 16.8 },
+        { label: 'Checkout', value: '891', pct: 6.9 },
+        { label: 'Purchased', value: stats.unitsSold.toString(), pct: stats.conversionRate ?? 0 },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
+                <BarChart3 size={10} /> Conversion Funnel
+            </h3>
+            <div className="space-y-2">
+                {stages.map((s) => (
+                    <div key={s.label} className="px-1">
+                        <div className="flex items-center justify-between mb-1">
+                            <span className="text-[10px] text-neutral-400">{s.label}</span>
+                            <span className="text-[10px] font-bold text-neutral-300">{s.value}</span>
+                        </div>
+                        <div className="w-full bg-white/5 rounded-full h-1.5">
+                            <div
+                                className="bg-[#FFE135] h-1.5 rounded-full transition-all"
+                                style={{ width: `${s.pct}%` }}
+                            />
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function CampaignReadyPanel({ products }: { products: Array<{ id: string }> }) {
+    return (
+        <div className="rounded-xl bg-gradient-to-br from-[#FFE135]/10 to-transparent border border-[#FFE135]/20 p-3">
+            <h3 className="text-[10px] font-bold text-[#FFE135] uppercase tracking-widest mb-2 px-1">Campaign Ready</h3>
+            <p className="text-[11px] text-neutral-400 px-1 mb-3">
+                {products.length} approved designs ready for production.
+            </p>
+            <button className="w-full text-xs font-bold text-[#FFE135] py-2 rounded-lg bg-[#FFE135]/10 hover:bg-[#FFE135]/20 transition-colors flex items-center justify-center gap-1.5">
+                <Plus size={12} />
+                Launch Campaign
+            </button>
+        </div>
+    );
 }
