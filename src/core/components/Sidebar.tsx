@@ -10,13 +10,14 @@ import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 
 export default function Sidebar() {
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
-    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, logout } = useStore(
+    const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, updatePreferences, logout } = useStore(
         useShallow((state) => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isSidebarOpen: state.isSidebarOpen,
             toggleSidebar: state.toggleSidebar,
             userProfile: state.userProfile,
+            updatePreferences: state.updatePreferences,
             logout: state.logout,
         }))
     );
@@ -204,8 +205,12 @@ export default function Sidebar() {
 
                         <div className="flex items-center justify-center pt-2 border-t border-white/5">
                             <button
-                                onClick={() => setModule('observability')}
-                                className={`p-1.5 rounded transition-transform hover:scale-110 ${currentModule === 'observability' ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
+                                onClick={() => {
+                                    const isEnabled = userProfile?.preferences?.observabilityEnabled ?? false;
+                                    updatePreferences({ observabilityEnabled: !isEnabled });
+                                    setModule('observability');
+                                }}
+                                className={`p-1.5 rounded transition-transform hover:scale-110 ${userProfile?.preferences?.observabilityEnabled ? 'text-dept-licensing bg-white/5 shadow-[0_0_10px_rgba(0,150,136,0.3)]' : 'text-gray-500 hover:text-gray-300'}`}
                                 title="System Observability"
                                 aria-label="System Observability"
                                 data-testid="observability-footer-btn"

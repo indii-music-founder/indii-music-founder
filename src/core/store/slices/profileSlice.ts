@@ -60,7 +60,8 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     bio: 'Creative Director',
     preferences: {
         theme: 'system',
-        notifications: true
+        notifications: true,
+        observabilityEnabled: false
     },
     brandKit: DEFAULT_BRAND_KIT,
     analyzedTrackIds: [],
