@@ -20,7 +20,7 @@ import PulseButton from './PulseButton';
 import { BILLBOARD_SLIDES } from '../../lib/billboardContent';
 
 interface DigitalBillboardProps {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     user?: any;
     authenticatedCta?: {
         label: string;
