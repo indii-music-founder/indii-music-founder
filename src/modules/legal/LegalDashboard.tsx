@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
+
+/* ================================================================== */
+/*  Legal Dashboard — Three-Panel Layout                                */
+/*                                                                     */
+/*  ┌──────────┬───────────────────────────┬──────────────┐            */
+/*  │  LEFT    │    CENTER                 │   RIGHT      │            */
+/*  │  Legal   │    Contract Analyzer      │   Analysis   │            */
+/*  │  Templates│   (drag-drop + results)  │   History    │            */
+/*  │  Quick   │                           │   Risk       │            */
+/*  │  Launch  │                           │   Scores     │            */
+/*  └──────────┴───────────────────────────┴──────────────┘            */
+/* ================================================================== */
 
 export default function LegalDashboard() {
     const [isDragging, setIsDragging] = useState(false);
@@ -14,6 +26,7 @@ export default function LegalDashboard() {
         summary: string;
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
+    const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
     const toast = useToast();
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -76,11 +89,17 @@ Only return valid JSON.
 
             const data = JSON.parse(response.response.text());
 
-            setAnalysisResult({
+            const result = {
                 score: data.score || 0,
                 summary: data.summary || "No summary provided.",
                 risks: data.risks || []
-            });
+            };
+
+            setAnalysisResult(result);
+            setAnalysisHistory(prev => [
+                { name: file.name, score: result.score, date: new Date().toLocaleDateString() },
+                ...prev.slice(0, 9)
+            ]);
             toast.success("Analysis complete!");
         } catch (error) {
             console.error("Analysis failed:", error);
@@ -97,9 +116,6 @@ Only return valid JSON.
                 parties: ['[ARTIST NAME]', '[COMPANY/INDIVIDUAL NAME]'],
                 purpose: 'general business discussion and project collaboration'
             });
-
-            // For Alpha, we just show a success toast and could potentially download it
-            // In a real app, we'd probably open a modal with the result
             toast.success("NDA Template generated! Check console for output.");
         } catch (error) {
             toast.error("Failed to generate NDA.");
@@ -125,36 +141,48 @@ Only return valid JSON.
     };
 
     const handleFindCounsel = () => {
-        // 🛡️ Sentinel: Added noopener,noreferrer for security
-        window.open('https://www.entertainmentlawyer.ca/directory', '_blank', 'noopener,noreferrer'); // Placeholder for a real directory
+        window.open('https://www.entertainmentlawyer.ca/directory', '_blank', 'noopener,noreferrer');
         toast.info("Opening entertainment lawyer directory...");
     };
 
     return (
-        <div className="h-full flex flex-col bg-bg-dark text-white p-6 overflow-y-auto">
-            <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2 flex items-center gap-3">
-                    <Shield className="text-blue-500" />
-                    Legal Dashboard
-                </h1>
-                <p className="text-gray-400">AI-powered contract analysis and legal tools.</p>
-            </div>
+        <div className="absolute inset-0 flex">
+            {/* ── LEFT PANEL — Templates & Quick Tools ──────────── */}
+            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <LegalTemplatesPanel
+                    isGenerating={isGenerating}
+                    onGenerateNDA={handleGenerateNDA}
+                    onGenerateIP={handleGenerateIPAssignment}
+                />
+                <QuickLaunchPanel onFindCounsel={handleFindCounsel} />
+                <DisclaimerPanel />
+            </aside>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Contract Validator Card */}
-                <div className="lg:col-span-2 bg-[#161b22] border border-gray-800 rounded-xl p-6">
-                    <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-                        <FileText size={18} className="text-blue-400" />
-                        Contract Validator
-                    </h3>
+            {/* ── CENTER — Contract Analyzer ──────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                    <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
+                    <div className="relative z-10 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-blue-400 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <Shield size={18} className="text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Legal</h1>
+                            <p className="text-muted-foreground font-medium tracking-wide text-[10px]">AI-POWERED CONTRACT ANALYSIS</p>
+                        </div>
+                    </div>
+                </div>
 
+                {/* Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
                     {!analysisResult && !isAnalyzing && (
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div
                                 onDragOver={handleDragOver}
                                 onDragLeave={handleDragLeave}
                                 onDrop={handleDrop}
-                                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-gray-700 hover:border-gray-600 hover:bg-gray-800/50'
+                                className={`border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative ${isDragging ? 'border-blue-500 bg-blue-500/10' : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
                                     }`}
                             >
                                 <input
@@ -164,14 +192,14 @@ Only return valid JSON.
                                     accept=".pdf,.docx,.txt"
                                 />
                                 <Upload size={48} className={`mb-4 ${isDragging ? 'text-blue-500' : 'text-gray-500'}`} />
-                                <p className="text-lg font-medium mb-2 text-center">Drop contract here</p>
+                                <p className="text-lg font-medium mb-2 text-center text-white">Drop contract here</p>
                                 <p className="text-sm text-gray-500 text-center">PDF, DOCX, TXT</p>
                                 <button className="mt-6 px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
                                     Browse Files
                                 </button>
                             </div>
 
-                            <div className="border-2 border-dashed border-gray-700 hover:border-gray-600 hover:bg-gray-800/50 rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
+                            <div className="border-2 border-dashed border-white/10 hover:border-white/20 hover:bg-white/[0.02] rounded-xl p-8 flex flex-col items-center justify-center transition-colors cursor-pointer relative group">
                                 <input
                                     type="file"
                                     accept="image/*"
@@ -180,9 +208,9 @@ Only return valid JSON.
                                     onChange={(e) => e.target.files?.[0] && handleFileUpload(e.target.files[0])}
                                 />
                                 <Camera size={48} className="mb-4 text-gray-500 group-hover:text-blue-500 transition-colors" />
-                                <p className="text-lg font-medium mb-2 text-center">Scan Document</p>
+                                <p className="text-lg font-medium mb-2 text-center text-white">Scan Document</p>
                                 <p className="text-sm text-gray-500 text-center">Take a photo of a contract</p>
-                                <button className="mt-6 px-6 py-2 bg-gray-700 group-hover:bg-gray-600 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
+                                <button className="mt-6 px-6 py-2 bg-white/5 group-hover:bg-white/10 text-white rounded-lg text-sm font-medium transition-colors pointer-events-none">
                                     Open Camera
                                 </button>
                             </div>
@@ -197,10 +225,10 @@ Only return valid JSON.
                     )}
 
                     {analysisResult && (
-                        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                            <div className="flex items-start justify-between mb-6">
+                        <div className="space-y-6">
+                            <div className="flex items-start justify-between">
                                 <div>
-                                    <h4 className="text-xl font-bold mb-1">Analysis Report</h4>
+                                    <h4 className="text-xl font-bold text-white mb-1">Analysis Report</h4>
                                     <p className="text-gray-400 text-sm">Generated by LegalAI Agent</p>
                                 </div>
                                 <div className={`px-4 py-2 rounded-lg flex items-center gap-2 ${analysisResult.score >= 80 ? 'bg-green-500/10 text-green-400 border border-green-500/20' :
@@ -212,81 +240,203 @@ Only return valid JSON.
                                 </div>
                             </div>
 
-                            <div className="bg-bg-dark rounded-lg p-4 mb-6 border border-gray-800">
-                                <p className="text-gray-300 leading-relaxed">{analysisResult.summary}</p>
+                            <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
+                                <p className="text-gray-300 leading-relaxed text-sm">{analysisResult.summary}</p>
                             </div>
 
-                            <h5 className="font-semibold mb-4 flex items-center gap-2 text-yellow-400">
-                                <AlertTriangle size={16} />
-                                Potential Risks & Attention Points
-                            </h5>
-                            <ul className="space-y-3">
-                                {analysisResult.risks.map((risk, index) => (
-                                    <li key={index} className="flex items-start gap-3 p-3 bg-bg-dark rounded border border-gray-800 hover:border-gray-700 transition-colors">
-                                        <div className="mt-1 min-w-[6px] h-[6px] rounded-full bg-yellow-500" />
-                                        <span className="text-sm text-gray-300">{risk}</span>
-                                    </li>
-                                ))}
-                            </ul>
+                            <div>
+                                <h5 className="font-semibold mb-4 flex items-center gap-2 text-yellow-400 text-sm">
+                                    <AlertTriangle size={16} />
+                                    Potential Risks & Attention Points
+                                </h5>
+                                <ul className="space-y-2">
+                                    {analysisResult.risks.map((risk, index) => (
+                                        <li key={index} className="flex items-start gap-3 p-3 rounded-lg bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                                            <div className="mt-1.5 min-w-[6px] h-[6px] rounded-full bg-yellow-500 flex-shrink-0" />
+                                            <span className="text-sm text-gray-300">{risk}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
 
                             <button
                                 onClick={() => setAnalysisResult(null)}
-                                className="mt-8 w-full py-3 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition-colors"
+                                className="w-full py-3 bg-white/5 hover:bg-white/10 text-white rounded-lg font-medium transition-colors text-sm"
                             >
                                 Analyze Another Document
                             </button>
                         </div>
                     )}
                 </div>
+            </div>
 
-                {/* Sidebar / Quick Tools */}
-                <div className="space-y-6">
-                    <div className="bg-[#161b22] border border-gray-800 rounded-xl p-6">
-                        <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-4">Quick Tools</h3>
-                        <div className="space-y-2">
-                            <button
-                                onClick={handleGenerateNDA}
-                                disabled={isGenerating !== null}
-                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 group ${isGenerating === 'NDA' ? 'opacity-50 cursor-wait' : 'hover:bg-gray-800'}`}
-                            >
-                                <div className="p-2 bg-blue-500/10 rounded group-hover:bg-blue-500/20 text-blue-400">
-                                    {isGenerating === 'NDA' ? <Loader2 size={18} className="animate-spin" /> : <FileText size={18} />}
-                                </div>
-                                <div>
-                                    <div className="font-medium">NDA Generator</div>
-                                    <div className="text-xs text-gray-500">Create a standard NDA</div>
-                                </div>
-                            </button>
-                            <button
-                                onClick={handleGenerateIPAssignment}
-                                disabled={isGenerating !== null}
-                                className={`w-full text-left p-3 rounded-lg transition-colors flex items-center gap-3 group ${isGenerating === 'IP' ? 'opacity-50 cursor-wait' : 'hover:bg-gray-800'}`}
-                            >
-                                <div className="p-2 bg-purple-500/10 rounded group-hover:bg-purple-500/20 text-purple-400">
-                                    {isGenerating === 'IP' ? <Loader2 size={18} className="animate-spin" /> : <CheckCircle size={18} />}
-                                </div>
-                                <div>
-                                    <div className="font-medium">IP Assignment</div>
-                                    <div className="text-xs text-gray-500">Transfer rights template</div>
-                                </div>
-                            </button>
-                        </div>
+            {/* ── RIGHT PANEL — History & Risk Scores ────────────── */}
+            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <AnalysisHistoryPanel history={analysisHistory} />
+                <RiskScoresPanel result={analysisResult} />
+                <CounselPanel onFindCounsel={handleFindCounsel} />
+            </aside>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Left Panel Widgets                                                  */
+/* ================================================================== */
+
+function LegalTemplatesPanel({ isGenerating, onGenerateNDA, onGenerateIP }: {
+    isGenerating: string | null; onGenerateNDA: () => void; onGenerateIP: () => void;
+}) {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Templates</h3>
+            <div className="space-y-2">
+                <button
+                    onClick={onGenerateNDA}
+                    disabled={isGenerating !== null}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left ${isGenerating === 'NDA' ? 'opacity-50 cursor-wait' : 'hover:bg-white/[0.04]'}`}
+                >
+                    <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                        {isGenerating === 'NDA' ? <Loader2 size={14} className="animate-spin text-blue-400" /> : <FileText size={14} className="text-blue-400" />}
                     </div>
+                    <div>
+                        <p className="text-xs font-bold text-white">NDA Generator</p>
+                        <p className="text-[10px] text-gray-500">Standard NDA template</p>
+                    </div>
+                </button>
+                <button
+                    onClick={onGenerateIP}
+                    disabled={isGenerating !== null}
+                    className={`w-full flex items-center gap-3 p-2.5 rounded-lg transition-colors text-left ${isGenerating === 'IP' ? 'opacity-50 cursor-wait' : 'hover:bg-white/[0.04]'}`}
+                >
+                    <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center flex-shrink-0">
+                        {isGenerating === 'IP' ? <Loader2 size={14} className="animate-spin text-purple-400" /> : <CheckCircle size={14} className="text-purple-400" />}
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-white">IP Assignment</p>
+                        <p className="text-[10px] text-gray-500">Transfer rights template</p>
+                    </div>
+                </button>
+                <button className="w-full flex items-center gap-3 p-2.5 rounded-lg hover:bg-white/[0.04] transition-colors text-left">
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center flex-shrink-0">
+                        <Briefcase size={14} className="text-emerald-400" />
+                    </div>
+                    <div>
+                        <p className="text-xs font-bold text-white">Sync License</p>
+                        <p className="text-[10px] text-gray-500">Music sync agreement</p>
+                    </div>
+                </button>
+            </div>
+        </div>
+    );
+}
 
-                    <div className="bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-blue-800/30 rounded-xl p-6">
-                        <h3 className="text-lg font-bold mb-2">Need a Lawyer?</h3>
-                        <p className="text-sm text-gray-400 mb-4">
-                            AI analysis is for informational purposes only. Connect with a verified entertainment lawyer for binding advice.
-                        </p>
-                        <button
-                            onClick={handleFindCounsel}
-                            className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-bold transition-colors"
-                        >
-                            Find Counsel
-                        </button>
+function QuickLaunchPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
+            <div className="space-y-2">
+                <button
+                    onClick={onFindCounsel}
+                    className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 transition-colors text-xs text-blue-300 font-medium border border-blue-500/10"
+                >
+                    <Scale size={12} /> Find Entertainment Lawyer
+                </button>
+                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium">
+                    <BookOpen size={12} /> Legal Resources
+                </button>
+            </div>
+        </div>
+    );
+}
+
+function DisclaimerPanel() {
+    return (
+        <div className="rounded-xl bg-amber-500/5 border border-amber-500/10 p-3">
+            <div className="flex items-start gap-2 text-xs text-amber-300/70">
+                <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+                <span>AI analysis is for informational purposes only. All drafts MUST be reviewed by qualified legal counsel.</span>
+            </div>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Right Panel Widgets                                                 */
+/* ================================================================== */
+
+function AnalysisHistoryPanel({ history }: { history: Array<{ name: string; score: number; date: string }> }) {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Analysis History</h3>
+            {history.length === 0 ? (
+                <p className="text-xs text-gray-600 px-1">No documents analyzed yet.</p>
+            ) : (
+                <div className="space-y-1">
+                    {history.map((h, i) => (
+                        <div key={i} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs text-white truncate">{h.name}</p>
+                                <p className="text-[10px] text-gray-600">{h.date}</p>
+                            </div>
+                            <span className={`text-xs font-bold flex-shrink-0 ml-2 ${
+                                h.score >= 80 ? 'text-green-400' : h.score >= 60 ? 'text-yellow-400' : 'text-red-400'
+                            }`}>
+                                {h.score}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function RiskScoresPanel({ result }: { result: { score: number; risks: string[] } | null }) {
+    if (!result) {
+        return (
+            <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Risk Assessment</h3>
+                <p className="text-xs text-gray-600 px-1">Upload a document to see risk analysis.</p>
+            </div>
+        );
+    }
+
+    const level = result.score >= 80 ? 'Low Risk' : result.score >= 60 ? 'Medium Risk' : 'High Risk';
+    const color = result.score >= 80 ? 'text-green-400' : result.score >= 60 ? 'text-yellow-400' : 'text-red-400';
+    const bgColor = result.score >= 80 ? 'bg-green-500' : result.score >= 60 ? 'bg-yellow-500' : 'bg-red-500';
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Risk Assessment</h3>
+            <div className="space-y-3">
+                <div className="p-3 rounded-lg bg-white/[0.02] text-center">
+                    <p className="text-3xl font-black text-white mb-1">{result.score}</p>
+                    <p className={`text-xs font-bold ${color}`}>{level}</p>
+                    <div className="w-full h-1.5 bg-white/5 rounded-full mt-2 overflow-hidden">
+                        <div className={`h-full ${bgColor} rounded-full`} style={{ width: `${result.score}%` }} />
                     </div>
                 </div>
+                <div className="px-1">
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest mb-2">Flagged Issues</p>
+                    <p className="text-xs text-white font-bold">{result.risks.length} risk{result.risks.length !== 1 ? 's' : ''} detected</p>
+                </div>
             </div>
+        </div>
+    );
+}
+
+function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
+    return (
+        <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 px-1">Need a Lawyer?</h3>
+            <p className="text-[10px] text-gray-500 px-1 mb-3">Connect with a verified entertainment lawyer for binding advice.</p>
+            <button
+                onClick={onFindCounsel}
+                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
+            >
+                Find Counsel
+            </button>
         </div>
     );
 }

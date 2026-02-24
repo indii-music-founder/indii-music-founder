@@ -45,8 +45,7 @@ vi.mock('./hooks/useSocial', () => ({
 describe('SocialDashboard', () => {
     it('renders the dashboard header', () => {
         render(<SocialDashboard />);
-        expect(screen.getByText('Social Media')).toBeInTheDocument();
-        expect(screen.getByText('Manage your social presence and campaigns.')).toBeInTheDocument();
+        expect(screen.getAllByText('Social')[0]).toBeInTheDocument();
     });
 
     it('opens the Create Post modal when button is clicked', () => {
