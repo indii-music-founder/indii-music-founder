@@ -171,7 +171,7 @@ function NodeParticles() {
     const mesh = useRef<THREE.InstancedMesh>(null!);
 
     // Generate random positions on a sphere surface
-    // eslint-disable-next-line react-hooks/purity
+     
     const particles = useMemo(() => {
         const temp = [];
         for (let i = 0; i < count; i++) {
@@ -183,7 +183,7 @@ function NodeParticles() {
             const y = r * Math.sin(theta) * Math.sin(phi);
             const z = r * Math.cos(phi);
 
-            // eslint-disable-next-line react-hooks/purity
+             
             temp.push({ position: [x, y, z], scale: Math.random() * 0.5 + 0.5 });
         }
         return temp;
@@ -222,7 +222,7 @@ function NodeParticles() {
 
 export default function Hero() {
     const bgParticles = useMemo(() => {
-        // eslint-disable-next-line react-hooks/purity
+         
         const arr = new Float32Array(900).map(() => (Math.random() - 0.5) * 15);
         return arr;
     }, []);
