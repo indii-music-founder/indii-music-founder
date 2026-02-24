@@ -4,6 +4,7 @@ import { AgentConfig } from './types';
 
 // Mock dependencies
 vi.mock('@/services/ai/GenAI', () => ({
+  serverTimestamp: vi.fn(),
     GenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
@@ -15,8 +16,10 @@ vi.mock('@/services/ai/GenAI', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     Timestamp: {
-        now: () => ({ toMillis: () => Date.now(), toDate: () => new Date() })
+        now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now(), toDate: () => new Date() })
     },
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -28,6 +31,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/app', () => ({
+  serverTimestamp: vi.fn(),
     initializeApp: vi.fn(),
     getApp: vi.fn()
 }));

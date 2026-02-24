@@ -6,6 +6,7 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
@@ -15,7 +16,8 @@ const mocks = vi.hoisted(() => ({
         getCurrentSubscription: vi.fn()
     },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     firebaseAI: {
         analyzeImage: vi.fn()
@@ -24,17 +26,20 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: mocks.httpsCallable,
     getFunctions: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
@@ -42,20 +47,24 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     db: {},
     auth: mocks.auth
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
 
@@ -86,7 +95,8 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
             callback({
                 exists: () => true,
                 id: jobId,
-                data: () => ({ status: 'processing', progress: 10 })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing', progress: 10 })
             });
 
             // 2. Simulate long wait (Pro model)
@@ -95,6 +105,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'stitching',
                         progress: 90
                     })
@@ -107,6 +118,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         videoUrl: 'https://storage.googleapis.com/bucket/video.mp4',
                         output: {
@@ -150,6 +162,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'failed',
                         error: 'Safety violation: Content blocked by safety settings.'
                     })
@@ -180,6 +193,7 @@ describe('Lens: Veo 3.1 Payload & Pipeline Integrity', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://malicious.site/script.js',

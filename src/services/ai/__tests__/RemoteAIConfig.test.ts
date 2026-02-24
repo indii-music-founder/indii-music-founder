@@ -8,6 +8,7 @@ const mockGenerateContent = vi.fn();
 const mockRemoteConfigValue = vi.fn();
 
 vi.mock('firebase/remote-config', () => ({
+  serverTimestamp: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: (rc: any, key: string) => ({
         asString: () => mockRemoteConfigValue(key)
@@ -15,6 +16,7 @@ vi.mock('firebase/remote-config', () => ({
 }));
 
 vi.mock('firebase/ai', () => ({
+  serverTimestamp: vi.fn(),
     getGenerativeModel: vi.fn((ai, config) => ({
         model: config.model,
         generateContent: mockGenerateContent
@@ -24,8 +26,10 @@ vi.mock('firebase/ai', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     remoteConfig: {},
-    getFirebaseAI: () => ({}),
+    getFirebaseAI: () => ({
+  serverTimestamp: vi.fn(),}),
     app: {},
     functions: {},
     auth: { currentUser: { uid: 'test-user' } },
@@ -33,6 +37,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn(),
@@ -44,6 +49,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('../billing/TokenUsageService', () => ({
+  serverTimestamp: vi.fn(),
     TokenUsageService: {
         trackUsage: vi.fn(),
         checkQuota: vi.fn().mockResolvedValue(true),
@@ -52,6 +58,7 @@ vi.mock('../billing/TokenUsageService', () => ({
 }));
 
 vi.mock('@/config/env', () => ({
+  serverTimestamp: vi.fn(),
     env: { appCheckKey: 'mock-key' }
 }));
 

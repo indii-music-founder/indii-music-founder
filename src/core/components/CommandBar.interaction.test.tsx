@@ -37,6 +37,7 @@ vi.mock('@/core/store', async () => {
         availableAgents: [],
     }));
     return {
+    serverTimestamp: vi.fn(),
         useStore: (selector: any) => store(selector),
         store
     };
@@ -59,12 +60,14 @@ vi.mock('@/core/context/ToastContext', () => {
         error: vi.fn()
     };
     return {
+    serverTimestamp: vi.fn(),
         useToast: () => mockToast,
         mockToast
     };
 });
 
 vi.mock('lucide-react', () => ({
+  serverTimestamp: vi.fn(),
     ArrowRight: () => <div data-testid="arrow-right" />,
     Loader2: () => <div data-testid="run-loader" className="animate-spin" />,
     Paperclip: () => <div />,
@@ -94,12 +97,15 @@ vi.mock('lucide-react', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     Timestamp: {
-        now: () => ({ toMillis: () => Date.now() }),
+        now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now() }),
         fromDate: (date: Date) => ({ toMillis: () => date.getTime() }),
     },
     getFirestore: vi.fn(),
-    initializeFirestore: vi.fn(() => ({})),
+    initializeFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     collection: vi.fn(),
@@ -109,6 +115,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
+  serverTimestamp: vi.fn(),
     agentService: {
         sendMessage: vi.fn().mockResolvedValue(undefined),
         warmup: vi.fn().mockResolvedValue(undefined)
@@ -116,6 +123,7 @@ vi.mock('@/services/agent/AgentService', () => ({
 }));
 
 vi.mock('@/services/ai/VoiceService', () => ({
+  serverTimestamp: vi.fn(),
     voiceService: {
         isSupported: vi.fn(() => false),
         startListening: vi.fn(),
@@ -124,6 +132,7 @@ vi.mock('@/services/ai/VoiceService', () => ({
 }));
 
 vi.mock('@/services/agent/registry', () => ({
+  serverTimestamp: vi.fn(),
     agentRegistry: {
         getAll: () => [],
         register: vi.fn(),
@@ -133,10 +142,12 @@ vi.mock('@/services/agent/registry', () => ({
 }));
 
 vi.mock('@/core/components/command-bar/DelegateMenu', () => ({
+  serverTimestamp: vi.fn(),
     DelegateMenu: () => <div data-testid="delegate-menu">Delegate Menu</div>
 }));
 
 vi.mock('@/core/components/command-bar/AttachmentList', () => ({
+  serverTimestamp: vi.fn(),
     AttachmentList: ({ attachments }: any) => (
         <div data-testid="attachment-list">
             {attachments.map((file: File) => (
@@ -147,6 +158,7 @@ vi.mock('@/core/components/command-bar/AttachmentList', () => ({
 }));
 
 vi.mock('motion/react', () => ({
+  serverTimestamp: vi.fn(),
     motion: {
         div: ({ children, className, drag, dragMomentum, ...props }: any) => (
             <div

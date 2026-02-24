@@ -38,7 +38,7 @@ const { mockSetScanning, mockAddVenue, defaultStoreState } = vi.hoisted(() => {
     return { mockSetScanning, mockAddVenue, defaultStoreState };
 });
 
-vi.mock('@/core/store', async (importOriginal) => {
+vi.mock('../store/AgentStore', async (importOriginal) => {
     // We can access imports dynamically inside the factory if we need to,
     // or just rely on the fact that vi.mock runs after hoisted. 
     // The issue was `createMockStore` imported at the top level is undefined 
@@ -47,7 +47,7 @@ vi.mock('@/core/store', async (importOriginal) => {
     // Instead of using createMockStore here which causes TDZ issues if imported
     // we just use the raw defaultStoreState from hoisted.
     return {
-        useStore: vi.fn((selector) => {
+        useAgentStore: vi.fn((selector) => {
             if (typeof selector === 'function') {
                 return selector(defaultStoreState);
             }
@@ -101,7 +101,8 @@ vi.mock('@/core/components/MobileOnlyWarning', () => ({
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
         showToast: vi.fn()
-    })
+    }),
+    ToastProvider: ({ children }: any) => <>{children}</>
 }));
 
 describe('👁️ Pixel: AgentDashboard AI Interaction', () => {

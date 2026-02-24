@@ -7,6 +7,7 @@ import { onSnapshot } from 'firebase/firestore';
 // -----------------------------------------------------------------------------
 
 vi.mock('../../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result."),
         generateContentStream: vi.fn().mockResolvedValue({
@@ -24,6 +25,7 @@ vi.mock('../../ai/FirebaseAIService', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'test-lens-user' }
     },
@@ -33,12 +35,14 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-veo-job-id' } }))
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal() as any;
     return {
+    serverTimestamp: vi.fn(),
         ...actual,
         doc: vi.fn(),
         onSnapshot: vi.fn()
@@ -46,6 +50,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
@@ -89,7 +94,8 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
             callback({
                 exists: () => true,
                 id: mockJobId,
-                data: () => ({ status: 'processing', progress: 10 })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing', progress: 10 })
             });
 
             // 2. Final State: Completed (after "network" delay)
@@ -164,7 +170,8 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
             callback({
                 exists: () => true,
                 id: mockJobId,
-                data: () => ({ status: 'processing', progress: 50 })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing', progress: 50 })
             });
 
             // Finish after 45s
@@ -172,7 +179,8 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ status: 'completed', url: 'valid.mp4' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed', url: 'valid.mp4' })
                 });
             }, 45000);
 
@@ -197,7 +205,8 @@ describe('🎥 Lens: Veo 3.1 Generation Pipeline', () => {
             callback({
                 exists: () => true,
                 id: mockJobId,
-                data: () => ({ status: 'processing' })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
             });
             // Never completes
             return vi.fn();

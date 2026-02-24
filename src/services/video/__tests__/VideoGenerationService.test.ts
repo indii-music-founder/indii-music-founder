@@ -7,12 +7,14 @@ import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
     }
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'test-user' }
     },
@@ -23,12 +25,14 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: { jobId: 'mock-job-id' } }))
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal() as any;
     return {
+    serverTimestamp: vi.fn(),
         ...actual,
         doc: vi.fn(),
         onSnapshot: vi.fn()
@@ -37,6 +41,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 // Mock SubscriptionService
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
@@ -110,7 +115,8 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ status: 'pending' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'pending' })
                 } as any);
 
                 // 2. Completed (Simulating async update)
@@ -142,6 +148,7 @@ describe('VideoGenerationService', () => {
                         exists: () => true,
                         id: mockJobId,
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: Content blocked by safety filters.'
                         })
@@ -162,7 +169,8 @@ describe('VideoGenerationService', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ status: 'processing' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
                 return vi.fn();
             });

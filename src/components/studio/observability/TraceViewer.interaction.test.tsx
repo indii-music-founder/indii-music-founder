@@ -4,6 +4,7 @@ import { TraceViewer } from './TraceViewer';
 
 // Mock dependencies
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
@@ -12,14 +13,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 
 vi.mock('./SwarmGraph', () => ({
+  serverTimestamp: vi.fn(),
     SwarmGraph: () => <div data-testid="swarm-graph-mock">Swarm Graph</div>
 }));
 
 vi.mock('./XRayPanel', () => ({
+  serverTimestamp: vi.fn(),
     XRayPanel: () => <div data-testid="xray-panel-mock">X-Ray Panel</div>
 }));
 

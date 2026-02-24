@@ -16,6 +16,7 @@ const mockObjectStoreNames = {
 
 // Mock idb
 vi.mock('idb', () => ({
+  serverTimestamp: vi.fn(),
     openDB: vi.fn().mockImplementation(() => Promise.resolve({
         put: mockPut,
         get: mockGet,
@@ -26,12 +27,14 @@ vi.mock('idb', () => ({
 
 // Mock Firebase
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     storage: {},
     auth: { currentUser: { uid: 'test-user-uid' } }
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: vi.fn(),
     setDoc: vi.fn(),
     getDoc: vi.fn().mockResolvedValue({ exists: () => false }), // Default to not found in cloud
@@ -40,6 +43,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/storage', () => ({
+  serverTimestamp: vi.fn(),
     ref: vi.fn(),
     uploadBytes: vi.fn(),
     getBlob: vi.fn(),

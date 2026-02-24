@@ -17,7 +17,9 @@ const mockSetProgress = vi.fn();
 const mockSetPrompt = vi.fn();
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         generatedHistory: [],
         selectedItem: null,
         pendingPrompt: null,
@@ -50,6 +52,7 @@ const editorStoreState = {
 
 vi.mock('./store/videoEditorStore', () => {
     const fn = vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         ...editorStoreState,
         setJobId: mockSetJobId,
         setStatus: mockSetJobStatus,
@@ -57,10 +60,12 @@ vi.mock('./store/videoEditorStore', () => {
         setViewMode: vi.fn(),
     }));
     (fn as any).getState = vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         status: editorStoreState.status,
         setProgress: mockSetProgress
     }));
-    return { useVideoEditorStore: fn };
+    return {
+    serverTimestamp: vi.fn(), useVideoEditorStore: fn };
 });
 
 // Mock Toast
@@ -69,7 +74,9 @@ const mockToastSuccess = vi.fn();
 const mockToastInfo = vi.fn();
 
 vi.mock('@/core/context/ToastContext', () => ({
+  serverTimestamp: vi.fn(),
     useToast: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         success: mockToastSuccess,
         error: mockToastError,
         info: mockToastInfo,
@@ -82,6 +89,7 @@ let subscribeCallback: ((data: any) => void) | null = null;
 let resolveGeneratePromise: ((value: any) => void) | null = null;
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
+  serverTimestamp: vi.fn(),
     VideoGeneration: {
         generateVideo: vi.fn(),
         subscribeToJob: vi.fn((id, cb) => {
@@ -94,14 +102,17 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
     },
 }));
 
-vi.mock('../../utils/video', () => ({ extractVideoFrame: vi.fn() }));
+vi.mock('../../utils/video', () => ({
+  serverTimestamp: vi.fn(), extractVideoFrame: vi.fn() }));
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     remoteConfig: { defaultConfig: {} },
     functions: {},

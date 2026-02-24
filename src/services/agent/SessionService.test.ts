@@ -2,17 +2,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // 1. Mock External Dependencies (Firebase/Firestore)
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     where: vi.fn(),
     orderBy: vi.fn(),
     limit: vi.fn(),
     Timestamp: {
         fromMillis: (ms: number) => ({ toMillis: () => ms, seconds: ms / 1000, nanoseconds: 0 }),
-        now: () => ({ toMillis: () => Date.now() })
+        now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now() })
     }
 }));
 
 // 2. Mock FirestoreService Base Class
 const { mockSet, mockUpdate, mockDelete, mockList } = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     mockSet: vi.fn().mockResolvedValue(undefined),
     mockUpdate: vi.fn().mockResolvedValue(undefined),
     mockDelete: vi.fn().mockResolvedValue(undefined),
@@ -21,6 +24,7 @@ const { mockSet, mockUpdate, mockDelete, mockList } = vi.hoisted(() => ({
 
 vi.mock('../FirestoreService', () => {
     return {
+    serverTimestamp: vi.fn(),
         FirestoreService: class {
             set = mockSet;
             update = mockUpdate;
@@ -33,10 +37,12 @@ vi.mock('../FirestoreService', () => {
 
 // 3. Mock Auth & Org Services
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'test-user-id' } }
 }));
 
 vi.mock('../OrganizationService', () => ({
+  serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: () => 'test-org-id'
     }

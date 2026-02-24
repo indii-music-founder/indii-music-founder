@@ -9,6 +9,7 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 
 // Mock @/services/firebase to prevent real Firebase initialization
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'keeper-test-user' },
         onAuthStateChanged: vi.fn(() => () => { })
@@ -20,14 +21,18 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock Firebase modules
 vi.mock('firebase/app', () => ({
+  serverTimestamp: vi.fn(),
     initializeApp: vi.fn(),
     getApp: vi.fn(),
     getApps: vi.fn(() => [])
 }));
 
 vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
-    initializeAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
+  serverTimestamp: vi.fn(),
+    getAuth: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
+    initializeAuth: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentUser: { uid: 'keeper-test-user' }, onAuthStateChanged: vi.fn(() => () => { }) })),
     onAuthStateChanged: vi.fn(),
     browserLocalPersistence: {},
     browserSessionPersistence: {},
@@ -35,12 +40,14 @@ vi.mock('firebase/auth', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     initializeFirestore: vi.fn(),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     Timestamp: {
-        now: vi.fn(() => ({ toMillis: () => Date.now() })),
+        now: vi.fn(() => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now() })),
         fromDate: vi.fn(),
         fromMillis: vi.fn(),
     },
@@ -52,6 +59,7 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock MembershipService
 vi.mock('@/services/MembershipService', () => ({
+  serverTimestamp: vi.fn(),
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
         trackUsage: vi.fn().mockResolvedValue(true)
@@ -61,14 +69,17 @@ vi.mock('@/services/MembershipService', () => ({
 // Mock AIService
 const mockGenerateContent = vi.fn().mockResolvedValue({
     text: () => 'I remember.',
-    usage: () => ({ promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
+    usage: () => ({
+  serverTimestamp: vi.fn(), promptTokenCount: 100, candidatesTokenCount: 10, totalTokenCount: 110 }),
     functionCalls: () => []
 });
 
 vi.mock('@/services/ai/GenAI', () => ({
+  serverTimestamp: vi.fn(),
     GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
+  serverTimestamp: vi.fn(),
             generateContent: mockGenerateContent
         })
     }

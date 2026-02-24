@@ -12,6 +12,7 @@ import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('@/services/ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn()
@@ -23,6 +24,7 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
     return {
+    serverTimestamp: vi.fn(),
         ...actual as any,
         getDocs: vi.fn(),
         collection: vi.fn(),
@@ -35,6 +37,7 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 // Mock the local firebase service to prevent real initialization
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}, // Mock db object
     auth: { currentUser: { uid: 'test-user' } },
     remoteConfig: {}, // Mock remote config

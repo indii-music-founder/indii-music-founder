@@ -6,6 +6,7 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // 1. Hoisted mocks
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
@@ -14,7 +15,8 @@ const mocks = vi.hoisted(() => ({
         canPerformAction: vi.fn()
     },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     delay: vi.fn(),
     firebaseAI: {
@@ -25,17 +27,20 @@ const mocks = vi.hoisted(() => ({
 
 // 2. Mock modules
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: mocks.httpsCallable,
     getFunctions: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
@@ -44,6 +49,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
     db: {},
@@ -51,22 +57,27 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
 
 vi.mock('@/utils/async', () => ({
+  serverTimestamp: vi.fn(),
     delay: mocks.delay
 }));
 
 vi.mock('uuid', () => ({
+  serverTimestamp: vi.fn(),
     v4: mocks.uuid
 }));
 
@@ -81,7 +92,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
         // Default: Quota OK
         mocks.subscriptionService.canPerformAction.mockResolvedValue({ allowed: true });
         // Default: Trigger OK
-        mocks.httpsCallable.mockReturnValue(async () => ({ data: { jobId: 'lens-veo-job-id' } }));
+        mocks.httpsCallable.mockReturnValue(async () => ({
+  serverTimestamp: vi.fn(), data: { jobId: 'lens-veo-job-id' } }));
 
         // Mock delay to use setTimeout so we can control it with fake timers
         mocks.delay.mockImplementation((ms) => new Promise(resolve => setTimeout(resolve, ms)));
@@ -101,6 +113,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'completed',
                             output: {
                                 url: 'https://storage.googleapis.com/veo-generations/mock-video.mp4',
@@ -137,6 +150,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'completed',
                             output: {
                                 url: 'https://storage.googleapis.com/veo-generations/oops.png',
@@ -167,6 +181,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'completed',
                             output: {
                                 url: 'https://storage.googleapis.com/veo-generations/mock-video.mp4',
@@ -206,6 +221,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                     exists: () => true,
                     id: 'lens-veo-job-id',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://mock.url/flash.mp4',
@@ -234,16 +250,19 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             mocks.doc.mockReturnValue('doc-ref');
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 // Initial Pending
-                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
+                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({
+  serverTimestamp: vi.fn(), status: 'pending' }) });
 
                 // Processing after 5s
                 setTimeout(() => {
-                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'processing', progress: 25 }) });
+                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing', progress: 25 }) });
                 }, 5000);
 
                 // Processing after 15s
                 setTimeout(() => {
-                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'processing', progress: 75 }) });
+                    callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing', progress: 75 }) });
                 }, 15000);
 
                 // Completed after 25s
@@ -252,6 +271,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'completed',
                             output: {
                                 url: 'https://mock.url/pro.mp4',
@@ -288,7 +308,8 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
             mocks.doc.mockReturnValue('doc-ref');
             mocks.onSnapshot.mockImplementation((ref, callback) => {
                 // Stays pending forever
-                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({ status: 'pending' }) });
+                callback({ exists: () => true, id: 'lens-veo-job-id', data: () => ({
+  serverTimestamp: vi.fn(), status: 'pending' }) });
                 return () => { };
             });
 
@@ -311,6 +332,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: Harassment filter tripped.'
                         })
@@ -334,6 +356,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: [HARM_CATEGORY_DANGEROUS_CONTENT] triggered with probability [HIGH]. Generation blocked.'
                         })
@@ -357,6 +380,7 @@ describe('Lens 🎥 - Veo 3.1 & Gemini 3 Native Generation Pipeline', () => {
                         exists: () => true,
                         id: 'lens-veo-job-id',
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: '429 Too Many Requests: Resource has been exhausted (e.g. check quota).'
                         })

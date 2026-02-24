@@ -10,6 +10,7 @@ const mockQuery = vi.fn();
 const mockWhere = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     collection: (db: any, col: string) => mockCollection(col),
     addDoc: (ref: any, data: any) => mockAddDoc(ref, data),
@@ -17,12 +18,14 @@ vi.mock('firebase/firestore', () => ({
     query: (ref: any, ...args: any[]) => mockQuery(ref, ...args),
     where: (field: string, op: string, val: any) => mockWhere(field, op, val),
     Timestamp: {
-        now: () => ({ toISOString: () => new Date().toISOString() })
+        now: () => ({
+  serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString() })
     }
 }));
 
 // Mock the db export from firebase service
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 
@@ -85,6 +88,7 @@ describe('FraudDetectionService', () => {
             mockGetDocs.mockResolvedValueOnce({
                 docs: [{
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         type: 'broad_spectrum',
                         pattern: 'sped_up',
                         details: 'Pitch/Tempo shift (+25%)'
@@ -104,6 +108,7 @@ describe('FraudDetectionService', () => {
              mockGetDocs.mockResolvedValueOnce({
                 docs: [{
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         type: 'broad_spectrum',
                         pattern: 'slowed',
                         details: 'Pitch/Tempo shift (-20%)'

@@ -11,6 +11,7 @@ import {
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     where: vi.fn(),
@@ -24,6 +25,7 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock db instance
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 

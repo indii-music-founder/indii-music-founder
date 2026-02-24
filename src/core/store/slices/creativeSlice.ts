@@ -58,7 +58,6 @@ export interface WhiskState {
 export interface CreativeSlice {
     // History
     generatedHistory: HistoryItem[];
-    historyListenerUnsubscribe: (() => void) | null;
     addToHistory: (item: HistoryItem) => void;
     initializeHistory: () => Promise<void>;
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => void;
@@ -157,7 +156,6 @@ export interface CreativeSlice {
 
 export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     generatedHistory: [],
-    historyListenerUnsubscribe: null,
     addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
@@ -179,11 +177,6 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         const { StorageService } = await import('@/services/StorageService');
 
         return new Promise<void>((resolve) => {
-
-            // Clean up existing listener if any
-            const currentUnsubscribe = get().historyListenerUnsubscribe;
-            if (currentUnsubscribe) currentUnsubscribe();
-
             (async () => {
                 try {
                     // Subscribe to real-time updates
@@ -239,9 +232,13 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                         resolve(); // Resolve anyway to unblock UI
                     });
 
-                    set({ historyListenerUnsubscribe: unsubscribe });
+                    // Register with SubscriptionManager instead of saving to state local
+                    import('@/core/store').then(({ useStore }) => {
+                        useStore.getState().registerSubscription('creative_history', unsubscribe);
+                    });
+
                 } catch (err) {
-                    console.error('[CreativeSlice] Failed to initialize history subscription:', err);
+                    console.error('[CreativeSlice] Failed to initialize history:', err);
                     resolve();
                 }
             })();

@@ -7,11 +7,13 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'test-user-lens' } },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     subscriptionService: {
         canPerformAction: vi.fn()
@@ -21,12 +23,14 @@ const mocks = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
@@ -35,6 +39,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
     db: {},
@@ -43,15 +48,18 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 // Mock UUID
 vi.mock('uuid', () => ({
+  serverTimestamp: vi.fn(),
     v4: () => 'lens-veo-job-id'
 }));
 
@@ -97,7 +105,8 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
             fireSnapshot({
                 exists: () => true,
                 id: 'job-id-pro',
-                data: () => ({ status: 'completed', output: { url: 'http://slow.url' } })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed', output: { url: 'http://slow.url' } })
             });
         }
 
@@ -132,7 +141,8 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
                 callback({
                     exists: () => true,
                     id: 'job-id-success',
-                    data: () => ({ status: 'completed' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed' })
                 });
             }, 50);
             return unsubscribeSpy;
@@ -177,6 +187,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
                 exists: () => true,
                 id: 'job-b',
                 data: () => ({
+  serverTimestamp: vi.fn(),
                     status: 'completed',
                     output: {
                         url: 'url-b',
@@ -210,6 +221,7 @@ describe('Lens 🎥 - Veo 3.1 Subscription Race Conditions', () => {
                 exists: () => true,
                 id: 'job-a',
                 data: () => ({
+  serverTimestamp: vi.fn(),
                     status: 'completed',
                     output: {
                         url: 'url-a',

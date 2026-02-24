@@ -14,12 +14,15 @@ expect.extend(toHaveNoViolations);
 vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     Timestamp: {
-        now: () => ({ toMillis: () => Date.now() }),
+        now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now() }),
         fromDate: (date: Date) => ({ toMillis: () => date.getTime() }),
     },
     getFirestore: vi.fn(),
-    initializeFirestore: vi.fn(() => ({})),
+    initializeFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     collection: vi.fn(),
@@ -29,12 +32,14 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/agent/AgentService', () => ({
+  serverTimestamp: vi.fn(),
     agentService: {
         sendMessage: vi.fn(),
     },
 }));
 
 vi.mock('@/services/ai/VoiceService', () => ({
+  serverTimestamp: vi.fn(),
     voiceService: {
         isSupported: vi.fn(() => false),
         startListening: vi.fn(),
@@ -43,6 +48,7 @@ vi.mock('@/services/ai/VoiceService', () => ({
 }));
 
 vi.mock('@/services/agent/registry', () => ({
+  serverTimestamp: vi.fn(),
     agentRegistry: {
         getAll: () => [
             { id: 'manager1', name: 'Manager One', category: 'manager', color: 'bg-red-500', description: 'Desc 1' },
@@ -54,7 +60,9 @@ vi.mock('@/services/agent/registry', () => ({
 }));
 
 vi.mock('../theme/moduleColors', () => ({
+  serverTimestamp: vi.fn(),
     getColorForModule: () => ({
+  serverTimestamp: vi.fn(),
         border: 'border-gray-700',
         ring: 'ring-gray-700',
         bg: 'bg-gray-800',
@@ -63,6 +71,7 @@ vi.mock('../theme/moduleColors', () => ({
 }));
 
 vi.mock('motion/react', () => ({
+  serverTimestamp: vi.fn(),
     motion: {
         div: React.forwardRef(({ children, className, ...props }: any, ref: any) => (
             <div ref={ref} className={className} {...props}>{children}</div>

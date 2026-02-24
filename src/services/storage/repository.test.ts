@@ -5,16 +5,19 @@ import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'test-user-123' } },
     storage: {},
     db: {}
 }));
 
 vi.mock('idb', () => ({
+  serverTimestamp: vi.fn(),
     openDB: vi.fn(),
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: vi.fn().mockReturnValue({ id: 'mock-doc-ref' }),
     setDoc: vi.fn(), // We check this call
     collection: vi.fn()

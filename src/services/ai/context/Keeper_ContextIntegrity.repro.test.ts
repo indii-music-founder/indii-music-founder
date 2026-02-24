@@ -9,6 +9,7 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 
 // 1. Hoist the mock function so it can be used inside vi.mock factory
 const { mockGenerateContent } = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     mockGenerateContent: vi.fn().mockResolvedValue({
         response: {
             text: () => 'I remember.',
@@ -20,25 +21,30 @@ const { mockGenerateContent } = vi.hoisted(() => ({
 
 // Mock Firebase
 vi.mock('firebase/app', () => ({
+  serverTimestamp: vi.fn(),
     initializeApp: vi.fn(),
     getApp: vi.fn(),
     getApps: vi.fn(() => [])
 }));
 
 vi.mock('firebase/auth', () => ({
-    getAuth: vi.fn(() => ({ currentUser: { uid: 'keeper-test-user' } })),
+  serverTimestamp: vi.fn(),
+    getAuth: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentUser: { uid: 'keeper-test-user' } })),
     initializeAuth: vi.fn(),
     browserLocalPersistence: {},
     browserSessionPersistence: {}
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     initializeFirestore: vi.fn(),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     Timestamp: {
-        now: vi.fn(() => ({ toMillis: () => Date.now() })),
+        now: vi.fn(() => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now() })),
         fromDate: vi.fn(),
         fromMillis: vi.fn(),
     },
@@ -50,6 +56,7 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock MembershipService
 vi.mock('@/services/MembershipService', () => ({
+  serverTimestamp: vi.fn(),
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
         trackUsage: vi.fn().mockResolvedValue(true),
@@ -59,9 +66,11 @@ vi.mock('@/services/MembershipService', () => ({
 
 // Mock GenAI
 vi.mock('@/services/ai/GenAI', () => ({
+  serverTimestamp: vi.fn(),
     GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
+  serverTimestamp: vi.fn(),
             generateContent: mockGenerateContent
         })
     }

@@ -4,7 +4,9 @@ import BrandManager from './BrandManager';
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
+  serverTimestamp: vi.fn(),
     useToast: () => ({
+  serverTimestamp: vi.fn(),
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
@@ -14,7 +16,9 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 // Mock Store
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: () => ({
+  serverTimestamp: vi.fn(),
         userProfile: {
             id: 'test-user',
             bio: 'Test Bio',
@@ -32,6 +36,7 @@ vi.mock('@/core/store', () => ({
 
 // Mock AI Service
 vi.mock('@/services/ai/GenAI', () => ({
+  serverTimestamp: vi.fn(),
     GenAI: {
         generateStructuredData: vi.fn().mockResolvedValue({
             isConsistent: true,
@@ -45,6 +50,7 @@ vi.mock('@/services/ai/GenAI', () => ({
 
 // Mock Firebase Functions
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     db: {},
     remoteConfig: { defaultConfig: {} },
@@ -53,6 +59,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: vi.fn(),
     updateDoc: vi.fn()
 }));
@@ -61,6 +68,7 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('motion/react', async (importOriginal) => {
     const actual = await importOriginal<typeof import('motion/react')>();
     return {
+    serverTimestamp: vi.fn(),
         ...actual,
         AnimatePresence: ({ children }: any) => <>{children}</>,
         motion: {

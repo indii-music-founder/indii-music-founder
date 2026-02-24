@@ -7,12 +7,14 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Hoisted mocks must be defined before imports
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     analyzeImage: vi.fn(),
     canPerformAction: vi.fn(),
     currentUser: { uid: 'test-user-lens' },
     triggerVideoJob: vi.fn(),
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     doc: vi.fn(),
     onSnapshot: vi.fn()
@@ -20,18 +22,21 @@ const mocks = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage
     }
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: mocks.canPerformAction
     }
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: { currentUser: mocks.currentUser },
     functions: {},
     db: {},
@@ -39,12 +44,14 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
@@ -164,6 +171,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
                     exists: () => true,
                     id: 'mock-job-id',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://veo.google.com/generated-video.mp4',

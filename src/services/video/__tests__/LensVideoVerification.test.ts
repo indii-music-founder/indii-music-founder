@@ -4,12 +4,14 @@ import { onSnapshot } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn().mockResolvedValue("Mocked temporal analysis result.")
     }
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'lens-verifier' }
     },
@@ -21,6 +23,7 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock SubscriptionService to always allow
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: vi.fn().mockResolvedValue({ allowed: true, currentUsage: 0, maxAllowed: 100 }),
         getCurrentSubscription: vi.fn().mockResolvedValue({ tier: Promise.resolve('pro') })
@@ -30,6 +33,7 @@ vi.mock('@/services/subscription/SubscriptionService', () => ({
 // Mock functions to capture arguments
 const mockHttpsCallable = vi.fn();
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     httpsCallable: vi.fn((functions, name) => {
         return (...args: any[]) => mockHttpsCallable(name, ...args);
     })
@@ -38,6 +42,7 @@ vi.mock('firebase/functions', () => ({
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal() as any;
     return {
+    serverTimestamp: vi.fn(),
         ...actual,
         doc: vi.fn(),
         onSnapshot: vi.fn()
@@ -73,7 +78,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ status: 'processing' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
 
                 setTimeout(() => {
@@ -112,7 +118,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                     callback({
                         exists: () => true,
                         id: mockJobId,
-                        data: () => ({ status: 'completed', url: 'http://fast.url' })
+                        data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed', url: 'http://fast.url' })
                     } as any);
                 }, 500); // 0.5s
                 return vi.fn();
@@ -132,7 +139,8 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                 callback({
                     exists: () => true,
                     id: mockJobId,
-                    data: () => ({ status: 'processing' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
                 } as any);
                 return vi.fn();
             });
@@ -156,6 +164,7 @@ describe('🎥 Lens: Veo 3.1 & Gemini 3 Integration Verification', () => {
                         exists: () => true,
                         id: mockJobId,
                         data: () => ({
+  serverTimestamp: vi.fn(),
                             status: 'failed',
                             error: 'Safety violation: Harassment filter triggered.'
                         })

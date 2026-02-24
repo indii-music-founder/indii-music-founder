@@ -6,6 +6,7 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'lens-tester' } },
@@ -16,7 +17,8 @@ const mocks = vi.hoisted(() => ({
         getCurrentSubscription: vi.fn()
     },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     firebaseAI: {
         analyzeImage: vi.fn()
@@ -25,12 +27,14 @@ const mocks = vi.hoisted(() => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'ledger-test-user' } },
     functionsWest1: {},
     db: {},
@@ -39,6 +43,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     db: {},
     auth: mocks.auth
@@ -47,14 +52,17 @@ vi.mock('../firebase', () => ({
 // We need to mock subscription service because VideoGenerationService uses it in other methods
 // enabling clean instantiation
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: mocks.firebaseAI
 }));
 
@@ -85,7 +93,8 @@ describe('Veo Timeout Handler (Lens)', () => {
             callback({
                 exists: () => true,
                 id: jobId,
-                data: () => ({ status: 'processing' })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
             });
             // Never report completion
             return () => { }; // unsubscribe mock
@@ -114,6 +123,7 @@ describe('Veo Timeout Handler (Lens)', () => {
                     exists: () => true,
                     id: jobId,
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: { url: 'https://veo.generated/video.mp4' }
                     })
@@ -145,6 +155,7 @@ describe('Veo Timeout Handler (Lens)', () => {
                 exists: () => true,
                 id: jobId,
                 data: () => ({
+  serverTimestamp: vi.fn(),
                     status: 'failed',
                     error: 'Safety violation: Copyrighted content'
                 })
@@ -167,7 +178,8 @@ describe('Veo Timeout Handler (Lens)', () => {
             callback({
                 exists: () => true,
                 id: jobId,
-                data: () => ({ status: 'processing' })
+                data: () => ({
+  serverTimestamp: vi.fn(), status: 'processing' })
             });
 
             // Simulate completion after 29s (Pro speed)
@@ -175,7 +187,8 @@ describe('Veo Timeout Handler (Lens)', () => {
                 callback({
                     exists: () => true,
                     id: jobId,
-                    data: () => ({ status: 'completed', output: {} })
+                    data: () => ({
+  serverTimestamp: vi.fn(), status: 'completed', output: {} })
                 });
             }, 29000);
 

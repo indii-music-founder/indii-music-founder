@@ -12,9 +12,13 @@ const AllTheProviders = ({ children }: WrapperProps) => {
     return (
         <MemoryRouter>
             <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-                <ToastProvider>
-                    {children}
-                </ToastProvider>
+                {typeof ToastProvider === 'function' ? (
+                    <ToastProvider>
+                        {children}
+                    </ToastProvider>
+                ) : (
+                    children
+                )}
             </ThemeProvider>
         </MemoryRouter>
     );

@@ -86,8 +86,18 @@ describe('VenueScoutService', () => {
 
     describe('searchVenues', () => {
         it('should validate inputs', async () => {
-            await expect(VenueScoutService.searchVenues('', 'Rock')).rejects.toThrow('Invalid search parameters');
-            await expect(VenueScoutService.searchVenues('Nashville', '')).rejects.toThrow('Invalid search parameters');
+            try {
+                await VenueScoutService.searchVenues('', 'Rock');
+                expect.fail('Should have thrown an error');
+            } catch (err: any) {
+                expect(err.message).toContain('Invalid search parameters');
+            }
+            try {
+                await VenueScoutService.searchVenues('Nashville', '');
+                expect.fail('Should have thrown an error');
+            } catch (err: any) {
+                expect(err.message).toContain('Invalid search parameters');
+            }
         });
 
         it('should seed database if empty', async () => {

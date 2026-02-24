@@ -15,6 +15,7 @@ const {
     mockUpdateDoc
 } = vi.hoisted(() => {
     return {
+    serverTimestamp: vi.fn(),
         mockAddDoc: vi.fn(),
         mockGetDocs: vi.fn(),
         mockQuery: vi.fn(),
@@ -27,6 +28,7 @@ const {
 });
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     auth: {
         currentUser: { uid: 'user-123' }
@@ -34,6 +36,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: mockCollection,
     doc: mockDoc,
     addDoc: mockAddDoc,
@@ -44,7 +47,8 @@ vi.mock('firebase/firestore', () => ({
     where: mockWhere,
     orderBy: mockOrderBy,
     Timestamp: {
-        now: () => ({ toDate: () => new Date() })
+        now: () => ({
+  serverTimestamp: vi.fn(), toDate: () => new Date() })
     }
 }));
 
@@ -66,7 +70,8 @@ describe('LicensingService', () => {
             const mockDocs = [
                 {
                     id: 'lic-1',
-                    data: () => ({ title: 'Song A', status: 'active' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), title: 'Song A', status: 'active' })
                 }
             ];
             mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });
@@ -85,7 +90,8 @@ describe('LicensingService', () => {
             const mockDocs = [
                 {
                     id: 'req-1',
-                    data: () => ({ title: 'Request A', status: 'checking' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), title: 'Request A', status: 'checking' })
                 }
             ];
             mockGetDocs.mockResolvedValueOnce({ docs: mockDocs });

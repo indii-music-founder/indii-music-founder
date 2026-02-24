@@ -4,6 +4,7 @@ import { OrganizationService } from './OrganizationService';
 
 // Mock Firebase
 vi.mock('./firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     auth: {
         currentUser: { uid: 'user-123' }
@@ -20,6 +21,7 @@ const mockWhere = vi.fn();
 const mockCollection = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: (...args: any[]) => mockCollection(...args),
     doc: vi.fn(),
     addDoc: (...args: any[]) => mockAddDoc(...args),
@@ -41,7 +43,8 @@ describe('OrganizationService', () => {
         // Mock getDoc for addUserToOrg check
         mockGetDoc.mockResolvedValue({
             exists: () => true,
-            data: () => ({ members: ['user-123'] })
+            data: () => ({
+  serverTimestamp: vi.fn(), members: ['user-123'] })
         });
 
         const orgId = await OrganizationService.createOrganization('Test Org', 'user-123');
@@ -53,7 +56,8 @@ describe('OrganizationService', () => {
     it('gets user organizations', async () => {
         mockGetDocs.mockResolvedValue({
             docs: [
-                { id: 'org-1', data: () => ({ name: 'Org 1', members: ['user-123'] }) }
+                { id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(), name: 'Org 1', members: ['user-123'] }) }
             ]
         });
 

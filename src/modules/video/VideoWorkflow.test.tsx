@@ -10,18 +10,23 @@ import { useToast, ToastProvider } from '@/core/context/ToastContext';
 
 // Mock Store
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: vi.fn(),
 }));
 
 vi.mock('./store/videoEditorStore', () => {
     const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({ status: 'idle', setProgress: vi.fn() }));
-    return { useVideoEditorStore: fn };
+    (fn as any).getState = vi.fn(() => ({
+  serverTimestamp: vi.fn(), status: 'idle', setProgress: vi.fn() }));
+    return {
+    serverTimestamp: vi.fn(), useVideoEditorStore: fn };
 });
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
+  serverTimestamp: vi.fn(),
     useToast: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
@@ -31,11 +36,13 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 // Mock extractVideoFrame
 vi.mock('../../utils/video', () => ({
+  serverTimestamp: vi.fn(),
     extractVideoFrame: vi.fn()
 }));
 
 // Mock FrameSelectionModal
 vi.mock('./components/FrameSelectionModal', () => ({
+  serverTimestamp: vi.fn(),
     default: ({ isOpen, onSelect, target }: any) => isOpen ? (
         <div data-testid="frame-modal">
             <button onClick={() => onSelect({ id: 'vid1', type: 'video', url: 'http://video.mp4' })}>
@@ -50,6 +57,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
+  serverTimestamp: vi.fn(),
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
@@ -59,13 +67,16 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 // Mock Firestore
 const mockOnSnapshot = vi.fn();
 vi.mock('firebase/firestore', () => ({
-    getFirestore: vi.fn(() => ({})),
+  serverTimestamp: vi.fn(),
+    getFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     doc: vi.fn(),
     onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
     collection: vi.fn(),
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     remoteConfig: { defaultConfig: {} },
     functions: {},

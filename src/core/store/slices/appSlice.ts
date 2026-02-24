@@ -47,10 +47,28 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: getInitialModule(),
     currentProjectId: 'default',
     projects: [],
-    setModule: (module) => set({
-        currentModule: module,
-        isRightPanelOpen: module === 'creative' || module === 'video' || module === 'files'
-    }),
+    setModule: (module) => {
+        // Aggressively tear down listeners from previous modules
+        // This requires dynamic import of store to avoid circular dependency
+        import('@/core/store').then(({ useStore }) => {
+            const currentModule = get().currentModule;
+            // Only clear if actually switching modules
+            if (currentModule !== module) {
+                if (currentModule === 'creative') {
+                    useStore.getState().clearSubscriptionsByPrefix('creative_');
+                } else if (currentModule === 'agent') {
+                    // Note: Agent runs globally via right panel sometimes, but if it's the main module:
+                    // useStore.getState().clearSubscriptionsByPrefix('agent_');
+                }
+                // Add more module prefixes here as needed
+            }
+        }).catch(err => console.error('[AppSlice] Failed to cleanup subscriptions:', err));
+
+        set({
+            currentModule: module,
+            isRightPanelOpen: module === 'creative' || module === 'video' || module === 'files'
+        });
+    },
     setProject: (id) => set({ currentProjectId: id }),
     addProject: (project) => set((state) => ({ projects: [project, ...state.projects] })),
     loadProjects: async () => {
