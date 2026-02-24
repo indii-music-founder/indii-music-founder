@@ -70,7 +70,7 @@ describe('KeysPanel', () => {
         });
 
         render(<KeysPanel />);
-        await waitFor(() => expect(isrcService.getUserCatalog).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());
 
         fireEvent.click(screen.getByText('Run Compliance Audit'));
 
@@ -90,7 +90,7 @@ describe('KeysPanel', () => {
         (distributionService.generateBWARM as any).mockResolvedValue('Header\nData');
 
         render(<KeysPanel />);
-        await waitFor(() => expect(isrcService.getUserCatalog).toHaveBeenCalled());
+        await waitFor(() => expect(screen.getByText(/Check compliance for 1 track/i)).toBeDefined());
 
         fireEvent.click(screen.getByText('Generate BWARM CSV'));
 
