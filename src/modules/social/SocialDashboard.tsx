@@ -313,7 +313,7 @@ function DraftsQueuePanel({ scheduledPosts }: { scheduledPosts: ScheduledPost[] 
                             <div className="flex items-center gap-2 mt-1">
                                 <span className="text-[10px] text-gray-600">{p.platform}</span>
                                 <span className="text-[10px] text-gray-600">
-                                    {new Date(p.scheduledTime || Date.now()).toLocaleDateString()}
+                                    {p.scheduledTime ? new Date(p.scheduledTime).toLocaleDateString() : 'TBD'}
                                 </span>
                             </div>
                         </div>
