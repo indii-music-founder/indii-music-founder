@@ -84,6 +84,7 @@ export interface ReleaseResult {
     reviewRequired?: boolean;
     upcAssigned?: string;
     isrcAssigned?: string;
+    packagePath?: string;
   };
 }
 

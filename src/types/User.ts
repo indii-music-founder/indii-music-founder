@@ -101,6 +101,7 @@ export interface KnowledgeDocument {
 export interface UserPreferences {
     theme: 'dark' | 'light' | 'system';
     biometricEnabled?: boolean;
+    observabilityEnabled?: boolean;
     notifications: boolean;
     [key: string]: any; // Allow extensibility
 }
