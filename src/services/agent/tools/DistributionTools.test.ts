@@ -29,9 +29,50 @@ vi.mock('@/services/ddex/ERNService', () => ({
     }
 }));
 
+vi.mock('@/services/identity/IdentifierService', () => ({
+    IdentifierService: {
+        nextISRC: vi.fn().mockResolvedValue('USIND2600001'),
+        validateISRC: vi.fn().mockReturnValue(true),
+        validateUPC: vi.fn().mockReturnValue(true)
+    }
+}));
+
+// Mock electronAPI
+if (typeof window !== 'undefined') {
+    (window as any).electronAPI = undefined; // Disable by default for tests that expect JS fallback
+}
+
+function enableElectron() {
+    (window as any).electronAPI = {
+        distribution: {
+            generateISRC: vi.fn().mockResolvedValue({ isrc: 'USIND2600001' }),
+            registerRelease: vi.fn().mockResolvedValue({ success: true }),
+            generateDDEX: vi.fn().mockResolvedValue('<xml>...</xml>'),
+            calculateTax: vi.fn().mockResolvedValue({ report: { withholding_rate: 0 } }),
+            certifyTax: vi.fn().mockResolvedValue({ report: { certified: true, payout_status: 'ACTIVE' } }),
+            executeWaterfall: vi.fn().mockResolvedValue({ report: { net_revenue: 9000 } }),
+            validateMetadata: vi.fn().mockResolvedValue({ report: { valid: true, errors: [], warnings: [] } }),
+            generateBWARM: vi.fn().mockResolvedValue({ csv: '...', report: {} }),
+            checkMerlinStatus: vi.fn().mockResolvedValue({ report: { compliant: true } })
+        }
+    };
+}
+
+function disableElectron() {
+    if (typeof window !== 'undefined') {
+        (window as any).electronAPI = undefined;
+    }
+}
+
 describe('DistributionTools', () => {
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        disableElectron();
+
+        // Reset validation mocks to pass by default
+        const { IdentifierService } = await import('@/services/identity/IdentifierService');
+        (IdentifierService.validateISRC as any).mockReturnValue(true);
+        (IdentifierService.validateUPC as any).mockReturnValue(true);
     });
 
     describe('issue_isrc', () => {
@@ -179,6 +220,10 @@ describe('DistributionTools', () => {
     });
 
     describe('run_metadata_qc', () => {
+        beforeEach(() => {
+            disableElectron();
+        });
+
         it('should pass clean metadata', async () => {
             const { DistributionTools } = await import('./DistributionTools');
 
@@ -254,6 +299,8 @@ describe('DistributionTools', () => {
     describe('prepare_release', () => {
         it('should reject invalid ISRC', async () => {
             const { DistributionTools } = await import('./DistributionTools');
+            const { IdentifierService } = await import('@/services/identity/IdentifierService');
+            (IdentifierService.validateISRC as any).mockReturnValue(false);
 
             const result = await DistributionTools.prepare_release({
                 title: 'Test Track',
@@ -269,6 +316,8 @@ describe('DistributionTools', () => {
 
         it('should reject invalid UPC', async () => {
             const { DistributionTools } = await import('./DistributionTools');
+            const { IdentifierService } = await import('@/services/identity/IdentifierService');
+            (IdentifierService.validateUPC as any).mockReturnValue(false);
 
             const result = await DistributionTools.prepare_release({
                 title: 'Test Track',

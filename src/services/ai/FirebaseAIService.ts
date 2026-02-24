@@ -316,7 +316,17 @@ export class FirebaseAIService {
         const leanPrompt = Array.isArray(prompt)
             ? prompt.map(p => ({
                 ...p,
-                parts: p.parts.map(part => 'inlineData' in part ? { ...part, inlineData: { ...part.inlineData, data: '[REDACTED]' } } : part)
+                parts: p.parts.map(part => {
+                    if ('inlineData' in part && part.inlineData) {
+                        const { mimeType, data } = part.inlineData;
+                        const dataLen = data?.length || 0;
+                        const snippet = dataLen > 32
+                            ? `${data.substring(0, 16)}...${data.substring(dataLen - 16)}`
+                            : data;
+                        return { ...part, inlineData: { mimeType, data: `[REDACTED:${mimeType}:${dataLen}:${snippet}]` } };
+                    }
+                    return part;
+                })
             }))
             : typeof prompt === 'string' ? prompt : '[COMPLEX_OBJECT]';
 
@@ -1610,7 +1620,8 @@ export class FirebaseAIService {
         for (let attempt = 0; attempt <= retries; attempt++) {
             try {
                 if (signal?.aborted) {
-                    throw new Error('Operation cancelled by user');
+                    const reason = signal.reason === 'TIMEOUT' ? 'AI Request timed out' : (signal.reason || 'Operation cancelled by user');
+                    throw typeof reason === 'string' ? new Error(reason) : reason;
                 }
                 return await operation();
             } catch (error: unknown) {

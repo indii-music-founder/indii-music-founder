@@ -7,6 +7,7 @@ export const RevenueEntrySchema = z.object({
   amount: z.number().default(0),
   currency: z.string().default('USD'),
   source: z.string().default('other'),
+  sourceId: z.string().optional(),
   customerId: z.string().optional(),
   userId: z.string(),
   status: z.enum(['completed', 'pending', 'failed']).default('completed'),
@@ -86,20 +87,20 @@ export const EarningsSummarySchema = z.object({
 });
 
 export const DashboardEarningsSummarySchema = z.object({
-    totalEarnings: z.number(),
-    pendingPayouts: z.number(),
-    lastPayout: z.number(),
-    lastPayoutDate: z.string().optional(),
-    currency: z.string(),
-    trends: z.object({
-        earningsChange: z.number(),
-        payoutsChange: z.number()
-    }),
-    sources: z.array(z.object({
-        name: z.string(),
-        amount: z.number(),
-        percentage: z.number()
-    }))
+  totalEarnings: z.number(),
+  pendingPayouts: z.number(),
+  lastPayout: z.number(),
+  lastPayoutDate: z.string().optional(),
+  currency: z.string(),
+  trends: z.object({
+    earningsChange: z.number(),
+    payoutsChange: z.number()
+  }),
+  sources: z.array(z.object({
+    name: z.string(),
+    amount: z.number(),
+    percentage: z.number()
+  }))
 });
 
 export type PlatformEarnings = z.infer<typeof PlatformEarningsSchema>;

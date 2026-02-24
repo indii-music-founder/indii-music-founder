@@ -226,13 +226,7 @@ export class AgentService {
             return;
         }
 
-        // 1. Check Provider: If set to 'agent-zero', delegate immediately
-        if (activeAgentProvider === 'agent-zero') {
-            await this.handleAgentZeroFlow(text, attachments, responseId);
-            return;
-        }
-
-        // 2. Use Orchestration for "Master Workflows" (Multi-Agent)
+        // 1. Use Orchestration for "Master Workflows" (Multi-Agent)
         const orchestratedResult = await orchestrationService.executeOrchestratedWorkflow(text, context);
         if (orchestratedResult) {
             updateAgentMessage(responseId, {
@@ -245,6 +239,12 @@ export class AgentService {
                     toolName: 'Orchestration Service'
                 }]
             });
+            return;
+        }
+
+        // 2. Check Provider: If set to 'agent-zero', delegate immediately
+        if (activeAgentProvider === 'agent-zero') {
+            await this.handleAgentZeroFlow(text, attachments, responseId);
             return;
         }
 

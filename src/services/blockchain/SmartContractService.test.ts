@@ -10,7 +10,7 @@ const mockQuery = vi.fn();
 const mockWhere = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     collection: (db: any, col: string) => mockCollection(col),
     addDoc: (ref: any, data: any) => mockAddDoc(ref, data),
@@ -19,14 +19,18 @@ vi.mock('firebase/firestore', () => ({
     where: (field: string, op: string, val: any) => mockWhere(field, op, val),
     Timestamp: {
         now: () => ({
-  serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString() })
+            serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString()
+        })
     }
 }));
 
 // Mock the db export from firebase service
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
-    db: {}
+    serverTimestamp: vi.fn(),
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 describe('SmartContractService', () => {
@@ -39,7 +43,7 @@ describe('SmartContractService', () => {
             docs: [
                 {
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         hash: 'mock-hash',
                         timestamp: new Date().toISOString(),
                         action: 'SPLIT_EXECUTION',
@@ -100,7 +104,7 @@ describe('SmartContractService', () => {
             docs: [
                 {
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         hash: 'mock-hash',
                         timestamp: new Date().toISOString(),
                         action: 'TOKEN_MINT',

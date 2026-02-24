@@ -306,6 +306,7 @@ class DDEXParserImpl {
         : [resourceList.SoundRecording];
 
       recordings.forEach((r: any) => {
+        const details = r.SoundRecordingDetailsByTerritory;
         resources.push({
           resourceReference: r['@_ResourceReference'],
           resourceType: 'SoundRecording',
@@ -316,7 +317,16 @@ class DDEXParserImpl {
             titleText: r.ReferenceTitle?.TitleText
           },
           duration: r.Duration,
-          displayArtistName: r.SoundRecordingDetailsByTerritory?.DisplayArtistName
+          displayArtistName: details?.DisplayArtistName,
+          soundRecordingDetails: {
+            soundRecordingType: 'MusicalWorkSoundRecording',
+            isInstrumental: false, // Default
+            languageOfPerformance: details?.LanguageOfPerformance,
+            lyrics: details?.Lyrics ? {
+              lyricsText: typeof details.Lyrics.LyricsText === 'object' ? details.Lyrics.LyricsText['#text'] : details.Lyrics.LyricsText,
+              isExplicit: details.Lyrics.IsExplicit === true
+            } : undefined
+          }
         });
       });
     }
@@ -363,6 +373,10 @@ class DDEXParserImpl {
           },
           DisplayArtistName: r.displayArtistName,
           LanguageOfPerformance: r.soundRecordingDetails?.languageOfPerformance,
+          Lyrics: r.soundRecordingDetails?.lyrics ? {
+            LyricsText: { '#text': r.soundRecordingDetails.lyrics.lyricsText },
+            IsExplicit: r.soundRecordingDetails.lyrics.isExplicit
+          } : undefined
         },
       })),
       Image: resources.filter((r) => r.resourceType === 'Image').map((r) => ({

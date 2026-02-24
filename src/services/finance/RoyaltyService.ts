@@ -1,4 +1,15 @@
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { db } from '@/services/firebase';
+import {
+    collection,
+    doc,
+    runTransaction,
+    addDoc,
+    serverTimestamp,
+    getDocs,
+    query,
+    where
+} from 'firebase/firestore';
 
 export interface RevenueReportItem {
     transactionId: string;
@@ -10,97 +21,152 @@ export interface RevenueReportItem {
 }
 
 export interface PayoutRecord {
-    userId: string; // The specific payee (e.g. producer@gmail.com)
+    userId: string; // The email or UID of the specific payee
     amount: number;
     currency: string;
     sourceTrackIsrc: string;
     role: string;
+    status: 'pending' | 'paid';
+    reportId?: string;
+    createdAt?: any;
 }
 
 export interface RecoupmentBalance {
-    id: string; // releaseId or trackIsrc
+    releaseId: string; // releaseId or trackIsrc
     balance: number; // Remaining amount to recoup
     totalExpense: number;
+    updatedAt: any;
 }
 
 export class RoyaltyService {
+    private static readonly PAYOUTS_COLLECTION = 'payouts';
+    private static readonly RECOUPMENT_COLLECTION = 'recoupment_balances';
 
     /**
-     * Calculate splits for a batch of revenue items against track metadata.
-     * @param revenueItems Raw revenue lines from DSPs
-     * @param metadataMap Map of ISRC -> ExtendedGoldenMetadata
+     * Ingest a batch of revenue items and calculate payouts, applying recoupment.
      */
-    static calculateSplits(
-        revenueItems: RevenueReportItem[],
+    static async ingestRevenueReport(
+        reportId: string,
+        items: RevenueReportItem[],
         metadataMap: Record<string, ExtendedGoldenMetadata>
+    ): Promise<{ success: boolean; payoutCount: number; error?: string }> {
+        try {
+            let totalPayoutsStored = 0;
+
+            for (const item of items) {
+                const trackData = metadataMap[item.isrc];
+                if (!trackData) continue;
+
+                const releaseId = trackData.id || item.isrc;
+
+                // Use transaction for atomic recoupment update and payout recording
+                await runTransaction(db, async (transaction) => {
+                    const recoupRef = doc(db, this.RECOUPMENT_COLLECTION, releaseId);
+                    const recoupDoc = await transaction.get(recoupRef);
+
+                    let unallocatedRevenue = item.grossRevenue;
+                    let currentBalance = 0;
+
+                    if (recoupDoc.exists()) {
+                        const data = recoupDoc.data() as RecoupmentBalance;
+                        currentBalance = data.balance;
+
+                        if (currentBalance > 0) {
+                            const deduction = Math.min(unallocatedRevenue, currentBalance);
+                            currentBalance -= deduction;
+                            unallocatedRevenue -= deduction;
+
+                            transaction.update(recoupRef, {
+                                balance: currentBalance,
+                                updatedAt: serverTimestamp()
+                            });
+                            console.log(`[RoyaltyService] Recooped ${deduction} for ${releaseId}. Remaining: ${currentBalance}`);
+                        }
+                    }
+
+                    if (unallocatedRevenue <= 0) return;
+
+                    // Calculate splits on the remaining revenue
+                    const payouts = this.calculateSplitsFromUnallocated(unallocatedRevenue, trackData, item);
+
+                    // Record each payout in the transaction
+                    for (const payout of payouts) {
+                        const payoutRef = doc(collection(db, this.PAYOUTS_COLLECTION));
+                        transaction.set(payoutRef, {
+                            ...payout,
+                            reportId,
+                            status: 'pending',
+                            createdAt: serverTimestamp()
+                        });
+                        totalPayoutsStored++;
+                    }
+                });
+            }
+
+            return { success: true, payoutCount: totalPayoutsStored };
+        } catch (error) {
+            console.error('[RoyaltyService] Ingestion failed:', error);
+            return { success: false, payoutCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    }
+
+    /**
+     * Internal logic helper for split distribution.
+     */
+    private static calculateSplitsFromUnallocated(
+        unallocatedRevenue: number,
+        trackData: ExtendedGoldenMetadata,
+        item: RevenueReportItem
     ): PayoutRecord[] {
         const payouts: PayoutRecord[] = [];
-        // Mock recoupment balances (In production, caller or service would provide this)
-        const recoupmentBalances: Record<string, number> = {};
+        const totalSplits = trackData.splits.reduce((sum, s) => sum + s.percentage, 0);
 
-        for (const item of revenueItems) {
-            const trackData = metadataMap[item.isrc];
+        // 1. Distribute defined splits
+        trackData.splits.forEach(split => {
+            const normalizedPercentage = totalSplits > 100 ? (split.percentage / totalSplits) * 100 : split.percentage;
+            const splitAmount = unallocatedRevenue * (normalizedPercentage / 100);
 
-            if (!trackData) {
-                continue;
+            if (splitAmount > 0) {
+                payouts.push({
+                    userId: split.email,
+                    amount: Number(splitAmount.toFixed(4)),
+                    currency: item.currency,
+                    sourceTrackIsrc: item.isrc,
+                    role: split.role,
+                    status: 'pending'
+                });
             }
+        });
 
-            // 1. Check Recoupment
-            // Deduct the gross revenue from the recoupment balance first
-            let unallocatedRevenue = item.grossRevenue;
-            const releaseId = trackData.id || item.isrc;
+        // 2. Handle Leftovers (to Label)
+        if (totalSplits < 100) {
+            const labelPercentage = 100 - totalSplits;
+            const labelAmount = unallocatedRevenue * (labelPercentage / 100);
 
-            if (recoupmentBalances[releaseId] && recoupmentBalances[releaseId] > 0) {
-                const deduction = Math.min(unallocatedRevenue, recoupmentBalances[releaseId]);
-                recoupmentBalances[releaseId] -= deduction;
-                unallocatedRevenue -= deduction;
-                console.log(`[RoyaltyService] Recooped ${deduction} for ${releaseId}. Remaining balance: ${recoupmentBalances[releaseId]}`);
-            }
-
-            if (unallocatedRevenue <= 0) continue;
-
-            // 2. Distribute based on splits
-            const totalSplits = trackData.splits.reduce((sum, s) => sum + s.percentage, 0);
-
-            if (totalSplits > 100) {
-                console.warn(`[RoyaltyService] Total splits exceed 100% (${totalSplits}%) for ${item.isrc}. Normalizing...`);
-            }
-
-            // Distribute defined splits
-            trackData.splits.forEach(split => {
-                // If total > 100, we normalize to prevent paying out more than we have
-                const normalizedPercentage = totalSplits > 100 ? (split.percentage / totalSplits) * 100 : split.percentage;
-                const splitAmount = unallocatedRevenue * (normalizedPercentage / 100);
-
-                if (splitAmount > 0) {
-                    payouts.push({
-                        userId: split.email,
-                        amount: Number(splitAmount.toFixed(4)),
-                        currency: item.currency,
-                        sourceTrackIsrc: item.isrc,
-                        role: split.role
-                    });
-                }
-            });
-
-            // 3. Handle Leftovers (Auto-allocate to Label/Owner)
-            if (totalSplits < 100) {
-                const labelPercentage = 100 - totalSplits;
-                const labelAmount = unallocatedRevenue * (labelPercentage / 100);
-
-                if (labelAmount > 0) {
-                    payouts.push({
-                        userId: 'label_hq@indiios.com', // Default Label/Owner ID
-                        amount: Number(labelAmount.toFixed(4)),
-                        currency: item.currency,
-                        sourceTrackIsrc: item.isrc,
-                        role: 'Label'
-                    });
-                    console.log(`[RoyaltyService] Allocated leftover ${labelPercentage}% (${labelAmount}) to Label HQ.`);
-                }
+            if (labelAmount > 0) {
+                payouts.push({
+                    userId: 'label_hq@indiios.com',
+                    amount: Number(labelAmount.toFixed(4)),
+                    currency: item.currency,
+                    sourceTrackIsrc: item.isrc,
+                    role: 'Label',
+                    status: 'pending'
+                });
             }
         }
 
         return payouts;
+    }
+
+    /**
+     * Manual override or initialization of recoupment balance.
+     */
+    static async setRecoupmentBalance(releaseId: string, amount: number): Promise<void> {
+        await addDoc(collection(db, this.RECOUPMENT_COLLECTION), {
+            releaseId,
+            balance: amount,
+            totalExpense: amount,
+            updatedAt: serverTimestamp()
+        });
     }
 }

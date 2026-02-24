@@ -1,3 +1,6 @@
+import { db } from '@/services/firebase';
+import { doc, runTransaction, getDoc } from 'firebase/firestore';
+
 /**
  * IdentifierService
  * Responsible for generating and validating unique industry identifiers.
@@ -13,12 +16,72 @@ export class IdentifierService {
     private static readonly DEFAULT_REGISTRANT_CODE = 'QY1'; // Example Registrant
 
     /**
-     * Generate a valid ISRC.
+     * Fetch and increment the next sequence number from Firestore.
+     * Uses a transaction to ensure atomicity and uniqueness.
+     */
+    private static async getNextSequence(type: 'isrc' | 'upc', year?: number): Promise<number> {
+        const seqDocRef = doc(db, 'system_sequences', 'identifiers');
+
+        return await runTransaction(db, async (transaction) => {
+            const seqDoc = await transaction.get(seqDocRef);
+
+            if (!seqDoc.exists()) {
+                // Initialize if not exists
+                const initialData = {
+                    isrc: { lastYear: year || 26, sequence: 100 }, // Start at 100 for padding
+                    upc: { sequence: 10000000000 } // 11 digits start
+                };
+                transaction.set(seqDocRef, initialData);
+                return type === 'isrc' ? initialData.isrc.sequence : initialData.upc.sequence;
+            }
+
+            const data = seqDoc.data();
+
+            if (type === 'isrc') {
+                const isrcData = data.isrc || { lastYear: year || 26, sequence: 100 };
+                let currentSeq = isrcData.sequence + 1;
+                let lastYear = isrcData.lastYear;
+
+                // Reset sequence if year has advanced
+                if (year && year > lastYear) {
+                    currentSeq = 1;
+                    lastYear = year;
+                }
+
+                transaction.update(seqDocRef, {
+                    'isrc.sequence': currentSeq,
+                    'isrc.lastYear': lastYear
+                });
+                return currentSeq;
+            } else {
+                const upcData = data.upc || { sequence: 10000000000 };
+                const currentSeq = upcData.sequence + 1;
+                transaction.update(seqDocRef, { 'upc.sequence': currentSeq });
+                return currentSeq;
+            }
+        });
+    }
+
+    /**
+     * Generate the next available ISRC automatically.
+     */
+    static async nextISRC(countryCode?: string, registrantCode?: string): Promise<string> {
+        const currentYear = new Date().getFullYear() % 100;
+        const sequence = await this.getNextSequence('isrc', currentYear);
+        return this.generateISRC(currentYear, sequence, countryCode, registrantCode);
+    }
+
+    /**
+     * Generate the next available UPC automatically.
+     */
+    static async nextUPC(): Promise<string> {
+        const sequence = await this.getNextSequence('upc');
+        return this.generateUPC(sequence.toString());
+    }
+
+    /**
+     * Format a valid ISRC string.
      * Format: CC-XXX-YY-NNNNN
-     * @param year 2-digit year (e.g., 24 for 2024)
-     * @param sequence Unique 5-digit number for the year
-     * @param countryCode 2-character country code (default: US)
-     * @param registrantCode 3-character registrant code
      */
     static generateISRC(
         year: number,
@@ -42,13 +105,12 @@ export class IdentifierService {
     }
 
     /**
-     * Generate a valid UPC (GTIN-12).
-     * Format: 11 digits + 1 check digit.
-     * @param prefix Company Prefix + Item Reference (11 digits total)
+     * Format a valid UPC (GTIN-12) from an 11-digit payload.
      */
     static generateUPC(payload: string): string {
         if (!/^\d{11}$/.test(payload)) {
-            throw new Error('UPC payload must be exactly 11 digits');
+            // If it's shorter, pad it; but we expect 11 digits from the sequence
+            payload = payload.padStart(11, '0');
         }
         const checkDigit = this.calculateGTINCheckDigit(payload);
         return `${payload}${checkDigit}`;
@@ -68,36 +130,22 @@ export class IdentifierService {
 
     /**
      * Calculate GTIN Check Digit (Luhn-like).
-     * Multiply digits by 3 or 1 alternating, sum, mod 10.
      */
     private static calculateGTINCheckDigit(payload: string): number {
-        // Pad to 11 digits if necessary (though generateUPC enforces 11)
         const digits = payload.split('').map(Number);
 
         let sum = 0;
         for (let i = 0; i < digits.length; i++) {
-            // GTIN-12 positions are 1-based index from left.
-            // Odd positions (1, 3, 5...) are multiplied by 3.
-            // Even positions (2, 4, 6...) are multiplied by 1.
-            // Wait, for GTIN-12 (UPC-A):
-            // The standard says: start from right (excluding check digit).
-            // Position 1 (rightmost of payload) * 3
-            // Position 2 * 1
-            // ...
-            // Let's stick to the standard algorithm:
-            // "Sum the odd positions (1, 3, 5, 7, 9, 11) and multiply by 3"
-            // "Sum the even positions (2, 4, 6, 8, 10)"
-            // "Add results"
-            // "Nearest multiple of 10 minus result"
-
-            if ((i + 1) % 2 !== 0) { // Odd position (1st, 3rd...)
+            // For GTIN-12: The 1st digit (index 0) is considered "odd" in the 1-based indexing for the algorithm
+            // (Position 1, 3, 5, 7, 9, 11)
+            if ((i + 1) % 2 !== 0) {
                 sum += digits[i] * 3;
-            } else { // Even position
+            } else {
                 sum += digits[i] * 1;
             }
         }
 
-        const nearestTen = Math.ceil(sum / 10) * 10;
-        return nearestTen - sum;
+        const remainder = sum % 10;
+        return remainder === 0 ? 0 : 10 - remainder;
     }
 }

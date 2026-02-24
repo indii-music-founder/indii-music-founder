@@ -12,7 +12,7 @@ import { getDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('@/services/ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: {
         generateStructuredData: vi.fn(),
         generateContent: vi.fn()
@@ -24,7 +24,7 @@ import { firebaseAI } from '@/services/ai/FirebaseAIService';
 vi.mock('firebase/firestore', async (importOriginal) => {
     const actual = await importOriginal();
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         ...actual as any,
         getDocs: vi.fn(),
         collection: vi.fn(),
@@ -37,12 +37,36 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 
 // Mock the local firebase service to prevent real initialization
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     db: {}, // Mock db object
     auth: { currentUser: { uid: 'test-user' } },
     remoteConfig: {}, // Mock remote config
     ai: {} // Mock ai service
 }));
+
+// Mock electronAPI
+if (typeof window !== 'undefined') {
+    (window as any).electronAPI = {
+        security: {
+            rotateCredentials: vi.fn().mockResolvedValue({
+                success: true,
+                service: 'database-db',
+                action: 'rotate_credentials',
+                status: 'SUCCESS',
+                new_key_id: 'mock-key-123',
+                timestamp: new Date().toISOString()
+            }),
+            scanVulnerabilities: vi.fn().mockResolvedValue({
+                success: true,
+                scan: {
+                    scope: 'all',
+                    vulnerabilities: [],
+                    score: 1.0
+                }
+            })
+        }
+    };
+}
 
 describe('SecurityTools (Mocked)', () => {
     beforeEach(() => {

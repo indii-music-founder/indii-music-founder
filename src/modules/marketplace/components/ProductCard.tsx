@@ -7,9 +7,11 @@ import { ShoppingBag, Loader2, Check } from 'lucide-react';
 interface ProductCardProps {
     product: Product;
     variant?: 'default' | 'embedded';
+    source?: string;
+    sourceId?: string;
 }
 
-const ProductCard = React.memo(({ product, variant = 'default' }: ProductCardProps) => {
+const ProductCard = React.memo(({ product, variant = 'default', source, sourceId }: ProductCardProps) => {
     const [purchasing, setPurchasing] = useState(false);
     const [purchased, setPurchased] = useState(false);
     const currentUser = useStore((state) => state.userProfile);
@@ -23,7 +25,9 @@ const ProductCard = React.memo(({ product, variant = 'default' }: ProductCardPro
                 product.id!,
                 currentUser.id,
                 product.sellerId,
-                product.price
+                product.price,
+                source,
+                sourceId
             );
             setPurchased(true);
         } catch (error) {

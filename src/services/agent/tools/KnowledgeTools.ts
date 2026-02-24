@@ -21,7 +21,7 @@ export const KnowledgeTools: Record<string, AnyToolFunction> = {
             args.query,
             userProfile,
             null,
-            (update) => console.info(`[RAG] ${update}`),
+            (update) => console.info(`[KnowledgeTools] ${update}`),
             () => { } // Update Doc Status dummy
         );
 

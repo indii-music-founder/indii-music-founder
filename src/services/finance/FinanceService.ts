@@ -31,7 +31,7 @@ export class FinanceService {
    * Get earnings summary for dashboard (RevenueService aggregation).
    */
   async getEarningsSummary(userId: string): Promise<DashboardEarningsSummary> {
-    if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
       throw new Error('Unauthorized');
     }
     // Use the RevenueService to get aggregated stats
@@ -61,7 +61,7 @@ export class FinanceService {
    */
   async fetchEarnings(userId: string): Promise<DashboardEarningsSummary | null> {
     try {
-      if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
+      if (!auth.currentUser || auth.currentUser.uid !== userId) {
         throw new Error('Unauthorized');
       }
 
@@ -194,7 +194,7 @@ export class FinanceService {
    * Subscribe to earnings reports for real-time updates.
    */
   subscribeToEarnings(userId: string, callback: (earnings: DashboardEarningsSummary | null) => void): () => void {
-    if (!auth.currentUser || (auth.currentUser.uid !== userId && userId !== 'guest')) {
+    if (!auth.currentUser || auth.currentUser.uid !== userId) {
       console.error('Unauthorized subscribe to earnings');
       return () => { };
     }

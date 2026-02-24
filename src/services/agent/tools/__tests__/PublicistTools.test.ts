@@ -24,7 +24,8 @@ describe('PublicistTools', () => {
             body_paragraphs: ['Para 1'],
             quotes: [{ speaker: 'Artist', text: 'Stoked' }],
             boilerplate: 'About us',
-            contact_info: { name: 'PR', email: 'pr@example.com' }
+            contact_info: { name: 'PR', email: 'pr@example.com' },
+            pdf: null
         };
         (firebaseAI.generateStructuredData as any).mockResolvedValue(mockResponse);
 

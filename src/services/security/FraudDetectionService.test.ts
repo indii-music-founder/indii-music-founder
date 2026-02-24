@@ -10,7 +10,7 @@ const mockQuery = vi.fn();
 const mockWhere = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     collection: (db: any, col: string) => mockCollection(col),
     addDoc: (ref: any, data: any) => mockAddDoc(ref, data),
@@ -19,14 +19,18 @@ vi.mock('firebase/firestore', () => ({
     where: (field: string, op: string, val: any) => mockWhere(field, op, val),
     Timestamp: {
         now: () => ({
-  serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString() })
+            serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString()
+        })
     }
 }));
 
 // Mock the db export from firebase service
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
-    db: {}
+    serverTimestamp: vi.fn(),
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-uid', email: 'test@test.com' }
+    }
 }));
 
 describe('FraudDetectionService', () => {
@@ -88,7 +92,7 @@ describe('FraudDetectionService', () => {
             mockGetDocs.mockResolvedValueOnce({
                 docs: [{
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         type: 'broad_spectrum',
                         pattern: 'sped_up',
                         details: 'Pitch/Tempo shift (+25%)'
@@ -104,11 +108,11 @@ describe('FraudDetectionService', () => {
         });
 
         it('should flag "slowed" content', async () => {
-             // Mock rule returning a match for 'slowed'
-             mockGetDocs.mockResolvedValueOnce({
+            // Mock rule returning a match for 'slowed'
+            mockGetDocs.mockResolvedValueOnce({
                 docs: [{
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         type: 'broad_spectrum',
                         pattern: 'slowed',
                         details: 'Pitch/Tempo shift (-20%)'

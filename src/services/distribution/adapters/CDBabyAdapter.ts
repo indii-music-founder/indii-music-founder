@@ -65,6 +65,7 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
         }
 
         try {
+            // 1. Generate DDEX ERN
             const ernResult = await ernService.generateERN(metadata, DDEX_CONFIG.PARTY_ID, 'cdbaby', assets);
 
             if (!ernResult.success || !ernResult.xml) {
@@ -75,11 +76,80 @@ export class CDBabyAdapter extends BaseDistributorAdapter {
                 };
             }
 
+            // 2. Map Files for Staging
+            if (window.electronAPI?.distribution?.stageRelease) {
+                console.info('[CDBaby] Staging release files...');
+
+                const files: { type: 'content' | 'path'; data: string; name: string }[] = [
+                    { type: 'content', data: ernResult.xml!, name: 'batch.xml' }
+                ];
+
+                let resourceCounter = 1;
+
+                // 2a. Map Audio
+                const tracks = (metadata.tracks && metadata.tracks.length > 0) ? metadata.tracks : [metadata];
+                tracks.forEach((track, index) => {
+                    const ref = `A${resourceCounter++}`;
+                    let assetObj = assets.audioFiles.find(a => a.trackIndex === index) || assets.audioFiles[index];
+                    if (!assetObj && index === 0 && assets.audioFile) {
+                        assetObj = { ...assets.audioFile, trackIndex: 0 };
+                    }
+
+                    if (assetObj) {
+                        const ext = assetObj.format || 'wav';
+                        files.push({
+                            type: 'path',
+                            data: assetObj.url,
+                            name: `${ref}.${ext}`
+                        });
+                    }
+                });
+
+                // 2b. Map Cover Art
+                if (assets.coverArt) {
+                    const ref = `IMG${resourceCounter++}`;
+                    const ext = assets.coverArt.url.split('.').pop() || 'jpg';
+                    files.push({
+                        type: 'path',
+                        data: assets.coverArt.url,
+                        name: `${ref}.${ext}`
+                    });
+                }
+
+                // 3. Stage Files
+                const releaseId = metadata.id || `CDB-${Date.now()}`;
+                const stagingValues = await window.electronAPI.distribution.stageRelease(releaseId, files);
+
+                if (!stagingValues.success || !stagingValues.packagePath) {
+                    throw new Error(stagingValues.error || 'Failed to stage CDBaby release locally');
+                }
+
+                console.info(`[CDBaby] Files staged at ${stagingValues.packagePath}.`);
+
+                // 4. Transmission (Simulation for now, or real if SFTP credentials exist)
+                if (this.credentials?.sftpHost) {
+                    await this.uploadBundle(stagingValues.packagePath, `/upload/${releaseId}`);
+                }
+
+                return {
+                    success: true,
+                    releaseId: releaseId,
+                    distributorReleaseId: `CDB-${releaseId}`,
+                    status: 'validating',
+                    metadata: {
+                        estimatedLiveDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+                        reviewRequired: true,
+                        packagePath: stagingValues.packagePath
+                    }
+                };
+            }
+
+            // Fallback for non-Electron environment
             return {
                 success: true,
                 releaseId: metadata.id,
                 distributorReleaseId: `CDB-${Date.now()}`,
-                status: 'validating', // CDBaby has strict upfront validation
+                status: 'validating',
                 metadata: {
                     estimatedLiveDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
                     reviewRequired: true,

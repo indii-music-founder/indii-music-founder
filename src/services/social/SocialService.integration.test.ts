@@ -6,7 +6,10 @@ import { CampaignStatus } from './types';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 // Mock Firestore

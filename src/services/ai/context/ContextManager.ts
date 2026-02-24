@@ -44,46 +44,46 @@ export class ContextManager {
 
         if (currentTokens <= maxTokens) return history;
 
-        // If we are over budget:
-        const truncated = [...history];
-
         // Preservation Rules
         const MIN_RECENT_MESSAGES = 2; // Keep at least last user/model exchange
-        const KEEP_FIRST_MESSAGE = true; // Try to keep the very first message (context anchor)
+        const KEEP_FIRST_MESSAGE = true; // Try to keep the very first message
 
-        // Safety valve for the loop
-        const MAX_ITERATIONS = 1000;
-        let iterations = 0;
+        // Safety valve: Limit total drops to prevent infinite loops (though length always decreases)
+        const MAX_DROPS = history.length;
+        let drops = 0;
 
-        // While over budget and we have more than the absolute minimum partial context
-        // We stop if we are down to just the recent messages
-        while (currentTokens > maxTokens && truncated.length > MIN_RECENT_MESSAGES && iterations < MAX_ITERATIONS) {
-            iterations++;
+        // Optimization: For VERY large histories (> 1000 turns), we should consider batch dropping
+        // but for now, let's just fix the iterations and ensure we don't hit the 1000 limit.
+        const truncated = [...history];
 
-            // Determine which index to remove
-            // If we want to keep the first message, and we have enough messages to drop from middle...
-            // Indices: 0 (First), 1 (Second)... N-2, N-1 (Recent)
-            // If length > MIN_RECENT + 1 (and KEEP_FIRST), we can drop index 1.
-            // Otherwise we fallback to dropping index 0.
+        while (currentTokens > maxTokens && truncated.length > MIN_RECENT_MESSAGES && drops < MAX_DROPS) {
+            drops++;
 
             let removeIndex = 0;
-
             if (KEEP_FIRST_MESSAGE && truncated.length > (MIN_RECENT_MESSAGES + 1)) {
-                // Remove from the "middle" (second oldest message)
+                // Remove the second message (index 1) to preserve the anchor (index 0)
                 removeIndex = 1;
             } else {
                 // Drop the oldest message
                 removeIndex = 0;
             }
 
-            const [removed] = truncated.splice(removeIndex, 1);
+            const removed = truncated[removeIndex];
             if (removed) {
                 currentTokens -= this.estimateContextTokens(removed);
+                truncated.splice(removeIndex, 1);
+            }
+
+            // [STRESS SAFETY] If we've dropped 5000 messages and STILL over limit, 
+            // maybe we have a massive single message. We should break to avoid hang.
+            if (drops >= 10000) {
+                console.error('[ContextManager] EXTREME TRUNCATION: Dropped 10,000 messages and still over limit. Breaking loop.');
+                break;
             }
         }
 
         if (currentTokens > maxTokens) {
-            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) even after aggressive truncation after ${iterations} iterations. Recent messages are too large.`);
+            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) after ${drops} drops. Recent messages are too large.`);
         }
 
         return truncated;
