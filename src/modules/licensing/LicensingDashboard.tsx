@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck } from 'lucide-react';
+import { FileText, Clock, CheckCircle2, AlertCircle, ExternalLink, ShieldCheck, Scale, TrendingUp, Briefcase, BarChart3 } from 'lucide-react';
 import { licensingService } from '@/services/licensing/LicensingService';
 import { LicenseRequest } from '@/services/licensing/types';
 import { motion, AnimatePresence } from 'motion/react';
@@ -10,13 +10,22 @@ import { useLicensing } from './hooks/useLicensing';
 import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
 
+/* ================================================================== */
+/*  Licensing Dashboard — Three-Panel Layout                            */
+/*                                                                     */
+/*  ┌──────────┬───────────────────────────┬──────────────┐            */
+/*  │  LEFT    │    CENTER                 │   RIGHT      │            */
+/*  │  Deal    │    Pending Clearances     │   Deal Flow  │            */
+/*  │  Health  │    Active Portfolio       │   Templates  │            */
+/*  │  Actions │    (expanded)             │   Compliance │            */
+/*  └──────────┴───────────────────────────┴──────────────┘            */
+/* ================================================================== */
 
 export default function LicensingDashboard() {
     const { licenses, requests, projectedValue, loading: isLoading, initiateDrafting } = useLicensing();
     const { currentModule } = useStore();
     const toast = useToast();
 
-    // Global exposed service for agent interaction (Development Only)
     useEffect(() => {
         if (process.env.NODE_ENV === 'development') {
             const win = window as unknown as Window & { licensingService: typeof licensingService };
@@ -42,51 +51,42 @@ export default function LicensingDashboard() {
     }
 
     return (
-        <div className="max-w-7xl mx-auto p-4 sm:p-8 space-y-10">
-            {/* Premium Header */}
-            <header className="relative overflow-hidden bg-gradient-to-br from-[#1c2128] to-[#161b22] p-8 rounded-[2rem] border border-white/5 shadow-2xl">
-                <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] -mr-32 -mt-32"></div>
-                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                    <div className="flex items-center gap-5">
-                        <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-inner">
-                            <ShieldCheck size={40} />
+        <div className="absolute inset-0 flex">
+            {/* ── LEFT PANEL — Deal Health & Actions ─────────────── */}
+            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <DealHealthPanel
+                    activeLicenses={licenses.length}
+                    pendingRequests={requests.length}
+                    projectedValue={projectedValue}
+                />
+                <RecentClearancesPanel requests={requests} onDraft={handleDraftAction} />
+                <ActionButtonsPanel toast={toast} />
+            </aside>
+
+            {/* ── CENTER — Main Content ──────────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0">
+                {/* Header */}
+                <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                    <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-indigo-500/8 blur-[100px] pointer-events-none rounded-full" />
+                    <div className="relative z-10 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-indigo-400 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                            <ShieldCheck size={18} className="text-white" />
                         </div>
                         <div>
-                            <h1 className="text-4xl font-extrabold text-white tracking-tight">Licensing Department</h1>
-                            <p className="text-indigo-300/60 font-medium mt-1">Alpha Release • Real-time Rights & Clearances</p>
-                        </div>
-                    </div>
-                    <div className="flex gap-4">
-                        <div className="bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-center">
-                            <div className="text-2xl font-bold text-white">{licenses.length}</div>
-                            <div className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Active Licenses</div>
-                        </div>
-                        <div className="bg-white/5 backdrop-blur-md px-5 py-3 rounded-2xl border border-white/10 text-center">
-                            <div className="text-2xl font-bold text-yellow-500">{requests.length}</div>
-                            <div className="text-[10px] uppercase font-bold text-gray-500 tracking-widest">Pending Clearances</div>
+                            <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Licensing</h1>
+                            <p className="text-muted-foreground font-medium tracking-wide text-[10px]">REAL-TIME RIGHTS & CLEARANCES</p>
                         </div>
                     </div>
                 </div>
-            </header>
 
-            {/* Metrics & Analytics */}
-            <MetricsGrid
-                activeLicensesCount={licenses.length}
-                pendingRequestsCount={requests.length}
-                projectedValue={projectedValue}
-            />
-
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-10">
-                {/* Pending Clearances Section */}
-                <section className="space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                            <Clock className="w-6 h-6 text-yellow-500" />
+                {/* Scrollable Content */}
+                <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6 space-y-8">
+                    {/* Pending Clearances */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-yellow-500" />
                             Pending Clearances
                         </h2>
-                    </div>
-
-                    <div className="space-y-4">
                         <AnimatePresence mode="popLayout">
                             {requests.length === 0 ? (
                                 <EmptyActionState
@@ -94,7 +94,7 @@ export default function LicensingDashboard() {
                                     title="No Pending Clearances"
                                     description="Start a new licensing deal to track its progress here. All drafted agreements will appear in this timeline."
                                     actionLabel="Draft New Deal"
-                                    onAction={() => console.info('Open draft modal')} // Placeholder for now
+                                    onAction={() => console.info('Open draft modal')}
                                     gradient="from-yellow-500/20 to-orange-500/20"
                                 />
                             ) : (
@@ -104,7 +104,7 @@ export default function LicensingDashboard() {
                                         initial={{ opacity: 0, x: -20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="group relative bg-[#1c2128] p-5 rounded-2xl border border-white/5 hover:border-indigo-500/30 transition-all hover:shadow-[0_0_30px_rgba(79,70,229,0.05)]"
+                                        className="group relative bg-white/[0.02] p-5 rounded-xl border border-white/5 hover:border-indigo-500/30 transition-all"
                                     >
                                         <div className="flex justify-between items-start gap-4">
                                             <div className="space-y-1">
@@ -122,7 +122,7 @@ export default function LicensingDashboard() {
                                             <div className="flex flex-col items-end gap-3">
                                                 <button
                                                     onClick={() => handleDraftAction(request)}
-                                                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-indigo-400/20 shadow-lg shadow-indigo-600/10 transition-all scale-95 group-hover:scale-100 hover:shadow-indigo-500/20"
+                                                    className="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-bold px-4 py-2 rounded-xl border border-indigo-400/20 shadow-lg shadow-indigo-600/10 transition-all scale-95 group-hover:scale-100"
                                                 >
                                                     <FileText size={14} />
                                                     DRAFT AGREEMENT
@@ -136,33 +136,26 @@ export default function LicensingDashboard() {
                                 ))
                             )}
                         </AnimatePresence>
-                    </div>
-                </section>
+                    </section>
 
-                {/* Active Portfolio Section */}
-                <section className="space-y-6">
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-3">
-                        <CheckCircle2 className="w-6 h-6 text-emerald-500" />
-                        Active Portfolio
-                    </h2>
-
-                    <div className="grid gap-4">
+                    {/* Active Portfolio */}
+                    <section className="space-y-4">
+                        <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                            Active Portfolio
+                        </h2>
                         <AnimatePresence mode="popLayout">
                             {licenses.length === 0 ? (
-                                <div className="space-y-6">
-                                    <EmptyActionState
-                                        icon={ShieldCheck}
-                                        title="Portfolio Empty"
-                                        description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
-                                        actionLabel="Import Agreement"
-                                        onAction={() => console.info('Import modal')}
-                                        secondaryLabel="Scan Catalog"
-                                        onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
-                                        gradient="from-emerald-500/20 to-teal-500/20"
-                                    />
-                                    {/* Visual Filler: Deal Flow Chart when empty to keep screen 'full' */}
-                                    <DealFlowChart />
-                                </div>
+                                <EmptyActionState
+                                    icon={ShieldCheck}
+                                    title="Portfolio Empty"
+                                    description="You haven't registered any active licenses yet. Import existing agreements or scan your catalog for potential sync opportunities."
+                                    actionLabel="Import Agreement"
+                                    onAction={() => console.info('Import modal')}
+                                    secondaryLabel="Scan Catalog"
+                                    onSecondary={() => toast.info("Beta: Semantic Deal Scanner initiated.")}
+                                    gradient="from-emerald-500/20 to-teal-500/20"
+                                />
                             ) : (
                                 licenses.map((license, idx) => (
                                     <motion.div
@@ -170,7 +163,7 @@ export default function LicensingDashboard() {
                                         initial={{ opacity: 0, scale: 0.95 }}
                                         animate={{ opacity: 1, scale: 1 }}
                                         transition={{ delay: idx * 0.05 }}
-                                        className="relative bg-gradient-to-r from-[#1c2128] to-[#161b22] p-5 rounded-2xl border border-white/5 overflow-hidden group hover:border-emerald-500/30 transition-all shadow-xl"
+                                        className="relative bg-white/[0.02] p-5 rounded-xl border border-white/5 overflow-hidden group hover:border-emerald-500/30 transition-all"
                                     >
                                         <div className="absolute top-0 right-0 p-3 text-emerald-500/10">
                                             <ShieldCheck size={64} />
@@ -192,7 +185,7 @@ export default function LicensingDashboard() {
                                                     href={license.agreementUrl}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all shadow-lg"
+                                                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-gray-400 hover:text-white transition-all"
                                                 >
                                                     <ExternalLink size={18} />
                                                 </a>
@@ -202,20 +195,170 @@ export default function LicensingDashboard() {
                                 ))
                             )}
                         </AnimatePresence>
-                    </div>
-                </section>
+                    </section>
+
+                    {/* Footer */}
+                    <footer className="flex items-center justify-between p-4 bg-indigo-500/5 rounded-xl border border-indigo-500/10">
+                        <div className="flex items-center gap-3 text-xs text-indigo-300/60 font-medium">
+                            <AlertCircle size={14} />
+                            <span>AI licensing tools active. All drafts MUST be reviewed by legal counsel.</span>
+                        </div>
+                        <div className="text-[10px] font-bold text-indigo-400 tracking-widest uppercase">
+                            Security: High
+                        </div>
+                    </footer>
+                </div>
             </div>
 
-            {/* Action Support Footer */}
-            <footer className="mt-12 flex items-center justify-between p-6 bg-indigo-500/5 rounded-[2rem] border border-indigo-500/10">
-                <div className="flex items-center gap-4 text-sm text-indigo-300/60 font-medium">
-                    <AlertCircle size={18} />
-                    <span>Experimental AI licensing tools active. All generated drafts MUST be reviewed by legal counsel.</span>
+            {/* ── RIGHT PANEL — Deal Flow & Templates ────────────── */}
+            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <DealFlowWidget />
+                <LicensingTemplatesPanel />
+                <ComplianceChecklistPanel licenses={licenses} />
+            </aside>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Left Panel Widgets                                                  */
+/* ================================================================== */
+
+function DealHealthPanel({ activeLicenses, pendingRequests, projectedValue }: {
+    activeLicenses: number; pendingRequests: number; projectedValue: number;
+}) {
+    const items = [
+        { label: 'Active Licenses', value: activeLicenses.toString(), icon: ShieldCheck, color: 'text-emerald-400' },
+        { label: 'Pending Clearances', value: pendingRequests.toString(), icon: Clock, color: 'text-yellow-400' },
+        { label: 'Projected Value', value: `$${projectedValue.toLocaleString()}`, icon: TrendingUp, color: 'text-indigo-400' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Deal Health</h3>
+            <div className="space-y-2">
+                {items.map((s) => (
+                    <div key={s.label} className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.04] transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                            <s.icon size={14} className={s.color} />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold text-white truncate">{s.value}</p>
+                            <p className="text-[10px] text-gray-500">{s.label}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function RecentClearancesPanel({ requests, onDraft }: { requests: LicenseRequest[]; onDraft: (r: LicenseRequest) => void }) {
+    const recent = requests.slice(0, 3);
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Recent Requests</h3>
+            {recent.length === 0 ? (
+                <p className="text-xs text-gray-600 px-1">No pending requests.</p>
+            ) : (
+                <div className="space-y-1">
+                    {recent.map((r) => (
+                        <button
+                            key={r.id}
+                            onClick={() => onDraft(r)}
+                            className="w-full flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
+                        >
+                            <div className="w-1.5 h-1.5 rounded-full bg-yellow-500 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-xs text-white truncate">{r.title}</p>
+                                <p className="text-[10px] text-gray-600">{r.usage}</p>
+                            </div>
+                        </button>
+                    ))}
                 </div>
-                <div className="text-xs font-bold text-indigo-400 tracking-widest uppercase">
-                    Security Level: High
-                </div>
-            </footer>
+            )}
+        </div>
+    );
+}
+
+function ActionButtonsPanel({ toast }: { toast: any }) {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Quick Actions</h3>
+            <div className="space-y-2">
+                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 transition-colors text-xs text-indigo-300 font-medium border border-indigo-500/10">
+                    <FileText size={12} /> Draft New Deal
+                </button>
+                <button className="w-full flex items-center gap-2 p-2.5 rounded-lg bg-white/[0.02] hover:bg-white/[0.06] transition-colors text-xs text-white font-medium">
+                    <Scale size={12} /> Review Agreements
+                </button>
+            </div>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Right Panel Widgets                                                 */
+/* ================================================================== */
+
+function DealFlowWidget() {
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Deal Pipeline</h3>
+            <DealFlowChart />
+        </div>
+    );
+}
+
+function LicensingTemplatesPanel() {
+    const templates = [
+        { label: 'Standard Sync License', icon: FileText, color: 'text-blue-400' },
+        { label: 'Master Use Agreement', icon: Briefcase, color: 'text-purple-400' },
+        { label: 'Mechanical License', icon: ShieldCheck, color: 'text-emerald-400' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Templates</h3>
+            <div className="space-y-1">
+                {templates.map((t) => (
+                    <button
+                        key={t.label}
+                        className="w-full flex items-center gap-2 py-2.5 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
+                    >
+                        <t.icon size={14} className={t.color} />
+                        <span className="text-xs text-gray-300">{t.label}</span>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function ComplianceChecklistPanel({ licenses }: { licenses: any[] }) {
+    const items = [
+        { label: 'All licenses documented', done: licenses.length > 0 },
+        { label: 'Rights verified', done: licenses.some(l => l.licenseType) },
+        { label: 'Agreements signed', done: licenses.some(l => l.agreementUrl) },
+        { label: 'Royalty splits confirmed', done: false },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Compliance</h3>
+            <div className="space-y-2">
+                {items.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2 px-2 py-1.5">
+                        <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center flex-shrink-0 ${
+                            item.done ? 'bg-emerald-500/20 border-emerald-500/40' : 'border-white/10'
+                        }`}>
+                            {item.done && <CheckCircle2 size={8} className="text-emerald-400" />}
+                        </div>
+                        <span className={`text-xs ${item.done ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }

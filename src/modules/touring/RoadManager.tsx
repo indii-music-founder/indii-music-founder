@@ -10,6 +10,7 @@ import { Itinerary } from './types';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { RoadManagerSidebar } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
+import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
 
 interface LogisticsReport {
     isFeasible: boolean;
@@ -203,13 +204,13 @@ const RoadManager: React.FC = () => {
     };
 
     return (
-        <div className="h-full flex bg-[#0f0f0f] text-white overflow-hidden">
-            {/* Sidebar */}
+        <div className="absolute inset-0 flex text-white">
+            {/* ── LEFT PANEL — Road Manager Sidebar ──────────────── */}
             <RoadManagerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            {/* Main Content Area */}
+            {/* ── CENTER — Main Content ──────────────────────────── */}
             <div className="flex-1 flex flex-col min-w-0 overflow-y-auto selection:bg-yellow-500/30">
-                <main className="flex-1 p-6 md:p-8 max-w-[1600px] mx-auto w-full">
+                <main className="flex-1 p-6 md:p-8 w-full">
                     <AnimatePresence mode="wait">
                         <motion.div
                             key={activeTab}
@@ -247,7 +248,7 @@ const RoadManager: React.FC = () => {
                                     handleFindGasStations={handleFindGasStations}
                                     isFindingPlaces={isFindingPlaces}
                                     nearbyPlaces={nearbyPlaces}
-                                    fuelStats={vehicleStats || { // Fallback
+                                    fuelStats={vehicleStats || {
                                         milesDriven: 0,
                                         fuelLevelPercent: 50,
                                         tankSizeGallons: 15,
@@ -272,8 +273,143 @@ const RoadManager: React.FC = () => {
                     </AnimatePresence>
                 </main>
             </div>
+
+            {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
+            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                <ItinerarySummaryPanel itinerary={itinerary} />
+                <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
+                <RiderQuickPanel />
+                <EmergencyContactsPanel />
+            </aside>
         </div>
     );
 };
+
+/* ================================================================== */
+/*  Right Panel Widgets                                                 */
+/* ================================================================== */
+
+function ItinerarySummaryPanel({ itinerary }: { itinerary: Itinerary | null }) {
+    if (!itinerary) {
+        return (
+            <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+                <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Itinerary</h3>
+                <p className="text-xs text-gray-600 px-1">No itinerary loaded. Create one in Planning.</p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Itinerary</h3>
+            <div className="space-y-2">
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
+                    <Calendar size={14} className="text-yellow-400 flex-shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold text-white">{itinerary.stops?.length || 0} Stops</p>
+                        <p className="text-[10px] text-gray-500">{itinerary.tourName || 'Unnamed Tour'}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
+                    <Navigation size={14} className="text-blue-400 flex-shrink-0" />
+                    <div>
+                        <p className="text-xs font-bold text-white">{itinerary.totalDistance || 'N/A'}</p>
+                        <p className="text-[10px] text-gray-500">Total Distance</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: any; fuelLogistics: any }) {
+    const fuelPct = vehicleStats?.fuelLevelPercent ?? 50;
+    const fuelColor = fuelPct > 50 ? 'text-green-400' : fuelPct > 20 ? 'text-yellow-400' : 'text-red-400';
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Vehicle Status</h3>
+            <div className="space-y-2">
+                <div className="p-3 rounded-lg bg-white/[0.02]">
+                    <div className="flex items-center justify-between mb-1">
+                        <span className="text-[10px] text-gray-500 font-bold">Fuel Level</span>
+                        <span className={`text-[10px] font-bold ${fuelColor}`}>{fuelPct}%</span>
+                    </div>
+                    <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div
+                            className={`h-full rounded-full transition-all ${fuelPct > 50 ? 'bg-green-500' : fuelPct > 20 ? 'bg-yellow-500' : 'bg-red-500'}`}
+                            style={{ width: `${fuelPct}%` }}
+                        />
+                    </div>
+                </div>
+                <div className="flex items-center gap-3 p-2.5 rounded-lg bg-white/[0.02]">
+                    <Fuel size={14} className="text-gray-400 flex-shrink-0" />
+                    <div>
+                        <p className="text-xs text-white">{vehicleStats?.milesDriven?.toLocaleString() || '0'} mi driven</p>
+                        <p className="text-[10px] text-gray-500">{vehicleStats?.mpg || 0} MPG</p>
+                    </div>
+                </div>
+                {fuelLogistics && (
+                    <div className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${
+                        fuelLogistics.status === 'CRITICAL' ? 'bg-red-500/10 border border-red-500/20 text-red-300' :
+                        fuelLogistics.status === 'LOW' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300' :
+                        'bg-green-500/10 border border-green-500/20 text-green-300'
+                    }`}>
+                        <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
+                        <span>Range: {fuelLogistics.currentRangeMiles} mi · ${fuelLogistics.costToFill} to fill</span>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function RiderQuickPanel() {
+    const items = [
+        { label: 'Sound Check', done: true },
+        { label: 'Backline Confirmed', done: true },
+        { label: 'Catering Ordered', done: false },
+        { label: 'Hotel Booked', done: false },
+    ];
+
+    return (
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+            <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Rider Checklist</h3>
+            <div className="space-y-1.5">
+                {items.map((item) => (
+                    <div key={item.label} className="flex items-center gap-2 px-2 py-1.5">
+                        <CheckSquare size={12} className={item.done ? 'text-green-400' : 'text-gray-600'} />
+                        <span className={`text-xs ${item.done ? 'text-gray-300 line-through' : 'text-gray-400'}`}>{item.label}</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function EmergencyContactsPanel() {
+    const contacts = [
+        { name: 'Tour Manager', phone: '(555) 123-4567' },
+        { name: 'Venue Contact', phone: '(555) 987-6543' },
+        { name: 'Roadside Assist', phone: '1-800-222-4357' },
+    ];
+
+    return (
+        <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
+            <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3 px-1">Emergency</h3>
+            <div className="space-y-2">
+                {contacts.map((c) => (
+                    <div key={c.name} className="flex items-center gap-2 px-2 py-1.5">
+                        <Phone size={10} className="text-red-400 flex-shrink-0" />
+                        <div>
+                            <p className="text-xs text-gray-300">{c.name}</p>
+                            <p className="text-[10px] text-gray-500">{c.phone}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export default RoadManager;

@@ -66,9 +66,9 @@ describe('LicensingDashboard', () => {
         });
 
         render(<LicensingDashboard />);
-        expect(screen.getByText('Licensing Department')).toBeInTheDocument();
-        expect(screen.getByText('Song A')).toBeInTheDocument();
-        expect(screen.getByText('Artist A')).toBeInTheDocument();
+        expect(screen.getByText('Licensing')).toBeInTheDocument();
+        expect(screen.getAllByText('Song A')[0]).toBeInTheDocument();
+        expect(screen.getAllByText('Artist A')[0]).toBeInTheDocument();
     });
 
     it('triggers draft action on button click', async () => {

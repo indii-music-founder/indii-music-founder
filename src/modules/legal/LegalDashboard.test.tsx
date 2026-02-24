@@ -14,11 +14,13 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: vi.fn().mockResolvedValue({
-            text: () => JSON.stringify({
-                score: 85,
-                summary: 'Test Summary',
-                risks: ['Risk 1', 'Risk 2']
-            })
+            response: {
+                text: () => JSON.stringify({
+                    score: 85,
+                    summary: 'Test Summary',
+                    risks: ['Risk 1', 'Risk 2']
+                })
+            }
         }),
         parseJSON: (text: string) => JSON.parse(text),
     },
@@ -57,7 +59,7 @@ vi.mock('@/core/config/ai-models', () => ({
 describe('LegalDashboard', () => {
     it('renders the dashboard title', () => {
         render(<LegalDashboard />);
-        expect(screen.getByText('Legal Dashboard')).toBeInTheDocument();
+        expect(screen.getByText('Legal')).toBeInTheDocument();
     });
 
     it('renders upload options', () => {
