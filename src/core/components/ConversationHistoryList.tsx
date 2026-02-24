@@ -138,7 +138,7 @@ const HistoryItem = memo(({
     );
 });
 
-export const ConversationHistoryList = ({ className }: { className?: string }) => {
+export const ConversationHistoryList = ({ className, onClose }: { className?: string; onClose?: () => void }) => {
     const sessions = useStore(state => state.sessions);
     const activeSessionId = useStore(state => state.activeSessionId);
     const setActiveSession = useStore(state => state.setActiveSession);
@@ -161,7 +161,7 @@ export const ConversationHistoryList = ({ className }: { className?: string }) =
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <h3 id="history-title" className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
                 <button
-                    onClick={() => setRightPanelView('messages')}
+                    onClick={() => onClose ? onClose() : setRightPanelView('messages')}
                     className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                     aria-label="Close history panel"
                 >
