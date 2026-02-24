@@ -4,7 +4,7 @@ import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
 
 // Mock the store
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useStore: {
         getState: vi.fn()
     }
@@ -12,12 +12,15 @@ vi.mock('@/core/store', () => ({
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
-    db: {}
+    serverTimestamp: vi.fn(),
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn(),
     getDocs: vi.fn(),

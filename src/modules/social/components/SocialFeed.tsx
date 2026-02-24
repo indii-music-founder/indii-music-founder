@@ -295,7 +295,12 @@ const FeedItem = React.memo(({ post }: { post: SocialPost }) => {
                     {/* Social Drop / Embedded Product */}
                     {embeddedProduct && (
                         <div className="mt-3">
-                            <ProductCard product={embeddedProduct} variant="embedded" />
+                            <ProductCard
+                                product={embeddedProduct}
+                                variant="embedded"
+                                source="social"
+                                sourceId={post.id}
+                            />
                         </div>
                     )}
 

@@ -6,7 +6,10 @@ import { ContractStatus } from '@/modules/legal/types';
 
 // Mock dependencies
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 vi.mock('firebase/firestore', () => ({

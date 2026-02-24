@@ -142,6 +142,7 @@ export interface UserProfile {
     careerStage?: string;
     artistType?: 'Solo' | 'Band' | 'Collective';
     goals?: string[];
+    currentOrganizationId?: string; // Cloud-synced active organization
 
     // Social & Commerce
     accountType: 'fan' | 'artist' | 'label' | 'admin';

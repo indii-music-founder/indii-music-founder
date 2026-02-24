@@ -4,7 +4,10 @@ import { getDocs, onSnapshot } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
-    db: {}
+    db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 vi.mock('firebase/firestore', async (importOriginal) => {

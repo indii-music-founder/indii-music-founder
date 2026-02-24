@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -243,10 +243,23 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 disabled={isProcessing}
             >
                 <PromptInputTextarea
-                    placeholder={isDragging ? "" : (isIndiiMode ? "Ask indii to orchestrate..." : `Message ${currentModule}...`)}
+                    placeholder={isDragging ? "" : (isIndiiMode ? "Launch a campaign, audit security, or ask anything..." : `Message ${currentModule}...`)}
                     aria-label={isIndiiMode ? "Ask indii" : `Message ${currentModule}`}
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                 />
+
+                {isIndiiMode && (
+                    <div className="absolute top-2 right-4 flex items-center gap-2">
+                        <motion.div
+                            initial={{ opacity: 0, x: 10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="bg-purple-500/20 border border-purple-500/30 rounded-full px-2 py-0.5 flex items-center gap-1.5 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
+                        >
+                            <Sparkles size={10} className="text-purple-400 animate-pulse" />
+                            <span className="text-[9px] font-bold text-purple-300 uppercase tracking-widest">Master Orchestrator</span>
+                        </motion.div>
+                    </div>
+                )}
 
                 <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 

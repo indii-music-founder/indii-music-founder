@@ -2,10 +2,10 @@ import { distributionService } from './DistributionService';
 import { DistributionSyncService } from './DistributionSyncService';
 import { DDEXReleaseRecord } from '@/services/metadata/types';
 import { SFTPConfig, DDEXMetadata } from '@/types/distribution';
+import { credentialService } from '@/services/security/CredentialService';
 
 export class MerlinService {
     private readonly MERLIN_SFTP_HOST = 'sftp.merlinnetwork.org';
-    private readonly MERLIN_SFTP_USER = process.env.VITE_MERLIN_SFTP_USER || 'mock_user';
     private readonly MERLIN_SFTP_PORT = 22;
 
     /**
@@ -21,11 +21,25 @@ export class MerlinService {
                 throw new Error(`Release not found: ${releaseId}`);
             }
 
-            // 2. Generate DDEX XML
+            // 2. Fetch Credentials
+            const creds = await credentialService.getCredentials('merlin');
+            if (!creds || !creds.username || !creds.password) {
+                throw new Error('Merlin SFTP credentials not found. Please configure them in Settings > Distribution.');
+            }
+
+            // 3. Generate DDEX XML
             const ddexXml = await this.generatePackage(release);
 
-            // 3. Transmit via SFTP (Fallback mode: No Aspera)
-            await this.transmitPackage(release, ddexXml);
+            // 4. Stage Release (Local FS)
+            // Staging ensures the package is physically ready on disk for the SFTP engine
+            if (window.electronAPI?.distribution?.stageRelease) {
+                await window.electronAPI.distribution.stageRelease(releaseId, [
+                    { type: 'metadata', data: ddexXml, name: 'release.xml' }
+                ]);
+            }
+
+            // 5. Transmit via SFTP
+            await this.transmitPackage(release, creds.username, creds.password);
 
             return { success: true, message: 'Delivered to Merlin via SFTP' };
         } catch (error) {
@@ -49,10 +63,10 @@ export class MerlinService {
             tracks: release.metadata.tracks?.map((t: any) => ({
                 isrc: t.isrc || '',
                 title: t.trackTitle || '',
-                duration: t.durationSeconds || 0, // Fallback to 0 if not yet computed in ExtendedGoldenMetadata
+                duration: t.durationSeconds || 0,
                 explicit: t.explicit || false,
-                filename: '', // File info handled separately by asset upload stage
-                file_hash: '',
+                filename: t.filename || '', // Map real filename
+                file_hash: t.fileHash || '',
                 genre: t.genre || release.metadata.genre || '',
                 label: t.labelName || release.metadata.labelName || ''
             })) || [],
@@ -70,14 +84,16 @@ export class MerlinService {
     /**
      * Transmits the package using the core DistributionService SFTP engine
      */
-    private async transmitPackage(release: DDEXReleaseRecord, xmlContent: string): Promise<void> {
+    private async transmitPackage(release: DDEXReleaseRecord, user: string, pass: string): Promise<void> {
         const config: SFTPConfig = {
             host: this.MERLIN_SFTP_HOST,
             port: this.MERLIN_SFTP_PORT,
-            user: this.MERLIN_SFTP_USER,
-            password: 'MOCK_PASSWORD_DO_NOT_USE', // In prod, this comes from secure vault/keytar
+            user: user,
+            password: pass,
             remotePath: `/incoming/${release.metadata.upc}/`,
-            localPath: '/tmp/release.xml' // Placeholder path, needs real file logic
+            // The stageRelease call in deliverRelease handles the physical placement.
+            // In the desktop app, stageRelease places files in a predictable staging directory.
+            localPath: `staged/${release.id}/release.xml`
         };
 
         const result = await distributionService.transmit(config);

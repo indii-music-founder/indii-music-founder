@@ -28,18 +28,13 @@ export class ERNService {
             const timestamp = new Date().toISOString();
 
             // 1. Auto-assign identifiers if missing
-            const currentYear = new Date().getFullYear() % 100;
-            const sequence = Math.floor(Math.random() * 90000) + 10000; // Simulated sequence for now
-
             if (!metadata.isrc) {
-                metadata.isrc = IdentifierService.generateISRC(currentYear, sequence);
+                metadata.isrc = await IdentifierService.nextISRC();
                 console.log(`[ERNService] Auto-assigned ISRC: ${metadata.isrc}`);
             }
 
             if (metadata.releaseType !== 'Single' && !metadata.upc) {
-                // Using a random 11-digit string for simulation as we don't have a UPC sequence store yet
-                const randomPayload = Math.random().toString().slice(2, 13).padStart(11, '0');
-                metadata.upc = IdentifierService.generateUPC(randomPayload);
+                metadata.upc = await IdentifierService.nextUPC();
                 console.log(`[ERNService] Auto-assigned UPC: ${metadata.upc}`);
             }
 

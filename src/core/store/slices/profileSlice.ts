@@ -45,10 +45,10 @@ const DEFAULT_BRAND_KIT: BrandKit = {
 };
 
 const DEFAULT_USER_PROFILE: UserProfile = {
-    id: 'guest',
-    uid: 'guest',
-    email: 'guest@indii.os',
-    displayName: 'Guest Artist',
+    id: 'pending',
+    uid: '',
+    email: '',
+    displayName: 'New Artist',
     photoURL: null,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
@@ -73,14 +73,15 @@ const DEFAULT_USER_PROFILE: UserProfile = {
 
 export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     currentOrganizationId: 'org-default',
-    organizations: [
-        { id: 'org-default', name: 'HQ', plan: 'enterprise', members: ['guest'] }
-    ],
+    organizations: [],
     userProfile: DEFAULT_USER_PROFILE,
     // Auth state delegated to AuthSlice
     setOrganization: (id) => {
-        localStorage.setItem('currentOrgId', id);
-        set({ currentOrganizationId: id });
+        set((state) => {
+            const newProfile = { ...state.userProfile, currentOrganizationId: id };
+            saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save org change:", err));
+            return { currentOrganizationId: id, userProfile: newProfile };
+        });
     },
     addOrganization: (org) => set((state) => ({ organizations: [...state.organizations, org] })),
     setUserProfile: (profile) => {
@@ -100,10 +101,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     loadUserProfile: async (uid: string) => {
         console.info('[Profile] Loading user profile for:', uid);
 
-        const storedOrgId = localStorage.getItem('currentOrgId');
-        if (storedOrgId) {
-            set({ currentOrganizationId: storedOrgId });
-        }
+        // localStorage.getItem('currentOrgId') removed - handled in organization sync below
 
         try {
             // Try to get from Firestore first (via Service/Repo) 
@@ -134,16 +132,20 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                     set({ organizations: userOrgs });
 
                     // Resolve Current Org ID
-                    const storedOrgId = localStorage.getItem('currentOrgId');
-                    const isValidStored = userOrgs.find(o => o.id === storedOrgId);
+                    // Resolve Current Org ID from Cloud Profile Preference
+                    const preferredOrgId = profile?.currentOrganizationId;
+                    const isValidPreferred = userOrgs.find(o => o.id === preferredOrgId);
 
-                    if (isValidStored) {
-                        set({ currentOrganizationId: isValidStored.id });
+                    if (isValidPreferred) {
+                        set({ currentOrganizationId: isValidPreferred.id });
                     } else {
-                        // Default to the first found org
+                        // Default to the first found org and sync back to cloud if possible
                         console.info('[Profile] Defaulting to first org:', userOrgs[0].id);
                         set({ currentOrganizationId: userOrgs[0].id });
-                        localStorage.setItem('currentOrgId', userOrgs[0].id);
+                        if (profile && !profile.currentOrganizationId) {
+                            const updatedProfile = { ...profile, currentOrganizationId: userOrgs[0].id };
+                            saveProfileToStorage(updatedProfile).catch(err => console.error("[ProfileSlice] Failed to sync default org:", err));
+                        }
                     }
                 }
             } catch (orgErr) {

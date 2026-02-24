@@ -29,6 +29,9 @@ const {
 
 vi.mock('@/services/firebase', () => ({
     db: {},
+    auth: {
+        currentUser: { uid: 'test-user', email: 'test@example.com' }
+    }
 }));
 
 vi.mock('firebase/firestore', () => ({

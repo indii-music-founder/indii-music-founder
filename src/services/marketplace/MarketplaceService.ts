@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
 import { paymentService } from '@/services/payment/PaymentService';
+import { revenueService } from '@/services/RevenueService';
 
 export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
@@ -111,7 +112,14 @@ export class MarketplaceService {
     /**
      * Process a purchase for a product.
      */
-    static async purchaseProduct(productId: string, buyerId: string, sellerId: string, amount: number): Promise<string> {
+    static async purchaseProduct(
+        productId: string,
+        buyerId: string,
+        sellerId: string,
+        amount: number,
+        source: string = 'direct',
+        sourceId?: string
+    ): Promise<string> {
         // 1. Validate Product Availability (Inventory)
         const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
         const productSnap = await getDoc(productRef);
@@ -157,6 +165,20 @@ export class MarketplaceService {
             };
 
             const purchaseRef = await addDoc(collection(db, this.PURCHASES_COLLECTION), purchaseData);
+
+            // 4. Record for Revenue Tracking
+            await revenueService.recordSale({
+                userId: sellerId,
+                productId,
+                productName: productData.title,
+                amount,
+                currency: 'USD',
+                source: source === 'social' ? 'social_drop' : source,
+                sourceId,
+                customerId: buyerId,
+                status: 'completed'
+            });
+
             return purchaseRef.id;
 
         } catch (error) {

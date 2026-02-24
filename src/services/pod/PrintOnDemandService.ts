@@ -459,6 +459,8 @@ class PrintfulProvider implements IPODProvider {
     }
 }
 
+import { agentZeroService } from '@/services/agent/AgentZeroService';
+
 // ============================================================================
 // Internal Provider (Fallback when no POD configured)
 // ============================================================================
@@ -609,10 +611,55 @@ class InternalProvider implements IPODProvider {
         return true;
     }
 
-    async generateMockup(_productId: string, _variantId: string, designUrl: string, _printArea?: string): Promise<string> {
-        // Return the design URL as-is for internal provider
-        // In production, you'd use the AI mockup generation
-        return designUrl;
+    async generateMockup(productId: string, variantId: string, designUrl: string, printArea = 'front'): Promise<string> {
+        try {
+            const product = await this.getProduct(productId);
+            const variant = product?.variants.find(v => v.id === variantId);
+            const color = variant?.color || 'black';
+            const type = product?.type || 'T-Shirt';
+
+            console.log(`[InternalPOD] Generating AI Mockup for ${type} (${color}) at ${printArea}`);
+
+            // 1. Convert Design URL to Base64 (if possible/needed) or pass as URL
+            // The agent tool IndiiImageEdit expects image_bytes. 
+            // We need to fetch the design first or pass the URL if the tool supports it.
+            // For now, we'll try to fetch it if it's a remote URL.
+
+            let imageBytes = '';
+            if (designUrl.startsWith('data:')) {
+                imageBytes = designUrl.split(',')[1];
+            } else {
+                try {
+                    const response = await fetch(designUrl);
+                    const blob = await response.blob();
+                    const buffer = await blob.arrayBuffer();
+                    imageBytes = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
+                } catch (e) {
+                    console.warn(`[InternalPOD] Failed to fetch design for base64 conversion, using fallback URL logic`, e);
+                    return designUrl; // Fallback
+                }
+            }
+
+            // 2. Call the AI Image Edit tool via Agent Zero
+            // We use 'remix' mode essentially to apply the design.
+            const prompt = `A cinematic studio mockup of a ${color} ${type}. The provided design is overlayed ${printArea === 'front' ? 'on the chest' : 'on the back'} with professional high-quality print texture. Hyper-realistic, 4k, retail presentation.`;
+
+            const result = await agentZeroService.callApi('/image_edit', {
+                prompt,
+                image: imageBytes,
+                // We don't use a mask here, just letting the model contextualize the "remix"
+                // with the prompt guidance.
+            });
+
+            if (result?.success && (result.url || result.data?.visual)) {
+                return result.url || result.data?.visual;
+            }
+
+            return designUrl; // Fallback
+        } catch (error) {
+            console.error('[InternalPOD] AI Mockup generation error:', error);
+            return designUrl; // Fallback
+        }
     }
 }
 

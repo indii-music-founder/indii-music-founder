@@ -12,8 +12,35 @@ export interface Organization {
 }
 
 class OrganizationServiceImpl extends FirestoreService<Organization> {
+    private useStore: any = null;
+
     constructor() {
         super('organizations');
+    }
+
+    /**
+     * Get the current active organization ID for the user.
+     * Synchronous access for filters and path generation.
+     */
+    getCurrentOrgId(): string | null {
+        // Attempt to get from store if initialized
+        try {
+            // Static reference to avoid circular deps if possible
+            if (!this.useStore) {
+                // We don't import at top level to avoid cycles during init
+                return null;
+            }
+            return this.useStore.getState().currentOrganizationId || 'personal';
+        } catch (e) {
+            return 'personal';
+        }
+    }
+
+    /**
+     * Set the store reference once initialized.
+     */
+    setStore(store: any) {
+        this.useStore = store;
     }
 
     async createOrganization(name: string, userId: string): Promise<string> {
@@ -75,12 +102,11 @@ class OrganizationServiceImpl extends FirestoreService<Organization> {
             throw new Error(`You are not a member of this organization`);
         }
 
-        localStorage.setItem('currentOrgId', orgId);
-        return orgId;
-    }
+        // Update the user's Firestore document
+        const userRef = doc(db, 'users', userId);
+        await updateDoc(userRef, { currentOrganizationId: orgId });
 
-    getCurrentOrgId(): string | null {
-        return localStorage.getItem('currentOrgId');
+        return orgId;
     }
 }
 

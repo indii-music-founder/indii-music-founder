@@ -30,19 +30,28 @@ export interface StoreState extends
     AudioIntelligenceSlice,
     SubscriptionSlice { }
 
-export const useStore = create<StoreState>()((...a) => ({
-    ...createAppSlice(...a),
-    ...createProfileSlice(...a),
-    ...createAgentSlice(...a),
-    ...createCreativeSlice(...a),
-    ...createWorkflowSlice(...a),
-    ...createAuthSlice(...a),
-    ...createFinanceSlice(...a),
-    ...createDistributionSlice(...a),
-    ...createFileSystemSlice(...a),
-    ...createAudioIntelligenceSlice(...a),
-    ...createSubscriptionSlice(...a),
-}));
+import { OrganizationService } from '@/services/OrganizationService';
+
+export const useStore = create<StoreState>()((...a) => {
+    const store = {
+        ...createAppSlice(...a),
+        ...createProfileSlice(...a),
+        ...createAgentSlice(...a),
+        ...createCreativeSlice(...a),
+        ...createWorkflowSlice(...a),
+        ...createAuthSlice(...a),
+        ...createFinanceSlice(...a),
+        ...createDistributionSlice(...a),
+        ...createFileSystemSlice(...a),
+        ...createAudioIntelligenceSlice(...a),
+        ...createSubscriptionSlice(...a),
+    };
+
+    // Phase 3.6: Bridge store state to OrganizationService for synchronous access
+    OrganizationService.setStore({ getState: () => store });
+
+    return store;
+});
 
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {

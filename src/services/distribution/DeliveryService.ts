@@ -305,12 +305,16 @@ export class DeliveryService {
 
                 console.info(`[DeliveryService] Connecting to SFTP host: ${credentials.host}...`);
 
+                if (!credentials.password && !credentials.apiSecret) {
+                    throw new Error(`Authentication missing for ${distributorId}. Password or Private Key required.`);
+                }
+
                 await this.transporter.connect({
                     host: credentials.host,
                     port: typeof credentials.port === 'string' ? parseInt(credentials.port, 10) : (credentials.port || 22),
                     username: credentials.username,
                     password: credentials.password,
-                    privateKey: credentials.apiSecret // Assuming key might be stored here for some
+                    privateKey: credentials.apiSecret
                 });
 
                 // Determine remote path (usually distributor defines an inbox)
@@ -330,13 +334,7 @@ export class DeliveryService {
                     timestamp: new Date().toISOString()
                 };
             } else {
-                console.warn('[DeliveryService] SFTP operations are disabled in the browser environment. Use backend functions.');
-                return {
-                    success: true,
-                    message: 'Delivery successful (Mock - Browser)',
-                    deliveredFiles: ['mock-file.xml'],
-                    timestamp: new Date().toISOString(),
-                };
+                throw new Error('SFTP delivery is only supported in the Electron desktop environment. Please use the desktop app to distribute releases.');
             }
         } catch (error) {
             console.error('[DeliveryService] Delivery failed:', error);

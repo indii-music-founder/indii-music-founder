@@ -15,8 +15,6 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
-// ISRC Registry counter (in production, this would be in Firestore)
-let isrcSequence = Math.floor(Math.random() * 90000) + 10000;
 
 /**
  * Prepare a release for distribution by generating DDEX ERN 4.3 XML.
@@ -63,7 +61,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                 message: `Industrial DDEX ERN 4.3 generated via Python Engine.`
             };
         } catch (e) {
-            console.warn('Industrial DDEX generation failed, falling back to JS Service:', e);
+            console.warn('[DistributionTools] Industrial DDEX generation failed, falling back to JS Service:', e);
         }
     }
 
@@ -202,14 +200,13 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
                 registry: 'Local'
             };
         } catch (e) {
-            console.warn('Authority Layer ISRC generation failed, falling back to JS:', e);
+            console.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
         }
     }
 
     // 2. Fallback to JS Service
     try {
-        const sequence = ++isrcSequence;
-        const isrc = IdentifierService.generateISRC(year % 100, sequence, 'US', 'IND');
+        const isrc = await IdentifierService.nextISRC('US', 'IND');
 
         const userId = auth.currentUser?.uid;
         if (userId) {
@@ -268,7 +265,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
                 };
             }
         } catch (e) {
-            console.warn('Bank Layer certification failed, falling back to JS:', e);
+            console.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
         }
     }
 
@@ -360,7 +357,7 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
                 message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
             };
         } catch (e) {
-            console.warn('Bank Layer waterfall failed, falling back to JS:', e);
+            console.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);
         }
     }
 
@@ -407,7 +404,7 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
                 };
             }
         } catch (e) {
-            console.warn('Brain Layer QC failed, falling back to JS:', e);
+            console.warn('[DistributionTools] Brain Layer QC failed, falling back to JS:', e);
         }
     }
 
@@ -482,7 +479,7 @@ const generate_bwarm = wrapTool('generate_bwarm', async (args: {
                 engine: 'Keys Layer (Python)'
             };
         } catch (e) {
-            console.warn('Keys Layer BWARM generation failed:', e);
+            console.warn('[DistributionTools] Keys Layer BWARM generation failed:', e);
             throw e;
         }
     }
@@ -515,7 +512,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
             throw new Error("No report returned");
 
         } catch (e) {
-            console.warn('Keys Layer Merlin check failed:', e);
+            console.warn('[DistributionTools] Keys Layer Merlin check failed:', e);
             throw e;
         }
     }

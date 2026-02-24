@@ -61,7 +61,7 @@ Key Terms: ${args.terms}`;
                 title
             }, `Contract draft generated and saved to Legal Dashboard (ID: ${contractId})`);
         } catch (persistError) {
-            console.warn('Failed to persist contract:', persistError);
+            console.warn('[LegalTools] Failed to persist contract:', persistError);
             return toolSuccess({
                 content
             }, "Contract generated but failed to save to dashboard (Persistence Error).");
