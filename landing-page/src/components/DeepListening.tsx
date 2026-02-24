@@ -78,13 +78,13 @@ function BackgroundParticles() {
 
     const particles = useMemo(() => {
         return new Array(count).fill(0).map(() => ({
-            // eslint-disable-next-line react-hooks/purity
+             
             position: [
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 20,
                 (Math.random() - 0.5) * 40
             ] as [number, number, number],
-            // eslint-disable-next-line react-hooks/purity
+             
             scale: Math.random() * 0.5 + 0.1
         }));
     }, []);

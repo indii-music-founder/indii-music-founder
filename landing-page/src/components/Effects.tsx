@@ -7,7 +7,7 @@ import { useRef } from 'react';
 import * as THREE from 'three';
 
 function ReactiveBloom() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const ref = useRef<any>(null);
 
     useFrame(() => {
@@ -31,7 +31,7 @@ function ReactiveBloom() {
 }
 
 function ReactiveGlitch() {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+     
     const ref = useRef<any>(null);
 
     useFrame(() => {
