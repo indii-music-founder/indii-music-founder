@@ -7,18 +7,21 @@ import { type ValidAgentId } from '../types';
 
 // Mock dependencies
 vi.mock('../AgentService', () => ({
+  serverTimestamp: vi.fn(),
     agentService: {
         runAgent: vi.fn().mockResolvedValue({ role: 'model', text: 'Task executing', timestamp: Date.now() })
     }
 }));
 
 vi.mock('../registry', () => ({
+  serverTimestamp: vi.fn(),
     agentRegistry: {
         getAsync: vi.fn()
     }
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     auth: {
         currentUser: { uid: 'test-user-123' }
@@ -28,6 +31,7 @@ vi.mock('@/services/firebase', () => ({
 const mockGetDocs = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     addDoc: vi.fn().mockResolvedValue({ id: 'mock-doc-id' }),
     query: vi.fn(),
@@ -63,6 +67,7 @@ describe('ProactiveService', () => {
                 {
                     id: 'task-1',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         agentId: 'marketing',
                         task: 'Follow up',
                         triggerType: 'schedule',
@@ -78,6 +83,7 @@ describe('ProactiveService', () => {
         (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
             if (agentId === 'marketing') {
                 return {
+    serverTimestamp: vi.fn(),
                     id: 'marketing',
                     name: 'Marketing Agent',
                     description: 'Agent for marketing tasks',
@@ -107,6 +113,7 @@ describe('ProactiveService', () => {
                 {
                     id: 'sub-1',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         agentId: 'researcher',
                         task: 'Analyze result',
                         triggerType: 'event',
@@ -122,6 +129,7 @@ describe('ProactiveService', () => {
         (agentRegistry.getAsync as any).mockImplementation(async (agentId: string) => {
             if (agentId === 'researcher') {
                 return {
+    serverTimestamp: vi.fn(),
                     id: 'researcher',
                     name: 'Researcher Agent',
                     description: 'Can analyze results',

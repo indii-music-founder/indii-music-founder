@@ -7,6 +7,7 @@ const {
     mockGenerateContentStream
 } = vi.hoisted(() => {
     return {
+    serverTimestamp: vi.fn(),
         mockGenerateContent: vi.fn(),
         mockGenerateContentStream: vi.fn()
     };
@@ -14,16 +15,20 @@ const {
 
 // Mock Firebase Modules
 vi.mock('firebase/remote-config', () => ({
+  serverTimestamp: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
-    getValue: vi.fn(() => ({ asString: () => '' }))
+    getValue: vi.fn(() => ({
+  serverTimestamp: vi.fn(), asString: () => '' }))
 }));
 
 vi.mock('firebase/functions', () => ({
+  serverTimestamp: vi.fn(),
     getFunctions: vi.fn(),
     httpsCallable: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn()
@@ -37,29 +42,36 @@ vi.mock('firebase/ai', () => {
     };
 
     return {
+    serverTimestamp: vi.fn(),
         getGenerativeModel: vi.fn(() => mockModel),
         getLiveGenerativeModel: vi.fn(),
-        getFirebaseAI: vi.fn(() => ({})),
+        getFirebaseAI: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     };
 });
 
 // Mock the core firebase service
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     app: {},
     remoteConfig: {},
     ai: {},
-    getFirebaseAI: () => ({}),
+    getFirebaseAI: () => ({
+  serverTimestamp: vi.fn(),}),
     functions: {},
     db: {},
     auth: { currentUser: { uid: 'test-user-id' } }
 }));
 
 // Mock other dependencies
-vi.mock('@google/genai', () => ({ GoogleGenAI: class {} }));
+vi.mock('@google/genai', () => ({
+  serverTimestamp: vi.fn(), GoogleGenAI: class {} }));
 vi.mock('@/config/env', () => ({
+  serverTimestamp: vi.fn(),
     env: { VITE_API_KEY: 'mock-key', appCheckKey: 'mock-key' }
 }));
 vi.mock('./billing/TokenUsageService', () => ({
+  serverTimestamp: vi.fn(),
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(true),
@@ -67,6 +79,7 @@ vi.mock('./billing/TokenUsageService', () => ({
     }
 }));
 vi.mock('./context/CachedContextService', () => ({
+  serverTimestamp: vi.fn(),
     CachedContextService: {
         shouldCache: vi.fn().mockReturnValue(false),
         generateHash: vi.fn(),
@@ -74,6 +87,7 @@ vi.mock('./context/CachedContextService', () => ({
     }
 }));
 vi.mock('./AIResponseCache', () => ({
+  serverTimestamp: vi.fn(),
     aiCache: { get: vi.fn(), set: vi.fn() }
 }));
 

@@ -7,6 +7,7 @@ import { setDoc } from 'firebase/firestore';
 
 // Mock dependencies
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
   auth: {
     currentUser: null,
   },
@@ -15,16 +16,19 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
   doc: vi.fn(),
   setDoc: vi.fn(),
 }));
 
 vi.mock('firebase/storage', () => ({
+  serverTimestamp: vi.fn(),
   ref: vi.fn(),
   uploadBytes: vi.fn(),
 }));
 
 vi.mock('./repository', () => ({
+  serverTimestamp: vi.fn(),
   initDB: vi.fn(),
 }));
 
@@ -103,7 +107,8 @@ describe('StorageMigrationService', () => {
       objectStore: vi.fn().mockImplementation((storeName) => {
         if (storeName === 'assets') return mockAssetStore;
         if (storeName === 'workflows') return mockWorkflowStore;
-        return { openCursor: vi.fn() };
+        return {
+    serverTimestamp: vi.fn(), openCursor: vi.fn() };
       }),
     };
 

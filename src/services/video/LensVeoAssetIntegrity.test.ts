@@ -10,11 +10,13 @@ global.fetch = fetchMock;
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'lens-integrity-user' } },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens-integrity' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens-integrity' }))
     },
     subscriptionService: {
         canPerformAction: vi.fn()
@@ -24,12 +26,14 @@ const mocks = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
@@ -38,6 +42,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
     db: {},
@@ -46,20 +51,24 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('../ai/FirebaseAIService', () => ({
+  serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: vi.fn(),
     }
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('uuid', () => ({
+  serverTimestamp: vi.fn(),
     v4: () => 'job-integrity-123'
 }));
 
@@ -90,6 +99,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
                     exists: () => true,
                     id: 'job-refresh-1',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://storage.googleapis.com/veo/video-expiring-soon.mp4',
@@ -105,6 +115,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
                     exists: () => true,
                     id: 'job-refresh-1',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://storage.googleapis.com/veo/video-refreshed.mp4',
@@ -150,6 +161,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
                     exists: () => true,
                     id: 'job-massive',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://veo.google.com/video.mp4',
@@ -184,6 +196,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
                     exists: () => true,
                     id: 'job-ghost',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://veo.google.com/ghost.mp4',
@@ -212,6 +225,7 @@ describe('Lens 🎥 - Veo Asset Integrity & URL Refresh', () => {
                     exists: () => true,
                     id: 'job-good',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://veo.google.com/good.mp4',

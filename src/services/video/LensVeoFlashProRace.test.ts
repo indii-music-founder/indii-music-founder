@@ -7,11 +7,13 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Hoisted mocks
 const mocks = vi.hoisted(() => ({
+  serverTimestamp: vi.fn(),
     onSnapshot: vi.fn(),
     doc: vi.fn(),
     auth: { currentUser: { uid: 'test-user-lens' } },
     useStore: {
-        getState: vi.fn(() => ({ currentOrganizationId: 'org-lens' }))
+        getState: vi.fn(() => ({
+  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
     },
     subscriptionService: {
         canPerformAction: vi.fn()
@@ -20,12 +22,14 @@ const mocks = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     doc: mocks.doc,
     onSnapshot: mocks.onSnapshot,
     getFirestore: vi.fn()
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
@@ -34,6 +38,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('../firebase', () => ({
+  serverTimestamp: vi.fn(),
     functions: {},
     functionsWest1: {},
     db: {},
@@ -42,14 +47,17 @@ vi.mock('../firebase', () => ({
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
+  serverTimestamp: vi.fn(),
     subscriptionService: mocks.subscriptionService
 }));
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
 vi.mock('uuid', () => ({
+  serverTimestamp: vi.fn(),
     v4: () => 'lens-veo-job-id'
 }));
 
@@ -94,6 +102,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: flashJobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-flash.mp4',
@@ -113,6 +122,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: proJobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-pro.mp4',
@@ -148,6 +158,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: jobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-pro.mp4',
@@ -177,6 +188,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: jobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-flash.mp4',
@@ -206,6 +218,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: jobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-flash.mp4',
@@ -235,6 +248,7 @@ describe('Lens 🎥 - Veo Flash vs Pro Race Condition', () => {
             exists: () => true,
             id: jobId,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 status: 'completed',
                 output: {
                     url: 'http://veo-pro.mp4',

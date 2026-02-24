@@ -58,7 +58,6 @@ export interface AgentSlice {
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
-    sessionsListenerUnsubscribe: (() => void) | null;
 
     // Dual-Chat Channel: 'indii' for orchestrator, 'agent' for specialists
     chatChannel: 'indii' | 'agent';
@@ -118,7 +117,6 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentHistory: [],
     sessions: {},
     activeSessionId: null,
-    sessionsListenerUnsubscribe: null,
     availableAgents: [],
     isLoadingAgents: false,
     agentsError: null,
@@ -353,10 +351,6 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     loadSessions: async () => {
         const { sessionService } = await import('@/services/agent/SessionService');
 
-        // Clean up existing listener if any
-        const currentUnsubscribe = get().sessionsListenerUnsubscribe;
-        if (currentUnsubscribe) currentUnsubscribe();
-
         try {
             const unsubscribe = sessionService.subscribeToSessions((sessions) => {
                 const sessionMap: Record<string, ConversationSession> = {};
@@ -388,7 +382,9 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
                 console.error('[AgentSlice] Sessions subscription error:', error);
             });
 
-            set({ sessionsListenerUnsubscribe: unsubscribe });
+            import('@/core/store').then(({ useStore }) => {
+                useStore.getState().registerSubscription('agent_sessions', unsubscribe);
+            });
         } catch (error) {
             console.error('[AgentSlice] Failed to initialize sessions subscription:', error);
         }

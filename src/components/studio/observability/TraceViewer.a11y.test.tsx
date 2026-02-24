@@ -30,6 +30,7 @@ const mockOnSnapshot = vi.fn((query, callback) => {
 });
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     orderBy: vi.fn(),
@@ -38,14 +39,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 
 vi.mock('./SwarmGraph', () => ({
+  serverTimestamp: vi.fn(),
     SwarmGraph: () => <div data-testid="swarm-graph-mock">Swarm Graph</div>
 }));
 
 vi.mock('./XRayPanel', () => ({
+  serverTimestamp: vi.fn(),
     XRayPanel: ({ trace }: { trace?: AgentTrace | null }) => (
         <div data-testid="xray-panel-mock">
             {trace ? `X-Ray Trace: ${trace.id}` : 'X-Ray Panel'}

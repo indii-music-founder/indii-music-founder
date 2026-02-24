@@ -35,27 +35,27 @@ describe('QuickActions', () => {
     it('renders all quick action buttons', () => {
         render(<QuickActions />);
 
-        expect(screen.getByText('Creative Studio')).toBeInTheDocument();
-        expect(screen.getByText('Video Production')).toBeInTheDocument();
+        expect(screen.getByText('Creative')).toBeInTheDocument();
+        expect(screen.getByText('Video')).toBeInTheDocument();
         expect(screen.getByText('Marketing')).toBeInTheDocument();
         expect(screen.getByText('Publishing')).toBeInTheDocument();
-        expect(screen.getByText('Workflow Lab')).toBeInTheDocument();
+        expect(screen.getByText('Workflow')).toBeInTheDocument();
     });
 
     it('calls setModule when a button is clicked', () => {
         render(<QuickActions />);
 
-        fireEvent.click(screen.getByText('Creative Studio'));
+        fireEvent.click(screen.getByText('Creative'));
         expect(mockSetModule).toHaveBeenCalledWith('creative');
 
-        fireEvent.click(screen.getByText('Video Production'));
+        fireEvent.click(screen.getByText('Video'));
         expect(mockSetModule).toHaveBeenCalledWith('video');
     });
 
     it('wraps buttons in tooltip triggers', () => {
         render(<QuickActions />);
 
-        const button = screen.getByText('Creative Studio').closest('button');
+        const button = screen.getByText('Creative').closest('button');
         // Radix UI TooltipTrigger adds data-state="closed" to the trigger element initially
         expect(button).toHaveAttribute('data-state', 'closed');
     });
@@ -64,7 +64,7 @@ describe('QuickActions', () => {
         const user = userEvent.setup();
         render(<QuickActions />);
 
-        const button = screen.getByText('Creative Studio').closest('button');
+        const button = screen.getByText('Creative').closest('button');
 
         // Trigger hover
         await user.hover(button!);

@@ -5,6 +5,7 @@ import { onSnapshot } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     where: vi.fn(),
@@ -13,6 +14,7 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 
@@ -54,7 +56,8 @@ describe('useReleases', () => {
             docs: [
                 {
                     id: 'doc-1',
-                    data: () => ({ metadata: { trackTitle: 'Song 1' } }),
+                    data: () => ({
+  serverTimestamp: vi.fn(), metadata: { trackTitle: 'Song 1' } }),
                     metadata: { hasPendingWrites: false, fromCache: false }
                 }
             ]

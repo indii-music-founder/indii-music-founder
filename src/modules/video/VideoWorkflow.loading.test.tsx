@@ -15,7 +15,9 @@ const mockSetJobStatus = vi.fn();
 const mockSetProgress = vi.fn();
 
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         generatedHistory: [],
         selectedItem: null,
         pendingPrompt: null,
@@ -32,8 +34,10 @@ vi.mock('@/core/store', () => ({
 // Mock Video Editor Store
 vi.mock('./store/videoEditorStore', () => {
     const fn = vi.fn() as Mock & { getState: Mock };
-    fn.getState = vi.fn(() => ({ status: 'idle', setProgress: mockSetProgress }));
-    return { useVideoEditorStore: fn };
+    fn.getState = vi.fn(() => ({
+  serverTimestamp: vi.fn(), status: 'idle', setProgress: mockSetProgress }));
+    return {
+    serverTimestamp: vi.fn(), useVideoEditorStore: fn };
 });
 
 // Mock Toast
@@ -41,7 +45,9 @@ const mockToastError = vi.fn();
 const mockToastSuccess = vi.fn();
 
 vi.mock('@/core/context/ToastContext', () => ({
+  serverTimestamp: vi.fn(),
     useToast: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
         success: mockToastSuccess,
         error: mockToastError,
         info: vi.fn(),
@@ -50,11 +56,13 @@ vi.mock('@/core/context/ToastContext', () => ({
 }));
 
 // Mock dependencies to prevent crash
-vi.mock('../../utils/video', () => ({ extractVideoFrame: vi.fn() }));
+vi.mock('../../utils/video', () => ({
+  serverTimestamp: vi.fn(), extractVideoFrame: vi.fn() }));
 
 // Mock VideoGenerationService
 let subscribeCallback: ((data: unknown) => void) | null = null;
 vi.mock('@/services/video/VideoGenerationService', () => ({
+  serverTimestamp: vi.fn(),
     VideoGeneration: {
         generateVideo: vi.fn(),
         subscribeToJob: vi.fn((id, cb) => {
@@ -66,12 +74,14 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     onSnapshot: vi.fn(),
     collection: vi.fn(),
 }));
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     remoteConfig: { defaultConfig: {} },
     functions: {},

@@ -7,6 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock @/services/firebase to prevent real Firebase initialization
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
         onAuthStateChanged: vi.fn(() => () => { })
@@ -18,18 +19,24 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock Firebase Modules
 vi.mock('firebase/app', () => ({
-    initializeApp: vi.fn(() => ({})),
-    getApp: vi.fn(() => ({})),
+  serverTimestamp: vi.fn(),
+    initializeApp: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
+    getApp: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     getApps: vi.fn(() => [])
 }));
 
 vi.mock('firebase/auth', async (importOriginal) => {
     return {
+    serverTimestamp: vi.fn(),
         getAuth: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
             currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
             onAuthStateChanged: vi.fn(() => () => { })
         })),
         initializeAuth: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
             currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
             onAuthStateChanged: vi.fn(() => () => { })
         })),
@@ -42,13 +49,17 @@ vi.mock('firebase/auth', async (importOriginal) => {
 
 vi.mock('firebase/firestore', async (importOriginal) => {
     return {
+    serverTimestamp: vi.fn(),
         Timestamp: {
-            now: () => ({ toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
+            now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => Date.now(), seconds: Math.floor(Date.now() / 1000), nanoseconds: 0 }),
             fromDate: (date: Date) => ({ toMillis: () => date.getTime(), seconds: Math.floor(date.getTime() / 1000), nanoseconds: 0 }),
             fromMillis: (ms: number) => ({ toMillis: () => ms, seconds: Math.floor(ms / 1000), nanoseconds: 0 })
         },
-        getFirestore: vi.fn(() => ({})),
-        initializeFirestore: vi.fn(() => ({})),
+        getFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
+        initializeFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
         doc: vi.fn(),
@@ -56,7 +67,8 @@ vi.mock('firebase/firestore', async (importOriginal) => {
         getDoc: vi.fn(),
         collection: vi.fn(),
         onSnapshot: vi.fn(),
-        writeBatch: vi.fn(() => ({ commit: vi.fn() })),
+        writeBatch: vi.fn(() => ({
+  serverTimestamp: vi.fn(), commit: vi.fn() })),
         addDoc: vi.fn(),
         updateDoc: vi.fn(),
         deleteDoc: vi.fn(),
@@ -69,33 +81,43 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 });
 
 vi.mock('firebase/storage', () => ({
-    getStorage: vi.fn(() => ({}))
+  serverTimestamp: vi.fn(),
+    getStorage: vi.fn(() => ({
+  serverTimestamp: vi.fn(),}))
 }));
 
 vi.mock('firebase/functions', () => ({
-    getFunctions: vi.fn(() => ({})),
+  serverTimestamp: vi.fn(),
+    getFunctions: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
     connectFunctionsEmulator: vi.fn(),
     httpsCallable: vi.fn()
 }));
 
 vi.mock('firebase/app-check', () => ({
+  serverTimestamp: vi.fn(),
     initializeAppCheck: vi.fn(),
     ReCaptchaEnterpriseProvider: vi.fn()
 }));
 
 vi.mock('firebase/remote-config', () => ({
-    getRemoteConfig: vi.fn(() => ({}))
+  serverTimestamp: vi.fn(),
+    getRemoteConfig: vi.fn(() => ({
+  serverTimestamp: vi.fn(),}))
 }));
 
 vi.mock('firebase/ai', () => ({
+  serverTimestamp: vi.fn(),
     getAI: vi.fn(),
     VertexAIBackend: vi.fn()
 }));
 
 // Mock store to prevent window.location access during initialization
 vi.mock('@/core/store', () => ({
+  serverTimestamp: vi.fn(),
     useStore: {
         getState: () => ({
+  serverTimestamp: vi.fn(),
             currentOrganizationId: 'keeper-org',
             uploadedImages: [],
             currentModule: 'dashboard'
@@ -105,6 +127,7 @@ vi.mock('@/core/store', () => ({
 
 // Mock OrganizationService
 vi.mock('@/services/OrganizationService', () => ({
+  serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: vi.fn(() => 'keeper-org')
     }
@@ -112,6 +135,7 @@ vi.mock('@/services/OrganizationService', () => ({
 
 // Mock MembershipService (Budget Checks)
 vi.mock('@/services/MembershipService', () => ({
+  serverTimestamp: vi.fn(),
     MembershipService: {
         checkBudget: vi.fn().mockResolvedValue({ allowed: true }),
         trackUsage: vi.fn().mockResolvedValue(true),
@@ -129,9 +153,11 @@ const mockGenerateContent = vi.fn().mockResolvedValue({
 });
 
 vi.mock('@/services/ai/GenAI', () => ({
+  serverTimestamp: vi.fn(),
     GenAI: {
         generateContent: (...args: any[]) => mockGenerateContent(...args),
         getGenerativeModel: () => ({
+  serverTimestamp: vi.fn(),
             generateContent: mockGenerateContent
         }),
         generateSpeech: vi.fn() // Needed because BaseAgent uses it in 'speak' tool

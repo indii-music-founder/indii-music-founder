@@ -4,6 +4,7 @@ import { getDocs, orderBy } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('./firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     auth: {}
 }));
@@ -17,6 +18,7 @@ const mockOrderBy = vi.fn();
 const mockAddDoc = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: (...args: unknown[]) => mockCollection(...args),
     addDoc: (...args: unknown[]) => mockAddDoc(...args),
     getDocs: (...args: unknown[]) => mockGetDocs(...args),
@@ -29,6 +31,7 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock OrganizationService
 vi.mock('./OrganizationService', () => ({
+  serverTimestamp: vi.fn(),
     OrganizationService: {
         getCurrentOrgId: () => 'org-123'
     }
@@ -45,11 +48,13 @@ describe('ProjectService', () => {
             docs: [
                 {
                     id: '1',
-                    data: () => ({ name: 'Project 1', date: 1000, orgId: 'org-123' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), name: 'Project 1', date: 1000, orgId: 'org-123' })
                 },
                 {
                     id: '2',
-                    data: () => ({ name: 'Project 2', date: 2000, orgId: 'org-123' })
+                    data: () => ({
+  serverTimestamp: vi.fn(), name: 'Project 2', date: 2000, orgId: 'org-123' })
                 }
             ]
         });

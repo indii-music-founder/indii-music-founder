@@ -6,6 +6,7 @@ import { deleteDoc, doc, writeBatch } from 'firebase/firestore';
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => {
     return {
+    serverTimestamp: vi.fn(),
         getFirestore: vi.fn(),
         collection: vi.fn(),
         doc: vi.fn(),
@@ -20,20 +21,24 @@ vi.mock('firebase/firestore', () => {
         setDoc: vi.fn(),
         onSnapshot: vi.fn(),
         writeBatch: vi.fn(() => ({
+  serverTimestamp: vi.fn(),
             delete: vi.fn(),
             commit: vi.fn()
         })),
-        initializeFirestore: vi.fn(() => ({})),
+        initializeFirestore: vi.fn(() => ({
+  serverTimestamp: vi.fn(),})),
         persistentLocalCache: vi.fn(),
         persistentMultipleTabManager: vi.fn(),
         Timestamp: {
-            now: () => ({ toMillis: () => 1000 })
+            now: () => ({
+  serverTimestamp: vi.fn(), toMillis: () => 1000 })
         }
     };
 });
 
 // Mock dependencies
 vi.mock('./firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {}
 }));
 

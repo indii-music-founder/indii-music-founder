@@ -35,9 +35,9 @@ vi.mock('../core/store', () => {
 
     const useStoreMock = vi.fn(() => mockState);
 
-     
+
     (useStoreMock as any).setState = vi.fn();
-     
+
     (useStoreMock as any).getState = vi.fn(() => mockState);
 
     return {
@@ -52,7 +52,7 @@ vi.mock('../modules/dashboard/Dashboard', () => ({
 
 // Mock ErrorBoundary to just render children so errors bubble up
 vi.mock('../core/components/ErrorBoundary', () => ({
-     
+
     ErrorBoundary: ({ children }: any) => <>{children}</>
 }));
 
@@ -61,7 +61,7 @@ vi.mock('../core/components/Sidebar', () => ({ default: () => <div>Sidebar</div>
 vi.mock('../core/components/RightPanel', () => ({ default: () => <div>RightPanel</div> }));
 vi.mock('../core/components/CommandBar', () => ({ default: () => <div>CommandBar</div> }));
 vi.mock('../core/components/MobileNav', () => ({ MobileNav: () => <div>MobileNav</div> }));
-vi.mock('../core/components/ChatOverlay', () => ({ default: () => <div>ChatOverlay</div> }));
+
 
 describe('Router Context Verification', () => {
     it('renders App inside BrowserRouter without crashing', async () => {

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 
 // Mock Firebase modules before importing CleanupService
 vi.mock('./firebase', () => ({
+  serverTimestamp: vi.fn(),
     db: {},
     storage: {}
 }));
@@ -13,6 +14,7 @@ const mockDoc = vi.fn();
 const mockCollection = vi.fn();
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: (...args: unknown[]) => mockCollection(...args),
     getDocs: (...args: unknown[]) => mockGetDocs(...args),
     deleteDoc: (...args: unknown[]) => mockDeleteDoc(...args),
@@ -27,6 +29,7 @@ const mockDeleteObject = vi.fn();
 const mockRef = vi.fn();
 
 vi.mock('firebase/storage', () => ({
+  serverTimestamp: vi.fn(),
     ref: (...args: unknown[]) => mockRef(...args),
     listAll: (...args: unknown[]) => mockListAll(...args),
     deleteObject: (...args: unknown[]) => mockDeleteObject(...args)
@@ -34,10 +37,12 @@ vi.mock('firebase/storage', () => ({
 
 // Mock dependent services
 vi.mock('./ProjectService', () => ({
+  serverTimestamp: vi.fn(),
     ProjectService: {}
 }));
 
 vi.mock('./OrganizationService', () => ({
+  serverTimestamp: vi.fn(),
     OrganizationService: {}
 }));
 
@@ -70,15 +75,18 @@ describe('CleanupService', () => {
         it('identifies orphaned history items with missing projects', async () => {
             // Create mock data
             const projectDocs = [
-                { id: 'project-1', data: () => ({ orgId: 'org-1' }) }
+                { id: 'project-1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1' }) }
             ];
             const orgDocs = [
-                { id: 'org-1', data: () => ({ name: 'Org 1' }) }
+                { id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(), name: 'Org 1' }) }
             ];
             const historyDocs = [
                 {
                     id: 'history-1',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         projectId: 'project-1', // Valid
                         orgId: 'org-1',
                         type: 'image',
@@ -88,6 +96,7 @@ describe('CleanupService', () => {
                 {
                     id: 'history-2',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         projectId: 'deleted-project', // Orphaned
                         orgId: 'org-1',
                         type: 'video',
@@ -115,15 +124,18 @@ describe('CleanupService', () => {
 
         it('identifies orphaned history items with missing organizations', async () => {
             const projectDocs = [
-                { id: 'project-1', data: () => ({ orgId: 'org-1' }) }
+                { id: 'project-1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1' }) }
             ];
             const orgDocs = [
-                { id: 'org-1', data: () => ({ name: 'Org 1' }) }
+                { id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(), name: 'Org 1' }) }
             ];
             const historyDocs = [
                 {
                     id: 'history-orphaned',
                     data: () => ({
+  serverTimestamp: vi.fn(),
                         projectId: 'project-1',
                         orgId: 'deleted-org', // Orphaned org
                         type: 'image'
@@ -149,11 +161,14 @@ describe('CleanupService', () => {
 
         it('identifies orphaned projects with missing organizations', async () => {
             const projectDocs = [
-                { id: 'project-1', data: () => ({ orgId: 'deleted-org', name: 'Orphaned Project', type: 'creative' }) },
-                { id: 'project-2', data: () => ({ orgId: 'org-1', name: 'Valid Project', type: 'video' }) }
+                { id: 'project-1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'deleted-org', name: 'Orphaned Project', type: 'creative' }) },
+                { id: 'project-2', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1', name: 'Valid Project', type: 'video' }) }
             ];
             const orgDocs = [
-                { id: 'org-1', data: () => ({ name: 'Org 1' }) }
+                { id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(), name: 'Org 1' }) }
             ];
             const historyDocs: unknown[] = [];
 
@@ -176,12 +191,15 @@ describe('CleanupService', () => {
 
         it('excludes personal and default org IDs from orphan detection', async () => {
             const projectDocs = [
-                { id: 'project-1', data: () => ({ orgId: 'personal', name: 'Personal Project' }) },
-                { id: 'project-2', data: () => ({ orgId: 'org-default', name: 'Default Project' }) }
+                { id: 'project-1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'personal', name: 'Personal Project' }) },
+                { id: 'project-2', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-default', name: 'Default Project' }) }
             ];
             const orgDocs: unknown[] = [];
             const historyDocs = [
-                { id: 'history-1', data: () => ({ projectId: 'default', orgId: 'personal' }) }
+                { id: 'history-1', data: () => ({
+  serverTimestamp: vi.fn(), projectId: 'default', orgId: 'personal' }) }
             ];
 
             let callCount = 0;
@@ -211,11 +229,15 @@ describe('CleanupService', () => {
         });
 
         it('calculates correct summary totals', async () => {
-            const projectDocs = [{ id: 'p1', data: () => ({ orgId: 'org-1' }) }];
-            const orgDocs = [{ id: 'org-1', data: () => ({}) }];
+            const projectDocs = [{ id: 'p1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1' }) }];
+            const orgDocs = [{ id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(),}) }];
             const historyDocs = [
-                { id: 'h1', data: () => ({ projectId: 'missing', orgId: 'org-1' }) },
-                { id: 'h2', data: () => ({ projectId: 'missing2', orgId: 'org-1' }) }
+                { id: 'h1', data: () => ({
+  serverTimestamp: vi.fn(), projectId: 'missing', orgId: 'org-1' }) },
+                { id: 'h2', data: () => ({
+  serverTimestamp: vi.fn(), projectId: 'missing2', orgId: 'org-1' }) }
             ];
 
             let callCount = 0;
@@ -351,10 +373,13 @@ describe('CleanupService', () => {
         });
 
         it('performs scan and execute when dryRun is false', async () => {
-            const projectDocs = [{ id: 'p1', data: () => ({ orgId: 'org-1' }) }];
-            const orgDocs = [{ id: 'org-1', data: () => ({}) }];
+            const projectDocs = [{ id: 'p1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1' }) }];
+            const orgDocs = [{ id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(),}) }];
             const historyDocs = [
-                { id: 'h1', data: () => ({ projectId: 'deleted-project', orgId: 'org-1' }) }
+                { id: 'h1', data: () => ({
+  serverTimestamp: vi.fn(), projectId: 'deleted-project', orgId: 'org-1' }) }
             ];
 
             let callCount = 0;
@@ -394,9 +419,12 @@ describe('CleanupService', () => {
 
     describe('storage scanning', () => {
         it('scans storage when includeStorage is true', async () => {
-            const projectDocs = [{ id: 'p1', data: () => ({ orgId: 'org-1' }) }];
-            const orgDocs = [{ id: 'org-1', data: () => ({}) }];
-            const historyDocs = [{ id: 'existing-file', data: () => ({ projectId: 'p1', orgId: 'org-1' }) }];
+            const projectDocs = [{ id: 'p1', data: () => ({
+  serverTimestamp: vi.fn(), orgId: 'org-1' }) }];
+            const orgDocs = [{ id: 'org-1', data: () => ({
+  serverTimestamp: vi.fn(),}) }];
+            const historyDocs = [{ id: 'existing-file', data: () => ({
+  serverTimestamp: vi.fn(), projectId: 'p1', orgId: 'org-1' }) }];
 
             let callCount = 0;
             mockGetDocs.mockImplementation(() => {

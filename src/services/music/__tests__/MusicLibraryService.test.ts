@@ -5,6 +5,7 @@ import { getDoc, setDoc, getDocs } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
+  serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'user-123' }
     },
@@ -12,6 +13,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+  serverTimestamp: vi.fn(),
     collection: vi.fn(),
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -20,7 +22,8 @@ vi.mock('firebase/firestore', () => ({
     where: vi.fn(),
     getDocs: vi.fn(),
     Timestamp: {
-        now: () => ({ toISOString: () => new Date().toISOString() })
+        now: () => ({
+  serverTimestamp: vi.fn(), toISOString: () => new Date().toISOString() })
     }
 }));
 
@@ -66,6 +69,7 @@ describe('MusicLibraryService', () => {
         vi.mocked(getDoc).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({
+  serverTimestamp: vi.fn(),
                 id: 'track-1',
                 features: mockFeatures
             })
@@ -90,8 +94,10 @@ describe('MusicLibraryService', () => {
     it('should list library items', async () => {
         vi.mocked(getDocs).mockResolvedValueOnce({
             docs: [
-                { data: () => ({ id: 'track-1', filename: 'one.mp3' }) },
-                { data: () => ({ id: 'track-2', filename: 'two.mp3' }) }
+                { data: () => ({
+  serverTimestamp: vi.fn(), id: 'track-1', filename: 'one.mp3' }) },
+                { data: () => ({
+  serverTimestamp: vi.fn(), id: 'track-2', filename: 'two.mp3' }) }
             ]
         } as any);
 
