@@ -39,6 +39,7 @@ jobs:
     needs: test
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest, windows-latest]
 
@@ -60,6 +61,11 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y build-essential libcairo2-dev libpango1.0-dev libjpeg-dev libgif-dev librsvg2-dev libpixman-1-dev libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libgbm1 libasound2t64 libpangocairo-1.0-0 libxss1 libgtk-3-0
 
+    - name: Install system dependencies (macOS)
+      if: runner.os == 'macOS'
+      run: |
+        brew install pkg-config cairo pango libpng jpeg giflib librsvg || true
+
     - name: Clean install dependencies
       run: |
         rm -rf node_modules package-lock.json
@@ -74,5 +80,5 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: release-${{ matrix.os }}
-        path: dist/
+        path: dist-electron/
         retention-days: 5
