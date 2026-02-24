@@ -93,7 +93,8 @@ vi.mock('lucide-react', () => ({
     ExternalLink: () => <div />,
     Zap: () => <div />,
     Bot: () => <div />,
-    Terminal: () => <div />
+    Terminal: () => <div />,
+    Sparkles: () => <div data-testid="sparkles-icon" />
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -198,7 +199,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
     it('Scenario 1: Verifies "Processing" state disables input and shows loader', async () => {
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i) as HTMLTextAreaElement;
+        const input = screen.getByPlaceholderText(/Launch a campaign/i) as HTMLTextAreaElement;
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         // 1. Enter text
@@ -226,7 +227,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
 
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i);
+        const input = screen.getByPlaceholderText(/Launch a campaign/i);
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Bad request' } });
@@ -243,7 +244,7 @@ describe('👁️ Pixel: CommandBar Interaction States', () => {
     it('Scenario 3: Optimistic UI - input clears immediately upon send', async () => {
         render(<CommandBar />);
 
-        const input = screen.getByPlaceholderText(/Ask indii to orchestrate/i) as HTMLTextAreaElement;
+        const input = screen.getByPlaceholderText(/Launch a campaign/i) as HTMLTextAreaElement;
         const submitBtn = screen.getByTestId('command-bar-run-btn');
 
         fireEvent.change(input, { target: { value: 'Fast clear' } });

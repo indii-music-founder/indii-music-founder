@@ -90,6 +90,7 @@ export default function RightPanel() {
                     <div className="flex-1 overflow-hidden relative flex flex-col">
                         {view === 'archives' ? (
                             <ConversationHistoryList
+                                onClose={() => setView('messages')}
                                 className="w-full border-none bg-transparent"
                             />
                         ) : (

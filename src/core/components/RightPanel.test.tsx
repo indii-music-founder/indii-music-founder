@@ -27,19 +27,61 @@ vi.mock('./right-panel/VideoPanel', () => ({
     ),
 }));
 
+// Mock remaining sub-components used by RightPanel
+vi.mock('@/components/project/ResourceTree', () => ({
+    ResourceTree: () => <div data-testid="resource-tree" />,
+}));
+vi.mock('@/modules/files/FilePreview', () => ({
+    default: () => <div data-testid="file-preview" />,
+}));
+vi.mock('@/core/theme/moduleColors', () => ({
+    getColorForModule: () => ({ bg: 'bg-gray-500', text: 'text-white', border: 'border-gray-700', ring: 'ring-gray-700' }),
+}));
+vi.mock('./command-bar/PromptArea', () => ({
+    PromptArea: () => <div data-testid="prompt-area" />,
+}));
+vi.mock('./ConversationHistoryList', () => ({
+    ConversationHistoryList: () => <div data-testid="conversation-history" />,
+}));
+vi.mock('@/core/components/chat/ChatMessage', () => ({
+    MessageItem: ({ msg }: any) => <div data-testid="message-item">{msg?.text}</div>,
+}));
+vi.mock('@/modules/dashboard/components/AssetSpotlight', () => ({
+    default: () => <div data-testid="asset-spotlight" />,
+}));
+vi.mock('motion/react', () => ({
+    motion: {
+        aside: ({ children, className, ...props }: any) => <aside className={className} {...props}>{children}</aside>,
+        div: ({ children, className, ...props }: any) => <div className={className} {...props}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
+}));
+
 describe('RightPanel', () => {
     const mockSetModule = vi.fn();
     const mockToggleRightPanel = vi.fn();
 
+    const mockToggleAgentWindow = vi.fn();
+    const mockSetView = vi.fn();
+
+    const defaultState = {
+        currentModule: 'dashboard',
+        setModule: mockSetModule,
+        isRightPanelOpen: false,
+        toggleRightPanel: mockToggleRightPanel,
+        isAgentOpen: false,
+        toggleAgentWindow: mockToggleAgentWindow,
+        agentHistory: [],
+        userProfile: null,
+        isAgentProcessing: false,
+        rightPanelView: 'messages' as const,
+        setRightPanelView: mockSetView,
+    };
+
     beforeEach(() => {
         vi.clearAllMocks();
         // Default store state
-        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
-            currentModule: 'dashboard',
-            setModule: mockSetModule,
-            isRightPanelOpen: false,
-            toggleRightPanel: mockToggleRightPanel,
-        });
+        (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue(defaultState);
     });
 
     it('renders collapsed state correctly', () => {
@@ -80,10 +122,9 @@ describe('RightPanel', () => {
 
     it('renders CreativePanel when open and module is creative', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
             currentModule: 'creative',
-            setModule: mockSetModule,
             isRightPanelOpen: true,
-            toggleRightPanel: mockToggleRightPanel,
         });
 
         render(<RightPanel />);
@@ -94,10 +135,9 @@ describe('RightPanel', () => {
 
     it('renders VideoPanel when open and module is video', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
             currentModule: 'video',
-            setModule: mockSetModule,
             isRightPanelOpen: true,
-            toggleRightPanel: mockToggleRightPanel,
         });
 
         render(<RightPanel />);
@@ -107,10 +147,9 @@ describe('RightPanel', () => {
 
     it('renders placeholder when open but no tool selected', () => {
         (useStore as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
+            ...defaultState,
             currentModule: 'dashboard',
-            setModule: mockSetModule,
             isRightPanelOpen: true,
-            toggleRightPanel: mockToggleRightPanel,
         });
 
         render(<RightPanel />);
