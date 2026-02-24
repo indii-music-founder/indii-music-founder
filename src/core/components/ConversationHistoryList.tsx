@@ -1,7 +1,7 @@
 import React, { useMemo, memo } from 'react';
 import { useStore } from '@/core/store';
 import { formatSmartDate, cn } from '@/lib/utils';
-import { MessageSquare, Calendar, Trash2, X } from 'lucide-react';
+import { MessageSquare, Calendar, Trash2, X, Edit2, Check } from 'lucide-react';
 import { motion } from 'motion/react';
 import type { ConversationSession } from '@/core/store/slices/agentSlice';
 
@@ -10,14 +10,32 @@ const HistoryItem = memo(({
     isActive,
     index,
     onSelect,
-    onDelete
+    onDelete,
+    onRename
 }: {
     session: ConversationSession,
     isActive: boolean,
     index: number,
     onSelect: (id: string) => void,
-    onDelete: (id: string) => void
+    onDelete: (id: string) => void,
+    onRename: (id: string, title: string) => void
 }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [tempTitle, setTempTitle] = React.useState(session.title || '');
+
+    const handleRename = (e: React.MouseEvent | React.FormEvent) => {
+        e.stopPropagation();
+        if (tempTitle.trim() && tempTitle !== session.title) {
+            onRename(session.id, tempTitle.trim());
+        }
+        setIsEditing(false);
+    };
+
+    const handleEditClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        setIsEditing(true);
+    };
+
     return (
         <motion.li
             initial={{ opacity: 0, x: -20 }}
@@ -43,12 +61,33 @@ const HistoryItem = memo(({
                 aria-current={isActive ? 'true' : undefined}
             >
                 <div className="flex justify-between items-start mb-2">
-                    <h4 className={cn(
-                        "text-[13px] font-bold truncate pr-6 tracking-tight",
-                        isActive ? 'text-purple-300' : 'text-gray-200'
-                    )}>
-                        {session.title || 'Temporal Stream'}
-                    </h4>
+                    {isEditing ? (
+                        <div className="flex items-center gap-2 w-full pr-12" onClick={e => e.stopPropagation()}>
+                            <input
+                                autoFocus
+                                className="bg-white/10 border border-purple-500/50 rounded px-2 py-1 text-[13px] font-bold text-white w-full focus:outline-none"
+                                value={tempTitle}
+                                onChange={e => setTempTitle(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter') handleRename(e);
+                                    if (e.key === 'Escape') setIsEditing(false);
+                                }}
+                            />
+                            <button
+                                onClick={handleRename}
+                                className="p-1 hover:bg-green-500/20 text-green-400 rounded transition-colors"
+                            >
+                                <Check size={14} />
+                            </button>
+                        </div>
+                    ) : (
+                        <h4 className={cn(
+                            "text-[13px] font-bold truncate pr-12 tracking-tight transition-colors",
+                            isActive ? 'text-purple-300' : 'text-gray-200'
+                        )}>
+                            {session.title || 'Temporal Stream'}
+                        </h4>
+                    )}
                 </div>
 
                 <div className="flex items-center gap-3 text-[10px] text-gray-500 font-mono tracking-wider uppercase">
@@ -64,8 +103,17 @@ const HistoryItem = memo(({
                 </div>
             </button>
 
-            {/* Delete Action (Glow reveal) */}
-            <div className="absolute right-3 top-4 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 group-focus-within:translate-x-0 z-10">
+            {/* Actions (Glow reveal) */}
+            <div className="absolute right-3 top-4 flex gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all duration-300 transform translate-x-2 group-hover:translate-x-0 group-focus-within:translate-x-0 z-10">
+                {!isEditing && (
+                    <button
+                        className="p-2 hover:bg-white/10 hover:text-white rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
+                        onClick={handleEditClick}
+                        aria-label="Rename session"
+                    >
+                        <Edit2 size={12} />
+                    </button>
+                )}
                 <button
                     className="p-2 hover:bg-red-500/20 hover:text-red-400 rounded-lg text-gray-600 transition-colors focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:outline-none"
                     onClick={(e) => {
@@ -90,11 +138,18 @@ const HistoryItem = memo(({
     );
 });
 
-export const ConversationHistoryList = ({ onClose, className }: { onClose: () => void, className?: string }) => {
+export const ConversationHistoryList = ({ className }: { className?: string }) => {
     const sessions = useStore(state => state.sessions);
     const activeSessionId = useStore(state => state.activeSessionId);
     const setActiveSession = useStore(state => state.setActiveSession);
     const deleteSession = useStore(state => state.deleteSession);
+    const updateSessionTitle = useStore(state => state.updateSessionTitle);
+    const setRightPanelView = useStore(state => state.setRightPanelView);
+
+    const handleSelect = (id: string) => {
+        setActiveSession(id);
+        setRightPanelView('messages');
+    };
 
     // Bolt Optimization: Memoize sorted sessions to prevent re-sorting on every render
     const sortedSessions = useMemo(() => {
@@ -106,7 +161,7 @@ export const ConversationHistoryList = ({ onClose, className }: { onClose: () =>
             <div className="p-5 border-b border-white/5 flex justify-between items-center bg-white/5">
                 <h3 id="history-title" className="font-bold text-[13px] uppercase tracking-[0.2em] text-gray-400">Archives</h3>
                 <button
-                    onClick={onClose}
+                    onClick={() => setRightPanelView('messages')}
                     className="p-1.5 hover:bg-white/10 rounded-full transition-colors text-gray-500 hover:text-white focus-visible:ring-2 focus-visible:ring-purple-500 focus-visible:outline-none"
                     aria-label="Close history panel"
                 >
@@ -127,8 +182,9 @@ export const ConversationHistoryList = ({ onClose, className }: { onClose: () =>
                         session={session}
                         isActive={session.id === activeSessionId}
                         index={index}
-                        onSelect={setActiveSession}
+                        onSelect={handleSelect}
                         onDelete={deleteSession}
+                        onRename={updateSessionTitle}
                     />
                 ))}
             </ul>

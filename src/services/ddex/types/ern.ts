@@ -136,6 +136,10 @@ export interface SoundRecordingDetails {
   isInstrumental: boolean;
   languageOfPerformance?: string;  // ISO 639-2
   iswc?: string;  // International Standard Musical Work Code
+  lyrics?: {
+    lyricsText: string;
+    isExplicit: boolean;
+  };
 }
 
 // Deal - commercial terms for distribution

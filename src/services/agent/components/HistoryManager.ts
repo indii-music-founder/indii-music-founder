@@ -1,6 +1,7 @@
 import type { AgentMessage } from '@/core/store';
 import { SummaryService } from '../utils/SummaryService';
 import { Logger } from '@/core/logger/Logger';
+import { memoryService } from '../MemoryService';
 
 /**
  * HistoryManager: Manages the "Active Memory" of a conversation.
@@ -9,6 +10,7 @@ import { Logger } from '@/core/logger/Logger';
  * 1. Sliding window for high-fidelity recent context.
  * 2. Automatic summarization of older turns via Gemini 3 Flash.
  * 3. Prevention of context window saturation.
+ * 4. Semantic retrieval of relevant past exchanges (episodic memory).
  */
 export class HistoryManager {
     // High-fidelity turns kept in full
@@ -56,29 +58,48 @@ export class HistoryManager {
      * @returns A promise resolving to the compiled history string for LLM context.
      */
     async getCompiledView(): Promise<string> {
+        const { useStore } = await import('@/core/store');
+        const state = useStore.getState();
+        const projectId = state.currentProjectId;
+        const sessionId = state.activeSessionId;
+
         const history = await this.getRecentHistory();
 
+        // 1. Semantic Recall (Tier 2 Integration)
+        let semanticRecall = '';
+        if (projectId && sessionId && history.length > 0) {
+            const lastMessage = history[history.length - 1].text;
+            const relevant = await memoryService.retrieveRelevantMemories(projectId, {
+                query: lastMessage,
+                filters: { sessionId, types: ['session_message', 'fact'] },
+                limit: 3
+            });
+            if (relevant.length > 0) {
+                semanticRecall = `\n## Relevant Past Context (Semantic Recall)\n${relevant.map(r => `- ${r}`).join('\n')}\n`;
+            }
+        }
+
         if (history.length <= this.MAX_RECENT_TURNS) {
-            return this.formatHistory(history);
+            return (this.formatHistory(history) + semanticRecall).trim();
         }
 
         Logger.info('HistoryManager', `Compressing history context (${history.length} turns)`);
 
-        // 1. Split history: [Historical] [Recent Window]
+        // 2. Split history: [Historical] [Recent Window]
         const recentWindow = history.slice(-this.MAX_RECENT_TURNS);
         const olderTurns = history.slice(0, -this.MAX_RECENT_TURNS);
 
-        // 2. Summarize older turns
+        // 3. Summarize older turns
         const historicalText = this.formatHistory(olderTurns);
         const summary = await SummaryService.summarize(historicalText);
 
-        // 3. Assemble view
+        // 4. Assemble view
         const formattedRecent = this.formatHistory(recentWindow);
 
         return `
 ## Conversation Summary (History)
 ${summary}
-
+${semanticRecall}
 ## Recent Exchange (Last ${this.MAX_RECENT_TURNS} turns)
 ${formattedRecent}
 `.trim();

@@ -3,7 +3,7 @@
  * Wraps console methods to prevent leaking sensitive information in production.
  */
 
-const isDev = import.meta.env.DEV;
+const isDev = typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : process.env.NODE_ENV !== 'production';
 
 export const logger = {
     /**

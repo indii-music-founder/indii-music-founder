@@ -32,32 +32,41 @@ const getEnv = (metaValue: any, processValue: any): string | undefined => {
     return val || undefined;
 };
 
+const getSafeMetaEnv = (key: string): any => {
+    try {
+        return (import.meta as any).env?.[key];
+    } catch {
+        return undefined;
+    }
+};
+
 const processEnv = {
     // 🛡️ Sentinel: Using static lookups for Vite compatibility
-    apiKey: getEnv(import.meta.env.VITE_API_KEY, process.env.VITE_API_KEY),
-    projectId: getEnv(import.meta.env.VITE_VERTEX_PROJECT_ID, process.env.VITE_VERTEX_PROJECT_ID),
-    location: getEnv(import.meta.env.VITE_VERTEX_LOCATION, process.env.VITE_VERTEX_LOCATION) || "us-central1",
-    useVertex: toBoolean(import.meta.env.VITE_USE_VERTEX || process.env.VITE_USE_VERTEX),
-    googleMapsApiKey: getEnv(import.meta.env.VITE_GOOGLE_MAPS_API_KEY, process.env.VITE_GOOGLE_MAPS_API_KEY),
+    apiKey: getEnv(getSafeMetaEnv('VITE_API_KEY'), process.env.VITE_API_KEY),
+    projectId: getEnv(getSafeMetaEnv('VITE_VERTEX_PROJECT_ID'), process.env.VITE_VERTEX_PROJECT_ID),
+    location: getEnv(getSafeMetaEnv('VITE_VERTEX_LOCATION'), process.env.VITE_VERTEX_LOCATION) || "us-central1",
+    useVertex: toBoolean(getSafeMetaEnv('VITE_USE_VERTEX') || process.env.VITE_USE_VERTEX),
+    googleMapsApiKey: getEnv(getSafeMetaEnv('VITE_GOOGLE_MAPS_API_KEY'), process.env.VITE_GOOGLE_MAPS_API_KEY),
 
-    VITE_FUNCTIONS_URL: getEnv(import.meta.env.VITE_FUNCTIONS_URL, process.env.VITE_FUNCTIONS_URL),
-    VITE_RAG_PROXY_URL: getEnv(import.meta.env.VITE_RAG_PROXY_URL, process.env.VITE_RAG_PROXY_URL),
-    DEV: import.meta.env.DEV,
+    VITE_FUNCTIONS_URL: getEnv(getSafeMetaEnv('VITE_FUNCTIONS_URL'), process.env.VITE_FUNCTIONS_URL),
+    VITE_RAG_PROXY_URL: getEnv(getSafeMetaEnv('VITE_RAG_PROXY_URL'), process.env.VITE_RAG_PROXY_URL),
+    DEV: getSafeMetaEnv('DEV') ?? process.env.NODE_ENV !== 'production',
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv(import.meta.env.VITE_FIREBASE_API_KEY, process.env.VITE_FIREBASE_API_KEY) || getEnv(import.meta.env.VITE_API_KEY, process.env.VITE_API_KEY),
-    firebaseProjectId: getEnv(import.meta.env.VITE_FIREBASE_PROJECT_ID, process.env.VITE_FIREBASE_PROJECT_ID),
-    firebaseStorageBucket: getEnv(import.meta.env.VITE_FIREBASE_STORAGE_BUCKET, process.env.VITE_FIREBASE_STORAGE_BUCKET),
-    firebaseDatabaseURL: getEnv(import.meta.env.VITE_FIREBASE_DATABASE_URL, process.env.VITE_FIREBASE_DATABASE_URL),
-    appCheckKey: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_KEY, process.env.VITE_FIREBASE_APP_CHECK_KEY),
-    appCheckDebugToken: getEnv(import.meta.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN, process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
+    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY) || getEnv(getSafeMetaEnv('VITE_API_KEY'), process.env.VITE_API_KEY),
+    firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), process.env.VITE_FIREBASE_PROJECT_ID),
+    firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), process.env.VITE_FIREBASE_STORAGE_BUCKET),
+    firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), process.env.VITE_FIREBASE_DATABASE_URL),
+    appCheckKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_KEY'), process.env.VITE_FIREBASE_APP_CHECK_KEY),
+    appCheckDebugToken: getEnv(getSafeMetaEnv('VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN'), process.env.VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN),
 
-    skipOnboarding: toBoolean(import.meta.env.VITE_SKIP_ONBOARDING || process.env.VITE_SKIP_ONBOARDING),
+    skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || process.env.VITE_SKIP_ONBOARDING),
+    VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
 };
 
 // Robust test environment detection
 const isTest =
-    import.meta.env.MODE === 'test' ||
+    getSafeMetaEnv('MODE') === 'test' ||
     !!process.env.VITEST ||
     !!process.env.NODE_ENV?.includes('test') ||
     process.env.VITEST_WORKER_ID !== undefined;
@@ -78,7 +87,7 @@ if (!parsed.success && !isTest) {
         Logger.error('Env', msg);
 
         // In production, throw to prevent running with broken config
-        if (import.meta.env.PROD) {
+        if (getSafeMetaEnv('PROD')) {
             throw new Error(msg);
         }
 
@@ -128,7 +137,7 @@ if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.appId
     const msg = "Firebase Configuration Incomplete: Please set VITE_FIREBASE_API_KEY, VITE_FIREBASE_PROJECT_ID, and VITE_FIREBASE_APP_ID";
     Logger.error('Env', msg);
 
-    if (import.meta.env.PROD) {
+    if (getSafeMetaEnv('PROD')) {
         throw new Error(msg);
     }
 }

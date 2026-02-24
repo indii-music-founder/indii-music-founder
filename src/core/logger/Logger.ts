@@ -8,8 +8,8 @@ import { Sentry } from '@/lib/sentry';
  * - In Production: Logs structured JSON for log aggregation + sends to Sentry
  */
 class LoggerService {
-    private isDev = import.meta.env.DEV;
-    private isProd = import.meta.env.PROD;
+    private isDev = typeof import.meta.env !== 'undefined' ? import.meta.env.DEV : process.env.NODE_ENV !== 'production';
+    private isProd = typeof import.meta.env !== 'undefined' ? import.meta.env.PROD : process.env.NODE_ENV === 'production';
 
     private formatMessage(module: string, message: string): string {
         return `[${module}] ${message}`;

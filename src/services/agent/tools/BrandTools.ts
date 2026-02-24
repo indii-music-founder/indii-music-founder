@@ -54,12 +54,45 @@ export const BrandTools: Record<string, AnyToolFunction> = {
         };
     }),
 
-    analyze_brand_consistency: wrapTool('analyze_brand_consistency', async ({ content, brand_guidelines }: { content: string; brand_guidelines?: string }) => {
+    analyze_brand_consistency: wrapTool('analyze_brand_consistency', async (args: {
+        content?: string;
+        assetPath?: string;
+        brandKit?: any;
+        brand_guidelines?: string;
+    }) => {
+        // 1. If an asset is provided, we use the Vision tool via Electron IPC
+        if (args.assetPath && (window as any).electronAPI?.brand) {
+            console.log(`[BrandTools] Triggering vision analysis for: ${args.assetPath}`);
+            const response = await (window as any).electronAPI.brand.analyzeConsistency(
+                args.assetPath,
+                args.brandKit || { guidelines: args.brand_guidelines || "Follow artist's visual DNA" }
+            );
+
+            if (!response.success) {
+                throw new Error(response.error || 'Vision analysis failed');
+            }
+
+            const report = response.report;
+            return {
+                consistent: report.consistent,
+                score: report.consistency_score,
+                issues: report.findings
+                    ?.filter((f: any) => f.status !== 'PASS')
+                    ?.map((f: any) => `${f.category}: ${f.feedback}`) || [],
+                recommendations: report.recommendations || [],
+                summary: report.summary,
+                message: report.consistent
+                    ? `Brand Audit PASSED (Score: ${report.consistency_score}/100)`
+                    : `Brand Audit FAILED (Score: ${report.consistency_score}/100)`
+            };
+        }
+
+        // 2. Fallback to Text-only analysis (Tone/Voice)
         const schema = zodToJsonSchema(AnalyzeBrandConsistencySchema);
         const prompt = `
         You are a Brand Specialist. Analyze the consistency of the following content.
-        Content: ${content}
-        ${brand_guidelines ? `Brand Guidelines: ${brand_guidelines}` : ''}
+        Content: ${args.content || 'No content provided'}
+        ${args.brand_guidelines ? `Brand Guidelines: ${args.brand_guidelines}` : ''}
 
         Check for tone, core values alignment, and visual language.
         Output a strict JSON object (no markdown) matching this schema:

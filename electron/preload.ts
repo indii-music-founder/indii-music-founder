@@ -59,6 +59,20 @@ contextBridge.exposeInMainWorld('electronAPI', {
         disconnect: () => ipcRenderer.invoke('sftp:disconnect'),
         isConnected: () => ipcRenderer.invoke('sftp:is-connected'),
     },
+    // Brand Capabilities
+    brand: {
+        analyzeConsistency: (assetPath: string, brandKit: any) => ipcRenderer.invoke('brand:analyze-consistency', assetPath, brandKit),
+    },
+    publicist: {
+        generatePdf: (data: any) => ipcRenderer.invoke('publicist:generate-pdf', data),
+    },
+    marketing: {
+        analyzeTrends: (data: any) => ipcRenderer.invoke('marketing:analyze-trends', data),
+    },
+    security: {
+        rotateCredentials: (data: any) => ipcRenderer.invoke('security:rotate-credentials', data),
+        scanVulnerabilities: (data: any) => ipcRenderer.invoke('security:scan-vulnerabilities', data),
+    },
     // Agent Capabilities
     agent: {
         navigateAndExtract: (url: string) => ipcRenderer.invoke('agent:navigate-and-extract', url),

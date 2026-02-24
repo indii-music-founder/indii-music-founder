@@ -52,13 +52,23 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
                 return { success: false, error: e.message };
             }
         },
-        analyze_brand_consistency: async (args: { content: string, type: string }) => {
-            const prompt = `Analyze the following ${args.type} for brand consistency.
-            Content: ${args.content}
-            
-            Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
-            Return a Score (0-100) and actionable feedback.`;
+        analyze_brand_consistency: async (args: { content?: string, type?: string, assetPath?: string, brandKit?: any }) => {
             try {
+                // If an asset path is provided, use the high-fidelity vision tool
+                if (args.assetPath && (window as any).electronAPI?.brand) {
+                    const response = await (window as any).electronAPI.brand.analyzeConsistency(args.assetPath, args.brandKit || {});
+                    if (response.success) {
+                        return { success: true, data: { analysis: response.report } };
+                    }
+                    throw new Error(response.error);
+                }
+
+                // Fallback to text-based analysis
+                const prompt = `Analyze the following ${args.type || 'content'} for brand consistency.
+                Content: ${args.content}
+                
+                Evaluate: Tone of Voice, Visual/Descriptive Alignment, and Core Values.
+                Return a Score (0-100) and actionable feedback.`;
                 const response = await firebaseAI.generateText(prompt);
                 return { success: true, data: { analysis: response } };
             } catch (e: any) {
@@ -142,9 +152,11 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
                     type: 'OBJECT',
                     properties: {
                         content: { type: 'STRING', description: 'The text or asset description to analyze.' },
-                        type: { type: 'STRING', description: 'Type of content (e.g., "social post", "email", "image").' }
+                        type: { type: 'STRING', description: 'Type of content (e.g., "social post", "email", "image").' },
+                        assetPath: { type: 'STRING', description: 'Optional: Local path to an image or video asset for vision analysis.' },
+                        brandKit: { type: 'OBJECT', description: 'Optional: Specific brand guidelines to use for analysis (colors, fonts, vibe).' }
                     },
-                    required: ['content', 'type']
+                    required: []
                 }
             },
             {

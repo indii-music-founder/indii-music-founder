@@ -3,8 +3,9 @@ import { motion } from 'motion/react';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '@/core/store';
 import {
-    MessageSquare, Bot, Sparkles, Zap, Clock,
+    MessageSquare, Bot, Sparkles, Zap, Clock, CheckCircle, Package, AlertCircle
 } from 'lucide-react';
+import { events, EventType } from '@/core/events';
 
 interface FeedItem {
     id: string;
@@ -12,22 +13,85 @@ interface FeedItem {
     text: string;
     time: string;
     color: string;
+    timestamp: number;
 }
 
 export default function ActivityFeed() {
-    const { agentHistory, sessions, activeSessionId } = useStore(
+    const { agentHistory, sessions } = useStore(
         useShallow((s) => ({
             agentHistory: s.agentHistory,
             sessions: s.sessions,
-            activeSessionId: s.activeSessionId,
         }))
     );
 
-    const feedItems = useMemo<FeedItem[]>(() => {
-        const items: FeedItem[] = [];
+    const [customEvents, setCustomEvents] = React.useState<FeedItem[]>([]);
 
-        // Pull recent messages (last 6)
-        const recent = agentHistory.slice(-6).reverse();
+    React.useEffect(() => {
+        const handleEvent = (type: EventType, data: any) => {
+            const id = `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+            let item: FeedItem | null = null;
+
+            switch (type) {
+                case 'TASK_COMPLETED':
+                    item = {
+                        id,
+                        icon: <CheckCircle size={12} className="text-green-400" />,
+                        text: `Task completed: ${data.title || 'Process finished'}`,
+                        time: formatTime(Date.now()),
+                        color: 'border-l-green-500/40',
+                        timestamp: Date.now()
+                    };
+                    break;
+                case 'ASSET_FINALIZED':
+                    item = {
+                        id,
+                        icon: <Package size={12} className="text-blue-400" />,
+                        text: `Asset finalized: ${data.name || 'New media created'}`,
+                        time: formatTime(Date.now()),
+                        color: 'border-l-blue-500/40',
+                        timestamp: Date.now()
+                    };
+                    break;
+                case 'SYSTEM_ALERT':
+                    item = {
+                        id,
+                        icon: <AlertCircle size={12} className={data.level === 'error' ? 'text-red-400' : 'text-amber-400'} />,
+                        text: data.message,
+                        time: formatTime(Date.now()),
+                        color: data.level === 'error' ? 'border-l-red-500/40' : 'border-l-amber-500/40',
+                        timestamp: Date.now()
+                    };
+                    break;
+                case 'AGENT_ACTION':
+                    item = {
+                        id,
+                        icon: <Zap size={12} className="text-purple-400" />,
+                        text: `${data.action}: ${data.details}`,
+                        time: formatTime(Date.now()),
+                        color: 'border-l-purple-500/40',
+                        timestamp: Date.now()
+                    };
+                    break;
+            }
+
+            if (item) {
+                setCustomEvents(prev => [item!, ...prev].slice(0, 10));
+            }
+        };
+
+        const types: EventType[] = ['TASK_COMPLETED', 'ASSET_FINALIZED', 'SYSTEM_ALERT', 'AGENT_ACTION'];
+        types.forEach(t => events.on(t, (data) => handleEvent(t, data)));
+
+        return () => {
+            types.forEach(t => events.off(t, (data) => handleEvent(t, data)));
+        };
+    }, []);
+
+    const feedItems = useMemo<FeedItem[]>(() => {
+        const items: FeedItem[] = [...customEvents];
+
+        // Pull recent messages (last 4 to make room for events)
+        const recent = agentHistory.slice(-4).reverse();
         for (const msg of recent) {
             const isAgent = msg.role === 'model';
             items.push({
@@ -36,36 +100,28 @@ export default function ActivityFeed() {
                     ? <Bot size={12} className="text-purple-400" />
                     : <MessageSquare size={12} className="text-blue-400" />,
                 text: isAgent
-                    ? `indii responded: "${truncate(msg.text, 55)}"`
-                    : `You asked: "${truncate(msg.text, 55)}"`,
+                    ? `indii: "${truncate(msg.text, 50)}"`
+                    : `You: "${truncate(msg.text, 50)}"`,
                 time: formatTime(msg.timestamp),
                 color: isAgent ? 'border-l-purple-500/40' : 'border-l-blue-500/40',
+                timestamp: msg.timestamp
             });
         }
 
-        // Count sessions
-        const sessionCount = Object.keys(sessions).length;
-        if (sessionCount > 0) {
+        // Add boot message if empty
+        if (items.length === 0) {
             items.push({
-                id: 'sessions',
-                icon: <Sparkles size={12} className="text-amber-400" />,
-                text: `${sessionCount} conversation${sessionCount !== 1 ? 's' : ''} this session`,
+                id: 'boot',
+                icon: <Zap size={12} className="text-green-400" />,
+                text: 'System initialized — awaiting input',
                 time: '',
-                color: 'border-l-amber-500/40',
+                color: 'border-l-green-500/40',
+                timestamp: 0 // Always at the bottom
             });
         }
 
-        // System boot entry
-        items.push({
-            id: 'boot',
-            icon: <Zap size={12} className="text-green-400" />,
-            text: 'System initialized — all departments online',
-            time: '',
-            color: 'border-l-green-500/40',
-        });
-
-        return items.slice(0, 7);
-    }, [agentHistory, sessions]);
+        return items.sort((a, b) => b.timestamp - a.timestamp).slice(0, 8);
+    }, [agentHistory, customEvents]);
 
     return (
         <div className="bg-[#161b22]/50 border border-white/5 rounded-xl p-5 h-full flex flex-col">

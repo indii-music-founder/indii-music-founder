@@ -1,37 +1,83 @@
 import React from 'react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
-import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Layers, Palette, Film, Folder, Bot, Sparkles, MessageSquare, Clock, X, History } from 'lucide-react';
 import CreativePanel from './right-panel/CreativePanel';
 import VideoPanel from './right-panel/VideoPanel';
 import { ResourceTree } from '@/components/project/ResourceTree';
 import FilePreview from '@/modules/files/FilePreview';
 import { motion, AnimatePresence } from 'motion/react';
 import { getColorForModule } from '@/core/theme/moduleColors';
+import { PromptArea } from './command-bar/PromptArea';
 import { ConversationHistoryList } from './ConversationHistoryList';
+import { MessageItem } from '@/core/components/chat/ChatMessage';
+import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
+import { cn } from '@/lib/utils';
 
 export default function RightPanel() {
-    const { currentModule, setModule, isRightPanelOpen, toggleRightPanel, isAgentOpen, toggleAgentWindow } = useStore(
+
+    const {
+        currentModule,
+        setModule,
+        isRightPanelOpen,
+        toggleRightPanel,
+        isAgentOpen,
+        toggleAgentWindow,
+        agentHistory,
+        userProfile,
+        isAgentProcessing,
+        rightPanelView: view,
+        setRightPanelView: setView
+    } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
             isRightPanelOpen: state.isRightPanelOpen,
             toggleRightPanel: state.toggleRightPanel,
             isAgentOpen: state.isAgentOpen,
-            toggleAgentWindow: state.toggleAgentWindow
+            toggleAgentWindow: state.toggleAgentWindow,
+            agentHistory: state.agentHistory,
+            userProfile: state.userProfile,
+            isAgentProcessing: state.isAgentProcessing,
+            rightPanelView: state.rightPanelView,
+            setRightPanelView: state.setRightPanelView
         }))
     );
+
+    const chatEndRef = React.useRef<HTMLDivElement>(null);
+
+    React.useEffect(() => {
+        if (view === 'messages') {
+            chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [agentHistory.length, view]);
 
     // Placeholder content based on module
     const renderContent = () => {
         // High priority: if the agent is open, show the chat overlay inside the right panel
         if (isAgentOpen) {
             return (
-                <div className="flex flex-col h-full bg-bg-dark border-l border-white/10 relative">
+                <div className="flex flex-col h-full bg-bg-dark border-l border-white/10 relative overflow-hidden">
                     <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
-                        <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                            <h3 className="font-medium text-sm text-gray-200">Chat with indii</h3>
+                        <div className="flex gap-4">
+                            <button
+                                onClick={() => setView('messages')}
+                                className={cn(
+                                    "text-xs font-bold uppercase tracking-wider transition-colors",
+                                    view === 'messages' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
+                                )}
+                            >
+                                Messages
+                            </button>
+                            <button
+                                onClick={() => setView('archives')}
+                                className={cn(
+                                    "text-xs font-bold uppercase tracking-wider transition-colors",
+                                    view === 'archives' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
+                                )}
+                            >
+                                Archives
+                            </button>
                         </div>
                         <button
                             onClick={toggleAgentWindow}
@@ -40,8 +86,58 @@ export default function RightPanel() {
                             <ChevronRight size={16} />
                         </button>
                     </div>
-                    <div className="flex-1 overflow-hidden relative">
-                        <ConversationHistoryList onClose={toggleRightPanel} />
+
+                    <div className="flex-1 overflow-hidden relative flex flex-col">
+                        {view === 'archives' ? (
+                            <ConversationHistoryList
+                                className="w-full border-none bg-transparent"
+                            />
+                        ) : (
+                            <div className="flex-1 flex flex-col min-h-0">
+                                {/* Messages List */}
+                                <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                                    {agentHistory.length === 0 ? (
+                                        <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                                            <MessageSquare size={32} className="mb-4 text-purple-400" />
+                                            <p className="text-sm font-medium">No messages yet</p>
+                                            <p className="text-xs mt-1">Start a conversation with indii to see it here.</p>
+                                        </div>
+                                    ) : (
+                                        <div className="space-y-6">
+                                            {agentHistory.map((msg) => (
+                                                <MessageItem
+                                                    key={msg.id}
+                                                    msg={msg}
+                                                    avatarUrl={msg.role === 'user' ? (userProfile?.photoURL ?? undefined) : undefined}
+                                                    variant="compact"
+                                                />
+                                            ))}
+                                            {isAgentProcessing && (
+                                                <div className="flex items-center gap-2 px-3 py-2 text-gray-500 text-xs">
+                                                    <Sparkles size={12} className="animate-pulse text-purple-400" />
+                                                    indii is thinking…
+                                                </div>
+                                            )}
+                                            <div ref={chatEndRef} />
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Inline PromptArea for Right Panel */}
+                                <div className="p-4 border-t border-white/10 bg-black/20">
+                                    <PromptArea isDocked className="!static !translate-x-0 !w-full !max-w-none shadow-none border-none bg-transparent" />
+                                </div>
+
+                                {/* Asset Spotlight integration */}
+                                <div className="border-t border-white/5 p-4 bg-black/20 shrink-0">
+                                    <h4 className="text-[10px] uppercase tracking-wider text-gray-500 font-bold mb-3 flex items-center gap-2">
+                                        <Sparkles size={10} className="text-purple-400" />
+                                        Your Creations
+                                    </h4>
+                                    <AssetSpotlight />
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             );

@@ -25,13 +25,14 @@ import { Components } from 'react-markdown';
 interface MessageItemProps {
     msg: AgentMessage;
     avatarUrl?: string;
+    variant?: 'default' | 'compact';
     agentIdentity?: {
         color: string;
         initials: string;
     };
 }
 
-export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemProps) => {
+export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIdentity }: MessageItemProps) => {
     // Custom Markdown Components
     // ... existing components ...
     const markdownComponents: Components = useMemo(() => ({
@@ -126,8 +127,8 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                 const content = String(codeChildren || '');
                 const match = /language-(\w+)/.exec(className || '');
                 const isJson = match && match[1] === 'json';
-                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return <>{children}</>;
-                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return <>{children}</>; } catch (e) { /* ignore */ } }
+                if (content.includes('# LEGAL AGREEMENT') || content.includes('**NON-DISCLOSURE AGREEMENT**')) return children;
+                if (isJson) { try { JSON.parse(content.replace(/\n$/, '')); return children; } catch (e) { /* ignore */ } }
             }
             return <CodeBlock {...props}>{children}</CodeBlock>;
         },
@@ -161,7 +162,7 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
             initial={{ opacity: 0, y: 10, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-            className={`flex gap-4 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} mb-6 px-1`}
+            className={`flex gap-3 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} ${variant === 'compact' ? 'mb-3' : 'mb-6'} px-1`}
         >
             {msg.role === 'model' && (
                 <div className="relative mt-1 flex-shrink-0">
@@ -169,16 +170,16 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
                     {avatarUrl ? (
                         <img
                             src={avatarUrl}
-                            className={`w-9 h-9 rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
+                            className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full object-cover relative z-10 border border-${agentIdentity?.color || 'purple'}-500/30 shadow-[0_0_15px_rgba(168,85,247,0.2)]`}
                             alt="AI"
                         />
                     ) : agentIdentity ? (
-                        <div className={`w-9 h-9 rounded-full bg-gradient-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center text-xs font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
+                        <div className={`${variant === 'compact' ? 'w-6 h-6 text-[8px]' : 'w-9 h-9 text-xs'} rounded-full bg-gradient-to-br from-${agentIdentity.color}-600 to-${agentIdentity.color}-800 flex items-center justify-center font-bold relative z-10 border border-${agentIdentity.color}-500/30 text-white shadow-lg`}>
                             {agentIdentity.initials}
                         </div>
                     ) : (
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30">
-                            <Bot size={18} className="text-purple-200" />
+                        <div className={`${variant === 'compact' ? 'w-6 h-6' : 'w-9 h-9'} rounded-full bg-gradient-to-br from-purple-600 to-purple-800 flex items-center justify-center text-xs font-bold relative z-10 border border-purple-500/30`}>
+                            <Bot size={variant === 'compact' ? 12 : 18} className="text-purple-200" />
                         </div>
                     )}
                 </div>
@@ -187,16 +188,16 @@ export const MessageItem = memo(({ msg, avatarUrl, agentIdentity }: MessageItemP
             <div
                 data-testid={msg.role === 'model' ? 'agent-message' : 'user-message'}
                 aria-live={msg.role === 'model' && msg.isStreaming ? 'polite' : undefined}
-                className={`max-w-[85%] rounded-[1.5rem] px-5 py-4 relative group transition-all duration-300 ${msg.role === 'user'
+                className={`max-w-[90%] rounded-[1.2rem] ${variant === 'compact' ? 'px-3 py-2 text-xs' : 'px-5 py-4'} relative group transition-all duration-300 ${msg.role === 'user'
                     ? 'bg-gradient-to-br from-white/10 to-transparent text-gray-100 border border-white/10 rounded-tr-sm shadow-sm'
                     : msg.role === 'system'
-                        ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[11px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-2'
+                        ? 'bg-white/5 backdrop-blur-sm text-gray-400 text-[10px] font-mono tracking-wider uppercase border border-white/5 w-full text-center rounded-xl p-1.5'
                         : 'bg-gradient-to-br from-[rgba(16,16,22,0.6)] to-[rgba(10,10,14,0.9)] text-gray-200 border border-white/5 rounded-tl-sm shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]'
                     }`}>
 
-                {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} />}
+                {msg.role === 'model' && msg.thoughts && <ThoughtChain thoughts={msg.thoughts} messageId={msg.id} compact={variant === 'compact'} />}
 
-                <div className="prose prose-invert prose-sm max-w-none break-words leading-[1.6] font-medium tracking-tight">
+                <div className={`prose prose-invert ${variant === 'compact' ? 'prose-xs' : 'prose-sm'} max-w-none break-words leading-[1.5] font-medium tracking-tight`}>
                     <ReactMarkdown
                         remarkPlugins={[remarkGfm]}
                         components={markdownComponents}

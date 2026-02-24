@@ -55,6 +55,10 @@ export interface AgentSlice {
     // Legacy mapping (computed/synced from activeSession)
     agentHistory: AgentMessage[];
 
+    // Right Panel View State
+    rightPanelView: 'messages' | 'archives';
+    setRightPanelView: (view: 'messages' | 'archives') => void;
+
     // Session State
     sessions: Record<string, ConversationSession>;
     activeSessionId: string | null;
@@ -131,6 +135,9 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentMode: 'assistant',
     isAgentProcessing: false,
     pendingApproval: null,
+    rightPanelView: 'messages',
+    setRightPanelView: (view) => set({ rightPanelView: view }),
+
     agentWindowSize: { width: 500, height: 800 },
 
     createSession: (title = 'New Conversation', initialAgents = ['indii']) => {
@@ -163,7 +170,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         if (sessions[sessionId]) {
             set({
                 activeSessionId: sessionId,
-                agentHistory: sessions[sessionId].messages
+                agentHistory: sessions[sessionId].messages,
+                rightPanelView: 'messages' // Automatically switch back to chat when selecting a session
             });
         }
     },
@@ -199,12 +207,19 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         };
     }),
 
-    updateSessionTitle: (sessionId, title) => set(state => ({
-        sessions: {
-            ...state.sessions,
-            [sessionId]: { ...state.sessions[sessionId], title }
-        }
-    })),
+    updateSessionTitle: (sessionId, title) => {
+        set(state => ({
+            sessions: {
+                ...state.sessions,
+                [sessionId]: { ...state.sessions[sessionId], title }
+            }
+        }));
+
+        // Persist the title change
+        import('@/services/agent/SessionService').then(({ sessionService }) => {
+            sessionService.updateSession(sessionId, { title }).catch(console.error);
+        });
+    },
 
     addAgentMessage: (msg) => set((state) => {
         // If no session exists, create one implicitly (safety net)

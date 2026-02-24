@@ -4,11 +4,10 @@ import { useStore } from '@/core/store';
 import { motion } from 'motion/react';
 import { Bot, Cpu, Clock, Sparkles } from 'lucide-react';
 
-/* ── Chat primitives (same ones ChatOverlay uses) ─────────────────── */
-import { PromptArea } from '@/core/components/command-bar/PromptArea';
+/* ── Chat primitives ── */
 import { MessageItem } from '@/core/components/chat/ChatMessage';
 
-/* ── Side-panel widgets ───────────────────────────────────────────── */
+/* ── Side-panel widgets ── */
 import AssetSpotlight from './AssetSpotlight';
 import RecentProjects from './RecentProjects';
 import ActivityFeed from './ActivityFeed';
@@ -113,17 +112,7 @@ export default function AgentWorkspace() {
                     )}
                     <div ref={chatEndRef} />
                 </div>
-
-                {/* Prompt — pinned bottom */}
-                <div className="flex-shrink-0 border-t border-white/5 p-3">
-                    <PromptArea className="max-w-3xl mx-auto" />
-                </div>
             </div>
-
-            {/* ── RIGHT PANEL — Creations ─────────────────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <AssetSpotlight />
-            </aside>
         </div>
     );
 }

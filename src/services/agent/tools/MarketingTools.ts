@@ -174,6 +174,23 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         } catch (error: any) {
             return toolError(`Failed to analyze audio for campaign: ${error.message}`, "ANALYSIS_FAILED");
         }
+    }),
+
+    analyze_market_trends: wrapTool('analyze_market_trends', async ({ category }: { category?: string }) => {
+        if (!(window as any).electronAPI?.marketing) {
+            return toolError("Marketing analysis bridge unavailable.", "IPC_ERROR");
+        }
+
+        try {
+            const result = await (window as any).electronAPI.marketing.analyzeTrends({ category });
+            if (!result.success) {
+                return toolError(result.error || "Analysis failed", "SCRAPE_FAILED");
+            }
+
+            return toolSuccess(result.analysis, `Market analysis complete for ${category || 'pop'}.`);
+        } catch (error: any) {
+            return toolError(`Failed to bridge to market analysis: ${error.message}`, "BRIDGE_ERROR");
+        }
     })
 };
 
@@ -183,5 +200,6 @@ export const {
     analyze_audience,
     schedule_content,
     track_performance,
-    generate_campaign_from_audio
+    generate_campaign_from_audio,
+    analyze_market_trends
 } = MarketingTools;

@@ -45,6 +45,9 @@ export const AI_MODELS = {
     },
     BROWSER: {
         AGENT: APPROVED_MODELS.BROWSER_AGENT,
+    },
+    EMBEDDING: {
+        DEFAULT: APPROVED_MODELS.EMBEDDING_DEFAULT,
     }
 } as const;
 
