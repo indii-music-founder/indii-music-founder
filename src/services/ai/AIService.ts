@@ -68,27 +68,18 @@ export class AIService {
             // [LEGACY-COMPAT] Matching exact option structure for strict toHaveBeenCalledWith tests
             const exactOptions: any = {
                 ...options,
-                signal: (p_timeout || p_signal) ? internalSignal : options?.signal,
+                signal: internalSignal,
                 safetySettings: options?.safetySettings,
                 toolConfig: options?.toolConfig
             };
 
             const resultPromise = GenAI.generateContent(
-<<<<<<< claude/quizzical-mclaren
-                p_contents,
-                p_model,
-                p_config,
-                p_systemInstruction,
-                p_tools as any, // Cast: ai.dto.Tool → firebase/ai.Tool structural equivalence
-                { ...options, signal: internalSignal }
-=======
                 p_contents as any,
                 p_model as any,
                 p_config as any,
                 p_systemInstruction as any,
-                p_tools as any,
+                p_tools as any, // Cast: ai.dto.Tool → firebase/ai.Tool structural equivalence
                 exactOptions
->>>>>>> main
             );
 
             // 3. Race against timeout
