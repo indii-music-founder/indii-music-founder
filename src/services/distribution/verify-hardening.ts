@@ -197,4 +197,7 @@ async function verifyHardening() {
     console.log('\n✨ Hardening Verification Complete!');
 }
 
-verifyHardening().catch(console.error);
+// Only execute when run directly (not on import)
+if (typeof process !== 'undefined' && process.argv[1]?.includes('verify-hardening')) {
+    verifyHardening().catch(console.error);
+}

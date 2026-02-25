@@ -1,10 +1,14 @@
 import React from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, ExternalLink, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 export const ApiKeyErrorModal = () => {
-    const { apiKeyError, setApiKeyError } = useStore();
+    const { apiKeyError, setApiKeyError } = useStore(useShallow(state => ({
+        apiKeyError: state.apiKeyError,
+        setApiKeyError: state.setApiKeyError,
+    })));
 
     if (!apiKeyError) return null;
 

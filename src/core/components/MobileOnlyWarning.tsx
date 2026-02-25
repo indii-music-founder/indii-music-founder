@@ -2,6 +2,7 @@ import React from 'react';
 import { Monitor, Smartphone, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import type { ModuleId } from '@/core/constants';
 
 interface MobileOnlyWarningProps {
@@ -15,7 +16,9 @@ export const MobileOnlyWarning: React.FC<MobileOnlyWarningProps> = ({
     reason = 'This feature requires a larger screen for optimal use.',
     suggestedModule = 'creative',
 }) => {
-    const { setModule } = useStore();
+    const { setModule } = useStore(useShallow(state => ({
+        setModule: state.setModule,
+    })));
 
     return (
         <div className="flex flex-col items-center justify-center h-full p-8 text-center bg-bg-dark">

@@ -88,4 +88,7 @@ async function verifySymphonicIntegration() {
     console.info('\n✨ Verification Complete!');
 }
 
-verifySymphonicIntegration().catch(console.error);
+// Only execute when run directly (not on import)
+if (typeof process !== 'undefined' && process.argv[1]?.includes('verify-symphonic')) {
+    verifySymphonicIntegration().catch(console.error);
+}

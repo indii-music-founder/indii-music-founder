@@ -2,6 +2,7 @@
 import React from 'react';
 import { Play, Camera, Music, Clapperboard } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 interface VisualScriptBeat {
@@ -23,7 +24,10 @@ interface VisualScriptRendererProps {
 }
 
 export default function VisualScriptRenderer({ data }: VisualScriptRendererProps) {
-    const { setPrompt, setGenerationMode } = useStore();
+    const { setPrompt, setGenerationMode } = useStore(useShallow(state => ({
+        setPrompt: state.setPrompt,
+        setGenerationMode: state.setGenerationMode,
+    })));
     const toast = useToast();
 
     const script: VisualScriptData | null = typeof data === 'string' ? (() => {

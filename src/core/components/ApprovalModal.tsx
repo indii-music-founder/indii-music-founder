@@ -1,4 +1,5 @@
 import { useStore } from '../store';
+import { useShallow } from 'zustand/react/shallow';
 import { AlertTriangle, Check, X } from 'lucide-react';
 
 const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label: string }> = {
@@ -11,7 +12,10 @@ const TYPE_CONFIG: Record<string, { icon: React.ReactNode; color: string; label:
 };
 
 export function ApprovalModal() {
-    const { pendingApproval, resolveApproval } = useStore();
+    const { pendingApproval, resolveApproval } = useStore(useShallow(state => ({
+        pendingApproval: state.pendingApproval,
+        resolveApproval: state.resolveApproval,
+    })));
 
     if (!pendingApproval) return null;
 
