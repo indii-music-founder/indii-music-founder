@@ -53,7 +53,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         activeAgentProvider,
         setActiveAgentProvider,
         isKnowledgeBaseEnabled,
-        setKnowledgeBaseEnabled
+        setKnowledgeBaseEnabled,
+        isCommandBarCollapsed,
+        setCommandBarCollapsed
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
@@ -73,7 +75,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         activeAgentProvider: state.activeAgentProvider,
         setActiveAgentProvider: state.setActiveAgentProvider,
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
-        setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled
+        setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
+        isCommandBarCollapsed: state.isCommandBarCollapsed,
+        setCommandBarCollapsed: state.setCommandBarCollapsed
     })));
 
     const isIndiiMode = chatChannel === 'indii';
@@ -341,6 +345,18 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     </div>
 
                     <div className="flex items-center gap-2 ml-auto">
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setCommandBarCollapsed(true);
+                            }}
+                            className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                            title="Collapse Chat"
+                            aria-label="Collapse Chat"
+                        >
+                            <ChevronUp size={16} className="rotate-180" />
+                        </button>
+
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
