@@ -110,6 +110,11 @@ const STITCH_MAX_POLL_ATTEMPTS = 60;
 // Video segment defaults
 const DEFAULT_SEGMENT_DURATION_SECONDS = 5;
 
+// Frame extraction defaults
+const DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS = 4.5;
+const FRAME_EXTRACTION_POLL_INTERVAL_MS = 2000;
+const FRAME_EXTRACTION_MAX_POLL_ATTEMPTS = 20;
+
 // ----------------------------------------------------------------------------
 // Inngest Functions
 // ----------------------------------------------------------------------------
@@ -210,12 +215,11 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                     return triggerResult.name;
                 });
 
-                // FIX #1: Move polling outside step.run using step.sleep
+                // Polling Loop
                 let segmentResult: any = null;
                 let isDone = false;
 
                 for (let attempt = 0; attempt < SEGMENT_MAX_POLL_ATTEMPTS; attempt++) {
-                    // Use step.sleep instead of setTimeout inside step.run
                     await step.sleep(`wait-segment-${i}-${attempt}`, `${SEGMENT_POLL_INTERVAL_SECONDS}s`);
 
                     segmentResult = await step.run(`poll-segment-${i}-${attempt}`, async () => {
@@ -285,99 +289,127 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                 // 4. Extract last frame for daisychaining
                 if (i < prompts.length - 1) {
                     try {
-                        // 4a. Trigger Transcoder Job
-                        const transcoderJobName = await step.run(`trigger-frame-extract-${i}`, async () => {
-                            const auth = new GoogleAuth({
-                                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-                            });
-                            const transcoder = new TranscoderServiceClient();
+                        let extractionAttempts = 0;
+                        const maxExtractionAttempts = 2;
+
+                        while (extractionAttempts < maxExtractionAttempts) {
                             try {
-                                const projectId = await auth.getProjectId();
-                                const location = 'us-central1';
-                                const bucket = admin.storage().bucket();
-                                const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
+                                // 4a. Trigger Transcoder Job
+                                const jobName = await step.run(`trigger-segment-extract-${i}-attempt-${extractionAttempts}`, async () => {
+                                    const auth = new GoogleAuth({
+                                        scopes: ['https://www.googleapis.com/auth/cloud-platform']
+                                    });
+                                    const transcoder = new TranscoderServiceClient();
+                                    try {
+                                        const projectId = await auth.getProjectId();
+                                        const location = 'us-central1';
+                                        const bucket = admin.storage().bucket();
+                                        const outputUri = `gs://${bucket.name}/frames/${userId}/${segmentId}/`;
 
-                                // Normalize Input URI
-                                const inputUri = toGcsUri(segmentUrl);
+                                        // Normalize Input URI
+                                        const inputUri = toGcsUri(segmentUrl);
 
-                                // Create Sprite Job (acting as frame extractor)
-                                const [job] = await transcoder.createJob({
-                                    parent: transcoder.locationPath(projectId, location),
-                                    job: {
-                                        outputUri,
-                                        config: {
-                                            inputs: [{ key: "input0", uri: inputUri }],
-                                            editList: [{ key: "atom0", inputs: ["input0"] }],
-                                            spriteSheets: [
-                                                {
-                                                    filePrefix: "frame_",
-                                                    startTimeOffset: { seconds: 4, nanos: 500000000 },
-                                                    endTimeOffset: { seconds: 0, nanos: 0 },
-                                                    columnCount: 1,
-                                                    rowCount: 1,
-                                                    totalCount: 1,
-                                                    quality: 100
+                                        // Calculate extraction time dynamically
+                                        const extractionTime = Math.min(
+                                            DEFAULT_FRAME_EXTRACTION_OFFSET_SECONDS,
+                                            DEFAULT_SEGMENT_DURATION_SECONDS - 0.5
+                                        );
+                                        const extractionSeconds = Math.floor(extractionTime);
+                                        const extractionNanos = Math.floor((extractionTime - extractionSeconds) * 1_000_000_000);
+
+                                        // Create Sprite Job
+                                        const [job] = await transcoder.createJob({
+                                            parent: transcoder.locationPath(projectId, location),
+                                            job: {
+                                                outputUri,
+                                                config: {
+                                                    inputs: [{ key: "input0", uri: inputUri }],
+                                                    editList: [{ key: "atom0", inputs: ["input0"] }],
+                                                    spriteSheets: [
+                                                        {
+                                                            filePrefix: "frame_",
+                                                            startTimeOffset: { seconds: extractionSeconds, nanos: extractionNanos },
+                                                            endTimeOffset: { seconds: 0, nanos: 0 },
+                                                            columnCount: 1,
+                                                            rowCount: 1,
+                                                            totalCount: 1,
+                                                            quality: 100
+                                                        }
+                                                    ]
                                                 }
-                                            ]
-                                        }
+                                            }
+                                        });
+                                        return job.name;
+                                    } finally {
+                                        await transcoder.close();
                                     }
                                 });
-                                return job.name;
-                            } finally {
-                                await transcoder.close();
-                            }
-                        });
 
-                        // 4b. Poll Transcoder Job
-                        let frameDone = false;
-                        let fAttempts = 0;
-                        let finalState = 'PROCESSING';
+                                // 4b. Poll Transcoder Job
+                                let frameDone = false;
+                                let finalState = 'PROCESSING';
 
-                        while (!frameDone && fAttempts < 20) {
-                            fAttempts++;
-                            await step.sleep(`wait-frame-${i}-${fAttempts}`, "2s");
+                                for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
+                                    await step.sleep(`wait-extract-${i}-${extractionAttempts}-${j}`, `${FRAME_EXTRACTION_POLL_INTERVAL_MS / 1000}s`);
 
-                            const jobState = await step.run(`check-frame-${i}-${fAttempts}`, async () => {
-                                const transcoder = new TranscoderServiceClient();
-                                try {
-                                    const [status] = await transcoder.getJob({ name: transcoderJobName });
-                                    return status.state as string;
-                                } catch (err: unknown) {
-                                    console.warn(`[FrameExtraction] Polling error: ${(err as Error).message}`);
-                                    return 'ERROR';
-                                } finally {
-                                    await transcoder.close();
-                                }
-                            });
+                                    finalState = await step.run(`poll-extract-${i}-${extractionAttempts}-${j}`, async () => {
+                                        const transcoder = new TranscoderServiceClient();
+                                        try {
+                                            const [status] = await transcoder.getJob({ name: jobName });
+                                            return status.state as string;
+                                        } catch (err: any) {
+                                            console.warn(`[FrameExtraction] Polling error: ${err.message}`);
+                                            return 'PROCESSING';
+                                        } finally {
+                                            await transcoder.close();
+                                        }
+                                    });
 
-                            if (jobState === 'SUCCEEDED' || jobState === 'FAILED') {
-                                finalState = jobState;
-                                frameDone = true;
-                            }
-                        }
-
-                        if (finalState === 'SUCCEEDED') {
-                            // Download Frame
-                            currentStartImage = await step.run(`download-frame-${i}`, async () => {
-                                const bucket = admin.storage().bucket();
-                                await new Promise(r => setTimeout(r, 1000));
-                                const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
-
-                                if (!files || files.length === 0) {
-                                    console.warn(`[LongForm] No frame generated for segment ${i}`);
-                                    return undefined;
+                                    if (finalState === 'SUCCEEDED' || finalState === 'FAILED') {
+                                        break;
+                                    }
                                 }
 
-                                files.sort((a, b) => a.name.localeCompare(b.name));
-                                const frameFile = files[0];
-                                const [buffer] = await frameFile.download();
-                                return `data:image/jpeg;base64,${buffer.toString('base64')}`;
-                            });
+                                if (finalState !== 'SUCCEEDED') {
+                                    throw new Error(`Frame extraction failed or timed out: ${finalState}`);
+                                }
+
+                                // 4c. Download Frame
+                                currentStartImage = await step.run(`download-frame-${i}-attempt-${extractionAttempts}`, async () => {
+                                    const bucket = admin.storage().bucket();
+                                    const [files] = await bucket.getFiles({ prefix: `frames/${userId}/${segmentId}/frame_` });
+
+                                    if (!files || files.length === 0) {
+                                        throw new Error(`No frame file generated for segment ${i}`);
+                                    }
+
+                                    const frameFile = files[0];
+                                    const [buffer] = await frameFile.download();
+                                    return `data:image/jpeg;base64,${buffer.toString('base64')}`;
+                                });
+
+                                break; // Success - exit retry loop
+                            } catch (e: any) {
+                                extractionAttempts++;
+                                console.warn(`[LongForm] Frame extraction attempt ${extractionAttempts} failed for segment ${i}:`, e.message);
+
+                                if (extractionAttempts >= maxExtractionAttempts) {
+                                    console.error(`[LongForm] All frame extraction attempts failed for segment ${i}. Continuing without visual continuity.`);
+                                    await step.run(`log-extraction-failure-${i}`, async () => {
+                                        await admin.firestore().collection("videoJobs").doc(jobId).set({
+                                            warnings: admin.firestore.FieldValue.arrayUnion(
+                                                `Frame extraction failed for segment ${i}: ${e.message}. Visual continuity may be affected.`
+                                            ),
+                                            updatedAt: admin.firestore.FieldValue.serverTimestamp()
+                                        }, { merge: true });
+                                    });
+                                    currentStartImage = undefined;
+                                }
+                            }
                         }
                     } catch (e: unknown) {
                         const errorMsg = (e as Error).message;
-                        console.error(`[LongForm] Frame extraction failed for segment ${i}:`, errorMsg);
-                        throw new Error(`Frame extraction failed, breaking continuity: ${errorMsg}`);
+                        console.error(`[LongForm] Unexpected error during segment ${i} continuity extraction:`, errorMsg);
                     }
                 }
             } // end prompts loop

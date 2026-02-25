@@ -7,8 +7,6 @@ import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import type { AgentService } from '../AgentService';
 
-
-
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
  * Merges OpenClaw's system/browser integration with Agent Zero's autonomous multi-turn reasoning.
@@ -120,8 +118,6 @@ export class HybridOrchestrator {
                 await TraceService.addStep(traceId, 'routing', { turn: `turn-${currentTurn}`, ...decision });
                 history.push({ turn: currentTurn, thought: decision.thought, action: decision.callAgentId || decision.useTool });
 
-
-
                 // Specialists Invocation
                 if (decision.callAgentId && decision.task) {
                     console.info(`[indii:Hybrid] Delegating to specialist: ${decision.callAgentId}`);
@@ -129,7 +125,6 @@ export class HybridOrchestrator {
                         if (!service) throw new Error('AgentService instance not provided for delegation');
                         const result = await service.runAgent(decision.callAgentId, decision.task, context, traceId);
 
-                        // Use pruneResult with larger limit for specialist feedback
                         history.push({
                             turn: currentTurn,
                             agent: decision.callAgentId,
@@ -187,7 +182,6 @@ export class HybridOrchestrator {
                     }
                 }
 
-                // Agent Zero Container Invocation
                 if (decision.useTool === 'agent_zero_deep') {
                     console.info(`[indii:Hybrid] Delegating deep task to Agent Zero Container...`);
                     try {
