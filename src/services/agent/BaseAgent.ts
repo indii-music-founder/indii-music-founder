@@ -583,7 +583,7 @@ ${task}
                 functionDeclarations: allFunctions.map(fn => ({
                     name: fn.name,
                     description: fn.description,
-                    parameters: fn.parameters
+                    parameters: JSON.parse(JSON.stringify(fn.parameters))
                 }))
             }]
             : [];

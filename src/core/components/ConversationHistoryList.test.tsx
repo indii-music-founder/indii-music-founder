@@ -40,6 +40,8 @@ describe('ConversationHistoryList', () => {
         activeSessionId: 's1',
         setActiveSession: mockSetActiveSession,
         deleteSession: mockDeleteSession,
+        setRightPanelView: vi.fn(),
+        rightPanelView: 'archives' as const,
     };
 
     beforeEach(() => {
@@ -109,15 +111,15 @@ describe('ConversationHistoryList', () => {
     });
 
     it('should be interactive', () => {
-         render(<ConversationHistoryList onClose={mockOnClose} />);
+        render(<ConversationHistoryList onClose={mockOnClose} />);
 
-         const buttons = screen.getAllByRole('button');
-         const sessionBtn = buttons.find(b =>
-             b.textContent?.includes('Session 2') &&
-             !b.getAttribute('aria-label')?.includes('Delete')
-         );
+        const buttons = screen.getAllByRole('button');
+        const sessionBtn = buttons.find(b =>
+            b.textContent?.includes('Session 2') &&
+            !b.getAttribute('aria-label')?.includes('Delete')
+        );
 
-         fireEvent.click(sessionBtn!);
-         expect(mockSetActiveSession).toHaveBeenCalledWith('s2');
+        fireEvent.click(sessionBtn!);
+        expect(mockSetActiveSession).toHaveBeenCalledWith('s2');
     });
 });

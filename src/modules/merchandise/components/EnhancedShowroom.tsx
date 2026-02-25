@@ -130,6 +130,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     // Sync state with prop if it changes from outside
     useEffect(() => {
         if (initialAsset) {
+            console.log("[EnhancedShowroom] Syncing initialAsset:", initialAsset.substring(0, 50) + "...");
             setProductAsset(initialAsset);
         }
     }, [initialAsset]);

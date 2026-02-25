@@ -581,11 +581,24 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             }
 
             // Raster formats (PNG, JPEG, WebP)
+            // ⚡ INDIIOS FIX: Reset zoom to 1 and dimensions to 800x1000 before export 
+            // to ensure no cropping occurs due to responsive scaling
+            const currentZoom = canvas.getZoom();
+            const currentWidth = canvas.width;
+            const currentHeight = canvas.height;
+
+            canvas.setZoom(1);
+            canvas.setDimensions({ width: 800, height: 1000 });
+
             const dataURL = canvas.toDataURL({
                 format: format === 'jpeg' ? 'jpeg' : 'png',
                 quality: format === 'jpeg' ? 0.9 : 1,
-                multiplier: 2 // Export at 2x resolution
+                multiplier: 2 // Export at 2x resolution (1600x2000)
             });
+
+            // Restore zoom and dimensions for the interactive UI
+            canvas.setZoom(currentZoom);
+            canvas.setDimensions({ width: currentWidth || 800 * currentZoom, height: currentHeight || 1000 * currentZoom });
 
             // Convert to WebP if requested
             if (format === 'webp') {

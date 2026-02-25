@@ -156,7 +156,7 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
                         assetPath: { type: 'STRING', description: 'Optional: Local path to an image or video asset for vision analysis.' },
                         brandKit: { type: 'OBJECT', description: 'Optional: Specific brand guidelines to use for analysis (colors, fonts, vibe).' }
                     },
-                    required: []
+                    required: ["content", "type"]
                 }
             },
             {
@@ -196,3 +196,8 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
         ]
     }]
 };
+
+import { freezeBrandAgent } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeBrandAgent();

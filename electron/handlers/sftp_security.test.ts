@@ -60,6 +60,9 @@ describe('🛡️ Shield: SFTP Security Integration Test', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         handlers = {};
 
         // Capture handlers when they are registered

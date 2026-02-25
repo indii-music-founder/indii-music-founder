@@ -16,6 +16,9 @@ describe('AgentSlice - Available Agents', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         // createStore returns the store hook/api, we can cast if needed or use inferred types
         useStore = createStore<AgentSlice>(createAgentSlice);
     });

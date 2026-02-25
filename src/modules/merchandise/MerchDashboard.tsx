@@ -8,7 +8,7 @@ import {
     Palette, Truck, BarChart3, Sparkles, Star
 } from 'lucide-react';
 
-import { useMerchandise } from './hooks/useMerchandise';
+import { useMerchandise, MerchStats } from './hooks/useMerchandise';
 import { useStore } from '@/core/store';
 import { TopSellingProductItem } from './components/TopSellingProductItem';
 import { RecentDesignItem } from './components/RecentDesignItem';
@@ -163,13 +163,17 @@ export default function MerchDashboard() {
                             <div className="relative z-10">
                                 <h3 className="text-lg font-bold text-white mb-2" data-testid="trend-score-title">Trend Score</h3>
                                 <div className="flex items-end gap-2 mb-2">
-                                    <span className="text-4xl font-black text-[#FFE135]">94</span>
+                                    <span className="text-4xl font-black text-[#FFE135]">{stats.trendScore}</span>
                                     <span className="text-sm text-neutral-400 mb-1">/ 100</span>
                                 </div>
                                 <div className="w-full bg-white/10 rounded-full h-2 mb-2">
-                                    <div className="bg-[#FFE135] h-2 rounded-full" style={{ width: '94%' }} />
+                                    <div className="bg-[#FFE135] h-2 rounded-full transition-all duration-500" style={{ width: `${stats.trendScore}%` }} />
                                 </div>
-                                <p className="text-xs text-neutral-500">Your designs are trending fresh. 2 new viral signals detected.</p>
+                                <p className="text-xs text-neutral-500">
+                                    {stats.trendScore > 80 ? "Your designs are trending fresh. 2 new viral signals detected." :
+                                        stats.trendScore > 0 ? "Design engagement is steady." :
+                                            "No trend data available yet."}
+                                </p>
                             </div>
                         </MerchCard>
 
@@ -180,15 +184,21 @@ export default function MerchDashboard() {
                             <div className="relative z-10">
                                 <h3 className="text-lg font-bold text-white mb-2" data-testid="production-performance-title">Production Velocity</h3>
                                 <div className="flex items-end gap-2 mb-2">
-                                    <span className="text-4xl font-black text-green-400">+12%</span>
+                                    <span className={`text-4xl font-black ${stats.productionVelocity >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                                        {stats.productionVelocity > 0 ? `+${stats.productionVelocity}%` : `${stats.productionVelocity}%`}
+                                    </span>
                                     <span className="text-sm text-neutral-400 mb-1">vs last week</span>
                                 </div>
                                 <div className="flex gap-1 h-2 mb-2">
-                                    <div className="flex-1 bg-green-500/20 rounded-full overflow-hidden">
-                                        <div className="h-full bg-green-500 w-[70%]" />
+                                    <div className="flex-1 bg-white/10 rounded-full overflow-hidden">
+                                        <div className={`h-full ${stats.productionVelocity >= 0 ? 'bg-green-500' : 'bg-red-500'} transition-all duration-500`} style={{ width: `${Math.min(Math.abs(stats.productionVelocity), 100)}%` }} />
                                     </div>
                                 </div>
-                                <p className="text-xs text-neutral-500">Production efficiency is up. Global logistics optimal.</p>
+                                <p className="text-xs text-neutral-500">
+                                    {stats.productionVelocity > 0 ? "Production efficiency is up. Global logistics optimal." :
+                                        stats.productionVelocity < 0 ? "Production throughput decreased this week." :
+                                            "Production pace is stable."}
+                                </p>
                             </div>
                         </MerchCard>
                     </div>
@@ -253,7 +263,7 @@ function StatsCard({ title, value, change, icon }: { title: string; value: strin
 /*  Left Panel Widgets                                                  */
 /* ================================================================== */
 
-function StoreStatsWidget({ stats }: { stats: { totalRevenue: number; unitsSold: number; conversionRate: number | null } }) {
+function StoreStatsWidget({ stats }: { stats: MerchStats }) {
     const items = [
         { label: 'Revenue', value: formatCurrency(stats.totalRevenue), color: 'text-[#FFE135]' },
         { label: 'Units Sold', value: stats.unitsSold.toString(), color: 'text-green-400' },
@@ -378,12 +388,12 @@ function PODPartnerStatusPanel() {
     );
 }
 
-function ConversionFunnelPanel({ stats }: { stats: { conversionRate: number | null; unitsSold: number } }) {
+function ConversionFunnelPanel({ stats }: { stats: MerchStats }) {
     const stages = [
-        { label: 'Page Views', value: '12,847', pct: 100 },
-        { label: 'Add to Cart', value: '2,156', pct: 16.8 },
-        { label: 'Checkout', value: '891', pct: 6.9 },
-        { label: 'Purchased', value: stats.unitsSold.toString(), pct: stats.conversionRate ?? 0 },
+        { label: 'Page Views', value: stats.funnelData.pageViews.toLocaleString(), pct: 100 },
+        { label: 'Add to Cart', value: stats.funnelData.addToCart.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.addToCart / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Checkout', value: stats.funnelData.checkout.toLocaleString(), pct: stats.funnelData.pageViews > 0 ? (stats.funnelData.checkout / stats.funnelData.pageViews) * 100 : 0 },
+        { label: 'Purchased', value: stats.unitsSold.toLocaleString(), pct: stats.conversionRate ?? 0 },
     ];
 
     return (

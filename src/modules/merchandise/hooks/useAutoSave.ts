@@ -69,7 +69,7 @@ export const useAutoSave = (
                 canvasJSON,
                 thumbnail,
                 lastModified: serverTimestamp(),
-                createdAt: lastSaved ? undefined : serverTimestamp(), // Only set on first save
+                ...(lastSaved ? {} : { createdAt: serverTimestamp() })
             }, { merge: true });
 
             setLastSaved(new Date());

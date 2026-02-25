@@ -27,7 +27,18 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     skipOnboarding: z.boolean().default(false),
 });
 
+// Robust test environment detection early for getEnv logic
+const isTest =
+    typeof process !== 'undefined' && (
+        !!process.env.VITEST ||
+        !!process.env.NODE_ENV?.includes('test') ||
+        process.env.VITEST_WORKER_ID !== undefined
+    );
+
 const getEnv = (metaValue: any, processValue: any): string | undefined => {
+    // In test environment, prioritize process.env (processValue) for easier mocking
+    if (isTest) return processValue || metaValue || undefined;
+
     const val = metaValue || processValue;
     return val || undefined;
 };
@@ -64,12 +75,7 @@ const processEnv = {
     VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
 };
 
-// Robust test environment detection
-const isTest =
-    getSafeMetaEnv('MODE') === 'test' ||
-    !!process.env.VITEST ||
-    !!process.env.NODE_ENV?.includes('test') ||
-    process.env.VITEST_WORKER_ID !== undefined;
+// isTest moved to top
 
 const parsed = FrontendEnvSchema.safeParse(processEnv);
 

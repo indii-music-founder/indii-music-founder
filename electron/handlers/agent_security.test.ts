@@ -77,6 +77,9 @@ describe('🛡️ Shield: Agent IPC Security Test', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         handlers = {};
 
         // Capture handlers

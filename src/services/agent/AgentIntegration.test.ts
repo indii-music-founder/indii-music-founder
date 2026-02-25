@@ -82,7 +82,7 @@ vi.mock('@/services/firebase', () => ({
 vi.mock('./MemoryService', () => ({
     memoryService: {
         retrieveRelevantMemories: vi.fn().mockResolvedValue([]),
-        saveMemory: vi.fn()
+        saveMemory: vi.fn().mockResolvedValue(undefined)
     }
 }));
 

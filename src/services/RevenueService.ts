@@ -94,7 +94,7 @@ export class RevenueService {
         // Basic validation - mimic Zod's parsing/skipping logic
         // If data is invalid or doesn't have essential fields, we skip it to match previous behavior
         if (!data || typeof data !== 'object') {
-           return;
+          return;
         }
 
         // Amount is critical
@@ -104,8 +104,8 @@ export class RevenueService {
         // However, RevenueEntrySchema has 'amount: z.number().default(0)', so strictly speaking if amount is missing it defaults to 0.
         // But if 'amount' is present and NOT a number, safeParse would fail.
         if ('amount' in data && typeof data.amount !== 'number' && data.amount !== undefined) {
-             // Invalid type for amount -> skip
-             return;
+          // Invalid type for amount -> skip
+          return;
         }
 
         totalRevenue += amount;
@@ -161,12 +161,12 @@ export class RevenueService {
         const data = doc.data();
 
         if (!data || typeof data !== 'object') {
-            return;
+          return;
         }
 
         // If amount is present but invalid type, skip (mimic Zod validation error)
         if ('amount' in data && typeof data.amount !== 'number' && data.amount !== undefined) {
-            return;
+          return;
         }
 
         const amount = (typeof data.amount === 'number') ? data.amount : 0;
@@ -194,7 +194,14 @@ export class RevenueService {
         sourceCounts,
         revenueByProduct,
         salesByProduct,
-        history
+        history,
+        trendScore: 0,
+        productionVelocity: 0,
+        funnelData: {
+          pageViews: 0,
+          addToCart: 0,
+          checkout: 0
+        }
       };
 
       return result;

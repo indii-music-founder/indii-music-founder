@@ -73,6 +73,9 @@ const MOCK_VENUE_B = {
 describe('VenueScoutService', () => {
     beforeEach(() => {
         vi.resetAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         // Clear cache by accessing private property (TS workaround or simple re-instantiation if possible, but static makes it hard.
         // We can mock Date.now() to expire cache if needed, or rely on distinct keys.
         // For testing, we'll use distinct cities/genres to avoid cache hits between tests unless intentional.

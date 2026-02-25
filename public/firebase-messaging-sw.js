@@ -2,7 +2,7 @@ importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js'
 importScripts('https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js');
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBWCig_kA7j_3Xm5IphpAq4WqGLwpwEzvA",
+    apiKey: "", // REMOVED HARDCODED KEY - Inject via build or env
     authDomain: "indiios-v-1-1.firebaseapp.com",
     projectId: "indiios-v-1-1",
     storageBucket: "indiios-alpha-electron",
