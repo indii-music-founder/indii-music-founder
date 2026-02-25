@@ -13,6 +13,28 @@ vi.mock('./DistributionService', () => ({
     }
 }));
 
+vi.mock('@/services/security/CredentialService', () => ({
+    credentialService: {
+        getCredentials: vi.fn(),
+        saveCredentials: vi.fn(),
+        deleteCredentials: vi.fn()
+    }
+}));
+
+// Mock window.electronAPI
+(global as any).window = {
+    electronAPI: {
+        distribution: {
+            stageRelease: vi.fn().mockResolvedValue(undefined)
+        },
+        credentials: {
+            get: vi.fn(),
+            save: vi.fn(),
+            delete: vi.fn()
+        }
+    }
+};
+
 vi.mock('./DistributionSyncService', () => ({
     DistributionSyncService: {
         getRelease: vi.fn()
@@ -42,8 +64,10 @@ describe('MerlinService', () => {
         updatedAt: { seconds: 1234567890, nanoseconds: 0 } as any
     };
 
-    beforeEach(() => {
+    beforeEach(async () => {
         vi.clearAllMocks();
+        const { credentialService } = await import('@/services/security/CredentialService');
+        vi.mocked(credentialService.getCredentials).mockResolvedValue({ username: 'test-user', password: 'test-password' });
     });
 
     it('should successfully deliver a release via SFTP', async () => {
@@ -69,7 +93,7 @@ describe('MerlinService', () => {
         expect(distributionService.generateDDEX).toHaveBeenCalled();
         expect(distributionService.transmit).toHaveBeenCalledWith(expect.objectContaining({
             host: 'sftp.merlinnetwork.org',
-            user: expect.any(String), // Should use existing env or default
+            user: 'test-user',
             remotePath: expect.stringContaining(mockRelease.metadata.upc || ''),
             localPath: expect.stringContaining('release.xml')
         }));
@@ -85,6 +109,8 @@ describe('MerlinService', () => {
     });
 
     it('should handle SFTP transmission failure', async () => {
+        const { credentialService } = await import('@/services/security/CredentialService');
+        vi.mocked(credentialService.getCredentials).mockResolvedValue({ username: 'test-user', password: 'test-password' });
         vi.mocked(DistributionSyncService.getRelease).mockResolvedValue(mockRelease);
         vi.mocked(distributionService.generateDDEX).mockResolvedValue('<xml>DDEX</xml>');
         vi.mocked(distributionService.transmit).mockResolvedValue({

@@ -42,6 +42,17 @@ export const RevenueStatsSchema = z.object({
     date: z.string(),
     amount: z.number(),
   })),
+  trendScore: z.number().default(0),
+  productionVelocity: z.number().default(0),
+  funnelData: z.object({
+    pageViews: z.number().default(0),
+    addToCart: z.number().default(0),
+    checkout: z.number().default(0),
+  }).default({
+    pageViews: 0,
+    addToCart: 0,
+    checkout: 0
+  }),
 });
 
 export type RevenueStats = z.infer<typeof RevenueStatsSchema>;

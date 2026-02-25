@@ -36,8 +36,8 @@ describe('Merchandise Dashboard', () => {
         standardProducts: mockStandardProducts,
         proProducts: mockProProducts,
         catalog: [],
-        stats: { totalRevenue: 3250, unitsSold: 150, conversionRate: 5.2, revenueChange: 12, unitsChange: 8 },
-        topSellingProducts: mockProProducts,
+        stats: { totalRevenue: 3250, unitsSold: 150, conversionRate: 5.2, revenueChange: 12, unitsChange: 8, funnelData: { pageViews: 5000, addToCart: 500, checkout: 200 } },
+        topSellingProducts: [...mockStandardProducts, ...mockProProducts],
         loading: false,
         error: null as string | null,
         addProduct: vi.fn(),
@@ -85,8 +85,11 @@ describe('Merchandise Dashboard', () => {
         );
 
         expect(screen.getByTestId('merch-dashboard-content')).toBeInTheDocument();
-        expect(screen.getByText('Kill Tee')).toBeInTheDocument();
-        expect(screen.getByText('Killer Cap')).toBeInTheDocument();
+        // Check for both standard and pro products which are now in topSellingProducts mock
+        expect(screen.getAllByText('Kill Tee').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Killer Cap').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Viral Hoodie').length).toBeGreaterThan(0);
+        expect(screen.getAllByText('Elite Bottle').length).toBeGreaterThan(0);
     });
 
     it('shows loading state', () => {

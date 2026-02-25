@@ -4,12 +4,19 @@ import { MerchandiseService, CatalogProduct } from '@/services/merchandise/Merch
 import { revenueService } from '@/services/RevenueService';
 import { MerchProduct } from '../types';
 
-interface MerchStats {
+export interface MerchStats {
     totalRevenue: number;
     unitsSold: number;
     conversionRate: number | null; // Nullable if not available
     revenueChange: number; // Percentage
     unitsChange: number; // Percentage
+    trendScore: number;
+    productionVelocity: number;
+    funnelData: {
+        pageViews: number;
+        addToCart: number;
+        checkout: number;
+    };
 }
 
 export const useMerchandise = () => {
@@ -21,7 +28,14 @@ export const useMerchandise = () => {
         unitsSold: 0,
         conversionRate: null,
         revenueChange: 0,
-        unitsChange: 0
+        unitsChange: 0,
+        trendScore: 0,
+        productionVelocity: 0,
+        funnelData: {
+            pageViews: 0,
+            addToCart: 0,
+            checkout: 0
+        }
     });
     const [topSellingProducts, setTopSellingProducts] = useState<(MerchProduct & { revenue: number, units: number })[]>([]);
     const [isProductsLoading, setIsProductsLoading] = useState(true);
@@ -138,7 +152,14 @@ export const useMerchandise = () => {
                         unitsSold: revenueStats.sourceCounts.merch || 0,
                         conversionRate: null,
                         revenueChange: revenueStats.revenueChange,
-                        unitsChange: 0
+                        unitsChange: 0,
+                        trendScore: revenueStats.trendScore || 0,
+                        productionVelocity: revenueStats.productionVelocity || 0,
+                        funnelData: revenueStats.funnelData || {
+                            pageViews: 0,
+                            addToCart: 0,
+                            checkout: 0
+                        }
                     });
 
                     const topSellers = products

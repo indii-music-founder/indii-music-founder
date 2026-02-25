@@ -53,6 +53,9 @@ describe('🛡️ Shield: Distribution Security Test', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
         // Reset realpathSync to identity function by default
         mocks.fsSync.realpathSync.mockImplementation((p) => p);
 

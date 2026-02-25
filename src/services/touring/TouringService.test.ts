@@ -30,6 +30,9 @@ vi.mock('firebase/firestore', async (importOriginal) => {
 describe('TouringService', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        // Prevent ZodError formatting crash in Vitest's console serializer
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+        vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     describe('getVehicleStats', () => {
