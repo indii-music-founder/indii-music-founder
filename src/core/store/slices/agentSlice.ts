@@ -74,6 +74,7 @@ export interface AgentSlice {
 
     isAgentOpen: boolean;
     isCommandBarDetached: boolean;
+    isCommandBarCollapsed: boolean;
     commandBarInput: string;
     commandBarAttachments: File[];
     agentMode: AgentMode;
@@ -100,6 +101,7 @@ export interface AgentSlice {
 
     toggleAgentWindow: () => void;
     setCommandBarDetached: (detached: boolean) => void;
+    setCommandBarCollapsed: (collapsed: boolean) => void;
     setCommandBarInput: (input: string) => void;
     setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
@@ -130,6 +132,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     isAgentOpen: false,
     isCommandBarDetached: false,
+    isCommandBarCollapsed: false,
     commandBarInput: '',
     commandBarAttachments: [],
     agentMode: 'assistant',
@@ -310,6 +313,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
         isRightPanelOpen: !state.isAgentOpen // Open RightPanel when agent opens, close when it closes
     })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
+    setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
     setCommandBarInput: (input) => set({ commandBarInput: input }),
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     setAgentMode: (mode) => set({ agentMode: mode }),

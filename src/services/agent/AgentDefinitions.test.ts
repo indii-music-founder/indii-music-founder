@@ -4,7 +4,7 @@ import { MarketingAgent } from './definitions/MarketingAgent';
 import { freezeBrandAgent } from './FreezeDiagnostic';
 
 // Freeze the schema early to catch mutations
-freezeBrandAgent();
+freezeBrandAgent(BrandAgent);
 
 describe('Agent Definitions', () => {
     describe('BrandAgent', () => {
