@@ -96,8 +96,7 @@ describe('distributionSlice', () => {
 
         await slice.connectDistributor('distrokid', mockCreds);
 
-        // Verify we are NOT passing the mock key
-        // Note: This test will fail on the current codebase because it forces ALPHA_MOCK_KEY
+        // Verify credentials are passed through, not replaced with a mock key
         expect(DistributorService.connect).not.toHaveBeenCalledWith(expect.anything(), expect.objectContaining({ apiKey: 'ALPHA_MOCK_KEY' }));
     });
   });

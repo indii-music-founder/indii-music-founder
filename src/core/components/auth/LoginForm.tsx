@@ -1,10 +1,17 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { Loader2, Mail, Lock, LogIn, Chrome, User } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export default function LoginForm() {
-    const { loginWithGoogle, loginWithEmail, loginAsGuest, authLoading, authError } = useStore();
+    const { loginWithGoogle, loginWithEmail, loginAsGuest, authLoading, authError } = useStore(useShallow(state => ({
+        loginWithGoogle: state.loginWithGoogle,
+        loginWithEmail: state.loginWithEmail,
+        loginAsGuest: state.loginAsGuest,
+        authLoading: state.authLoading,
+        authError: state.authError,
+    })));
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { FileText, Clapperboard } from 'lucide-react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
 
 interface ScreenplayElement {
@@ -19,7 +20,10 @@ interface ScreenplayRendererProps {
 }
 
 export default function ScreenplayRenderer({ data }: ScreenplayRendererProps) {
-    const { setPrompt, setGenerationMode } = useStore();
+    const { setPrompt, setGenerationMode } = useStore(useShallow(state => ({
+        setPrompt: state.setPrompt,
+        setGenerationMode: state.setGenerationMode,
+    })));
     const toast = useToast();
 
     // Parse data if it's a string

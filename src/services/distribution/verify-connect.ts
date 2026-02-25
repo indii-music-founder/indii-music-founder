@@ -131,4 +131,7 @@ async function verifyConnection() {
     }
 }
 
-verifyConnection().catch(console.error);
+// Only execute when run directly (not on import)
+if (typeof process !== 'undefined' && process.argv[1]?.includes('verify-connect')) {
+    verifyConnection().catch(console.error);
+}
