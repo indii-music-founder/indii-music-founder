@@ -346,7 +346,6 @@ export const generateLongFormVideoFn = (inngestClient: any, _geminiApiKey: any) 
                                 });
 
                                 // 4b. Poll Transcoder Job
-                                let frameDone = false;
                                 let finalState = 'PROCESSING';
 
                                 for (let j = 0; j < FRAME_EXTRACTION_MAX_POLL_ATTEMPTS; j++) {
