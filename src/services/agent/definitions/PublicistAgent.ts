@@ -274,3 +274,8 @@ Think in terms of "Media Placements," "Narrative Arc," and "Public Perception."
         };
     })
     .build();
+
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(PublicistAgent);

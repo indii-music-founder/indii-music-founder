@@ -137,7 +137,7 @@
 - [x] UI: Create `SidecarStatus.tsx` component. <!-- id: 601 -->
 - [x] State: Create `sidecarSlice.ts` state management. <!-- id: 600 -->
 - [x] UI: Integrate `SidecarStatus` in `Sidebar.tsx`. <!-- id: 605 -->
-- [ ] Electron: Add health ping and Docker restart IPC to `main.ts`. <!-- id: 604 -->
+- [x] Electron: Add health ping and Docker restart IPC to `main.ts`. <!-- id: 604 -->
 - [x] State: Create `syncSlice.ts` for metadata persistence tracking. <!-- id: 607 -->
-- [ ] UI: Implement `SyncStatus.tsx` in the shell footer. <!-- id: 602 -->
+- [x] UI: Implement `SyncStatus.tsx` in the shell footer. <!-- id: 602 -->
 - [ ] Final Verification: Run full suite and verify 2200+ tests pass. <!-- id: 603 -->

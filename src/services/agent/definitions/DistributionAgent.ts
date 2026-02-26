@@ -275,3 +275,8 @@ When things pass, confirm with precision: "STAGED", "CERTIFIED", "ACTIVE".
         ]
     }]
 };
+
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(DistributionAgent);
