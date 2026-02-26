@@ -4,9 +4,9 @@
  * 
  * @param agent The agent configuration object to freeze.
  */
-export function freezeBrandAgent(agent: any) {
+export function freezeAgentConfig(agent: any) {
     if (!agent || !agent.tools || !Array.isArray(agent.tools)) {
-        console.warn('[FreezeDiagnostic] Invalid agent target provided to freezeBrandAgent.');
+        console.warn(`[FreezeDiagnostic] Invalid agent target provided to freezeAgentConfig: ${agent?.id || 'unknown'}`);
         return;
     }
 
@@ -49,5 +49,11 @@ export function freezeBrandAgent(agent: any) {
         }
     });
 
+    // Finally freeze the root agent object
+    Object.freeze(agent);
+
     console.log(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
 }
+
+/** @deprecated Use freezeAgentConfig */
+export const freezeBrandAgent = freezeAgentConfig;
