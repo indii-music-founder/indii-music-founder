@@ -129,5 +129,11 @@ You are the authorized Art Director for the current active project. Your sole re
                 }
             };
         };
+
+        // Freeze the configuration to prevent mutation
+        // Since we are in the constructor, we can use a dynamic import or just import it at top
+        import('../FreezeDiagnostic').then(({ freezeAgentConfig }) => {
+            freezeAgentConfig(this);
+        });
     }
 }
