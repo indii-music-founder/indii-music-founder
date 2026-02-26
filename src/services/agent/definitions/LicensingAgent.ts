@@ -1,4 +1,6 @@
 import { AgentConfig } from "../types";
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 import systemPrompt from '@/agents/licensing/prompt.md?raw';
 import { licensingService } from "../../licensing/LicensingService";
 import { licenseScannerService } from "../../knowledge/LicenseScannerService";
@@ -233,3 +235,6 @@ export const LicensingAgent: AgentConfig = {
         ]
     }]
 };
+
+freezeAgentConfig(LicensingAgent);
+

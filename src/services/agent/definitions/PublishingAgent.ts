@@ -1,4 +1,6 @@
 import { AgentConfig } from "../types";
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 import systemPrompt from '@agents/publishing/prompt.md?raw';
 
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
@@ -128,3 +130,6 @@ Think in terms of "Writer's Share," "Publisher's Share," "Mechanicals," and "Bla
         ]
     }]
 };
+
+freezeAgentConfig(PublishingAgent);
+

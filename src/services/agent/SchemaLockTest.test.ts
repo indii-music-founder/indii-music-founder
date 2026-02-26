@@ -8,20 +8,20 @@ describe('BrandAgent Schema Lock Proof', () => {
         // Ensure it's frozen
         freezeAgentConfig(BrandAgent);
 
-        const targetTool = BrandAgent.tools?.[0].functionDeclarations.find(f => f.name === 'analyze_brand_consistency');
-        expect(targetTool).toBeDefined();
-        expect(Object.isFrozen(targetTool)).toBe(true);
-        expect(Object.isFrozen(targetTool?.parameters)).toBe(true);
-        expect(Object.isFrozen(targetTool?.parameters?.required)).toBe(true);
+        const brandConsistencyTool = BrandAgent.tools?.[0].functionDeclarations.find(f => f.name === 'analyze_brand_consistency');
+        expect(brandConsistencyTool).toBeDefined();
+        expect(Object.isFrozen(brandConsistencyTool)).toBe(true);
+        expect(Object.isFrozen(brandConsistencyTool?.parameters)).toBe(true);
+        expect(Object.isFrozen(brandConsistencyTool?.parameters?.required)).toBe(true);
 
         // Try to mutate it (should fail in strict mode, or just not work)
         try {
-            (targetTool!.parameters! as any).required = [];
+            (brandConsistencyTool!.parameters! as any).required = [];
         } catch (e) {
             console.log('[SchemaLockTest] Mutation caught (Expected):', (e as Error).message);
         }
 
-        expect(targetTool?.parameters?.required).toEqual(['content', 'type']);
+        expect(brandConsistencyTool?.parameters?.required).toEqual(['content', 'type']);
     });
 
     it('should stay intact after AgentRegistry access', async () => {
@@ -29,7 +29,7 @@ describe('BrandAgent Schema Lock Proof', () => {
         const agent = await agentRegistry.getAsync('brand');
         expect(agent).toBeDefined();
 
-        const targetTool = BrandAgent.tools?.[0].functionDeclarations.find(f => f.name === 'analyze_brand_consistency');
-        expect(targetTool?.parameters?.required).toEqual(['content', 'type']);
+        const tool2 = BrandAgent.tools?.[0].functionDeclarations.find(f => f.name === 'analyze_brand_consistency');
+        expect(tool2?.parameters?.required).toEqual(['content', 'type']);
     });
 });
