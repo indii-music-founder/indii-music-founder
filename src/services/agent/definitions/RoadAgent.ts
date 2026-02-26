@@ -209,3 +209,9 @@ Think in terms of "Load-in/Soundcheck," "Settlement," "Advances," and "Routing E
         ]
     }]
 };
+
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(RoadAgent);
+

@@ -166,3 +166,9 @@ export const DirectorAgent: AgentConfig = {
         ]
     }]
 };
+
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(DirectorAgent);
+
