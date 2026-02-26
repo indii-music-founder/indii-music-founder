@@ -586,9 +586,13 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             const currentZoom = canvas.getZoom();
             const currentWidth = canvas.width;
             const currentHeight = canvas.height;
+            const currentVpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
 
+            // Set to absolute 1:1 state
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
             canvas.setZoom(1);
             canvas.setDimensions({ width: 800, height: 1000 });
+            canvas.renderAll();
 
             const dataURL = canvas.toDataURL({
                 format: format === 'jpeg' ? 'jpeg' : 'png',
@@ -597,8 +601,13 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             });
 
             // Restore zoom and dimensions for the interactive UI
+            canvas.setViewportTransform(currentVpt as any);
             canvas.setZoom(currentZoom);
-            canvas.setDimensions({ width: currentWidth || 800 * currentZoom, height: currentHeight || 1000 * currentZoom });
+            canvas.setDimensions({
+                width: currentWidth || (800 * currentZoom),
+                height: currentHeight || (1000 * currentZoom)
+            });
+            canvas.renderAll();
 
             // Convert to WebP if requested
             if (format === 'webp') {

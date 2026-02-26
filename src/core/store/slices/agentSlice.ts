@@ -110,6 +110,7 @@ export interface AgentSlice {
     setKnowledgeBaseEnabled: (enabled: boolean) => void;
     requestApproval: (content: string, type: string) => Promise<boolean>;
     resolveApproval: (approved: boolean) => void;
+    resetCommandBar: () => void;
 
     addParticipant: (sessionId: string, agentId: string) => void;
     setAgentProcessing: (isProcessing: boolean) => void;
@@ -314,6 +315,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
     setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
+    resetCommandBar: () => set({ isCommandBarDetached: false, isCommandBarCollapsed: false }),
     setCommandBarInput: (input) => set({ commandBarInput: input }),
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     setAgentMode: (mode) => set({ agentMode: mode }),

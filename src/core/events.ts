@@ -6,7 +6,8 @@ export type EventType =
     | 'SYSTEM_ALERT'
     | 'TASK_COMPLETED'
     | 'TASK_FAILED'
-    | 'ASSET_FINALIZED';
+    | 'ASSET_FINALIZED'
+    | 'SYNC_QUEUE_CHANGE';
 
 export interface AgentActionEvent {
     agentId: string;
@@ -28,11 +29,12 @@ export interface SystemAlertEvent {
 class EventBus {
     private listeners: { [key in EventType]?: EventCallback[] } = {};
 
-    on<T>(event: EventType, callback: EventCallback<T>): void {
+    on<T>(event: EventType, callback: EventCallback<T>): () => void {
         if (!this.listeners[event]) {
             this.listeners[event] = [];
         }
         this.listeners[event]?.push(callback as EventCallback<any>);
+        return () => this.off(event, callback);
     }
 
     off<T>(event: EventType, callback: EventCallback<T>): void {

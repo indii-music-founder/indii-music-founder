@@ -268,19 +268,26 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 
                 <PromptInputActions className="px-2 pb-2">
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1.5 flex-1">
                         {!isMobile && (
-                            <>
-                                <input type="file" ref={fileInputRef} onChange={handleFileSelect} className="hidden" multiple aria-label="Upload files" />
-                                <input type="file" ref={cameraInputRef} onChange={handleFileSelect} className="hidden" accept="image/*" capture="environment" aria-label="Take photo" />
+                            <div className="flex items-center gap-0.5">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleFileSelect}
+                                    className="hidden"
+                                    multiple
+                                    aria-label="Upload files"
+                                />
                                 <PromptInputAction tooltip="Attach files">
-                                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none">
-                                        <Paperclip size={20} />
+                                    <button
+                                        onClick={() => fileInputRef.current?.click()}
+                                        className="flex items-center justify-center p-2 rounded-xl text-gray-400 hover:bg-white/10 hover:text-gray-200 transition-all focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                    >
+                                        <Paperclip size={18} />
                                     </button>
                                 </PromptInputAction>
-
-
-                            </>
+                            </div>
                         )}
 
                         <PromptInputAction tooltip={isListening ? "Stop listening" : "Voice Input"}>
@@ -294,9 +301,10 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 )}
                                 aria-label={isListening ? "Stop listening" : "Voice Input"}
                             >
-                                <Mic size={20} className={isListening ? "animate-pulse" : ""} />
+                                <Mic size={18} className={isListening ? "animate-pulse" : ""} />
                             </button>
                         </PromptInputAction>
+
                         {!isMobile && (
                             <div className="relative">
                                 <button
@@ -308,82 +316,103 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     aria-expanded={openDelegate}
                                     aria-label="Select active agent"
                                     className={cn(
-                                        "flex items-center justify-center w-10 h-10 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                        "flex items-center justify-center w-9 h-9 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <div className={cn("w-2 h-2 rounded-full", !isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
+                                    <div className={cn("w-1.5 h-1.5 rounded-full", !isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
                                 </button>
-                                <DelegateMenu isOpen={openDelegate} currentModule={currentModule} isIndiiMode={isIndiiMode} managerAgents={managerAgents} departmentAgents={departmentAgents} onSelect={handleDelegate} onSelectIndii={() => {
-                                    setChatChannel('indii');
-                                    setModule('dashboard' as ModuleId);
-                                    setActiveAgentProvider('agent-zero'); // Explicitly engage Sidecar
-                                    setOpenDelegate(false);
-                                    if (!isAgentOpen) toggleAgentWindow();
-                                }} onClose={handleCloseDelegate} />
+                                <DelegateMenu
+                                    isOpen={openDelegate}
+                                    currentModule={currentModule}
+                                    isIndiiMode={isIndiiMode}
+                                    managerAgents={managerAgents}
+                                    departmentAgents={departmentAgents}
+                                    onSelect={handleDelegate}
+                                    onSelectIndii={() => {
+                                        setChatChannel('indii');
+                                        setModule('dashboard' as ModuleId);
+                                        setActiveAgentProvider('agent-zero');
+                                        setOpenDelegate(false);
+                                        if (!isAgentOpen) toggleAgentWindow();
+                                    }}
+                                    onClose={handleCloseDelegate}
+                                />
                             </div>
                         )}
 
-                        {/* KB Toggle — grouped with agent selector */}
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
-                            }}
-                            className={cn(
-                                "flex items-center justify-center w-8 h-8 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
-                                isKnowledgeBaseEnabled
-                                    ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
-                                    : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
-                            )}
-                            title={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}
-                            aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
-                            aria-pressed={isKnowledgeBaseEnabled}
-                        >
-                            <Database size={13} />
-                        </button>
+                        <PromptInputAction tooltip={isKnowledgeBaseEnabled ? "Knowledge Base Active" : "Connect Knowledge Base"}>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
+                                }}
+                                className={cn(
+                                    "flex items-center justify-center w-8 h-8 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    isKnowledgeBaseEnabled
+                                        ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
+                                        : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
+                                )}
+                                aria-label={isKnowledgeBaseEnabled ? "Disconnect Knowledge Base" : "Connect Knowledge Base"}
+                                aria-pressed={isKnowledgeBaseEnabled}
+                            >
+                                <Database size={12} />
+                            </button>
+                        </PromptInputAction>
                     </div>
 
-                    {!isDocked && (
-                        <div className="flex items-center gap-2 ml-auto">
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        {!isDocked && (
+                            <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">
+                                <PromptInputAction tooltip="Collapse Chat">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCommandBarCollapsed(true);
+                                        }}
+                                        className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        aria-label="Collapse Chat"
+                                    >
+                                        <ChevronUp size={16} className="rotate-180" />
+                                    </button>
+                                </PromptInputAction>
+
+                                <PromptInputAction tooltip={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setCommandBarDetached(!isCommandBarDetached);
+                                        }}
+                                        className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                                        aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
+                                    >
+                                        {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
+                                    </button>
+                                </PromptInputAction>
+                            </div>
+                        )}
+
+                        <PromptInputAction tooltip="Send Message (Enter)">
                             <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCommandBarCollapsed(true);
-                                }}
-                                className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                                title="Collapse Chat"
-                                aria-label="Collapse Chat"
+                                onClick={(e) => handleSubmit(e)}
+                                disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
+                                className={cn(
+                                    "flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    isIndiiMode
+                                        ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
+                                        : `${colors.bg} hover:brightness-110`
+                                )}
+                                data-testid="command-bar-run-btn"
                             >
-                                <ChevronUp size={16} className="rotate-180" />
+                                {isProcessing ? (
+                                    <Loader2 size={16} className="animate-spin" data-testid="run-loader" />
+                                ) : (
+                                    <ArrowRight size={16} />
+                                )}
+                                {!isMobile && <span className="ml-0.5">Run</span>}
                             </button>
-
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setCommandBarDetached(!isCommandBarDetached);
-                                }}
-                                className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                                title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
-                                aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
-                            >
-                                {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
-                            </button>
-                        </div>
-                    )}
-
-                    {/* NATIVE/ZERO controls removed to reduce crowding - Indii mode via DelegateMenu now controls this */}
-
-                    <PromptInputAction tooltip="Run command">
-                        <button
-                            onClick={(e) => handleSubmit(e)}
-                            disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
-                            className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                            data-testid="command-bar-run-btn"
-                        >
-                            {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
-                        </button>
-                    </PromptInputAction>
+                        </PromptInputAction>
+                    </div>
                 </PromptInputActions>
             </PromptInput>
         </div>

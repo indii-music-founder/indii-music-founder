@@ -105,8 +105,40 @@ const createWindow = () => {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+        startHealthMonitoring(mainWindow);
     });
 };
+
+/**
+ * Sidecar Health Monitor
+ */
+let healthCheckInterval: NodeJS.Timeout | null = null;
+
+const checkSidecarHealth = async (window: BrowserWindow) => {
+    try {
+        // Fetch is available in Node.js 18+ (Project requires Node 22)
+        const response = await fetch('http://localhost:50080/health');
+        const status = response.ok ? 'online' : 'offline';
+        window.webContents.send('sidecar:status-update', status);
+    } catch (err) {
+        // Only log error in debug, as 'offline' is an expected state
+        log.debug('[Sidecar] Health check failed - sidecar is likely offline');
+        window.webContents.send('sidecar:status-update', 'offline');
+    }
+};
+
+const startHealthMonitoring = (window: BrowserWindow) => {
+    if (healthCheckInterval) clearInterval(healthCheckInterval);
+
+    // Initial check
+    checkSidecarHealth(window);
+
+    // 30s interval
+    healthCheckInterval = setInterval(() => {
+        checkSidecarHealth(window);
+    }, 30000);
+};
+
 
 // Protocol Registration
 if (process.defaultApp) {
@@ -165,6 +197,22 @@ if (!gotTheLock) {
         registerMarketingHandlers();
         registerSecurityHandlers();
         registerVideoHandlers();
+
+        // Register Sidecar Handlers
+        ipcMain.handle('sidecar:restart', async () => {
+            log.info('[Main] Manual sidecar restart requested via IPC');
+            const result = await DockerService.restartSystem();
+
+            // Trigger immediate health check after restart if a window exists
+            const windows = BrowserWindow.getAllWindows();
+            if (windows.length > 0) {
+                // Wait 5s for container to fully wrap up its internal init
+                setTimeout(() => checkSidecarHealth(windows[0]), 5000);
+            }
+
+            return result;
+        });
+
 
         // Ensure AI Services are running
         DockerService.ensureStarted().catch(err => {

@@ -126,9 +126,18 @@
 - [x] Sync: Resolved merge conflicts and pushed fixes to `origin/main` (CI Triggered). <!-- id: 408 -->
 - [x] Gauntlet: `npm run typecheck` passes with 0 errors. <!-- id: 404 -->
 
-  - [ ] Create `SidecarStatus.tsx` visual component.
-  - [ ] Add health ping and Docker restart IPC to Electron main.
-- [ ] Offline Queue UX: Surface sync status to the user. <!-- id: 602 -->
-  - [ ] Create `syncSlice.ts` to track `MetadataPersistenceService` queue.
-  - [ ] Implement `SyncStatus.tsx` in the shell footer.
+- [x] Brand Architecture: Fix intermittent `required` schema corruption in `BrandAgent`. <!-- id: 700 -->
+  - [x] Core: Implement deep-clone in `BaseAgent` constructor. <!-- id: 701 -->
+  - [x] Core: Implement global `freezeAgentConfig` safety net in `agentConfig.ts`. <!-- id: 702 -->
+  - [x] Utils: Harden `zodToToolParameters` with fresh array instances. <!-- id: 703 -->
+  - [ ] Verification: Run `AgentDefinitions.test.ts` (Blocked by EPERM). <!-- id: 704 -->
+
+## Tasks - Sidecar & Sync Infrastructure
+
+- [x] UI: Create `SidecarStatus.tsx` component. <!-- id: 601 -->
+- [x] State: Create `sidecarSlice.ts` state management. <!-- id: 600 -->
+- [x] UI: Integrate `SidecarStatus` in `Sidebar.tsx`. <!-- id: 605 -->
+- [ ] Electron: Add health ping and Docker restart IPC to `main.ts`. <!-- id: 604 -->
+- [x] State: Create `syncSlice.ts` for metadata persistence tracking. <!-- id: 607 -->
+- [ ] UI: Implement `SyncStatus.tsx` in the shell footer. <!-- id: 602 -->
 - [ ] Final Verification: Run full suite and verify 2200+ tests pass. <!-- id: 603 -->

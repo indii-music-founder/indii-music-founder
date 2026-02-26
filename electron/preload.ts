@@ -90,6 +90,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
         openFolder: (filePath?: string) => ipcRenderer.invoke('video:open-folder', filePath),
     },
 
+    // Sidecar (Docker/Agent Zero)
+    sidecar: {
+        restart: () => ipcRenderer.invoke('sidecar:restart'),
+    },
+
+
     // Distribution
     distribution: {
         stageRelease: (releaseId: string, files: { type: string, data: string, name: string }[]) => ipcRenderer.invoke('distribution:stage-release', releaseId, files),
