@@ -98,6 +98,10 @@ CRITICAL RULES:
         const { TOOL_REGISTRY } = await import('../tools');
         this.functions = TOOL_REGISTRY;
         this.tools = this.buildToolDeclarations();
+
+        // Freeze the configuration after it's build to prevent mutation
+        const { freezeAgentConfig } = await import('../FreezeDiagnostic');
+        freezeAgentConfig(this);
     }
 
 

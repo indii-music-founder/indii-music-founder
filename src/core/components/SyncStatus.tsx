@@ -76,10 +76,13 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({ collapsed }) => {
                 collapsed ? "p-1 justify-center" : "px-3 py-2"
             )}
         >
-            <div className={cn(
-                "p-1.5 rounded-full",
-                lastSyncError ? "bg-red-500/20" : isSyncing ? "bg-blue-500/10" : "bg-amber-500/10"
-            )}>
+            <div
+                className={cn(
+                    "p-1.5 rounded-full",
+                    lastSyncError ? "bg-red-500/20" : isSyncing ? "bg-blue-500/10" : "bg-amber-500/10"
+                )}
+                title={collapsed ? (isSyncing ? 'Syncing...' : lastSyncError ? 'Sync Error' : `${pendingCount} items pending`) : undefined}
+            >
                 {isSyncing ? (
                     <RefreshCw size={14} className="text-blue-500 animate-spin" />
                 ) : lastSyncError ? (

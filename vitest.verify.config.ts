@@ -2,19 +2,29 @@ import { defineConfig } from 'vitest/config';
 import path from 'path';
 
 export default defineConfig({
-    test: {
-        environment: 'jsdom',
-        globals: true,
-        setupFiles: ['./src/test/setup.ts'],
+    resolve: {
         alias: {
-            '@': path.resolve(__dirname, './src'),
-            '@agents': path.resolve(__dirname, './agents')
+            '@': path.resolve(import.meta.dirname, './src'),
+            '@agents': path.resolve(import.meta.dirname, './agents'),
         },
-        // Prevent parallel execution for this diagnostic run
-        fileParallelism: false,
-        maxWorkers: 1,
-        forks: {
-            singleFork: true
-        }
+    },
+    test: {
+        globals: true,
+        environment: 'jsdom',
+        setupFiles: [path.resolve(import.meta.dirname, './src/test/setup.ts')],
+        clearMocks: true,
+        restoreMocks: true,
+        watch: false,
+        pool: 'forks',
+        exclude: [
+            '**/node_modules/**',
+            '**/dist/**',
+            '**/cypress/**',
+            '**/.{idea,git,cache,output,temp,claude}/**',
+            '**/*.config.*',
+            '**/e2e/**',
+            '**/functions/**',
+            'A2UI/**'
+        ],
     },
 });

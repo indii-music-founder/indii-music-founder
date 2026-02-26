@@ -1,4 +1,5 @@
 import { AGENT_CONFIGS } from './agentConfig';
+import { freezeAgentConfig } from './FreezeDiagnostic';
 
 import { SpecializedAgent } from './types';
 
@@ -99,7 +100,9 @@ export class AgentRegistry {
 
                     this.registerLazy(meta, async () => {
                         const { BaseAgent } = await import('./BaseAgent');
-                        return new BaseAgent(config);
+                        const agent = new BaseAgent(config);
+                        freezeAgentConfig(agent);
+                        return agent;
                     });
                 } catch (e) {
                     console.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
@@ -120,7 +123,7 @@ export class AgentRegistry {
 
             this.registerLazy(keeperMeta, async () => {
                 const { BaseAgent } = await import('./BaseAgent');
-                return new BaseAgent({
+                const agent = new BaseAgent({
                     id: 'keeper',
                     name: 'Keeper',
                     description: 'Context Integrity Guardian',
@@ -129,6 +132,8 @@ export class AgentRegistry {
                     systemPrompt: 'You are Keeper, the Context Integrity Guardian for indiiOS. Your goal is to ensure all agent interactions are coherent, adhere to brand guidelines, and recall necessary memories or rules.',
                     tools: []
                 });
+                freezeAgentConfig(agent);
+                return agent;
             });
         } catch (e) {
             console.warn("[AgentRegistry] Failed to register Keeper agent:", e);

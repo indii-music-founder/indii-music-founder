@@ -211,6 +211,7 @@ export class BaseAgent implements SpecializedAgent {
             });
         });
 
+        // Initialize functions
         this.functions = {
             // Phase 3.5: Migrated to use execution context for isolated state access
             get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
