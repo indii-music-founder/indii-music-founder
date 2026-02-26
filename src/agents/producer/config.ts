@@ -44,3 +44,9 @@ export const ProducerAgent: AgentConfig = {
         };
     }
 };
+
+import { freezeAgentConfig } from '@/services/agent/FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(ProducerAgent);
+

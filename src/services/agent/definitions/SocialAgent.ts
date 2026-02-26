@@ -175,3 +175,9 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
         ]
     }]
 };
+
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(SocialAgent);
+
