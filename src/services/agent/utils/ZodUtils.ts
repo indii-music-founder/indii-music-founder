@@ -18,7 +18,7 @@ export function zodToToolParameters(schema: z.ZodType): ToolParameters {
     // But for typical z.object(), it returns an object with properties.
 
     const properties = jsonSchema.properties || {};
-    const required = jsonSchema.required || [];
+    const required = [...(jsonSchema.required || [])]; // Spread to ensure fresh array instance
 
     return {
         type: 'OBJECT',
@@ -60,7 +60,7 @@ function mapSchema(schema: any): ToolParameterSchema {
         enum: schema.enum,
         items,
         properties,
-        required: schema.required
+        required: schema.required ? [...schema.required] : undefined // Deep clone for nested properties
     };
 }
 

@@ -199,7 +199,8 @@ export class BaseAgent implements SpecializedAgent {
         this.color = config.color;
         this.category = config.category;
         this.systemPrompt = config.systemPrompt;
-        this.tools = config.tools || [];
+        // Deep clone to prevent shared state contamination
+        this.tools = config.tools ? JSON.parse(JSON.stringify(config.tools)) : [];
 
         // Populate tool schemas for validation
         this.tools.forEach(def => {

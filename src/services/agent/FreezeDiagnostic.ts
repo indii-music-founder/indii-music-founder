@@ -19,9 +19,12 @@ export function freezeAgentConfig(agent: any) {
                 const required = fn.parameters?.required;
                 if (!required || required.length === 0) {
                     console.error(' [CRITICAL] BrandAgent schema is ALREADY CORRUPTED at freeze time!', {
-                        name: fn.name,
-                        required
+                        agentId: agent.id,
+                        toolName: fn.name,
+                        required,
+                        parameters: JSON.stringify(fn.parameters)
                     });
+                    console.trace('Corruption Trace:');
                 }
             }
         });

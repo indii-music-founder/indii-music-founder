@@ -35,8 +35,18 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     DistributionAgent
 ];
 
-// Re-export from types.ts for convenience
-// The canonical VALID_AGENT_IDS is defined in types.ts to avoid circular dependencies
+import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
 export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
 export type { ValidAgentId } from './types';
+
+import { freezeAgentConfig } from './FreezeDiagnostic';
+
+// Safety net: freeze all agent configurations to prevent shared state contamination
+AGENT_CONFIGS.forEach(agent => {
+    try {
+        freezeAgentConfig(agent);
+    } catch (e) {
+        console.warn(`[agentConfig] Failed to freeze agent "${agent.id}":`, e);
+    }
+});
 
