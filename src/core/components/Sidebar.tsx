@@ -7,6 +7,9 @@ import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
+import { SidecarStatus } from './SidecarStatus';
+import { SyncStatus } from './SyncStatus';
+
 
 export default function Sidebar() {
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
@@ -161,8 +164,15 @@ export default function Sidebar() {
                 </div>
             </div>
             {/* User Profile Section */}
-            <div className="p-4 border-t border-white/5 mt-auto">
+            <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
+                {!isSidebarOpen && (
+                    <div className="mb-2 w-full flex flex-col gap-2">
+                        <SidecarStatus collapsed={true} />
+                        <SyncStatus collapsed={true} />
+                    </div>
+                )}
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
+
                     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-dept-creative to-dept-marketing flex items-center justify-center flex-shrink-0 overflow-hidden">
                         {userProfile?.photoURL ? (
                             <img src={userProfile.photoURL} alt="User avatar" className="w-full h-full object-cover" />
@@ -202,6 +212,11 @@ export default function Sidebar() {
                         <div className="px-2 pt-2 border-t border-white/5">
                             <BiometricToggle />
                         </div>
+                        <div className="px-1 pt-2 border-t border-white/5 flex flex-col gap-2">
+                            <SidecarStatus collapsed={!isSidebarOpen} />
+                            <SyncStatus />
+                        </div>
+
 
                         <div className="flex items-center justify-center pt-2 border-t border-white/5">
                             <button

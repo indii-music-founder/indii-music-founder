@@ -109,6 +109,7 @@ class MetadataPersistenceService {
             queue.push(item);
             localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
             console.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);
+            events.emit('SYNC_QUEUE_CHANGE', { count: queue.length });
         } catch (e) {
             console.error('[MetadataPersistence] Failed to queue for later:', e);
         }
@@ -120,6 +121,7 @@ class MetadataPersistenceService {
     async processQueue(): Promise<number> {
         if (this.isProcessingQueue) return 0;
         this.isProcessingQueue = true;
+        events.emit('SYNC_QUEUE_CHANGE', { count: this.getPendingCount(), syncing: true });
 
         try {
             const existing = localStorage.getItem(QUEUE_KEY);
@@ -156,8 +158,10 @@ class MetadataPersistenceService {
             // Save failed items back to queue
             if (failedItems.length > 0) {
                 localStorage.setItem(QUEUE_KEY, JSON.stringify(failedItems));
+                events.emit('SYNC_QUEUE_CHANGE', { count: failedItems.length, syncing: false, error: failedItems.length > 0 ? 'Sync failed for some items' : null });
             } else {
                 localStorage.removeItem(QUEUE_KEY);
+                events.emit('SYNC_QUEUE_CHANGE', { count: 0, syncing: false, error: null });
             }
 
             if (successCount > 0) {
@@ -394,5 +398,18 @@ if (typeof window !== 'undefined' && auth?.onAuthStateChanged) {
             }, 2000);
         }
     });
+
+    // Listen for network reconnect
+    window.addEventListener('online', () => {
+        console.info('[MetadataPersistence] Online detected, processing queue...');
+        metadataPersistenceService.processQueue();
+    });
+
+    // Periodic check every 5 minutes as a fallback
+    setInterval(() => {
+        if (navigator.onLine) {
+            metadataPersistenceService.processQueue();
+        }
+    }, 5 * 60 * 1000);
 }
 

@@ -52,11 +52,28 @@ export const useAutoSave = (
             const canvasJSON = JSON.stringify(canvas.toObject(['name', 'thumbnail']));
 
             // Generate thumbnail (low quality for storage efficiency)
+            // ⚡ INDIIOS FIX: Reset zoom and viewport temporarily for consistent thumbnails
+            const currentZoom = canvas.getZoom();
+            const currentVpt = canvas.viewportTransform ? [...canvas.viewportTransform] : [1, 0, 0, 1, 0, 0];
+
+            canvas.setViewportTransform([1, 0, 0, 1, 0, 0]);
+            canvas.setZoom(1);
+            // We don't resize the whole canvas here to avoid disruptive flashes during auto-save,
+            // instead we use the width/height parameters of toDataURL
+
             const thumbnail = canvas.toDataURL({
                 format: 'png',
                 quality: 0.6,
-                multiplier: 0.3 // Small thumbnail
+                multiplier: 0.3, // Fixed 30x scale of 800x1000 = 240x300 thumbnail
+                left: 0,
+                top: 0,
+                width: 800,
+                height: 1000
             });
+
+            // Restore
+            canvas.setViewportTransform(currentVpt as any);
+            canvas.setZoom(currentZoom);
 
             // Save to Firestore
             const designRef = doc(db, 'designs', designId);

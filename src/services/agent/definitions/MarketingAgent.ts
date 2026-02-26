@@ -216,4 +216,10 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
             }
         ]
     }]
+
 };
+
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
+// Freeze the schema to prevent cross-test contamination
+freezeAgentConfig(MarketingAgent);

@@ -205,6 +205,7 @@ function useAppInitialization() {
         };
     }, [initializeAuthListener]);
 
+
     // 2. Load User Profile when User is Authenticated
     useEffect(() => {
         if (user?.uid) {
@@ -224,7 +225,23 @@ function useAppInitialization() {
             useStore.setState({ isAgentOpen: false });
         }
     }, [user, initializeHistory, loadProjects]);
+
+    // 4. Sidecar Health Listener (Electron only)
+    useEffect(() => {
+        const { setSidecarStatus } = useStore.getState();
+
+        // window.electronAPI is only available in the Electron environment
+        // @ts-ignore
+        if (window.electronAPI?.on) {
+            // @ts-ignore
+            const removeListener = window.electronAPI.on('sidecar:status-update', (status: any) => {
+                setSidecarStatus(status);
+            });
+            return () => removeListener();
+        }
+    }, []);
 }
+
 
 function useOnboardingRedirect() {
     const { user, authLoading, currentModule } = useStore();
