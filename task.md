@@ -129,8 +129,10 @@
 - [x] Brand Architecture: Fix intermittent `required` schema corruption in `BrandAgent`. <!-- id: 700 -->
   - [x] Core: Implement deep-clone in `BaseAgent` constructor. <!-- id: 701 -->
   - [x] Core: Implement global `freezeAgentConfig` safety net in `agentConfig.ts`. <!-- id: 702 -->
+  - [x] Core: Apply `freezeAgentConfig` to all 16 agent definitions (Universal Lock). <!-- id: 705 -->
   - [x] Utils: Harden `zodToToolParameters` with fresh array instances. <!-- id: 703 -->
-  - [ ] Verification: Run `AgentDefinitions.test.ts` (Blocked by EPERM). <!-- id: 704 -->
+  - [x] Test: Implement `SchemaLockTest.test.ts` for automated verification. <!-- id: 706 -->
+  - [ ] Verification: Run `AgentDefinitions.test.ts` and `SchemaLockTest.test.ts` (Blocked by EPERM). <!-- id: 704 -->
 
 ## Tasks - Sidecar & Sync Infrastructure
 
