@@ -197,7 +197,7 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
     }]
 };
 
-import { freezeBrandAgent } from '../FreezeDiagnostic';
+import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
-freezeBrandAgent(BrandAgent);
+freezeAgentConfig(BrandAgent);

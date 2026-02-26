@@ -1,12 +1,12 @@
 
 import { describe, it, expect } from 'vitest';
 import { BrandAgent } from './definitions/BrandAgent';
-import { freezeBrandAgent } from './FreezeDiagnostic';
+import { freezeAgentConfig } from './FreezeDiagnostic';
 
 describe('BrandAgent Schema Lock Proof', () => {
     it('should be frozen and not allow mutations', () => {
         // Ensure it's frozen
-        freezeBrandAgent();
+        freezeAgentConfig(BrandAgent);
 
         const tool = BrandAgent.tools?.[0].functionDeclarations.find(f => f.name === 'analyze_brand_consistency');
         expect(tool).toBeDefined();

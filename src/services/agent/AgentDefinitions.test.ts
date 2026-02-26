@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { BrandAgent } from './definitions/BrandAgent';
 import { MarketingAgent } from './definitions/MarketingAgent';
-import { freezeBrandAgent } from './FreezeDiagnostic';
+import { freezeAgentConfig } from './FreezeDiagnostic';
 
 // Freeze the schema early to catch mutations
-freezeBrandAgent(BrandAgent);
+freezeAgentConfig(BrandAgent);
 
 describe('Agent Definitions', () => {
     describe('BrandAgent', () => {
