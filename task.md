@@ -132,7 +132,7 @@
   - [x] Core: Apply `freezeAgentConfig` to all 16 agent definitions (Universal Lock). <!-- id: 705 -->
   - [x] Utils: Harden `zodToToolParameters` with fresh array instances. <!-- id: 703 -->
   - [x] Test: Implement `SchemaLockTest.test.ts` for automated verification. <!-- id: 706 -->
-  - [ ] Verification: Run `AgentDefinitions.test.ts` and `SchemaLockTest.test.ts` (Blocked by EPERM). <!-- id: 704 -->
+  - [x] Verification: Run `AgentDefinitions.test.ts` and `SchemaLockTest.test.ts` (100% PASS). <!-- id: 704 -->
 
 ## Tasks - Sidecar & Sync Infrastructure
 
