@@ -28,22 +28,22 @@ function CommandBar() {
             {shouldShow && (
                 <motion.div
                     key="standalone-command-bar"
-                    initial={{ opacity: 0, y: 40, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.95 }}
                     animate={{
                         opacity: 1,
                         scale: 1,
-                        width: isCommandBarCollapsed ? 64 : '100%',
-                        maxWidth: isCommandBarCollapsed ? 64 : 672,
-                        x: isCommandBarDetached ? 0 : "-50%",
-                        y: isCommandBarDetached ? 0 : 0
+                        width: isCommandBarCollapsed ? (isCommandBarDetached ? 48 : 64) : '100%',
+                        maxWidth: isCommandBarCollapsed ? 48 : 672,
+                        x: isCommandBarDetached ? undefined : "-50%", // Don't animate x when detached to let drag control it
+                        y: isCommandBarDetached ? undefined : 0
                     }}
-                    exit={{ opacity: 0, y: 40, scale: 0.95 }}
+                    exit={{ opacity: 0, scale: 0.95 }}
                     drag={isCommandBarDetached}
                     dragMomentum={false}
                     className={cn(
                         "fixed z-[500] flex items-center justify-center",
                         isCommandBarDetached
-                            ? "cursor-move top-[80%] left-[50%]"
+                            ? "cursor-move top-[80%] left-[50%] w-auto" // w-auto when detached so it shrinks properly
                             : "bottom-8 left-1/2"
                     )}
                 >

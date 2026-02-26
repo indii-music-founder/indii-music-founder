@@ -344,44 +344,46 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         </button>
                     </div>
 
-                    <div className="flex items-center gap-2 ml-auto">
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setCommandBarCollapsed(true);
-                            }}
-                            className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                            title="Collapse Chat"
-                            aria-label="Collapse Chat"
-                        >
-                            <ChevronUp size={16} className="rotate-180" />
-                        </button>
-
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setCommandBarDetached(!isCommandBarDetached);
-                            }}
-                            className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                            title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
-                            aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
-                        >
-                            {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
-                        </button>
-
-                        {/* NATIVE/ZERO controls removed to reduce crowding - Indii mode via DelegateMenu now controls this */}
-
-                        <PromptInputAction tooltip="Run command">
+                    {!isDocked && (
+                        <div className="flex items-center gap-2 ml-auto">
                             <button
-                                onClick={(e) => handleSubmit(e)}
-                                disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
-                                className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
-                                data-testid="command-bar-run-btn"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCommandBarCollapsed(true);
+                                }}
+                                className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                                title="Collapse Chat"
+                                aria-label="Collapse Chat"
                             >
-                                {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
+                                <ChevronUp size={16} className="rotate-180" />
                             </button>
-                        </PromptInputAction>
-                    </div>
+
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setCommandBarDetached(!isCommandBarDetached);
+                                }}
+                                className="p-1.5 rounded-full text-gray-500 hover:text-white hover:bg-white/10 transition-all min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 flex items-center justify-center focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                                title={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
+                                aria-label={isCommandBarDetached ? "Dock to Agent" : "Detach from Agent"}
+                            >
+                                {isCommandBarDetached ? <PanelTopOpen size={16} /> : <PanelTopClose size={16} />}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* NATIVE/ZERO controls removed to reduce crowding - Indii mode via DelegateMenu now controls this */}
+
+                    <PromptInputAction tooltip="Run command">
+                        <button
+                            onClick={(e) => handleSubmit(e)}
+                            disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
+                            className="flex items-center justify-center gap-2 px-3 py-1.5 bg-gray-800 hover:bg-gray-700 disabled:opacity-50 text-white text-xs font-medium rounded-lg min-h-[44px] min-w-[44px] md:min-h-0 md:min-w-0 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+                            data-testid="command-bar-run-btn"
+                        >
+                            {isProcessing ? <Loader2 size={14} className="animate-spin" data-testid="run-loader" /> : <ArrowRight size={14} />}
+                        </button>
+                    </PromptInputAction>
                 </PromptInputActions>
             </PromptInput>
         </div>
