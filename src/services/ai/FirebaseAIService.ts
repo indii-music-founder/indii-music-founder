@@ -179,6 +179,9 @@ export class FirebaseAIService {
             // 2. Fetch Remote Config (Safe Mode) - NOW WITH DYNAMIC SCHEMA
             let modelName: string = FALLBACK_MODEL;
             try {
+                if (!remoteConfig) {
+                    throw new Error('remoteConfig not defined');
+                }
                 await fetchAndActivate(remoteConfig);
 
                 // Get the old simple string (legacy)

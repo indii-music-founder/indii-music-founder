@@ -214,8 +214,9 @@ export class BaseAgent implements SpecializedAgent {
         this.color = config.color;
         this.category = config.category;
         this.systemPrompt = config.systemPrompt;
-        // Deep clone to prevent shared state contamination
-        this.tools = config.tools ? JSON.parse(JSON.stringify(config.tools)) : [];
+        
+        // Phase 4: Use shallow clone for tools to preserve Zod schemas
+        this.tools = config.tools ? [...config.tools] : [];
 
         // Populate tool schemas for validation
         this.tools.forEach(def => {
@@ -668,14 +669,17 @@ ${task}
                 const response = {
                     text: () => result.response?.text?.() || '',
                     functionCalls: () => {
-                        // Support mocked results that provide a direct functionCalls helper (common in tests)
-                        if (result.response && typeof (result.response as any).functionCalls === 'function') {
-                            return (result.response as any).functionCalls();
+                        // Support mocked results or SDK results that provide a direct functionCalls helper
+                        const res = result.response as any;
+                        if (res && typeof res.functionCalls === 'function') {
+                            const calls = res.functionCalls();
+                            return Array.isArray(calls) ? calls : [];
                         }
 
-                        const parts = (result.response?.candidates?.[0]?.content?.parts || []) as ContentPart[];
+                        const candidates = res?.candidates;
+                        const parts = (candidates?.[0]?.content?.parts || []) as ContentPart[];
                         return parts
-                            .filter((p): p is FunctionCallPart => 'functionCall' in p)
+                            .filter((p): p is FunctionCallPart => !!p && typeof p === 'object' && 'functionCall' in p)
                             .map((p) => p.functionCall);
                     },
                     usage: () => result.response?.usageMetadata,

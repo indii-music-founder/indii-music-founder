@@ -2,16 +2,15 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RateLimiter } from './RateLimiter';
 
 describe('RateLimiter', () => {
-    let now = 1700000000000;
+    const startTime = 1700000000000;
 
     beforeEach(() => {
-        vi.spyOn(Date, 'now').mockImplementation(() => now);
         vi.useFakeTimers();
+        vi.setSystemTime(startTime);
     });
 
     afterEach(() => {
         vi.useRealTimers();
-        vi.restoreAllMocks();
     });
 
     it('should initialize with max tokens', () => {
@@ -25,8 +24,9 @@ describe('RateLimiter', () => {
         for(let i=0; i<10; i++) limiter.tryAcquire();
         expect(limiter.getRemainingTokens()).toBe(0);
 
-        // Advance 1.1 seconds to be safe
-        now += 1100;
+        // Advance 1.1 seconds
+        vi.setSystemTime(startTime + 1100);
+        
         expect(limiter.getRemainingTokens()).toBeGreaterThanOrEqual(1);
     });
 
@@ -40,7 +40,7 @@ describe('RateLimiter', () => {
         await Promise.resolve();
         
         // Advance time enough for 1 token
-        now += 1500;
+        vi.setSystemTime(startTime + 1500);
         await vi.advanceTimersByTimeAsync(1500);
         
         await expect(acquirePromise).resolves.toBeUndefined();
@@ -54,7 +54,7 @@ describe('RateLimiter', () => {
         
         await Promise.resolve();
         
-        now += 1000;
+        vi.setSystemTime(startTime + 1000);
         await vi.advanceTimersByTimeAsync(1000);
         
         await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
