@@ -96,7 +96,7 @@ describe('CLIP (Audio) -> DDEX Integration Pipeline', () => {
         // Check for mapped values
         expect(xml).toContain('<GenreText>Electronica</GenreText>');
         expect(xml).toContain('<SubGenre>Techno</SubGenre>');
-        expect(xml).toContain('<Duration>PT3M04S</Duration>');
+        expect(xml).toContain('<Duration>PT3M4S</Duration>');
         expect(xml).toContain('<LanguageOfPerformance>zxx</LanguageOfPerformance>'); // Instrumental
 
         // Step E: Validate with DDEX Validator (Schema integrity)

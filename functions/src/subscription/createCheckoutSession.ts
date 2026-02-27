@@ -15,11 +15,11 @@ export const createCheckoutSession = onCall(async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new HttpsError('unauthenticated', 'Unauthorized');
   }
 
   if (tier === SubscriptionTier.FREE) {
-    throw new Error('Cannot create checkout session for free tier');
+    throw new HttpsError('invalid-argument', 'Cannot create checkout session for free tier');
   }
 
   try {
@@ -58,7 +58,7 @@ export const createCheckoutSession = onCall(async (request) => {
     const priceId = getPriceId(tier, isYearly);
 
     if (!priceId) {
-      throw new Error(`No Stripe price configured for tier: ${tier}`);
+      throw new HttpsError('failed-precondition', `No Stripe price configured for tier: ${tier}`);
     }
 
     // Build checkout session parameters

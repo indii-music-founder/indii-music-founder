@@ -10,8 +10,10 @@ export * from './types';
 export { DDEXParser } from './DDEXParser';
 
 // Services (to be added as implemented)
-export { ERNService } from './ERNService';
+export { ERNService, ernService } from './ERNService';
 export { ERNMapper } from './ERNMapper';
-// export { DSRService } from './DSRService';
-// export { DDEXValidator } from './DDEXValidator';
-// export { DDEXChoreography } from './DDEXChoreography';
+export { DSRService, dsrService } from './DSRService';
+export { DDEXValidator } from './DDEXValidator';
+export { MEADService, meadService } from './MEADService';
+export { RINService, rinService } from './RINService';
+export { DSRProcessor, dsrProcessor } from './DSRProcessor';

@@ -12,7 +12,7 @@ export const cancelSubscription = onCall(async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new HttpsError('unauthenticated', 'Unauthorized');
   }
 
   try {
@@ -20,20 +20,20 @@ export const cancelSubscription = onCall(async (request) => {
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
 
     if (!subscriptionDoc.exists) {
-      throw new Error('Subscription not found');
+      throw new HttpsError('not-found', 'Subscription not found');
     }
 
     const subscription = subscriptionDoc.data();
 
     if (!subscription) {
-      throw new Error('Subscription data not found');
+      throw new HttpsError('not-found', 'Subscription data not found');
     }
 
     const stripeCustomerId = subscription.stripeCustomerId;
     const stripeSubscriptionId = subscription.stripeSubscriptionId;
 
     if (!stripeCustomerId || !stripeSubscriptionId) {
-      throw new Error('No active subscription found');
+      throw new HttpsError('failed-precondition', 'No active subscription found');
     }
 
     if (subscription.cancelAtPeriodEnd) {

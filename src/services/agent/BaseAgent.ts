@@ -1,6 +1,21 @@
-import { SpecializedAgent, AgentResponse, AgentProgressCallback, AgentConfig, ToolDefinition, FunctionDeclaration, AgentContext, VALID_AGENT_IDS_LIST, VALID_AGENT_IDS, ValidAgentId, WhiskState, AnyToolFunction } from './types';
+import {
+    SpecializedAgent,
+    AgentResponse,
+    AgentProgressCallback,
+    AgentConfig,
+    ToolDefinition,
+    FunctionDeclaration,
+    AgentContext,
+    VALID_AGENT_IDS_LIST,
+    VALID_AGENT_IDS,
+    ValidAgentId,
+    WhiskState,
+    AnyToolFunction,
+    DelegateTaskArgs,
+    ConsultExpertsArgs
+} from './types';
 import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
-import type { Tool } from '@/shared/types/ai.dto';
+import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
 import { ZodType } from 'zod';
 import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
@@ -217,12 +232,12 @@ export class BaseAgent implements SpecializedAgent {
             get_project_details: async ({ projectId }, _context, toolContext?: ToolExecutionContext) => {
                 // Use execution context if available, fallback to direct store access for backwards compatibility
                 const projects = toolContext ? toolContext.get('projects') : (await import('@/core/store')).useStore.getState().projects;
-                const project = projects?.find((p: any) => p.id === projectId);
+                const project = (projects as any[])?.find((p: any) => p.id === projectId);
                 if (!project) return { success: false, error: 'Project not found' };
                 return { success: true, data: project };
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
-            delegate_task: async ({ targetAgentId, task }: any, context, _toolContext?: ToolExecutionContext) => {
+            delegate_task: async ({ targetAgentId, task }: DelegateTaskArgs, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { DelegationLoopDetector } = await import('./LoopDetector');
@@ -232,7 +247,7 @@ export class BaseAgent implements SpecializedAgent {
                     return toolError('Invalid delegation parameters', 'INVALID_ARGS');
                 }
                 // Runtime validation: reject invalid agent IDs to prevent hallucination issues
-                if (!VALID_AGENT_IDS.includes(targetAgentId as ValidAgentId)) {
+                if (!VALID_AGENT_IDS.includes(targetAgentId)) {
                     return toolError(
                         `Invalid agent ID: "${targetAgentId}". Valid IDs are: ${VALID_AGENT_IDS_LIST}`,
                         'INVALID_AGENT_ID'
@@ -265,7 +280,7 @@ export class BaseAgent implements SpecializedAgent {
                 };
             },
             // Phase 3.5: Updated signature to accept toolContext (not used, but consistent)
-            consult_experts: async ({ consultations }: any, context, _toolContext?: ToolExecutionContext) => {
+            consult_experts: async ({ consultations }: ConsultExpertsArgs, context, _toolContext?: ToolExecutionContext) => {
                 const { agentService } = await import('./AgentService');
                 const { toolError } = await import('./utils/ToolUtils');
                 const { validateHubAndSpoke } = await import('./types');
@@ -276,20 +291,20 @@ export class BaseAgent implements SpecializedAgent {
 
                 try {
                     const results = await Promise.all(
-                        consultations.map(async (c: { targetAgentId: string; task: string }) => {
-                            if (!VALID_AGENT_IDS.includes(c.targetAgentId as ValidAgentId)) {
-                                return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
+                        consultations.map(async (c: ExpertConsultation) => {
+                            if (!VALID_AGENT_IDS.includes(c.agentId)) {
+                                return { agentId: c.agentId, error: `Invalid agent ID: ${c.agentId}` };
                             }
 
                             // Phase 4: Enforce hub-and-spoke architecture
-                            const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
+                            const hubSpokeError = validateHubAndSpoke(this.id, c.agentId);
                             if (hubSpokeError) {
-                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
-                                return { agentId: c.targetAgentId, error: hubSpokeError };
+                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.agentId}`);
+                                return { agentId: c.agentId, error: hubSpokeError };
                             }
 
-                            const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
-                            return { agentId: c.targetAgentId, response: res };
+                            const res = await agentService.runAgent(c.agentId, c.task, context, context?.traceId, context?.attachments);
+                            return { agentId: c.agentId, response: res };
                         })
                     );
 
@@ -593,8 +608,8 @@ ${task}
         const accumulatedResponse = '';
         let iterations = 0;
         const MAX_ITERATIONS = 15;
-        const toolCalls: any[] = [];
-        let lastToolResult: any = undefined;
+        const toolCalls: Array<{ name: string; args: ToolFunctionArgs; result: ToolFunctionResult | string }> = [];
+        let lastToolResult: ToolFunctionResult | undefined = undefined;
         let currentThoughtSignature: string | undefined = undefined;
 
         // Phase 2: Clear loop detector for new task execution
@@ -658,17 +673,17 @@ ${task}
                             return (result.response as any).functionCalls();
                         }
 
-                        const parts = result.response?.candidates?.[0]?.content?.parts || [];
+                        const parts = (result.response?.candidates?.[0]?.content?.parts || []) as ContentPart[];
                         return parts
-                            .filter((p: any) => 'functionCall' in p)
-                            .map((p: any) => (p as any).functionCall);
+                            .filter((p): p is FunctionCallPart => 'functionCall' in p)
+                            .map((p) => p.functionCall);
                     },
                     usage: () => result.response?.usageMetadata,
                     thoughtSignature: (() => {
                         // Extract thoughtSignature from the last part of the response
-                        const parts = result.response?.candidates?.[0]?.content?.parts || [];
+                        const parts = (result.response?.candidates?.[0]?.content?.parts || []) as ContentPart[];
                         for (const p of parts) {
-                            if ((p as any).thoughtSignature) return (p as any).thoughtSignature;
+                            if (p.thoughtSignature) return p.thoughtSignature;
                         }
                         return undefined;
                     })()
@@ -719,7 +734,7 @@ ${task}
                     const argsStr = JSON.stringify(args);
                     onProgress?.({ type: 'tool', toolName: name, content: `Executing ${name}...` });
 
-                    let result: any;
+                    let result: ToolFunctionResult;
                     if (this.functions[name]) {
                         try {
                             const schema = this.toolSchemas.get(name);

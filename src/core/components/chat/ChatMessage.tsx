@@ -18,6 +18,7 @@ import { JsonViewer } from './JsonViewer';
 import { ImageRenderer, ToolImageOutput } from './ToolOutputRenderer';
 import { CodeBlock } from './CodeBlock';
 import { getText } from './utils';
+import { safeJsonParse } from '@/services/utils/json';
 
 // Types
 import { Components } from 'react-markdown';
@@ -220,7 +221,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             return null;
                         }
 
-                        const json = JSON.parse(jsonStr);
+                        const json = safeJsonParse(jsonStr); if(!json) return null;
                         const toolName = thought.toolName || 'unknown_tool';
 
                         if ((toolName === 'generate_image' || toolName === 'batch_edit_images' || toolName === 'generate_high_res_asset' || toolName === 'remix_image') && (json.urls || json.image_ids)) {

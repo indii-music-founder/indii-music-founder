@@ -199,4 +199,23 @@ describe('ERNMapper', () => {
         expect(release.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
         expect(release.aiGenerationInfo?.aiToolsUsed).toContain('Suno');
     });
+
+    it('should format duration correctly for DDEX', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            durationFormatted: '3:04'
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const resource = ern.resourceList[0];
+
+        expect(resource.duration).toBe('PT3M4S');
+        
+        const metadataLong: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            durationFormatted: '1:05:30'
+        };
+        const ernLong = ERNMapper.mapMetadataToERN(metadataLong, defaultOptions);
+        expect(ernLong.resourceList[0].duration).toBe('PT1H5M30S');
+    });
 });

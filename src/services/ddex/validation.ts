@@ -84,7 +84,7 @@ export const ExtendedGoldenMetadataSchema = GoldenMetadataSchema.extend({
     distributionChannels: z.array(z.enum(['streaming', 'download', 'physical'])),
     exclusiveTerritory: TerritoryCodeSchema.optional(),
     exclusiveEndDate: z.string().regex(isoDateRegex).optional(),
-    upc: z.string().optional(),
+    upc: z.string().regex(/^\d{12}$/, 'Invalid UPC format').optional(),
     gridId: z.string().optional(),
     catalogNumber: z.string().optional(),
     releaseTitle: z.string().optional(),

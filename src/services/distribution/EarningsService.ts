@@ -1,11 +1,12 @@
 import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, Timestamp, orderBy, limit } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, limit, doc, setDoc } from 'firebase/firestore';
 import type { DistributorEarnings } from './types/distributor';
 import type { DateRange } from '@/services/ddex/types/common';
 
-export interface EarningsRecord extends DistributorEarnings {
+export interface EarningsRecord extends Omit<DistributorEarnings, 'lastUpdated'> {
     id?: string;
-    createdAt: number;
+    createdAt: any; // serverTimestamp
+    lastUpdated: any; // serverTimestamp
 }
 
 export class EarningsService {
@@ -16,27 +17,31 @@ export class EarningsService {
      */
     async getEarnings(distributorId: string, releaseId: string, period?: DateRange): Promise<DistributorEarnings | null> {
         try {
-            const constraints: any[] = [
+            let q = query(
+                collection(db, this.COLLECTION),
                 where('distributorId', '==', distributorId),
                 where('releaseId', '==', releaseId)
-            ];
+            );
 
             if (period) {
-                // This assumes stored records have a compatible date field or we filter in memory
-                // For simplicity in this roadmap, we fetch the latest matching record
+                q = query(q, 
+                    where('period.startDate', '==', period.startDate),
+                    where('period.endDate', '==', period.endDate)
+                );
+            } else {
+                q = query(q, orderBy('period.endDate', 'desc'), limit(1));
             }
-
-            const q = query(
-                collection(db, this.COLLECTION),
-                ...constraints,
-                orderBy('lastUpdated', 'desc'),
-                limit(1)
-            );
 
             const snapshot = await getDocs(q);
             if (snapshot.empty) return null;
 
-            return snapshot.docs[0].data() as DistributorEarnings;
+            const data = snapshot.docs[0].data();
+            return {
+                ...data,
+                id: snapshot.docs[0].id,
+                // Handle Timestamp conversion
+                lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
+            } as DistributorEarnings;
         } catch (error) {
             console.error('[EarningsService] Failed to fetch earnings:', error);
             return null;
@@ -48,13 +53,27 @@ export class EarningsService {
      */
     async getAllEarnings(distributorId: string, period?: DateRange): Promise<DistributorEarnings[]> {
         try {
-             const q = query(
+             let q = query(
                 collection(db, this.COLLECTION),
                 where('distributorId', '==', distributorId)
             );
 
+            if (period) {
+                q = query(q, 
+                    where('period.startDate', '>=', period.startDate),
+                    where('period.endDate', '<=', period.endDate)
+                );
+            }
+
             const snapshot = await getDocs(q);
-            return snapshot.docs.map(doc => doc.data() as DistributorEarnings);
+            return snapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    ...data,
+                    id: doc.id,
+                    lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
+                } as DistributorEarnings;
+            });
         } catch (error) {
             console.error('[EarningsService] Failed to fetch all earnings:', error);
             return [];
@@ -66,13 +85,16 @@ export class EarningsService {
      */
     async recordEarnings(data: DistributorEarnings): Promise<string> {
         try {
-            const record: EarningsRecord = {
+            const earningsId = `${data.distributorId}_${data.releaseId}_${data.period.startDate}_${data.period.endDate}`;
+            const record = {
                 ...data,
-                createdAt: Date.now()
+                createdAt: serverTimestamp(),
+                lastUpdated: serverTimestamp()
             };
 
-            const docRef = await addDoc(collection(db, this.COLLECTION), record);
-            return docRef.id;
+            // Use setDoc with a deterministic ID to prevent duplicates if the same report is processed twice
+            await setDoc(doc(db, this.COLLECTION, earningsId), record, { merge: true });
+            return earningsId;
         } catch (error) {
             console.error('[EarningsService] Failed to record earnings:', error);
             throw error;

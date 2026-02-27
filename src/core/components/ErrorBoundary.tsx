@@ -10,6 +10,7 @@ interface Props {
 interface State {
     hasError: boolean;
     error: Error | null;
+    errorId?: string;
 }
 
 const CHUNK_RELOAD_KEY = 'app_last_chunk_error';
@@ -18,11 +19,12 @@ const RELOAD_THRESHOLD_MS = 10000; // 10 seconds
 export class ErrorBoundary extends Component<Props, State> {
     public state: State = {
         hasError: false,
-        error: null
+        error: null,
+        errorId: undefined
     };
 
     public static getDerivedStateFromError(error: Error): State {
-        return { hasError: true, error };
+        return { hasError: true, error, errorId: crypto.randomUUID().slice(0, 8) };
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
@@ -42,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
             }
         }
 
-        console.error("Uncaught error:", error, errorInfo);
+        console.error(`[ErrorBoundary] Uncaught error (${this.state.errorId}):`, error, errorInfo);
     }
 
     private isChunkLoadError(error: Error): boolean {
@@ -88,7 +90,7 @@ export class ErrorBoundary extends Component<Props, State> {
                         <p className="text-gray-300 mb-6">
                             An unexpected error occurred. You can try reloading, or go back to the dashboard.
                         </p>
-                        {import.meta.env.DEV && this.state.error && (
+                        {import.meta.env.DEV && this.state.error ? (
                             <>
                                 <p className="font-mono text-sm text-red-200 mb-2 text-left">
                                     {this.state.error.message}
@@ -97,6 +99,10 @@ export class ErrorBoundary extends Component<Props, State> {
                                     {this.state.error.stack}
                                 </pre>
                             </>
+                        ) : (
+                            <p className="font-mono text-sm text-gray-400 mb-6">
+                                Reference Code: {this.state.errorId}
+                            </p>
                         )}
                         <div className="flex gap-3 justify-center">
                             <button

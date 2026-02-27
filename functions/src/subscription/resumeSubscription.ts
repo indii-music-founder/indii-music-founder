@@ -12,7 +12,7 @@ export const resumeSubscription = onCall(async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new HttpsError('unauthenticated', 'Unauthorized');
   }
 
   try {
@@ -20,27 +20,27 @@ export const resumeSubscription = onCall(async (request) => {
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
 
     if (!subscriptionDoc.exists) {
-      throw new Error('Subscription not found');
+      throw new HttpsError('not-found', 'Subscription not found');
     }
 
     const subscription = subscriptionDoc.data();
 
     if (!subscription) {
-      throw new Error('Subscription data not found');
+      throw new HttpsError('not-found', 'Subscription data not found');
     }
 
     const stripeCustomerId = subscription.stripeCustomerId;
     const stripeSubscriptionId = subscription.stripeSubscriptionId;
 
     if (!stripeCustomerId || !stripeSubscriptionId) {
-      throw new Error('No active subscription found');
+      throw new HttpsError('failed-precondition', 'No active subscription found');
     }
 
     // Check if subscription is set to cancel at period end
     const stripeSubscription = await stripe.subscriptions.retrieve(stripeSubscriptionId);
 
     if (!stripeSubscription.cancel_at_period_end) {
-      throw new Error('Subscription is not scheduled for cancellation');
+      throw new HttpsError('failed-precondition', 'Subscription is not scheduled for cancellation');
     }
 
     // Resume by removing cancel_at_period_end

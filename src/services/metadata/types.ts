@@ -159,7 +159,7 @@ export interface DDEXReleaseRecord {
     publishedAt?: string;
 }
 
-export const INITIAL_METADATA: GoldenMetadata = {
+export const INITIAL_METADATA: ExtendedGoldenMetadata = {
     trackTitle: '',
     artistName: '',
     isrc: '',
@@ -172,5 +172,13 @@ export const INITIAL_METADATA: GoldenMetadata = {
     publisher: 'Self-Published',
     containsSamples: false,
     samples: [],
-    isGolden: false
+    isGolden: false,
+    releaseType: 'Single',
+    releaseDate: new Date().toISOString().split('T')[0],
+    territories: ['Worldwide'],
+    distributionChannels: ['streaming', 'download'],
+    aiGeneratedContent: {
+        isFullyAIGenerated: false,
+        isPartiallyAIGenerated: false
+    }
 };

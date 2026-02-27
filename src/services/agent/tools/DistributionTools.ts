@@ -520,6 +520,8 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
     return toolError('Merlin check requires Electron environment (Keys Layer).', 'ELECTRON_REQUIRED');
 });
 
+import { MusicTools } from './MusicTools';
+
 export const DistributionTools: Record<string, AnyToolFunction> = {
     prepare_release,
     run_audio_qc: wrapTool('run_audio_qc', run_audio_qc),
@@ -528,5 +530,6 @@ export const DistributionTools: Record<string, AnyToolFunction> = {
     calculate_payout,
     run_metadata_qc,
     generate_bwarm,
-    check_merlin_status
+    check_merlin_status,
+    create_music_metadata: MusicTools.create_music_metadata
 };

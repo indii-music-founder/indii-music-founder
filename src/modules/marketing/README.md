@@ -1,30 +1,21 @@
-# Marketing Module
+# Marketing & Campaigns Module (RC1)
 
-## Purpose
+The Marketing module is the growth engine of indiiOS. It automates the complex task of promoting creative work, ensuring that every release reaches its maximum potential through AI-driven asset creation and campaign strategy.
 
-The Marketing Module assists users in planning, creating, and analyzing marketing campaigns. It leverages AI to generate strategies, write copy, and provide insights into market trends.
+## 🚀 Key Features
+- **Campaign Architect:** Plan multi-week release cycles including teaser phases, launch day, and post-release support.
+- **AI Copywriter:** Generates platform-specific captions, bios, and press releases that maintain brand voice.
+- **Brand Kit Management:** Centralized storage for logos, color palettes, and fonts to ensure visual consistency across all assets.
+- **Asset Optimizer:** Automatically resizes and formats creative assets for TikTok, Instagram, YouTube, and X.
+- **EPK Builder:** Generate professional Electronic Press Kits from release metadata and creative studio assets.
 
-## Key Components
+## 🏗️ Technical Architecture
+- **`MarketingDashboard`**: Central hub for campaign status and asset management.
+- **`MarketingAgent`**: Specialist agent for strategy development and copywriting.
+- **Campaign Schemas**: Strict Zod-based definitions for campaign phases and milestones.
+- **Context Awareness:** Automatically pulls project details from the **Publishing** module to ensure accuracy.
 
-### `MarketingDashboard`
-
-The central dashboard for marketing activities. It likely includes:
-
-- Campaign overview and management.
-- Tools for generating content.
-- Analytics visualizations (mocked or real).
-
-### `CampaignManager`
-
-A component for managing specific marketing campaigns, defining goals, and tracking progress.
-
-## Tools (`tools.ts`)
-
-- `generate_campaign_strategy`: Creates a comprehensive campaign plan based on product, audience, and goal.
-- `write_social_copy`: Generates social media posts for specific platforms and tones.
-- `analyze_market_trends`: Provides insights into current industry trends (mocked or AI-generated).
-
-## AI Agents
-
-- **Chief Marketing Officer (CMO):** Plans high-level strategies.
-- **Senior Copywriter:** Executes content creation tasks.
+## 🔗 Integrations
+- **Social Module:** Direct deployment of marketing assets to audience platforms.
+- **Creative Studio:** One-click import of posters and promotional graphics.
+- **Finance:** Tracks marketing spend and calculates campaign ROI.

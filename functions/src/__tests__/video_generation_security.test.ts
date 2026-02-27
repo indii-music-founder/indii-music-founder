@@ -84,9 +84,7 @@ describe('🛡️ Shield: Video Generation Security', () => {
         };
     });
 
-    // TODO: Implement safetySettings in video_generation.ts then re-enable this test
-    // The Veo 3.1 API supports safety settings but they're not currently being sent
-    it.skip('should ENFORCE Safety Settings in Veo 3.1 API Request', async () => {
+    it('should ENFORCE Safety Settings in Veo 3.1 API Request', async () => {
         const handler = generateVideoFn(mockInngestClient, mockGeminiApiKey);
 
         const event = {

@@ -1,20 +1,21 @@
-# Video Module
+# Video Studio Module (RC1)
 
-## Purpose
+The Video Studio is a production-grade idea-to-render pipeline for AI video synthesis. It integrates **Google Veo 3.1** and **Imagen Video** models into a structured creative workflow that ensures high-fidelity results through a "Director's Cut" validation process.
 
-The Video Module focuses specifically on video production workflows, distinct from the general Creative Module. It handles advanced video features like timeline editing, keyframing, and specific video generation tasks.
+## 🎞️ Key Features
+- **Neural Storyboarding:** Generate consistent keyframes from natural language descriptions.
+- **Veo 3.1 Integration:** High-resolution (1080p/4K) video synthesis with support for temporal consistency and cinematic physics.
+- **The Director (QA Hub):** A specialized interface for reviewing, regenerating, and upscaling AI samples before final delivery.
+- **Multimodal Prompting:** Combine text prompts with reference images (image-to-video) or input videos (video-to-video) for precise control.
+- **Remotion Integration:** Local preview and timeline scrubbing for generated assets before cloud rendering.
 
-## Key Components
+## 🏗️ Architecture
+- **`VideoGenerationService`**: Manages the polling-based asynchronous lifecycle of Vertex AI video jobs.
+- **`VideoWorkflow`**: A state machine that tracks the job from `draft` -> `storyboard` -> `rendering` -> `completed`.
+- **Inngest Orchestration**: Backend rendering jobs are handled via serverless workflows to manage long-running timeouts and retries.
 
-### `VideoEditor` (Conceptual)
-
-An interface for arranging video clips, adding audio, and applying effects.
-
-### `FrameSelectionModal`
-
-A utility component for selecting specific frames from a video to use as inputs for other generations (e.g., image-to-video, daisy-chaining).
-
-## Services
-
-- `VideoGenerationService`: The backend service powering video creation.
-- `VideoService`: (Legacy/Alternative) service for video operations.
+## 🛠️ Usage
+1. Define a creative brief or let the **Creative Director Agent** generate one.
+2. Select your model (Veo 3.1 Pro or Fast).
+3. Set your duration (4s, 6s, or 8s).
+4. Initiate generation and monitor the **The Director** dashboard for real-time progress.

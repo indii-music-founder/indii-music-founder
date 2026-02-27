@@ -77,8 +77,8 @@ vi.mock('firebase/auth', () => ({
 **What:** `MetadataPersistenceService.save()` calls `serverTimestamp` from `firebase/firestore`, but the test's mock doesn't provide it. The error is caught internally and the test still passes.
 
 ### 7. `distribution_sandbox.security.test.ts` — 6 pre-existing failures
-**Status:** KNOWN, NEEDS INVESTIGATION
-**What:** Security sandbox tests for distribution handler have assertion mismatches. Not caused by CI changes — these are pre-existing.
+**Status:** FIXED (2026-02-26)
+**What:** Security sandbox tests for distribution handler were reported as having assertion mismatches. Verified they now pass in the current environment.
 
 ---
 

@@ -1,19 +1,14 @@
-# Onboarding Module
+# Onboarding Module (RC1)
 
-## Purpose
+The Onboarding module provides a structured, multi-step entry into the indiiOS ecosystem. It is designed to capture the core identity of the artist or organization and initialize the **Knowledge Base** with essential context.
 
-The Onboarding Module guides new users through the initial setup of their account and workspace. It collects essential information to personalize the experience and sets up the user's brand kit.
+## 🏁 Key Features
+- **Identity Setup:** Captures artist name, genre, and core brand mission.
+- **Visual Personality:** A guided aesthetic selection process to set the baseline for the **Creative Studio**.
+- **Organization Initialization:** Creates the shared workspace and default roles.
+- **Progress Tracking:** Tracks the user's completion of the setup phase before unlocking full platform access.
 
-## Key Components
-
-### `OnboardingFlow`
-
-The main container for the multi-step onboarding process.
-
-### `BrandKitSetup`
-
-A step in the onboarding process where users define their brand colors, fonts, and logo. This data is stored and used to customize AI generations.
-
-### `PersonaSelection`
-
-Allows users to select their primary role (e.g., Creator, Marketer, Musician) to tailor the UI.
+## 🏗️ Technical Architecture
+- **`OnboardingModal`**: The primary UI container for the setup flow.
+- **`OnboardingService`**: Manages the multi-step state and final data persistence to Firestore.
+- **Verification Logic**: Ensures all critical fields are completed before finalizing the profile.
