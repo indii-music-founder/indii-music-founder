@@ -8,7 +8,9 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Mock Firebase before importing tools
 vi.mock('@/services/firebase', () => ({
     db: {},
-    auth: { currentUser: { uid: 'test-user-123' } }
+    auth: { currentUser: { uid: 'test-user-123' } },
+    remoteConfig: { defaultConfig: {} },
+    getFirebaseAI: vi.fn(() => ({}))
 }));
 
 vi.mock('firebase/firestore', () => ({

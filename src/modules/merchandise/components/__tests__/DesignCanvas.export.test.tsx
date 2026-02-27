@@ -9,9 +9,11 @@ vi.mock('fabric', () => {
         Canvas: class {
             width = 800;
             height = 1000;
+            viewportTransform = [1, 0, 0, 1, 0, 0];
             getZoom = vi.fn().mockReturnValue(1);
             setZoom = vi.fn();
             setDimensions = vi.fn();
+            setViewportTransform = vi.fn();
             toDataURL = vi.fn().mockReturnValue('data:image/png;base64,mock');
             toSVG = vi.fn().mockReturnValue('<svg>mock</svg>');
             getObjects = vi.fn().mockReturnValue([]);

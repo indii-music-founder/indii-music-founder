@@ -5,6 +5,14 @@ import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 
+export interface TechnicalAudit {
+    peakLevel: number;
+    integratedLoudness: number;
+    sampleRate: number;
+    isStereo: boolean;
+    rejectionRisks: string[];
+}
+
 export interface AudioFeatures {
     bpm: number;
     key: string;
@@ -14,6 +22,8 @@ export interface AudioFeatures {
     danceability: number;
     loudness: number;
     valence?: number; // Happiness/Sadness
+    audit?: TechnicalAudit;
+    segments?: { start: number; label: string; energy: number }[];
 }
 
 export interface DeepAudioFeatures extends AudioFeatures {
@@ -262,6 +272,43 @@ export class AudioAnalysisService {
 
             const danceabilityValue = this.essentia.Danceability(signal).danceability;
 
+            // TECHNICAL AUDIT
+            let maxPeak = 0;
+            for (let i = 0; i < channelData.length; i++) {
+                const abs = Math.abs(channelData[i]);
+                if (abs > maxPeak) maxPeak = abs;
+            }
+
+            const rejectionRisks: string[] = [];
+            if (maxPeak > 0.99) rejectionRisks.push('Peak levels too high (risk of clipping/distortion)');
+            if (audioBuffer.sampleRate < 44100) rejectionRisks.push('Sample rate below industry standard (44.1kHz)');
+            
+            const loudnessLUFS = -20 + (energyValue * 100); // Approximation
+            if (loudnessLUFS > -10) rejectionRisks.push('Integrated loudness too high (risk of DSP normalization)');
+            if (loudnessLUFS < -18) rejectionRisks.push('Integrated loudness too low');
+
+            const audit: TechnicalAudit = {
+                peakLevel: 20 * Math.log10(maxPeak || 0.00001),
+                integratedLoudness: loudnessLUFS,
+                sampleRate: audioBuffer.sampleRate,
+                isStereo: audioBuffer.numberOfChannels > 1,
+                rejectionRisks
+            };
+
+            // BASIC SEGMENTATION (Viral DNA)
+            const segments: { start: number; label: string; energy: number }[] = [];
+            const windowSize = audioBuffer.sampleRate * 2; // 2 second windows
+            for (let i = 0; i < channelData.length; i += windowSize) {
+                const subArr = channelData.slice(i, i + windowSize);
+                let subEnergy = 0;
+                for (let j = 0; j < subArr.length; j++) subEnergy += subArr[j] * subArr[j];
+                subEnergy = Math.sqrt(subEnergy / subArr.length);
+                
+                if (subEnergy > energyValue * 1.5) {
+                    segments.push({ start: i / audioBuffer.sampleRate, label: 'High Energy / Hook candidate', energy: subEnergy });
+                }
+            }
+
             console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
 
             // Mapping RMS to dynamic energy (0-1)
@@ -278,7 +325,9 @@ export class AudioAnalysisService {
                 valence: isMinor
                     ? 0.3 + (energy * 0.2)
                     : 0.6 + (energy * 0.3),
-                loudness: -20 + (energyValue * 100), // Very rough estimate
+                loudness: loudnessLUFS,
+                audit,
+                segments: segments.slice(0, 5), // Return top 5 interesting spots
                 // Simulated Deep Features for UI Metadata Matrix
                 genre: {
                     [bpm > 115 && bpm < 130 ? 'Dance' : bpm > 140 ? 'Drum & Bass' : energy > 0.6 ? 'Rock' : 'Ambient']: 0.85

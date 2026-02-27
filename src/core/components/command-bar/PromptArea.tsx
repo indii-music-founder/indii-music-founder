@@ -397,6 +397,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={(e) => handleSubmit(e)}
                                 disabled={(!(commandBarInput || '').trim() && (commandBarAttachments?.length ?? 0) === 0) || isProcessing}
+                                aria-label="Run command"
                                 className={cn(
                                     "flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isIndiiMode

@@ -9,6 +9,7 @@ import { AuthProvider } from './components/auth/AuthProvider';
 import AuthLayout from './components/layouts/AuthLayout';
 import Privacy from './pages/Privacy';
 import Terms from './pages/Terms';
+import FieldRecorder from './pages/FieldRecorder';
 
 function App() {
   return (
@@ -23,6 +24,7 @@ function App() {
             <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
             <Route path="/privacy" element={<Privacy />} />
             <Route path="/terms" element={<Terms />} />
+            <Route path="/record" element={<FieldRecorder />} />
           </Routes>
         </div>
       </BrowserRouter>

@@ -3,16 +3,21 @@ import { BaseAgent } from './BaseAgent';
 import { createTool } from './utils/ZodUtils';
 import { z } from 'zod';
 import { AgentConfig } from './types';
+import { GenAI } from '@/services/ai/GenAI';
 
 // Mock dependencies
 vi.mock('@/services/ai/GenAI', () => ({
     GenAI: {
         generateContent: vi.fn(),
-        generateContentStream: vi.fn()
-    },
-    AI: {
-        generateContent: vi.fn(),
-        generateContentStream: vi.fn()
+        generateContentStream: vi.fn(),
+        generateSpeech: vi.fn()
+    }
+}));
+
+// Mock MembershipService
+vi.mock('@/services/membership/MembershipService', () => ({
+    MembershipService: {
+        recordSpend: vi.fn()
     }
 }));
 
@@ -55,14 +60,21 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should execute tool when args are valid', async () => {
-        // Setup AI mock to call the tool via generateContentStream
-        const aiMock = await import('@/services/ai/GenAI');
-        vi.mocked(aiMock.GenAI.generateContent)
+        // Setup AI mock
+        (GenAI.generateContent as any)
             .mockResolvedValueOnce({
                 response: {
                     text: () => 'Calling tool...',
+                    functionCalls: () => [{
+                        name: 'test_tool',
+                        args: {
+                            requiredString: 'valid',
+                            positiveNumber: 10
+                        }
+                    }],
                     candidates: [{
                         content: {
+                            role: 'model',
                             parts: [
                                 { text: 'Calling tool...' },
                                 {
@@ -76,21 +88,20 @@ describe('BaseAgent Tool Validation', () => {
                                 }
                             ]
                         }
-                    }],
-                    usageMetadata: undefined
+                    }]
                 }
-            } as any)
+            })
             .mockResolvedValueOnce({
                 response: {
                     text: () => 'Tool execution confirmed.',
                     candidates: [{
                         content: {
+                            role: 'model',
                             parts: [{ text: 'Tool execution confirmed.' }]
                         }
-                    }],
-                    usageMetadata: undefined
+                    }]
                 }
-            } as any);
+            });
 
         const response = await agent.execute('Task');
 
@@ -99,47 +110,51 @@ describe('BaseAgent Tool Validation', () => {
     });
 
     it('should block tool execution when args are invalid', async () => {
-        // Setup AI mock to call the tool with INVALID args via generateContentStream
-        const aiMock = await import('@/services/ai/GenAI');
-        vi.mocked(aiMock.GenAI.generateContent)
+        (GenAI.generateContent as any)
             .mockResolvedValueOnce({
                 response: {
-                    text: () => 'Calling tool...',
+                    text: () => 'Calling tool with invalid args...',
+                    functionCalls: () => [{
+                        name: 'test_tool',
+                        args: {
+                            requiredString: 'valid',
+                            positiveNumber: -5 // Invalid
+                        }
+                    }],
                     candidates: [{
                         content: {
+                            role: 'model',
                             parts: [
-                                { text: 'Calling tool...' },
+                                { text: 'Calling tool with invalid args...' },
                                 {
                                     functionCall: {
                                         name: 'test_tool',
                                         args: {
                                             requiredString: 'valid',
-                                            positiveNumber: -5 // Invalid
+                                            positiveNumber: -5
                                         }
                                     }
                                 }
                             ]
                         }
-                    }],
-                    usageMetadata: undefined
+                    }]
                 }
-            } as any)
+            })
             .mockResolvedValueOnce({
                 response: {
                     text: () => 'I see there was a validation error.',
                     candidates: [{
                         content: {
+                            role: 'model',
                             parts: [{ text: 'I see there was a validation error.' }]
                         }
-                    }],
-                    usageMetadata: undefined
+                    }]
                 }
-            } as any);
+            });
 
         const response = await agent.execute('Task');
 
-        expect(testToolHandler).not.toHaveBeenCalled(); // Handler should NOT be called
-        // The error would be in the conversation history/prompt, and the agent responds to it
+        expect(testToolHandler).not.toHaveBeenCalled();
         expect(response.text).toContain('validation error');
     });
 });

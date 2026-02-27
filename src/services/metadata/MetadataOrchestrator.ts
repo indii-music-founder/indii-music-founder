@@ -56,8 +56,40 @@ export class MetadataOrchestrator {
         // 4. Save to Track Library (Firestore)
         await trackLibrary.saveTrack(metadata);
         
+        // 5. PROACTIVE: Trigger Digital Handshake for collaborators
+        if (metadata.splits && metadata.splits.length > 0) {
+            this.triggerCollaboratorHandshake(metadata);
+        }
+        
         Logger.info('MetadataOrchestrator', `Golden Metadata created: ${metadata.trackTitle} (${metadata.isrc})`);
         return metadata;
+    }
+
+    /**
+     * Proactively suggests legal protection when new collaborators are detected.
+     */
+    private async triggerCollaboratorHandshake(metadata: ExtendedGoldenMetadata) {
+        const { useStore } = await import('@/core/store');
+        const { addMessage } = useStore.getState();
+
+        const externalCollaborators = metadata.splits.filter(s => 
+            s.legalName.toLowerCase() !== 'self' && 
+            s.legalName.toLowerCase() !== metadata.artistName.toLowerCase()
+        );
+
+        if (externalCollaborators.length > 0) {
+            const collaboratorNames = externalCollaborators.map(c => c.legalName).join(', ');
+            
+            // Inject a proactive message from the Legal Agent into the chat
+            addMessage({
+                id: crypto.randomUUID(),
+                role: 'assistant',
+                content: `I've detected new collaborators on "${metadata.trackTitle}": **${collaboratorNames}**. \n\nTo ensure your rights are protected, would you like me to generate a **Genesis Split Sheet** for everyone to sign digitally?`,
+                timestamp: Date.now(),
+                agentId: 'legal',
+                status: 'sent'
+            });
+        }
     }
 
     private formatDuration(seconds: number): string {
