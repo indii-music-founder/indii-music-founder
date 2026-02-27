@@ -36,12 +36,12 @@ export class EarningsService {
             if (snapshot.empty) return null;
 
             const data = snapshot.docs[0].data();
-            return {
+            return ({
                 ...data,
                 id: snapshot.docs[0].id,
                 // Handle Timestamp conversion
                 lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
-            } as DistributorEarnings;
+            } as unknown) as DistributorEarnings;
         } catch (error) {
             console.error('[EarningsService] Failed to fetch earnings:', error);
             return null;
@@ -68,11 +68,11 @@ export class EarningsService {
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => {
                 const data = doc.data();
-                return {
+                return ({
                     ...data,
                     id: doc.id,
                     lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
-                } as DistributorEarnings;
+                } as unknown) as DistributorEarnings;
             });
         } catch (error) {
             console.error('[EarningsService] Failed to fetch all earnings:', error);

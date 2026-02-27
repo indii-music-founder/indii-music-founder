@@ -70,7 +70,7 @@ export class MetadataOrchestrator {
      */
     private async triggerCollaboratorHandshake(metadata: ExtendedGoldenMetadata) {
         const { useStore } = await import('@/core/store');
-        const { addMessage } = useStore.getState();
+        const { addAgentMessage } = useStore.getState();
 
         const externalCollaborators = metadata.splits.filter(s => 
             s.legalName.toLowerCase() !== 'self' && 
@@ -81,13 +81,12 @@ export class MetadataOrchestrator {
             const collaboratorNames = externalCollaborators.map(c => c.legalName).join(', ');
             
             // Inject a proactive message from the Legal Agent into the chat
-            addMessage({
+            addAgentMessage({
                 id: crypto.randomUUID(),
-                role: 'assistant',
-                content: `I've detected new collaborators on "${metadata.trackTitle}": **${collaboratorNames}**. \n\nTo ensure your rights are protected, would you like me to generate a **Genesis Split Sheet** for everyone to sign digitally?`,
+                role: 'model',
+                text: `I've detected new collaborators on "${metadata.trackTitle}": **${collaboratorNames}**. \n\nTo ensure your rights are protected, would you like me to generate a **Genesis Split Sheet** for everyone to sign digitally?`,
                 timestamp: Date.now(),
-                agentId: 'legal',
-                status: 'sent'
+                agentId: 'legal'
             });
         }
     }

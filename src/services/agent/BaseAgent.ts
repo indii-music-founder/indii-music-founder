@@ -12,7 +12,10 @@ import {
     WhiskState,
     AnyToolFunction,
     DelegateTaskArgs,
-    ConsultExpertsArgs
+    ConsultExpertsArgs,
+    ExpertConsultation,
+    ToolFunctionArgs,
+    ToolFunctionResult
 } from './types';
 import { AI_MODELS, AI_CONFIG, MODEL_PRICING } from '@/core/config/ai-models';
 import type { Tool, ContentPart, FunctionCallPart } from '@/shared/types/ai.dto';
