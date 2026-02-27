@@ -277,6 +277,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     onChange={handleFileSelect}
                                     className="hidden"
                                     multiple
+                                    accept="image/*,audio/*,application/pdf,text/*"
                                     aria-label="Upload files"
                                 />
                                 <PromptInputAction tooltip="Attach files">

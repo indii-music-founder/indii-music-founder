@@ -15,6 +15,7 @@ import { ProducerAgent } from '@/agents/producer/config';
 import { SecurityAgent } from './definitions/SecurityAgent';
 import { DevOpsAgent } from './definitions/DevOpsAgent';
 import { DistributionAgent } from './definitions/DistributionAgent';
+import { MusicAgent } from './definitions/MusicAgent';
 
 export const AGENT_CONFIGS: AgentConfig[] = [
     MarketingAgent,
@@ -32,7 +33,8 @@ export const AGENT_CONFIGS: AgentConfig[] = [
     BrandAgent,
     DevOpsAgent,
     SecurityAgent,
-    DistributionAgent
+    DistributionAgent,
+    MusicAgent
 ];
 
 import { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';

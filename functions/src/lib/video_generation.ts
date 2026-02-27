@@ -57,7 +57,13 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                         aspectRatio: options?.aspectRatio || "16:9",
                         personGeneration: "allow_adult",
                         generateAudio: requestedAudio ?? true
-                    }
+                    },
+                    safetySettings: [
+                        { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_MEDIUM_AND_ABOVE" },
+                        { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_MEDIUM_AND_ABOVE" }
+                    ]
                 };
 
                 // VEO 3.1: Resolution support

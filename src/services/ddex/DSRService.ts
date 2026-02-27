@@ -62,8 +62,27 @@ export class DSRService {
             platformFeePercent: 0
         });
 
-        // Here we would stick the results into a database
-        // await db.royalties.insertMany(royalties);
+        // indiiOS Phase 4: Persist processed earnings to Firestore
+        const { earningsService } = await import('@/services/distribution/EarningsService');
+        
+        // Find distributorId from mapping
+        const distributorId = (distributorKey || 'unknown') as DistributorId;
+
+        // Group royalties by release to create DistributorEarnings records
+        for (const calc of royalties) {
+            await earningsService.recordEarnings({
+                distributorId,
+                releaseId: calc.releaseId,
+                period: calc.period,
+                streams: calc.totalStreams,
+                downloads: calc.totalDownloads,
+                grossRevenue: calc.grossRevenue,
+                distributorFee: calc.distributorFees,
+                netRevenue: calc.netRevenue,
+                currencyCode: calc.currencyCode,
+                lastUpdated: new Date().toISOString()
+            });
+        }
 
         return {
             batchId: `BATCH-${Date.now()}`,

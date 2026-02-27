@@ -136,6 +136,29 @@ export class ERNMapper {
         return release;
     }
 
+    private static formatDuration(duration?: string): string | undefined {
+        if (!duration) return undefined;
+        
+        // Handle HH:MM:SS or MM:SS
+        const parts = duration.split(':').map(Number);
+        let h = 0, m = 0, s = 0;
+        
+        if (parts.length === 3) {
+            [h, m, s] = parts;
+        } else if (parts.length === 2) {
+            [m, s] = parts;
+        } else {
+            s = parts[0] || 0;
+        }
+        
+        let iso = 'PT';
+        if (h > 0) iso += `${h}H`;
+        if (m > 0 || h > 0) iso += `${m}M`;
+        iso += `${s}S`;
+        
+        return iso;
+    }
+
     private static buildResources(metadata: ExtendedGoldenMetadata, assets?: ReleaseAssets): {
         resources: Resource[];
         resourceReferences: string[];
@@ -145,15 +168,9 @@ export class ERNMapper {
         let resourceCounter = 1;
 
         // Determine tracks to process
-        // If it's a Single, metadata acts as the track if tracks array is empty.
-        // If it's an Album/EP, iterate metadata.tracks.
         const tracksToProcess = (metadata.tracks && metadata.tracks.length > 0)
             ? metadata.tracks as ExtendedGoldenMetadata[]
-            : [metadata]; // Treat root as the single track
-
-        // If metadata represents a single track but has no explicit tracks array,
-        // tracksToProcess is [metadata]. However, 'assets.audioFiles' might rely on index.
-        // Let's ensure the loop correctly aligns.
+            : [metadata];
 
         // 1. Audio Resources
         tracksToProcess.forEach((track, index) => {
@@ -172,7 +189,7 @@ export class ERNMapper {
                 },
                 displayArtistName: track.artistName,
                 contributors: this.mapContributors(track.splits, track.artistName),
-                duration: track.durationFormatted ? `PT${track.durationFormatted.replace(':', 'M')}S` : undefined,
+                duration: this.formatDuration(track.durationFormatted),
                 parentalWarningType: track.explicit ? 'Explicit' : 'NotExplicit',
                 soundRecordingDetails: {
                     soundRecordingType: 'MusicalWorkSoundRecording',

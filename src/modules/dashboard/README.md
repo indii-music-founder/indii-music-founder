@@ -1,23 +1,21 @@
-# Dashboard Module
+# Dashboard & Unified Command Module (RC1)
 
-## Purpose
+The Dashboard is the "Nervous System" of indiiOS. It serves as the primary entry point for creators, providing a unified, high-level overview of their entire creative and business ecosystem.
 
-The Dashboard Module serves as the landing page and command center for users. It provides an overview of projects, recent activities, and quick access to other modules.
+## 📊 Key Features
+- **Neural Overview:** Real-time metrics for current projects, active releases, and financial status.
+- **Activity Feed:** A global event log tracking everything from completed AI renders to royalty payouts.
+- **Quick Actions:** One-click shortcuts to frequent tasks (e.g., "Generate Image", "Create Release").
+- **Agent Hub:** Direct access to the **Hub Agent (indii)** for session-wide assistance.
+- **Module Navigation:** The primary router for switching between **Creative**, **Distribution**, and **Finance** suites.
 
-## Key Components
+## 🏗️ Technical Architecture
+- **`Dashboard`**: The top-level React component for the unified workspace.
+- **`DashboardService`**: Aggregator logic that pulls data from multiple domain-specific stores.
+- **Zustand `appSlice`**: Managing the global navigation and layout state.
+- **Responsive Layout:** Optimized for both the **Electron Desktop** experience and high-resolution web displays.
 
-### `Dashboard`
-
-The main view displaying:
-
-- **Project List:** A grid or list of active projects.
-- **Recent Activity:** A feed of recent generations, edits, and tasks.
-- **Quick Actions:** Buttons to immediately start common tasks (e.g., "New Project", "Upload File").
-
-### `ProjectCard`
-
-Displays individual project details and status.
-
-### `NewProjectModal`
-
-A modal interface for creating new projects, selecting the type (Creative, Music, etc.), and setting initial parameters.
+## 🔗 Integrations
+- **All Modules:** Dynamically renders widgets from every active feature module.
+- **Auth Service:** Context-aware display of user profile and active organization.
+- **Sync Status:** Real-time tracking of Firestore and Storage synchronization.

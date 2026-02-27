@@ -45,19 +45,32 @@ describe('RateLimiter', () => {
         expect(limiter.tryAcquire()).toBe(true);
     });
 
-    // Skip async tests for now due to fake timer complexity
-    // The production logic is correct (uses Date.now() and setTimeout),
-    // but testing it with fake timers is tricky due to Date.now() not being faked.
-    // These operations work correctly in production.
-    it.skip('should wait for token in acquire()', async () => {
+    it('should wait for token in acquire()', async () => {
         const limiter = new RateLimiter(60, 0); // Start empty
+        
+        // Start the acquisition
         const acquirePromise = limiter.acquire(2000);
+        
+        // Advance timers enough to refill
+        vi.advanceTimersByTime(1000);
+        
+        // Let microtasks run
+        await Promise.resolve();
+        await Promise.resolve();
+        
         await expect(acquirePromise).resolves.toBeUndefined();
     });
 
-    it.skip('should timeout if token never available', async () => {
-        const limiter = new RateLimiter(60, 0); // Start empty
+    it('should timeout if token never available', async () => {
+        const limiter = new RateLimiter(1, 0); // Extremely slow refill
         const acquirePromise = limiter.acquire(50);
+        
+        vi.advanceTimersByTime(100);
+        
+        // Let microtasks run
+        await Promise.resolve();
+        await Promise.resolve();
+        
         await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
     });
 });

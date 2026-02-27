@@ -17,6 +17,7 @@ import { env } from '@/config/env';
 import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { safeJsonParse } from '@/services/utils/json';
 import { AI_MODELS, APPROVED_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
@@ -105,8 +106,8 @@ interface BatchEmbedContentsResponse {
 
 // Interface for GenerativeModel with batching support
 interface ExtendedGenerativeModel extends GenerativeModel {
-    batchEmbedContents?: any;
-    embedContent?: any;
+    batchEmbedContents?: (req: { requests: { content: Content, model?: string }[] }) => Promise<BatchEmbedContentsResponse>;
+    embedContent?: (req: Content | string) => Promise<{ embedding: { values: number[] } }>;
 }
 
 // Duplicates removed
@@ -122,7 +123,7 @@ export class FirebaseAIService {
     private defaultConfig: GenerationConfig = {};
 
     // Fallback mode: use direct Gemini SDK when App Check is not available
-    private fallbackClient: any = null;
+    private fallbackClient: GoogleGenAI | null = null;
     private useFallbackMode = false;
     private activeRequests: Map<string, Promise<GenerateContentResult>> = new Map();
 
@@ -187,7 +188,8 @@ export class FirebaseAIService {
                 const jsonString = getValue(remoteConfig, 'ai_system_config').asString();
                 if (jsonString) {
                     try {
-                        const parsed = JSON.parse(jsonString);
+                        const parsed = safeJsonParse(jsonString);
+                        if (!parsed) continue;
                         const validated = RemoteAIConfigSchema.safeParse(parsed);
                         if (validated.success) {
                             this.remoteConfig = validated.data;
@@ -301,8 +303,8 @@ export class FirebaseAIService {
         options?: {
             signal?: AbortSignal;
             cachedContent?: string;
-            safetySettings?: any[];
-            toolConfig?: any;
+            safetySettings?: SafetySetting[];
+            toolConfig?: ToolConfig;
             thoughtSignature?: string;
             skipCache?: boolean;
             timeout?: number;
@@ -429,20 +431,20 @@ export class FirebaseAIService {
                                 }
                             }
 
-                            const modelOptions: any = {
+                            const modelOptions = {
                                 model: modelName,
                                 generationConfig: mergedConfig as unknown as Record<string, unknown>,
                                 systemInstruction,
-                                tools: tools as any,
+                                tools: (tools as unknown as Tool[]),
                                 toolConfig: options?.toolConfig,
                                 safetySettings: options?.safetySettings || STANDARD_SAFETY_SETTINGS
                             };
 
                             if (cachedContent) {
-                                modelOptions.cachedContent = cachedContent;
+                                (modelOptions as any).cachedContent = cachedContent;
                             }
 
-                            const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+                            const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as any);
                             try {
                                 return await (modelCallback as any).generateContent(
                                     typeof sanitizedPrompt === 'string'
@@ -999,7 +1001,7 @@ export class FirebaseAIService {
         const cached = await aiCache.get(cacheKeyString, modelName, config);
         if (cached) {
             try {
-                return JSON.parse(cached) as T;
+                return safeJsonParse(cached) as T;
             } catch (_e) {
                 // Ignore parse failure
             }
@@ -1024,7 +1026,7 @@ export class FirebaseAIService {
 
         // Use the robust parser
         const cleaned = text.replace(/```json\n ?| ```/g, '').trim();
-        return JSON.parse(cleaned) as T;
+        return safeJsonParse(cleaned) as T;
     }
 
     /**
@@ -1136,7 +1138,7 @@ export class FirebaseAIService {
         if (!text) return {};
         try {
             const cleaned = text.replace(/```json\n?|```/g, '').trim();
-            return JSON.parse(cleaned) as T;
+            return safeJsonParse(cleaned) as T;
         } catch {
             logger.error('[FirebaseAIService] Failed to parse JSON:', text);
             return {} as any;
@@ -1312,7 +1314,7 @@ export class FirebaseAIService {
     /**
      * HIGH LEVEL: Generate image using backend proxy
      */
-    async generateImage(promptOrOptions: string | GenerateImageOptions, modelOverride?: string, configOverride?: any): Promise<string> {
+    async generateImage(promptOrOptions: string | GenerateImageOptions, modelOverride?: string, configOverride?: GenerationConfig): Promise<string> {
         return this.mediaBreaker.execute(async () => {
             await this.ensureInitialized();
 
@@ -1323,7 +1325,7 @@ export class FirebaseAIService {
             if (typeof promptOrOptions === 'object' && 'prompt' in promptOrOptions) {
                 prompt = promptOrOptions.prompt;
                 model = promptOrOptions.model || model;
-                config = (promptOrOptions.config as any) || config;
+                config = promptOrOptions.config || config;
             } else {
                 prompt = promptOrOptions as string;
             }
@@ -1418,9 +1420,10 @@ export class FirebaseAIService {
                         throw new Error('No candidates returned from TTS fallback model');
                     }
 
-                    const audioPart = (candidates[0] as any).content?.parts?.find((p: any) => p && 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
+                    const parts = (candidates[0].content?.parts || []) as ContentPart[];
+                    const audioPart = parts.find(p => 'inlineData' in p && p.inlineData?.mimeType.startsWith('audio/'));
 
-                    if (!audioPart || !audioPart.inlineData) {
+                    if (!audioPart || !('inlineData' in audioPart)) {
                         throw new Error('No audio data found in fallback response parts');
                     }
 

@@ -7,6 +7,8 @@ import PasswordResetForm from './components/auth/PasswordResetForm';
 import VerifyEmail from './components/auth/VerifyEmail';
 import { AuthProvider } from './components/auth/AuthProvider';
 import AuthLayout from './components/layouts/AuthLayout';
+import Privacy from './pages/Privacy';
+import Terms from './pages/Terms';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Route path="/signup" element={<AuthLayout><SignupForm /></AuthLayout>} />
             <Route path="/reset-password" element={<AuthLayout><PasswordResetForm /></AuthLayout>} />
             <Route path="/verify-email" element={<AuthLayout><VerifyEmail /></AuthLayout>} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
           </Routes>
         </div>
       </BrowserRouter>

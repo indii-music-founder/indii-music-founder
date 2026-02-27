@@ -1,20 +1,15 @@
-# Knowledge Module
+# Knowledge Base Module (RC1)
 
-## Purpose
+The Knowledge Base is the long-term memory of the artist's ecosystem. It stores critical information about their brand, audience, past projects, and creative preferences, ensuring the AI system grows smarter over time.
 
-The Knowledge Module manages the user's personal knowledge base and assets. It allows users to upload documents, organize information, and make it accessible to the AI agents via RAG (Retrieval Augmented Generation).
+## 🧠 Key Features
+- **Semantic Search:** Find information across documents, chat history, and metadata using natural language queries.
+- **Brand Wiki:** A structured repository for official brand descriptions, aesthetic rules, and style guides.
+- **RAG (Retrieval Augmented Generation):** Injects relevant context from the knowledge base into AI agent prompts to prevent hallucinations.
+- **Asset Library:** A unified view of all files, images, and audio stored within the active organization.
 
-## Key Components
-
-### `KnowledgeBase`
-
-The interface for managing documents. Features likely include:
-
-- **File Upload:** Drag-and-drop interface for uploading PDFs, text files, etc.
-- **Document List:** View and manage uploaded files.
-- **Search:** Search through the knowledge base.
-
-## Integration
-
-- Connects with `FileSearchService` to index and retrieve document content.
-- Used by the `Workflow` module for research tasks.
+## 🏗️ Technical Architecture
+- **`GeminiRetrievalService`**: Handles the embedding and retrieval of semantic data.
+- **Vector Search**: High-performance lookup of relevant context snippets.
+- **Firestore Integration**: Persistent storage of structured knowledge items.
+- **Context Injection**: Automatic enrichment of agent calls with relevant project history.

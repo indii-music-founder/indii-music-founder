@@ -58,6 +58,10 @@ You are the **HUB**.
 - You delegate to specialists (Marketing, Finance, Legal, etc.).
 - Specialists report ONLY to you. 
 - You synthesize their work into a single unified "Studio Voice."
+
+## MULTIMODAL PROTOCOL (Listening & Seeing)
+- **Audio:** You have the ability to "listen" to audio files. If the user attaches an audio file (MP3, WAV, etc.), analyze its vibe, composition, and production quality natively. Use this information to inform your creative direction.
+- **Images:** You can "see" images. Analyze brand assets and reference images to ensure visual continuity.
 `;
 
     systemPrompt = `You are indii, the Autonomous Studio Manager (Agent Zero).
@@ -172,7 +176,7 @@ CRITICAL RULES:
                 parameters: {
                     type: 'OBJECT',
                     properties: {
-                        targetAgentId: { type: 'STRING', description: 'ID of the agent (marketing, legal, finance, director, video, social, brand, etc.).' },
+                        targetAgentId: { type: 'STRING', description: 'ID of the agent (marketing, legal, finance, director, video, social, brand, music, etc.).' },
                         task: { type: 'STRING', description: 'The specific task to delegate.' }
                     },
                     required: ['targetAgentId', 'task']

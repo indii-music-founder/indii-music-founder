@@ -6,6 +6,11 @@ interface CanvasHistoryState {
   timestamp: number;
 }
 
+interface HistoryData {
+  states: CanvasHistoryState[];
+  index: number;
+}
+
 interface UseCanvasHistoryReturn {
   undo: () => void;
   redo: () => void;
@@ -28,46 +33,56 @@ export const useCanvasHistory = (
   maxHistorySize: number = 50,
   debounceMs: number = 300
 ): UseCanvasHistoryReturn => {
-  const [history, setHistory] = useState<CanvasHistoryState[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [history, setHistory] = useState<HistoryData>({
+    states: [],
+    index: -1,
+  });
+  
   const isPerformingAction = useRef(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastSavedJson = useRef<string | null>(null);
 
   // Save current canvas state to history
   const saveState = useCallback(() => {
     if (!canvas || isPerformingAction.current) return;
 
     try {
-      const json = JSON.stringify(canvas.toObject(['name'])); // Include custom properties
+      // We use toObject with custom properties we care about
+      // 'name' and 'id' are critical for our layer management
+      const obj = canvas.toObject(['name', 'id', 'selectable', 'locked']);
+      const json = JSON.stringify(obj);
+
+      // Optimization: Don't save if nothing changed
+      if (json === lastSavedJson.current) return;
+      lastSavedJson.current = json;
+
       const timestamp = Date.now();
 
-      setHistory((prevHistory) => {
+      setHistory((prev) => {
         // Remove any "future" states if we're not at the end
-        const newHistory = prevHistory.slice(0, historyIndex + 1);
+        const newStates = prev.states.slice(0, prev.index + 1);
 
         // Add new state
-        newHistory.push({ json, timestamp });
+        newStates.push({ json, timestamp });
 
         // Limit history size
-        if (newHistory.length > maxHistorySize) {
-          newHistory.shift();
-          return newHistory;
+        if (newStates.length > maxHistorySize) {
+          newStates.shift();
+          return {
+            states: newStates,
+            index: newStates.length - 1,
+          };
         }
 
-        return newHistory;
-      });
-
-      setHistoryIndex((prevIndex) => {
-        const newHistory = history.slice(0, prevIndex + 1);
-        if (newHistory.length >= maxHistorySize) {
-          return maxHistorySize - 1;
-        }
-        return prevIndex + 1;
+        return {
+          states: newStates,
+          index: newStates.length - 1,
+        };
       });
     } catch (error) {
-      console.error('Failed to save canvas state:', error);
+      console.error('[useCanvasHistory] Failed to save canvas state:', error);
     }
-  }, [canvas, history, historyIndex, maxHistorySize]);
+  }, [canvas, maxHistorySize]);
 
   // Debounced save state
   const debouncedSaveState = useCallback(() => {
@@ -82,94 +97,97 @@ export const useCanvasHistory = (
 
   // Undo to previous state
   const undo = useCallback(async () => {
-    if (!canvas || historyIndex <= 0) return;
+    if (!canvas || history.index <= 0) return;
 
     isPerformingAction.current = true;
 
     try {
-      const prevState = history[historyIndex - 1];
+      const prevIndex = history.index - 1;
+      const prevState = history.states[prevIndex];
       const parsedJson = JSON.parse(prevState.json);
 
+      lastSavedJson.current = prevState.json;
+      
       await canvas.loadFromJSON(parsedJson);
       canvas.renderAll();
-      setHistoryIndex(historyIndex - 1);
-      isPerformingAction.current = false;
+      
+      setHistory(prev => ({ ...prev, index: prevIndex }));
+      
+      // Small delay to ensure Fabric events triggered by loadFromJSON are ignored
+      setTimeout(() => {
+        isPerformingAction.current = false;
+      }, 100);
     } catch (error) {
-      console.error('Failed to undo:', error);
+      console.error('[useCanvasHistory] Failed to undo:', error);
       isPerformingAction.current = false;
     }
-  }, [canvas, history, historyIndex]);
+  }, [canvas, history]);
 
   // Redo to next state
   const redo = useCallback(async () => {
-    if (!canvas || historyIndex >= history.length - 1) return;
+    if (!canvas || history.index >= history.states.length - 1) return;
 
     isPerformingAction.current = true;
 
     try {
-      const nextState = history[historyIndex + 1];
+      const nextIndex = history.index + 1;
+      const nextState = history.states[nextIndex];
       const parsedJson = JSON.parse(nextState.json);
+
+      lastSavedJson.current = nextState.json;
 
       await canvas.loadFromJSON(parsedJson);
       canvas.renderAll();
-      setHistoryIndex(historyIndex + 1);
-      isPerformingAction.current = false;
+      
+      setHistory(prev => ({ ...prev, index: nextIndex }));
+      
+      setTimeout(() => {
+        isPerformingAction.current = false;
+      }, 100);
     } catch (error) {
-      console.error('Failed to redo:', error);
+      console.error('[useCanvasHistory] Failed to redo:', error);
       isPerformingAction.current = false;
     }
-  }, [canvas, history, historyIndex]);
+  }, [canvas, history]);
 
   // Clear all history
   const clearHistory = useCallback(() => {
-    setHistory([]);
-    setHistoryIndex(-1);
+    setHistory({ states: [], index: -1 });
+    lastSavedJson.current = null;
   }, []);
 
   // Auto-save on canvas modifications
   useEffect(() => {
     if (!canvas) return;
 
-    const handleModified = () => {
+    const handleUpdate = () => {
       if (!isPerformingAction.current) {
         debouncedSaveState();
       }
     };
 
-    const handleObjectAdded = () => {
-      if (!isPerformingAction.current) {
-        debouncedSaveState();
-      }
-    };
+    // Fabric v6 events
+    canvas.on('object:modified', handleUpdate);
+    canvas.on('object:added', handleUpdate);
+    canvas.on('object:removed', handleUpdate);
+    canvas.on('path:created', handleUpdate);
 
-    const handleObjectRemoved = () => {
-      if (!isPerformingAction.current) {
-        debouncedSaveState();
-      }
-    };
-
-    canvas.on('object:modified', handleModified);
-    canvas.on('object:added', handleObjectAdded);
-    canvas.on('object:removed', handleObjectRemoved);
-
-    // Save initial state if history is empty
-    if (history.length === 0) {
-      // Use setTimeout to avoid synchronous state update in effect
-      setTimeout(() => {
-        saveState();
-      }, 0);
+    // Initial state save
+    if (history.states.length === 0) {
+      saveState();
     }
 
     return () => {
-      canvas.off('object:modified', handleModified);
-      canvas.off('object:added', handleObjectAdded);
-      canvas.off('object:removed', handleObjectRemoved);
+      canvas.off('object:modified', handleUpdate);
+      canvas.off('object:added', handleUpdate);
+      canvas.off('object:removed', handleUpdate);
+      canvas.off('path:created', handleUpdate);
 
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [canvas, debouncedSaveState, saveState, history.length]);
+  }, [canvas, debouncedSaveState, saveState, history.states.length]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -178,20 +196,23 @@ export const useCanvasHistory = (
     const handleKeyDown = (e: KeyboardEvent) => {
       // Check if user is typing in an input
       const target = e.target as HTMLElement;
-      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
         return;
       }
 
+      const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+      const ctrlKey = isMac ? e.metaKey : e.ctrlKey;
+
       // Undo: Cmd/Ctrl + Z
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+      if (ctrlKey && e.key.toLowerCase() === 'z' && !e.shiftKey) {
         e.preventDefault();
         undo();
       }
 
       // Redo: Cmd/Ctrl + Shift + Z or Cmd/Ctrl + Y
       if (
-        ((e.metaKey || e.ctrlKey) && e.key === 'z' && e.shiftKey) ||
-        ((e.metaKey || e.ctrlKey) && e.key === 'y')
+        (ctrlKey && e.key.toLowerCase() === 'z' && e.shiftKey) ||
+        (ctrlKey && e.key.toLowerCase() === 'y')
       ) {
         e.preventDefault();
         redo();
@@ -199,18 +220,15 @@ export const useCanvasHistory = (
     };
 
     window.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
+    return () => window.removeEventListener('keydown', handleKeyDown);
   }, [canvas, undo, redo]);
 
   return {
     undo,
     redo,
     saveState,
-    canUndo: historyIndex > 0,
-    canRedo: historyIndex < history.length - 1,
+    canUndo: history.index > 0,
+    canRedo: history.index < history.states.length - 1,
     clearHistory
   };
 };

@@ -279,13 +279,13 @@ curl -I https://indiios-studio.web.app | grep -E "X-Frame|Content-Security"
 | P0 | App Check hard fail | ✅ DONE |
 | P0 | Firebase internals | ✅ DONE |
 | P0 | Sentry init | ✅ DONE |
-| P0 | Security headers | 🔲 TODO |
-| P0 | Deploy secrets | 🔲 TODO |
-| P1 | ErrorBoundary stack | 🔲 TODO |
-| P1 | Video error handling | 🔲 TODO |
-| P1 | JSON.parse safety | 🔲 TODO |
-| P1 | Rate limiting | 🔲 TODO |
-| P1 | Node version | 🔲 TODO |
+| P0 | Security headers | ✅ DONE |
+| P0 | Deploy secrets | ✅ DONE |
+| P1 | ErrorBoundary stack | ✅ DONE |
+| P1 | Video error handling | ✅ DONE |
+| P1 | JSON.parse safety | ✅ DONE |
+| P1 | Rate limiting | ✅ DONE |
+| P1 | Node version | ✅ DONE |
 | P1 | Firestore rules | 🔲 TODO |
 | P1 | RateLimiter tests | 🔲 TODO |
 | P2 | Verify build | 🔲 TODO |

@@ -13,7 +13,7 @@ export const getUsageStats = onCall(async (request) => {
   const { userId } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
-    throw new Error('Unauthorized');
+    throw new HttpsError('unauthenticated', 'Unauthorized');
   }
 
   try {
@@ -22,13 +22,13 @@ export const getUsageStats = onCall(async (request) => {
     // Get subscription
     const subscriptionDoc = await db.collection('subscriptions').doc(userId).get();
     if (!subscriptionDoc.exists) {
-      throw new Error('Subscription not found');
+      throw new HttpsError('not-found', 'Subscription not found');
     }
 
     const subscription = subscriptionDoc.data();
 
     if (!subscription) {
-      throw new Error('Subscription data not found');
+      throw new HttpsError('not-found', 'Subscription data not found');
     }
 
     const tier = subscription.tier as SubscriptionTier;

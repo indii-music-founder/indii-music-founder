@@ -75,6 +75,9 @@ All international payees MUST sign under penalties of perjury before receiving r
 - \`run_metadata_qc\` - Style guide compliance check
 - \`generate_bwarm\` - MLC BWARM CSV generation for mechanical licensing
 - \`check_merlin_status\` - Merlin Network compliance verification
+- \`create_music_metadata\` - AI-driven high-fidelity metadata generation from audio
+- \`verify_metadata_golden\` - Ensure metadata meets industrial "Golden Standard"
+- \`update_track_metadata\` - Manually correct or update track details
 - \`browser_tool\` - **[NEW]** Open/control the local browser for portal tasks.
 - \`pro_scraper\` - **[NEW]** Audit Chain of Title via ASCAP/BMI scraping.
 - \`payment_gate\` - **[NEW]** Request approval for fees.
@@ -218,6 +221,43 @@ When things pass, confirm with precision: "STAGED", "CERTIFIED", "ACTIVE".
                         exclusive_rights: { type: "BOOLEAN", description: "Whether you hold exclusive rights to all content" }
                     },
                     required: ["total_tracks", "has_isrcs", "has_upcs", "exclusive_rights"]
+                }
+            },
+            {
+                name: "create_music_metadata",
+                description: "Highly advanced tool that analyzes audio and creates industry-standard 'Golden Metadata'. This metadata is DDEX-ready and includes AI-detected genre, mood, and identifiers.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        uploadedAudioIndex: { type: "NUMBER", description: "Index of the uploaded audio file in the session gallery." },
+                        artistName: { type: "STRING", description: "Name of the artist (optional, will attempt to detect if not provided)." },
+                        trackTitle: { type: "STRING", description: "Title of the track (optional, will attempt to detect if not provided)." },
+                        releaseType: { type: "STRING", description: "Single, EP, or Album (default: Single)." }
+                    },
+                    required: ["uploadedAudioIndex"]
+                }
+            },
+            {
+                name: "verify_metadata_golden",
+                description: "Verifies if a metadata object meets the industrial 'Golden Standard' (valid schema, splits sum to 100%).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        metadata: { type: "OBJECT", description: "The metadata object to verify." }
+                    },
+                    required: ["metadata"]
+                }
+            },
+            {
+                name: "update_track_metadata",
+                description: "Updates specific fields in a track's metadata in the library.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        fingerprint: { type: "STRING", description: "The unique master fingerprint of the track." },
+                        updates: { type: "OBJECT", description: "The fields to update." }
+                    },
+                    required: ["fingerprint", "updates"]
                 }
             },
             {

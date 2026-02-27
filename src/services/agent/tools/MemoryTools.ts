@@ -69,7 +69,14 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         ) as any;
 
         const text = response.text?.() || response.response?.text?.() || '{}';
-        const verification = JSON.parse(text);
+        
+        let verification;
+        try {
+            verification = JSON.parse(text);
+        } catch (e) {
+            console.error('[MemoryTools] Failed to parse verification JSON:', text);
+            verification = { score: 0, pass: false, reasoning: 'Failed to parse AI response' };
+        }
 
         return {
             verification,

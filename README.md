@@ -1,541 +1,132 @@
 <div align="center">
-  <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
+  <img width="1200" height="475" alt="indiiOS Banner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# indiiOS: The AI-Native Creative Studio
+# indiiOS: The Sovereign Creative Engine
 
-**The Operating System for Independent Artists**
+**The First AI-Native Operating System for Independent Artists & Producers.**
 
-indiiOS is a multi-tenant, AI-native creative platform that unifies image generation, video production, music synthesis, distribution, and campaign management into a single intelligent workspace. Powered by a hub-and-spoke agent architecture that maintains consistent context across every surface.
+indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-tenant, sovereign creative workspace designed to empower independent music producers, visual artists, and labels. By unifying AI-powered asset generation, automated distribution, and intelligent business operations, indiiOS enables creators to own their infrastructure, their data, and their future.
 
-[![Firebase Hosting](https://img.shields.io/badge/Firebase-Hosted-FFCA28?logo=firebase)](https://indiios-studio.web.app)
-[![React 19](https://img.shields.io/badge/React-19-61DAFB?logo=react)](https://react.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?logo=typescript)](https://www.typescriptlang.org)
-[![Electron](https://img.shields.io/badge/Electron-33-47848F?logo=electron)](https://www.electronjs.org)
-
----
-
-## indii - The AI Agent System
-
-indiiOS is powered by **indii**, an intelligent AI agent orchestration system that provides AI-driven assistance through a hub-and-spoke architecture.
-
-indii consists of:
-
-- **Agent Zero (Hub)**: Central coordinator for all agent interactions
-- **Specialist Agents (Spokes)**: Domain experts (Marketing, Finance, Video, etc.)
-- **AgentOrchestrator**: Intelligent routing system
-- **Hybrid Architecture**: Dockerized Python sidecar for secure execution
-
-Learn more about indii's architecture in [PHASE4_IMPLEMENTATION.md](PHASE4_IMPLEMENTATION.md)
+[![Version](https://img.shields.io/badge/Version-0.1.0--beta.2-blue)](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron)
+[![Firebase](https://img.shields.io/badge/Cloud-Firebase-FFCA28?logo=firebase)](https://indiios-studio.web.app)
+[![React](https://img.shields.io/badge/Framework-React_18-61DAFB?logo=react)](https://react.dev)
+[![TypeScript](https://img.shields.io/badge/Language-TypeScript-3178C6?logo=typescript)](https://www.typescriptlang.org)
+[![Electron](https://img.shields.io/badge/Desktop-Electron_33-47848F?logo=electron)](https://www.electronjs.org)
 
 ---
 
-## Table of Contents
+## 💠 The Vision
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Quick Start](#quick-start)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
+indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
 
 ---
 
-## Features
+## 🏗️ 3-Layer Architecture
 
-### Creative Studios
+To ensure 99.9% reliability in probabilistic AI workflows, indiiOS operates on a rigorous 3-layer system:
 
-| Module              | Description                                                                              |
-| ------------------- | ---------------------------------------------------------------------------------------- |
-| **Creative Studio** | Infinite canvas for AI image generation, editing, and product visualization ("Showroom") |
-| **Video Studio**    | Idea-to-brief-to-render pipeline with QA checkpoints ("Director's Cut") using Veo 3.1    |
-| **Music Studio**    | Audio analysis tools (BPM, key, energy extraction) powered by Essentia.js                |
-| **Workflow Lab**    | Node-based automation editor to chain AI tasks across suites                             |
-
-### Business Operations
-
-| Module                        | Description                                                    |
-| ----------------------------- | -------------------------------------------------------------- |
-| **Publishing & Distribution** | Multi-distributor release management with DDEX ERN/DSR support |
-| **Finance**                   | Revenue tracking, royalty management, and financial analytics  |
-| **Marketing**                 | Campaign management, brand assets, and AI copywriting          |
-| **Legal**                     | Contract review, rights management, and compliance tools       |
-| **Touring**                   | Road management and tour planning                              |
-
-### Distribution Integrations
-
-- **DistroKid** - Direct API integration
-- **TuneCore** - Full release management
-- **CD Baby** - Standard distribution
-- **Symphonic** - DDEX-compliant delivery
-- **DDEX Support** - ERN message generation, DSR report parsing
-
-### Agent System
-
-- **Hub (indii)** - Orchestrates conversations, injects org/project context, delegates to specialists
-- **Agent Zero Sidecar** - Dockerized Python runtime on `localhost` for secure tool execution and Python interoperability.
-- **R2A2 Security** - Reflective Risk-Awareness module with input scanning, injection detection, and confidence scoring.
-- **Secrets Broker** - Ephemeral handle-based credential management ensuring zero-trust secret handling.
-- **Specialists** - Legal, Marketing, Brand, Road Manager, Music, Video, Creative Director, and **Browser** agents
-- **Autonomous Browser Agent** - Fully self-driving Puppeteer instance powered by `gemini-2.5-pro-ui-checkpoint` for real-time web discovery and data extraction.
-- **Context Safety** - Firestore-scoped lookups ensure responses stay within the active workspace
-
-### Electron Desktop Application
-
-- **Browser Agent Integration** - Native Puppeteer IPC for web discovery and automation
-- **SFTP/SSH2 Integration** - Direct distributor file uploads and DDEX delivery
-- **Keytar Integration** - Secure credential storage in OS keychain
-- **Platform-Specific Features** - File system access, native dialogs, and tray notifications
-- **Security Hardened** - Sandbox enabled, Context Isolation active, strict Content Security Policy
+1.  **Layer 1: Directive (Managerial)** - Natural language SOPs (Standard Operating Procedures) that define goals and safety boundaries.
+2.  **Layer 2: Orchestration (Intelligence)** - The Hub-and-Spoke Agent system (indii) that reasons, routes tasks, and manages context.
+3.  **Layer 3: Execution (Deterministic)** - Hard-coded TypeScript and Python scripts that handle the "heavy lifting" (API calls, file system ops, DDEX generation).
 
 ---
 
-### Hub-and-Spoke Agent Model
+## 🤖 indii: The Hub-and-Spoke Agent System
 
-```
-         ┌─────────────────────┐
-         │   AgentZero (Hub)   │
-         │   (Orchestrator)    │
-         └──────────┬──────────┘
-                    │
-        ┌───────────┼───────────┐
-        │           │           │
-   ┌────▼───┐  ┌───▼────┐  ┌──▼─────┐
-   │ Legal  │  │ Brand  │  │Marketing│
-   │ Agent  │  │ Agent  │  │  Agent  │
-   └────────┘  └────────┘  └────────┘
-        │           │           │
-   ┌────▼───┐  ┌───▼────┐  ┌──▼─────┐
-   │  Road  │  │ Music  │  │Finance │
-   │Manager │  │ Agent  │  │ Agent  │
-   └────────┘  └────────┘  └────────┘
-```
+The core of indiiOS is **indii**, an intelligent orchestration hub.
 
-### Frontend/Backend Split
-
-| Layer        | Technologies                    | Purpose                                     |
-| ------------ | ------------------------------- | ------------------------------------------- |
-| **Frontend** | React 19, Vite, Zustand         | UI, real-time chat, canvas editing          |
-| **Backend**  | Firebase Functions (Node.js 22) | Heavy AI workloads, rate limiting, security |
-| **AI**       | Gemini 3.x, Veo 3.1, Vertex AI  | Text, image, and video generation           |
+-   **Agent Zero (The Hub):** The central brain. It maintains your session context and coordinates between specialist agents.
+-   **Specialist Agents (The Spokes):**
+    -   **Legal Agent:** Real-time contract review and rights management.
+    -   **Creative Director:** Maintains brand consistency across image and video generation.
+    -   **Music Agent:** Deep audio analysis (BPM, key, timbre) via `Essentia.js`.
+    -   **Marketing Agent:** Automated campaign execution and AI copywriting.
+    -   **Finance Agent:** Waterfall payout calculations and royalty tracking.
+    -   **Browser Agent:** Autonomous Puppeteer driver for real-time web discovery.
 
 ---
 
-## Tech Stack
+## 📦 Core Modules
 
-### Frontend
+### 🎨 Creative Studios
+*   **Creative Studio:** An infinite Fabric.js canvas for AI image generation, product visualization, and asset editing.
+*   **Video Studio:** A production-grade pipeline for **Veo 3.1** and **Imagen** video synthesis, featuring a built-in "Director's Cut" QA step.
+*   **Workflow Lab:** A node-based automation editor (React Flow) to chain complex AI tasks into repeatable creative recipes.
 
-- **Framework:** React 19.2 + Vite 6.2
-- **Styling:** TailwindCSS v4.1 (CSS-first config)
-- **State:** Zustand 5.0
+### 📈 Business Operations
+*   **Distribution & DDEX:** The industry-standard **DDEX (Digital Data Exchange)** engine. Automated generation of ERN (Electronic Release Notification) messages and parsing of DSR (Digital Sales Report) files.
+*   **Finance & Royalties:** A secure ledger for tracking streaming revenue, physical sales, and automated royalty splits.
+*   **Touring (Road Manager):** Logistics, fuel calculations, and venue discovery for independent touring.
+
+---
+
+## 🚀 Tech Stack
+
+### Frontend & Desktop
+- **UI:** React 18, Vite, TailwindCSS v4 (CSS-first)
+- **State:** Zustand 5.0 (Slice-based)
+- **Desktop:** Electron 33 (Hardened sandbox, Context Isolation)
 - **Animation:** Framer Motion 12.x
-- **Canvas:** Fabric.js 6.9, React Flow 11.11
-- **Audio:** Tone.js 15.1, Wavesurfer.js 7.11, Essentia.js 0.1.3
-- **Video:** Remotion 4.0 (Player, Renderer, Lambda)
 
-### Backend
-
-- **Platform:** Firebase (Hosting, Functions, Firestore, Storage)
-- **Runtime:** Node.js 22 (Gen 2 Functions)
-- **AI SDK:** Genkit AI 1.26, Google GenAI 1.30
-- **Jobs:** Inngest 3.46
-
-### Desktop
-
-- **Framework:** Electron 33
-- **Automation:** Puppeteer (Main Process)
-- **Packaging:** Electron Forge
-- **Security:** Keytar for credential storage
-
-### AI Models
-
-| Purpose           | Model                          |
-| ----------------- | ------------------------------ |
-| Complex Reasoning | `gemini-3-pro-preview`         |
-| Fast Tasks        | `gemini-3-flash-preview`       |
-| Image Generation  | `gemini-3-pro-image-preview`   |
-| Video Generation  | `veo-3.1-generate-preview`     |
-| Browser Agent     | `gemini-2.5-pro-ui-checkpoint` |
+### Backend & AI
+- **Cloud:** Firebase (Gen 2 Functions, Firestore, Storage)
+- **AI Models:** Gemini 3 Pro (Complex Reasoning), Gemini 3 Flash (Fast Routing), Veo 3.1 (Video), Imagen (Image)
+- **Jobs:** Inngest 3.46 (Reliable background task orchestration)
+- **Security:** R2A2 (Reflective Risk-Awareness) scanning for prompt injections.
 
 ---
 
-## Quick Start
+## 🛠️ Getting Started
 
 ### Prerequisites
+- **Node.js:** >= 22.0.0
+- **Firebase CLI:** `npm install -g firebase-tools`
+- **Docker:** (Optional) Required for Agent Zero Sidecar execution.
 
-- **Node.js 20+** (LTS recommended)
-- **Firebase CLI** (`npm install -g firebase-tools`)
-- **Google Cloud** access with Vertex AI enabled
-
-### 1. Clone and Install
-
+### Installation
 ```bash
 git clone https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron.git
 cd indiiOS-Alpha-Electron
 npm install
 ```
 
-### 2. Environment Configuration
+### Environment Setup
+Copy `.env.example` to `.env` and provide your API keys:
+- `VITE_API_KEY`: Your Gemini/Google AI key.
+- `VITE_FIREBASE_API_KEY`: Your Firebase project identifier.
 
-Create a `.env` file in the project root:
-
-```env
-# Required - Gemini API
-VITE_GEMINI_API_KEY=your_gemini_api_key
-
-# Required - Firebase Configuration (JSON string)
-VITE_FIREBASE_CONFIG={"apiKey":"...","authDomain":"...","projectId":"...","storageBucket":"...","messagingSenderId":"...","appId":"..."}
-
-# Required for video generation
-VITE_VERTEX_PROJECT_ID=your_gcp_project_id
-VITE_VERTEX_LOCATION=us-central1
-
-# Optional - Google Maps
-VITE_GOOGLE_MAPS_API_KEY=your_maps_api_key
-
-# Optional - Distribution APIs
-DISTROKID_API_KEY=your_distrokid_key
-TUNECORE_API_KEY=your_tunecore_key
-```
-
-### 3. Development Modes
-
-**Web Studio (Browser)**
-
+### Development
 ```bash
-npm run dev
-# Opens at http://localhost:5173
-```
-
-**Electron Desktop App**
-
-```bash
-# Start Vite dev server first
+# Start Vite Studio (Port 4242)
 npm run dev
 
-# In another terminal, launch Electron
-npm run electron:dev
-```
-
-**Firebase Emulators (Local Backend)**
-
-```bash
-cd functions
-npm install
-npm run build
-firebase emulators:start
-```
-
-### 4. Build & Deploy
-
-```bash
-# Build web studio
-npm run build
-
-# Build landing page
-npm run build:landing
-
-# Build both
-npm run build:all
-
-# Deploy to Firebase
-firebase deploy
-```
-
-### 5. Agent Zero Sidecar (Optional AI Enhancement)
-
-The **Agent Zero Sidecar** provides advanced AI capabilities through a secure Docker container, including image generation (Imagen 3), video synthesis (Veo 3.1), and audio analysis.
-
-#### Prerequisites
-
-- **Docker Desktop** installed and running
-- **Docker Compose** v2.0+
-- Ports **50080** (API) and **8880** (Tunnel) available
-
-#### Quick Start
-
-```bash
-# 1. Start the Agent Zero container
-docker compose up -d
-
-# 2. Verify health
-curl http://localhost:50080/healthz
-# Expected: {"status": "healthy", "service": "indii-agent", "version": "0.1.0"}
-
-# 3. Run verification tests
-python3 scripts/verify_bridge.py
-```
-
-#### Environment Variables
-
-Add these to your `.env` file:
-
-```env
-# Required for Agent Zero
-GOOGLE_API_KEY=your_google_api_key
-GEMINI_API_KEY=your_gemini_api_key  # Optional, falls back to GOOGLE_API_KEY
-
-# Optional
-EMBEDDING_MODEL=models/embedding-001
-```
-
-#### Using Agent Zero in the App
-
-1. Launch the Electron app (`npm run electron:dev`)
-2. Open the Chat Overlay
-3. Toggle the provider from **"Native"** to **"Zero"**
-4. Send messages - Agent Zero will handle complex tasks with tool execution
-
-#### Available Tools
-
-- **Image Generation** (`indii_image_gen`) - Generates images using Gemini Imagen 3
-- **Video Generation** (`indii_video_gen`) - Creates videos using Google Veo 3.1
-- **Audio Analysis** (`indii_audio_ear`) - Analyzes audio files with Gemini multimodal
-
-#### Verification Tests
-
-Run the complete test suite to verify all functionality:
-
-```bash
-# Infrastructure tests
-python3 scripts/test_volume_mapping.py
-python3 scripts/test_network_isolation.py
-
-# API handler tests
-python3 scripts/verify_bridge.py
-python3 scripts/test_context_bleed.py
-
-# Tooling tests
-python3 scripts/test_protocol.py
-python3 scripts/test_zeroization.py
-
-# Security tests
-python3 scripts/test_honeypot.py
-```
-
-#### Troubleshooting
-
-**Container won't start:**
-
-```bash
-docker logs indii-agent-working
-docker compose down && docker compose build && docker compose up -d
-```
-
-**Connection refused:**
-
-```bash
-# Check port availability
-lsof -i :50080
-
-# Restart container
-docker compose restart
-```
-
-**For detailed setup and advanced usage, see:**
-
-- [Agent Zero Quick Start Guide](docs/AGENT_ZERO_QUICKSTART.md)
-- [Agent Zero Test Results](docs/AGENT_ZERO_TEST_RESULTS.md)
-
----
-
-## Project Structure
-
-```
-indiiOS-Alpha-Electron/
-├── src/                          # Frontend source
-│   ├── core/                     # App infrastructure
-│   │   ├── App.tsx              # Main entry
-│   │   ├── store.ts             # Zustand store root
-│   │   ├── store/slices/        # State slices
-│   │   ├── components/          # Sidebar, CommandBar, etc.
-│   │   └── config/              # AI model configs
-│   ├── modules/                  # Feature modules
-│   │   ├── auth/                # Authentication
-│   │   ├── creative/            # Image generation
-│   │   ├── video/               # Video production
-│   │   ├── music/               # Audio analysis
-│   │   ├── workflow/            # Node editor
-│   │   ├── marketing/           # Campaigns
-│   │   ├── publishing/          # Distribution
-│   │   ├── finance/             # Revenue tracking
-│   │   └── legal/               # Contracts
-│   ├── services/                 # Business logic
-│   │   ├── agent/               # AgentZero + specialists
-│   │   ├── ai/                  # AI service wrappers
-│   │   ├── distribution/        # Multi-distributor facade
-│   │   ├── ddex/                # ERN/DSR handling
-│   │   └── security/            # Credential management
-│   └── components/               # Shared UI
-├── functions/                    # Firebase Cloud Functions
-│   └── src/
-│       ├── agents/              # Backend agents
-│       ├── ai/                  # Vertex AI wrappers
-│       └── inngest/             # Job workflows
-├── electron/                     # Desktop wrapper
-│   ├── main.ts                  # Main process
-│   └── preload.ts               # Preload scripts
-├── landing-page/                 # Marketing site (Next.js)
-├── e2e/                          # Playwright tests
-└── docs/                         # Documentation
+# Start Electron App (Requires Vite running)
+npm run desktop:dev
 ```
 
 ---
 
-## Development
-
-### Scripts
-
-| Command                  | Description              |
-| ------------------------ | ------------------------ |
-| `npm run dev`            | Start Vite dev server    |
-| `npm run build`          | Build production bundle  |
-| `npm run electron:dev`   | Run Electron in dev mode |
-| `npm run electron:build` | Build Electron app       |
-| `npm run test`           | Run Vitest unit tests    |
-| `npm run test:e2e`       | Run Playwright E2E tests |
-| `npm run lint`           | Lint with ESLint         |
-| `npm run lint:fix`       | Auto-fix lint issues     |
-
-### Code Conventions
-
-- **Imports:** Use `@/` alias (e.g., `import { useStore } from '@/core/store'`)
-- **Components:** Functional components with TypeScript interfaces
-- **State:** Zustand slices for domain-specific state
-- **Styling:** TailwindCSS v4 with CSS-first configuration
-
-### Store Architecture
-
-```typescript
-import { useStore } from "@/core/store";
-
-function MyComponent() {
-  // Select only needed state
-  const activeModule = useStore((state) => state.activeModule);
-  const { user, activeOrg } = useStore((state) => ({
-    user: state.user,
-    activeOrg: state.activeOrg,
-  }));
-}
-```
+## 🧪 Testing & Quality
+indiiOS maintains a **"Zero-Regression"** policy.
+- **Unit:** Vitest (jsdom environment).
+- **E2E:** Playwright (60+ critical path specs).
+- **Security:** Strict API Credentials Policy and automated secret scanning.
 
 ---
 
-## Testing
-
-### Unit Tests (Vitest)
-
-```bash
-# Run all tests
-npm run test
-
-# Watch mode
-npm run test -- --watch
-
-# With coverage
-npm run test -- --coverage
-```
-
-### E2E Tests (Playwright)
-
-```bash
-# Headless
-npm run test:e2e
-
-# Interactive UI
-npx playwright test --ui
-
-# Debug mode
-npx playwright test --debug
-```
-
-### Test Structure
-
-- **Unit tests:** Co-located with source (`*.test.ts`)
-- **E2E tests:** Located in `e2e/` directory
-- **Fixtures:** `src/test/setup.ts` configures mocks
+## 📜 Documentation
+For deep-dives into specific subsystems, see:
+- [Architecture Standard](directives/architecture_standard.md)
+- [Agent Stability Protocol](directives/agent_stability.md)
+- [DDEX Implementation Plan](docs/DDEX_IMPLEMENTATION_PLAN.md)
+- [Model Usage Policy](MODEL_POLICY.md)
 
 ---
 
-## Deployment
-
-### Firebase Hosting
-
-| Target  | Site ID          | URL                              |
-| ------- | ---------------- | -------------------------------- |
-| Landing | `indiios-v-1-1`  | <https://indiios-v-1-1.web.app>  |
-| Studio  | `indiios-studio` | <https://indiios-studio.web.app> |
-
-### Manual Deployment
-
-```bash
-# Build and deploy everything
-npm run build:all && firebase deploy
-
-# Deploy only hosting
-firebase deploy --only hosting
-
-# Deploy specific function
-firebase deploy --only functions:generateImage
-```
-
-### GitHub Actions
-
-Automated deployment triggers on push to `main` branch. See `.github/workflows/deploy.yml`.
-
-**Required Secrets:**
-
-- `VITE_API_KEY`
-- `VITE_VERTEX_PROJECT_ID`
-- `VITE_VERTEX_LOCATION`
-- `FIREBASE_SERVICE_ACCOUNT`
-
----
-
-## Documentation
-
-| Document                                                                 | Description                              |
-| ------------------------------------------------------------------------ | ---------------------------------------- |
-| [CLAUDE.md](./CLAUDE.md)                                                 | Comprehensive AI assistant guide         |
-| [MASTER_COMPLETION_PLAN.md](./MASTER_COMPLETION_PLAN.md)                 | RC1 Completion Status (Primary)          |
-| [TASKS.md](./TASKS.md)                                                   | Active Tasks & Operational Logs          |
-| [MODEL_POLICY.md](./MODEL_POLICY.md)                                     | AI model usage requirements              |
-| [RULES.md](./RULES.md)                                                   | Agent Zero protocol and design standards |
-| [docs/AGENT_SYSTEM_ARCHITECTURE.md](./docs/AGENT_SYSTEM_ARCHITECTURE.md) | Hub-and-spoke design details             |
-| [docs/AUTONOMOUS_BROWSER_AGENT.md](./docs/AUTONOMOUS_BROWSER_AGENT.md)   | Self-driving browser internals           |
-| [docs/BACKEND_ARCHITECTURE.md](./docs/BACKEND_ARCHITECTURE.md)           | Firebase + Vertex AI service map         |
-| [docs/DDEX_IMPLEMENTATION_PLAN.md](./docs/DDEX_IMPLEMENTATION_PLAN.md)   | Distribution integration details         |
-| [docs/HYBRID_ARCHITECTURE_REVIEW.md](./docs/HYBRID_ARCHITECTURE_REVIEW.md)| Hybrid Architecture & Security Verification |
-
----
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Run linting before commits (`npm run lint:fix`)
-4. Commit with clear messages
-5. Push and create a Pull Request
-
-### Before Submitting
-
-- [ ] Tests pass (`npm run test`)
-- [ ] Lint passes (`npm run lint`)
-- [ ] Build succeeds (`npm run build`)
-- [ ] E2E tests pass (`npm run test:e2e`)
-
----
-
-## License
-
-Proprietary - IndiiOS LLC
-
----
+## ⚖️ License
+Proprietary. © 2026 IndiiOS LLC. All Rights Reserved.
 
 <div align="center">
-  <sub>Built with AI for independent artists</sub>
+  <sub>Built by Artists, for Artists. Powered by High-Intelligence.</sub>
 </div>

@@ -218,6 +218,20 @@ export interface ToolFunctionResult {
 
 import type { ToolExecutionContext } from './ToolExecutionContext';
 
+export interface DelegateTaskArgs extends ToolFunctionArgs {
+    targetAgentId: ValidAgentId;
+    task: string;
+}
+
+export interface ExpertConsultation {
+    agentId: ValidAgentId;
+    task: string;
+}
+
+export interface ConsultExpertsArgs extends ToolFunctionArgs {
+    consultations: ExpertConsultation[];
+}
+
 /**
  * Tool function type - accepts any args that extend ToolFunctionArgs
  * The runtime will validate args against the tool schema.
