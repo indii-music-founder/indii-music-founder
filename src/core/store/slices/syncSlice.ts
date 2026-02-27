@@ -1,5 +1,4 @@
 import { StateCreator } from 'zustand';
-import { WhiskSlice } from './creativeSlice';
 
 export interface SyncSlice {
     pendingCount: number;

@@ -1344,7 +1344,7 @@ export class FirebaseAIService {
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
                     imageSize: '4K', // "Perfect" quality
-                    personGenerationConfig: config?.personGenerationConfig as any
+                    personGenerationConfig: (config as any)?.personGenerationConfig
                 } as any
             };
 

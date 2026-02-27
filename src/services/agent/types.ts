@@ -67,6 +67,7 @@ export const VALID_AGENT_IDS = [
     'security',
     'merchandise',  // Merchandise creation & production
     'distribution', // Industrial Direct-to-DSP Engine
+    'music',        // Sonic Director - Audio Analysis & Metadata
     'curriculum',   // Agent Zero Automation (Branding Alignment)
     'keeper',       // Context Integrity Guardian
     'generalist'  // Agent Zero
