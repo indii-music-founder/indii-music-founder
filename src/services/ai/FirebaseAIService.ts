@@ -189,13 +189,14 @@ export class FirebaseAIService {
                 if (jsonString) {
                     try {
                         const parsed = safeJsonParse(jsonString);
-                        if (!parsed) continue;
-                        const validated = RemoteAIConfigSchema.safeParse(parsed);
-                        if (validated.success) {
-                            this.remoteConfig = validated.data;
-                            logger.info('[FirebaseAIService] Loaded dynamic AI config from Remote Config');
-                        } else {
-                            logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
+                        if (parsed) {
+                            const validated = RemoteAIConfigSchema.safeParse(parsed);
+                            if (validated.success) {
+                                this.remoteConfig = validated.data;
+                                logger.info('[FirebaseAIService] Loaded dynamic AI config from Remote Config');
+                            } else {
+                                logger.warn('[FirebaseAIService] Invalid remote config schema:', validated.error);
+                            }
                         }
                     } catch (e) {
                         logger.warn('[FirebaseAIService] Failed to parse ai_system_config JSON:', e);

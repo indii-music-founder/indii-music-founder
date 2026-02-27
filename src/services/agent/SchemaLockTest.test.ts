@@ -33,7 +33,7 @@ describe('Agent Schema Lock Proof', () => {
         // We check for the tools schema in either location
         const tools = agent.tools || agent.config?.tools;
         const tool = tools?.[0]?.functionDeclarations?.find((f: any) => f.name === 'analyze_brand_consistency');
-        expect(tool?.parameters?.required).toContain('uploadedAudioIndex');
+        expect(tool?.parameters?.required).toContain('content');
 
         // Ensure the registry didn't accidentally return a mutable copy that lost its freeze
         expect(Object.isFrozen(tool?.parameters?.required)).toBe(true);

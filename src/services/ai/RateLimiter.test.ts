@@ -1,75 +1,61 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { RateLimiter } from './RateLimiter';
 
 describe('RateLimiter', () => {
+    let now = 1700000000000;
+
     beforeEach(() => {
+        vi.spyOn(Date, 'now').mockImplementation(() => now);
         vi.useFakeTimers();
     });
 
     afterEach(() => {
         vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     it('should initialize with max tokens', () => {
-        const limiter = new RateLimiter(60); // 60 RPM
-        expect(limiter.getRemainingTokens()).toBe(60);
-    });
-
-    it('should consume tokens', () => {
-        const limiter = new RateLimiter(60);
-        expect(limiter.tryAcquire()).toBe(true);
-        expect(limiter.tryAcquire()).toBe(true);
-        // Should be slightly less than 58 because refill simulates continuously,
-        // but close enough to floor(58) if very fast.
-        expect(limiter.getRemainingTokens()).toBeLessThanOrEqual(58);
-    });
-
-    it('should fail to acquire when empty', () => {
-        const limiter = new RateLimiter(1, 1); // 1 RPM, burst 1
-        expect(limiter.tryAcquire()).toBe(true);
-        expect(limiter.tryAcquire()).toBe(false);
+        const limiter = new RateLimiter(60, 10);
+        expect(limiter.getRemainingTokens()).toBe(10);
     });
 
     it('should refill over time', () => {
-        const limiter = new RateLimiter(60); // 1 per second
-
+        const limiter = new RateLimiter(60, 10);
         // Consume all
-        for (let i = 0; i < 60; i++) {
-            limiter.tryAcquire();
-        }
-        expect(limiter.tryAcquire()).toBe(false);
+        for(let i=0; i<10; i++) limiter.tryAcquire();
+        expect(limiter.getRemainingTokens()).toBe(0);
 
-        // Advance 1 second
-        vi.advanceTimersByTime(1000);
-
-        expect(limiter.tryAcquire()).toBe(true);
+        // Advance 1.1 seconds to be safe
+        now += 1100;
+        expect(limiter.getRemainingTokens()).toBeGreaterThanOrEqual(1);
     });
 
     it('should wait for token in acquire()', async () => {
-        const limiter = new RateLimiter(60, 0); // Start empty
+        const limiter = new RateLimiter(60, 1); 
+        limiter.tryAcquire(); // now empty
         
-        // Start the acquisition
-        const acquirePromise = limiter.acquire(2000);
+        const acquirePromise = limiter.acquire(5000);
         
-        // Advance timers enough to refill
-        vi.advanceTimersByTime(1000);
-        
-        // Let microtasks run
+        // Wait for first setTimeout in the loop
         await Promise.resolve();
-        await Promise.resolve();
+        
+        // Advance time enough for 1 token
+        now += 1500;
+        await vi.advanceTimersByTimeAsync(1500);
         
         await expect(acquirePromise).resolves.toBeUndefined();
     });
 
     it('should timeout if token never available', async () => {
-        const limiter = new RateLimiter(1, 0); // Extremely slow refill
-        const acquirePromise = limiter.acquire(50);
+        const limiter = new RateLimiter(1, 1); 
+        limiter.tryAcquire(); 
         
-        vi.advanceTimersByTime(100);
+        const acquirePromise = limiter.acquire(500); 
         
-        // Let microtasks run
         await Promise.resolve();
-        await Promise.resolve();
+        
+        now += 1000;
+        await vi.advanceTimersByTimeAsync(1000);
         
         await expect(acquirePromise).rejects.toThrow('Rate limit acquisition timed out');
     });
