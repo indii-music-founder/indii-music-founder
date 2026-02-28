@@ -34,7 +34,7 @@ describe('DDEXMapper', () => {
                 oneLiner: 'A perfect summer night driving anthem.'
             },
             targetPrompts: {
-                imagen: 'foo',
+                image: 'foo',
                 veo: 'bar'
             }
         }

@@ -32,7 +32,7 @@ export const ReleaseManager: React.FC = () => {
                     isExplicit: false,
                     visualImagery: { abstract: '', narrative: '', lighting: '' },
                     marketingHooks: { keywords: [], oneLiner: 'A banger.' },
-                    targetPrompts: { imagen: '', veo: '' }
+                    targetPrompts: { image: '', veo: '' }
                 },
                 analyzedAt: Date.now(),
                 modelVersion: 'gemini-3-pro-preview'

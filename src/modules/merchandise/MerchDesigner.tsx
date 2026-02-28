@@ -15,7 +15,7 @@ import { KeyboardShortcuts, useKeyboardShortcutsHint } from './components/Keyboa
 import { DesignTemplate, templateService } from './templates/DesignTemplates';
 import { useCanvasHistory } from './hooks/useCanvasHistory';
 import { useAutoSave } from './hooks/useAutoSave';
-import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2, FolderOpen, History, HelpCircle } from 'lucide-react';
+import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, User as UserIcon, Save, AlignLeft, AlignCenter, AlignRight, AlignVerticalJustifyStart, AlignVerticalJustifyCenter, AlignVerticalJustifyEnd, Layers, Sticker, Wand2, FolderOpen, History, HelpCircle, Star } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { MerchCard } from './components/MerchCard';
@@ -86,6 +86,7 @@ export default function MerchDesigner() {
     const {
         addImage,
         addText,
+        addShape,
         deleteSelected,
         bringToFront,
         sendToBack,
@@ -138,6 +139,12 @@ export default function MerchDesigner() {
         addText('Your Text');
         toast.success('Text added to canvas');
     }, [addText, toast]);
+
+    // Handle add shape
+    const handleAddShape = useCallback((type: 'star' | 'circle' | 'square') => {
+        addShape(type);
+        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} added to canvas`);
+    }, [addShape, toast]);
 
     // Wrap alignment with toast feedback
     const handleAlign = useCallback((alignment: 'left' | 'center' | 'right' | 'top' | 'middle' | 'bottom') => {
@@ -577,6 +584,11 @@ export default function MerchDesigner() {
                                     icon={<Type size={18} />}
                                     label="Text"
                                     onClick={handleAddText}
+                                />
+                                <ToolButton
+                                    icon={<Star size={18} />}
+                                    label="Shape"
+                                    onClick={() => handleAddShape('star')}
                                 />
                                 <ToolButton
                                     icon={<Sparkles size={18} />}

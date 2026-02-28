@@ -21,7 +21,7 @@ export interface AudioSemanticData {
         oneLiner: string;   // "A crushing industrial anthem for the digital age."
     };
     targetPrompts: {
-        imagen: string;     // Optimized for gemini-3-pro-image-preview
+        image: string;      // Optimized for gemini-3.1-pro-image-preview
         veo: string;        // Optimized for veo-3.1-generate-preview
     };
 }

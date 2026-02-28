@@ -175,13 +175,19 @@ const makeProduct = (overrides: Partial<MerchProduct> = {}): MerchProduct => ({
   ...overrides,
 });
 
-const mockStats: MerchandiseStats = {
+const mockStats: any = {
   totalRevenue: 8250,
   unitsSold: 312,
   conversionRate: 6.4,
   revenueChange: 18,
   unitsChange: 11,
-  funnelData: { pageViews: 10000, addToCart: 850, checkout: 640 },
+  trendScore: 90,
+  productionVelocity: 85,
+  funnelData: {
+    pageViews: 1000,
+    addToCart: 200,
+    checkout: 50
+  }
 };
 
 const standardProducts = [
@@ -765,6 +771,8 @@ describe('MerchDashboard — stats indicators', () => {
         conversionRate: 0,
         revenueChange: 0,
         unitsChange: 0,
+        trendScore: 0,
+        productionVelocity: 0,
         funnelData: { pageViews: 0, addToCart: 0, checkout: 0 },
       },
     });

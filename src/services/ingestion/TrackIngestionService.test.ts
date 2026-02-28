@@ -50,7 +50,7 @@ describe('TrackIngestionService', () => {
                 oneLiner: 'Best song ever'
             },
             targetPrompts: {
-                imagen: 'visual prompt',
+                image: 'visual prompt',
                 veo: 'video prompt'
             }
         },

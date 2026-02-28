@@ -129,9 +129,9 @@ export class ImageGenerationService {
                 prompt: fullPrompt,
                 aspectRatio: aspectRatio,
                 count: count,
-                // Gemini 3 Pro Image (Imagen 3) is strictly Text-to-Image.
+                // Gemini 3.1 Image models are strictly Text-to-Image for this endpoint.
                 model: options.model === 'pro' ? 'pro' : 'fast',
-                // Imagen 3 does not support thinking/grounding - removing from payload to prevent 400s
+                // Gemini Image does not support thinking/grounding - removing from payload to prevent 400s
                 // Removing images: [] as it might trigger invalid argument for T2I
             });
             console.log('[ImageGen DEBUG] generateImageV3 returned:', result);
@@ -370,7 +370,7 @@ export class ImageGenerationService {
 
                     const result = await generateImage({
                         prompt: `Render this content image in the artistic style of the reference image.Maintain the composition and subject from content, apply colors, textures, and mood from style.${options.prompt || 'Restyle'} `,
-                        // Gemini 3 Pro Image is currently Text-to-Image only.
+                        // Gemini 3.1 Image models are currently Text-to-Image only.
                         // Passing input images causes INVALID_ARGUMENT (400).
                         aspectRatio
                     });

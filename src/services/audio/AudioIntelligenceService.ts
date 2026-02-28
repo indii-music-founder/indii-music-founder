@@ -37,10 +37,10 @@ const SEMANTIC_SCHEMA: Schema = {
         targetPrompts: {
             type: 'OBJECT',
             properties: {
-                imagen: { type: 'STRING' },
+                image: { type: 'STRING' },
                 veo: { type: 'STRING' }
             },
-            required: ['imagen', 'veo']
+            required: ['image', 'veo']
         }
     },
     required: ['mood', 'genre', 'instruments', 'ddexGenre', 'ddexSubGenre', 'language', 'isExplicit', 'visualImagery', 'marketingHooks', 'targetPrompts']
@@ -126,7 +126,7 @@ Output Targets:
    - 'isExplicit': True if the lyrics contain explicit content, False otherwise.
 
 2. Creative Direction:
-   - 'targetPrompts.imagen': A visual prompt optimized for Google Imagen 3. Focus on lighting, texture, and composition.
+   - 'targetPrompts.image': A visual prompt optimized for Google Gemini Image 3.1. Focus on lighting, texture, and composition.
    - 'targetPrompts.veo': A video prompt optimized for Google Veo. Focus on motion, camera movement, and atmosphere.
 
 Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what would it look like?
