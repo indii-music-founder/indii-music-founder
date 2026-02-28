@@ -170,6 +170,21 @@ vi.mock('firebase/firestore', () => {
         doc: vi.fn(() => ({ id: crypto.randomUUID() })),
         addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc-id' })),
         getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
+        getUsageStats: vi.fn(() => Promise.resolve({
+            data: {
+                tier: 'free',
+                generationsUsed: 0,
+                generationsRemaining: 10,
+                maxGenerations: 10,
+                storageTotalGB: 0,
+                projectsCreated: 0,
+                projectsRemaining: 3,
+                maxProjects: 3,
+                teamMembersUsed: 0,
+                teamMembersRemaining: 1,
+                maxTeamMembers: 1
+            }
+        })),
         getDocs: vi.fn(() => Promise.resolve({ docs: [], empty: true, size: 0, forEach: vi.fn() })),
         setDoc: vi.fn(() => Promise.resolve()),
         updateDoc: vi.fn(() => Promise.resolve()),

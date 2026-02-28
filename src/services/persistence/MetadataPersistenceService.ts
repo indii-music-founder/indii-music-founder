@@ -15,6 +15,8 @@ import { auth, db } from '@/services/firebase';
 import { collection, addDoc, setDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { events } from '@/core/events';
 
+export type AssetType = 'audio' | 'image' | 'video' | 'document' | 'workflow' | 'project' | 'campaign' | 'other';
+
 export interface PersistenceResult {
     success: boolean;
     docId?: string;

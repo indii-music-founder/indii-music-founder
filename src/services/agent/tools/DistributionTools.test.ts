@@ -10,7 +10,13 @@ vi.mock('@/services/firebase', () => ({
     db: {},
     auth: { currentUser: { uid: 'test-user-123' } },
     remoteConfig: { defaultConfig: {} },
-    getFirebaseAI: vi.fn(() => ({}))
+    getFirebaseAI: vi.fn(() => ({})),
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/firestore', () => ({
@@ -92,7 +98,7 @@ describe('DistributionTools', () => {
             expect(parsed.data.isrc).toMatch(/^USIND26\d{5}$/);
             expect(parsed.data.track_title).toBe('Test Track');
             expect(parsed.data.registry_status).toBe('REGISTERED');
-        });
+        }, 10000); // 10s timeout to avoid flaky cold-start failures
     });
 
     describe('certify_tax_profile', () => {

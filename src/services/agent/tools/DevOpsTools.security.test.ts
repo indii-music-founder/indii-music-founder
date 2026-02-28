@@ -19,7 +19,15 @@ vi.mock('@/core/store', () => ({
 // 3. Mock Firebase Functions (The Dangerous Backend)
 vi.mock('@/services/firebase', () => ({
     functions: {}, // Just an empty object since httpsCallable uses it as reference
-    auth: { currentUser: { uid: 'test-guardian' } }
+    auth: { currentUser: { uid: 'test-guardian' } },
+    db: {},
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    remoteConfig: { defaultConfig: {}, fetchAndActivate: vi.fn(() => Promise.resolve()), getValue: vi.fn(() => ({ asString: () => '', asBoolean: () => false, asNumber: () => 0 })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/functions', () => ({

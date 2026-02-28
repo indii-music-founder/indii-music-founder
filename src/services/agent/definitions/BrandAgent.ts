@@ -200,4 +200,3 @@ Think in terms of "Visual DNA," "Authenticity," "Core Values," and "Identity Pil
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
-freezeAgentConfig(BrandAgent);

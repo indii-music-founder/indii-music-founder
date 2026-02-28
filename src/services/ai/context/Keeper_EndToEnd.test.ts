@@ -7,14 +7,20 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Mock @/services/firebase to prevent real Firebase initialization
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'keeper-test-user', getIdToken: vi.fn().mockResolvedValue('test-token') },
         onAuthStateChanged: vi.fn(() => () => { })
     },
     db: {},
     storage: {},
-    remoteConfig: { defaultConfig: {} }
+    remoteConfig: { defaultConfig: {} },
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock Firebase Modules

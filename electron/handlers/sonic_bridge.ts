@@ -31,7 +31,7 @@ export function registerSonicBridgeHandlers() {
         log.info(`[SonicBridge] Starting watch on: ${watchPath}`);
         
         watcher = chokidar.watch(watchPath, {
-            ignored: /(^|[\/\])\../, // ignore dotfiles
+            ignored: /(^|[/\\])\../, // ignore dotfiles
             persistent: true,
             ignoreInitial: true,
             depth: 0 // only top level for bounces usually

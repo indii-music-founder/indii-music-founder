@@ -1,92 +1,79 @@
 import { AgentContext } from './types';
 import { agentService } from './AgentService';
+import { maestroBatchingService } from './MaestroBatchingService';
+import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
  * OrchestrationService manages complex, multi-agent workflows.
- * It coordinates specialist agents (Brand, Publicist, Marketing, Security)
- * to achieve high-level goals like "Launch a full campaign".
+ * It coordinates specialist agents to achieve high-level goals 
+ * using the Maestro Batching system for efficiency.
  */
 export class OrchestrationService {
 
     /**
-     * Executes a full Campaign Launch workflow.
-     * sequence:
-     * 1. Brand Agent: Audit existing assets and identity.
-     * 2. Publicist Agent: Draft press release and generate PDF.
-     * 3. Marketing Agent: Analyze trends and create strategy.
-     * 4. Social Agent: Prepare social drop posts.
+     * Executes a workflow from the registry.
      */
-    async launchCampaign(projectId: string, userIntent: string, context: AgentContext): Promise<string> {
-        const traceId = uuidv4();
-        console.info(`[Orchestration] Starting Campaign Launch for project: ${projectId}, trace: ${traceId}`);
+    async executeWorkflow(workflowId: string, context: AgentContext): Promise<string> {
+        const workflow = WORKFLOW_REGISTRY[workflowId];
+        if (!workflow) throw new Error(`Workflow ${workflowId} not found in registry.`);
 
-        let report = `# 🚀 Campaign Launch Report\n\n**Goal**: ${userIntent}\n\n---\n\n`;
+        const traceId = uuidv4();
+        console.info(`[Orchestration] Starting workflow: ${workflow.name} (${workflowId}), trace: ${traceId}`);
+
+        let report = `# 🚀 Workflow Report: ${workflow.name}\n\n**Description**: ${workflow.description}\n\n---\n\n`;
 
         try {
-            // STEP 1: BRAND AUDIT
-            console.info('[Orchestration] Step 1: Requesting Brand Audit...');
-            const brandResult = await agentService.runAgent(
-                'brand',
-                `Analyze the brand consistency and identity for this project based on current assets. Intent: ${userIntent}`,
+            // Map steps to batch tasks
+            const tasks = workflow.steps.map(step => ({
+                agentId: step.agentId,
+                prompt: step.prompt,
+                description: step.prompt, // Use prompt as description for now
+                params: { projectId: context.projectId, traceId },
                 context,
+                priority: step.priority,
                 traceId
-            );
-            report += `## 🎨 Brand Audit\n${brandResult.text}\n\n---\n\n`;
+            }));
 
-            // STEP 2: PUBLICIST - PRESS RELEASE
-            console.info('[Orchestration] Step 2: Generating Press Release...');
-            const publicistResult = await agentService.runAgent(
-                'publicist',
-                `Generate a professional press release and PDF for this campaign. Context: ${userIntent}`,
-                context,
-                traceId
-            );
-            report += `## 📰 Publicity & PR\n${publicistResult.text}\n\n---\n\n`;
+            // Execute via Maestro Batching
+            console.info(`[Orchestration] Enqueuing ${tasks.length} tasks into Maestro...`);
+            const results = await maestroBatchingService.executeBatch(tasks);
 
-            // STEP 3: MARKETING STRATEGY
-            console.info('[Orchestration] Step 3: Analyzing Market Trends...');
-            const marketingResult = await agentService.runAgent(
-                'marketing',
-                `Analyze current market trends and provide a 4-week marketing strategy for this release. Intent: ${userIntent}`,
-                context,
-                traceId
-            );
-            report += `## 📈 Marketing Strategy\n${marketingResult.text}\n\n---\n\n`;
+            // Synthesize report
+            results.forEach((res: any, index: number) => {
+                const step = workflow.steps[index];
+                const statusIcon = res.success ? '✅' : '❌';
+                report += `## ${statusIcon} Step: ${step.agentId.toUpperCase()}\n`;
+                report += `${res.message || res.text || res.error || 'No output'}\n\n---\n\n`;
+            });
 
-            // STEP 4: SOCIAL DROPS
-            console.info('[Orchestration] Step 4: Preparing Social Content...');
-            const socialResult = await agentService.runAgent(
-                'social',
-                `Prepare at least 3 social drop post drafts (TikTok, Instagram, Twitter) for this campaign.`,
-                context,
-                traceId
-            );
-            report += `## 📱 Social Drops\n${socialResult.text}\n\n---\n\n`;
-
-            report += `✅ **Orchestration Complete.** All specialist outputs have been synthesized above.`;
+            report += `✅ **Orchestration Complete.** All steps processed via Maestro Batching.`;
             return report;
 
         } catch (error: any) {
-            console.error('[Orchestration] Campaign Launch failed:', error);
-            return `❌ **Campaign Launch Interrupted**: ${error.message}. Partial progress saved in project logs.`;
+            console.error(`[Orchestration] Workflow ${workflowId} failed:`, error);
+            return `❌ **Workflow Interrupted**: ${error.message}.`;
         }
     }
 
     /**
      * General purpose orchestration router.
-     * Detects if a request is an indiiOS "Master Workflow".
      */
     async executeOrchestratedWorkflow(intent: string, context: AgentContext): Promise<string | null> {
         const lower = intent.toLowerCase();
 
-        // Campaign Triggers
+        // Release/Campaign Workflow
         if (lower.includes('launch') && (lower.includes('campaign') || lower.includes('release'))) {
             if (!context.projectId) throw new Error("A project must be active to launch a campaign.");
-            return this.launchCampaign(context.projectId, intent, context);
+            return this.executeWorkflow('CAMPAIGN_LAUNCH', context);
         }
 
-        // Add more master workflows here (e.g. "Security Audit", "Tour Planning")
+        // Merch Drop Workflow
+        if (lower.includes('merch') && (lower.includes('drop') || lower.includes('collection'))) {
+            if (!context.projectId) throw new Error("A project must be active for a merch drop.");
+            return this.executeWorkflow('AI_MERCH_DROP', context);
+        }
+
         return null;
     }
 }

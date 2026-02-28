@@ -131,5 +131,4 @@ Think in terms of "Writer's Share," "Publisher's Share," "Mechanicals," and "Bla
     }]
 };
 
-freezeAgentConfig(PublishingAgent);
 

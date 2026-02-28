@@ -17,7 +17,13 @@ vi.mock('@/services/firebase', () => ({
     db: {}, // Mock db object
     storage: {},
     functions: {},
-    auth: { currentUser: { uid: 'user-123' } }
+    auth: { currentUser: { uid: 'user-123' } },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    remoteConfig: { defaultConfig: {}, fetchAndActivate: vi.fn(() => Promise.resolve()), getValue: vi.fn(() => ({ asString: () => '', asBoolean: () => false, asNumber: () => 0 })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/firestore', () => ({

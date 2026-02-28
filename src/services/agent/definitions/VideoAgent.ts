@@ -130,4 +130,3 @@ Think in terms of "Frame Rate," "Dynamic Range," "Motion Vectors," and "Rhythmic
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
-freezeAgentConfig(VideoAgent);

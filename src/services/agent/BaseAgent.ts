@@ -217,7 +217,7 @@ export class BaseAgent implements SpecializedAgent {
         this.color = config.color;
         this.category = config.category;
         this.systemPrompt = config.systemPrompt;
-        
+
         // Phase 4: Use shallow clone for tools to preserve Zod schemas
         this.tools = config.tools ? [...config.tools] : [];
 
@@ -296,19 +296,19 @@ export class BaseAgent implements SpecializedAgent {
                 try {
                     const results = await Promise.all(
                         consultations.map(async (c: ExpertConsultation) => {
-                            if (!VALID_AGENT_IDS.includes(c.agentId)) {
-                                return { agentId: c.agentId, error: `Invalid agent ID: ${c.agentId}` };
+                            if (!VALID_AGENT_IDS.includes(c.targetAgentId)) {
+                                return { agentId: c.targetAgentId, error: `Invalid agent ID: ${c.targetAgentId}` };
                             }
 
                             // Phase 4: Enforce hub-and-spoke architecture
-                            const hubSpokeError = validateHubAndSpoke(this.id, c.agentId);
+                            const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
                             if (hubSpokeError) {
-                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.agentId}`);
-                                return { agentId: c.agentId, error: hubSpokeError };
+                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
+                                return { agentId: c.targetAgentId, error: hubSpokeError };
                             }
 
-                            const res = await agentService.runAgent(c.agentId, c.task, context, context?.traceId, context?.attachments);
-                            return { agentId: c.agentId, response: res };
+                            const res = await agentService.runAgent(c.targetAgentId, c.task, context, context?.traceId, context?.attachments);
+                            return { agentId: c.targetAgentId, response: res };
                         })
                     );
 

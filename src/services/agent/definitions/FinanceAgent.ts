@@ -210,4 +210,3 @@ Think in terms of "Gross vs. Net," "Artist Share," and "Burn Rate."
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
-freezeAgentConfig(FinanceAgent);

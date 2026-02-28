@@ -11,7 +11,13 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     auth: {
         currentUser: { uid: 'test-user-id' }
-    }
+    },
+    db: {},
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/ai', () => ({

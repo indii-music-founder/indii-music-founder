@@ -19,6 +19,12 @@ vi.mock('@/services/firebase', () => ({
         currentUser: { uid: 'test-user' }
     },
     remoteConfig: { defaultConfig: {} },
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // 3. Mock Firebase Functions

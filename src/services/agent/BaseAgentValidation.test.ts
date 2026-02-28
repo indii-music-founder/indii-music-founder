@@ -13,9 +13,32 @@ vi.mock('@/services/ai/GenAI', () => ({
     }
 }));
 
+vi.mock('firebase/app', () => ({
+    serverTimestamp: vi.fn(),
+    initializeApp: vi.fn(),
+    getApp: vi.fn()
+}));
+
+vi.mock('firebase/firestore', () => ({
+    serverTimestamp: vi.fn(),
+    Timestamp: {
+        now: () => ({
+            serverTimestamp: vi.fn(), toMillis: () => Date.now(), toDate: () => new Date()
+        })
+    },
+    doc: vi.fn(),
+    setDoc: vi.fn(),
+    getDoc: vi.fn(),
+    initializeFirestore: vi.fn(),
+    persistentLocalCache: vi.fn(),
+    persistentMultipleTabManager: vi.fn(),
+    collection: vi.fn()
+}));
+
 // Mock MembershipService
-vi.mock('@/services/membership/MembershipService', () => ({
+vi.mock('@/services/MembershipService', () => ({
     MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 10, requiresApproval: false }),
         recordSpend: vi.fn()
     }
 }));
@@ -60,7 +83,7 @@ describe('BaseAgent Tool Validation', () => {
 
     it('should execute tool when args are valid', async () => {
         const { GenAI } = await import('@/services/ai/GenAI');
-        
+
         // Setup AI mock to call the tool
         (GenAI.generateContent as any).mockResolvedValueOnce({
             response: {
@@ -89,7 +112,7 @@ describe('BaseAgent Tool Validation', () => {
 
     it('should block tool execution when args are invalid', async () => {
         const { GenAI } = await import('@/services/ai/GenAI');
-        
+
         (GenAI.generateContent as any).mockResolvedValueOnce({
             response: {
                 text: () => 'Calling tool with invalid args...',

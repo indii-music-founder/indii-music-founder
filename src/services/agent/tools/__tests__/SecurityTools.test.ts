@@ -41,7 +41,14 @@ vi.mock('@/services/firebase', () => ({
     db: {}, // Mock db object
     auth: { currentUser: { uid: 'test-user' } },
     remoteConfig: {}, // Mock remote config
-    ai: {} // Mock ai service
+    ai: {}, // Mock ai service
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock electronAPI

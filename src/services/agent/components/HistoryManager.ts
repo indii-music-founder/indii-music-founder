@@ -29,7 +29,7 @@ export class HistoryManager {
         const { agentHistory } = useStore.getState();
 
         // Filter out system messages and internal logs for the conversation window
-        const cleanHistory = agentHistory.filter(m =>
+        const cleanHistory = (agentHistory || []).filter(m =>
             (m.role === 'user' || m.role === 'model') &&
             m.text &&
             m.text.trim() !== ''

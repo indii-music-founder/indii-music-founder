@@ -10,7 +10,7 @@ export class ContextResolver {
         const { useStore } = await import('@/core/store');
         const state = useStore.getState();
         const { currentProjectId, projects, currentOrganizationId, userProfile, currentModule } = state;
-        const currentProject = projects.find(p => p.id === currentProjectId);
+        const currentProject = projects?.find(p => p.id === currentProjectId);
         const brandKit = userProfile?.brandKit;
 
         let projectHandle: ProjectHandle | undefined;

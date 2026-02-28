@@ -10,7 +10,13 @@ vi.mock('@/services/firebase', () => ({
     functions: {},
     ai: {},
     remoteConfig: {},
-    auth: { currentUser: { uid: 'user-123' } }
+    auth: { currentUser: { uid: 'user-123' } },
+    db: {},
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock Google GenAI SDK (Fallback) - new @google/genai package

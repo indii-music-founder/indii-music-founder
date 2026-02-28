@@ -11,12 +11,16 @@ vi.mock('@/core/store');
 vi.mock('@/core/context/ToastContext');
 // Mock the firebase import that is causing issues
 vi.mock('@/services/firebase', () => ({
-  app: {},
+    app: {},
   db: {},
   storage: {},
   auth: {},
   functions: {},
-  remoteConfig: { defaultConfig: {} }
+  remoteConfig: { defaultConfig: {} },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 // Also mock repository since it imports firebase
 vi.mock('@/services/storage/repository', () => ({

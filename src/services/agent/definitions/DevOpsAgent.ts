@@ -1,6 +1,5 @@
 import { AgentConfig } from "../types";
 import { freezeAgentConfig } from '../FreezeDiagnostic';
-
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { Schema } from 'firebase/ai';
 
@@ -137,4 +136,3 @@ export const DevOpsAgent: AgentConfig = {
 };
 
 freezeAgentConfig(DevOpsAgent);
-

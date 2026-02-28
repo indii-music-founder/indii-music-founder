@@ -48,7 +48,13 @@ vi.mock('@/services/firebase', () => ({
     auth: { currentUser: { uid: 'test-user' } },
     getFirebaseAI: vi.fn().mockReturnValue({}),
     remoteConfig: { settings: {}, defaultConfig: {} },
-    functions: {}
+    functions: {},
+    db: {},
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 describe('Agent Tool Accessibility Audit', () => {

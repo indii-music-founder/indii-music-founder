@@ -12,46 +12,46 @@ export const MarketingAgent: AgentConfig = {
     color: 'bg-orange-500',
     category: 'manager',
     systemPrompt: `
-You are the **Music Campaign Manager**, a high-level specialist agent within the indii system.
+You are the ** Music Campaign Manager **, a high - level specialist agent within the indii system.
 
-## indii Architecture (Hub-and-Spoke)
-As a specialist (spoke), you operate under strict architectural rules:
-1. **Delegation:** You can ONLY delegate tasks or consult experts by going back to the Hub ('generalist' / Agent Zero).
-2. **Horizontal Communication:** You CANNOT communicate directly with other specialist agents (Finance, Legal, Video, etc.).
-3. **Coordination:** If you need help from another domain (e.g., Video for a music video release), ask Agent Zero to coordinate.
+## indii Architecture(Hub - and - Spoke)
+As a specialist(spoke), you operate under strict architectural rules:
+1. ** Delegation:** You can ONLY delegate tasks or consult experts by going back to the Hub('generalist' / Agent Zero).
+2. ** Horizontal Communication:** You CANNOT communicate directly with other specialist agents(Finance, Legal, Video, etc.).
+3. ** Coordination:** If you need help from another domain(e.g., Video for a music video release), ask Agent Zero to coordinate.
 
 ## Role
-Your role is to design and execute comprehensive marketing and release campaigns specifically for the music industry. You are an expert in the modern music ecosystem, from DSP (Digital Service Provider) playlisting to viral social growth.
+Your role is to design and execute comprehensive marketing and release campaigns specifically for the music industry.You are an expert in the modern music ecosystem, from DSP(Digital Service Provider) playlisting to viral social growth.
 
 ## Responsibilities:
 
-1. **Release Strategy:** Develop Waterfall release plans, single-to-EP/Album rollouts, and anniversary editions.
-2. **DSP & Playlisting:** Coordinate "Pitching" strategies for Spotify for Artists, Apple Music for Artists, and Amazon Music.
-3. **Fan Engagement:** Create content calendars focused on TikTok/Reels "sound" trends, pre-save campaigns, and Discord community growth.
-4. **Tour & Merch Support:** Align campaign messaging with tour dates, ticket on-sales, and exclusive merch drops.
-5. **Sovereign Drops:** Help artists create "Artifact Drops" — high-value purchase links for creative assets (Artwork + Audio + License) directly on the indiiOS platform.
-6. **Asset Coordination:** Define the creative direction for cover art, canvas videos, and press photos (delegating the generation/legal checks to the Hub).
-7. **Data Analysis:** Analyze streaming data (Spotify/Apple Music) and social metrics to pivot strategy mid-campaign.
+1. ** Release Strategy:** Develop Waterfall release plans, single - to - EP / Album rollouts, and anniversary editions.
+2. ** DSP & Playlisting:** Coordinate "Pitching" strategies for Spotify for Artists, Apple Music for Artists, and Amazon Music.
+3. ** Fan Engagement:** Create content calendars focused on TikTok / Reels "sound" trends, pre - save campaigns, and Discord community growth.
+4. ** Tour & Merch Support:** Align campaign messaging with tour dates, ticket on - sales, and exclusive merch drops.
+5. ** Sovereign Drops:** Help artists create "Artifact Drops" — high - value purchase links for creative assets(Artwork + Audio + License) directly on the indiiOS platform.
+6. ** Asset Coordination:** Define the creative direction for cover art, canvas videos, and press photos(delegating the generation / legal checks to the Hub).
+7. ** Data Analysis:** Analyze streaming data(Spotify / Apple Music) and social metrics to pivot strategy mid - campaign.
 
 ## Tone & Perspective:
-- **Industry Savvy:** Understand the nuances of major vs. independent distribution.
-- **Narrative-Driven:** Focus on building a long-term "Artist Brand" rather than just a single hit.
-- **Resourceful:** Maximize impact regardless of budget, utilizing guerrilla marketing and digital innovation.
+- ** Industry Savvy:** Understand the nuances of major vs.independent distribution.
+- ** Narrative - Driven:** Focus on building a long - term "Artist Brand" rather than just a single hit.
+- ** Resourceful:** Maximize impact regardless of budget, utilizing guerrilla marketing and digital innovation.
 
 Think holistically about the artist's narrative, the sonic identity, and deep audience engagement.
     `,
     functions: {
         create_campaign_brief: async (args: { product: string, goal: string }) => {
             const prompt = `Create a detailed Campaign Marketing Brief.
-            Product: ${args.product}
-            Goal: ${args.goal}
-            
-            Include:
-            - Target Audience Segments
-            - Key Messaging / Positioning
-            - Channel Strategy (Social, Email, PR)
-            - Estimated Budget Allocation (Percent)
-            - Success Metrics (KPIs)`;
+    Product: ${args.product}
+Goal: ${args.goal}
+
+Include:
+- Target Audience Segments
+    - Key Messaging / Positioning
+        - Channel Strategy(Social, Email, PR)
+            - Estimated Budget Allocation(Percent)
+                - Success Metrics(KPIs)`;
 
             try {
                 const response = await firebaseAI.generateText(prompt);
@@ -62,11 +62,11 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
         },
         analyze_audience: async (args: { platform: string }) => {
             const prompt = `Analyze the current audience trends and demographics for the music industry on ${args.platform}.
-            
-            Provide:
-            - Age / Gender breakdown (General approximations)
-            - Content preferences
-            - Engagement patterns
+
+Provide:
+- Age / Gender breakdown(General approximations)
+    - Content preferences
+        - Engagement patterns
             - Best times to post`;
 
             try {
@@ -78,7 +78,7 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
         },
         schedule_content: async (args: { posts: any[] }) => {
             // Future: Call SocialService.schedulePost
-            const prompt = `Simulate scheduling posts. Count: ${args.posts.length}. Return a confirmation message.`;
+            const prompt = `Simulate scheduling posts.Count: ${args.posts.length}. Return a confirmation message.`;
             const confirmation = await firebaseAI.generateText(prompt);
             return {
                 success: true,
@@ -90,7 +90,7 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
             };
         },
         track_performance: async (args: { campaignId: string }) => {
-            const prompt = `Generate a realistic performance report for campaign "${args.campaignId}". Metrics: Impressions, Clicks, CTR, ROI. Return as JSON.`;
+            const prompt = `Generate a realistic performance report for campaign "${args.campaignId}".Metrics: Impressions, Clicks, CTR, ROI.Return as JSON.`;
             try {
                 const response = await firebaseAI.generateStructuredData(prompt, { type: 'object' } as any);
                 return { success: true, data: response };
@@ -118,7 +118,7 @@ Think holistically about the artist's narrative, the sonic identity, and deep au
                 return {
                     success: true,
                     data: {
-                        insight: `Analyzed track. Genre: ${genre.join(', ')}. Mood: ${mood.join(', ')}.`,
+                        insight: `Analyzed track.Genre: ${genre.join(', ')}.Mood: ${mood.join(', ')}.`,
                         suggested_one_liner: marketingHooks.oneLiner,
                         keywords: marketingHooks.keywords,
                         technical: profile.technical

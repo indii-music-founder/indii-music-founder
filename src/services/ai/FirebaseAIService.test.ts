@@ -72,7 +72,7 @@ vi.mock('firebase/ai', () => {
 
 // Mock the core firebase service
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     app: {},
     remoteConfig: {},
     ai: {}, // The raw firebase instance
@@ -80,7 +80,11 @@ vi.mock('@/services/firebase', () => ({
   serverTimestamp: vi.fn(),}), // The accessor function
     functions: {},
     db: {},
-    auth: { currentUser: { uid: 'test-user-id' } }
+    auth: { currentUser: { uid: 'test-user-id' } },
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock Google GenAI SDK (Fallback) - new @google/genai package

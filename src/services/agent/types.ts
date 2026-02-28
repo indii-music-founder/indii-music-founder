@@ -225,7 +225,7 @@ export interface DelegateTaskArgs extends ToolFunctionArgs {
 }
 
 export interface ExpertConsultation {
-    agentId: ValidAgentId;
+    targetAgentId: ValidAgentId;
     task: string;
 }
 

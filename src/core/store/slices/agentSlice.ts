@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { z } from 'zod';
 import { SpecializedAgent } from '@/services/agent/types';
+import { BatchedTask } from '@/services/agent/MaestroBatchingService';
 // import { agentRegistry } from '@/services/agent/registry'; // Removed to break circular dependency
 
 const AgentSchema = z.object({
@@ -58,6 +59,12 @@ export interface AgentSlice {
     // Right Panel View State
     rightPanelView: 'messages' | 'archives';
     setRightPanelView: (view: 'messages' | 'archives') => void;
+
+    // Maestro Batching State
+    batchingTasks: BatchedTask[];
+    addBatchTask: (task: BatchedTask) => void;
+    updateBatchTask: (id: string, updates: Partial<BatchedTask>) => void;
+    clearCompletedBatchTasks: () => void;
 
     // Session State
     sessions: Record<string, ConversationSession>;
@@ -141,6 +148,18 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     pendingApproval: null,
     rightPanelView: 'messages',
     setRightPanelView: (view) => set({ rightPanelView: view }),
+
+    // Maestro Batching Initial State
+    batchingTasks: [],
+    addBatchTask: (task) => set(state => ({
+        batchingTasks: [...state.batchingTasks, task]
+    })),
+    updateBatchTask: (id, updates) => set(state => ({
+        batchingTasks: state.batchingTasks.map(t => t.id === id ? { ...t, ...updates } : t)
+    })),
+    clearCompletedBatchTasks: () => set(state => ({
+        batchingTasks: state.batchingTasks.filter(t => t.status !== 'completed' && t.status !== 'error')
+    })),
 
     agentWindowSize: { width: 500, height: 800 },
 

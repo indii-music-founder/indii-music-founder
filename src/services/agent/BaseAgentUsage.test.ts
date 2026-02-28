@@ -4,7 +4,7 @@ import { AgentConfig } from './types';
 
 // Mock dependencies
 vi.mock('@/services/ai/GenAI', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     GenAI: {
         generateContentStream: vi.fn(),
         generateContent: vi.fn()
@@ -16,10 +16,11 @@ vi.mock('@/services/ai/GenAI', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     Timestamp: {
         now: () => ({
-  serverTimestamp: vi.fn(), toMillis: () => Date.now(), toDate: () => new Date() })
+            serverTimestamp: vi.fn(), toMillis: () => Date.now(), toDate: () => new Date()
+        })
     },
     doc: vi.fn(),
     setDoc: vi.fn(),
@@ -31,10 +32,18 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('firebase/app', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     initializeApp: vi.fn(),
     getApp: vi.fn()
 }));
+
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 10, requiresApproval: false }),
+        recordSpend: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
 
 describe('BaseAgent Usage Defenses', () => {
     let agent: BaseAgent;
