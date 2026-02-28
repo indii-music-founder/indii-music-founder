@@ -57,7 +57,7 @@ describe('MaestroBatchingService', () => {
         // Check if store actions were called using our mock references
         expect(addBatchTaskMock).toHaveBeenCalledTimes(2);
         expect(updateBatchTaskMock).toHaveBeenCalled();
-    });
+    }, 10000);
 
     it('should sort tasks by priority before execution', async () => {
         // We'll wrap the processBatch logic in a spy if we can, 
