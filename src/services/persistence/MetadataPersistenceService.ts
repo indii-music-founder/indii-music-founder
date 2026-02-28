@@ -11,12 +11,9 @@
  * to ensure data is never silently lost.
  */
 
-import { db, auth } from '@/services/firebase';
+import { auth, db } from '@/services/firebase';
 import { collection, addDoc, setDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { events } from '@/core/events';
-
-// Types for different asset metadata
-export type AssetType = 'audio' | 'image' | 'video' | 'document' | 'workflow' | 'project' | 'campaign';
 
 export interface PersistenceResult {
     success: boolean;
