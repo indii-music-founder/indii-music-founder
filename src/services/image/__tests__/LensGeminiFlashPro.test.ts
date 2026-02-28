@@ -112,7 +112,7 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
         // Assert
         expect(results).toHaveLength(1);
         // Note: thinking/grounding params are intentionally stripped by the service
-        // to prevent Imagen 3 400 errors
+        // to prevent Gemini Image 400 errors
         expect(generateImageMock).toHaveBeenCalledWith(expect.objectContaining({
             model: 'pro',
         }));
@@ -159,7 +159,7 @@ describe('Lens 🎥 - Gemini 3 Flash vs Pro Pipeline', () => {
             thinking: true
         });
 
-        // The service intentionally strips thinking/grounding to prevent Imagen 3 errors
+        // The service intentionally strips thinking/grounding to prevent Gemini Image errors
         // Verify the call was made with the standard params
         expect(generateImageMock).toHaveBeenCalledWith(expect.objectContaining({
             model: 'fast',

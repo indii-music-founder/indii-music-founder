@@ -61,7 +61,7 @@ class GeminiImageService {
      * Core Text-to-Image Generation
      * 
      * 'fast' model → Gemini multimodal generateContent with IMAGE modality (instant, no aspect ratio control)
-     * 'pro' model  → Vertex AI Imagen REST API (proper aspect ratio, seed control, higher fidelity)
+     * 'pro' model  → Vertex AI Gemini Image REST API (proper aspect ratio, seed control, higher fidelity)
      */
     async generate(data: any): Promise<{ images: any[]; aiMetadata: any; aiGenerationInfo: any }> {
         const isFast = data.model === 'fast';
@@ -69,7 +69,7 @@ class GeminiImageService {
             ? FUNCTION_AI_MODELS.IMAGE.FAST
             : FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
-        console.log(`[GeminiImageService:generate] Mode: ${isFast ? 'fast (Gemini)' : 'pro (Imagen)'} | Prompt: "${data.prompt.substring(0, 50)}..."`);
+        console.log(`[GeminiImageService:generate] Mode: ${isFast ? 'fast (Gemini)' : 'pro (Gemini Image)'} | Prompt: "${data.prompt.substring(0, 50)}..."`);
 
         try {
             if (isFast) {
@@ -117,9 +117,9 @@ class GeminiImageService {
                     }
                 };
             } else {
-                // --- Pro Path: Vertex AI Imagen REST API (full aspect ratio, seed, personGeneration) ---
+                // --- Pro Path: Vertex AI Gemini Image REST API (full aspect ratio, seed, personGeneration) ---
                 const { GoogleAuth } = await import("google-auth-library");
-                const imagenModel = "imagen-3.0-generate-001";
+                const proModel = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
                 const auth = new GoogleAuth({
                     scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -128,7 +128,7 @@ class GeminiImageService {
                 const projectId = await auth.getProjectId();
                 const accessToken = await client.getAccessToken();
 
-                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${imagenModel}:predict`;
+                const endpoint = `https://us-central1-aiplatform.googleapis.com/v1/projects/${projectId}/locations/us-central1/publishers/google/models/${proModel}:predict`;
 
                 const requestBody = {
                     instances: [
@@ -157,13 +157,13 @@ class GeminiImageService {
                         const parsedError = JSON.parse(errorText);
                         errorText = parsedError.error?.message || errorText;
                     } catch (_e) { /* ignore JSON parse error */ }
-                    throw new Error(`Vertex AI Imagen API Error: ${response.status} ${errorText}`);
+                    throw new Error(`Vertex AI Image API Error: ${response.status} ${errorText}`);
                 }
 
                 const result = await response.json();
 
                 if (!result.predictions || result.predictions.length === 0) {
-                    throw new Error("No images returned from Imagen API");
+                    throw new Error("No images returned from Image API");
                 }
 
                 const images = result.predictions.map((p: any) => ({
@@ -174,7 +174,7 @@ class GeminiImageService {
                 return {
                     images,
                     aiMetadata: {
-                        toolName: imagenModel,
+                        toolName: proModel,
                         generationType: 'text-to-image',
                         isAIGenerated: true,
                         timestamp: new Date().toISOString(),
@@ -183,8 +183,8 @@ class GeminiImageService {
                     aiGenerationInfo: {
                         isFullyAIGenerated: true,
                         isPartiallyAIGenerated: false,
-                        aiToolsUsed: [imagenModel],
-                        humanContributionDescription: `Generated via indiiOS Imagen Pro using prompt: "${data.prompt.substring(0, 100)}..."`
+                        aiToolsUsed: [proModel],
+                        humanContributionDescription: `Generated via indiiOS Gemini Image Pro using prompt: "${data.prompt.substring(0, 100)}..."`
                     }
                 };
             }
@@ -198,7 +198,7 @@ class GeminiImageService {
      */
     async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string; aiMetadata: any; aiGenerationInfo: any }> {
         const { GoogleAuth } = await import("google-auth-library");
-        const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION === 'gemini-3-pro-image-preview' ? 'imagen-3.0-capability-001' : FUNCTION_AI_MODELS.IMAGE.GENERATION;
+        const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
         try {
             console.log(`[GeminiImageService:edit] Model: ${modelId} | Instruction: "${data.prompt.substring(0, 50)}..."`);

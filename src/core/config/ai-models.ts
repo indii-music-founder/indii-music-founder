@@ -11,15 +11,15 @@ import { z } from 'zod';
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3-pro-image-preview',
-    IMAGE_FAST: 'gemini-3-pro-image-preview',
+    IMAGE_GEN: 'gemini-3.1-pro-image-preview',
+    IMAGE_FAST: 'gemini-3.1-flash-image-preview',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
     AUDIO_TTS: 'gemini-2.5-pro-preview-tts',
     VIDEO_PRO: 'veo-3.1-generate-preview',
     VIDEO_FAST: 'veo-3.1-fast-generate-preview',
     VIDEO_GEN: 'veo-3.1-generate-preview', // Alias for backward compatibility
-    BROWSER_AGENT: 'gemini-3.1-pro-preview',
+    BROWSER_AGENT: 'gemini-2.5-pro-preview',
     EMBEDDING_DEFAULT: 'models/embedding-001'
 } as const;
 
@@ -102,7 +102,8 @@ export const AI_CONFIG = {
 export const MODEL_PRICING = {
     'gemini-3.1-pro-preview': { input: 2.50, output: 7.50 },
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
-    'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
+    'gemini-3.1-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
+    'gemini-3.1-flash-image-preview': { output: 30.00, resolution: "1K", capacity: 8 },
     'veo-3.1-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
         perSecond4K: 0.40,   // 4K Video Only
@@ -132,7 +133,7 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-1\./i,            // Block all legacy 1.x models
     /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS, image, pro, flash)
-    /imagen-3/i,
+    /imagen/i,                // Block all Imagen models (replaced by Gemini Image models)
 ];
 
 function validateModels(): void {

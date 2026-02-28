@@ -1,55 +1,54 @@
-from python.helpers.tool import Tool, Response
-try:
-    from python.helpers.browser import BrowserHelper as Browser
-except ImportError:
-    # Fallback for when running from root context vs package context
-    import sys
-    import os
-    sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
-    from python.helpers.browser import BrowserHelper as Browser
 import os
+from google import genai
+from google.genai import types
+from python.helpers.tool import Tool, Response
 
 class BrowserTool(Tool):
+    """
+    General Browser Tool.
+    Refactored to use the native Gemini 2.5 Pro Google Search tool instead of Playwright,
+    adhering to user preferences for the Google browser agent.
+    """
     async def execute(self, action, **kwargs):
-        if not hasattr(self.agent, "browser"):
-            self.agent.browser = Browser(headless=True)
-            await self.agent.browser.start()
-
-        browser = self.agent.browser
+        self.set_progress(f"Native Browser Task: {action}")
+        
+        # Clean up legacy Playwright instances
+        if hasattr(self.agent, "browser"):
+            del self.agent.browser
 
         try:
-            if action == "open":
-                url = kwargs.get("url")
-                await browser.open(url)
-                return Response(message=f"Opened {url}", break_loop=False)
+            model_id = "gemini-2.5-pro"
+            api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
             
-            elif action == "click":
-                selector = kwargs.get("selector")
-                await browser.click(selector)
-                return Response(message=f"Clicked {selector}", break_loop=False)
+            if not api_key:
+                return Response(message="Gemini API key not found.", break_loop=True)
 
-            elif action == "type":
-                selector = kwargs.get("selector")
-                text = kwargs.get("text")
-                await browser.fill(selector, text)
-                return Response(message=f"Typed '{text}' into {selector}", break_loop=False)
+            client = genai.Client(api_key=api_key)
             
-            elif action == "get_dom":
-                dom = await browser.get_clean_dom()
-                return Response(message=dom, break_loop=False)
+            url = kwargs.get("url", "")
+            query = kwargs.get("query", kwargs.get("text", action))
             
-            elif action == "screenshot":
-                 path = kwargs.get("path", "screenshot.png")
-                 await browser.screenshot(path)
-                 return Response(message=f"Screenshot saved to {path}", break_loop=False)
-            
-            elif action == "close":
-                await browser.close()
-                del self.agent.browser
-                return Response(message="Browser closed", break_loop=False)
+            prompt = f"Action requested: {action}\nURL: {url}\nDetails: {query}\n\nPlease browse the web to find this information and return the result."
 
-            else:
-                return Response(message=f"Unknown browser action: {action}", break_loop=False)
+            response = client.models.generate_content(
+                model=model_id,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    tools=[{"google_search": {}}]
+                )
+            )
+
+            grounding_data = None
+            if hasattr(response, "candidates") and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, "grounding_metadata"):
+                    grounding_data = candidate.grounding_metadata
+
+            return Response(
+                message=f"**Browser Result:**\n\n{response.text}",
+                break_loop=False,
+                additional={"grounding": str(grounding_data) if grounding_data else None}
+            )
 
         except Exception as e:
             return Response(message=f"Browser error: {str(e)}", break_loop=False)

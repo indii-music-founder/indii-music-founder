@@ -108,15 +108,18 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
             });
 
             // Enable object controls
-            fabric.Object.prototype.set({
-                transparentCorners: false,
-                borderColor: '#FFE135',
-                cornerColor: '#FFE135',
-                cornerSize: 12,
-                cornerStyle: 'circle',
-                borderScaleFactor: 2,
-                padding: 5,
-            });
+            const TargetObj = fabric.FabricObject || (fabric as any).Object;
+            if (TargetObj && TargetObj.prototype) {
+                Object.assign(TargetObj.prototype, {
+                    transparentCorners: false,
+                    borderColor: '#FFE135',
+                    cornerColor: '#FFE135',
+                    cornerSize: 12,
+                    cornerStyle: 'circle',
+                    borderScaleFactor: 2,
+                    padding: 5,
+                });
+            }
 
             fabricCanvasRef.current = canvas;
             requestAnimationFrame(() => {
@@ -537,6 +540,54 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         canvas.renderAll();
     }, [canvas, getSmartPosition]);
 
+    const addShape = useCallback((type: 'star' | 'circle' | 'square', options?: any) => {
+        if (!canvas) return;
+        const position = getSmartPosition(150, 150);
+
+        let shapeObj: fabric.Object;
+
+        switch (type) {
+            case 'star':
+                shapeObj = new fabric.Polygon([
+                    { x: 50, y: 0 }, { x: 61, y: 35 }, { x: 98, y: 35 },
+                    { x: 68, y: 57 }, { x: 79, y: 91 }, { x: 50, y: 70 },
+                    { x: 21, y: 91 }, { x: 32, y: 57 }, { x: 2, y: 35 }, { x: 39, y: 35 }
+                ], {
+                    left: position.left,
+                    top: position.top,
+                    fill: '#FFE135',
+                    name: `Star ${generateId()}`,
+                    ...options
+                });
+                break;
+            case 'circle':
+                shapeObj = new fabric.Circle({
+                    left: position.left,
+                    top: position.top,
+                    radius: 75,
+                    fill: '#FFE135',
+                    name: `Circle ${generateId()}`,
+                    ...options
+                });
+                break;
+            case 'square':
+                shapeObj = new fabric.Rect({
+                    left: position.left,
+                    top: position.top,
+                    width: 150,
+                    height: 150,
+                    fill: '#FFE135',
+                    name: `Square ${generateId()}`,
+                    ...options
+                });
+                break;
+        }
+
+        canvas.add(shapeObj);
+        canvas.setActiveObject(shapeObj);
+        canvas.renderAll();
+    }, [canvas, getSmartPosition]);
+
     const deleteSelected = useCallback(() => {
         if (!canvas) return;
 
@@ -712,6 +763,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
         addImage,
         addImageAtPosition,
         addText,
+        addShape,
         deleteSelected,
         bringToFront,
         sendToBack,

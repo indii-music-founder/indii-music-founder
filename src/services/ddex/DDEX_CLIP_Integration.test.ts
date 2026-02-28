@@ -40,7 +40,7 @@ describe('CLIP (Audio) -> DDEX Integration Pipeline', () => {
                 oneLiner: 'A peak-time warehouse weapon.'
             },
             targetPrompts: {
-                imagen: 'foo',
+                image: 'foo',
                 veo: 'bar'
             }
         }

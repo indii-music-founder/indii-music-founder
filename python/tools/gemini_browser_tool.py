@@ -1,58 +1,55 @@
 import os
-import asyncio
-import json
-import base64
+from google import genai
+from google.genai import types
 from python.helpers.tool import Tool, Response
-from python.helpers.browser import BrowserHelper
-from python.config.ai_models import AIConfig
 
 class GeminiBrowserTool(Tool):
     """
-    Task: Gemini 2.5 Browser Control Bridge.
-    Uses the Gemini 2.5 Visual reasoning to control a local browser.
-    Logic:
-    1. Capture screenshot of the local browser.
-    2. Send screenshot + DOM to Gemini 2.5 with a visual navigation prompt.
-    3. Gemini returns coordinates or actions (click, type, scroll).
-    4. Tool executes actions via Playwright.
+    Task: Native Gemini 2.5 Browser Agent.
+    Uses the Gemini 2.5 Pro native Google Browser/Search agent to surf the web and achieve the goal.
+    This replaces Playwright with Google's native agentic capabilities.
     """
 
     async def execute(self, goal, url=None, **kwargs):
-        self.set_progress(f"Initiating Gemini 2.5 Visual Navigation for: {goal}")
+        self.set_progress(f"Initiating Native Gemini 2.5 Browser Agent for: {goal}")
         
-        if not hasattr(self.agent, "browser"):
-            self.agent.browser = BrowserHelper()
-            await self.agent.browser.start(headless=False) # Visual mode for debugging
-
-        browser = self.agent.browser
-        
+        # Cleanup any legacy Playwright instances to adhere to user constraints
+        if hasattr(self.agent, "browser"):
+            del self.agent.browser
+            
         try:
-            if url:
-                await browser.navigate(url)
+            # We strictly use gemini-2.5-pro for the browser agent as per user constraints
+            model_id = "gemini-2.5-pro"
+            api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
             
-            # Initial state capture
-            screenshot_path = "gemini_obs.png"
-            await browser.screenshot(screenshot_path)
+            if not api_key:
+                return Response(message="Gemini API key not found in environment.", break_loop=True)
+
+            client = genai.Client(api_key=api_key)
             
-            # 1. Prepare Multimodal Payload
-            # We would send this to Gemini 2.5 Pro (High Thinking)
-            # prompt = f"Observe this screen and achieve the goal: {goal}. Return JSON: {{'action': 'click|type|scroll', 'selector': '...', 'coord': [x,y], 'text': '...'}}"
+            # Combine URL and goal if URL is provided
+            prompt = f"Target URL: {url}\nGoal: {goal}" if url else goal
             
-            # For this MVP implementation, we create the bridge structure that calls Gemini.
-            # In a live agent environment, the agent itself (using Gemini 2.5) 
-            # will use THIS tool to translate its vision into clicks.
-            
-            obs_data = {
-                "screenshot": screenshot_path,
-                "url": browser.page.url if browser.page else "none",
-                "goal": goal
-            }
+            response = client.models.generate_content(
+                model=model_id,
+                contents=prompt,
+                config=types.GenerateContentConfig(
+                    tools=[{"google_search": {}}]
+                )
+            )
+
+            # Extract grounding metadata if available
+            grounding_data = None
+            if hasattr(response, "candidates") and response.candidates:
+                candidate = response.candidates[0]
+                if hasattr(candidate, "grounding_metadata"):
+                    grounding_data = candidate.grounding_metadata
 
             return Response(
-                message=f"**Gemini 2.5 Visual Bridge Active.**\nCaptured state for goal: {goal}. Waiting for visual instruction.",
+                message=f"**Gemini 2.5 Browser Result:**\n\n{response.text}",
                 break_loop=False,
-                additional={"observation": obs_data}
+                additional={"grounding": str(grounding_data) if grounding_data else None}
             )
 
         except Exception as e:
-            return Response(message=f"Gemini Browser Error: {str(e)}", break_loop=True)
+            return Response(message=f"Gemini Browser Agent Error: {str(e)}", break_loop=True)

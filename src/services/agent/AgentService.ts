@@ -574,7 +574,7 @@ If the user asks you to do something that requires tools (like generating images
                 regex: /img:\/\//gi,
                 toolName: 'Image Generation',
                 type: 'tool' as const,
-                getMessage: () => 'Generated an image using Imagen 3'
+                getMessage: () => 'Generated an image using Gemini Image 3.1 Pro'
             },
             {
                 regex: /(?:analyzed|processed|examined)\s+(?:image|photo|picture)/gi,

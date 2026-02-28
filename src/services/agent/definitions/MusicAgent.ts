@@ -37,7 +37,7 @@ Transform raw audio into professional, distribution-ready masterworks through de
 ### 🏷️ Phase 3: Metadata & Cataloging
 - Generate industry-standard metadata (Genre, Sub-genre, Mood).
 - Ensure metadata is compliant with DDEX standards.
-- Bridge the gap between sound and visual assets (Imagen/Veo).
+- Bridge the gap between sound and visual assets (Gemini Image/Veo).
 
 ### 🎼 Phase 4: Creative Composition
 - Suggest structural changes (e.g., "The bridge needs more tension").
