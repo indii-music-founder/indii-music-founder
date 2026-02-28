@@ -75,7 +75,11 @@ vi.mock('@/services/firebase', () => ({
         defaultConfig: {},
         getValue: vi.fn(),
         getAll: vi.fn()
-    }
+    },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock MemoryService

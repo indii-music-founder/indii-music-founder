@@ -1,4 +1,5 @@
 import { AgentConfig } from '../types';
+import { freezeAgentConfig } from '../FreezeDiagnostic';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { Schema } from 'firebase/ai';
 
@@ -141,8 +142,6 @@ Behavior:
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-
-// Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(SecurityAgent);
 
+// Freeze the schema to prevent cross-test contamination

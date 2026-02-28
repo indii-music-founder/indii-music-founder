@@ -30,12 +30,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
     functionsWest1: {},
-    remoteConfig: {}
+    remoteConfig: {},
+    storage: {},
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('../firebase', () => ({
@@ -44,7 +49,7 @@ vi.mock('../firebase', () => ({
     functionsWest1: {},
     db: {},
     auth: mocks.auth,
-    remoteConfig: {}
+    remoteConfig: {},
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({

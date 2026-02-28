@@ -5,11 +5,19 @@ import { getDoc, setDoc, getDocs } from 'firebase/firestore';
 
 // Mock Firebase
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'user-123' }
     },
-    db: {}
+    db: {},
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    remoteConfig: { defaultConfig: {}, fetchAndActivate: vi.fn(() => Promise.resolve()), getValue: vi.fn(() => ({ asString: () => '', asBoolean: () => false, asNumber: () => 0 })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/firestore', () => ({

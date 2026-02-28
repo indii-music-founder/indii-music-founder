@@ -78,6 +78,12 @@ describe('Sidebar Navigation Integration', () => {
         initializeHistory: mockInitializeHistory,
         loadProjects: mockLoadProjects,
         loadSessions: vi.fn(),
+        pendingCount: 0,
+        isSyncing: false,
+        lastSyncError: null,
+        setPendingCount: vi.fn(),
+        setIsSyncing: vi.fn(),
+        setLastSyncError: vi.fn(),
         ...overrides,
     });
 

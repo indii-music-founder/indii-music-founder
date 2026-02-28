@@ -23,7 +23,12 @@ vi.mock('@/services/firebase', () => ({
     storage: {},
     functions: {},
     remoteConfig: {}, // Mock remoteConfig
-    ai: {}
+    ai: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // vi.mock('@/core/store', () => ({

@@ -12,6 +12,7 @@ import { PromptArea } from './command-bar/PromptArea';
 import { ConversationHistoryList } from './ConversationHistoryList';
 import { MessageItem } from '@/core/components/chat/ChatMessage';
 import AssetSpotlight from '@/modules/dashboard/components/AssetSpotlight';
+import { BatchingStatus } from './agent/BatchingStatus';
 import { cn } from '@/lib/utils';
 
 export default function RightPanel() {
@@ -128,6 +129,9 @@ export default function RightPanel() {
                                 <div className="p-4 border-t border-white/10 bg-black/20">
                                     <PromptArea isDocked className="!static !translate-x-0 !w-full !max-w-none shadow-none border-none bg-transparent" />
                                 </div>
+
+                                {/* Maestro Batching Status */}
+                                <BatchingStatus />
 
                                 {/* Asset Spotlight integration */}
                                 <div className="border-t border-white/5 p-4 bg-black/20 shrink-0">

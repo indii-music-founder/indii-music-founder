@@ -40,12 +40,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: mocks.auth,
     db: {},
     functions: {},
     functionsWest1: {},
     remoteConfig: { defaultConfig: {} },
+    storage: {},
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Handle dynamic import used in VideoGenerationService

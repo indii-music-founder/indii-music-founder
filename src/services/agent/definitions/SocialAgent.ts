@@ -1,4 +1,6 @@
 import { AgentConfig } from "../types";
+import { freezeAgentConfig } from '../FreezeDiagnostic';
+
 import systemPrompt from '@agents/social/prompt.md?raw';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { Schema } from 'firebase/ai';
@@ -81,6 +83,15 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
                     message: `Post successfully queued for ${args.platform}. indii will monitor for engagement upon release.`
                 }
             };
+        },
+        draft_advanced_thread: async (args: { topic: string, platform: string, threadLength: number }) => {
+            const prompt = `Draft a compelling ${args.threadLength}-part advanced thread for ${args.platform} about ${args.topic}. Make each part flow smoothly into the next, using hooks and cliffhangers where appropriate. Return an array of strings.`;
+            try {
+                const response = await firebaseAI.generateStructuredData(prompt, { type: 'array', items: { type: 'string' } } as Schema);
+                return { success: true, data: { thread: response } };
+            } catch (e) {
+                return { success: false, error: (e as Error).message };
+            }
         }
     },
     tools: [{
@@ -171,13 +182,23 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
                     },
                     required: ["action", "service"]
                 }
+            },
+            {
+                name: "draft_advanced_thread",
+                description: "Draft an advanced multi-part thread for a social platform.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        topic: { type: "STRING" },
+                        platform: { type: "STRING" },
+                        threadLength: { type: "NUMBER" }
+                    },
+                    required: ["topic", "platform", "threadLength"]
+                }
             }
         ]
     }]
 };
 
-import { freezeAgentConfig } from '../FreezeDiagnostic';
-
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(SocialAgent);
-

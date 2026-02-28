@@ -9,14 +9,20 @@ import { AgentMessage } from '@/core/store/slices/agentSlice';
 
 // Mock @/services/firebase to prevent real Firebase initialization
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'keeper-test-user' },
         onAuthStateChanged: vi.fn(() => () => { })
     },
     db: {},
     storage: {},
-    remoteConfig: { defaultConfig: {} }
+    remoteConfig: { defaultConfig: {} },
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock Firebase modules

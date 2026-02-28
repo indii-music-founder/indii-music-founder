@@ -25,13 +25,19 @@ vi.mock('../../ai/FirebaseAIService', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: {
         currentUser: { uid: 'test-lens-user' }
     },
     db: {},
     functions: {},
     remoteConfig: { defaultConfig: {} },
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('firebase/functions', () => ({

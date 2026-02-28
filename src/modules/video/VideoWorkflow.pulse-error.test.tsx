@@ -113,11 +113,17 @@ vi.mock('firebase/firestore', () => ({
     collection: vi.fn(),
 }));
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     db: {},
     remoteConfig: { defaultConfig: {} },
     functions: {},
-    auth: { currentUser: { uid: 'test-user' } }
+    auth: { currentUser: { uid: 'test-user' } },
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Helper to update store mock during test execution

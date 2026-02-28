@@ -172,10 +172,8 @@ export const useCanvasHistory = (
     canvas.on('object:removed', handleUpdate);
     canvas.on('path:created', handleUpdate);
 
-    // Initial state save
-    if (history.states.length === 0) {
-      saveState();
-    }
+    // Initial state save - handled by object:added or manual trigger if needed
+    // Removed synchronous saveState() from here to prevent cascading renders
 
     return () => {
       canvas.off('object:modified', handleUpdate);

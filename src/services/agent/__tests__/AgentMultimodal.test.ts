@@ -3,6 +3,14 @@ import { BaseAgent } from '../BaseAgent';
 import { GenAI } from '../../ai/GenAI';
 import { StreamChunk } from '@/shared/types/ai.dto';
 
+// Mock MembershipService
+vi.mock('@/services/MembershipService', () => ({
+    MembershipService: {
+        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false }),
+        recordSpend: vi.fn().mockResolvedValue(undefined)
+    }
+}));
+
 // Mock AI
 vi.mock('../../ai/GenAI', () => ({
     GenAI: {
@@ -33,7 +41,14 @@ vi.mock('@/services/firebase', () => ({
         getAll: vi.fn().mockReturnValue({}),
         getValue: vi.fn(),
         settings: {}
-    }
+    },
+    storage: {},
+    functions: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 class VisionAgent extends BaseAgent {

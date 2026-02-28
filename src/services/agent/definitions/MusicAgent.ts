@@ -6,6 +6,7 @@
  */
 
 import { AgentConfig } from "../types";
+import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 export const MusicAgent: AgentConfig = {
     id: "music",
@@ -93,8 +94,6 @@ You are sophisticated, technically precise, and creatively inspiring. You speak 
         ]
     }]
 };
-
-import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
 freezeAgentConfig(MusicAgent);

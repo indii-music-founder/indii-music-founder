@@ -184,6 +184,7 @@ export interface GenerateVideoRequest {
     };
     apiKey?: string;
     jobId?: string;
+    generateAudio?: boolean;
 }
 
 export interface GenerateImageRequest {

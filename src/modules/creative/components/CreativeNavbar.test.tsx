@@ -27,7 +27,12 @@ vi.mock('@/services/firebase', () => ({
     remoteConfig: { defaultConfig: {} },
     db: {},
     functions: {},
-    storage: {}
+    storage: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 // Mock child components to simplify testing

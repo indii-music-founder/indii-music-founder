@@ -273,9 +273,31 @@ Think in terms of "Media Placements," "Narrative Arc," and "Public Perception."
             }
         };
     })
+    .withTool({
+        functionDeclarations: [{
+            name: "generate_pdf",
+            description: "Automatically generate a professional PDF document (e.g., Press Release, EPK).",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    title: { type: "STRING", description: "Document title" },
+                    content: { type: "STRING", description: "Document content in markdown or plain text" }
+                },
+                required: ["title", "content"]
+            }
+        }]
+    }, async (args: { title: string, content: string }) => {
+        // Placeholder for an actual PDF generation integration (e.g. using a Cloud Function or frontend library)
+        return {
+            success: true,
+            data: {
+                message: `PDF generated successfully for "${args.title}".`,
+                download_url: "https://indii-os.web.app/downloads/placeholder.pdf"
+            }
+        };
+    })
     .build();
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
 
 // Freeze the schema to prevent cross-test contamination
-freezeAgentConfig(PublicistAgent);

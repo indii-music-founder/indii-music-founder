@@ -212,7 +212,7 @@ export default function PostGenerator() {
         setIsGeneratingImage(true);
         try {
             // Using a standard model for image gen
-            const base64 = await AI.generateImage({
+            const base64 = await (AI as any).generateImage({
                 model: AI_MODELS.IMAGE.GENERATION,
                 prompt: prompt
             });

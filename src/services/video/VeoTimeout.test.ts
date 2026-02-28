@@ -34,12 +34,17 @@ vi.mock('firebase/firestore', () => ({
 }));
 
 vi.mock('@/services/firebase', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     auth: { currentUser: { uid: 'ledger-test-user' } },
     functionsWest1: {},
     db: {},
     functions: {},
     remoteConfig: { defaultConfig: {} },
+    storage: {},
+    getFirebaseAI: vi.fn(() => ({})),
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('../firebase', () => ({

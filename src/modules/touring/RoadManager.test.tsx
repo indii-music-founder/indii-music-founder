@@ -21,7 +21,9 @@ vi.mock('@/services/firebase', () => ({
     storage: {},
     app: {},
     messaging: {},
-    appCheck: {}
+    appCheck: {},
+    functionsWest1: { region: vi.fn(() => ({ httpsCallable: vi.fn() })) },
+    getFirebaseAI: vi.fn(() => ({}))
 }));
 
 // Mock useTouring hook

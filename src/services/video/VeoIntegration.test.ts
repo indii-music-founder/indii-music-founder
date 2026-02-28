@@ -46,6 +46,10 @@ vi.mock('@/services/firebase', () => ({
     functionsWest1: {},
     getFirebaseAI: vi.fn(),
     remoteConfig: { defaultConfig: {} },
+    storage: {},
+    app: { options: {} },
+    appCheck: { getToken: vi.fn(() => Promise.resolve({ token: 'mock-token' })) },
+    messaging: { getToken: vi.fn() }
 }));
 
 vi.mock('../firebase', () => ({ // Handle relative import in service
