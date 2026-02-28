@@ -142,4 +142,5 @@
 - [x] Electron: Add health ping and Docker restart IPC to `main.ts`. <!-- id: 604 -->
 - [x] State: Create `syncSlice.ts` for metadata persistence tracking. <!-- id: 607 -->
 - [x] UI: Implement `SyncStatus.tsx` in the shell footer. <!-- id: 602 -->
+- [ ] UI Polish: Verify responsive layout of Sidebar status badges. <!-- id: 608 -->
 - [ ] Final Verification: Run full suite and verify 2200+ tests pass. <!-- id: 603 -->
