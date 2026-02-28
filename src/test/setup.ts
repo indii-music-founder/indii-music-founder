@@ -151,8 +151,47 @@ vi.mock('firebase/auth', () => ({
     indexedDBLocalPersistence: {},
     signInWithEmailAndPassword: vi.fn(),
     signOut: vi.fn(),
-    onAuthStateChanged: vi.fn()
+    onAuthStateChanged: vi.fn(),
+    updateEmail: vi.fn().mockResolvedValue({}),
+    updatePassword: vi.fn().mockResolvedValue({})
 }));
+
+// Mock the @/core/store module to provide a valid userProfile with ID for tests
+vi.mock('@/core/store', () => {
+    const mockState = {
+        userProfile: { id: 'test-uid', email: 'test@test.com', displayName: 'Test User' },
+        currentOrganizationId: 'org-123',
+        organizations: [{ id: 'org-123', plan: 'enterprise' }],
+        inventory: { assets: [] },
+        app: { currentModule: 'dashboard' },
+        auth: { status: 'authenticated' },
+        // Common slice methods to prevent "is not a function" errors
+        addAgentMessage: vi.fn(),
+        updateAgentMessage: vi.fn(),
+        setAgentStatus: vi.fn(),
+        updateTaskProgress: vi.fn(),
+        addNotification: vi.fn(),
+        setLoading: vi.fn(),
+        clearHistory: vi.fn(),
+        startSession: vi.fn(),
+        endSession: vi.fn(),
+        setActiveSessionId: vi.fn(),
+        registerSubscription: vi.fn(() => () => { })
+    };
+
+    const useStoreMock = Object.assign(
+        vi.fn((selector) => selector ? selector(mockState) : mockState),
+        {
+            getState: vi.fn(() => mockState),
+            setState: vi.fn((patch) => Object.assign(mockState, typeof patch === 'function' ? patch(mockState) : patch)),
+            subscribe: vi.fn(() => () => { })
+        }
+    );
+
+    return {
+        useStore: useStoreMock
+    };
+});
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => {
@@ -162,9 +201,12 @@ vi.mock('firebase/firestore', () => {
         fromMillis: vi.fn((millis: number) => ({ toMillis: () => millis, toDate: () => new Date(millis), seconds: Math.floor(millis / 1000), nanoseconds: 0 }))
     };
 
+    // Create a mock db object that passes basic checks
+    const mockDb = { type: 'firestore', getFirestore: () => ({}) };
+
     return {
-        initializeFirestore: vi.fn(() => ({})),
-        getFirestore: vi.fn(() => ({})),
+        initializeFirestore: vi.fn(() => mockDb),
+        getFirestore: vi.fn(() => mockDb),
         Timestamp,
         collection: vi.fn(() => ({ id: 'mock-coll-id' })),
         doc: vi.fn(() => ({ id: crypto.randomUUID() })),

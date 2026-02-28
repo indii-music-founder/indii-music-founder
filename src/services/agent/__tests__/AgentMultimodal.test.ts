@@ -3,14 +3,6 @@ import { BaseAgent } from '../BaseAgent';
 import { GenAI } from '../../ai/GenAI';
 import { StreamChunk } from '@/shared/types/ai.dto';
 
-// Mock MembershipService
-vi.mock('@/services/MembershipService', () => ({
-    MembershipService: {
-        checkBudget: vi.fn().mockResolvedValue({ allowed: true, remainingBudget: 100, requiresApproval: false }),
-        recordSpend: vi.fn().mockResolvedValue(undefined)
-    }
-}));
-
 // Mock AI
 vi.mock('../../ai/GenAI', () => ({
     GenAI: {
