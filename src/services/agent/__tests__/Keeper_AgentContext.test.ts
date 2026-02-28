@@ -197,6 +197,21 @@ describe('📚 Keeper: Context & Persistence Integration', () => {
             activeAgentProvider: 'native' // Ensure we use the native orchestrator flow
         });
 
+        // Bridge the store mock to the session service mock to satisfy integration expectations
+        const state = useStore.getState() as any;
+        state.addAgentMessage.mockImplementation((msg: any) => {
+            const currentSessionId = useStore.getState().activeSessionId;
+            if (currentSessionId) {
+                mockUpdateSession(currentSessionId, { messages: [msg] });
+            }
+        });
+        state.updateAgentMessage.mockImplementation((id: string, updates: any) => {
+            const currentSessionId = useStore.getState().activeSessionId;
+            if (currentSessionId) {
+                mockUpdateSession(currentSessionId, updates);
+            }
+        });
+
         // Reset AgentService state (singleton)
         (agentService as any).isProcessing = false;
         (agentService as any).isWarmedUp = true;

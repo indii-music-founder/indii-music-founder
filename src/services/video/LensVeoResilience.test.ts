@@ -7,14 +7,15 @@ import { VideoGenerationService } from './VideoGenerationService';
 
 // Hoisted mocks must be defined before imports
 const mocks = vi.hoisted(() => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     analyzeImage: vi.fn(),
     canPerformAction: vi.fn(),
     currentUser: { uid: 'test-user-lens' },
     triggerVideoJob: vi.fn(),
     useStore: {
         getState: vi.fn(() => ({
-  serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens' }))
+            serverTimestamp: vi.fn(), currentOrganizationId: 'org-lens'
+        }))
     },
     doc: vi.fn(),
     onSnapshot: vi.fn()
@@ -22,14 +23,14 @@ const mocks = vi.hoisted(() => ({
 
 // Mock modules
 vi.mock('../ai/FirebaseAIService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     firebaseAI: {
         analyzeImage: mocks.analyzeImage
     }
 }));
 
 vi.mock('@/services/subscription/SubscriptionService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     subscriptionService: {
         canPerformAction: mocks.canPerformAction
     }
@@ -50,14 +51,22 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    collection: vi.fn(() => ({ id: 'mock-coll' })),
     doc: mocks.doc,
+    addDoc: vi.fn(() => Promise.resolve({ id: 'mock-doc' })),
+    getDoc: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}) })),
+    setDoc: vi.fn(() => Promise.resolve()),
+    updateDoc: vi.fn(() => Promise.resolve()),
     onSnapshot: mocks.onSnapshot,
-    getFirestore: vi.fn()
+    serverTimestamp: vi.fn(),
+    Timestamp: {
+        now: () => ({ toMillis: () => Date.now() }),
+        fromMillis: (ms: number) => ({ toMillis: () => ms })
+    }
 }));
 
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useStore: mocks.useStore
 }));
 
@@ -177,7 +186,7 @@ describe('Lens 🎥 - Veo 3.1 Resilience & Fallback Strategy', () => {
                     exists: () => true,
                     id: 'mock-job-id',
                     data: () => ({
-  serverTimestamp: vi.fn(),
+                        serverTimestamp: vi.fn(),
                         status: 'completed',
                         output: {
                             url: 'https://veo.google.com/generated-video.mp4',
