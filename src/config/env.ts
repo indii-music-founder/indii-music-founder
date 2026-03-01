@@ -64,7 +64,7 @@ const processEnv = {
     DEV: getSafeMetaEnv('DEV') ?? process.env.NODE_ENV !== 'production',
 
     // Firebase specific overrides
-    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY) || getEnv(getSafeMetaEnv('VITE_API_KEY'), process.env.VITE_API_KEY),
+    firebaseApiKey: getEnv(getSafeMetaEnv('VITE_FIREBASE_API_KEY'), process.env.VITE_FIREBASE_API_KEY),
     firebaseProjectId: getEnv(getSafeMetaEnv('VITE_FIREBASE_PROJECT_ID'), process.env.VITE_FIREBASE_PROJECT_ID),
     firebaseStorageBucket: getEnv(getSafeMetaEnv('VITE_FIREBASE_STORAGE_BUCKET'), process.env.VITE_FIREBASE_STORAGE_BUCKET),
     firebaseDatabaseURL: getEnv(getSafeMetaEnv('VITE_FIREBASE_DATABASE_URL'), process.env.VITE_FIREBASE_DATABASE_URL),
@@ -133,7 +133,7 @@ export const firebaseConfig = {
     authDomain: "indiios-v-1-1.firebaseapp.com",
     databaseURL: "https://indiios-v-1-1-default-rtdb.firebaseio.com",
     projectId: "indiios-v-1-1",
-    storageBucket: "indiios-alpha-electron",
+    storageBucket: firebaseEnv.firebaseStorageBucket || "indiios-v-1-1.firebasestorage.app",
     messagingSenderId: "223837784072",
     appId: "1:223837784072:web:3af738739465ea4095e9bd",
     measurementId: "G-7WW3HEHFTF"
