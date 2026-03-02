@@ -95,7 +95,7 @@ describe('MerlinService', () => {
             host: 'sftp.merlinnetwork.org',
             user: 'test-user',
             remotePath: expect.stringContaining(mockRelease.metadata.upc || ''),
-            localPath: expect.stringContaining('release.xml')
+            localPath: expect.stringContaining('staged')
         }));
     });
 

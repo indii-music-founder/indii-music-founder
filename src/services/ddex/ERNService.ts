@@ -17,13 +17,13 @@ export class ERNService {
     async generateERN(
         metadata: ExtendedGoldenMetadata,
         senderPartyId: string = DDEX_CONFIG.PARTY_ID,
-        distributorKey: string = 'generic',
+        distributorKey: string = 'merlin',
         assets?: ReleaseAssets,
         options?: { isTestMode?: boolean } // Added options for Test Mode
     ): Promise<{ success: boolean; xml?: string; error?: string }> {
         try {
             const { DISTRIBUTORS } = await import('@/core/config/distributors');
-            const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.generic;
+            const distributor = DISTRIBUTORS[distributorKey as keyof typeof DISTRIBUTORS] || DISTRIBUTORS.merlin;
             const recipientPartyId = distributor.ddexPartyId;
             const timestamp = new Date().toISOString();
 

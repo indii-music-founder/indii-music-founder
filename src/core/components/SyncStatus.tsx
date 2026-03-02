@@ -30,14 +30,14 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({ collapsed }) => {
     useEffect(() => {
         // Initial count
         import('@/services/persistence/MetadataPersistenceService').then(m => {
-            setPendingCount(m.metadataPersistenceService.getPendingCount());
+            setPendingCount?.(m.metadataPersistenceService.getPendingCount());
         });
 
         // Listen for changes
         const unsubscribe = events.on<{ count: number; error?: string | null; syncing?: boolean }>('SYNC_QUEUE_CHANGE', (data) => {
-            setPendingCount(data.count);
-            if (data.error !== undefined) setLastSyncError(data.error);
-            if (data.syncing !== undefined) setIsSyncing(data.syncing);
+            setPendingCount?.(data.count);
+            if (data.error !== undefined) setLastSyncError?.(data.error);
+            if (data.syncing !== undefined) setIsSyncing?.(data.syncing);
         });
 
         return unsubscribe;

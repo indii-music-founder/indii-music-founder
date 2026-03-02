@@ -242,8 +242,8 @@ class DDEXParserImpl {
       parentalWarningType: 'NoAdviceAvailable' as const,
       releaseResourceReferenceList: [],
       aiGenerationInfo: r?.AIGenerationInfo ? {
-        isFullyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === true,
-        isPartiallyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === true,
+        isFullyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === true || (r.AIGenerationInfo as Record<string, any>).IsFullyAIGenerated === 'true',
+        isPartiallyAIGenerated: (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === true || (r.AIGenerationInfo as Record<string, any>).IsPartiallyAIGenerated === 'true',
         aiToolsUsed: (r.AIGenerationInfo as Record<string, any>).AIToolsUsed?.AIToolUsed
           ? Array.isArray((r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed)
             ? (r.AIGenerationInfo as Record<string, any>).AIToolsUsed.AIToolUsed
