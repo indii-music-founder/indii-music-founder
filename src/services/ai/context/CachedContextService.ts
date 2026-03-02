@@ -15,7 +15,7 @@ export class CachedContextService {
     /**
      * Generate a stable hash for the context (system instruction + tools)
      */
-    static generateHash(systemInstruction: string, tools?: any[]): string {
+    static generateHash(systemInstruction: string, tools?: unknown[]): string {
         const content = systemInstruction + (tools ? JSON.stringify(tools) : '');
         // Simple hash function for client-side
         let hash = 0;

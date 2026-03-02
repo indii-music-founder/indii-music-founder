@@ -1,5 +1,5 @@
 import { db } from '@/services/firebase';
-import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, FieldValue } from 'firebase/firestore';
 import { RATE_LIMITS, TIER_CONFIG } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 
@@ -7,12 +7,12 @@ export interface UsageStats {
     date: string; // YYYY-MM-DD
     tokensUsed: number;
     requestCount: number;
-    lastUpdated: any;
+    lastUpdated: FieldValue | Date | null;
 }
 
 export interface RateLimitStats {
     count: number;
-    lastUpdated: any;
+    lastUpdated: FieldValue | Date | null;
 }
 
 export class TokenUsageService {
@@ -38,9 +38,9 @@ export class TokenUsageService {
                 requestCount: increment(1),
                 lastUpdated: serverTimestamp()
             });
-        } catch (error: any) {
+        } catch (error: unknown) {
             // If doc doesn't exist, create it (atomic upsert not strictly possible without transaction, but error handling covers it)
-            if (error?.code === 'not-found') {
+            if (error && typeof error === 'object' && 'code' in error && (error as { code: string }).code === 'not-found') {
                 await setDoc(ref, {
                     userId,
                     date: today,

@@ -25,7 +25,7 @@
 | 7 | **Add Content Security Policy headers** for production builds | `vite.config.ts`, `firebase.json` | DONE - CSP + security headers on both hosting targets |
 | 8 | **Harden env var validation** - throw on missing critical vars instead of warning | `src/config/env.ts` | DONE - Throws in production, warns in dev |
 | 9 | **Fix TypeScript type errors** (`google.maps` and `vitest/globals` type definitions missing) | `tsconfig.json` | DONE - 7 → 0 errors |
-| 10 | **Pin all dependency versions** - stop using `--legacy-peer-deps` as workaround | `package.json` | TODO |
+| 10 | **Pin all dependency versions** - stop using `--legacy-peer-deps` as workaround | `package.json` | DONE - Pinned dynamic versions and used npm overrides to resolve genkit/zod peer deps natively |
 | 11 | **Verify `.env.production` is in `.gitignore`** | `.gitignore` | DONE - Untracked .env.production (had credentials), added .env.* pattern |
 | 12 | **Add rate limiting to Firebase Cloud Functions** | `functions/src/` | DONE - Reusable Firestore-backed rate limiter on all generation endpoints |
 | 13 | **Audit admin token bypass** in Firestore rules (`request.auth.token.admin == true`) | `firestore.rules` | DONE - Correct pattern (Firebase Custom Claims), extracted isAdmin() helper |
@@ -39,11 +39,11 @@
 | # | Item | File/Area | Status |
 |---|------|-----------|--------|
 | 16 | **Add automated axe-core a11y scans to CI pipeline** | `.github/workflows/deploy.yml` | DONE - axe-core CLI runs against built app in CI |
-| 17 | **Create READMEs for 17 missing modules** (agent, distribution, finance, licensing, etc.) | `src/modules/*/` | TODO |
+| 17 | **Create READMEs for 17 missing modules** (agent, distribution, finance, licensing, etc.) | `src/modules/*/` | DONE - All 27 modules now have READMEs |
 | 18 | **Reduce 737 `any` type declarations** - focus on public API surfaces first | Codebase-wide | TODO |
 | 19 | **Add Node.js version runtime check** (enforce >= 22.0.0 in app startup) | `src/core/App.tsx` or `vite.config.ts` | DONE - Build-time check in vite.config.ts |
 | 20 | **Add Sentry error tracking configuration for production** (imported but verify DSN) | `src/lib/sentry.ts` | DONE - Full config with replays, perf monitoring, sensitive data scrubbing; DSN via VITE_SENTRY_DSN env var |
-| 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | TODO |
+| 21 | **Create OpenAPI/Swagger specs for Cloud Functions** | `functions/src/` | DONE - Added openapi.yaml spec for critical endpoints |
 | 22 | **Add color contrast testing** (WCAG 2.1 AA compliance) | `e2e/` | TODO |
 | 23 | **Set up Storybook** for shared UI component documentation | `src/components/ui/` | TODO |
 | 24 | **Add bundle size monitoring** (track regressions with size-limit or bundlesize) | `.github/workflows/deploy.yml` | DONE - Bundle size report + 15MB JS threshold in CI |
@@ -88,9 +88,9 @@
 | Priority | Total | Done | Remaining |
 |----------|-------|------|-----------|
 | P0 Critical | 5 | 5 | 0 |
-| P1 High | 10 | 9 | 1 |
-| P2 Medium | 15 | 9 | 6 |
+| P1 High | 10 | 10 | 0 |
+| P2 Medium | 15 | 11 | 4 |
 | P3 Standard | 20 | 15 | 5 |
-| **Total** | **50** | **38** | **12** |
+| **Total** | **50** | **41** | **9** |
 
-**Current Grade: A+** (76% complete, full CI/CD instrumentation, Sentry source maps, load testing, GDPR, build passes)
+**Current Grade: A+** (82% complete, full CI/CD instrumentation, Sentry source maps, load testing, GDPR, build passes)

@@ -88,7 +88,7 @@ export interface UsageRecord {
     fileSize?: number;
     format?: string;
     model?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 

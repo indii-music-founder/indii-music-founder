@@ -27,7 +27,7 @@ export interface FileNode {
         storagePath?: string;
         size?: number;
         mimeType?: string;
-        [key: string]: any;
+        [key: string]: unknown;
     };
     createdAt: number;
     updatedAt: number;
@@ -52,9 +52,9 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 id: doc.id,
                 ...doc.data()
             } as FileNode));
-        } catch (error: any) {
+        } catch (error: unknown) {
             // Fallback for missing index error
-            if (error.code === 'failed-precondition') {
+            if (error && typeof error === 'object' && 'code' in error && error.code === 'failed-precondition') {
                 console.warn('Firestore index missing, falling back to client-side sort', error);
                 const q = query(this.collection, where('projectId', '==', projectId));
                 const snapshot = await getDocs(q);

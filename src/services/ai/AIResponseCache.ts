@@ -69,7 +69,7 @@ export class AIResponseCache {
     private l1Cache = new Map<string, CachedResponse>();
     private static readonly MAX_L1_SIZE = 50;
 
-    async get(prompt: string, model: string, config?: any): Promise<string | null> {
+    async get(prompt: string, model: string, config?: unknown): Promise<string | null> {
         if (typeof window === 'undefined') return null;
 
         try {
@@ -104,7 +104,7 @@ export class AIResponseCache {
         }
     }
 
-    async set(prompt: string, response: string, model: string, config?: any, ttl: number = DEFAULT_TTL): Promise<void> {
+    async set(prompt: string, response: string, model: string, config?: unknown, ttl: number = DEFAULT_TTL): Promise<void> {
         if (typeof window === 'undefined') return;
 
         try {
@@ -136,7 +136,7 @@ export class AIResponseCache {
         this.l1Cache.set(key, entry);
     }
 
-    private async generateKey(prompt: string, model: string, config?: any): Promise<string> {
+    private async generateKey(prompt: string, model: string, config?: unknown): Promise<string> {
         const configStr = config ? JSON.stringify(config) : '';
         const raw = `${model}:${prompt}:${configStr}`;
         return this.getHash(raw);

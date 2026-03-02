@@ -24,7 +24,7 @@ export class CredentialService {
      */
     async getCredentials(distributorId: DistributorId): Promise<Credentials | null> {
         if (!window.electronAPI?.credentials) throw new Error('Electron API not available');
-        return await window.electronAPI.credentials.get(distributorId);
+        return await window.electronAPI.credentials.get(distributorId) as Credentials | null;
     }
 
     /**

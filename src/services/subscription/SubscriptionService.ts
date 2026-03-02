@@ -286,10 +286,10 @@ export class SubscriptionService {
             reason: `Unknown action: ${action}`
           };
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       // GRACEFUL DEGRADATION: If subscription check fails (timeout, auth, network),
       // allow the action to proceed for demo experience. The backend will enforce limits.
-      console.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error?.message);
+      console.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error instanceof Error ? error.message : String(error));
       return { allowed: true };
     }
   }

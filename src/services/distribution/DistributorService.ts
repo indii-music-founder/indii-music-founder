@@ -459,7 +459,7 @@ class DistributorServiceImpl {
             }
             return null;
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           console.warn(`[DistributorService] Failed to fetch earnings from ${id}:`, error instanceof Error ? error.message : error);
           return null;
         }
@@ -612,7 +612,7 @@ class DistributorServiceImpl {
               results[distributorId] = { status: 'not_connected' };
             }
           });
-        } catch (error: any) {
+        } catch (error: unknown) {
           results[distributorId] = {
             status: 'error',
             error: error instanceof Error ? error.message : 'Unknown error',

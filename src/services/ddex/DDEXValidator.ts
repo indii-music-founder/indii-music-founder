@@ -81,19 +81,19 @@ export class DDEXValidator {
             // Check Profile Version ID
             const actualProfile = root['@_ReleaseProfileVersionId'];
             if (!actualProfile || !actualProfile.includes(profileVersion)) {
-                 // Fallback logic for partial matches
-                 if (!profileVersion.includes('/') && actualProfile?.endsWith(profileVersion)) {
-                     // Acceptable
-                 } else if (actualProfile !== profileVersion) {
-                     return false;
-                 }
+                // Fallback logic for partial matches
+                if (!profileVersion.includes('/') && actualProfile?.endsWith(profileVersion)) {
+                    // Acceptable
+                } else if (actualProfile !== profileVersion) {
+                    return false;
+                }
             }
 
             // Normalize profile for checking (e.g., 'AudioAlbum' from 'CommonReleaseTypes/14/AudioAlbum')
             const profile = profileVersion.split('/').pop() || profileVersion;
 
             // Helper to get array from list (handles single item or array)
-            const getArray = (item: any) => item ? (Array.isArray(item) ? item : [item]) : [];
+            const getArray = (item: unknown) => item ? (Array.isArray(item) ? item : [item]) : [];
 
             const releaseList = getArray(root.ReleaseList?.Release);
             if (releaseList.length === 0) return false;
@@ -103,7 +103,7 @@ export class DDEXValidator {
             switch (profile) {
                 case 'AudioAlbum':
                     // 1. ReleaseType is 'Album'
-                    if (!releaseList.some((r: any) => r.ReleaseType === 'Album')) return false;
+                    if (!releaseList.some((r: Record<string, unknown>) => r.ReleaseType === 'Album')) return false;
                     // 2. Contains SoundRecording
                     if (!resourceList.SoundRecording) return false;
                     // 3. Contains Image (Cover Art is mandatory for Albums)
@@ -112,7 +112,7 @@ export class DDEXValidator {
 
                 case 'Single':
                     // 1. ReleaseType is 'Single'
-                    if (!releaseList.some((r: any) => r.ReleaseType === 'Single')) return false;
+                    if (!releaseList.some((r: Record<string, unknown>) => r.ReleaseType === 'Single')) return false;
                     // 2. Contains SoundRecording
                     if (!resourceList.SoundRecording) return false;
                     // 3. Contains Image
@@ -121,7 +121,7 @@ export class DDEXValidator {
 
                 case 'VideoSingle':
                     // 1. ReleaseType is 'VideoSingle'
-                    if (!releaseList.some((r: any) => r.ReleaseType === 'VideoSingle')) return false;
+                    if (!releaseList.some((r: Record<string, unknown>) => r.ReleaseType === 'VideoSingle')) return false;
                     // 2. Contains Video
                     if (!resourceList.Video) return false;
                     // 3. Contains Image (Thumbnail/Cover)
@@ -130,7 +130,7 @@ export class DDEXValidator {
 
                 case 'Ringtone':
                     // 1. ReleaseType is 'Ringtone'
-                    if (!releaseList.some((r: any) => r.ReleaseType === 'Ringtone')) return false;
+                    if (!releaseList.some((r: Record<string, unknown>) => r.ReleaseType === 'Ringtone')) return false;
                     // 2. Contains SoundRecording
                     if (!resourceList.SoundRecording) return false;
                     break;

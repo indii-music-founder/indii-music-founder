@@ -177,9 +177,11 @@ export interface SFTPConfig {
     protocol?: 'SFTP' | 'ASPERA';
     host: string;
     port?: number;
-    user: string;
+    user?: string;
+    username?: string;
     password?: string;
     key?: string; // Path to private key
+    privateKey?: string;
     localPath: string;
     remotePath?: string;
 }

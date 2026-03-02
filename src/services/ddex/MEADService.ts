@@ -1,6 +1,6 @@
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { DDEX_CONFIG } from '@/core/config/ddex';
-import { MEADMessage, MEADContent, MEADRelease, MEADResource } from './types/mead';
+import { MEADMessage, MEADContent, MEADRelease, MEADResource, Biography } from './types/mead';
 import { DDEXParser } from './DDEXParser'; // We might need to extend parser for MEAD if we output XML
 
 /**
@@ -86,7 +86,7 @@ export class MEADService {
         });
     }
 
-    private extractBiographies(metadata: ExtendedGoldenMetadata): any[] | undefined {
+    private extractBiographies(metadata: ExtendedGoldenMetadata): Biography[] | undefined {
         // metadata.description is often just a liner note or promo text
         // If we had a specific 'artistBio' field, we'd map it here.
         // For now, mapping description as a biography if it looks long enough?

@@ -132,7 +132,7 @@ export class MerlinService {
                 status: 'failed' as MerlinDeliveryStatus,
                 errorMessage: message,
                 updatedAt: serverTimestamp(),
-            }).catch(() => {/* best-effort */});
+            }).catch(() => {/* best-effort */ });
 
             return { success: false, status: 'failed', message };
         }
@@ -249,7 +249,7 @@ export class MerlinService {
             title: release.metadata.releaseTitle || release.metadata.trackTitle || 'Untitled Release',
             artist: release.metadata.artistName,
             artists: [release.metadata.artistName],
-            tracks: (release.metadata.tracks || []).map((t: any) => ({
+            tracks: (release.metadata.tracks || []).map((t: Partial<import('@/services/metadata/types').ExtendedGoldenMetadata> & { filename?: string; fileHash?: string; durationSeconds?: number }) => ({
                 isrc: t.isrc || '',
                 title: t.trackTitle || '',
                 duration: t.durationSeconds || 0,

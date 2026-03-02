@@ -5,15 +5,11 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { agentZeroService } from '@/services/agent/AgentZeroService';
 import { env } from '@/config/env';
 
-declare global {
-    interface Window {
-        electronAPI?: any;
-    }
-}
 // isInlineDataPart removed - remixImage/batchRemix now use Cloud Function
 import { getImageConstraints, getDistributorPromptContext, type ImageConstraints } from '@/services/onboarding/DistributorContext';
 import type { UserProfile } from '@/modules/workflow/types';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import type { SubscriptionTier } from '@/services/subscription/types';
 import { usageTracker } from '@/services/subscription/UsageTracker';
 import { QuotaExceededError } from '@/shared/types/errors';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
@@ -99,7 +95,7 @@ export class ImageGenerationService {
         if (!quotaCheck.allowed) {
             // ... existing error logic
             console.error('[ImageGen DEBUG] Quota exceeded');
-            let tier: any = 'free'; // Using any to bypass strict enum mismatch if needed, but MembershipTier includes 'free'
+            let tier: SubscriptionTier = 'free' as SubscriptionTier; // Bypassing strict enum mismatch if needed, MembershipTier includes 'free'
             try {
                 const sub = userId
                     ? await subscriptionService.getSubscription(userId)
@@ -205,13 +201,14 @@ export class ImageGenerationService {
             parallelResults.forEach(res => {
                 if (res) results.push(res);
             });
-        } catch (err: any) {
+        } catch (err: unknown) {
+            const errObj = err as { code?: string; details?: unknown };
             console.error("❌ Image Generation Error:", err);
             console.error("Error details:", {
-                message: err?.message,
-                code: err?.code,
-                details: err?.details,
-                stack: err?.stack?.substring(0, 500)
+                message: err instanceof Error ? err.message : String(err),
+                code: errObj.code,
+                details: errObj.details,
+                stack: err instanceof Error ? err.stack?.substring(0, 500) : undefined
             });
 
             throw err;
@@ -311,7 +308,7 @@ export class ImageGenerationService {
             });
 
             // The backend returns it in a candidates array for frontend compatibility
-            const data = result.data as any;
+            const data = result.data as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
 
             if (data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
                 const mimeType = data.candidates[0].content.parts[0].inlineData.mimeType || 'image/png';
@@ -414,7 +411,7 @@ export class ImageGenerationService {
         imageMimeType?: string;
         maskMimeType?: string;
         refMimeType?: string;
-    }): Promise<any> {
+    }): Promise<unknown> {
         try {
             const editImage = httpsCallable(functions, 'editImage');
             const result = await editImage(options);

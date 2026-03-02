@@ -346,7 +346,7 @@ export class FirebaseAIService {
         const executeRequest = async (): Promise<GenerateContentResult> => {
             // Create an internal AbortController for timeout if specified
             const timeoutController = new AbortController();
-            let timeoutId: any;
+            let timeoutId: NodeJS.Timeout | number | undefined;
 
             if (options?.timeout && options.timeout > 0) {
                 timeoutId = setTimeout(() => {
@@ -507,8 +507,8 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        safetySettings?: any[],
-        toolConfig?: any,
+        safetySettings?: SafetySetting[],
+        toolConfig?: ToolConfig,
         options?: { signal?: AbortSignal }
     ): Promise<GenerateContentResult> {
         if (!this.fallbackClient) {
@@ -558,8 +558,8 @@ export class FirebaseAIService {
         tools?: Tool[],
         options?: {
             signal?: AbortSignal;
-            safetySettings?: any[];
-            toolConfig?: any;
+            safetySettings?: SafetySetting[];
+            toolConfig?: ToolConfig;
             thoughtSignature?: string;
             timeout?: number;
         }
@@ -569,7 +569,7 @@ export class FirebaseAIService {
 
         // Create an internal AbortController for timeout if specified
         const timeoutController = new AbortController();
-        let timeoutId: any;
+        let timeoutId: NodeJS.Timeout | number | undefined;
 
         if (options?.timeout && options.timeout > 0) {
             timeoutId = setTimeout(() => {
@@ -620,7 +620,7 @@ export class FirebaseAIService {
                     }
 
                     // Normal Mode setup
-                    let cachedContent: any = undefined;
+                    let cachedContent: string | undefined = undefined;
                     if (systemInstruction && CachedContextService.shouldCache(systemInstruction)) {
                         const hash = CachedContextService.generateHash(systemInstruction, tools);
                         const existingCache = await CachedContextService.findCache(hash);
@@ -629,7 +629,7 @@ export class FirebaseAIService {
                         }
                     }
 
-                    const modelOptions: any = {
+                    const modelOptions: Record<string, unknown> = {
                         model: modelName,
                         generationConfig: mergedConfig,
                         systemInstruction,
@@ -642,7 +642,7 @@ export class FirebaseAIService {
                         modelOptions.cachedContent = cachedContent;
                     }
 
-                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions);
+                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as any);
 
                     try {
                         const result: GenerateContentStreamResult = await (modelCallback as any).generateContentStream(
@@ -652,13 +652,13 @@ export class FirebaseAIService {
 
                         // Accumulate chunks for the final WrappedResponse
                         let finalText = '';
-                        const chunks: any[] = [];
+                        const chunks: GenerateContentResponse[] = [];
 
                         const transformedStream = new ReadableStream<StreamChunk>({
                             async start(controller) {
                                 try {
                                     for await (const chunk of result.stream) {
-                                        chunks.push(chunk);
+                                        chunks.push(chunk as unknown as GenerateContentResponse);
                                         const part = chunk.candidates?.[0]?.content?.parts?.[0] || chunk;
                                         const chunkText = typeof (part as any).text === 'function'
                                             ? (part as any).text()
@@ -751,7 +751,7 @@ export class FirebaseAIService {
         config?: GenerationConfig,
         systemInstruction?: string,
         tools?: Tool[],
-        options?: { signal?: AbortSignal, safetySettings?: any[], toolConfig?: any }
+        options?: { signal?: AbortSignal, safetySettings?: SafetySetting[], toolConfig?: ToolConfig }
     ): Promise<{ stream: ReadableStream<StreamChunk>, response: Promise<WrappedResponse> }> {
         if (!this.fallbackClient) {
             throw new AppException(AppErrorCode.INTERNAL_ERROR, 'Fallback client not initialized');
@@ -777,14 +777,14 @@ export class FirebaseAIService {
         });
 
         // Collect chunks for final response
-        const chunks: any[] = [];
+        const chunks: GenerateContentResponse[] = [];
         let finalText = '';
 
         const stream = new ReadableStream<StreamChunk>({
             async start(controller) {
                 try {
                     for await (const chunk of result) {
-                        chunks.push(chunk);
+                        chunks.push(chunk as unknown as GenerateContentResponse);
                         let chunkText = '';
                         try {
                             const c = chunk as any;

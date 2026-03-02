@@ -64,7 +64,7 @@ export class DistributionPersistenceService extends FirestoreService<ReleaseDepl
         status: ReleaseDeploymentDocument['status'],
         details?: {
             externalId?: string;
-            errors?: any[];
+            errors?: unknown[];
             trackingLink?: string;
         }
     ): Promise<void> {

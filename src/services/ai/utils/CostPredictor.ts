@@ -13,6 +13,17 @@ export interface CostEstimate {
     details: string;
 }
 
+export interface PricingData {
+    input?: number;
+    output?: number;
+    perGeneration?: number;
+    perSecond?: number;
+    perSecond4K?: number;
+    audioAddOn?: number;
+    capacity?: number;
+    resolution?: string;
+}
+
 export class CostPredictor {
     private static CREDIT_MULTIPLIER = 1000; // Example: $1.00 = 1000 credits
 
@@ -21,7 +32,7 @@ export class CostPredictor {
      */
     static predictTextCost(prompt: string, expectedOutputTokens = 500, model = APPROVED_MODELS.TEXT_FAST): CostEstimate {
         const pricing = this.getPricing(model);
-        if (!pricing || !('input' in pricing)) {
+        if (!pricing || pricing.input === undefined || pricing.output === undefined) {
             return this.getUnknownEstimate(model);
         }
 
@@ -45,7 +56,7 @@ export class CostPredictor {
      */
     static predictImageCost(count = 1, model = APPROVED_MODELS.IMAGE_GEN): CostEstimate {
         const pricing = this.getPricing(model);
-        if (!pricing || !('perGeneration' in pricing)) {
+        if (!pricing || pricing.perGeneration === undefined) {
             return this.getUnknownEstimate(model);
         }
 
@@ -65,7 +76,7 @@ export class CostPredictor {
      */
     static predictVideoCost(durationSeconds: number = AI_CONFIG.VIDEO.DEFAULT_DURATION_SECONDS, model = APPROVED_MODELS.VIDEO_GEN): CostEstimate {
         const pricing = this.getPricing(model);
-        if (!pricing || !('perSecond' in pricing)) {
+        if (!pricing || pricing.perSecond === undefined) {
             return this.getUnknownEstimate(model);
         }
 
@@ -93,7 +104,7 @@ export class CostPredictor {
     /**
      * Get pricing configuration for a model, checking Remote Config first
      */
-    private static getPricing(modelId: string): any {
+    private static getPricing(modelId: string): PricingData | undefined {
         // 1. Check Remote Config
         try {
             const configStr = getValue(remoteConfig, 'ai_system_config').asString();

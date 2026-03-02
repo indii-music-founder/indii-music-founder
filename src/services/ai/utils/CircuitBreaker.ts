@@ -9,16 +9,16 @@ export enum CircuitState {
 export interface CircuitBreakerConfig {
     failureThreshold: number;
     resetTimeoutMs: number;
-    fallbackResponse?: any;
+    fallbackResponse?: unknown;
 }
 
 /**
  * Checks if an error is a non-recoverable configuration/permission error.
  * These errors should fail fast and NOT trip the circuit breaker.
  */
-function isNonRecoverableError(error: any): boolean {
-    const msg = error?.message || String(error);
-    const code = error?.code || '';
+function isNonRecoverableError(error: unknown): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    const code = (error as { code?: string })?.code || '';
 
     // Firebase App Check / Installations errors - configuration issue, won't recover with retry
     if (msg.includes('installations/request-failed') ||
@@ -57,7 +57,7 @@ export class CircuitBreaker {
                 // Testing service...
             } else {
                 if (fallback !== undefined) return fallback;
-                if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse;
+                if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse as T;
                 throw new Error('CircuitBreaker: Service is currently unavailable (Circuit OPEN).');
             }
         }
@@ -76,7 +76,7 @@ export class CircuitBreaker {
 
             this.onFailure(error);
             if (fallback !== undefined) return fallback;
-            if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse;
+            if (this.config.fallbackResponse !== undefined) return this.config.fallbackResponse as T;
             throw error;
         }
     }
@@ -93,7 +93,7 @@ export class CircuitBreaker {
         }
     }
 
-    private onFailure(_error: any) {
+    private onFailure(_error: unknown) {
         this.failureCount++;
         this.lastFailureTime = Date.now();
 

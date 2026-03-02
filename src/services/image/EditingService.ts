@@ -6,11 +6,6 @@ import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { PromptBuilder } from './PromptBuilderService';
 import { agentZeroService } from '@/services/agent/AgentZeroService';
 
-declare global {
-    interface Window {
-        electronAPI?: any;
-    }
-}
 
 // Data URI regex - strict pattern for image MIME types
 const DATA_URI_REGEX = /^data:(image\/[a-z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/i;
@@ -32,12 +27,16 @@ export class EditingService {
     ): Promise<T> {
         try {
             return await operation();
-        } catch (error: any) {
+        } catch (error: unknown) {
+            const errOpts = {
+                code: (error as { code?: string })?.code,
+                message: error instanceof Error ? error.message : String(error)
+            };
             const isRetryable =
-                error?.code === 'resource-exhausted' ||
-                error?.message?.includes('429') ||
-                error?.message?.includes('quota') ||
-                error?.message?.includes('rate');
+                errOpts.code === 'resource-exhausted' ||
+                errOpts.message.includes('429') ||
+                errOpts.message.includes('quota') ||
+                errOpts.message.includes('rate');
 
             if (retries > 0 && isRetryable) {
                 await new Promise(r => setTimeout(r, delay));
@@ -124,7 +123,7 @@ export class EditingService {
             base64?: string;
             mimeType?: string;
             thoughtSignature?: string;
-            candidates?: any[]
+            candidates?: { content?: { parts?: { inlineData?: { mimeType: string; data: string } }[] } }[]
         };
 
         // Handle flattened response (base64) or nested candidate structure
@@ -135,7 +134,9 @@ export class EditingService {
             url = `data:${data.mimeType || 'image/png'};base64,${data.base64}`;
         } else if (data.candidates?.[0]?.content?.parts?.[0]?.inlineData) {
             const part = data.candidates[0].content.parts[0];
-            url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (part && part.inlineData) {
+                url = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            }
         }
 
         if (url) {
@@ -235,8 +236,8 @@ export class EditingService {
                 } else {
                     failures.push({ index: i, error: 'No result returned from API' });
                 }
-            } catch (error: any) {
-                failures.push({ index: i, error: error.message || 'Unknown error' });
+            } catch (error: unknown) {
+                failures.push({ index: i, error: error instanceof Error ? error.message : String(error) });
             }
         }
 

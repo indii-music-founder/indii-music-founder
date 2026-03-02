@@ -1,8 +1,19 @@
 import { GenAI } from '@/services/ai/GenAI';
 import { audioService } from '@/services/audio/AudioService';
 
+interface SpeechRecognitionInstance {
+    continuous: boolean;
+    interimResults: boolean;
+    lang: string;
+    start: () => void;
+    stop: () => void;
+    onresult: ((event: { results: { transcript: string }[][] }) => void) | null;
+    onerror: ((event: { error: unknown }) => void) | null;
+    onend: (() => void) | null;
+}
+
 export class VoiceService {
-    private recognition: any | null = null;
+    private recognition: SpeechRecognitionInstance | null = null;
     private isListening: boolean = false;
 
     private get synthesis(): SpeechSynthesis | null {
@@ -13,17 +24,19 @@ export class VoiceService {
 
     constructor() {
         if (typeof window !== 'undefined' && ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window)) {
-            const SpeechRecognition = (window as unknown as { SpeechRecognition: new () => any }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition: new () => any }).webkitSpeechRecognition;
+            const SpeechRecognition = (window as unknown as { SpeechRecognition: new () => SpeechRecognitionInstance }).SpeechRecognition || (window as unknown as { webkitSpeechRecognition: new () => SpeechRecognitionInstance }).webkitSpeechRecognition;
             this.recognition = new SpeechRecognition();
-            this.recognition.continuous = false;
-            this.recognition.interimResults = false;
-            this.recognition.lang = 'en-US';
+            if (this.recognition) {
+                this.recognition.continuous = false;
+                this.recognition.interimResults = false;
+                this.recognition.lang = 'en-US';
+            }
         } else {
             // Speech Recognition API not supported in this browser
         }
     }
 
-    startListening(onResult: (text: string) => void, onError?: (error: any) => void) {
+    startListening(onResult: (text: string) => void, onError?: (error: unknown) => void) {
         if (!this.recognition) return;
 
         if (this.isListening) {
@@ -32,13 +45,13 @@ export class VoiceService {
 
         this.isListening = true;
 
-        this.recognition.onresult = (event: any) => {
+        this.recognition.onresult = (event: { results: { transcript: string }[][] }) => {
             const transcript = event.results[0][0].transcript;
             onResult(transcript);
             this.isListening = false;
         };
 
-        this.recognition.onerror = (event: any) => {
+        this.recognition.onerror = (event: { error: unknown }) => {
             if (onError) onError(event.error);
             this.isListening = false;
         };
