@@ -10,8 +10,23 @@ import type { DateRange, ValidationResult, ValidationError } from '@/services/dd
 // Re-export specific DDEX types needed by consumers
 export type { ValidationResult, ValidationError, DateRange };
 
-// Supported distributors
-export type DistributorId =
+/**
+ * Direct DSP delivery targets — indiiOS delivers as a registered distributor.
+ * These bypass aggregators entirely.
+ */
+export type DirectDSPId =
+  | 'merlin'    // Collective — reaches Spotify, Apple, Amazon, Deezer, Tidal in one delivery
+  | 'spotify'   // Direct (requires Spotify for Distributors partnership)
+  | 'apple'     // Direct via ITMSP (requires iTunes Store Provider account)
+  | 'amazon'    // Direct (requires Amazon Music content provider agreement)
+  | 'tidal'     // Direct (requires Tidal partner agreement)
+  | 'deezer';   // Direct or via Merlin
+
+/**
+ * Legacy aggregator connectors — migration/import only.
+ * Used to pull existing catalogs into indiiOS. NOT active delivery targets.
+ */
+export type LegacyAggregatorId =
   | 'distrokid'
   | 'tunecore'
   | 'cdbaby'
@@ -19,8 +34,10 @@ export type DistributorId =
   | 'awal'
   | 'unitedmasters'
   | 'amuse'
-  | 'symphonic'
-  | 'merlin';
+  | 'symphonic';
+
+/** Full distributor ID union — direct DSPs + legacy migration connectors */
+export type DistributorId = DirectDSPId | LegacyAggregatorId;
 
 // ... (existing code)
 

@@ -18,10 +18,20 @@ class IdentityManager:
 
     Adheres to the standard ISRC format: CC-XXX-YY-NNNNN.
     - CC: Country Code (2 letters)
-    - XXX: Registrant Code (3 alphanumeric)
+    - XXX: Registrant Code (3 alphanumeric) — set via ISRC_REGISTRANT_CODE env var
     - YY: Year of Registration (2 digits)
     - NNNNN: Unique Designation Code (5 digits)
+
+    Required environment variables for production use:
+    - ISRC_REGISTRANT_CODE: 3-character code assigned by the US ISRC Agency (RIAA)
+    - ISRC_COUNTRY_CODE: 2-letter ISO country code (default: US)
+    - GS1_COMPANY_PREFIX: 9-digit GS1 company prefix for UPC generation (~$250/yr at gs1us.org)
     """
+
+    # Production defaults read from environment — never hardcode in source
+    DEFAULT_ISRC_COUNTRY = os.environ.get("ISRC_COUNTRY_CODE", "US")
+    DEFAULT_ISRC_REGISTRANT = os.environ.get("ISRC_REGISTRANT_CODE", "")
+    DEFAULT_GS1_PREFIX = os.environ.get("GS1_COMPANY_PREFIX", "")
 
     def __init__(self, store_path: Optional[str] = None):
         """Initializes the IdentityManager.
@@ -65,23 +75,56 @@ class IdentityManager:
 
     def generate_isrc(
             self,
-            country: str = "US",
-            registrant: str = "XXX") -> str:
+            country: Optional[str] = None,
+            registrant: Optional[str] = None) -> str:
         """Generates a new valid ISRC.
 
         Args:
-            country: 2-letter ISO country code.
-            registrant: 3-character registrant code assigned to the label/artist.
+            country: 2-letter ISO country code. Defaults to ISRC_COUNTRY_CODE env var or "US".
+            registrant: 3-character registrant code assigned by the US ISRC Agency (RIAA).
+                        Defaults to ISRC_REGISTRANT_CODE env var.
 
         Returns:
             A formatted ISRC string.
+
+        Raises:
+            ValueError: If no registrant code is configured (neither arg nor env var).
         """
+        resolved_country = (country or self.DEFAULT_ISRC_COUNTRY or "US").upper()
+        resolved_registrant = (registrant or self.DEFAULT_ISRC_REGISTRANT or "").upper()
+
+        if not resolved_registrant:
+            raise ValueError(
+                "ISRC registrant code is required. Set the ISRC_REGISTRANT_CODE environment "
+                "variable to your 3-character code assigned by the US ISRC Agency (RIAA). "
+                "Apply at: https://www.usisrc.org/"
+            )
+
+        if len(resolved_registrant) != 3 or not resolved_registrant.isalnum():
+            raise ValueError(
+                f"Invalid ISRC registrant code '{resolved_registrant}'. "
+                "Must be exactly 3 alphanumeric characters as assigned by the ISRC Agency."
+            )
+
         year = datetime.datetime.now().strftime("%y")
         self.data["isrc_count"] += 1
         sequence = str(self.data["isrc_count"]).zfill(5)
 
         # Format: CC-XXX-YY-NNNNN
-        isrc = f"{country.upper()}-{registrant.upper()}-{year}-{sequence}"
+        isrc = f"{resolved_country}-{resolved_registrant}-{year}-{sequence}"
+
+        # Uniqueness check — prevent reissuing same ISRC across releases
+        all_issued = {
+            isrc_val
+            for entry in self.data.get("registry", {}).values()
+            for isrc_val in entry.get("isrcs", [])
+        }
+        if isrc in all_issued:
+            # Increment and retry once (counter drift recovery)
+            self.data["isrc_count"] += 1
+            sequence = str(self.data["isrc_count"]).zfill(5)
+            isrc = f"{resolved_country}-{resolved_registrant}-{year}-{sequence}"
+
         logger.info(f"Generated ISRC: {isrc}")
         return isrc
 
@@ -96,22 +139,40 @@ class IdentityManager:
         check_digit = (10 - (total % 10)) % 10
         return check_digit
 
-    def generate_upc(self, prefix: str = "060123456") -> str:
+    def generate_upc(self, prefix: Optional[str] = None) -> str:
         """Generates a new valid 12-digit UPC with GS1 check digit.
 
         Args:
-            prefix: 9-digit company prefix (defaults to mock prefix).
+            prefix: 9-digit GS1 company prefix. Defaults to GS1_COMPANY_PREFIX env var.
+                    Register at https://www.gs1us.org/ (~$250/yr for 9-digit prefix).
                     Note: A 9-digit prefix allows for 2 digits of item reference (100 items).
 
         Returns:
             A valid 12-digit UPC string.
+
+        Raises:
+            ValueError: If no GS1 company prefix is configured.
         """
+        resolved_prefix = prefix or self.DEFAULT_GS1_PREFIX or ""
+
+        if not resolved_prefix:
+            raise ValueError(
+                "GS1 company prefix is required for UPC generation. Set the GS1_COMPANY_PREFIX "
+                "environment variable to your 9-digit prefix. "
+                "Register at: https://www.gs1us.org/"
+            )
+
+        if len(resolved_prefix) != 9 or not resolved_prefix.isdigit():
+            raise ValueError(
+                f"Invalid GS1 company prefix '{resolved_prefix}'. "
+                "Must be exactly 9 digits as assigned by GS1."
+            )
+
         self.data["upc_count"] += 1
-        sequence = str(self.data["upc_count"]).zfill(
-            2)  # 2 digits item ref for 9 digit prefix
+        sequence = str(self.data["upc_count"]).zfill(2)  # 2 digits item ref for 9-digit prefix
 
         # Build 11-digit base
-        partial_upc = f"{prefix}{sequence}"[-11:].zfill(11)
+        partial_upc = f"{resolved_prefix}{sequence}"[-11:].zfill(11)
 
         check_digit = self._calculate_upc_check_digit(partial_upc)
         full_upc = f"{partial_upc}{check_digit}"

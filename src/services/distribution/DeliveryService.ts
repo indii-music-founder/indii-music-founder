@@ -4,6 +4,9 @@ import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/di
 import { ernService } from '@/services/ddex/ERNService';
 import { transcodingService } from '@/services/audio/TranscodingService';
 
+// DSPs transcode audio themselves from the master file delivered in the DDEX package.
+// indiiOS delivers the original WAV/FLAC — do NOT pre-transcode to OGG or MP3.
+
 export interface DeliveryResult {
     success: boolean;
     message: string;
@@ -101,31 +104,12 @@ export class DeliveryService {
                                 const audioDest = path.join(resourcesDir, `${resourceRef}.${audioExt}`);
 
                                 await safeCopy(asset.url, audioDest);
-
-                                // Transcoding Stub: Create OGG variant for Spotify if master is valid
-                                // In production, this would be a queued job, not inline.
-                                if (fs.existsSync(audioDest)) {
-                                    await transcodingService.transcode({
-                                        inputPath: audioDest, // Use the safe copy as input
-                                        outputPath: path.join(resourcesDir, `${resourceRef}.ogg`),
-                                        targetFormat: 'ogg'
-                                    });
-                                }
                             }
                         }
                     } else if (assets.audioFile && assets.audioFile.url) {
                         const audioExt = assets.audioFile.format || 'wav';
                         const audioDest = path.join(resourcesDir, `A1.${audioExt}`);
                         await safeCopy(assets.audioFile.url, audioDest);
-
-                        if (fs.existsSync(audioDest)) {
-                            // Transcoding Stub
-                            await transcodingService.transcode({
-                                inputPath: audioDest,
-                                outputPath: path.join(resourcesDir, `A1.ogg`),
-                                targetFormat: 'ogg'
-                            });
-                        }
                     }
 
                     // Copy Cover Art

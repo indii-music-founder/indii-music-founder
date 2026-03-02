@@ -18,7 +18,9 @@ indiiOS is not just a platform; it is a **Digital Handshake**. It is a multi-ten
 
 ## 💠 The Vision
 
-indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
+indiiOS solves the "fragmentation trap" where artists lose 40% of their creative time managing 20+ different tools — and 20–30% of their revenue to aggregators who change their TOS whenever they feel like it. It provides a unified **Neural Cortex** that understands your brand, your sound, and your business goals across every module.
+
+**indiiOS is the distributor.** We hold a registered DDEX Party ID and deliver directly to DSPs. The aggregator middleman layer doesn't exist here. Your masters stay yours, your royalties stay yours, and your data stays yours.
 
 ---
 
@@ -55,8 +57,12 @@ The core of indiiOS is **indii**, an intelligent orchestration hub.
 *   **Workflow Lab:** A node-based automation editor (React Flow) to chain complex AI tasks into repeatable creative recipes.
 
 ### 📈 Business Operations
-*   **Distribution & DDEX:** The industry-standard **DDEX (Digital Data Exchange)** engine. Automated generation of ERN (Electronic Release Notification) messages and parsing of DSR (Digital Sales Report) files.
-*   **Finance & Royalties:** A secure ledger for tracking streaming revenue, physical sales, and automated royalty splits.
+*   **Direct Distribution Engine:** indiiOS is a **registered DDEX distributor** (`PA-DPIDA-2025122604-E` / New Detroit Music LLC). Releases are delivered **directly** to DSPs via DDEX ERN 4.3 — no DistroKid, no TuneCore, no TOS changes every 30 days, no percentage cuts. Artists keep 100% of their royalties.
+    - **Primary path:** Merlin Network (`sftp.merlinnetwork.org`) — one delivery reaches Spotify, Apple Music, Amazon, Deezer, Tidal, and SoundCloud.
+    - **Direct paths:** Apple Music (ITMSP), Spotify (Spotify for Distributors), Amazon Music, Tidal.
+    - **Migration connectors:** Import existing catalogs from DistroKid, TuneCore, CD Baby, Symphonic and move them to direct delivery.
+    - **Identity:** Real ISRC generation (via `ISRC_REGISTRANT_CODE` env var) and GS1 UPC generation (via `GS1_COMPANY_PREFIX` env var).
+*   **Finance & Royalties:** A secure ledger for tracking streaming revenue, physical sales, and automated waterfall royalty splits.
 *   **Touring (Road Manager):** Logistics, fuel calculations, and venue discovery for independent touring.
 
 ---

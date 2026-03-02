@@ -11,6 +11,7 @@ Implements DDEX ERN 4.3 standard (https://kb.ddex.net/display/ERNDG/ERN+4)
 import datetime
 import json
 import logging
+import os
 import sys
 import uuid
 import xml.etree.ElementTree as ET
@@ -35,16 +36,23 @@ class DDEXGenerator:
     # DDEX Namespace
     ERN_NS = "http://ddex.net/xml/ern/43"
 
-    def __init__(self, sender_dpid: str = "PADPIDA2023011801X",
-                 sender_name: str = "indiiOS Distribution"):
+    # Registered DPID for New Detroit Music LLC (dpid.ddex.net)
+    # Override via DDEX_SENDER_DPID env var for multi-tenant deployments
+    DEFAULT_SENDER_DPID = os.environ.get("DDEX_SENDER_DPID", "PA-DPIDA-2025122604-E")
+    DEFAULT_SENDER_NAME = os.environ.get("DDEX_SENDER_NAME", "New Detroit Music LLC")
+
+    def __init__(self, sender_dpid: Optional[str] = None,
+                 sender_name: Optional[str] = None):
         """Initialize the DDEX Generator.
 
         Args:
             sender_dpid: DDEX Party ID for the sender (distributor).
+                         Defaults to DDEX_SENDER_DPID env var or the registered indiiOS DPID.
             sender_name: Human-readable sender name.
+                         Defaults to DDEX_SENDER_NAME env var or 'New Detroit Music LLC'.
         """
-        self.sender_dpid = sender_dpid
-        self.sender_name = sender_name
+        self.sender_dpid = sender_dpid or self.DEFAULT_SENDER_DPID
+        self.sender_name = sender_name or self.DEFAULT_SENDER_NAME
 
     def _create_element(self, parent: Optional[ET.Element], tag: str,
                         text: Optional[str] = None, **attrs) -> ET.Element:
