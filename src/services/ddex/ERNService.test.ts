@@ -37,6 +37,7 @@ describe('ERNService', () => {
 
     it('should generate a valid ERN object from metadata', async () => {
         const result = await ernService.generateERN(MOCK_METADATA);
+        console.log('RESULT', result);
         expect(result.success).toBe(true);
         expect(result.xml).toBeDefined();
         // Basic XML check

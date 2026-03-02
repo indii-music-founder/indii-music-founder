@@ -10,7 +10,7 @@ describe('Finance Agent Integration', () => {
 
         const data = result.data;
         expect(data.status).toBe('READY_FOR_AUDIT');
-        expect(data.distributor).toBe('DistroKid');
+        expect(data.distributor).toBe('DistroKid (Migration Only)');
         expect(data.party_id).toBeDefined();
     });
 

@@ -62,6 +62,21 @@ vi.mock('../core/components/RightPanel', () => ({ default: () => <div>RightPanel
 vi.mock('../core/components/CommandBar', () => ({ default: () => <div>CommandBar</div> }));
 vi.mock('../core/components/MobileNav', () => ({ MobileNav: () => <div>MobileNav</div> }));
 
+// Silence background async services causing fetch overlap
+vi.mock('../core/logger/Logger', () => ({
+    logger: {
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn(),
+        debug: vi.fn(),
+    }
+}));
+vi.mock('../services/StorageService', () => ({
+    StorageService: {
+        initialize: vi.fn()
+    }
+}));
+
 
 describe('Router Context Verification', () => {
     it('renders App inside BrowserRouter without crashing', async () => {
