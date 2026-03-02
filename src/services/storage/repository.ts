@@ -143,13 +143,13 @@ export async function getAssetFromStorage(id: string): Promise<string> {
 
 interface Workflow {
     id: string;
-    [key: string]: any; // Allow other properties
+    [key: string]: unknown; // Allow other properties
 }
 
 interface CanvasState {
     id: string;
     json: string;
-    updatedAt: any;
+    updatedAt: string | number | Date | unknown;
 }
 
 // --- User Profile ---

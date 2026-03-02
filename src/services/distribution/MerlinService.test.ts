@@ -43,7 +43,7 @@ vi.mock('./DistributionSyncService', () => ({
 
 describe('MerlinService', () => {
     const mockReleaseId = 'release-123';
-    const mockRelease: any = {
+    const mockRelease = {
         id: mockReleaseId,
         orgId: 'org-1',
         status: 'DISTRIBUTED',
@@ -60,9 +60,9 @@ describe('MerlinService', () => {
             coverArtUrl: 'https://example.com/art.jpg',
             tracks: []
         },
-        createdAt: { seconds: 1234567890, nanoseconds: 0 } as any,
-        updatedAt: { seconds: 1234567890, nanoseconds: 0 } as any
-    };
+        createdAt: '2026-02-20T00:00:00.000Z',
+        updatedAt: '2026-02-20T00:00:00.000Z'
+    } as unknown as DDEXReleaseRecord;
 
     beforeEach(async () => {
         vi.clearAllMocks();

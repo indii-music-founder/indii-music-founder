@@ -5,7 +5,7 @@
 export class AudioService {
     private static instance: AudioService;
     private isEnabled: boolean = true;
-    private queue: Array<{ data: string; mimeType: string; resolve: () => void; reject: (err: any) => void }> = [];
+    private queue: Array<{ data: string; mimeType: string; resolve: () => void; reject: (err: unknown) => void }> = [];
     private isProcessing: boolean = false;
     private currentAudio: HTMLAudioElement | null = null;
 

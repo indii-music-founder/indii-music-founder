@@ -1,4 +1,4 @@
- 
+
 import * as DistributionTypes from './distribution';
 
 export interface AuthTokenData {
@@ -35,6 +35,7 @@ export interface ElectronAPI {
     audio: {
         analyze: (filePath: string) => Promise<AudioAnalysisResult>;
         getMetadata: (hash: string) => Promise<unknown>;
+        transcode: (options: unknown) => Promise<{ success: boolean; error?: string }>;
     };
 
     // Network (Main Process Fetching)
@@ -44,7 +45,7 @@ export interface ElectronAPI {
 
     // SFTP (Distribution)
     sftp: {
-        connect: (config: any) => Promise<{ success: boolean; error?: string }>;
+        connect: (config: unknown) => Promise<{ success: boolean; error?: string }>;
         uploadDirectory: (localPath: string, remotePath: string) => Promise<{ success: boolean; files?: string[]; error?: string }>;
         disconnect: () => Promise<{ success: boolean }>;
         isConnected: () => Promise<boolean>;
@@ -61,6 +62,10 @@ export interface ElectronAPI {
         proxyZero?: (url: string, payload: unknown, headers: Record<string, string>) => Promise<{ success: boolean; status?: number; data?: unknown; error?: string }>;
     };
 
+    sidecar?: {
+        restart: () => void;
+    };
+
     // Video (Local Asset Management)
     video: {
         saveAsset: (url: string, filename: string) => Promise<string>;
@@ -69,14 +74,14 @@ export interface ElectronAPI {
 
     // Credentials
     credentials: {
-        save: (id: string, creds: any) => Promise<void>;
-        get: (id: string) => Promise<any | null>;
+        save: (id: string, creds: unknown) => Promise<void>;
+        get: (id: string) => Promise<unknown | null>;
         delete: (id: string) => Promise<boolean>;
     };
 
     // Distribution (DDEX Packaging)
     distribution: {
-        stageRelease: (releaseId: string, files: { type: 'content' | 'path'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
+        stageRelease: (releaseId: string, files: { type: 'content' | 'path' | 'metadata'; data: string; name: string }[]) => Promise<DistributionTypes.PackageResponse>;
         runForensics: (filePath: string) => Promise<DistributionTypes.IPCResponse<DistributionTypes.ForensicsReport>>;
         packageITMSP: (releaseId: string) => Promise<DistributionTypes.PackageResponse>;
         calculateTax: (data: DistributionTypes.TaxCalculationData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.TaxReport>>;
@@ -91,6 +96,8 @@ export interface ElectronAPI {
         generateBWARM: (data: DistributionTypes.BWarmData) => Promise<DistributionTypes.CSVResponse<unknown>>;
         checkMerlinStatus: (data: DistributionTypes.MerlinCheckData) => Promise<DistributionTypes.IPCResponse<DistributionTypes.MerlinReport>>;
         transmit: (config: DistributionTypes.SFTPConfig) => Promise<DistributionTypes.IPCResponse<DistributionTypes.SFTPReport>>;
+        listRemoteFiles: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string[]>;
+        downloadRemoteFile: (config: Omit<DistributionTypes.SFTPConfig, 'localPath'>) => Promise<string>;
     };
     on: (channel: string, callback: (...args: unknown[]) => void) => () => void;
 }

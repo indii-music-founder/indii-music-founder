@@ -41,7 +41,7 @@ export interface ReleaseDeploymentDocument extends BaseDocument {
     artist?: string;
     coverArtUrl?: string;
     // Support for distribution/types/distributor.ts types indirectly
-    errors?: any[];
+    errors?: unknown[];
     warnings?: string[];
     territories?: string[];
     projectedReleaseDate?: string;

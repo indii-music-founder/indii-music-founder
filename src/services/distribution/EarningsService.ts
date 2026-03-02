@@ -1,12 +1,12 @@
 import { db } from '@/services/firebase';
-import { collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, limit, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, limit, doc, setDoc, FieldValue } from 'firebase/firestore';
 import type { DistributorEarnings } from './types/distributor';
 import type { DateRange } from '@/services/ddex/types/common';
 
 export interface EarningsRecord extends Omit<DistributorEarnings, 'lastUpdated'> {
     id?: string;
-    createdAt: any; // serverTimestamp
-    lastUpdated: any; // serverTimestamp
+    createdAt: FieldValue | Date; // serverTimestamp
+    lastUpdated: FieldValue | Date; // serverTimestamp
 }
 
 export class EarningsService {
@@ -24,7 +24,7 @@ export class EarningsService {
             );
 
             if (period) {
-                q = query(q, 
+                q = query(q,
                     where('period.startDate', '==', period.startDate),
                     where('period.endDate', '==', period.endDate)
                 );
@@ -53,13 +53,13 @@ export class EarningsService {
      */
     async getAllEarnings(distributorId: string, period?: DateRange): Promise<DistributorEarnings[]> {
         try {
-             let q = query(
+            let q = query(
                 collection(db, this.COLLECTION),
                 where('distributorId', '==', distributorId)
             );
 
             if (period) {
-                q = query(q, 
+                q = query(q,
                     where('period.startDate', '>=', period.startDate),
                     where('period.endDate', '<=', period.endDate)
                 );

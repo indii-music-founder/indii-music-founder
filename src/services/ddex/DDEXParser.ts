@@ -297,7 +297,7 @@ class DDEXParserImpl {
   private parseResourceList(resourceList: Record<string, unknown>) {
     if (!resourceList) return [];
 
-    const resources: any[] = [];
+    const resources: Record<string, any>[] = [];
 
     // Parse SoundRecordings
     if (resourceList.SoundRecording) {
@@ -305,8 +305,8 @@ class DDEXParserImpl {
         ? resourceList.SoundRecording
         : [resourceList.SoundRecording];
 
-      recordings.forEach((r: any) => {
-        const details = r.SoundRecordingDetailsByTerritory;
+      recordings.forEach((r: Record<string, any>) => {
+        const details = r.SoundRecordingDetailsByTerritory as Record<string, any>;
         resources.push({
           resourceReference: r['@_ResourceReference'],
           resourceType: 'SoundRecording',
@@ -337,7 +337,7 @@ class DDEXParserImpl {
         ? resourceList.Image
         : [resourceList.Image];
 
-      images.forEach((r: any) => {
+      images.forEach((r: Record<string, any>) => {
         resources.push({
           resourceReference: r['@_ResourceReference'],
           resourceType: 'Image',
@@ -351,7 +351,7 @@ class DDEXParserImpl {
       });
     }
 
-    return resources;
+    return resources as ERNMessage['resourceList'];
   }
 
   private buildResourceList(resources: ERNMessage['resourceList']) {

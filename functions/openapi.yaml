@@ -1,0 +1,139 @@
+openapi: 3.0.3
+info:
+  title: indiiOS Cloud Functions API
+  description: API specifications for indiiOS Firebase Cloud Functions, handling GenAI, video rendering, subscriptions, and external service orchestration.
+  version: 0.1.0-beta.2
+  contact:
+    name: indiiOS Support
+    url: https://indiios.com
+
+servers:
+  - url: https://us-central1-{projectId}.cloudfunctions.net
+    description: Production Environment
+  - url: http://localhost:5001/{projectId}/us-central1
+    description: Local Emulator
+
+paths:
+  /triggerVideoJob:
+    post:
+      summary: Trigger Video Generation Job (Veo)
+      description: Queues a single long-form video generation task.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    prompt:
+                      type: string
+                    jobId:
+                      type: string
+                    orgId:
+                      type: string
+                    model:
+                      type: string
+                    durationSeconds:
+                      type: number
+                    resolution:
+                      type: string
+                    generateAudio:
+                      type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                      message:
+                        type: string
+
+  /generateImageV3:
+    post:
+      summary: Generate Image (Gemini 3 Pro)
+      description: Synchronous image generation using advanced models.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    prompt:
+                      type: string
+                    resolution:
+                      type: string
+                      enum: [low, medium, high, ultra_high]
+                    aspectRatio:
+                      type: string
+      responses:
+        '200':
+          description: OK
+
+  /generateSpeech:
+    post:
+      summary: Text-to-Speech Generation
+      description: Generates audio output from text using Gemini TTS.
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: object
+                  properties:
+                    text:
+                      type: string
+                    voice:
+                      type: string
+                    model:
+                      type: string
+      responses:
+        '200':
+          description: Base64 audio returned
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      audioContent:
+                        type: string
+
+  /healthCheck:
+    post:
+      summary: System Health Check
+      description: Pings Firestore and verifies API health.
+      responses:
+        '200':
+          description: OK
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT (Firebase Custom Token)

@@ -138,11 +138,11 @@ export class ERNMapper {
 
     private static formatDuration(duration?: string): string | undefined {
         if (!duration) return undefined;
-        
+
         // Handle HH:MM:SS or MM:SS
         const parts = duration.split(':').map(Number);
         let h = 0, m = 0, s = 0;
-        
+
         if (parts.length === 3) {
             [h, m, s] = parts;
         } else if (parts.length === 2) {
@@ -150,12 +150,12 @@ export class ERNMapper {
         } else {
             s = parts[0] || 0;
         }
-        
+
         let iso = 'PT';
         if (h > 0) iso += `${h}H`;
         if (m > 0 || h > 0) iso += `${m}M`;
         iso += `${s}S`;
-        
+
         return iso;
     }
 
@@ -221,7 +221,7 @@ export class ERNMapper {
 
             // Link TechnicalDetails from Assets
             if (assets && assets.audioFiles && assets.audioFiles.length > index) {
-                const matchedAsset = assets.audioFiles.find((a: any) => a.trackIndex === index) || assets.audioFiles[index];
+                const matchedAsset = assets.audioFiles.find((a: NonNullable<ReleaseAssets['audioFiles']>[number]) => a.trackIndex === index) || assets.audioFiles[index];
 
                 if (matchedAsset) {
                     const ext = matchedAsset.format || 'wav';
