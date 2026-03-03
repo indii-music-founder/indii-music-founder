@@ -59,6 +59,7 @@ export const departmentCssVars = {
     video: '--color-dept-creative',        // Video shares Creative
     agent: '--color-dept-creative',        // Agent shares Creative
     'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative
+    audio: '--color-dept-creative',             // Audio Studio shares Creative
     onboarding: '--color-dept-creative',   // Onboarding shares Creative
     workflow: '--color-dept-social',       // Workflow shares Social
     showroom: '--color-dept-brand',        // Showroom shares Brand
@@ -203,6 +204,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
     },
     video: {
         // Video shares Creative's purple aesthetic
+        text: 'text-dept-creative',
+        bg: 'bg-dept-creative/10',
+        border: 'border-dept-creative',
+        ring: 'focus-within:ring-dept-creative/50',
+        hoverText: 'hover:text-dept-creative',
+        hoverBg: 'hover:bg-dept-creative/5',
+        cssVar: '--color-dept-creative',
+    },
+    audio: {
+        // Audio Studio shares Creative's purple aesthetic
         text: 'text-dept-creative',
         bg: 'bg-dept-creative/10',
         border: 'border-dept-creative',
