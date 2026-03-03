@@ -6,7 +6,7 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import { WhiskService } from '../../services/WhiskService';
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
-import { Loader2, Layout, Maximize2, Settings, Shuffle, ChevronDown, ChevronUp, Hash } from 'lucide-react';
+import { Loader2, Layout, Maximize2, Settings, Shuffle, ChevronDown, ChevronUp, Hash, Music, Trash2 } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 // Components
@@ -231,7 +231,6 @@ export default function VideoWorkflow() {
     // Set initial active video
     useEffect(() => {
         if (selectedItem?.type === 'video') {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setActiveVideo(selectedItem);
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
@@ -308,6 +307,7 @@ export default function VideoWorkflow() {
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     firstFrame: videoInputs.firstFrame?.url,
                     generateAudio: studioControls.generateAudio,
+                    inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinking: studioControls.thinking,
                     model: studioControls.model,
                     onProgress: (current, total) => {
@@ -338,6 +338,7 @@ export default function VideoWorkflow() {
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
                     generateAudio: studioControls.generateAudio,
+                    inputAudio: useVideoEditorStore.getState().inputAudio || undefined,
                     thinking: studioControls.thinking,
                     model: studioControls.model
                 });
@@ -399,15 +400,29 @@ export default function VideoWorkflow() {
             >
 
                 {/* Director Prompt Bar (Top Overlay) */}
-                <DirectorPromptBar
-                    prompt={localPrompt}
-                    onPromptChange={(val) => {
-                        setLocalPrompt(val);
-                        setPrompt(val); // Sync real-time
-                    }}
-                    onGenerate={handleGenerate}
-                    isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
-                />
+                <div className="relative z-50">
+                    <DirectorPromptBar
+                        prompt={localPrompt}
+                        onPromptChange={(val) => {
+                            setLocalPrompt(val);
+                            setPrompt(val); // Sync real-time
+                        }}
+                        onGenerate={handleGenerate}
+                        isGenerating={jobStatus === 'queued' || jobStatus === 'processing'}
+                    />
+                    {useVideoEditorStore.getState().inputAudio && (
+                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-2 px-3 py-1 bg-purple-500/90 backdrop-blur-md rounded-full border border-purple-400/50 shadow-lg shadow-purple-500/20 animate-in fade-in zoom-in duration-300">
+                            <Music className="w-3 h-3 text-white animate-pulse" />
+                            <span className="text-[10px] font-bold text-white uppercase tracking-tighter">Custom Audio Attached</span>
+                            <button
+                                onClick={() => useVideoEditorStore.getState().setInputAudio(null)}
+                                className="ml-1 hover:text-red-200 transition-colors"
+                            >
+                                <Trash2 className="w-3 h-3" />
+                            </button>
+                        </div>
+                    )}
+                </div>
 
                 {/* Central Preview Stage (Memoized) */}
                 <VideoStage

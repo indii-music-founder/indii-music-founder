@@ -4,6 +4,7 @@ import ffmpegPath from 'ffmpeg-static';
 import ffprobePath from 'ffprobe-static';
 import crypto from 'crypto';
 import fs from 'fs';
+import path from 'path';
 import { apiService } from '../services/APIService';
 import { AudioAnalyzeSchema, AudioLookupSchema } from '../utils/validation';
 import { validateSafeAudioPath } from '../utils/file-security';
@@ -111,6 +112,79 @@ export function registerAudioHandlers() {
                 return { success: false, error: `Validation Error: ${error.errors[0].message}` };
             }
             throw error;
+        }
+    });
+
+    ipcMain.handle('audio:transcode', async (event, options) => {
+        const { inputPath, outputPath, targetFormat, bitRate, sampleRate } = options;
+        console.log(`[Main] Transcoding: ${inputPath} -> ${outputPath} (${targetFormat})`);
+
+        try {
+            validateSender(event);
+
+            // Security: Ensure output directory exists
+            const outputDir = path.dirname(outputPath);
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir, { recursive: true });
+            }
+
+            return new Promise((resolve) => {
+                let command = ffmpeg(inputPath)
+                    .toFormat(targetFormat);
+
+                if (bitRate) command = command.audioBitrate(bitRate);
+                if (sampleRate) command = command.audioFrequency(sampleRate);
+
+                command
+                    .on('end', () => {
+                        console.log('[Main] Transcoding finished');
+                        resolve({ success: true, path: outputPath });
+                    })
+                    .on('error', (err) => {
+                        console.error('[Main] Transcoding failed:', err);
+                        resolve({ success: false, error: err.message });
+                    })
+                    .save(outputPath);
+            });
+        } catch (error) {
+            console.error('[Main] Transcode setup failed:', error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
+        }
+    });
+
+    ipcMain.handle('audio:master', async (event, options) => {
+        const { inputPath, outputPath, style } = options;
+        console.log(`[Main] Mastering: ${inputPath} -> ${outputPath} (Style: ${style})`);
+
+        try {
+            validateSender(event);
+
+            // Lazy-load mastering filters to avoid circular dependency
+            const { MasteringService } = await import('../../src/services/audio/MasteringService');
+            const filter = MasteringService.getFilterForStyle(style);
+
+            // Ensure output directory exists
+            const outputDir = path.dirname(outputPath);
+            if (!fs.existsSync(outputDir)) {
+                fs.mkdirSync(outputDir, { recursive: true });
+            }
+
+            return new Promise((resolve) => {
+                ffmpeg(inputPath)
+                    .audioFilters(filter)
+                    .on('end', () => {
+                        console.log('[Main] Mastering finished');
+                        resolve({ success: true, path: outputPath });
+                    })
+                    .on('error', (err) => {
+                        console.error('[Main] Mastering failed:', err);
+                        resolve({ success: false, error: err.message });
+                    })
+                    .save(outputPath);
+            });
+        } catch (error) {
+            console.error('[Main] Audio mastering setup failed:', error);
+            return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     });
 }

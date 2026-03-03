@@ -2,13 +2,13 @@
  * AudioWorkspace - Unified Audio Generation Module
  * 
  * Tabs: Generate (SoundFX/Music/TTS), Library
- * Part of Phase 1: Audio Generation in the master completion plan.
+ * Features: AI Generation, Audio Analysis, Waveform Display, Persistence
  */
-import React, { useState, useRef, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
     Music, Mic, Wand2, Play, Pause, Download, Loader2,
-    Volume2, Hash, Clock, Sparkles, AudioLines,
-    RefreshCw, Trash2, Search, Filter, History
+    Volume2, Clock, Sparkles, AudioLines,
+    RefreshCw, Trash2, Search, Filter, History, Clapperboard
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
@@ -20,6 +20,8 @@ import {
     TTS_VOICE_PRESETS,
 } from '@/services/audio/AudioGenerationService';
 import { type AudioMetadata } from '@/services/audio/AudioPersistenceService';
+import { WaveformPlayer } from './components/WaveformPlayer';
+import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
 
 // ============================================================================
 // Types
@@ -29,7 +31,7 @@ type AudioTab = 'generate' | 'library';
 type GenerateMode = 'soundfx' | 'music' | 'tts';
 
 // ============================================================================
-// Genre / Mood Presets
+// Constants
 // ============================================================================
 
 const GENRE_PRESETS = [
@@ -52,8 +54,11 @@ const AudioWorkspace: React.FC = () => {
         generatedAssets,
         fetchAudioLibrary,
         isAudioLoading,
-        deleteAudioAsset
+        deleteAudioAsset,
+        setModule
     } = useStore();
+
+    const setInputAudio = useVideoEditorStore(state => state.setInputAudio);
 
     // Navigation
     const [activeTab, setActiveTab] = useState<AudioTab>('generate');
@@ -62,29 +67,23 @@ const AudioWorkspace: React.FC = () => {
     // Generation state
     const [isGenerating, setIsGenerating] = useState(false);
     const [prompt, setPrompt] = useState('');
-    const [autoAnalyze, setAutoAnalyze] = useState(false);
+    const [autoAnalyze, setAutoAnalyze] = useState(true);
+    const [currentResult, setCurrentResult] = useState<AudioGenerationResult | null>(null);
 
-    // SoundFX controls
+    // Params
     const [sfxDuration, setSfxDuration] = useState(5);
-
-    // Music controls
     const [musicGenre, setMusicGenre] = useState('Electronic');
     const [musicMood, setMusicMood] = useState('Energetic');
     const [musicTempo, setMusicTempo] = useState<'slow' | 'medium' | 'fast'>('medium');
     const [musicDuration, setMusicDuration] = useState(30);
-
-    // TTS controls
     const [ttsText, setTtsText] = useState('');
     const [ttsVoice, setTtsVoice] = useState<TTSVoicePreset>('Kore');
     const [ttsSpeed, setTtsSpeed] = useState(1.0);
 
-    // Playback
-    const [playingId, setPlayingId] = useState<string | null>(null);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
-
-    // Library Filter
+    // Library State
     const [searchQuery, setSearchQuery] = useState('');
     const [typeFilter, setTypeFilter] = useState<AudioGenerationType | 'all'>('all');
+    const [playingId, setPlayingId] = useState<string | null>(null);
 
     // Initial load
     useEffect(() => {
@@ -92,35 +91,30 @@ const AudioWorkspace: React.FC = () => {
     }, [fetchAudioLibrary]);
 
     // ========================================================================
-    // Generation Handlers
+    // Handlers
     // ========================================================================
 
     const handleGenerate = useCallback(async () => {
         if (isGenerating) return;
 
         setIsGenerating(true);
+        setCurrentResult(null);
+
         try {
+            let res: AudioGenerationResult;
+
             switch (generateMode) {
                 case 'soundfx':
-                    if (!prompt.trim()) {
-                        toast.error('Enter a sound description.');
-                        setIsGenerating(false);
-                        return;
-                    }
-                    await audioGenerationService.generateSoundFX({
+                    if (!prompt.trim()) throw new Error('Enter a sound description.');
+                    res = await audioGenerationService.generateSoundFX({
                         prompt: prompt.trim(),
                         durationSeconds: sfxDuration,
                         analyze: autoAnalyze,
                     });
                     break;
-
                 case 'music':
-                    if (!prompt.trim()) {
-                        toast.error('Enter a music description.');
-                        setIsGenerating(false);
-                        return;
-                    }
-                    await audioGenerationService.generateMusic({
+                    if (!prompt.trim()) throw new Error('Enter a music description.');
+                    res = await audioGenerationService.generateMusic({
                         prompt: prompt.trim(),
                         genre: musicGenre,
                         mood: musicMood,
@@ -129,100 +123,60 @@ const AudioWorkspace: React.FC = () => {
                         analyze: autoAnalyze,
                     });
                     break;
-
                 case 'tts':
-                    if (!ttsText.trim()) {
-                        toast.error('Enter text to speak.');
-                        setIsGenerating(false);
-                        return;
-                    }
-                    await audioGenerationService.generateTTS({
+                    if (!ttsText.trim()) throw new Error('Enter text to speak.');
+                    res = await audioGenerationService.generateTTS({
                         text: ttsText.trim(),
                         voicePreset: ttsVoice,
                         speed: ttsSpeed,
                         analyze: autoAnalyze,
                     });
                     break;
-
                 default:
                     throw new Error(`Unknown mode: ${generateMode}`);
             }
 
-            toast.success(`${generateMode === 'soundfx' ? 'Sound effect' : generateMode === 'music' ? 'Music track' : 'Speech'} generated!`);
-
-        } catch (error) {
-            console.error('[AudioWorkspace] Generation failed:', error);
-            toast.error(error instanceof Error ? error.message : 'Audio generation failed.');
+            setCurrentResult(res);
+            toast.success('Generation complete!');
+        } catch (error: any) {
+            console.error('[AudioWorkspace] Error:', error);
+            toast.error(error.message || 'Generation failed');
         } finally {
             setIsGenerating(false);
         }
     }, [isGenerating, generateMode, prompt, sfxDuration, musicGenre, musicMood, musicTempo, musicDuration, ttsText, ttsVoice, ttsSpeed, autoAnalyze, toast]);
 
-    // ========================================================================
-    // Playback & Library Handlers
-    // ========================================================================
+    const handleShipToVideo = useCallback((asset: AudioMetadata | AudioGenerationResult) => {
+        const url = asset.storageUrl || (asset as any).dataUri;
+        if (!url) return;
 
-    const togglePlay = useCallback((item: AudioMetadata | AudioGenerationResult) => {
-        const id = 'id' in item ? item.id : (item as any).id;
-        const uri = 'storageUrl' in item ? item.storageUrl : (item as any).dataUri;
+        setInputAudio(url);
+        setModule('video');
+        toast.info('Audio sent to Video Studio');
+    }, [setInputAudio, setModule, toast]);
 
-        if (!uri) {
-            toast.error('Audio source not available.');
-            return;
-        }
-
-        if (playingId === id) {
-            audioRef.current?.pause();
-            setPlayingId(null);
-            return;
-        }
-
-        if (audioRef.current) {
-            audioRef.current.pause();
-        }
-
-        const audio = new Audio(uri);
-        audioRef.current = audio;
-        audio.onended = () => setPlayingId(null);
-        audio.onerror = () => {
-            setPlayingId(null);
-            toast.error('Playback failed.');
-        };
-        audio.play();
-        setPlayingId(id);
-    }, [playingId, toast]);
-
-    const handleDownload = useCallback((item: AudioMetadata | AudioGenerationResult) => {
-        const id = 'id' in item ? item.id : (item as any).id;
-        const uri = 'storageUrl' in item ? item.storageUrl : (item as any).dataUri;
-        const mimeType = item.mimeType;
-
-        if (!uri) return;
-
-        const link = document.createElement('a');
-        link.href = uri;
-        const ext = mimeType.includes('wav') ? 'wav' : mimeType.includes('mp3') ? 'mp3' : 'audio';
-        link.download = `${item.type}_${id.substring(0, 8)}.${ext}`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        toast.success('Downloaded!');
-    }, [toast]);
-
-    const handleDelete = useCallback(async (id: string) => {
-        if (!confirm('Are you sure you want to delete this audio asset?')) return;
-
+    const handleDelete = async (id: string) => {
+        if (!confirm('Are you sure you want to delete this asset?')) return;
         try {
             await deleteAudioAsset(id);
-            if (playingId === id) {
-                audioRef.current?.pause();
-                setPlayingId(null);
-            }
-            toast.success('Asset deleted.');
-        } catch (err) {
-            toast.error('Failed to delete asset.');
+            if (playingId === id) setPlayingId(null);
+            toast.success('Asset deleted');
+        } catch (error) {
+            toast.error('Delete failed');
         }
-    }, [deleteAudioAsset, playingId, toast]);
+    };
+
+    const handleDownload = (asset: AudioMetadata | AudioGenerationResult) => {
+        const url = asset.storageUrl || (asset as any).dataUri;
+        if (!url) return;
+
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${asset.type}_${asset.id.slice(0, 8)}.${asset.mimeType.split('/')[1] || 'wav'}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
 
     // ========================================================================
     // Filtering
@@ -236,270 +190,279 @@ const AudioWorkspace: React.FC = () => {
     });
 
     // ========================================================================
-    // Mode Label Helpers
+    // Render Helpers
     // ========================================================================
 
-    const modeConfig: Record<GenerateMode, { icon: React.ReactNode; label: string; color: string; bgColor: string; accentColor: string }> = {
-        soundfx: { icon: <Wand2 size={14} />, label: 'Sound FX', color: 'text-amber-400', bgColor: 'bg-amber-500/10 border-amber-500/20', accentColor: 'amber' },
-        music: { icon: <Music size={14} />, label: 'Music', color: 'text-purple-400', bgColor: 'bg-purple-500/10 border-purple-500/20', accentColor: 'purple' },
-        tts: { icon: <Mic size={14} />, label: 'Text to Speech', color: 'text-emerald-400', bgColor: 'bg-emerald-500/10 border-emerald-500/20', accentColor: 'emerald' },
-    };
-
-    const typeLabel = (type: AudioGenerationType | string) => {
-        switch (type) {
-            case 'soundfx': return { label: 'SFX', color: 'bg-amber-500/20 text-amber-300' };
-            case 'music': return { label: 'MUSIC', color: 'bg-purple-500/20 text-purple-300' };
-            case 'tts': return { label: 'TTS', color: 'bg-emerald-500/20 text-emerald-300' };
-            default: return { label: 'AUDIO', color: 'bg-gray-500/20 text-gray-300' };
-        }
-    };
-
-    // ========================================================================
-    // Render
-    // ========================================================================
+    const ModeCard = ({ mode, label, icon, current }: { mode: GenerateMode, label: string, icon: React.ReactNode, current: boolean }) => (
+        <button
+            onClick={() => setGenerateMode(mode)}
+            className={`flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all gap-2 w-full ${current
+                ? 'bg-purple-500/10 border-purple-500 text-purple-400'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10'
+                }`}
+        >
+            <div className={`p-3 rounded-xl ${current ? 'bg-purple-500/20 text-purple-400' : 'bg-white/5'}`}>
+                {icon}
+            </div>
+            <span className="text-sm font-medium">{label}</span>
+        </button>
+    );
 
     return (
-        <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-blue-500/20 border border-purple-500/20 text-purple-400">
-                        <AudioLines size={20} />
+        <div className="flex flex-col h-full bg-black text-white relative overflow-hidden">
+            {/* Header / Tabs */}
+            <div className="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-black/50 backdrop-blur-xl z-10">
+                <div className="flex items-center gap-4">
+                    <div className="bg-purple-500/20 p-2.5 rounded-xl">
+                        <AudioLines className="text-purple-400 w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-lg font-bold tracking-tight">Audio Studio</h1>
-                        <p className="text-[10px] text-gray-500 uppercase tracking-widest">AI-Powered Audio Generation</p>
+                        <h1 className="text-xl font-bold tracking-tight">Audio Studio</h1>
+                        <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">Phase 1 / Generation</p>
                     </div>
                 </div>
-                {/* Tab Navigation */}
-                <div className="flex gap-1 bg-white/5 rounded-lg p-1">
-                    {(['generate', 'library'] as AudioTab[]).map(tab => (
-                        <button
-                            key={tab}
-                            onClick={() => setActiveTab(tab)}
-                            className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${activeTab === tab
-                                ? 'bg-white/10 text-white shadow-sm'
-                                : 'text-gray-500 hover:text-gray-300'
-                                }`}
-                        >
-                            {tab}
-                        </button>
-                    ))}
+
+                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                    <button
+                        onClick={() => setActiveTab('generate')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'generate' ? 'bg-purple-500 shadow-lg text-white' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        Generate
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('library')}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'library' ? 'bg-purple-500 shadow-lg text-white' : 'text-gray-400 hover:text-white'}`}
+                    >
+                        Library ({generatedAssets.length})
+                    </button>
                 </div>
             </div>
 
-            {/* Content Area */}
-            <div className="flex-1 flex overflow-hidden">
+            <main className="flex-1 overflow-y-auto custom-scrollbar p-8">
                 {activeTab === 'generate' ? (
-                    <div className="flex-1 flex">
-                        {/* Left Panel: Controls */}
-                        <div className="w-[380px] border-r border-white/5 flex flex-col overflow-y-auto custom-scrollbar">
-                            {/* Mode Selector */}
-                            <div className="p-4 border-b border-white/5">
-                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-2 block text-white/40">Generation Mode</label>
-                                <div className="grid grid-cols-3 gap-1.5">
-                                    {(Object.entries(modeConfig) as [GenerateMode, typeof modeConfig[GenerateMode]][]).map(([mode, config]) => (
-                                        <button
-                                            key={mode}
-                                            onClick={() => setGenerateMode(mode)}
-                                            className={`flex flex-col items-center gap-1 p-3 rounded-xl border transition-all ${generateMode === mode
-                                                ? `${config.bgColor} ${config.color}`
-                                                : 'border-white/5 text-gray-500 hover:border-white/10 hover:text-gray-300'
-                                                }`}
-                                        >
-                                            {config.icon}
-                                            <span className="text-[9px] font-bold uppercase tracking-wider">{config.label}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
+                    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        {/* Mode Selection */}
+                        <div className="grid grid-cols-3 gap-4">
+                            <ModeCard
+                                mode="soundfx"
+                                label="Sound FX"
+                                icon={<Wand2 className="w-6 h-6" />}
+                                current={generateMode === 'soundfx'}
+                            />
+                            <ModeCard
+                                mode="music"
+                                label="Music"
+                                icon={<Music className="w-6 h-6" />}
+                                current={generateMode === 'music'}
+                            />
+                            <ModeCard
+                                mode="tts"
+                                label="Speech"
+                                icon={<Mic className="w-6 h-6" />}
+                                current={generateMode === 'tts'}
+                            />
+                        </div>
 
-                            {/* Mode-Specific Controls */}
-                            <div className="p-4 space-y-4 flex-1">
-                                {generateMode === 'soundfx' && (
-                                    <>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Describe the sound</label>
+                        {/* Controls Container */}
+                        <div className="bg-white/5 border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+                            <div className="p-8 space-y-6">
+                                {/* Prompt Area */}
+                                {generateMode !== 'tts' ? (
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Concept / Prompt</label>
+                                        <textarea
+                                            value={prompt}
+                                            onChange={(e) => setPrompt(e.target.value)}
+                                            placeholder={generateMode === 'soundfx' ? "Describe a sound (e.g., Heavy rain on a tin roof with distant thunder)..." : "Describe the music (e.g., Lofi hip hop beat with a smooth saxophone melody)..."}
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[120px] transition-all"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Speech Text</label>
                                             <textarea
-                                                value={prompt}
-                                                onChange={e => setPrompt(e.target.value)}
-                                                placeholder="e.g. Cinematic whoosh transitioning to a deep bass drop..."
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white placeholder:text-white/20 focus:border-amber-500/40 focus:outline-none resize-none"
-                                                rows={4}
+                                                value={ttsText}
+                                                onChange={(e) => setTtsText(e.target.value)}
+                                                placeholder="Enter the text you want to convert to speech..."
+                                                className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[150px] transition-all"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-2">
-                                                <Clock size={10} /> Duration: {sfxDuration}s
-                                            </label>
-                                            <input
-                                                type="range" min={1} max={30}
-                                                value={sfxDuration}
-                                                onChange={e => setSfxDuration(Number(e.target.value))}
-                                                className="w-full accent-amber-500"
-                                            />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Voice Profile</label>
+                                                <select
+                                                    value={ttsVoice}
+                                                    onChange={(e) => setTtsVoice(e.target.value as any)}
+                                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50"
+                                                >
+                                                    {TTS_VOICE_PRESETS.map(v => <option key={v.id} value={v.id} className="bg-gray-900">{v.label}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-bold text-gray-500 uppercase tracking-widest px-1">Speech Rate ({ttsSpeed}x)</label>
+                                                <input
+                                                    type="range" min="0.5" max="2.0" step="0.1"
+                                                    value={ttsSpeed} onChange={(e) => setTtsSpeed(parseFloat(e.target.value))}
+                                                    className="w-full accent-purple-500"
+                                                />
+                                            </div>
                                         </div>
-                                    </>
+                                    </div>
+                                )}
+
+                                {/* Specific Mode Settings */}
+                                {generateMode === 'soundfx' && (
+                                    <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-4 h-4 text-amber-400" />
+                                            <span className="text-sm font-medium">Duration: {sfxDuration}s</span>
+                                        </div>
+                                        <input
+                                            type="range" min="1" max="15" step="1"
+                                            value={sfxDuration} onChange={(e) => setSfxDuration(parseInt(e.target.value))}
+                                            className="w-40 accent-amber-500"
+                                        />
+                                    </div>
                                 )}
 
                                 {generateMode === 'music' && (
-                                    <>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Music Direction</label>
-                                            <textarea
-                                                value={prompt}
-                                                onChange={e => setPrompt(e.target.value)}
-                                                placeholder="e.g. A driving synthwave track with arpeggiated melodies..."
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-purple-500/40 focus:outline-none resize-none"
-                                                rows={3}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Genre</label>
-                                            <div className="flex flex-wrap gap-1.5">
-                                                {GENRE_PRESETS.map(g => (
-                                                    <button key={g} onClick={() => setMusicGenre(g)}
-                                                        className={`px-2.5 py-1 rounded-full text-[9px] font-bold uppercase border transition-all ${musicGenre === g ? 'bg-purple-500/20 text-purple-300 border-purple-500/30' : 'border-white/10 text-white/40 hover:text-white'}`}>{g}</button>
-                                                ))}
+                                    <div className="space-y-4">
+                                        <div className="grid grid-cols-3 gap-4">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Genre</label>
+                                                <select value={musicGenre} onChange={(e) => setMusicGenre(e.target.value)} className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-sm">
+                                                    {GENRE_PRESETS.map(g => <option key={g} value={g}>{g}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Mood</label>
+                                                <select value={musicMood} onChange={(e) => setMusicMood(e.target.value)} className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-sm">
+                                                    {MOOD_PRESETS.map(m => <option key={m} value={m}>{m}</option>)}
+                                                </select>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-bold text-gray-500 uppercase ml-1">Tempo</label>
+                                                <select value={musicTempo} onChange={(e) => setMusicTempo(e.target.value as any)} className="w-full bg-black/40 border border-white/10 p-2.5 rounded-xl text-sm">
+                                                    <option value="slow">Slow</option>
+                                                    <option value="medium">Medium</option>
+                                                    <option value="fast">Fast</option>
+                                                </select>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div>
-                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Tempo</label>
-                                                <div className="flex gap-1">
-                                                    {(['slow', 'medium', 'fast'] as const).map(t => (
-                                                        <button key={t} onClick={() => setMusicTempo(t)}
-                                                            className={`flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase border transition-all ${musicTempo === t ? 'bg-white/10 text-white' : 'border-white/5 text-white/20'}`}>{t}</button>
-                                                    ))}
-                                                </div>
+                                        <div className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/10">
+                                            <div className="flex items-center gap-2 text-sm">
+                                                <Clock className="w-4 h-4 text-purple-400" />
+                                                <span>Target Length: {musicDuration}s</span>
                                             </div>
-                                            <div>
-                                                <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 flex items-center gap-1"><Clock size={10} /> {musicDuration}s</label>
-                                                <input type="range" min={15} max={60} step={5} value={musicDuration} onChange={e => setMusicDuration(Number(e.target.value))} className="w-full accent-purple-500" />
-                                            </div>
+                                            <input type="range" min="10" max="60" step="5" value={musicDuration} onChange={(e) => setMusicDuration(parseInt(e.target.value))} className="w-48 accent-purple-500" />
                                         </div>
-                                    </>
+                                    </div>
                                 )}
 
-                                {generateMode === 'tts' && (
-                                    <>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Text to Speak</label>
-                                            <textarea
-                                                value={ttsText}
-                                                onChange={e => setTtsText(e.target.value)}
-                                                placeholder="Enter text..."
-                                                className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:border-emerald-500/40 focus:outline-none resize-none"
-                                                rows={5}
-                                            />
-                                        </div>
-                                        <div>
-                                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-1.5 block">Voice</label>
-                                            <div className="grid grid-cols-2 gap-1.5">
-                                                {TTS_VOICE_PRESETS.map(v => (
-                                                    <button key={v.id} onClick={() => setTtsVoice(v.id)}
-                                                        className={`px-3 py-1.5 rounded-lg text-left border transition-all ${ttsVoice === v.id ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' : 'border-white/5 text-white/30'}`}>
-                                                        <div className="text-[9px] font-bold">{v.label}</div>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    </>
-                                )}
-
-                                {/* Auto-Analyze Toggle */}
-                                <div className="pt-2">
+                                {/* Utils */}
+                                <div className="flex items-center justify-between pt-2">
                                     <button
                                         onClick={() => setAutoAnalyze(!autoAnalyze)}
-                                        className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all ${autoAnalyze ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : 'border-white/5 text-white/40'}`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl border transition-all ${autoAnalyze ? 'bg-indigo-500/20 border-indigo-500/50 text-indigo-400' : 'bg-white/5 border-white/10 text-gray-500'}`}
                                     >
-                                        <div className="flex items-center gap-2">
-                                            <Sparkles size={14} />
-                                            <span className="text-[10px] font-bold uppercase tracking-wider">Auto-Analyze Metadata</span>
-                                        </div>
-                                        <div className={`w-6 h-3 rounded-full relative transition-colors ${autoAnalyze ? 'bg-blue-500' : 'bg-white/10'}`}>
-                                            <div className={`absolute top-0.5 w-2 h-2 rounded-full bg-white transition-all ${autoAnalyze ? 'left-3.5' : 'left-0.5'}`} />
-                                        </div>
+                                        <Sparkles className="w-4 h-4" />
+                                        <span className="text-xs font-bold uppercase tracking-wider">AI Analysis</span>
+                                    </button>
+
+                                    <button
+                                        onClick={handleGenerate}
+                                        disabled={isGenerating}
+                                        className="bg-gradient-to-r from-purple-500 to-indigo-600 px-8 py-3 rounded-2xl font-bold flex items-center gap-3 shadow-xl hover:shadow-purple-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed group"
+                                    >
+                                        {isGenerating ? (
+                                            <>
+                                                <Loader2 className="w-5 h-5 animate-spin" />
+                                                Snythesizing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                                                Generate AI Audio
+                                            </>
+                                        )}
                                     </button>
                                 </div>
                             </div>
-
-                            {/* Generate Button */}
-                            <div className="p-4 border-t border-white/5">
-                                <button
-                                    onClick={handleGenerate}
-                                    disabled={isGenerating}
-                                    className={`w-full flex items-center justify-center gap-2 py-3.5 rounded-xl font-bold text-sm uppercase tracking-wider transition-all disabled:opacity-50 ${modeConfig[generateMode].accentColor === 'amber' ? 'bg-amber-600 hover:bg-amber-500' : modeConfig[generateMode].accentColor === 'purple' ? 'bg-purple-600 hover:bg-purple-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white shadow-xl shadow-black/20`}
-                                >
-                                    {isGenerating ? <><Loader2 size={16} className="animate-spin" /> Working...</> : <><Sparkles size={16} /> Create {modeConfig[generateMode].label}</>}
-                                </button>
-                            </div>
                         </div>
 
-                        {/* Right Panel: Results History */}
-                        <div className="flex-1 flex flex-col bg-black/20 overflow-hidden">
-                            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                                <h2 className="text-[10px] font-bold text-white/40 uppercase tracking-widest flex items-center gap-2"><History size={12} /> Generation History</h2>
-                                <span className="text-[10px] text-white/20 font-medium tracking-tight">Current Session</span>
-                            </div>
-                            <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-                                {generatedAssets.length === 0 ? (
-                                    <div className="flex flex-col items-center justify-center h-full gap-4 text-white/10 opacity-30">
-                                        <AudioLines size={64} />
-                                        <div className="text-center">
-                                            <p className="text-sm font-bold uppercase tracking-widest">Awaiting Audio</p>
-                                            <p className="text-[10px] mt-2 max-w-[200px]">Define your sound parameters and start producing.</p>
+                        {/* Result Preview */}
+                        {currentResult && (
+                            <div className="bg-white/5 border border-purple-500/30 rounded-3xl p-6 space-y-6 animate-in zoom-in-95 duration-500 shadow-2xl shadow-purple-500/5">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="text-lg font-bold flex items-center gap-2">
+                                        <Sparkles className="text-purple-400 w-5 h-5" />
+                                        Generated Asset
+                                    </h3>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleShipToVideo(currentResult)}
+                                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-purple-400"
+                                            title="Ship to Video"
+                                        >
+                                            <Clapperboard className="w-5 h-5" />
+                                        </button>
+                                        <button
+                                            onClick={() => handleDownload(currentResult)}
+                                            className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
+                                        >
+                                            <Download className="w-5 h-5" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <WaveformPlayer
+                                    url={currentResult.storageUrl || (currentResult as any).dataUri}
+                                    isPlaying={playingId === currentResult.id}
+                                    onPlay={() => setPlayingId(currentResult.id)}
+                                    onPause={() => setPlayingId(null)}
+                                />
+
+                                {autoAnalyze && (
+                                    <div className="grid grid-cols-4 gap-4">
+                                        <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
+                                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">BPM</span>
+                                            <span className="text-xl font-mono text-purple-400">{currentResult.bpm || '--'}</span>
+                                        </div>
+                                        <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
+                                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Key</span>
+                                            <span className="text-xl font-mono text-indigo-400">{currentResult.key || '--'}</span>
+                                        </div>
+                                        <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
+                                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Scale</span>
+                                            <span className="text-sm font-medium text-gray-300">Chromatic</span>
+                                        </div>
+                                        <div className="bg-black/40 p-3 rounded-2xl border border-white/5">
+                                            <span className="text-[10px] text-gray-500 uppercase font-bold block mb-1">Mime</span>
+                                            <span className="text-sm font-medium text-gray-300">WAV</span>
                                         </div>
                                     </div>
-                                ) : (
-                                    generatedAssets.map(asset => {
-                                        const badge = typeLabel(asset.type);
-                                        const isPlaying = playingId === asset.id;
-                                        return (
-                                            <div key={asset.id} className={`group flex items-center gap-4 p-4 rounded-2xl border transition-all ${isPlaying ? 'bg-white/10 border-white/20 shadow-2xl' : 'bg-white/[0.03] border-white/5 hover:bg-white/[0.05] hover:border-white/10'}`}>
-                                                <button onClick={() => togglePlay(asset as any)} className={`shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all ${isPlaying ? 'bg-blue-500 text-white animate-pulse' : 'bg-white/5 text-white/40 hover:bg-blue-500 hover:text-white'}`}>
-                                                    {isPlaying ? <Pause size={20} /> : <Play size={20} className="ml-0.5" />}
-                                                </button>
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2 mb-1">
-                                                        <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${badge.color}`}>{badge.label}</span>
-                                                        <span className="text-[10px] text-white/30 font-medium tracking-tight">{~~asset.estimatedDuration}s</span>
-                                                        {asset.bpm && <span className="text-[9px] text-blue-400/60 font-bold tracking-widest uppercase items-center flex gap-1"><RefreshCw size={8} /> {asset.bpm} BPM</span>}
-                                                    </div>
-                                                    <p className="text-xs text-white/80 font-medium truncate">{asset.prompt}</p>
-                                                    <div className="flex items-center gap-4 mt-1.5 opacity-40 group-hover:opacity-100 transition-opacity">
-                                                        <button onClick={() => handleDownload(asset as any)} className="text-[9px] font-bold uppercase tracking-widest hover:text-blue-400 flex items-center gap-1 transition-colors"><Download size={10} /> Store</button>
-                                                        <button onClick={() => handleDelete(asset.id)} className="text-[9px] font-bold uppercase tracking-widest hover:text-red-400 flex items-center gap-1 transition-colors"><Trash2 size={10} /> Trash</button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        );
-                                    })
                                 )}
                             </div>
-                        </div>
+                        )}
                     </div>
                 ) : (
-                    /* Library Tab: Persistent Storage View */
-                    <div className="flex-1 flex flex-col overflow-hidden bg-black/10">
-                        {/* Library Toolbar */}
-                        <div className="p-4 border-b border-white/5 flex items-center justify-between gap-4">
-                            <div className="relative flex-1 max-w-md">
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/20" size={14} />
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        {/* Library Filter Bar */}
+                        <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
+                            <div className="relative flex-1">
+                                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                                 <input
-                                    type="text"
-                                    value={searchQuery}
-                                    onChange={e => setSearchQuery(e.target.value)}
+                                    type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
                                     placeholder="Search library..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-4 py-2 text-xs text-white focus:outline-none focus:border-white/20"
+                                    className="w-full bg-black/40 border border-white/10 py-2 pl-11 pr-4 rounded-xl focus:outline-none focus:ring-1 focus:ring-purple-500/50"
                                 />
                             </div>
                             <div className="flex items-center gap-2">
-                                <Filter className="text-white/20" size={14} />
+                                <Filter className="w-4 h-4 text-gray-500" />
                                 <select
-                                    value={typeFilter}
-                                    onChange={e => setTypeFilter(e.target.value as any)}
-                                    className="bg-white/5 border border-white/10 rounded-lg px-2 py-1.5 text-xs text-white/60 focus:outline-none"
+                                    value={typeFilter} onChange={(e) => setTypeFilter(e.target.value as any)}
+                                    className="bg-black/40 border border-white/10 p-2 rounded-xl text-sm"
                                 >
                                     <option value="all">All Types</option>
                                     <option value="soundfx">Sound FX</option>
@@ -509,69 +472,64 @@ const AudioWorkspace: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* List Area */}
-                        <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
-                            {isAudioLoading ? (
-                                <div className="flex flex-col items-center justify-center h-full space-y-3 opacity-30">
-                                    <Loader2 className="animate-spin" size={32} />
-                                    <span className="text-xs font-bold uppercase tracking-widest">Fetching Library...</span>
-                                </div>
-                            ) : filteredAssets.length === 0 ? (
-                                <div className="flex flex-col items-center justify-center h-full text-center opacity-30">
-                                    <Hash size={48} className="mb-4" />
-                                    <p className="text-sm font-bold uppercase tracking-widest">Collection Empty</p>
-                                    <p className="text-[10px] mt-2 max-w-[240px]">No persistent audio assets found. Start generating to build your library.</p>
-                                </div>
-                            ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                    {filteredAssets.map(asset => {
-                                        const badge = typeLabel(asset.type);
-                                        const isPlaying = playingId === asset.id;
-                                        return (
-                                            <div key={asset.id} className={`flex flex-col p-5 rounded-3xl border transition-all ${isPlaying ? 'bg-blue-500/10 border-blue-500/30' : 'bg-white/[0.02] border-white/5 hover:border-white/10'}`}>
-                                                <div className="flex justify-between items-start mb-4">
-                                                    <span className={`px-2 py-0.5 rounded-full text-[8px] font-black uppercase ${badge.color}`}>{badge.label}</span>
-                                                    <p className="text-[9px] text-white/20 font-mono">{new Date(asset.generatedAt).toLocaleDateString()}</p>
+                        {/* Asset Grid */}
+                        {isAudioLoading ? (
+                            <div className="flex flex-col items-center justify-center py-20 grayscale opacity-50">
+                                <Loader2 className="w-10 h-10 animate-spin text-purple-500 mb-4" />
+                                <p className="text-gray-500 animate-pulse">Scanning audio archive...</p>
+                            </div>
+                        ) : filteredAssets.length === 0 ? (
+                            <div className="text-center py-32 bg-white/5 rounded-3xl border border-white/10 border-dashed">
+                                <History className="w-12 h-12 text-gray-700 mx-auto mb-4" />
+                                <h3 className="text-lg font-medium text-gray-400">No audio assets found</h3>
+                                <p className="text-sm text-gray-600 mt-1">Try generating something new</p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {filteredAssets.map(asset => (
+                                    <div key={asset.id} className="group bg-white/5 border border-white/10 rounded-3xl overflow-hidden hover:border-purple-500/50 transition-all">
+                                        <div className="p-6 space-y-4">
+                                            <div className="flex items-start justify-between">
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`p-2 rounded-lg ${asset.type === 'music' ? 'bg-purple-500/20 text-purple-400' :
+                                                        asset.type === 'soundfx' ? 'bg-amber-500/20 text-amber-500' :
+                                                            'bg-emerald-500/20 text-emerald-400'
+                                                        }`}>
+                                                        {asset.type === 'music' ? <Music size={16} /> : asset.type === 'soundfx' ? <Wand2 size={16} /> : <Mic size={16} />}
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-sm font-bold line-clamp-1">{asset.prompt || 'Untitled Audio'}</p>
+                                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-medium">{new Date(asset.generatedAt).toLocaleDateString()}</p>
+                                                    </div>
                                                 </div>
-                                                <div className="flex-1">
-                                                    <p className="text-xs font-semibold text-white/90 line-clamp-3 mb-4 leading-relaxed tracking-tight select-none cursor-default">
-                                                        {asset.prompt}
-                                                    </p>
-                                                    {asset.bpm && (
-                                                        <div className="flex gap-2 mb-4">
-                                                            <div className="px-2 py-1 rounded-lg bg-black/40 border border-white/5 flex items-center gap-1.5">
-                                                                <RefreshCw size={10} className="text-blue-400" />
-                                                                <span className="text-[10px] font-bold text-white/60">{asset.bpm} BPM</span>
-                                                            </div>
-                                                            {asset.key && (
-                                                                <div className="px-2 py-1 rounded-lg bg-black/40 border border-white/5 flex items-center gap-1.5">
-                                                                    <Mic size={10} className="text-purple-400" />
-                                                                    <span className="text-[10px] font-bold text-white/60">{asset.key}</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <div className="flex items-center gap-2 pt-2 border-t border-white/5 mt-auto">
-                                                    <button onClick={() => togglePlay(asset as any)} className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${isPlaying ? 'bg-blue-500 text-white' : 'bg-white/5 text-white/60 hover:bg-white/10'}`}>
-                                                        {isPlaying ? <><Pause size={12} /> Pause</> : <><Play size={12} /> Listen</>}
-                                                    </button>
-                                                    <button onClick={() => handleDownload(asset as any)} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-all">
-                                                        <Download size={14} />
-                                                    </button>
-                                                    <button onClick={() => handleDelete(asset.id)} className="p-2.5 rounded-xl bg-white/5 hover:bg-red-500/20 text-white/20 hover:text-red-400 transition-all">
-                                                        <Trash2 size={14} />
-                                                    </button>
+                                                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                    <button onClick={() => handleShipToVideo(asset)} className="p-2 hover:bg-white/10 rounded-lg text-purple-400" title="Ship to Video"><Clapperboard size={16} /></button>
+                                                    <button onClick={() => handleDownload(asset)} className="p-2 hover:bg-white/10 rounded-lg text-gray-400"><Download size={16} /></button>
+                                                    <button onClick={() => handleDelete(asset.id)} className="p-2 hover:bg-red-500/10 text-gray-400 hover:text-red-500 rounded-lg"><Trash2 size={16} /></button>
                                                 </div>
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            )}
-                        </div>
+
+                                            <WaveformPlayer
+                                                url={asset.storageUrl || (asset as any).dataUri}
+                                                height={40}
+                                                isPlaying={playingId === asset.id}
+                                                onPlay={() => setPlayingId(asset.id)}
+                                                onPause={() => setPlayingId(null)}
+                                            />
+
+                                            <div className="flex items-center gap-4 text-[10px] font-bold uppercase tracking-widest text-gray-500">
+                                                {asset.bpm && <span className="flex items-center gap-1"><Volume2 size={12} className="text-purple-400" /> {asset.bpm} BPM</span>}
+                                                {asset.key && <span className="flex items-center gap-1"><Sparkles size={12} className="text-indigo-400" /> {asset.key}</span>}
+                                                <span className="flex items-center gap-1"><Clock size={12} /> {Math.round(asset.estimatedDuration)}s</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 )}
-            </div>
+            </main>
         </div>
     );
 };

@@ -51,6 +51,7 @@ export const VideoGenerationOptionsSchema = z.object({
     motionStrength: z.number().min(0).max(1).optional(),
     shotList: z.array(z.unknown()).optional(), // Can refine later
     generateAudio: z.boolean().optional(),
+    inputAudio: z.string().optional(), // For custom soundtracks (URL or Base64)
     thinking: z.boolean().optional(),
     orgId: z.string().optional(),
     userProfile: z.custom<UserProfile>().optional() // Typed UserProfile for service compatibility

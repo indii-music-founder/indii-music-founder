@@ -370,6 +370,60 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             throw error;
         }
     }
+
+    private releasesService = new FirestoreService<any>('ddexReleases');
+
+    /**
+     * Stage a new release for distribution
+     */
+    async stageRelease(data: {
+        title: string;
+        artist: string;
+        orgId: string;
+        releaseDate?: string;
+        coverArtUrl?: string;
+        assets: Array<{ id: string; type: string; url: string; role: string }>;
+        metadata?: Record<string, unknown>;
+    }): Promise<string> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) throw new Error('User must be authenticated');
+
+        return this.releasesService.add({
+            ...data,
+            userId,
+            status: 'validating',
+            lastCheckedAt: Timestamp.now(),
+            submittedAt: null
+        });
+    }
+
+    /**
+     * Get all releases for the current user/org
+     */
+    async getReleases(orgId?: string): Promise<any[]> {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return [];
+
+        const constraints = orgId
+            ? [this.where('orgId', '==', orgId)]
+            : [this.where('userId', '==', userId)];
+
+        return this.releasesService.list([...constraints, this.orderBy('createdAt', 'desc')]);
+    }
+
+    /**
+     * Subscribe to releases
+     */
+    subscribeReleases(callback: (releases: any[]) => void, orgId?: string) {
+        const userId = auth.currentUser?.uid;
+        if (!userId) return () => { };
+
+        const constraints = orgId
+            ? [this.where('orgId', '==', orgId)]
+            : [this.where('userId', '==', userId)];
+
+        return this.releasesService.subscribe([...constraints, this.orderBy('createdAt', 'desc')], callback);
+    }
 }
 
 export const distributionService = new DistributionService();

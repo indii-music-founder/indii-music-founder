@@ -44,7 +44,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Audio (Native Processing)
     audio: {
         analyze: (filePath: string) => ipcRenderer.invoke('audio:analyze', filePath),
-        getMetadata: (hash: string) => ipcRenderer.invoke('audio:lookup-metadata', hash)
+        getMetadata: (hash: string) => ipcRenderer.invoke('audio:lookup-metadata', hash),
+        transcode: (options: unknown) => ipcRenderer.invoke('audio:transcode', options),
+        master: (options: unknown) => ipcRenderer.invoke('audio:master', options)
     },
 
     // Network (Main Process Fetching)
