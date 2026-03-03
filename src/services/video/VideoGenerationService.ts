@@ -315,6 +315,11 @@ export class VideoGenerationService {
         model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
+        personGeneration?: "dont_allow" | "allow_adult" | "allow_all";
+        referenceImages?: {
+            image: { uri: string };
+            referenceType: "ASSET" | "STYLE";
+        }[];
     }): Promise<{ id: string, url: string, prompt: string }[]> {
         // Security: Sanitize Prompt (Redact PII)
         const sanitizedPrompt = InputSanitizer.sanitize(options.prompt);
@@ -366,6 +371,8 @@ export class VideoGenerationService {
                 thinking: options.thinking,
                 model: options.model,
                 negativePrompt: options.negativePrompt,
+                personGeneration: options.personGeneration,
+                referenceImages: options.referenceImages
             }
         });
 

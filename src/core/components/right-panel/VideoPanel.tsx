@@ -7,6 +7,7 @@ import { VideoAspectRatioSchema, VideoResolutionSchema } from '@/modules/video/s
 import { z } from 'zod';
 import { useStore } from '../../store';
 import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
+import { CharacterLibrary } from '@/modules/creative/components/CharacterLibrary';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
@@ -30,7 +31,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
         prompt,
         videoInputs,
         setVideoInput,
-        currentOrganizationId
+        currentOrganizationId,
+        characterReferences
     } = useStore(useShallow(state => ({
         addToHistory: state.addToHistory,
         updateHistoryItem: state.updateHistoryItem,
@@ -40,7 +42,8 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
         prompt: state.prompt,
         videoInputs: state.videoInputs,
         setVideoInput: state.setVideoInput,
-        currentOrganizationId: state.currentOrganizationId
+        currentOrganizationId: state.currentOrganizationId,
+        characterReferences: state.characterReferences
     })));
     const toast = useToast();
 
@@ -82,7 +85,12 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     seed: studioControls.seed ? parseInt(studioControls.seed) : undefined,
                     generateAudio: studioControls.generateAudio,
                     model: studioControls.model,
-                    firstFrame: videoInputs.firstFrame?.url // H6 Fix: Wire up firstFrame
+                    firstFrame: videoInputs.firstFrame?.url, // H6 Fix: Wire up firstFrame
+                    personGeneration: studioControls.personGeneration,
+                    referenceImages: characterReferences.map(ref => ({
+                        image: { uri: ref.image.url },
+                        referenceType: ref.referenceType === 'subject' ? 'ASSET' : 'STYLE'
+                    }))
                 });
             } else {
                 // Trigger Single Shot
@@ -100,7 +108,12 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                     motionStrength: studioControls.motionStrength,
                     generateAudio: studioControls.generateAudio,
                     model: studioControls.model,
-                    orgId: currentOrganizationId
+                    orgId: currentOrganizationId,
+                    personGeneration: studioControls.personGeneration,
+                    referenceImages: characterReferences.map(ref => ({
+                        image: { uri: ref.image.url },
+                        referenceType: ref.referenceType === 'subject' ? 'ASSET' : 'STYLE'
+                    }))
                 });
             }
 
@@ -216,6 +229,9 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                         </div>
                     )}
 
+                    {/* Veo 3.1 Character Consistency */}
+                    <CharacterLibrary />
+
                     {/* Negative Prompt */}
                     <div className="space-y-3">
                         <label className="text-[10px] font-bold text-gray-500 tracking-wider">NEGATIVE PROMPT</label>
@@ -297,6 +313,34 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                                     className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.model === 'pro' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
                                 >
                                     PRO
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="flex items-center justify-between bg-white/5 p-3 rounded-xl border border-white/5 hover:border-dept-creative/30 transition-all">
+                            <div className="space-y-1">
+                                <label className="text-[10px] font-bold text-gray-500 tracking-wider flex items-center gap-2">
+                                    PERSON GENERATION
+                                </label>
+                            </div>
+                            <div className="flex bg-black/40 p-1 rounded-xl border border-white/5">
+                                <button
+                                    onClick={() => setStudioControls({ personGeneration: 'dont_allow' })}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'dont_allow' ? 'bg-red-500/20 text-red-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                >
+                                    DONT ALLOW
+                                </button>
+                                <button
+                                    onClick={() => setStudioControls({ personGeneration: 'allow_adult' })}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_adult' ? 'bg-blue-500/20 text-blue-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                >
+                                    ALLOW ADULT
+                                </button>
+                                <button
+                                    onClick={() => setStudioControls({ personGeneration: 'allow_all' })}
+                                    className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${studioControls.personGeneration === 'allow_all' ? 'bg-green-500/20 text-green-400 shadow-sm' : 'text-gray-600 hover:text-gray-400'}`}
+                                >
+                                    ALLOW ALL
                                 </button>
                             </div>
                         </div>

@@ -100,7 +100,7 @@ export interface CreativeSlice {
         // Feature Parity
         generateAudio: boolean;
         useGrounding: boolean;
-        personGeneration: 'allow_adult' | 'dont_allow';
+        personGeneration: 'allow_adult' | 'dont_allow' | 'allow_all';
         isTransitionMode: boolean;
     };
     setStudioControls: (controls: Partial<CreativeSlice['studioControls']>) => void;
@@ -124,10 +124,16 @@ export interface CreativeSlice {
     setVideoInput: <K extends keyof CreativeSlice['videoInputs']>(key: K, value: CreativeSlice['videoInputs'][K]) => void;
     setVideoInputs: (inputs: Partial<CreativeSlice['videoInputs']>) => void;
 
-    // Entity Anchor (Character Consistency)
-    entityAnchor: HistoryItem | null;
-    setEntityAnchor: (img: HistoryItem | null) => void;
-
+    // Character/Entity References (Veo 3.1 multiple-image consistency)
+    characterReferences: Array<{
+        image: HistoryItem;
+        referenceType: 'subject' | 'style' | 'reference';
+        name?: string;
+    }>;
+    addCharacterReference: (ref: { image: HistoryItem; referenceType: 'subject' | 'style' | 'reference'; name?: string }) => void;
+    removeCharacterReference: (id: string) => void;
+    clearCharacterReferences: () => void;
+    updateCharacterReference: (id: string, updates: Partial<{ referenceType: 'subject' | 'style' | 'reference'; name: string }>) => void;
     viewMode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release';
     setViewMode: (mode: 'gallery' | 'canvas' | 'video_production' | 'showroom' | 'direct' | 'lab' | 'editor' | 'release') => void;
 
@@ -361,8 +367,18 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
         videoInputs: { ...state.videoInputs, ...inputs }
     })),
 
-    entityAnchor: null,
-    setEntityAnchor: (img) => set({ entityAnchor: img }),
+    characterReferences: [],
+    addCharacterReference: (ref) => set((state) => {
+        if (state.characterReferences.length >= 3) return state;
+        return { characterReferences: [...state.characterReferences, ref] };
+    }),
+    removeCharacterReference: (id) => set((state) => ({
+        characterReferences: state.characterReferences.filter(r => r.image.id !== id)
+    })),
+    clearCharacterReferences: () => set({ characterReferences: [] }),
+    updateCharacterReference: (id, updates) => set((state) => ({
+        characterReferences: state.characterReferences.map(r => r.image.id === id ? { ...r, ...updates } : r)
+    })),
 
     viewMode: 'gallery',
     setViewMode: (mode) => set({ viewMode: mode }),

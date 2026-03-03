@@ -327,13 +327,15 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
 
     render_cinematic_grid: wrapTool('render_cinematic_grid', async (args: { prompt: string }) => {
         const { useStore } = await import('@/core/store');
-        const { entityAnchor, addToHistory, currentProjectId } = useStore.getState();
+        const { characterReferences, addToHistory, currentProjectId } = useStore.getState();
 
         let fullPrompt = `Create a cinematic grid of shots (Wide, Medium, Close-up, Low Angle) for: ${args.prompt}.`;
         let sourceImages = undefined;
 
-        if (entityAnchor) {
-            const match = entityAnchor.url.match(/^data:(.+);base64,(.+)$/);
+        const firstRef = characterReferences?.[0];
+
+        if (firstRef) {
+            const match = firstRef.image.url.match(/^data:(.+);base64,(.+)$/);
             if (match) {
                 sourceImages = [{ mimeType: match[1], data: match[2] }];
                 fullPrompt += " Maintain strict character consistency with the provided reference.";
@@ -412,9 +414,9 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         }, `Successfully extracted ${frameLabels[gridIndex]} (panel ${gridIndex}) from the cinematic grid. The frame is now in your Gallery.`);
     }),
 
-    set_entity_anchor: wrapTool('set_entity_anchor', async (args: SetEntityAnchorArgs) => {
+    add_character_reference: wrapTool('add_character_reference', async (args: SetEntityAnchorArgs) => {
         const { useStore } = await import('@/core/store');
-        const { setEntityAnchor, addToHistory, currentProjectId } = useStore.getState();
+        const { addCharacterReference, addToHistory, currentProjectId } = useStore.getState();
 
         const match = args.image.match(/^data:(.+);base64,(.+)$/);
         if (!match) {
@@ -424,19 +426,19 @@ export const DirectorTools: Record<string, AnyToolFunction> = {
         const anchorItem = {
             id: crypto.randomUUID(),
             url: args.image,
-            prompt: "Entity Anchor (Global Reference)",
+            prompt: "Character Reference",
             type: 'image' as const,
             timestamp: Date.now(),
             projectId: currentProjectId,
             category: 'headshot' as const
         };
 
-        setEntityAnchor(anchorItem);
+        addCharacterReference({ image: anchorItem, referenceType: 'subject' });
         addToHistory(anchorItem);
 
         return toolSuccess({
             anchorId: anchorItem.id
-        }, "Entity Anchor set successfully. Character consistency is now locked.");
+        }, "Character Reference set successfully.");
     }),
 
     analyze_audio: wrapTool('analyze_audio', async (args: { uploadedAudioIndex: number }) => {

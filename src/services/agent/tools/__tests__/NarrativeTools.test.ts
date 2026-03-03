@@ -54,8 +54,8 @@ describe('Filmmaking Grammar Tools', () => {
         vi.clearAllMocks();
         vi.mocked(useStore.getState).mockReturnValue({
             currentProjectId: 'test-project',
-            entityAnchor: null,
-            setEntityAnchor: mockSetEntityAnchor,
+            characterReferences: [],
+            addCharacterReference: mockSetEntityAnchor,
             addToHistory: mockAddToHistory,
             studioControls: { resolution: '1080p', aspectRatio: '16:9' },
             isSidebarOpen: true,
@@ -91,7 +91,7 @@ describe('Filmmaking Grammar Tools', () => {
             // Mock store with entity anchor
             vi.mocked(useStore.getState).mockReturnValue({
                 currentProjectId: 'test-project',
-                entityAnchor: { url: 'data:image/png;base64,mockanchordata' },
+                characterReferences: [{ image: { url: 'data:image/png;base64,mockanchordata', id: 'mock', type: 'image' }, referenceType: 'subject' }],
                 addToHistory: mockAddToHistory,
                 isSidebarOpen: true,
                 activeModule: 'filmmaking',
@@ -118,16 +118,19 @@ describe('Filmmaking Grammar Tools', () => {
             }));
         });
 
-        it('set_entity_anchor should update store state and return ToolFunctionResult', async () => {
-            const result = await DirectorTools.set_entity_anchor({ image: "data:image/png;base64,newdata" });
+        it('add_character_reference should update store state and return ToolFunctionResult', async () => {
+            const result = await DirectorTools.add_character_reference({ image: "data:image/png;base64,newdata" });
 
             expect(mockSetEntityAnchor).toHaveBeenCalledWith(expect.objectContaining({
-                url: "data:image/png;base64,newdata",
-                type: 'image'
+                image: expect.objectContaining({
+                    url: "data:image/png;base64,newdata",
+                    type: 'image'
+                }),
+                referenceType: 'subject'
             }));
 
             expect(result.success).toBe(true);
-            expect(result.message).toContain("Entity Anchor set successfully");
+            expect(result.message).toContain("Character Reference set successfully");
         });
     });
 

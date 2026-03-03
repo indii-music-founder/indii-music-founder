@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '../../services/video/VideoGenerationService';
 import { WhiskService } from '../../services/WhiskService';
 // Removed unused imports from motion and lucide-react as they are now in VideoStage
-import { Loader2, Layout, Maximize2, Settings } from 'lucide-react';
+import { Loader2, Layout, Maximize2, Settings, Shuffle, ChevronDown, ChevronUp, Hash } from 'lucide-react';
 import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 
 // Components
@@ -132,7 +132,9 @@ export default function VideoWorkflow() {
         setPendingPrompt,
         selectedItem,
         setVideoInputs,
-        whiskState
+        whiskState,
+        characterReferences,
+        setStudioControls
     } = useStore(useShallow((state: import('@/core/store').StoreState) => ({
         generatedHistory: state.generatedHistory,
         addToHistory: state.addToHistory,
@@ -146,7 +148,9 @@ export default function VideoWorkflow() {
         setPendingPrompt: state.setPendingPrompt,
         selectedItem: state.selectedItem,
         setVideoInputs: state.setVideoInputs,
-        whiskState: state.whiskState
+        whiskState: state.whiskState,
+        characterReferences: state.characterReferences,
+        setStudioControls: state.setStudioControls
     })));
 
     // Editor Store
@@ -181,6 +185,13 @@ export default function VideoWorkflow() {
 
     // Director State
     const [activeVideo, setActiveVideo] = useState<HistoryItem | null>(null);
+    const [showSettings, setShowSettings] = useState(false);
+
+    /** Generate a random 32-bit seed value */
+    const randomizeSeed = useCallback(() => {
+        const newSeed = Math.floor(Math.random() * 2147483647).toString();
+        setStudioControls({ seed: newSeed });
+    }, [setStudioControls]);
 
     // Stable handler for drag start
     const handleDragStart = React.useCallback((e: React.DragEvent, item: HistoryItem) => {
@@ -197,9 +208,9 @@ export default function VideoWorkflow() {
         if (pendingPrompt) {
             // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
-             
+
             setPrompt(pendingPrompt);
-             
+
             setPendingPrompt(null);
         }
     }, [pendingPrompt, setPrompt, setPendingPrompt]);
@@ -225,7 +236,7 @@ export default function VideoWorkflow() {
         } else if (generatedHistory.length > 0 && !activeVideo) {
             // Find most recent video
             const recent = generatedHistory.find(h => h.type === 'video');
-             
+
             if (recent) setActiveVideo(recent);
         }
     }, [selectedItem, generatedHistory, activeVideo]);
@@ -318,7 +329,11 @@ export default function VideoWorkflow() {
                     firstFrame: videoInputs.firstFrame?.url,
                     lastFrame: videoInputs.lastFrame?.url,
                     timeOffset: videoInputs.timeOffset,
-                    ingredients: videoInputs.ingredients?.map(i => i.url),
+                    referenceImages: characterReferences?.map(ref => ({
+                        image: { uri: ref.image.url },
+                        referenceType: ref.referenceType === 'style' ? 'STYLE' as const : 'ASSET' as const
+                    })),
+                    personGeneration: studioControls.personGeneration,
                     orgId: currentOrganizationId,
                     duration: studioControls.duration,
                     durationSeconds: studioControls.duration,
@@ -401,6 +416,96 @@ export default function VideoWorkflow() {
                     activeVideo={activeVideo}
                     setVideoInputs={setVideoInputs}
                 />
+
+                {/* Technical Settings Panel (Collapsible, Bottom-Right) */}
+                <div className="absolute bottom-24 right-4 z-30 w-72">
+                    <button
+                        onClick={() => setShowSettings(s => !s)}
+                        data-testid="toggle-settings-btn"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all text-[10px] font-bold uppercase tracking-wider mb-1 ml-auto"
+                        aria-label="Toggle Technical Settings"
+                        aria-expanded={showSettings}
+                    >
+                        <Settings size={12} />
+                        Settings
+                        {showSettings ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+                    </button>
+
+                    {showSettings && (
+                        <div className="glass rounded-xl p-4 space-y-3 border border-white/10 shadow-2xl shadow-black/60 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                            {/* Seed Control */}
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                                    <Hash size={10} className="text-blue-400" />
+                                    Seed (Reproducibility)
+                                </label>
+                                <div className="flex items-center gap-2">
+                                    <input
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern="[0-9]*"
+                                        value={studioControls.seed || ''}
+                                        onChange={(e) => {
+                                            const val = e.target.value.replace(/[^0-9]/g, '');
+                                            setStudioControls({ seed: val });
+                                        }}
+                                        placeholder="Random"
+                                        data-testid="seed-input"
+                                        aria-label="Seed value for reproducible generation"
+                                        className="flex-1 bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white placeholder-gray-600 focus:ring-1 focus:ring-blue-500/50 focus:border-blue-500/30 outline-none font-mono transition-all"
+                                    />
+                                    <button
+                                        onClick={randomizeSeed}
+                                        data-testid="randomize-seed-btn"
+                                        title="Generate random seed"
+                                        aria-label="Generate random seed"
+                                        className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 hover:bg-blue-500/20 hover:text-blue-300 transition-all"
+                                    >
+                                        <Shuffle size={14} />
+                                    </button>
+                                    {studioControls.seed && (
+                                        <button
+                                            onClick={() => setStudioControls({ seed: '' })}
+                                            data-testid="clear-seed-btn"
+                                            title="Clear seed (use random)"
+                                            aria-label="Clear seed"
+                                            className="p-2 rounded-lg bg-white/5 border border-white/10 text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                                        >
+                                            ×
+                                        </button>
+                                    )}
+                                </div>
+                                <p className="text-[9px] text-gray-600 leading-snug">
+                                    {studioControls.seed
+                                        ? `Seed: ${studioControls.seed} — Same prompt + seed = same output`
+                                        : 'Empty = random seed each generation'
+                                    }
+                                </p>
+                            </div>
+
+                            {/* Last used seed from active video */}
+                            {activeVideo?.meta && (() => {
+                                try {
+                                    const meta = JSON.parse(activeVideo.meta);
+                                    const usedSeed = meta?.seed;
+                                    if (usedSeed) {
+                                        return (
+                                            <button
+                                                onClick={() => setStudioControls({ seed: String(usedSeed) })}
+                                                data-testid="reuse-seed-btn"
+                                                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-green-500/5 border border-green-500/20 text-green-400 hover:bg-green-500/10 transition-all text-[10px] font-bold"
+                                            >
+                                                <Hash size={10} />
+                                                Reuse seed from selected: {usedSeed}
+                                            </button>
+                                        );
+                                    }
+                                } catch { /* ignore */ }
+                                return null;
+                            })()}
+                        </div>
+                    )}
+                </div>
 
                 {/* Dailies Strip (Bottom Overlay) */}
                 <DailiesStrip

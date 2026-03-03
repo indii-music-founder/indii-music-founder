@@ -19,14 +19,14 @@ interface GalleryItemProps {
     item: HistoryItem;
     onSelect: (item: HistoryItem) => void;
     setVideoInput: (key: 'firstFrame' | 'lastFrame', value: HistoryItem) => void;
-    setEntityAnchor: (item: HistoryItem | null) => void;
+    addCharacterReference: (ref: { image: HistoryItem; referenceType: "subject" | "style" | "reference" }) => void;
     setSelectedItem: (item: HistoryItem | null) => void;
     toast: any;
     generationMode: string;
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, setEntityAnchor, setSelectedItem, toast, generationMode, onDelete }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete }: GalleryItemProps) => {
     return (
         <div
             draggable
@@ -113,11 +113,11 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, setEntityAnchor, setS
                             </>
                         )}
                         <button
-                            onClick={(e) => { e.stopPropagation(); setEntityAnchor(item); toast.success("Entity Anchor Set"); }}
+                            onClick={(e) => { e.stopPropagation(); addCharacterReference({ image: item, referenceType: 'subject' }); toast.success("Character Reference Set"); }}
                             data-testid="set-anchor-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-yellow-500 hover:text-black focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
-                            title="Set as Entity Anchor (Character Lock)"
-                            aria-label="Set as Entity Anchor (Character Lock)"
+                            title="Add Character Reference"
+                            aria-label="Add Character Reference"
                         >
                             <Anchor size={14} />
                         </button>
@@ -177,7 +177,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, setEntityAnchor, setS
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, setEntityAnchor } = useStore(useShallow(state => ({
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, addCharacterReference } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeFromHistory: state.removeFromHistory,
         uploadedImages: state.uploadedImages,
@@ -191,7 +191,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput: state.setVideoInput,
         selectedItem: state.selectedItem,
         setSelectedItem: state.setSelectedItem,
-        setEntityAnchor: state.setEntityAnchor
+        addCharacterReference: state.addCharacterReference
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -335,7 +335,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                             item={item}
                             onSelect={handleSelect}
                             setVideoInput={setVideoInput}
-                            setEntityAnchor={setEntityAnchor}
+                            addCharacterReference={addCharacterReference}
                             setSelectedItem={setSelectedItem}
                             toast={toast}
                             generationMode={generationMode}

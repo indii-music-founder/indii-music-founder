@@ -27,8 +27,9 @@ export const VideoJobSchema = z.object({
             imageBytes: z.string().optional(),
             uri: z.string().optional()
         }).optional(),
-        referenceType: z.enum(["ASSET"]).optional().default("ASSET")
+        referenceType: z.enum(["ASSET", "STYLE"]).optional().default("ASSET")
     })).optional().nullable(),
+    personGeneration: z.enum(["dont_allow", "allow_adult", "allow_all"]).optional().nullable(),
     duration: z.union([z.string(), z.number()]).optional().nullable(), // Allow number and null
     durationSeconds: z.number().optional().nullable(),
     generateAudio: z.boolean().optional().nullable(),
