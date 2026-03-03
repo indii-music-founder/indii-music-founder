@@ -17,6 +17,7 @@ import { AudioIntelligenceSlice, createAudioIntelligenceSlice } from './slices/a
 import { SubscriptionSlice, createSubscriptionSlice } from './slices/subscriptionSlice';
 import { SidecarSlice, createSidecarSlice } from './slices/sidecarSlice';
 import { SyncSlice, createSyncSlice } from './slices/syncSlice';
+import { AudioGenerationSlice, createAudioGenerationSlice } from './slices/audioGenerationSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agentSlice';
@@ -35,7 +36,8 @@ export interface StoreState extends
     AudioIntelligenceSlice,
     SubscriptionSlice,
     SidecarSlice,
-    SyncSlice { }
+    SyncSlice,
+    AudioGenerationSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -55,6 +57,7 @@ export const useStore = create<StoreState>()((...a) => {
         ...createSubscriptionSlice(...a),
         ...createSidecarSlice(...a),
         ...createSyncSlice(...a),
+        ...createAudioGenerationSlice(...a),
     };
 
 

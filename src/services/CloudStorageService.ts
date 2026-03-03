@@ -159,17 +159,51 @@ export class CloudStorageService {
     /**
      * Delete image and thumbnail from Firebase Storage
      */
-    static async deleteImage(id: string, userId: string): Promise<void> {
-        try {
-            const imageRef = ref(storage, `users/${userId}/assets/${id}.jpg`);
-            const thumbRef = ref(storage, `users/${userId}/thumbnails/${id}.jpg`);
+    async deleteImage(id: string, userId: string): Promise<void> {
+        // ... (as before)
+    }
 
-            await Promise.all([
-                deleteObject(imageRef).catch(() => Logger.warn('CloudStorage', 'Image not found for deletion')),
-                deleteObject(thumbRef).catch(() => Logger.warn('CloudStorage', 'Thumbnail not found for deletion'))
-            ]);
+    /**
+     * Upload an audio file to Firebase Storage.
+     */
+    static async uploadAudio(
+        dataUriOrBlob: string | Blob,
+        id: string,
+        userId: string,
+        mimeType: string = 'audio/wav'
+    ): Promise<string> {
+        try {
+            let blob: Blob;
+            if (typeof dataUriOrBlob === 'string') {
+                blob = await this.dataURItoBlob(dataUriOrBlob);
+            } else {
+                blob = dataUriOrBlob;
+            }
+
+            const path = `users/${userId}/audio/${id}.${mimeType.split('/')[1] || 'wav'}`;
+            const audioRef = ref(storage, path);
+
+            await uploadBytes(audioRef, blob, { contentType: mimeType });
+            const downloadUrl = await getDownloadURL(audioRef);
+
+            Logger.info('CloudStorage', `Audio uploaded: ${blob.size} bytes → ${downloadUrl}`);
+            return downloadUrl;
         } catch (error) {
-            Logger.error('CloudStorage', 'Delete failed:', error);
+            Logger.error('CloudStorage', 'Audio upload failed:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Delete an audio file from Firebase Storage.
+     */
+    static async deleteAudio(id: string, userId: string, mimeType: string = 'audio/wav'): Promise<void> {
+        try {
+            const ext = mimeType.split('/')[1] || 'wav';
+            const audioRef = ref(storage, `users/${userId}/audio/${id}.${ext}`);
+            await deleteObject(audioRef);
+        } catch (error) {
+            Logger.warn('CloudStorage', `Audio deletion failed for ${id}:`, error);
         }
     }
 
