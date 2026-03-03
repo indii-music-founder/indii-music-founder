@@ -104,6 +104,8 @@ interface VideoEditorState {
     removeReferenceImage: (index: number) => void;
     generateAudio: boolean;
     setGenerateAudio: (enabled: boolean) => void;
+    inputAudio: string | null;
+    setInputAudio: (url: string | null) => void;
 
     // Timeline Zoom (P1)
     timelineZoom: number;
@@ -151,6 +153,8 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     extendedProject: null,
     referenceImages: [],
     generateAudio: true,
+    inputAudio: null,
+    setInputAudio: (url) => set({ inputAudio: url }),
     timelineZoom: 1,
 
     viewMode: 'director',

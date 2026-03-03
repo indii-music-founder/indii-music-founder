@@ -36,6 +36,7 @@ export interface ElectronAPI {
         analyze: (filePath: string) => Promise<AudioAnalysisResult>;
         getMetadata: (hash: string) => Promise<unknown>;
         transcode: (options: unknown) => Promise<{ success: boolean; error?: string }>;
+        master: (options: unknown) => Promise<{ success: boolean; path?: string; error?: string }>;
     };
 
     // Network (Main Process Fetching)

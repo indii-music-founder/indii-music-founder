@@ -124,3 +124,11 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         </ToastContext.Provider>
     );
 };
+
+// Singleton helper for non-React context usage (services, etc)
+export const toast = {
+    success: (message: string, duration?: number) => events.emit('SYSTEM_ALERT', { level: 'success', message }),
+    error: (message: string, duration?: number) => events.emit('SYSTEM_ALERT', { level: 'error', message }),
+    info: (message: string, duration?: number) => events.emit('SYSTEM_ALERT', { level: 'info', message }),
+    warning: (message: string, duration?: number) => events.emit('SYSTEM_ALERT', { level: 'warning', message }),
+};

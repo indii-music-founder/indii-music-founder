@@ -312,6 +312,7 @@ export class VideoGenerationService {
         firstFrame?: string;
         generateAudio?: boolean;
         thinking?: boolean;
+        inputAudio?: string;
         model?: string;
         onProgress?: (current: number, total: number) => void;
         userProfile?: UserProfile;
@@ -368,6 +369,7 @@ export class VideoGenerationService {
                 resolution: options.resolution,
                 seed: options.seed,
                 generateAudio: options.generateAudio,
+                inputAudio: options.inputAudio,
                 thinking: options.thinking,
                 model: options.model,
                 negativePrompt: options.negativePrompt,
