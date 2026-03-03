@@ -55,7 +55,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     parameters: {
                         sampleCount: 1,
                         aspectRatio: options?.aspectRatio || "16:9",
-                        personGeneration: "allow_adult",
+                        personGeneration: options?.personGeneration || "allow_adult",
                         generateAudio: requestedAudio ?? true
                     },
                     safetySettings: [
@@ -153,7 +153,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                     requestBody.instances[0].image = {
                         bytesBase64Encoded: startImageBytes
                     };
-                    requestBody.parameters.personGeneration = "allow_adult";
+                    requestBody.parameters.personGeneration = options?.personGeneration || "allow_adult";
                 }
 
                 // VEO 3.1: Last Frame (Interpolation)
@@ -163,7 +163,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                         requestBody.parameters.lastFrame = {
                             bytesBase64Encoded: lastImageBytes
                         };
-                        requestBody.parameters.personGeneration = "allow_adult";
+                        requestBody.parameters.personGeneration = options?.personGeneration || "allow_adult";
                     }
                 }
 
@@ -192,7 +192,7 @@ export const generateVideoFn = (inngestClient: any, geminiApiKey: any) => innges
                             referenceType: refType
                         };
                     }));
-                    requestBody.parameters.personGeneration = "allow_adult";
+                    requestBody.parameters.personGeneration = options?.personGeneration || "allow_adult";
                     // Reference images force 8s
                     requestBody.parameters.duration = 8;
                 }

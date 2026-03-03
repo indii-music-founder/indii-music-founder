@@ -53,7 +53,7 @@ describe('CreativeGallery Accessibility', () => {
         // but the goal is to verify the fix.
 
         // Just checking existence of buttons via title to ensure they are rendered first
-        expect(screen.getByTitle('Set as Entity Anchor (Character Lock)')).toBeInTheDocument();
+        expect(screen.getByTitle('Add Character Reference')).toBeInTheDocument();
     });
 
     it('overlay has group-focus-within class for keyboard accessibility', () => {
@@ -68,7 +68,7 @@ describe('CreativeGallery Accessibility', () => {
 
     it('buttons have focus-visible styles', () => {
         render(<CreativeGallery />);
-        const button = screen.getByTitle('Set as Entity Anchor (Character Lock)');
+        const button = screen.getByTitle('Add Character Reference');
         expect(button.className).toContain('focus-visible:ring-2');
     });
 });

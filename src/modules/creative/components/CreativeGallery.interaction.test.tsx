@@ -46,7 +46,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         setVideoInput: mockSetVideoInput,
         selectedItem: null,
         setSelectedItem: mockSetSelectedItem,
-        setEntityAnchor: vi.fn()
+        addCharacterReference: vi.fn()
     };
 
     beforeEach(() => {
@@ -106,11 +106,11 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         expect(mockToastSuccess).toHaveBeenCalledWith("Set as First Frame");
     });
 
-    it('verifies the Set as Entity Anchor lifecycle (Click → Action → Feedback)', async () => {
-        const mockSetEntityAnchor = vi.fn();
+    it('verifies the Set as Character Reference lifecycle (Click → Action → Feedback)', async () => {
+        const mockAddCharacterReference = vi.fn();
         (useStore as any).mockReturnValue({
             ...mockStore,
-            setEntityAnchor: mockSetEntityAnchor
+            addCharacterReference: mockAddCharacterReference
         });
 
         render(<CreativeGallery />);
@@ -122,10 +122,10 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         fireEvent.click(anchorBtn);
 
         // ✅ Assert Action
-        expect(mockSetEntityAnchor).toHaveBeenCalledWith(mockItem);
+        expect(mockAddCharacterReference).toHaveBeenCalledWith({ image: mockItem, referenceType: 'subject' });
 
         // ✅ Assert Feedback: Toast confirmation (Check exact message from component)
-        expect(mockToastSuccess).toHaveBeenCalledWith("Entity Anchor Set");
+        expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
     });
 
     it('verifies the Like lifecycle (Click → Feedback)', async () => {

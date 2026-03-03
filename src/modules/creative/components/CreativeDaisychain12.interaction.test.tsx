@@ -112,7 +112,7 @@ describe('Creative Director 12-Click Daisychain', () => {
     const mockAddWhiskItem = vi.fn();
     const mockSetPendingPrompt = vi.fn();
     const mockSetGenerationMode = vi.fn();
-    const mockSetEntityAnchor = vi.fn();
+    const mockAddCharacterReference = vi.fn();
 
     beforeEach(() => {
         vi.clearAllMocks();
@@ -137,7 +137,7 @@ describe('Creative Director 12-Click Daisychain', () => {
             },
             setGenerationMode: mockSetGenerationMode,
             updateWhiskItem: vi.fn(),
-            setEntityAnchor: mockSetEntityAnchor,
+            addCharacterReference: mockAddCharacterReference,
         });
     });
 
@@ -168,7 +168,7 @@ describe('Creative Director 12-Click Daisychain', () => {
                         setLocalPrompt(newPrompt);
                         mockSetPrompt(newPrompt);
                     },
-                    setEntityAnchor: mockSetEntityAnchor,
+                    addCharacterReference: mockAddCharacterReference,
                     userProfile: {
                         brandKit: {
                             brandDescription: 'Cool Brand',
@@ -319,10 +319,10 @@ describe('Creative Director 12-Click Daisychain', () => {
         // const itemB = screen.getByTestId('gallery-item-item-b');
         // fireEvent.click(itemB); 
 
-        // --- CLICK 14: Set Item B as Entity Anchor (Originally 12) ---
+        // --- CLICK 14: Set Item B as Character Reference (Originally 12) ---
         const anchorButtons = screen.getAllByTestId('set-anchor-btn');
         fireEvent.click(anchorButtons[1]); // Anchor for Item B
-        expect(mockSetEntityAnchor).toHaveBeenCalledWith(mockItemB);
-        expect(mockToastSuccess).toHaveBeenCalledWith("Entity Anchor Set");
+        expect(mockAddCharacterReference).toHaveBeenCalledWith({ image: mockItemB, referenceType: 'subject' });
+        expect(mockToastSuccess).toHaveBeenCalledWith("Character Reference Set");
     });
 });

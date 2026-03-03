@@ -18,6 +18,14 @@ export const VideoAspectRatioSchema = z.enum([
     '16:9', '9:16', '1:1', '4:3', '3:4'
 ]);
 
+export const ReferenceImageSchema = z.object({
+    image: z.object({
+        imageBytes: z.string().optional(),
+        uri: z.string().optional()
+    }).optional(),
+    referenceType: z.enum(["ASSET", "STYLE"]).optional().default("ASSET")
+});
+
 export const VideoGenerationOptionsSchema = z.object({
     prompt: z.string().min(1, "Prompt is required"),
     aspectRatio: VideoAspectRatioSchema.optional(),
@@ -34,7 +42,8 @@ export const VideoGenerationOptionsSchema = z.object({
     }).optional(),
     timeOffset: z.number().optional(),
     ingredients: z.array(z.string()).optional(),
-    referenceImages: z.array(z.unknown()).optional(), // Veo 3.1 alias
+    referenceImages: z.array(ReferenceImageSchema).max(3, "Max 3 reference images").optional(), // Veo 3.1 alias
+    personGeneration: z.enum(["dont_allow", "allow_adult", "allow_all"]).optional(),
     duration: z.number().min(1).max(300).optional(), // 5 minutes max per atomic job
     durationSeconds: z.number().optional(), // Alias for consistency
     fps: z.number().int().min(1).max(60).optional(),

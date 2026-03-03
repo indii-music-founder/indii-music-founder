@@ -46,8 +46,8 @@ const createMockStoreState = (overrides = {}) => ({
     },
     uploadedImages: [],
     generatedHistory: [],
-    entityAnchor: null,
-    setEntityAnchor: vi.fn(),
+    characterReferences: [],
+    addCharacterReference: vi.fn(),
     ...overrides
 });
 
@@ -254,8 +254,8 @@ describe('DirectorTools', () => {
         });
 
         it('includes entity anchor as source image when set', async () => {
-            const entityAnchor = { url: 'data:image/png;base64,anchor', id: 'anchor-1' };
-            (useStore.getState as any).mockReturnValue(createMockStoreState({ entityAnchor }));
+            const characterReferences = [{ image: { url: 'data:image/png;base64,anchor', id: 'anchor-1' }, referenceType: 'subject' }];
+            (useStore.getState as any).mockReturnValue(createMockStoreState({ characterReferences }));
 
             const mockResults = [{ id: 'grid-1', url: 'data:image/png;base64,grid', prompt: 'grid' }];
             vi.mocked(ImageGeneration.generateImages).mockResolvedValue(mockResults);
@@ -299,34 +299,34 @@ describe('DirectorTools', () => {
         });
     });
 
-    describe('set_entity_anchor', () => {
+    describe('add_character_reference', () => {
         it('validates base64 data URI format', async () => {
-            const result = await DirectorTools.set_entity_anchor({ image: 'invalid-data' });
+            const result = await DirectorTools.add_character_reference({ image: 'invalid-data' });
 
             expect(result.success).toBe(false);
             expect(result.error).toContain('Invalid image data');
         });
 
-        it('sets entity anchor and adds to history', async () => {
-            const mockSetEntityAnchor = vi.fn();
+        it('sets character reference and adds to history', async () => {
+            const mockAddCharacterReference = vi.fn();
             const mockAddToHistory = vi.fn();
             (useStore.getState as any).mockReturnValue(createMockStoreState({
-                setEntityAnchor: mockSetEntityAnchor,
+                addCharacterReference: mockAddCharacterReference,
                 addToHistory: mockAddToHistory
             }));
 
-            const result = await DirectorTools.set_entity_anchor({
+            const result = await DirectorTools.add_character_reference({
                 image: 'data:image/png;base64,validdata'
             });
 
-            expect(mockSetEntityAnchor).toHaveBeenCalled();
+            expect(mockAddCharacterReference).toHaveBeenCalled();
             expect(mockAddToHistory).toHaveBeenCalledWith(
                 expect.objectContaining({
                     url: 'data:image/png;base64,validdata',
-                    prompt: 'Entity Anchor (Global Reference)'
+                    prompt: 'Character Reference'
                 })
             );
-            expect(result.message).toContain('Entity Anchor set successfully');
+            expect(result.message).toContain('Character Reference set successfully');
         });
     });
 
