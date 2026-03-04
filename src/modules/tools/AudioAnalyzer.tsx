@@ -1,20 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import WaveSurfer from 'wavesurfer.js';
-import RegionsPlugin, { Region } from 'wavesurfer.js/dist/plugins/regions.esm.js';
+import React, { useState } from 'react';
 import {
-    Activity, Play, Pause, Upload, Volume2, Mic2, Tag,
-    Database, Fingerprint, Save, RotateCcw, Scissors, Loader2
+    Activity, Upload, Database, Save, Loader2, Music, Hash, Clock, BarChart2, ShieldCheck
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
-import { cn } from '@/lib/utils';
-import { fingerprintService } from '@/services/audio/FingerprintService';
 import { audioAnalysisService, DeepAudioFeatures } from '@/services/audio/AudioAnalysisService';
-import { SonicRadar } from './components/SonicRadar';
-import { TagMatrix } from './components/TagMatrix';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/core/context/ToastContext';
+import { TagMatrix } from './components/TagMatrix';
 
 const DEFAULT_TAGS = {
     'Mood': ['Energetic', 'Dark', 'Chill', 'Happy', 'Melancholic', 'Aggressive', 'Ethereal'],
@@ -25,40 +18,13 @@ const DEFAULT_TAGS = {
 
 const AudioAnalyzer: React.FC = () => {
     const toast = useToast();
-    // --- State ---
     const [file, setFile] = useState<File | null>(null);
-    const [isPlaying, setIsPlaying] = useState(false);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isFromCache, setIsFromCache] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const [selectedRegion, setSelectedRegion] = useState<{ start: number, end: number } | null>(null);
-
-    // Audio Features
-    const [features, setFeatures] = useState({
-        bpm: 0,
-        key: '?',
-        energy: 0,
-        danceability: 0,
-        happiness: 0,
-        acousticness: 0,
-        instrumentalness: 0,
-        duration: 0
-    });
-
-    // Hold the full deep analysis result for saving
+    
     const [fullAnalysis, setFullAnalysis] = useState<DeepAudioFeatures | null>(null);
-
-    const [regionFeatures, setRegionFeatures] = useState<typeof features | null>(null);
-
-    // Refs
-    const waveformContainerRef = useRef<HTMLDivElement>(null);
-    const wavesurferRef = useRef<WaveSurfer | null>(null);
-    const regionsPluginRef = useRef<RegionsPlugin | null>(null);
-
-    // --- Initialization & Audio Handling ---
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -66,87 +32,16 @@ const AudioAnalyzer: React.FC = () => {
 
         setFile(uploadedFile);
         setTags([]);
-        setSelectedRegion(null);
         setFullAnalysis(null);
-
-        // Initialize WaveSurfer with the new file
-        initWaveSurfer(uploadedFile);
-
-        // Run Analysis
         await runAnalysis(uploadedFile);
-    };
-
-    const initWaveSurfer = (audioFile: File) => {
-        if (wavesurferRef.current) {
-            wavesurferRef.current.destroy();
-        }
-
-        if (!waveformContainerRef.current) return;
-
-        const url = URL.createObjectURL(audioFile);
-
-        const ws = WaveSurfer.create({
-            container: waveformContainerRef.current,
-            waveColor: 'rgba(255, 255, 255, 0.4)', // Increased contrast
-            progressColor: '#facc15',
-            cursorColor: '#ffffff',
-            barWidth: 2,
-            barGap: 3,
-            height: 100, // Slightly more compact
-            normalize: true,
-            backend: 'WebAudio',
-            minPxPerSec: 50,
-            dragToSeek: true,
-        });
-
-        // Initialize Regions Plugin
-        const wsRegions = RegionsPlugin.create();
-        regionsPluginRef.current = wsRegions;
-        ws.registerPlugin(wsRegions);
-
-        // Events
-        ws.load(url);
-
-        ws.on('ready', () => {
-            setDuration(ws.getDuration());
-            // Add a default region for demo purposes
-            wsRegions.addRegion({
-                start: ws.getDuration() * 0.2, // 20% in
-                end: ws.getDuration() * 0.4,   // 40% in
-                content: 'Viral Segment',
-                color: 'rgba(250, 204, 21, 0.2)', // Primary with opacity
-                drag: true,
-                resize: true
-            });
-        });
-
-        ws.on('audioprocess', (time) => setCurrentTime(time));
-        ws.on('finish', () => setIsPlaying(false));
-        ws.on('play', () => setIsPlaying(true));
-        ws.on('pause', () => setIsPlaying(false));
-
-        // Region Events
-        wsRegions.on('region-updated', (region: Region) => {
-            setSelectedRegion({ start: region.start, end: region.end });
-        });
-
-        wsRegions.on('region-clicked', (region: Region, e: MouseEvent) => {
-            e.stopPropagation(); // Prevent seek
-            region.play();
-        });
-
-        wavesurferRef.current = ws;
     };
 
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
-        const toastId = toast.loading("Initializing Compliance Models... (First run may take time)");
-        const currentToastId = toastId;
+        const toastId = toast.loading("Executing compliance extraction protocol...");
 
         try {
-            // Run Analysis
-            // Explicitly type the result to ensure TS knows the shape
             const analysisResult = await audioAnalysisService.analyze(audioFile);
             const result = analysisResult.features;
             const fromCache = analysisResult.fromCache;
@@ -155,39 +50,22 @@ const AudioAnalyzer: React.FC = () => {
             setIsFromCache(fromCache);
 
             if (!fromCache) {
-                toast.dismiss(currentToastId);
-                toast.success("Analysis Complete: Neural Network inference successful");
+                toast.dismiss(toastId);
+                toast.success("Extraction Complete: Neural Network inference successful");
             } else {
-                toast.dismiss(currentToastId);
+                toast.dismiss(toastId);
             }
-
-            setFeatures({
-                bpm: result.bpm,
-                key: `${result.key} ${result.scale}`,
-                energy: result.energy,
-                danceability: result.danceability_ml || result.danceability || 0.5,
-                happiness: result.moods?.happy || result.valence || 0.5,
-                // Heuristic: Low energy usually implies higher acousticness if instrumental
-                acousticness: result.voice_instrumental ? (1 - result.voice_instrumental) * 0.5 : 0.3,
-                instrumentalness: result.voice_instrumental || 0.7,
-                duration: result.duration
-            });
 
             // Smart Auto-Tagging based on Sonic DNA
             const newTags: string[] = [];
-
-            // Add top Genre
             if (result.genre) {
                 const entries = Object.entries(result.genre);
                 if (entries.length > 0) {
                     const topGenre = entries.sort((a, b) => b[1] - a[1])[0];
-                    if (topGenre && topGenre[1] > 0.3) {
-                        newTags.push(topGenre[0]);
-                    }
+                    if (topGenre && topGenre[1] > 0.3) newTags.push(topGenre[0]);
                 }
             }
 
-            // Add top Moods
             if (result.moods) {
                 if (result.moods.happy > 0.6) newTags.push('Happy');
                 if (result.moods.sad > 0.6) newTags.push('Sad');
@@ -195,166 +73,21 @@ const AudioAnalyzer: React.FC = () => {
                 if (result.moods.relaxed > 0.6) newTags.push('Relaxed');
             }
 
-            // Legacy/Heuristic Tags fallback
-            if (result.energy > 0.8) newTags.push('High Voltage', 'Intense');
+            if (result.energy > 0.8) newTags.push('High Voltage');
             else if (result.energy > 0.6) newTags.push('High Energy');
-            else if (result.energy < 0.2) newTags.push('Ambient', 'Atmospheric');
-            else if (result.energy < 0.4) newTags.push('Chill');
-
-            if (result.bpm > 150) newTags.push('Hypertempo');
-            else if (result.bpm > 135) newTags.push('High Tempo');
-            else if (result.bpm < 80) newTags.push('Very Slow');
+            
+            if (result.bpm > 135) newTags.push('High Tempo');
             else if (result.bpm < 95) newTags.push('Downtempo');
             else newTags.push('Mid-tempo');
 
-            // Add Genre if available
-            if (result.genre) {
-                const topGenre = Object.keys(result.genre)[0];
-                if (topGenre) newTags.push(topGenre);
-            }
-
-            if ((result.danceability_ml || 0) > 0.75) newTags.push('Club Ready', 'Groovy');
-
             setTags(Array.from(new Set(newTags)));
-
-            // --- SONIC CORTEX INTEGRATION ---
-            if (!fromCache) {
-                // Trigger Gemini 3 Pro Multimodal Analysis
-                console.log("🚀 TRIGGERING SONIC CORTEX ANALYSIS NOW...");
-                const cortexToastId = toast.loading("Sonic Cortex: Listening for Soul...");
-
-                // Helper to convert for Gemini
-                const fileToBase64 = (file: File): Promise<string> => {
-                    return new Promise((resolve, reject) => {
-                        const reader = new FileReader();
-                        reader.readAsDataURL(file);
-                        reader.onload = () => resolve(reader.result as string);
-                        reader.onerror = error => reject(error);
-                    });
-                };
-
-                try {
-                    const base64 = await fileToBase64(audioFile);
-                    // Dynamically import to avoid circular dep issues or load weight
-                    const { sonicCortexService } = await import('@/services/audio/SonicCortexService');
-
-                    const soul = await sonicCortexService.describeSoul(base64, audioFile.type || 'audio/mp3');
-
-                    toast.dismiss(cortexToastId);
-
-                    if (soul) {
-                        console.log("🟦 [SONIC CORTEX] SOUL CERTIFICATE:", JSON.stringify(soul, null, 2));
-                        toast.success("Sonic Cortex: Soul Identified");
-
-                        // Optional: augment tags with cortex keywords
-                        if (soul.suggestedKeywords) {
-                            const aiTags = soul.suggestedKeywords.slice(0, 3);
-                            setTags(prev => Array.from(new Set([...prev, ...aiTags])));
-                        }
-                    }
-                } catch (cortexError) {
-                    console.error("[AudioAnalyzer] Sonic Cortex Failed:", cortexError);
-                    toast.dismiss(cortexToastId);
-                    toast.error("Sonic Cortex could not hear the soul.");
-                } finally {
-                    // Double safety: Ensure toast is gone
-                    toast.dismiss(cortexToastId);
-                }
-            }
-            // --------------------------------
-
         } catch (error) {
-            console.error("Deep Analysis Failed", error);
-            if (currentToastId) toast.dismiss(currentToastId);
-            toast.error("Deep Analysis failed. Try another file.");
+            console.error("Deep Extraction Failed", error);
+            toast.dismiss(toastId);
+            toast.error("Deep Extraction failed. Try another file.");
             setIsAnalyzing(false);
         } finally {
             setIsAnalyzing(false);
-        }
-    };
-
-    const togglePlay = () => {
-        if (wavesurferRef.current) {
-            wavesurferRef.current.playPause();
-        }
-    };
-
-    const handleAnalyzeRegion = async () => {
-        if (!selectedRegion || !wavesurferRef.current) {
-            toast.info("Select a region on the waveform first.");
-            return;
-        }
-
-        const fullBuffer = wavesurferRef.current.getDecodedData();
-        if (!fullBuffer) {
-            toast.error("Audio data not ready.");
-            return;
-        }
-
-        const audioCtx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-
-        const startSample = Math.floor(selectedRegion.start * fullBuffer.sampleRate);
-        const endSample = Math.floor(selectedRegion.end * fullBuffer.sampleRate);
-        const length = endSample - startSample;
-
-        if (length <= 0) return;
-
-        // Create segmented buffer
-        const regionBuffer = audioCtx.createBuffer(
-            fullBuffer.numberOfChannels,
-            length,
-            fullBuffer.sampleRate
-        );
-
-        for (let channel = 0; channel < fullBuffer.numberOfChannels; channel++) {
-            const channelData = fullBuffer.getChannelData(channel);
-            // Copy segment
-            const segment = channelData.slice(startSample, endSample);
-            regionBuffer.copyToChannel(segment, channel);
-        }
-
-        const toastId = toast.loading("Scanning for Distribution Compliance...");
-
-        try {
-            // Note: Currently analyzeBuffer is basic.
-            // Ideally we'd overload analyzeDeep to accept AudioBuffer, but for now fallback to basic for regions
-            // or we need to refactor analyzeDeep to separate decoding.
-            // Given the complexity of deep analysis on short segments (requires minimum duration),
-            // we stick to basic features + standard tagging for regions for now, unless refactored.
-            // But wait, the user wants "Deep" analysis.
-            // Let's rely on the basic analyzeBuffer which is already wired, but maybe upgrade it later.
-
-            const result = await audioAnalysisService.analyzeBuffer(regionBuffer);
-
-            setRegionFeatures({
-                bpm: result.bpm,
-                key: `${result.key} ${result.scale}`,
-                energy: result.energy,
-                danceability: result.danceability || 0.5,
-                happiness: result.valence || 0.5,
-                acousticness: 0.3,
-                instrumentalness: 0.7,
-                duration: result.duration
-            });
-
-            // Smart tagging based on region
-            const newTags: string[] = [];
-            if (result.energy > 0.8) newTags.push('Viral Moment');
-            if (result.bpm > 130) newTags.push('High Tempo');
-            if (result.danceability > 0.7) newTags.push('Groove Section');
-
-            if (newTags.length > 0) {
-                setTags(prev => Array.from(new Set([...prev, ...newTags])));
-                toast.success(`Region Analyzed: +${newTags.length} derived tags`);
-            } else {
-                toast.success("Compliance Scan Complete");
-            }
-
-            toast.dismiss(toastId);
-
-        } catch (error) {
-            console.error("Region Analysis Failed", error);
-            toast.error("Failed to sequence region DNA.");
         }
     };
 
@@ -364,20 +97,18 @@ const AudioAnalyzer: React.FC = () => {
         const toastId = toast.loading("Logging compliance audit to Knowledge Graph...");
 
         try {
-            // 1. Save to Knowledge Graph (Firestore)
             await audioAnalysisService.saveAnalysisToFirestore(fullAnalysis, file.name);
 
-            // 2. Save to Music Library Cache
             const fileHash = await audioAnalysisService.generateFileHash(file);
             const featuresToSave = {
-                bpm: features.bpm,
-                key: features.key.split(' ')[0],
-                scale: features.key.split(' ')[1] || 'major',
-                energy: features.energy,
-                duration: features.duration,
-                danceability: features.danceability,
-                loudness: -1,
-                valence: features.happiness
+                bpm: fullAnalysis.bpm,
+                key: fullAnalysis.key,
+                scale: fullAnalysis.scale || 'major',
+                energy: fullAnalysis.energy,
+                duration: fullAnalysis.duration,
+                danceability: fullAnalysis.danceability,
+                loudness: fullAnalysis.loudness || -1,
+                valence: fullAnalysis.valence || 0.5
             };
             const { musicLibraryService } = await import('@/services/music/MusicLibraryService');
             await musicLibraryService.saveAnalysis(fileHash, file.name, featuresToSave, fileHash);
@@ -400,203 +131,103 @@ const AudioAnalyzer: React.FC = () => {
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Derived Context
-    const aiContextDescription = file ?
-        `Track "${file.name}" | ${Math.round(features.bpm)} BPM | ${features.key}. ` +
-        (regionFeatures
-            ? `SELECTED REGION: ${(regionFeatures.energy * 100).toFixed(0)}% Energy, ${Math.round(regionFeatures.bpm)} BPM. Identified as potential key moment.`
-            : `Global energy is ${(features.energy * 100).toFixed(0)}%. No specific region isolated.`)
-        : "No audio loaded.";
-
     return (
-        <ModuleDashboard title="Compliance DNA Console" description="Distribution Compliance & Technical Standards Audit" icon={<Activity className="text-primary" />}>
-            <div className="flex flex-col h-full p-4 gap-4 overflow-hidden">
+        <ModuleDashboard title="Distribution Intelligence Tracker" description="Extract sonic DNA for Agents, Marketing, and DDEX Requirements" icon={<Activity className="text-primary" />}>
+            <div className="flex flex-col h-full p-6 gap-6 overflow-y-auto custom-scrollbar">
 
-                {/* Top Section: Analysis & Operations (Split View) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 min-h-0">
-
-                    {/* Left: Sonic Radar (4 cols) */}
-                    <div className="lg:col-span-4 bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center relative">
-                        <div className="absolute top-4 left-4 text-xs font-mono text-muted-foreground flex items-center gap-2">
-                            <Fingerprint size={12} />
-                            {regionFeatures ? "SEGMENT COMPLIANCE" : "GLOBAL COMPLIANCE"}
-                        </div>
-                        {/* Show Region features if available, else global */}
-                        <SonicRadar features={regionFeatures || features} loading={isAnalyzing} />
-
-                        {/* Key Stats Row */}
-                        <div className="flex justify-between w-full px-8 mt-6">
-                            <div className="text-center" data-testid="bpm-stat">
-                                <div className="text-[10px] text-muted-foreground uppercase">BPM</div>
-                                <div className="text-2xl font-mono text-primary glow-text-white">{Math.round((regionFeatures || features).bpm) || '--'}</div>
-                            </div>
-                            <div className="text-center" data-testid="key-stat">
-                                <div className="text-[10px] text-muted-foreground uppercase">KEY</div>
-                                <div className="text-2xl font-mono text-primary glow-text-white">{(regionFeatures || features).key || '--'}</div>
-                            </div>
-                            <div className="text-center" data-testid="energy-stat">
-                                <div className="text-[10px] text-muted-foreground uppercase">ENERGY</div>
-                                <div className="text-2xl font-mono text-primary glow-text-white">{((regionFeatures || features).energy * 10).toFixed(1)}</div>
-                            </div>
-                        </div>
-
-                        {regionFeatures && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setRegionFeatures(null)}
-                                className="mt-4 text-[10px] h-6 text-muted-foreground hover:text-white"
-                                data-testid="reset-to-global-button"
-                                aria-label="Reset analysis to global view"
-                            >
-                                <RotateCcw size={10} className="mr-1" /> Reset to Global
-                            </Button>
-                        )}
+                {/* Top Actions */}
+                <div className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5">
+                    <div>
+                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                            <ShieldCheck className="text-green-400" size={24} />
+                            Ingestion & Data Extraction
+                        </h2>
+                        <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata for DDEX distribution and agent context.</p>
                     </div>
-
-                    {/* Middle: Tagging Matrix (5 cols) */}
-                    <div className="lg:col-span-5 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
-                        <div className="p-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                            <span className="text-xs font-bold text-muted-foreground">COMPLIANCE MATRIX</span>
-                            <Badge variant="outline" className="text-[10px] h-5 border-white/10">{tags.length} TAGS</Badge>
-                        </div>
-                        <TagMatrix
-                            tags={tags}
-                            onAddTag={(tag) => setTags([...tags, tag])}
-                            onRemoveTag={(tag) => setTags(tags.filter(t => t !== tag))}
-                            suggestions={DEFAULT_TAGS}
-                        />
-                    </div>
-
-                    {/* Right: Actions & AI Output (3 cols) */}
-                    <div className="lg:col-span-3 flex flex-col gap-4">
-                        {/* Upload Card */}
-                        <label className="bg-primary/5 hover:bg-primary/10 border border-primary/20 hover:border-primary/40 rounded-xl p-4 cursor-pointer transition-all group flex items-center gap-4 focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 focus-within:outline-none" data-testid="import-track-button">
-                            <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center group-hover:scale-110 transition-transform">
-                                <Upload size={18} className="text-primary" />
-                            </div>
-                            <div>
-                                <div className="text-sm font-bold text-primary">Import Track</div>
-                                <div className="text-[10px] text-muted-foreground">WAV, MP3, AIFF</div>
-                            </div>
-                            <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} data-testid="import-track-input" />
-                        </label>
-
-                        {/* AI Summary */}
-                        <div className="flex-1 bg-gradient-to-br from-black/40 to-purple-900/10 rounded-xl border border-white/5 p-4 flex flex-col">
-                            <div className="flex justify-between items-center mb-3">
-                                <div className="flex items-center gap-2">
-                                    <Database className="text-purple-400" size={14} />
-                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Audit Findings</span>
-                                </div>
-                                {isFromCache && <Badge variant="secondary" className="text-[8px] h-4 bg-purple-500/20 text-purple-300 pointer-events-none">CACHED</Badge>}
-                            </div>
-                            <div className="flex-1 overflow-y-auto">
-                                <p className="text-xs font-mono text-white/70 leading-relaxed">
-                                    {isAnalyzing ? (
-                                        <span className="flex items-center gap-2">
-                                            <Loader2 className="animate-spin" size={12} />
-                                            Running Neural Inference...
-                                        </span>
-                                    ) : aiContextDescription}
-                                </p>
-                            </div>
-                        </div>
-
-                        <Button
-                            className="w-full bg-purple-600 hover:bg-purple-500 shadow-[0_0_15px_rgba(147,51,234,0.3)]"
-                            disabled={!file || isAnalyzing || isSaving}
-                            onClick={handleSaveAnalysis}
-                            data-testid="save-analysis-button"
-                        >
-                            {isSaving ? <Loader2 className="animate-spin mr-2" size={14} /> : <Save size={14} className="mr-2" />}
-                            Log Audit Result
-                        </Button>
-                    </div>
+                    <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                        {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+                        {isAnalyzing ? "Extracting Data..." : "Load Audio Master"}
+                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} />
+                    </label>
                 </div>
 
-                {/* Bottom Section: Waveform Console */}
-                <div className="h-40 bg-card glass-panel rounded-2xl border border-white/5 flex flex-col relative overflow-hidden shrink-0">
-                    {/* Toolbar */}
-                    <div className="h-10 border-b border-white/5 flex items-center px-4 justify-between bg-white/5">
-                        <div className="flex items-center gap-4 text-xs font-mono text-muted-foreground">
-                            <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
-                            {selectedRegion && (
-                                <span className="text-primary flex items-center gap-1">
-                                    <Scissors size={10} />
-                                    SELECTION: {formatTime(selectedRegion.start)} - {formatTime(selectedRegion.end)}
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            {selectedRegion && (
-                                <Button size="sm" variant="secondary" className="h-6 text-[10px]" onClick={handleAnalyzeRegion} data-testid="analyze-segment-button">
-                                    Audit Segment DNA
-                                </Button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Waveform Canvas */}
-                    <div className="flex-1 relative group bg-black/20">
-                        {/* Centered Placeholder if no file */}
-                        {!file && (
-                            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                                <span className="text-xs font-mono text-white/20 tracking-[0.2em]">NO SIGNAL</span>
+                {/* Data Readout Matrix */}
+                {fullAnalysis && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                <Clock size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">Duration</span>
                             </div>
-                        )}
-
-                        {/* Actual Waveform Container */}
-                        <div ref={waveformContainerRef} className="w-full h-full" />
+                            <span className="text-3xl font-mono text-white">{formatTime(fullAnalysis.duration)}</span>
+                        </div>
+                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                <Activity size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">BPM (Tempo)</span>
+                            </div>
+                            <span className="text-3xl font-mono text-white">{Math.round(fullAnalysis.bpm)}</span>
+                        </div>
+                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                <Music size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">Key & Scale</span>
+                            </div>
+                            <span className="text-3xl font-mono text-white">{fullAnalysis.key} {fullAnalysis.scale}</span>
+                        </div>
+                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                <BarChart2 size={16} />
+                                <span className="text-xs font-bold uppercase tracking-wider">Energy Index</span>
+                            </div>
+                            <span className="text-3xl font-mono text-white">{(fullAnalysis.energy * 100).toFixed(0)}%</span>
+                        </div>
                     </div>
+                )}
 
-                    {/* Transport Bottom Bar */}
-                    <div className="h-12 border-t border-white/5 flex items-center justify-center gap-6 bg-black/20">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full hover:bg-white/10 text-muted-foreground"
-                            onClick={() => {
-                                if (wavesurferRef.current) wavesurferRef.current.stop();
-                                setIsPlaying(false);
-                            }}
-                            data-testid="stop-button"
-                            aria-label="Stop playback"
-                        >
-                            <RotateCcw size={16} />
-                        </Button>
-
-                        <Button
-                            size="icon"
-                            className={cn(
-                                "rounded-full w-10 h-10 shadow-[0_0_20px_rgba(var(--primary),0.3)] hover:scale-105 transition-transform",
-                                isPlaying ? "bg-primary text-black" : "bg-white/10 hover:bg-white/20"
-                            )}
-                            onClick={togglePlay}
-                            disabled={!file}
-                            data-testid="play-pause-button"
-                            aria-label={isPlaying ? "Pause" : "Play"}
-                        >
-                            {isPlaying ? <Pause size={20} fill="currentColor" /> : <Play size={20} fill="currentColor" className="ml-0.5" />}
-                        </Button>
-
-                        {/* Volume Slider */}
-                        <div className="absolute right-6 flex items-center gap-3 w-32">
-                            <Volume2 size={14} className="text-muted-foreground" />
-                            <Slider
-                                defaultValue={[75]}
-                                max={100}
-                                step={1}
-                                onValueChange={(vals) => {
-                                    if (wavesurferRef.current) wavesurferRef.current.setVolume(vals[0] / 100);
-                                }}
-                                className="flex-1"
-                                data-testid="volume-slider"
-                                aria-label="Volume"
+                {/* Bottom Matrix: Tagging and DB Log */}
+                {fullAnalysis && (
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                        {/* Tagging */}
+                        <div className="lg:col-span-8 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
+                            <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Metadata Tags (For Agents)</span>
+                                <Badge variant="outline" className="text-[10px] h-5 border-white/10">{tags.length} TAGS</Badge>
+                            </div>
+                            <TagMatrix
+                                tags={tags}
+                                onAddTag={(tag) => setTags([...tags, tag])}
+                                onRemoveTag={(tag) => setTags(tags.filter(t => t !== tag))}
+                                suggestions={DEFAULT_TAGS}
                             />
                         </div>
+
+                        {/* Audit Logging */}
+                        <div className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className="flex items-center gap-2">
+                                        <Database className="text-primary" size={18} />
+                                        <h3 className="text-sm font-bold text-primary uppercase">Knowledge Graph</h3>
+                                    </div>
+                                    {isFromCache && <Badge variant="secondary" className="text-[10px] bg-primary/20 text-primary-foreground border-none">CACHED</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground leading-relaxed mb-6">
+                                    Logging this data into the Knowledge Graph provides your AI agents (Creative Director, Marketing, Video Producer) with the structural context needed to create assets that perfectly match the song's energy and rhythm. It is also packaged for DDEX distribution.
+                                </p>
+                            </div>
+
+                            <Button
+                                className="w-full bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)] text-primary-foreground font-bold py-6 text-sm"
+                                disabled={isSaving}
+                                onClick={handleSaveAnalysis}
+                            >
+                                {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
+                                Push Data to Agents
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
 
             </div>
         </ModuleDashboard>
