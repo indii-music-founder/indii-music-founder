@@ -59,7 +59,7 @@ vi.mock('@/core/config/ai-models', () => ({
         AUDIO_FLASH: 'mock-model-fast',
         VIDEO_GEN: 'mock-video-model',
         BROWSER_AGENT: 'mock-model-agent',
-        EMBEDDING_DEFAULT: 'models/embedding-001'
+        EMBEDDING_DEFAULT: 'gemini-embedding-001'
     },
     validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }

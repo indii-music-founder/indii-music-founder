@@ -58,7 +58,7 @@ export interface UserMemory {
 
   // Vector search
   embedding?: number[];         // Vector embedding for semantic search
-  embeddingModel?: string;      // Model used for embedding (e.g., "models/embedding-001")
+  embeddingModel?: string;      // Model used for embedding (e.g., "gemini-embedding-001")
 }
 
 /**

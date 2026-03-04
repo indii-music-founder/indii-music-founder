@@ -20,7 +20,7 @@ export const APPROVED_MODELS = {
     VIDEO_FAST: 'veo-3.1-fast-generate-preview',
     VIDEO_GEN: 'veo-3.1-generate-preview', // Alias for backward compatibility
     BROWSER_AGENT: 'gemini-2.5-pro-preview',
-    EMBEDDING_DEFAULT: 'models/embedding-001'
+    EMBEDDING_DEFAULT: 'gemini-embedding-001'
 } as const;
 
 export const AI_MODELS = {
@@ -89,6 +89,9 @@ export const AI_CONFIG = {
             HD: '1080p',
             UHD: '4k'
         }
+    },
+    EMBEDDING: {
+        DIMENSIONS: 768, // MRL: supported values are 768, 1536, or 3072
     }
 } as const;
 

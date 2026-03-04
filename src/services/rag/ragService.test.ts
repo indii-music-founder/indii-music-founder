@@ -42,7 +42,7 @@ vi.mock('@/core/config/ai-models', () => ({
         AUDIO_FLASH: 'gemini-3-pro-preview',
         VIDEO_GEN: 'veo-3.1-generate-preview',
         BROWSER_AGENT: 'gemini-3-pro-preview',
-        EMBEDDING_DEFAULT: 'models/embedding-001'
+        EMBEDDING_DEFAULT: 'gemini-embedding-001'
     },
     validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }
