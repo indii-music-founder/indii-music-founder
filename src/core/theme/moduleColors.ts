@@ -212,16 +212,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
     },
-    audio: {
-        // Audio Distribution Hub shares Distribution's electric blue aesthetic
-        text: 'text-dept-distribution',
-        bg: 'bg-dept-distribution/10',
-        border: 'border-dept-distribution',
-        ring: 'focus-within:ring-dept-distribution/50',
-        hoverText: 'hover:text-dept-distribution',
-        hoverBg: 'hover:bg-dept-distribution/5',
-        cssVar: '--color-dept-distribution',
-    },
     workflow: {
         // Workflow uses Social's connectivity cyan
         text: 'text-dept-social',
