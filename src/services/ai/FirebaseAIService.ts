@@ -83,7 +83,7 @@ function isAppCheckError(error: unknown): boolean {
 function isAppCheckConfigured(): boolean {
     // Force fallback in dev mode unless a debug token is explicitly set
     // This allows localhost to work without App Check emulation
-    console.log('[FirebaseAIService] App Check Debug:', {
+    logger.debug('[FirebaseAIService] App Check Debug:', {
         DEV: env.DEV,
         debugToken: env.appCheckDebugToken,
         key: env.appCheckKey
@@ -253,7 +253,7 @@ export class FirebaseAIService {
         const foundSource = Object.entries(keySources).find(([_, val]) => !!val);
         const apiKey = foundSource ? foundSource[1] : undefined;
 
-        console.log('[FirebaseAIService] Fallback Mode Initialization:', {
+        logger.debug('[FirebaseAIService] Fallback Mode Initialization:', {
             foundKey: !!apiKey,
             source: foundSource ? foundSource[0] : 'NONE',
             keyPrefix: apiKey ? apiKey.substring(0, 8) + '...' : 'N/A'
@@ -789,7 +789,7 @@ export class FirebaseAIService {
                         try {
                             const c = chunk as any;
                             chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
-                        } catch (e) { console.log('CAUGHT CHUNK ERROR', e); }
+                        } catch (e) { logger.debug('CAUGHT CHUNK ERROR', e); }
                         finalText += chunkText;
                         const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
                         const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
@@ -873,9 +873,9 @@ export class FirebaseAIService {
         try {
             // Security: Redact PII from logs
             const sanitizedForLog = this.sanitizePrompt(prompt);
-            console.log('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
-            console.log('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
-            console.log('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
+            logger.debug('[DEBUG-PAYLOAD] modelName:', modelOverride || this.getModelName());
+            logger.debug('[DEBUG-PAYLOAD] prompt:', JSON.stringify(sanitizedForLog).substring(0, 500) + "...");
+            logger.debug('[DEBUG-PAYLOAD] config:', JSON.stringify(config));
         } catch (e) { /* Ignore logging errors */ }
 
         return this.rawGenerateContent(prompt, modelOverride, config, systemInstruction, tools, options);
@@ -1284,7 +1284,8 @@ export class FirebaseAIService {
                     const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
                     const result = await this.fallbackClient!.models.embedContent({
                         model: modelName,
-                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
                     });
                     return (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [];
                 });
@@ -1525,7 +1526,8 @@ export class FirebaseAIService {
                     const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
                     const result = await this.fallbackClient.models.embedContent({
                         model: options.model,
-                        contents: [{ role: 'user', parts: [{ text }] }] as any
+                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
                     });
                     return { values: (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [] };
                 } catch (error) {
