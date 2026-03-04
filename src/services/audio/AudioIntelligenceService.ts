@@ -143,7 +143,7 @@ Listen deeply to the instrumentation, vocal delivery, and mix. If it is aggressi
                 }
             ],
             SEMANTIC_SCHEMA,
-            4096, // High thinking budget for deep logic
+            8192, // Maps to thinkingLevel: 'HIGH' for Gemini 3.x (deep musicology analysis)
             "You are an expert musicologist and audio analyst.",
             AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
         );
