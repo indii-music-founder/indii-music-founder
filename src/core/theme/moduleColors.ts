@@ -58,8 +58,8 @@ export const departmentCssVars = {
     publicist: '--color-dept-marketing',   // Publicist shares Marketing
     video: '--color-dept-creative',        // Video shares Creative
     agent: '--color-dept-creative',        // Agent shares Creative
-    'audio-analyzer': '--color-dept-creative', // Audio Analyzer shares Creative
-    audio: '--color-dept-creative',             // Audio Studio shares Creative
+    'audio-analyzer': '--color-dept-distribution', // Audio Audit shares Distribution
+    audio: '--color-dept-distribution',             // Audio Distribution Hub shares Distribution
     onboarding: '--color-dept-creative',   // Onboarding shares Creative
     workflow: '--color-dept-social',       // Workflow shares Social
     showroom: '--color-dept-brand',        // Showroom shares Brand
@@ -213,14 +213,14 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-creative',
     },
     audio: {
-        // Audio Studio shares Creative's purple aesthetic
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
+        // Audio Distribution Hub shares Distribution's electric blue aesthetic
+        text: 'text-dept-distribution',
+        bg: 'bg-dept-distribution/10',
+        border: 'border-dept-distribution',
+        ring: 'focus-within:ring-dept-distribution/50',
+        hoverText: 'hover:text-dept-distribution',
+        hoverBg: 'hover:bg-dept-distribution/5',
+        cssVar: '--color-dept-distribution',
     },
     workflow: {
         // Workflow uses Social's connectivity cyan
@@ -324,14 +324,14 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-default',
     },
     'audio-analyzer': {
-        // Audio tools share Creative's purple
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
+        // Audio Audit shares Distribution's electric blue aesthetic
+        text: 'text-dept-distribution',
+        bg: 'bg-dept-distribution/10',
+        border: 'border-dept-distribution',
+        ring: 'focus-within:ring-dept-distribution/50',
+        hoverText: 'hover:text-dept-distribution',
+        hoverBg: 'hover:bg-dept-distribution/5',
+        cssVar: '--color-dept-distribution',
     },
     observability: {
         text: 'text-dept-distribution',

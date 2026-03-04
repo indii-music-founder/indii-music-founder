@@ -141,7 +141,7 @@ const AudioAnalyzer: React.FC = () => {
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
-        const toastId = toast.loading("Initializing Deep Analysis Models... (First run may take time)");
+        const toastId = toast.loading("Initializing Compliance Models... (First run may take time)");
         const currentToastId = toastId;
 
         try {
@@ -313,7 +313,7 @@ const AudioAnalyzer: React.FC = () => {
             regionBuffer.copyToChannel(segment, channel);
         }
 
-        const toastId = toast.loading("Isolating Sonic DNA sequence...");
+        const toastId = toast.loading("Scanning for Distribution Compliance...");
 
         try {
             // Note: Currently analyzeBuffer is basic.
@@ -347,7 +347,7 @@ const AudioAnalyzer: React.FC = () => {
                 setTags(prev => Array.from(new Set([...prev, ...newTags])));
                 toast.success(`Region Analyzed: +${newTags.length} derived tags`);
             } else {
-                toast.success("Region Analysis Complete");
+                toast.success("Compliance Scan Complete");
             }
 
             toast.dismiss(toastId);
@@ -409,7 +409,7 @@ const AudioAnalyzer: React.FC = () => {
         : "No audio loaded.";
 
     return (
-        <ModuleDashboard title="Sonic DNA Console" description="Deep Metadata Extraction & Laboratory Analysis" icon={<Activity className="text-primary" />}>
+        <ModuleDashboard title="Compliance DNA Console" description="Distribution Compliance & Technical Standards Audit" icon={<Activity className="text-primary" />}>
             <div className="flex flex-col h-full p-4 gap-4 overflow-hidden">
 
                 {/* Top Section: Analysis & Operations (Split View) */}
@@ -419,7 +419,7 @@ const AudioAnalyzer: React.FC = () => {
                     <div className="lg:col-span-4 bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col items-center justify-center relative">
                         <div className="absolute top-4 left-4 text-xs font-mono text-muted-foreground flex items-center gap-2">
                             <Fingerprint size={12} />
-                            {regionFeatures ? "REGION FINGERPRINT" : "GLOBAL FINGERPRINT"}
+                            {regionFeatures ? "SEGMENT COMPLIANCE" : "GLOBAL COMPLIANCE"}
                         </div>
                         {/* Show Region features if available, else global */}
                         <SonicRadar features={regionFeatures || features} loading={isAnalyzing} />
@@ -457,7 +457,7 @@ const AudioAnalyzer: React.FC = () => {
                     {/* Middle: Tagging Matrix (5 cols) */}
                     <div className="lg:col-span-5 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
                         <div className="p-3 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                            <span className="text-xs font-bold text-muted-foreground">METADATA MATRIX</span>
+                            <span className="text-xs font-bold text-muted-foreground">COMPLIANCE MATRIX</span>
                             <Badge variant="outline" className="text-[10px] h-5 border-white/10">{tags.length} TAGS</Badge>
                         </div>
                         <TagMatrix
@@ -487,7 +487,7 @@ const AudioAnalyzer: React.FC = () => {
                             <div className="flex justify-between items-center mb-3">
                                 <div className="flex items-center gap-2">
                                     <Database className="text-purple-400" size={14} />
-                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Lab Observations</span>
+                                    <span className="text-[10px] font-bold text-purple-400 uppercase">Audit Findings</span>
                                 </div>
                                 {isFromCache && <Badge variant="secondary" className="text-[8px] h-4 bg-purple-500/20 text-purple-300 pointer-events-none">CACHED</Badge>}
                             </div>
@@ -510,7 +510,7 @@ const AudioAnalyzer: React.FC = () => {
                             data-testid="save-analysis-button"
                         >
                             {isSaving ? <Loader2 className="animate-spin mr-2" size={14} /> : <Save size={14} className="mr-2" />}
-                            Save Analysis
+                            Log Audit Result
                         </Button>
                     </div>
                 </div>
@@ -531,7 +531,7 @@ const AudioAnalyzer: React.FC = () => {
                         <div className="flex items-center gap-2">
                             {selectedRegion && (
                                 <Button size="sm" variant="secondary" className="h-6 text-[10px]" onClick={handleAnalyzeRegion} data-testid="analyze-segment-button">
-                                    Analyze Segment DNA
+                                    Audit Segment DNA
                                 </Button>
                             )}
                         </div>

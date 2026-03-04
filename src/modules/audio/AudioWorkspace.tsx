@@ -1,14 +1,9 @@
-/**
- * AudioWorkspace - Unified Audio Generation Module
- * 
- * Tabs: Generate (SoundFX/Music/TTS), Library
- * Features: AI Generation, Audio Analysis, Waveform Display, Persistence
- */
 import React, { useState, useCallback, useEffect } from 'react';
 import {
     Music, Mic, Wand2, Play, Pause, Download, Loader2,
     Volume2, Clock, Sparkles, AudioLines,
-    RefreshCw, Trash2, Search, Filter, History, Clapperboard
+    RefreshCw, Trash2, Search, Filter, History, Clapperboard,
+    Activity, ShieldCheck, Zap
 } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
@@ -21,13 +16,15 @@ import {
 } from '@/services/audio/AudioGenerationService';
 import { type AudioMetadata } from '@/services/audio/AudioPersistenceService';
 import { WaveformPlayer } from './components/WaveformPlayer';
+import { AnalyzeWorkspace } from './components/AnalyzeWorkspace';
+import { MasteringWorkspace } from './components/MasteringWorkspace';
 import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type AudioTab = 'generate' | 'library';
+type AudioTab = 'generate' | 'analyze' | 'master' | 'library';
 type GenerateMode = 'soundfx' | 'music' | 'tts';
 
 // ============================================================================
@@ -211,53 +208,69 @@ const AudioWorkspace: React.FC = () => {
     return (
         <div className="flex flex-col h-full bg-black text-white relative overflow-hidden">
             {/* Header / Tabs */}
-            <div className="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-black/50 backdrop-blur-xl z-10">
+            <div className="flex items-center justify-between px-8 py-6 border-b border-white/10 bg-black/50 backdrop-blur-xl z-20">
                 <div className="flex items-center gap-4">
-                    <div className="bg-purple-500/20 p-2.5 rounded-xl">
+                    <div className="bg-purple-500/20 p-2.5 rounded-xl border border-purple-500/20">
                         <AudioLines className="text-purple-400 w-6 h-6" />
                     </div>
                     <div>
-                        <h1 className="text-xl font-bold tracking-tight">Audio Studio</h1>
-                        <p className="text-xs text-gray-500 uppercase tracking-widest font-medium">Phase 1 / Generation</p>
+                        <h1 className="text-xl font-bold tracking-tight">Audio Distribution Hub</h1>
+                        <p className="text-[10px] text-gray-500 uppercase tracking-[0.2em] font-bold">Release Compliance V1.0</p>
                     </div>
                 </div>
 
-                <div className="flex bg-white/5 p-1 rounded-xl border border-white/10">
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
                     <button
                         onClick={() => setActiveTab('generate')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'generate' ? 'bg-purple-500 shadow-lg text-white' : 'text-gray-400 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'generate' ? 'bg-purple-500 shadow-xl text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                     >
-                        Generate
+                        <Sparkles size={14} />
+                        Assets
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('analyze')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'analyze' ? 'bg-indigo-500 shadow-xl text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <ShieldCheck size={14} />
+                        Compliance
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('master')}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'master' ? 'bg-amber-500 shadow-xl text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                    >
+                        <Zap size={14} />
+                        Optimize
                     </button>
                     <button
                         onClick={() => setActiveTab('library')}
-                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${activeTab === 'library' ? 'bg-purple-500 shadow-lg text-white' : 'text-gray-400 hover:text-white'}`}
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'library' ? 'bg-white/10 shadow-xl text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                     >
-                        Library ({generatedAssets.length})
+                        <History size={14} />
+                        Library
                     </button>
                 </div>
             </div>
 
-            <main className="flex-1 overflow-y-auto custom-scrollbar p-8">
-                {activeTab === 'generate' ? (
+            <main className="flex-1 overflow-y-auto custom-scrollbar p-10 pb-20">
+                {activeTab === 'generate' && (
                     <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
                         {/* Mode Selection */}
                         <div className="grid grid-cols-3 gap-4">
                             <ModeCard
                                 mode="soundfx"
-                                label="Sound FX"
+                                label="Social SFX"
                                 icon={<Wand2 className="w-6 h-6" />}
                                 current={generateMode === 'soundfx'}
                             />
                             <ModeCard
                                 mode="music"
-                                label="Music"
+                                label="Marketing Tease"
                                 icon={<Music className="w-6 h-6" />}
                                 current={generateMode === 'music'}
                             />
                             <ModeCard
                                 mode="tts"
-                                label="Speech"
+                                label="Brand Voice"
                                 icon={<Mic className="w-6 h-6" />}
                                 current={generateMode === 'tts'}
                             />
@@ -284,7 +297,7 @@ const AudioWorkspace: React.FC = () => {
                                             <textarea
                                                 value={ttsText}
                                                 onChange={(e) => setTtsText(e.target.value)}
-                                                placeholder="Enter the text you want to convert to speech..."
+                                                placeholder="Enter marketing copy or brand announcements for synthesis..."
                                                 className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-2 focus:ring-purple-500/50 min-h-[150px] transition-all"
                                             />
                                         </div>
@@ -383,7 +396,7 @@ const AudioWorkspace: React.FC = () => {
                                         ) : (
                                             <>
                                                 <RefreshCw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
-                                                Generate AI Audio
+                                                Synthesize Marketing Asset
                                             </>
                                         )}
                                     </button>
@@ -397,7 +410,7 @@ const AudioWorkspace: React.FC = () => {
                                 <div className="flex items-center justify-between">
                                     <h3 className="text-lg font-bold flex items-center gap-2">
                                         <Sparkles className="text-purple-400 w-5 h-5" />
-                                        Generated Asset
+                                        Synthesized Asset
                                     </h3>
                                     <div className="flex items-center gap-2">
                                         <button
@@ -446,8 +459,14 @@ const AudioWorkspace: React.FC = () => {
                             </div>
                         )}
                     </div>
-                ) : (
-                    <div className="max-w-6xl mx-auto space-y-6">
+                )}
+
+                {activeTab === 'analyze' && <AnalyzeWorkspace />}
+
+                {activeTab === 'master' && <MasteringWorkspace />}
+
+                {activeTab === 'library' && (
+                    <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
                         {/* Library Filter Bar */}
                         <div className="flex items-center gap-4 bg-white/5 p-4 rounded-2xl border border-white/10">
                             <div className="relative flex-1">
