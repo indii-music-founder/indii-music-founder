@@ -131,7 +131,7 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
                 expect.objectContaining({ bpm: 120 }),
                 'MOCK-HASH'
             );
-            expect(mockToast.success).toHaveBeenCalledWith('Analysis saved to Database & Library.');
+            expect(mockToast.success).toHaveBeenCalledWith('Compliance Audit logged to Database & Library.');
         });
     });
 });
