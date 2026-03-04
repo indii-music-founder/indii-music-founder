@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import {
-    Activity, Upload, Database, Save, Loader2, Music, Hash, Clock, BarChart2, ShieldCheck
+    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { audioAnalysisService, DeepAudioFeatures } from '@/services/audio/AudioAnalysisService';
+import type { SonicDescription } from '@/services/audio/SonicCortexService';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/core/context/ToastContext';
@@ -23,8 +24,9 @@ const AudioAnalyzer: React.FC = () => {
     const [isFromCache, setIsFromCache] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
-    
+
     const [fullAnalysis, setFullAnalysis] = useState<DeepAudioFeatures | null>(null);
+    const [sonicDescription, setSonicDescription] = useState<SonicDescription | null>(null);
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -33,15 +35,17 @@ const AudioAnalyzer: React.FC = () => {
         setFile(uploadedFile);
         setTags([]);
         setFullAnalysis(null);
+        setSonicDescription(null);
         await runAnalysis(uploadedFile);
     };
 
     const runAnalysis = async (audioFile: File) => {
         setIsAnalyzing(true);
         setIsFromCache(false);
-        const toastId = toast.loading("Executing compliance extraction protocol...");
+        const extractToastId = toast.loading("Executing baseline extraction...");
 
         try {
+            // STEP 1: Basic Telemetry (BPM, Key, Scale, Duration)
             const analysisResult = await audioAnalysisService.analyze(audioFile);
             const result = analysisResult.features;
             const fromCache = analysisResult.fromCache;
@@ -49,43 +53,44 @@ const AudioAnalyzer: React.FC = () => {
             setFullAnalysis(result);
             setIsFromCache(fromCache);
 
-            if (!fromCache) {
-                toast.dismiss(toastId);
-                toast.success("Extraction Complete: Neural Network inference successful");
-            } else {
-                toast.dismiss(toastId);
-            }
+            toast.dismiss(extractToastId);
 
-            // Smart Auto-Tagging based on Sonic DNA
-            const newTags: string[] = [];
-            if (result.genre) {
-                const entries = Object.entries(result.genre);
-                if (entries.length > 0) {
-                    const topGenre = entries.sort((a, b) => b[1] - a[1])[0];
-                    if (topGenre && topGenre[1] > 0.3) newTags.push(topGenre[0]);
+            // Generate basic mechanical tags
+            const newTags: Set<string> = new Set();
+            if (result.energy > 0.8) newTags.add('High Energy');
+            if (result.bpm > 135) newTags.add('High Tempo');
+
+            // STEP 2: Sonic Cortex AI Analysis (Deep Reasoning)
+            const cortexToastId = toast.loading("Executing Deep Sonic Reasoning via Gemini 3 Pro...");
+            try {
+                const reader = new FileReader();
+                reader.readAsDataURL(audioFile);
+                await new Promise(resolve => reader.onload = resolve);
+                const base64Audio = reader.result as string;
+
+                const { sonicCortexService } = await import('@/services/audio/SonicCortexService');
+                const cortexResult = await sonicCortexService.describeSoul(base64Audio, audioFile.type);
+
+                if (cortexResult) {
+                    setSonicDescription(cortexResult);
+                    cortexResult.suggestedKeywords.forEach(k => newTags.add(k));
+                    toast.dismiss(cortexToastId);
+                    toast.success("Sonic DNA and Cognitive Analysis Complete");
+                } else {
+                    toast.dismiss(cortexToastId);
+                    toast.error("Deep Sonic Reasoning failed or timed out.");
                 }
+            } catch (e) {
+                console.error("Sonic Cortex Error:", e);
+                toast.dismiss(cortexToastId);
+                toast.error("Sonic Cortex Error during reasoning.");
             }
 
-            if (result.moods) {
-                if (result.moods.happy > 0.6) newTags.push('Happy');
-                if (result.moods.sad > 0.6) newTags.push('Sad');
-                if (result.moods.aggressive > 0.6) newTags.push('Aggressive');
-                if (result.moods.relaxed > 0.6) newTags.push('Relaxed');
-            }
-
-            if (result.energy > 0.8) newTags.push('High Voltage');
-            else if (result.energy > 0.6) newTags.push('High Energy');
-            
-            if (result.bpm > 135) newTags.push('High Tempo');
-            else if (result.bpm < 95) newTags.push('Downtempo');
-            else newTags.push('Mid-tempo');
-
-            setTags(Array.from(new Set(newTags)));
+            setTags(Array.from(newTags));
         } catch (error) {
-            console.error("Deep Extraction Failed", error);
-            toast.dismiss(toastId);
-            toast.error("Deep Extraction failed. Try another file.");
-            setIsAnalyzing(false);
+            console.error("Extraction Failed", error);
+            toast.dismiss(extractToastId);
+            toast.error("Audio Extractions failed. Try another file.");
         } finally {
             setIsAnalyzing(false);
         }
@@ -97,8 +102,6 @@ const AudioAnalyzer: React.FC = () => {
         const toastId = toast.loading("Logging compliance audit to Knowledge Graph...");
 
         try {
-            await audioAnalysisService.saveAnalysisToFirestore(fullAnalysis, file.name);
-
             const fileHash = await audioAnalysisService.generateFileHash(file);
             const featuresToSave = {
                 bpm: fullAnalysis.bpm,
@@ -108,14 +111,26 @@ const AudioAnalyzer: React.FC = () => {
                 duration: fullAnalysis.duration,
                 danceability: fullAnalysis.danceability,
                 loudness: fullAnalysis.loudness || -1,
-                valence: fullAnalysis.valence || 0.5
+                valence: fullAnalysis.valence || 0.5,
+                // Append smart AI tags and descriptions
+                aiAnalysis: sonicDescription ? {
+                    timbre: sonicDescription.timbre,
+                    mood: sonicDescription.mood,
+                    productionStyle: sonicDescription.productionStyle,
+                    keywords: tags
+                } : undefined
             };
+
+            // Save to Firestore persistence layer
+            await audioAnalysisService.saveAnalysisToFirestore(fullAnalysis, file.name);
+
+            // Save to library cache
             const { musicLibraryService } = await import('@/services/music/MusicLibraryService');
             await musicLibraryService.saveAnalysis(fileHash, file.name, featuresToSave, fileHash);
 
             setIsFromCache(true);
             toast.dismiss(toastId);
-            toast.success("Compliance Audit logged to Database & Library.");
+            toast.success("Compliance Audit & Sonic Data logged to Database.");
         } catch (error) {
             console.error("Save failed", error);
             toast.dismiss(toastId);
@@ -142,12 +157,12 @@ const AudioAnalyzer: React.FC = () => {
                             <ShieldCheck className="text-green-400" size={24} />
                             Ingestion & Data Extraction
                         </h2>
-                        <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata for DDEX distribution and agent context.</p>
+                        <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Essentia + Gemini 3 Pro.</p>
                     </div>
                     <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
                         {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-                        {isAnalyzing ? "Extracting Data..." : "Load Audio Master"}
-                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} />
+                        {isAnalyzing ? "Analyzing Audio..." : "Load Audio Master"}
+                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
                     </label>
                 </div>
 
@@ -185,9 +200,60 @@ const AudioAnalyzer: React.FC = () => {
                     </div>
                 )}
 
+                {/* Sonic Cortex Insights */}
+                {sonicDescription && (
+                    <div className="bg-gradient-to-br from-indigo-900/20 to-purple-900/20 rounded-2xl border border-indigo-500/20 p-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex justify-between items-center mb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-indigo-500/20">
+                                    <BrainCircuit className="text-indigo-400" size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-white">Sonic Cortex Analysis</h3>
+                                    <p className="text-xs text-indigo-300">Powered by Gemini 3 Pro Deep Reasoning</p>
+                                </div>
+                            </div>
+                            {sonicDescription.aiArtifactProbability > 0.5 && (
+                                <Badge variant="destructive" className="animate-pulse">High AI Artifact Probability</Badge>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                                <div>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Emotion & Vibe</span>
+                                    <p className="text-sm text-white/90 leading-relaxed font-medium">{sonicDescription.mood}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Timbre & Quality</span>
+                                    <p className="text-sm text-white/80 leading-relaxed">{sonicDescription.timbre}</p>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Production Style</span>
+                                    <p className="text-sm text-white/80 leading-relaxed">{sonicDescription.productionStyle}</p>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                <div>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-2">Melodic Motifs</span>
+                                    <ul className="text-sm text-indigo-200 leading-relaxed list-disc list-inside">
+                                        {sonicDescription.melodicMotifs.map((motif, i) => <li key={i}>{motif}</li>)}
+                                    </ul>
+                                </div>
+                                <div>
+                                    <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest block mb-1">Marketing Copy Prompt</span>
+                                    <p className="text-sm font-mono text-indigo-300/80 bg-black/40 p-3 rounded-lg border border-white/5">
+                                        "{sonicDescription.suggestedMarketingCopy}"
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Bottom Matrix: Tagging and DB Log */}
                 {fullAnalysis && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-10">
                         {/* Tagging */}
                         <div className="lg:col-span-8 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
                             <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
