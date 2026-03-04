@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { StateCreator } from 'zustand';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioIntelligence } from '@/services/audio/AudioIntelligenceService';
@@ -28,7 +29,7 @@ export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> 
             // 2. Check Cache
             const existing = get().audioProfiles[id];
             if (existing) {
-                console.log(`[AudioIntelligenceMask] Cache hit for ${id}`);
+                logger.debug(`[AudioIntelligenceMask] Cache hit for ${id}`);
                 set({ isAnalyzingAudio: false });
                 return existing;
             }
@@ -48,7 +49,7 @@ export const createAudioIntelligenceSlice: StateCreator<AudioIntelligenceSlice> 
             return profile;
 
         } catch (error: unknown) {
-            console.error('[AudioIntelligenceMask] Analysis failed', error);
+            logger.error('[AudioIntelligenceMask] Analysis failed', error);
             const message = error instanceof Error ? error.message : 'Audio analysis failed';
             set({
                 isAnalyzingAudio: false,

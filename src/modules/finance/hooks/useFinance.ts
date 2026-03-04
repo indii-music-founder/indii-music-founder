@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
 import { financeService, Expense } from '@/services/finance/FinanceService';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
+import { logger } from '@/utils/logger';
 
 export function useFinance() {
     const { userProfile } = useStore();
@@ -62,7 +63,7 @@ export function useFinance() {
             setExpenses(prev => [newExpense, ...prev]);
             return true;
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             Sentry.captureException(e);
             toast.error("Failed to add expense.");
             return false;

@@ -20,6 +20,7 @@ import {
   type DashboardEarningsSummary
 } from '@/services/revenue/schema';
 import { ExpenseSchema, type Expense } from '@/modules/finance/schemas';
+import { logger } from '@/utils/logger';
 
 export type { Expense };
 
@@ -83,7 +84,7 @@ export class FinanceService {
       const parseResult = DashboardEarningsSummarySchema.safeParse(docData);
 
       if (!parseResult.success) {
-        console.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
+        logger.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
         Sentry.captureMessage(`Earnings validation failed for user ${userId}`, 'error');
         return null;
       }
@@ -163,7 +164,7 @@ export class FinanceService {
    */
   subscribeToExpenses(userId: string, callback: (expenses: Expense[]) => void): () => void {
     if (!auth.currentUser || auth.currentUser.uid !== userId) {
-      console.error('Unauthorized subscribe to expenses');
+      logger.error('Unauthorized subscribe to expenses');
       return () => { };
     }
 
@@ -185,7 +186,7 @@ export class FinanceService {
       });
       callback(expenses);
     }, (error) => {
-      console.error("Error subscribing to expenses:", error);
+      logger.error("Error subscribing to expenses:", error);
       Sentry.captureException(error);
     });
   }
@@ -195,7 +196,7 @@ export class FinanceService {
    */
   subscribeToEarnings(userId: string, callback: (earnings: DashboardEarningsSummary | null) => void): () => void {
     if (!auth.currentUser || auth.currentUser.uid !== userId) {
-      console.error('Unauthorized subscribe to earnings');
+      logger.error('Unauthorized subscribe to earnings');
       return () => { };
     }
 
@@ -212,14 +213,14 @@ export class FinanceService {
         if (parseResult.success) {
           callback(parseResult.data);
         } else {
-          console.error(`[FinanceService] Earnings snapshot validation failed:`, parseResult.error);
+          logger.error(`[FinanceService] Earnings snapshot validation failed:`, parseResult.error);
           callback(null);
         }
       } else {
         callback(null);
       }
     }, (error) => {
-      console.error("Error subscribing to earnings:", error);
+      logger.error("Error subscribing to earnings:", error);
       Sentry.captureException(error);
     });
   }

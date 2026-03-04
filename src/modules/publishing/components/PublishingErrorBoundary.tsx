@@ -5,6 +5,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertCircle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface Props {
     children: ReactNode;
@@ -40,7 +41,7 @@ export class PublishingErrorBoundary extends Component<Props, State> {
         const { componentName, onError } = this.props;
 
         // Log to console
-        console.error(
+        logger.error(
             `[PublishingErrorBoundary${componentName ? ` - ${componentName}` : ''}]`,
             error,
             errorInfo

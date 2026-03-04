@@ -8,6 +8,7 @@
 
 import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, FieldValue, query, collection, where, getCountFromServer } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 export type MembershipTier = 'free' | 'pro' | 'enterprise';
 
@@ -243,7 +244,7 @@ class MembershipServiceImpl {
                 return snapshot.data() as DailyUsage;
             }
         } catch (error) {
-            console.warn('[MembershipService] Failed to get usage:', error);
+            logger.warn('[MembershipService] Failed to get usage:', error);
         }
 
         // Return default empty usage
@@ -304,7 +305,7 @@ class MembershipServiceImpl {
                 await setDoc(usageRef, newUsage);
             }
         } catch (error) {
-            console.error('[MembershipService] Failed to increment usage:', error);
+            logger.error('[MembershipService] Failed to increment usage:', error);
             // Don't throw - usage tracking shouldn't block generation
         }
     }
@@ -324,7 +325,7 @@ class MembershipServiceImpl {
                 updatedAt: Date.now()
             }, { merge: true });
         } catch (error) {
-            console.error('[MembershipService] Failed to record spend:', error);
+            logger.error('[MembershipService] Failed to record spend:', error);
         }
     }
 
@@ -371,7 +372,7 @@ class MembershipServiceImpl {
         const userId = await this.getCurrentUserId();
         if (!userId) {
             // No user = deny quota (must be authenticated for any generation)
-            console.warn('[MembershipService] Quota check denied: No authenticated user');
+            logger.warn('[MembershipService] Quota check denied: No authenticated user');
             return { allowed: false, currentUsage: 0, maxAllowed: 0 };
         }
 
@@ -412,7 +413,7 @@ class MembershipServiceImpl {
                     const snapshot = await getCountFromServer(q);
                     currentUsage = snapshot.data().count;
                 } catch (e) {
-                    console.warn('[MembershipService] Failed to count projects:', e);
+                    logger.warn('[MembershipService] Failed to count projects:', e);
                     currentUsage = 0;
                 }
                 // Check if quota is unlimited first
@@ -444,7 +445,7 @@ class MembershipServiceImpl {
                         currentUsage = 0;
                     }
                 } catch (e) {
-                    console.warn('[MembershipService] Failed to count projects:', e);
+                    logger.warn('[MembershipService] Failed to count projects:', e);
                     currentUsage = 0; // Fail open but warn
                 }
 

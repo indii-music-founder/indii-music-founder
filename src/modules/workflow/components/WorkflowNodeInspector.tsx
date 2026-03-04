@@ -4,6 +4,7 @@ import { X, Sparkles, Save, Loader2 } from 'lucide-react';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { isTextPart } from '@/shared/types/ai.dto';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
 
 export default function WorkflowNodeInspector() {
     const { nodes, setNodes, selectedNodeId, setSelectedNodeId } = useStore();
@@ -43,7 +44,7 @@ export default function WorkflowNodeInspector() {
             setPrompt(newPrompt);
             setAiInstruction('');
         } catch (e) {
-            // console.error("AI Refinement Error", e);
+            // logger.error("AI Refinement Error", e);
         } finally {
             setIsGenerating(false);
         }

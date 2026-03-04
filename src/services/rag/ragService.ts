@@ -3,6 +3,7 @@ import { AI_MODELS } from '@/core/config/ai-models';
 import { GeminiRetrieval } from './GeminiRetrievalService';
 import type { KnowledgeAsset, KnowledgeDocumentIndexingStatus, UserProfile, AudioAnalysisJob } from '../../modules/workflow/types';
 import { GeminiFile } from './GeminiRetrievalService';
+import { logger } from '@/utils/logger';
 
 interface Attribution {
     sourceId?: string;
@@ -33,7 +34,7 @@ export async function runAgenticWorkflow(
         const fileList = await GeminiRetrieval.listFiles();
         files = fileList.files || [];
     } catch (err) {
-        console.warn("RAG Retrieval Failed (proceeding with Pure LLM):", err);
+        logger.warn("RAG Retrieval Failed (proceeding with Pure LLM):", err);
         reasoning.push(`Retrieval Error: ${err}`);
         // Fallback to empty files list -> triggers Pure LLM
         files = [];
@@ -71,7 +72,7 @@ export async function runAgenticWorkflow(
         }
 
     } catch (error) {
-        console.error("Agent Logic Failed:", error);
+        logger.error("Agent Logic Failed:", error);
         responseText = "I'm having trouble processing that right now.";
         reasoning.push(`Critical Error: ${error}`);
     }
@@ -125,7 +126,7 @@ export async function processForKnowledgeBase(
             );
             displayTitle = metadata.title || fileName;
         } catch (error) {
-            console.warn("Metadata extraction failed, using defaults:", error);
+            logger.warn("Metadata extraction failed, using defaults:", error);
         }
     }
 
@@ -143,7 +144,7 @@ export async function processForKnowledgeBase(
             embeddingId: file.name
         };
     } catch (e) {
-        console.error("[RAG] Ingestion failed:", e);
+        logger.error("[RAG] Ingestion failed:", e);
         return {
             title: displayTitle,
             content: "Failed to process",

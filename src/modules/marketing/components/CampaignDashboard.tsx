@@ -9,6 +9,7 @@ import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { Loader2, BarChart3, TrendingUp, MousePointerClick, Image, Sparkles, Radio } from 'lucide-react';
 import { motion } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -43,7 +44,7 @@ const CampaignDashboard: React.FC = () => {
                     setSelectedCampaign(newCampaign);
                 }
             } catch (error) {
-                console.error("Failed to load new campaign", error);
+                logger.error("Failed to load new campaign", error);
             }
         }
     }, []);
@@ -58,7 +59,7 @@ const CampaignDashboard: React.FC = () => {
             const savedCampaign = await MarketingService.getCampaignById(newId);
             if (savedCampaign) setSelectedCampaign(savedCampaign);
         } catch (error) {
-            console.error("Failed to save AI campaign", error);
+            logger.error("Failed to save AI campaign", error);
         }
     }, []);
 

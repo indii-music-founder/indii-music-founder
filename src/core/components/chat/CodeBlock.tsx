@@ -2,6 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { getText } from './utils';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface CodeBlockProps extends React.HTMLAttributes<HTMLPreElement> {
     children?: React.ReactNode;
@@ -19,7 +20,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ children, className, ...pr
             setIsCopied(true);
             setTimeout(() => setIsCopied(false), 2000);
         } catch (err) {
-            console.error('Failed to copy text: ', err);
+            logger.error('Failed to copy text: ', err);
         }
     }, [children]);
 

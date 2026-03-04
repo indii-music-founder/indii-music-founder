@@ -1,4 +1,5 @@
 import { PaymentProvider, PaymentTransaction, PaymentConfig } from './types';
+import { logger } from '@/utils/logger';
 
 /**
  * PaymentService
@@ -27,7 +28,7 @@ export class PaymentService implements PaymentProvider {
      */
     async processPayment(data: Omit<PaymentTransaction, 'id' | 'status' | 'createdAt'>): Promise<PaymentTransaction> {
         if (!this.config.enabled) {
-            console.warn('[PaymentService] Payment processing is currently disabled.');
+            logger.warn('[PaymentService] Payment processing is currently disabled.');
             throw new Error('Payment processing is not yet enabled in this environment.');
         }
 

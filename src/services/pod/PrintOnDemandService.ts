@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Print-on-Demand Service Abstraction Layer
  *
@@ -182,7 +183,7 @@ class PrintfulProvider implements IPODProvider {
                         throw new Error(`Printful API ${label} after ${maxRetries} retries: ${message}`);
                     }
                     const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000);
-                    console.warn(`[Printful] ${status} on ${endpoint}. Retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
+                    logger.warn(`[Printful] ${status} on ${endpoint}. Retrying in ${waitMs}ms (attempt ${attempt}/${maxRetries})...`);
                     await new Promise(resolve => setTimeout(resolve, waitMs));
                     continue;
                 }
@@ -618,7 +619,7 @@ class InternalProvider implements IPODProvider {
             const color = variant?.color || 'black';
             const type = product?.type || 'T-Shirt';
 
-            console.log(`[InternalPOD] Generating AI Mockup for ${type} (${color}) at ${printArea}`);
+            logger.debug(`[InternalPOD] Generating AI Mockup for ${type} (${color}) at ${printArea}`);
 
             // 1. Convert Design URL to Base64 (if possible/needed) or pass as URL
             // The agent tool IndiiImageEdit expects image_bytes. 
@@ -635,7 +636,7 @@ class InternalProvider implements IPODProvider {
                     const buffer = await blob.arrayBuffer();
                     imageBytes = btoa(new Uint8Array(buffer).reduce((data, byte) => data + String.fromCharCode(byte), ''));
                 } catch (e) {
-                    console.warn(`[InternalPOD] Failed to fetch design for base64 conversion, using fallback URL logic`, e);
+                    logger.warn(`[InternalPOD] Failed to fetch design for base64 conversion, using fallback URL logic`, e);
                     return designUrl; // Fallback
                 }
             }
@@ -657,7 +658,7 @@ class InternalProvider implements IPODProvider {
 
             return designUrl; // Fallback
         } catch (error) {
-            console.error('[InternalPOD] AI Mockup generation error:', error);
+            logger.error('[InternalPOD] AI Mockup generation error:', error);
             return designUrl; // Fallback
         }
     }
@@ -691,7 +692,7 @@ class PrintOnDemandServiceClass {
         const provider = this.providers.get(providerName);
 
         if (!provider) {
-            console.warn(`[POD] Provider ${providerName} not found, falling back to internal`);
+            logger.warn(`[POD] Provider ${providerName} not found, falling back to internal`);
             return this.providers.get('internal')!;
         }
 

@@ -11,6 +11,7 @@ import {
 import { db } from '../firebase';
 import { Campaign, Contact } from '../../modules/publicist/types';
 import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
+import { logger } from '@/utils/logger';
 
 
 export class PublicistService {
@@ -36,13 +37,13 @@ export class PublicistService {
                 if (parsed.success) {
                     return { ...parsed.data, id: doc.id } as Campaign;
                 }
-                console.warn(`[PublicistService] Invalid campaign ${doc.id}:`, parsed.error);
+                logger.warn(`[PublicistService] Invalid campaign ${doc.id}:`, parsed.error);
                 // Return data casted to Campaign as fallback, ensuring budget exists
                 return { ...data, id: doc.id, budget: data.budget || 0 } as Campaign;
             });
             callback(campaigns);
         }, (error) => {
-            console.error("Error fetching campaigns:", error);
+            logger.error("Error fetching campaigns:", error);
             callback([]);
         });
     }
@@ -65,12 +66,12 @@ export class PublicistService {
                 if (parsed.success) {
                     return { ...parsed.data, id: doc.id } as Contact;
                 }
-                console.warn(`[PublicistService] Invalid contact ${doc.id}:`, parsed.error);
+                logger.warn(`[PublicistService] Invalid contact ${doc.id}:`, parsed.error);
                 return { ...data, id: doc.id } as Contact;
             });
             callback(contacts);
         }, (error) => {
-            console.error("Error fetching contacts:", error);
+            logger.error("Error fetching contacts:", error);
             callback([]);
         });
     }

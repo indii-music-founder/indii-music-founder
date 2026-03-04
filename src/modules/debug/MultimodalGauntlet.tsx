@@ -6,6 +6,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Play, CheckCircle, AlertCircle, Image as ImageIcon, Video } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 export default function MultimodalGauntlet() {
     const { userProfile } = useStore();
@@ -77,7 +78,7 @@ export default function MultimodalGauntlet() {
             setStep(5);
             toast.success("Multimodal Gauntlet Triggered Successfully!");
         } catch (err: any) {
-            console.error("Gauntlet Failure:", err);
+            logger.error("Gauntlet Failure:", err);
             setErrors({ [step]: err.message });
             toast.error(`Step ${step} failed: ${err.message}`);
         } finally {

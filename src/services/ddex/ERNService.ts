@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { DDEXParser } from './DDEXParser';
 import { ERNMapper } from './ERNMapper';
 import type { ERNMessage } from './types/ern';
@@ -30,12 +31,12 @@ export class ERNService {
             // 1. Auto-assign identifiers if missing
             if (!metadata.isrc) {
                 metadata.isrc = await IdentifierService.nextISRC();
-                console.log(`[ERNService] Auto-assigned ISRC: ${metadata.isrc}`);
+                logger.debug(`[ERNService] Auto-assigned ISRC: ${metadata.isrc}`);
             }
 
             if (metadata.releaseType !== 'Single' && !metadata.upc) {
                 metadata.upc = await IdentifierService.nextUPC();
-                console.log(`[ERNService] Auto-assigned UPC: ${metadata.upc}`);
+                logger.debug(`[ERNService] Auto-assigned UPC: ${metadata.upc}`);
             }
 
             // 2. Use the Mapper to generate a complete ERN object

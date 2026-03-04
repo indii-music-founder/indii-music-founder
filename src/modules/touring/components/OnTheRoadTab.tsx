@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Itinerary, ItineraryStop } from '../types';
 import { TourMap } from './TourMap';
+import { logger } from '@/utils/logger';
 
 interface FuelStats {
     milesDriven: number;
@@ -59,7 +60,7 @@ export const OnTheRoadTab: React.FC<OnTheRoadTabProps> = ({
                 setCurrentLocation(`${latitude}, ${longitude}`);
             },
             (error) => {
-                console.error("Geolocation failed:", error);
+                logger.error("Geolocation failed:", error);
             }
         );
     };

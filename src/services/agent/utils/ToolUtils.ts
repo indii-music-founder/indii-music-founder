@@ -1,5 +1,6 @@
 import { ToolFunctionResult, ToolFunction, ToolFunctionArgs, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { logger } from '@/utils/logger';
 
 /**
  * Standardized helper to create a success ToolFunctionResult
@@ -65,7 +66,7 @@ export function wrapTool<TArgs extends ToolFunctionArgs>(
 
         } catch (error: any) {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            console.error(`[Tool:${toolName}] execution failed:`, error);
+            logger.error(`[Tool:${toolName}] execution failed:`, error);
 
             // Preserve specific error codes if available (e.g. QUOTA_EXCEEDED)
             const errorCode = (error?.code && typeof error.code === 'string')

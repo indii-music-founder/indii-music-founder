@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { getFirestore, collection, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 export interface TimeSeriesDataPoint {
     date: string;
@@ -78,7 +79,7 @@ export function useAnalytics(dateRange: { start: string; end: string }) {
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to fetch analytics';
             setError(message);
-            console.error('[useAnalytics] Error:', err);
+            logger.error('[useAnalytics] Error:', err);
 
             // Fallback to empty data on error
             setData([]);
@@ -146,7 +147,7 @@ export function usePayouts() {
         } catch (err) {
             const message = err instanceof Error ? err.message : 'Failed to fetch payouts';
             setError(message);
-            console.error('[usePayouts] Error:', err);
+            logger.error('[usePayouts] Error:', err);
             setPayouts([]);
         } finally {
             setLoading(false);

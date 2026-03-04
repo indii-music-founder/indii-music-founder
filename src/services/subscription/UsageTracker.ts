@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Usage Tracker Service
  *
@@ -100,23 +101,23 @@ class UsageTracker {
         timestamp: Date.now()
       });
     } catch (error) {
-      console.error(`[UsageTracker] Error tracking usage (attempt ${attempt + 1}):`, error);
+      logger.error(`[UsageTracker] Error tracking usage (attempt ${attempt + 1}):`, error);
 
       const maxAttempts = 3;
       if (attempt < maxAttempts - 1) {
         // Exponential backoff with jitter: 1s, 2s, 4s + random 0-1s
         const backoffMs = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
-        console.log(`[UsageTracker] Retrying in ${Math.round(backoffMs)}ms...`);
+        logger.debug(`[UsageTracker] Retrying in ${Math.round(backoffMs)}ms...`);
 
         // Fire and forget the retry
         setTimeout(() => {
           this.trackUsage(userId, record, attempt + 1).catch(e => {
-            console.error('[UsageTracker] Retry failed:', e);
+            logger.error('[UsageTracker] Retry failed:', e);
           });
         }, backoffMs);
       } else {
         // Final failure log
-        console.error('[UsageTracker] Failed to track usage after max attempts:', error);
+        logger.error('[UsageTracker] Failed to track usage after max attempts:', error);
       }
     }
   }

@@ -6,6 +6,7 @@ import { auth } from '../firebase';
 import { where, orderBy, limit, Timestamp, onSnapshot, collection, query, Unsubscribe } from 'firebase/firestore';
 import { db } from '../firebase';
 import { cleanFirestoreData } from '@/services/utils/firebase';
+import { logger } from '@/utils/logger';
 
 // Define the Firestore document shape (handling timestamps)
 interface SessionDocument extends Omit<ConversationSession, 'createdAt' | 'updatedAt'> {
@@ -64,7 +65,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         // KEEPER: Dual Write for Electron Local Persistence (Forget)
         if (window.electronAPI?.agent?.deleteHistory) {
             window.electronAPI.agent.deleteHistory(id).catch((err: any) => {
-                console.error('[SessionService] Failed to delete local history:', err);
+                logger.error('[SessionService] Failed to delete local history:', err);
             });
         }
     }
@@ -73,7 +74,7 @@ class SessionServiceImpl extends FirestoreService<SessionDocument> {
         if (window.electronAPI?.agent?.saveHistory) {
             // Fire and forget (or await if strict consistency needed)
             window.electronAPI.agent.saveHistory(id, data).catch((err: any) => {
-                console.error('[SessionService] Failed to save to local history:', err);
+                logger.error('[SessionService] Failed to save to local history:', err);
             });
         }
     }

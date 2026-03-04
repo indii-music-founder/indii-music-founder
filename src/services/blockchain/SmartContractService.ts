@@ -1,6 +1,7 @@
 
 import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 /**
  * SmartContractService
@@ -109,7 +110,7 @@ export class SmartContractService {
             await addDoc(collection(db, this.LEDGER_COLLECTION), entry);
             console.info(`[Blockchain Ledger] New Block: ${entry.hash} | ${action} | ${entityId}`);
         } catch (error) {
-            console.error('[Blockchain Ledger] Failed to persist entry:', error);
+            logger.error('[Blockchain Ledger] Failed to persist entry:', error);
         }
     }
 
@@ -127,7 +128,7 @@ export class SmartContractService {
             const snapshot = await getDocs(q);
             return snapshot.docs.map(doc => doc.data() as LedgerEntry);
         } catch (error) {
-            console.error('[SmartContract] Failed to fetch chain of custody:', error);
+            logger.error('[SmartContract] Failed to fetch chain of custody:', error);
             return [];
         }
     }

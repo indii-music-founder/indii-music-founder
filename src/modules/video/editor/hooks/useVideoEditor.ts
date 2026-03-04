@@ -6,6 +6,7 @@ import { useVideoEditorStore, VideoProject, VideoClip } from '../../store/videoE
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { useToast } from '@/core/context/ToastContext';
 import { PIXELS_PER_FRAME } from '../constants';
+import { logger } from '@/utils/logger';
 
 export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
@@ -101,7 +102,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
             if (data.renderId || data.success) toast.success('Cloud render started successfully!');
             else throw new Error(data.error || 'Export failed');
         } catch (error: any) {
-            console.error('Export error:', error);
+            logger.error('Export error:', error);
             toast.error(`Export failed: ${error.message}`);
         } finally {
             setIsExporting(false);
@@ -136,7 +137,7 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
                     toast.success('Asset added to timeline');
                 }
             } catch (err) {
-                console.error('Failed to parse dropped item', err);
+                logger.error('Failed to parse dropped item', err);
             }
         }
     };

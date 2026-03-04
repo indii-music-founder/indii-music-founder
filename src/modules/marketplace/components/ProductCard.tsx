@@ -3,6 +3,7 @@ import { Product } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
 import { ShoppingBag, Loader2, Check } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface ProductCardProps {
     product: Product;
@@ -31,7 +32,7 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
             );
             setPurchased(true);
         } catch (error) {
-            console.error("Purchase failed:", error);
+            logger.error("Purchase failed:", error);
         } finally {
             setPurchasing(false);
         }

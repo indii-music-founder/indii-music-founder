@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Sentry Error Tracking Initialization
  *
@@ -9,12 +10,12 @@ import * as Sentry from '@sentry/react';
 export function initSentry(): void {
     // Only initialize in production builds unless debug flag is set
     if (import.meta.env.DEV && !import.meta.env.VITE_DEBUG_SENTRY) {
-        console.warn('[Sentry] Skipped in Development Mode. Set VITE_DEBUG_SENTRY=true to enable.');
+        logger.warn('[Sentry] Skipped in Development Mode. Set VITE_DEBUG_SENTRY=true to enable.');
         return;
     }
 
     if (import.meta.env.DEV) {
-        console.warn('[Sentry] Initializing in Development Mode for testing purposes.');
+        logger.warn('[Sentry] Initializing in Development Mode for testing purposes.');
     }
 
     const dsn = import.meta.env.VITE_SENTRY_DSN || "https://70a3cd3c32290fe54f43c227f6a058a3@o4510109129244672.ingest.us.sentry.io/4510318323040256";
@@ -71,9 +72,9 @@ export function initSentry(): void {
             ],
         });
 
-        console.log('[Sentry] Initialized for production');
+        logger.debug('[Sentry] Initialized for production');
     } catch (error) {
-        console.error('[Sentry] Initialization failed:', error);
+        logger.error('[Sentry] Initialization failed:', error);
     }
 }
 

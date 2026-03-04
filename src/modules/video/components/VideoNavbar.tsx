@@ -3,6 +3,7 @@ import { useVideoEditorStore } from '../store/videoEditorStore';
 import { Film, Clapperboard, Scissors, MonitorPlay, Loader2 } from 'lucide-react';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 export default function VideoNavbar() {
     const { viewMode, setViewMode } = useVideoEditorStore();
@@ -20,7 +21,7 @@ export default function VideoNavbar() {
                 toast.error("Screen Control API not supported or permission denied.");
             }
         } catch (error) {
-            console.error("Projector error:", error);
+            logger.error("Projector error:", error);
             toast.error("Failed to open projector window");
         } finally {
             setIsProjecting(false);

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from '@/utils/logger';
 
 /**
  * AI Model Configuration
@@ -161,7 +162,7 @@ function validateModels(): void {
 ║  This model is BANNED by MODEL_POLICY.md.                                    ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 `;
-                console.error(errorMessage);
+                logger.error(errorMessage);
                 throw new Error(`FORBIDDEN MODEL: ${modelId}. See MODEL_POLICY.md for approved models.`);
             }
         }

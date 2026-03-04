@@ -3,6 +3,7 @@ import { agentService } from './AgentService';
 import { maestroBatchingService } from './MaestroBatchingService';
 import { WORKFLOW_REGISTRY, WorkflowDefinition } from './WorkflowRegistry';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
 
 /**
  * OrchestrationService manages complex, multi-agent workflows.
@@ -51,7 +52,7 @@ export class OrchestrationService {
             return report;
 
         } catch (error: any) {
-            console.error(`[Orchestration] Workflow ${workflowId} failed:`, error);
+            logger.error(`[Orchestration] Workflow ${workflowId} failed:`, error);
             return `❌ **Workflow Interrupted**: ${error.message}.`;
         }
     }

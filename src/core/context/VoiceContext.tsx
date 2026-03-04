@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import { audioService } from '@/services/audio/AudioService';
+import { logger } from '@/utils/logger';
 
 interface VoiceContextType {
     isVoiceEnabled: boolean;
@@ -88,7 +89,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 };
 
                 recognitionInstance.onerror = (event) => {
-                    console.error('Speech recognition error', event.error);
+                    logger.error('Speech recognition error', event.error);
                     setIsListening(false);
                 };
 
@@ -99,7 +100,7 @@ export const VoiceProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const toggleListening = useCallback(() => {
         if (!recognitionRef.current) {
-            console.warn('Speech recognition not supported in this browser.');
+            logger.warn('Speech recognition not supported in this browser.');
             return;
         }
 

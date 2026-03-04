@@ -6,6 +6,7 @@ import { cleanFirestoreData } from '@/services/utils/firebase';
 import { remoteConfig } from '@/services/firebase';
 import { getValue } from 'firebase/remote-config';
 import { RemoteAIConfigSchema } from '@/services/ai/config/RemoteAIConfig';
+import { logger } from '@/utils/logger';
 
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
@@ -21,13 +22,13 @@ export class TraceService {
         parentTraceId?: string
     ): Promise<string> {
         if (!userId) {
-            console.warn('[TraceService] No userId provided, skipping trace.');
+            logger.warn('[TraceService] No userId provided, skipping trace.');
             return '';
         }
 
         try {
             if (!db) {
-                console.warn('[TraceService] DB not initialized, returning mock ID');
+                logger.warn('[TraceService] DB not initialized, returning mock ID');
                 return crypto.randomUUID();
             }
 
@@ -52,7 +53,7 @@ export class TraceService {
             await setDoc(doc(db, this.COLLECTION, traceId), cleanFirestoreData(trace));
             return traceId;
         } catch (error) {
-            console.error('[TraceService] Failed to start trace: (Non-blocking)', error);
+            logger.error('[TraceService] Failed to start trace: (Non-blocking)', error);
             return crypto.randomUUID();
         }
     }
@@ -176,7 +177,7 @@ export class TraceService {
                 }));
             }
         } catch (error) {
-            console.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
+            logger.error(`[TraceService] Failed to add step with usage to trace ${traceId}: (Non-blocking)`, error);
             // Non-blocking: We don't throw here to ensure the main agent flow continues
         }
     }
@@ -203,7 +204,7 @@ export class TraceService {
                 ...(output ? { output } : {})
             }));
         } catch (error) {
-            console.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
+            logger.error(`[TraceService] Failed to complete trace ${traceId}: (Non-blocking)`, error);
         }
     }
 
@@ -222,7 +223,7 @@ export class TraceService {
                 error
             }));
         } catch (e) {
-            console.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
+            logger.error(`[TraceService] Failed to fail trace ${traceId}: (Non-blocking)`, e);
         }
     }
 

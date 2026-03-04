@@ -4,6 +4,7 @@ import { TouringService } from '@/services/touring/TouringService';
 import { VehicleStats, Itinerary, ItineraryStop } from '../types';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 export const useTouring = () => {
     const { userProfile } = useStore();
@@ -44,7 +45,7 @@ export const useTouring = () => {
                 setVehicleStats(defaultStats);
             }
         }).catch(error => {
-            console.error('Failed to fetch vehicle stats:', error);
+            logger.error('Failed to fetch vehicle stats:', error);
             // Fallback to default state on error to keep UI functional
             setVehicleStats(defaultStats);
         });
@@ -78,7 +79,7 @@ export const useTouring = () => {
         try {
             await TouringService.updateItinerary(currentItinerary.id, { stops: updatedStops });
         } catch (error) {
-            console.error("Failed to update itinerary", error);
+            logger.error("Failed to update itinerary", error);
             toast.error("Failed to save changes");
             // Optionally revert logical state here if needed
         }
@@ -93,7 +94,7 @@ export const useTouring = () => {
             });
             toast.success("Itinerary saved");
         } catch (error) {
-            console.error("Failed to save itinerary", error);
+            logger.error("Failed to save itinerary", error);
             toast.error("Failed to save itinerary");
         }
     };
@@ -105,7 +106,7 @@ export const useTouring = () => {
             await TouringService.saveVehicleStats(userProfile.id, stats);
             toast.success("Vehicle stats updated");
         } catch (error) {
-            console.error("Failed to save vehicle stats", error);
+            logger.error("Failed to save vehicle stats", error);
             toast.error("Failed to save vehicle stats");
         }
     };

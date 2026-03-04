@@ -6,6 +6,7 @@ import { auth } from '@/services/firebase';
 import { agentRegistry } from '../registry';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import type { AgentService } from '../AgentService';
+import { logger } from '@/utils/logger';
 
 /**
  * HybridOrchestrator: The "Best of Both Worlds" engine.
@@ -132,7 +133,7 @@ export class HybridOrchestrator {
                         });
                         lastAgentResponse = result.text;
                     } catch (agentErr: any) {
-                        console.error(`[indii:Hybrid] Specialist ${decision.callAgentId} failed:`, agentErr);
+                        logger.error(`[indii:Hybrid] Specialist ${decision.callAgentId} failed:`, agentErr);
                         history.push({ turn: currentTurn, agent: decision.callAgentId, error: String(agentErr) });
                     }
                 }
@@ -151,7 +152,7 @@ export class HybridOrchestrator {
                         });
                         lastAgentResponse = result.data?.answer;
                     } catch (toolErr) {
-                        console.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
+                        logger.error(`[indii:Hybrid] Tool knowledge_base failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'knowledge_base', error: String(toolErr) });
                     }
                 }
@@ -177,7 +178,7 @@ export class HybridOrchestrator {
                         history.push({ turn: currentTurn, tool: 'browser_control', result: pruneResult(result.data || result.message, 3000) });
                         lastAgentResponse = result.message || '';
                     } catch (toolErr) {
-                        console.error(`[indii:Hybrid] Tool browser_control failed:`, toolErr);
+                        logger.error(`[indii:Hybrid] Tool browser_control failed:`, toolErr);
                         history.push({ turn: currentTurn, tool: 'browser_control', error: String(toolErr) });
                     }
                 }
@@ -195,7 +196,7 @@ export class HybridOrchestrator {
                         });
                         lastAgentResponse = result.message;
                     } catch (azErr) {
-                        console.error(`[indii:Hybrid] Agent Zero Container failed:`, azErr);
+                        logger.error(`[indii:Hybrid] Agent Zero Container failed:`, azErr);
                         history.push({ turn: currentTurn, tool: 'agent_zero_deep', error: String(azErr) });
                     }
                 }
@@ -209,8 +210,8 @@ export class HybridOrchestrator {
                 }
 
             } catch (e: any) {
-                console.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e?.message || e);
-                console.error(`[indii:Hybrid] Error details:`, e?.stack || 'No stack');
+                logger.error(`[indii:Hybrid] Turn ${currentTurn} failed:`, e?.message || e);
+                logger.error(`[indii:Hybrid] Error details:`, e?.stack || 'No stack');
                 lastAgentResponse = `I encountered an issue: ${e?.message?.slice?.(0, 100) || 'Unknown error'}`;
                 break;
             }

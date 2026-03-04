@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { BaseAgent } from '../BaseAgent';
 // useStore removed to prevent circular dependency - dynamically imported in execute()
 // TOOL_REGISTRY removed to prevent circular dependency
@@ -6,6 +7,7 @@ import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { AgentProgressCallback, AgentResponse, FunctionDeclaration, ToolDefinition, AgentContext } from '../types';
 import type { WhiskState } from '@/core/store/slices/creativeSlice';
+import { AgentPromptBuilder } from '../builders/AgentPromptBuilder';
 
 /**
  * GeneralistAgent (Agent Zero) - The primary orchestrator and fallback agent.
@@ -376,8 +378,8 @@ RECENT UPLOADS (Reference by Index):
 ${useStore.getState().uploadedImages?.map((img: any, i: number) => `  [${i}] ${img.subject ? img.subject + ' - ' : ''}${img.category ? img.category.toUpperCase() + ': ' : ''}${img.prompt || 'Uploaded Image'} (${img.type}) ${img.tags ? '(' + img.tags.join(', ') + ')' : ''}`).slice(0, 10).join('\n') || 'None'}
 ` : '';
 
-        // Build Reference Mixer context (Whisk) - Use inherited method
-        const whiskContext = context?.whiskState ? this.buildWhiskContext(context.whiskState) : '';
+        // Build Reference Mixer context (Whisk) - Use static builder
+        const whiskContext = context?.whiskState ? AgentPromptBuilder.buildWhiskContext(context.whiskState) : '';
 
         const fullSystemPrompt = `${this.systemPrompt}
 ${orgContext}
@@ -473,7 +475,7 @@ CURRENT REQUEST: ${task}
                         }
                     }
                 } catch (streamError) {
-                    console.warn('[indii:AgentZero] Stream read interrupted:', streamError);
+                    logger.warn('[indii:AgentZero] Stream read interrupted:', streamError);
                 }
 
                 const response = await responsePromise;
@@ -488,7 +490,7 @@ CURRENT REQUEST: ${task}
 
                     // Loop detection
                     if (lastToolCall && lastToolCall.name === name && lastToolCall.args === argsStr) {
-                        console.warn(`[GeneralistAgent] Loop detected: same tool ${name} called twice with same args`);
+                        logger.warn(`[GeneralistAgent] Loop detected: same tool ${name} called twice with same args`);
                         return {
                             text: accumulatedResponse || 'Task completed.',
                             error: 'Loop detected - stopping to prevent infinite execution.'
@@ -529,7 +531,7 @@ CURRENT REQUEST: ${task}
                                 ? ` Did you mean: ${suggestions.join(', ')}?`
                                 : '';
 
-                            console.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
+                            logger.warn(`[GeneralistAgent] Tool '${name}' not found.${suggestionText}`);
                             result = {
                                 success: false,
                                 error: `Tool '${name}' not found.${suggestionText}`,
@@ -549,7 +551,7 @@ CURRENT REQUEST: ${task}
                     // Don't try to get another AI response which may fail due to permission issues
                     const generationTools = ['generate_image', 'generate_video', 'edit_image', 'batch_edit_images'];
                     if (generationTools.includes(name) && String(outputText).toLowerCase().includes('success')) {
-                        console.log(`[GeneralistAgent] ${name} succeeded, breaking loop immediately`);
+                        logger.debug(`[GeneralistAgent] ${name} succeeded, breaking loop immediately`);
                         break; // Exit loop - we have completed the generation
                     }
 
@@ -568,7 +570,7 @@ CURRENT REQUEST: ${task}
 
             } catch (err: unknown) {
                 const message = err instanceof Error ? err.message : String(err);
-                console.error('[indii:AgentZero] Error:', err);
+                logger.error('[indii:AgentZero] Error:', err);
                 onProgress?.({ type: 'thought', content: `Error: ${message}` });
 
                 // CRITICAL: Break loop immediately on fatal errors to prevent "AI Verification Failed" spam

@@ -8,6 +8,7 @@ import { auth } from '@/services/firebase';
 import { FirestoreService } from '@/services/FirestoreService';
 import { orderBy, limit } from 'firebase/firestore';
 import { CloudStorageService } from '@/services/CloudStorageService';
+import { logger } from '@/utils/logger';
 
 export interface PersistedAudioMetadata {
     id: string;
@@ -107,7 +108,7 @@ class AudioPersistenceService extends FirestoreService<PersistedAudioMetadata> {
                 }
             }
         } catch (err) {
-            console.warn('[AudioPersistence] Storage cleanup pre-fetch failed:', err);
+            logger.warn('[AudioPersistence] Storage cleanup pre-fetch failed:', err);
         }
 
         // 3. Delete Firestore record

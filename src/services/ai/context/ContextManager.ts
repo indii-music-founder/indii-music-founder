@@ -1,4 +1,5 @@
 import { Content } from '@/shared/types/ai.dto';
+import { logger } from '@/utils/logger';
 
 export class ContextManager {
     /**
@@ -77,13 +78,13 @@ export class ContextManager {
             // [STRESS SAFETY] If we've dropped 5000 messages and STILL over limit, 
             // maybe we have a massive single message. We should break to avoid hang.
             if (drops >= 10000) {
-                console.error('[ContextManager] EXTREME TRUNCATION: Dropped 10,000 messages and still over limit. Breaking loop.');
+                logger.error('[ContextManager] EXTREME TRUNCATION: Dropped 10,000 messages and still over limit. Breaking loop.');
                 break;
             }
         }
 
         if (currentTokens > maxTokens) {
-            console.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) after ${drops} drops. Recent messages are too large.`);
+            logger.warn(`[ContextManager] Context over limit (${currentTokens}/${maxTokens}) after ${drops} drops. Recent messages are too large.`);
         }
 
         return truncated;

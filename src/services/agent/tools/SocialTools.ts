@@ -3,6 +3,7 @@ import { SocialService } from '@/services/social/SocialService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // SocialTools Implementation
@@ -26,7 +27,7 @@ export const SocialTools: Record<string, AnyToolFunction> = {
             postId = await SocialService.createPost(text);
             persistMessage = `Saved to Feed (ID: ${postId})`;
         } catch (persistError) {
-            console.warn('Failed to persist social post:', persistError);
+            logger.warn('Failed to persist social post:', persistError);
         }
 
         return toolSuccess({

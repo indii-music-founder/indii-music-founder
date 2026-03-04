@@ -3,6 +3,7 @@ import { auth, db, storage } from '../firebase';
 import { ref, uploadBytes, getBlob } from 'firebase/storage';
 import { doc, setDoc, getDoc, collection, getDocs } from 'firebase/firestore';
 import { UserProfile } from '@/modules/workflow/types';
+import { logger } from '@/utils/logger';
 
 const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
@@ -52,12 +53,12 @@ export async function processSyncQueue(): Promise<void> {
             itemsToRemove.push(id);
             console.info(`[Repository] Successfully synced queued asset ${id}`);
         } catch (error) {
-            console.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
+            logger.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
             item.retryCount++;
 
             // Remove from queue after 3 failed attempts
             if (item.retryCount >= 3) {
-                console.error(`[Repository] Asset ${id} removed from queue after 3 failed attempts`);
+                logger.error(`[Repository] Asset ${id} removed from queue after 3 failed attempts`);
                 itemsToRemove.push(id);
             }
         }
@@ -135,7 +136,7 @@ export async function getAssetFromStorage(id: string): Promise<string> {
 
         return URL.createObjectURL(cloudBlob);
     } catch (error) {
-        console.warn(`Failed to fetch asset ${id} from cloud:`, error);
+        logger.warn(`Failed to fetch asset ${id} from cloud:`, error);
     }
 
     throw new Error(`Asset ${id} not found locally or in cloud`);
@@ -202,7 +203,7 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
                 return cloudProfile;
             }
         } catch (error) {
-            console.warn('[Repository] Cloud profile fetch failed, falling back to local:', error);
+            logger.warn('[Repository] Cloud profile fetch failed, falling back to local:', error);
         }
     }
 

@@ -15,7 +15,7 @@ export class PromptService {
         if (this.prompts.has(id)) {
             const existing = this.prompts.get(id)!;
             if (existing.version > version) {
-                console.warn(`[PromptService] Ignored registration of older version for prompt '${id}'`);
+                logger.warn(`[PromptService] Ignored registration of older version for prompt '${id}'`);
                 return;
             }
         }
@@ -44,7 +44,7 @@ export class PromptService {
 
         // Check for missing variables (optional strictly check)
         if (output.includes('{{') && output.includes('}}')) {
-            console.warn(`[PromptService] Prompt '${id}' may have unresolved variables: ${output.match(/{{.*?}}/g)}`);
+            logger.warn(`[PromptService] Prompt '${id}' may have unresolved variables: ${output.match(/{{.*?}}/g)}`);
         }
 
         return output;

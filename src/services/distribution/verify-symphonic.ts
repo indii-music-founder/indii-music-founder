@@ -4,6 +4,7 @@ import type { ExtendedGoldenMetadata } from '../metadata/types';
 import type { ReleaseAssets } from './types/distributor';
 import * as fs from 'fs';
 import * as path from 'path';
+import { logger } from '@/utils/logger';
 
 async function verifySymphonicIntegration() {
     console.info('🚀 Verifying Symphonic Integration...\n');
@@ -73,7 +74,7 @@ async function verifySymphonicIntegration() {
         console.info(`✅ Success! Release ID: ${result.releaseId}`);
         console.info(`✅ Status: ${result.status}`);
     } else {
-        console.error('❌ Failed:', result);
+        logger.error('❌ Failed:', result);
     }
 
     // 5. Inspect Staging Directory

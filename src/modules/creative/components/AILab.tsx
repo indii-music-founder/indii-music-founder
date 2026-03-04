@@ -17,6 +17,7 @@ import {
     ArrowRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 export default function AILab() {
     const {
@@ -110,7 +111,7 @@ export default function AILab() {
             toast.success("Architectural Chain Complete. Ready for Production.");
 
         } catch (err: any) {
-            console.error("Architect Failure:", err);
+            logger.error("Architect Failure:", err);
             setError(err.message || "Prediction chain failed.");
             setStatus('error');
             toast.error(`Architect Error: ${err.message}`);

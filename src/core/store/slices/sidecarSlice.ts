@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { logger } from '@/utils/logger';
 
 export type SidecarStatus = 'online' | 'offline' | 'checking';
 
@@ -18,7 +19,7 @@ export const createSidecarSlice: StateCreator<SidecarSlice> = (set) => ({
             window.electronAPI.sidecar.restart();
 
         } else {
-            console.warn('[SidecarSlice] Sidecar restart IPC not available');
+            logger.warn('[SidecarSlice] Sidecar restart IPC not available');
         }
     },
 });

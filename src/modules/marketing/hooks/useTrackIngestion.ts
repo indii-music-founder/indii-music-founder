@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { trackIngestion } from '@/services/ingestion/TrackIngestionService';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { logger } from '@/utils/logger';
 
 interface UseTrackIngestionResult {
     ingest: (file: File) => Promise<ExtendedGoldenMetadata | null>;
@@ -29,7 +30,7 @@ export function useTrackIngestion(): UseTrackIngestionResult {
             setProgress('Complete');
             return metadata;
         } catch (err) {
-            console.error('Track ingestion failed:', err);
+            logger.error('Track ingestion failed:', err);
             setError(err instanceof Error ? err.message : 'Unknown error');
             return null;
         } finally {

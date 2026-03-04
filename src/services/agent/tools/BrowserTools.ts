@@ -1,5 +1,6 @@
 import { wrapTool, toolError, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { logger } from '@/utils/logger';
 
 /**
  * BrowserTools: The "Ghost Hands" (CDP Bridge)
@@ -22,7 +23,7 @@ export const BrowserTools: Record<string, AnyToolFunction> = {
             }
 
             // 2. Web / Fallback (Agent Zero Container)
-            console.warn('[BrowserTools] Native bridge missing. Delegating to Agent Zero Container...');
+            logger.warn('[BrowserTools] Native bridge missing. Delegating to Agent Zero Container...');
             const { agentZeroService } = await import('../AgentZeroService');
 
             // We ask Agent Zero to browse. It will use python/tools/browser.py

@@ -10,6 +10,7 @@ import { useStore } from '@/core/store';
 import { ExpenseItem } from './ExpenseItem';
 import { ExpenseManualEntryModal } from './ExpenseManualEntryModal';
 import { ReceiptScanResultSchema } from '@/modules/finance/schemas';
+import { logger } from '@/utils/logger';
 
 export const ExpenseTracker: React.FC = React.memo(() => {
     const { userProfile } = useStore();
@@ -100,7 +101,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
                         toast.error("Could not read receipt data.");
                     }
                 } catch (e) {
-                    console.error("Receipt analysis error:", e);
+                    logger.error("Receipt analysis error:", e);
                     toast.error("Failed to analyze receipt.");
                 } finally {
                     setIsAnalyzing(false);
@@ -108,7 +109,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
             };
             reader.readAsDataURL(file);
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             toast.error("Failed to read file.");
             setIsAnalyzing(false);
         }

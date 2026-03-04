@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'motion/react';
 import { TrendingUp, DollarSign, Loader2, RefreshCw, Calculator } from 'lucide-react';
 import { FinanceTools } from '@/services/agent/tools/FinanceTools';
+import { logger } from '@/utils/logger';
 
 interface ProjectionData {
     gross: { month_1: number; month_6: number; year_1: number };
@@ -28,7 +29,7 @@ export const RevenueProjections = () => {
                 setProjections(result.data.projections);
             }
         } catch (error) {
-            console.error("Forecast failed:", error);
+            logger.error("Forecast failed:", error);
         } finally {
             setLoading(false);
         }

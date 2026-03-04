@@ -6,6 +6,7 @@ import { AppException, AppErrorCode } from '@/shared/types/errors';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { httpsCallable } from 'firebase/functions';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
 
 const COLLECTION_NAME = 'merchandise';
 const CATALOG_COLLECTION = 'merchandise_catalog';
@@ -27,7 +28,7 @@ export const MerchandiseService = {
             } as MerchProduct));
             callback(products);
         }, (error) => {
-            console.warn('[MerchandiseService] Subscription error:', error);
+            logger.warn('[MerchandiseService] Subscription error:', error);
             if (onError) onError(error);
         });
     },
@@ -48,13 +49,13 @@ export const MerchandiseService = {
                 if (result.success) {
                     products.push(result.data);
                 } else {
-                    console.warn(`[MerchandiseService] Invalid catalog item ${docSnap.id}:`, result.error);
+                    logger.warn(`[MerchandiseService] Invalid catalog item ${docSnap.id}:`, result.error);
                 }
             });
 
             return products;
         } catch (error) {
-            console.warn('[MerchandiseService] Failed to load catalog:', error);
+            logger.warn('[MerchandiseService] Failed to load catalog:', error);
             return [];
         }
     },
@@ -278,7 +279,7 @@ export const MerchandiseService = {
             return jobId;
 
         } catch (error: any) {
-            console.error("Video Generation Error:", error);
+            logger.error("Video Generation Error:", error);
             throw error;
         }
     },

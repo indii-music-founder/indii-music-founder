@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BrandAsset } from '@/types/User';
 import { StorageService } from '@/services/StorageService';
 import WebcamCapture from '@/components/shared/WebcamCapture';
+import { logger } from '@/utils/logger';
 
 type AssetCollection = 'brandAssets' | 'referenceImages';
 type AssetCategory = 'logo' | 'headshot' | 'bodyshot' | 'clothing' | 'environment' | 'other';
@@ -91,7 +92,7 @@ export default function UnifiedAssetLibrary({
 
             onUpdate([...currentAssets, ...newAssets]);
         } catch (error) {
-            console.error(`Failed to upload ${storagePath}`, error);
+            logger.error(`Failed to upload ${storagePath}`, error);
         } finally {
             setIsUploading(false);
             if (fileInputRef.current) fileInputRef.current.value = '';

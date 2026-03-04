@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { type ModuleId, isValidModule } from '@/core/constants';
 import type { ProjectMetadata } from '@/services/dashboard/DashboardService';
+import { logger } from '@/utils/logger';
 
 // Helper to get initial module from URL
 const getInitialModule = (): ModuleId => {
@@ -62,7 +63,7 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
                 }
                 // Add more module prefixes here as needed
             }
-        }).catch(err => console.error('[AppSlice] Failed to cleanup subscriptions:', err));
+        }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions:', err));
 
         set({
             currentModule: module,

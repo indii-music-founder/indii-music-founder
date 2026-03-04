@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { VehicleStats, Itinerary } from '@/modules/touring/types';
 import { z } from 'zod';
+import { logger } from '@/utils/logger';
 
 const VEHICLES_COLLECTION = 'tour_vehicles';
 const ITINERARIES_COLLECTION = 'tour_itineraries';
@@ -72,7 +73,7 @@ export const TouringService = {
                         ...data
                     } as VehicleStats;
                 } catch (validationError) {
-                    console.error('Invalid VehicleStats data:', validationError);
+                    logger.error('Invalid VehicleStats data:', validationError);
                     // Decide whether to return partial data or null.
                     // For safety, returning null forces a fallback/re-seed flow or error state.
                     return null;
@@ -80,7 +81,7 @@ export const TouringService = {
             }
             return null;
         } catch (error) {
-            console.error('Error fetching vehicle stats:', error);
+            logger.error('Error fetching vehicle stats:', error);
             throw error;
         }
     },
@@ -105,7 +106,7 @@ export const TouringService = {
                         ...data
                     } as Itinerary;
                 } catch (validationError) {
-                    console.warn(`Skipping invalid itinerary ${doc.id}:`, validationError);
+                    logger.warn(`Skipping invalid itinerary ${doc.id}:`, validationError);
                     return null;
                 }
             }).filter((item): item is Itinerary => item !== null);

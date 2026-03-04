@@ -14,6 +14,7 @@
 import { auth, db } from '@/services/firebase';
 import { collection, addDoc, setDoc, doc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { events } from '@/core/events';
+import { logger } from '@/utils/logger';
 
 export type AssetType = 'audio' | 'image' | 'video' | 'document' | 'workflow' | 'project' | 'campaign' | 'other';
 
@@ -110,7 +111,7 @@ class MetadataPersistenceService {
             console.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);
             events.emit('SYNC_QUEUE_CHANGE', { count: queue.length });
         } catch (e) {
-            console.error('[MetadataPersistence] Failed to queue for later:', e);
+            logger.error('[MetadataPersistence] Failed to queue for later:', e);
         }
     }
 
@@ -131,7 +132,7 @@ class MetadataPersistenceService {
 
             const { authenticated, userId } = this.checkAuth();
             if (!authenticated || !userId) {
-                console.warn('[MetadataPersistence] Cannot process queue - not authenticated');
+                logger.warn('[MetadataPersistence] Cannot process queue - not authenticated');
                 return 0;
             }
 
@@ -147,7 +148,7 @@ class MetadataPersistenceService {
                     });
                     successCount++;
                 } catch (e) {
-                    console.error(`[MetadataPersistence] Failed to sync queued item:`, e);
+                    logger.error(`[MetadataPersistence] Failed to sync queued item:`, e);
                     if (item.retryCount < 3) {
                         failedItems.push({ ...item, retryCount: item.retryCount + 1 });
                     }
@@ -204,7 +205,7 @@ class MetadataPersistenceService {
             if (showToasts) {
                 events.emit('SYSTEM_ALERT', { level: 'error', message: `❌ Save Failed: ${errorMsg}` });
             }
-            console.warn(`[MetadataPersistence] Cannot save ${assetType}: Not authenticated`);
+            logger.warn(`[MetadataPersistence] Cannot save ${assetType}: Not authenticated`);
 
             // Queue for later if enabled
             if (queueOnFailure) {
@@ -256,7 +257,7 @@ class MetadataPersistenceService {
                 };
             } catch (error) {
                 lastError = error as Error;
-                console.warn(`[MetadataPersistence] Save attempt ${attempt + 1}/${maxRetries + 1} failed:`, error);
+                logger.warn(`[MetadataPersistence] Save attempt ${attempt + 1}/${maxRetries + 1} failed:`, error);
 
                 if (attempt < maxRetries) {
                     // Wait before retry with exponential backoff
@@ -333,7 +334,7 @@ class MetadataPersistenceService {
                 console.info(`[MetadataPersistence] ✅ Updated ${collectionPath}/${docId}`);
                 return { success: true, docId, retryable: false };
             } catch (error) {
-                console.warn(`[MetadataPersistence] Update attempt ${attempt + 1} failed:`, error);
+                logger.warn(`[MetadataPersistence] Update attempt ${attempt + 1} failed:`, error);
                 if (attempt < maxRetries) {
                     await new Promise(resolve => setTimeout(resolve, 1000 * Math.pow(2, attempt)));
                 }

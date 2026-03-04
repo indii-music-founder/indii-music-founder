@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import {
     SpecializedAgent,
     AgentResponse,
@@ -24,173 +25,10 @@ import { LoopDetector, DelegationLoopDetector } from './LoopDetector';
 import { AgentExecutionContext, ExecutionContextFactory } from './context/AgentExecutionContext';
 import { ToolExecutionContext } from './ToolExecutionContext';
 import { wrapTool, toolError } from './utils/ToolUtils';
-// TOOL_REGISTRY removed to prevent circular dependency
+import { SUPERPOWER_TOOLS } from './definitions/SuperpowerTools';
 
-// Export types for use in definitions
-export type { AgentConfig };
 
-const SUPERPOWER_TOOLS: FunctionDeclaration[] = [
-    {
-        name: 'save_memory',
-        description: 'Save a fact, rule, or preference to long-term memory.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                content: { type: 'STRING', description: 'The content to remember.' },
-                type: { type: 'STRING', description: 'Type of memory.', enum: ['fact', 'summary', 'rule'] }
-            },
-            required: ['content']
-        }
-    },
-    {
-        name: 'recall_memories',
-        description: 'Search long-term memory for relevant information.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                query: { type: 'STRING', description: 'Search query.' }
-            },
-            required: ['query']
-        }
-    },
-    {
-        name: 'verify_output',
-        description: 'Critique and verify generated content against a goal.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                goal: { type: 'STRING', description: 'The original goal.' },
-                content: { type: 'STRING', description: 'The content to verify.' }
-            },
-            required: ['goal', 'content']
-        }
-    },
-    {
-        name: 'request_approval',
-        description: 'Request user approval for high-stakes actions.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                content: { type: 'STRING', description: 'Content or action requiring approval.' },
-                type: { type: 'STRING', description: 'Type of action (e.g., "post", "email").' }
-            },
-            required: ['content']
-        }
-    },
-    {
-        name: 'get_project_details',
-        description: 'Fetch full details of a project by ID.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                projectId: { type: 'STRING', description: 'The ID of the project to fetch.' }
-            },
-            required: ['projectId']
-        }
-    },
-    {
-        name: 'search_knowledge',
-        description: 'Search the internal knowledge base for answers, guidelines, or policies.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                query: { type: 'STRING', description: 'The search query.' }
-            },
-            required: ['query']
-        }
-    },
-    {
-        name: 'delegate_task',
-        description: `Delegate a sub-task to another specialized agent. ONLY use valid agent IDs from this list: ${VALID_AGENT_IDS_LIST}. Using any other ID will fail.`,
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                targetAgentId: { type: 'STRING', description: `The ID of the agent to delegate to. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
-                task: { type: 'STRING', description: 'The specific task for the agent to perform.' }
-            },
-            required: ['targetAgentId', 'task']
-        }
-    },
-    {
-        name: 'consult_experts',
-        description: 'Consult multiple specialized agents in parallel to get diverse perspectives on a complex sub-task.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                consultations: {
-                    type: 'ARRAY',
-                    description: 'List of specific tasks to delegate to specialized agents.',
-                    items: {
-                        type: 'OBJECT',
-                        properties: {
-                            targetAgentId: { type: 'STRING', description: `The ID of the agent to consult. MUST be one of: ${VALID_AGENT_IDS_LIST}` },
-                            task: { type: 'STRING', description: 'The specific question or instruction for this specialist.' }
-                        },
-                        required: ['targetAgentId', 'task']
-                    }
-                }
-            },
-            required: ['consultations']
-        }
-    },
-    {
-        name: 'speak',
-        description: 'Read text aloud using the agents voice. Use this for proactive notifications or to emphasize important information.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                text: { type: 'STRING', description: 'The text to read aloud.' },
-                voice: { type: 'STRING', description: 'Optional voice override (e.g., Kore, Puck, Charon, Vega, Capella).' }
-            },
-            required: ['text']
-        }
-    },
-    {
-        name: 'schedule_task',
-        description: 'Schedule a task to be executed automatically after a delay (e.g., follow-ups, reminders).',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                targetAgentId: { type: 'STRING', description: `Agent to execute. Valid IDs: ${VALID_AGENT_IDS_LIST}` },
-                task: { type: 'STRING', description: 'The instruction to execute.' },
-                delayMinutes: { type: 'NUMBER', description: 'Minutes to wait before execution.' }
-            },
-            required: ['targetAgentId', 'task', 'delayMinutes']
-        }
-    },
-    {
-        name: 'subscribe_to_event',
-        description: 'Subscribe to a system event to trigger an autonomous response (e.g., when a task completes).',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                eventType: {
-                    type: 'STRING',
-                    enum: ['TASK_COMPLETED', 'TASK_FAILED', 'SYSTEM_ALERT'],
-                    description: 'The type of event to monitor.'
-                },
-                task: { type: 'STRING', description: 'The instruction to execute when the event occurs.' }
-            },
-            required: ['eventType', 'task']
-        }
-    },
-    {
-        name: 'send_notification',
-        description: 'Display a proactive notification (toast) to the user.',
-        parameters: {
-            type: 'OBJECT',
-            properties: {
-                type: {
-                    type: 'STRING',
-                    enum: ['info', 'success', 'warning', 'error'],
-                    description: 'The style of the notification.'
-                },
-                message: { type: 'STRING', description: 'The message to display.' }
-            },
-            required: ['type', 'message']
-        }
-    }
-];
+import { AgentPromptBuilder } from './builders/AgentPromptBuilder';
 
 export class BaseAgent implements SpecializedAgent {
     public id: string;
@@ -261,7 +99,7 @@ export class BaseAgent implements SpecializedAgent {
                 // Phase 4: Enforce hub-and-spoke architecture
                 const hubSpokeError = validateHubAndSpoke(this.id, targetAgentId);
                 if (hubSpokeError) {
-                    console.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
+                    logger.warn(`[BaseAgent] Hub-and-spoke violation: ${this.id} -> ${targetAgentId}`);
                     return toolError(hubSpokeError, 'HUB_SPOKE_VIOLATION');
                 }
 
@@ -269,7 +107,7 @@ export class BaseAgent implements SpecializedAgent {
                 const traceId = context?.traceId || 'unknown';
                 const delegationCheck = DelegationLoopDetector.recordDelegation(traceId, targetAgentId);
                 if (delegationCheck.isLoop) {
-                    console.warn(`[BaseAgent] Delegation loop detected: ${traceId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
+                    logger.warn(`[BaseAgent] Delegation loop detected: ${traceId} -> ${targetAgentId}. Pattern: ${delegationCheck.pattern}`);
                     return toolError(
                         `Cannot delegate: ${delegationCheck.reason}. Chain: ${delegationCheck.pattern}`,
                         'DELEGATION_LOOP'
@@ -303,7 +141,7 @@ export class BaseAgent implements SpecializedAgent {
                             // Phase 4: Enforce hub-and-spoke architecture
                             const hubSpokeError = validateHubAndSpoke(this.id, c.targetAgentId);
                             if (hubSpokeError) {
-                                console.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
+                                logger.warn(`[BaseAgent] Hub-and-spoke violation in consult_experts: ${this.id} -> ${c.targetAgentId}`);
                                 return { agentId: c.targetAgentId, error: hubSpokeError };
                             }
 
@@ -380,7 +218,7 @@ export class BaseAgent implements SpecializedAgent {
                     };
                 } catch (err: unknown) {
                     const message = err instanceof Error ? err.message : String(err);
-                    console.error('[indii:BaseAgent] Speak failure:', err);
+                    logger.error('[indii:BaseAgent] Speak failure:', err);
                     return {
                         success: false,
                         message: `Failed to speak: ${message}`
@@ -389,37 +227,6 @@ export class BaseAgent implements SpecializedAgent {
             },
             ...(config.functions || {} as Record<string, AnyToolFunction>)
         };
-    }
-
-    protected buildWhiskContext(whiskState: WhiskState): string {
-        if (!whiskState) return '';
-        const { subjects, scenes, styles, preciseReference } = whiskState;
-        const lines: string[] = [];
-
-        const checkedSubjects = subjects.filter(s => s.checked);
-        const checkedScenes = scenes.filter(s => s.checked);
-        const checkedStyles = styles.filter(s => s.checked);
-
-        if (checkedSubjects.length === 0 && checkedScenes.length === 0 && checkedStyles.length === 0) {
-            return '';
-        }
-
-        lines.push('## REFERENCE MIXER (WHISK) CONTEXT');
-        lines.push(`- Precise Mode: ${preciseReference ? 'ON (strict adherence to references)' : 'OFF (creative freedom)'}`);
-        lines.push('The following items are "Locked" in the Reference Mixer. They represent the current visual direction:');
-
-        if (checkedSubjects.length > 0) {
-            lines.push('- SUBJECTS: ' + checkedSubjects.map(s => s.aiCaption || s.content).join(', '));
-        }
-        if (checkedScenes.length > 0) {
-            lines.push('- SCENES: ' + checkedScenes.map(s => s.aiCaption || s.content).join(', '));
-        }
-        if (checkedStyles.length > 0) {
-            lines.push('- STYLES: ' + checkedStyles.map(s => s.aiCaption || s.content).join(', '));
-        }
-
-        lines.push('IMPORTANT: When generating images or videos, you MUST incorporate these locked references. Synthesize the subject, scene, and style into a cohesive prompt.');
-        return lines.join('\n');
     }
 
     /**
@@ -441,12 +248,12 @@ export class BaseAgent implements SpecializedAgent {
 
         // If another execution is in progress for this key, wait for it
         if (BaseAgent.executionLocks.has(lockKey)) {
-            console.log(`[BaseAgent] ${this.name} waiting for existing execution to complete...`);
+            logger.debug(`[BaseAgent] ${this.name} waiting for existing execution to complete...`);
             try {
                 await BaseAgent.executionLocks.get(lockKey);
             } catch (err) {
                 // Previous execution failed, but we can proceed
-                console.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
+                logger.warn(`[BaseAgent] Previous execution failed for ${lockKey}, proceeding...`);
             }
         }
 
@@ -511,9 +318,6 @@ export class BaseAgent implements SpecializedAgent {
             ? `\n## RELEVANT MEMORIES\n${context.memoryContext}\n`
             : '';
 
-        // Build Reference Mixer context
-        const whiskContext = context?.whiskState ? `\n${this.buildWhiskContext(context.whiskState)}\n` : '';
-
         // Build distributor section
         const distributorSection = context?.distributor?.isConfigured
             ? `\n## DISTRIBUTOR REQUIREMENTS\n${context.distributor.promptContext}\n\nIMPORTANT: When generating any cover art, promotional images, or release assets:\n- ALWAYS use ${context.distributor.coverArtSize.width}x${context.distributor.coverArtSize.height}px for cover art\n- Export audio in ${context.distributor.audioFormat.join(' or ')} format\n- These are ${context.distributor.name} requirements - non-compliance will cause upload rejection.\n`
@@ -552,36 +356,18 @@ export class BaseAgent implements SpecializedAgent {
             }
         }
 
-        let fullPrompt = `
-# MISSION
-${this.systemPrompt}
-
-# CONTEXT
-${JSON.stringify(enrichedContext, null, 2)}
-
-${context?.brandKit ? `
-## BRAND & IDENTITY
-- **Brand Description:** ${context.brandKit.brandDescription || 'Not provided'}
-- **Aesthetic Style:** ${context.brandKit.aestheticStyle || 'Not provided'}
-${context.brandKit.releaseDetails ? `
-- **CURRENT PROJECT (ALBUM/SINGLE):** ${context.brandKit.releaseDetails.title || 'Untitled Project'}
-- **ARTIST NAME:** ${context.brandKit.releaseDetails.artists || 'Unknown Artist'}
-- **MOOD/THEME:** ${context.brandKit.releaseDetails.mood || 'N/A'}
-` : ''}
-` : ''}
-
-${whiskContext}
-
-# HISTORY
-${safeHistory}
-${memorySection}
-${distributorSection}
-
-${SUPERPOWER_PROMPT}
-
-# CURRENT OBJECTIVE
-${task}
-`;
+        let fullPrompt = AgentPromptBuilder.buildFullPrompt(
+            this.systemPrompt,
+            task,
+            this.name,
+            this.id,
+            context,
+            enrichedContext,
+            safeHistory,
+            SUPERPOWER_PROMPT,
+            memorySection,
+            distributorSection
+        );
 
         // Tool gathering logic
         const specialistToolNames = new Set(
@@ -638,7 +424,7 @@ ${task}
                 // LEDGER: Circuit Breaker - Check Budget before execution
                 const budgetCheck = await MembershipService.checkBudget(0);
                 if (!budgetCheck.allowed) {
-                    console.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
+                    logger.warn(`[BaseAgent] Budget exceeded in ${this.id}. Halting execution.`);
                     // executionContext.rollback() is already synchronous, but for consistency if we ever make it async:
                     executionContext.rollback();
                     return {
@@ -725,8 +511,8 @@ ${task}
                     // Phase 2: Advanced loop detection
                     const loopCheck = this.loopDetector.detectLoop(name, args);
                     if (loopCheck.isLoop) {
-                        console.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
-                        console.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
+                        logger.warn(`[BaseAgent] Loop detected in ${this.id}: ${loopCheck.reason}`);
+                        logger.warn(`[BaseAgent] Pattern: ${loopCheck.pattern}`);
                         await executionContext.rollback();
                         return {
                             text: `Task ended: ${loopCheck.reason}`,
@@ -795,7 +581,7 @@ ${task}
 
                     // Phase 3: Commit execution context changes on successful completion
                     if (executionContext.hasUncommittedChanges()) {
-                        console.log(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
+                        logger.debug(`[BaseAgent] Committing changes for ${this.id}: ${executionContext.getChangeSummary()}`);
                         await executionContext.commit();
                     }
 
@@ -815,7 +601,7 @@ ${task}
 
             // Phase 3: Max iterations reached - rollback any uncommitted changes
             if (executionContext.hasUncommittedChanges()) {
-                console.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
+                logger.warn(`[BaseAgent] Max iterations reached, rolling back ${executionContext.getChangeSummary()}`);
                 executionContext.rollback();
             }
 
@@ -828,7 +614,7 @@ ${task}
         } catch (error: unknown) {
             // Phase 3: Error occurred - rollback any uncommitted changes
             if (executionContext.hasUncommittedChanges()) {
-                console.error(`[BaseAgent] Error occurred, rolling back ${executionContext.getChangeSummary()}`);
+                logger.error(`[BaseAgent] Error occurred, rolling back ${executionContext.getChangeSummary()}`);
                 executionContext.rollback();
             }
 

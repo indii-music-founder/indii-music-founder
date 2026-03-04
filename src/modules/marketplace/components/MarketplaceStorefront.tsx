@@ -5,6 +5,7 @@ import { useStore } from '@/core/store';
 import ProductCard from './ProductCard';
 import CreateProductModal from './CreateProductModal';
 import { Plus, Store } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface MarketplaceStorefrontProps {
     artistId?: string; // If provided, shows specific artist's store.
@@ -26,7 +27,7 @@ export default function MarketplaceStorefront({ artistId }: MarketplaceStorefron
             const data = await MarketplaceService.getProductsByArtist(targetId);
             setProducts(data);
         } catch (error) {
-            console.error("Failed to load products", error);
+            logger.error("Failed to load products", error);
         } finally {
             setLoading(false);
         }

@@ -12,6 +12,7 @@ import {
 import { useToast } from "@/core/context/ToastContext";
 import { CampaignAI } from "@/services/marketing/CampaignAIService";
 import { ScheduledPost, PostEnhancement, EnhancementType } from "../types";
+import { logger } from '@/utils/logger';
 
 interface AIEnhancePostModalProps {
   post: ScheduledPost;
@@ -73,7 +74,7 @@ export default function AIEnhancePostModal({
       setEnhancement(result);
       toast.success("Post enhanced!");
     } catch (error) {
-      // console.error('Enhancement failed:', error);
+      // logger.error('Enhancement failed:', error);
       toast.error("Failed to enhance post. Please try again.");
     } finally {
       setIsEnhancing(false);

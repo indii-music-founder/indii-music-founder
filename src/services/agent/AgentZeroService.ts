@@ -1,4 +1,5 @@
 import CryptoJS from 'crypto-js';
+import { logger } from '@/utils/logger';
 
 // Configuration interface
 export interface AgentZeroConfig {
@@ -242,7 +243,7 @@ class AgentZeroService {
             };
         } catch (e: unknown) {
             const error = e as Error;
-            console.error('[AgentZeroService] Send Message Failed:', {
+            logger.error('[AgentZeroService] Send Message Failed:', {
                 message: error.message,
                 stack: error.stack,
                 cause: (error as { cause?: unknown }).cause
@@ -290,7 +291,7 @@ class AgentZeroService {
             }
             return data;
         } catch (e: unknown) {
-            console.error('[AgentZeroService] Execute Task Error:', e);
+            logger.error('[AgentZeroService] Execute Task Error:', e);
             throw e;
         }
     }
@@ -319,7 +320,7 @@ class AgentZeroService {
 
             return await response.json();
         } catch (e: unknown) {
-            console.error('[AgentZeroService] Provision Project Error:', e);
+            logger.error('[AgentZeroService] Provision Project Error:', e);
             throw e;
         }
     }
@@ -348,7 +349,7 @@ class AgentZeroService {
 
             return await response.json();
         } catch (e: unknown) {
-            console.error('[AgentZeroService] Sync Project Error:', e);
+            logger.error('[AgentZeroService] Sync Project Error:', e);
             throw e;
         }
     }

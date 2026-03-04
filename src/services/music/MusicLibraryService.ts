@@ -2,6 +2,7 @@ import { db, auth } from '@/services/firebase';
 import { collection, doc, setDoc, getDoc, query, where, getDocs, Timestamp } from 'firebase/firestore';
 import type { AudioFeatures } from '@/services/audio/AudioAnalysisService';
 import { AudioSemanticData } from '@/services/audio/types';
+import { logger } from '@/utils/logger';
 
 export interface AnalyzedTrack {
     id: string; // Typically a hash of the file or consistent local ID
@@ -44,7 +45,7 @@ export class MusicLibraryService {
             await setDoc(trackRef, data, { merge: true });
             console.info(`[MusicLibrary] Saved analysis for track: ${filename} (${trackId})`);
         } catch (error) {
-            console.error(`[MusicLibrary] Failed to save analysis for ${trackId}:`, error);
+            logger.error(`[MusicLibrary] Failed to save analysis for ${trackId}:`, error);
             // Non-blocking error, analysis is just lost from cache
         }
     }
@@ -65,7 +66,7 @@ export class MusicLibraryService {
                 return snap.data() as AnalyzedTrack;
             }
         } catch (error) {
-            console.error(`[MusicLibrary] Error fetching analysis for ${trackId}:`, error);
+            logger.error(`[MusicLibrary] Error fetching analysis for ${trackId}:`, error);
         }
 
         return null;
@@ -88,7 +89,7 @@ export class MusicLibraryService {
                 return snap.docs[0].data() as AnalyzedTrack;
             }
         } catch (error) {
-            console.error(`[MusicLibrary] Error fetching analysis by hash:`, error);
+            logger.error(`[MusicLibrary] Error fetching analysis by hash:`, error);
         }
 
         return null;
@@ -110,7 +111,7 @@ export class MusicLibraryService {
             console.info(`[MusicLibrary] Found ${tracks.length} analyzed tracks.`);
             return tracks;
         } catch (error) {
-            console.error(`[MusicLibrary] Error listing library:`, error);
+            logger.error(`[MusicLibrary] Error listing library:`, error);
             return [];
         }
     }

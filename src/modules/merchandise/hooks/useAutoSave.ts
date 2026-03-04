@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import * as fabric from 'fabric';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
@@ -34,7 +35,7 @@ export const useAutoSave = (
 
     const saveDesign = useCallback(async () => {
         if (!canvas || !user || !currentProjectId || !activeOrg) {
-            console.warn('Auto-save skipped: missing canvas, user, or project context', {
+            logger.warn('Auto-save skipped: missing canvas, user, or project context', {
                 hasCanvas: !!canvas,
                 hasUser: !!user,
                 hasProject: !!currentProjectId,
@@ -90,9 +91,9 @@ export const useAutoSave = (
             }, { merge: true });
 
             setLastSaved(new Date());
-            console.log(`Design "${designName}" auto-saved at ${new Date().toLocaleTimeString()}`);
+            logger.debug(`Design "${designName}" auto-saved at ${new Date().toLocaleTimeString()}`);
         } catch (err) {
-            console.error('Auto-save failed:', err);
+            logger.error('Auto-save failed:', err);
             setError(err instanceof Error ? err.message : 'Auto-save failed');
         } finally {
             setIsSaving(false);

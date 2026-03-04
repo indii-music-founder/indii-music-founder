@@ -42,13 +42,14 @@ export { VALID_AGENT_IDS, VALID_AGENT_IDS_LIST } from './types';
 export type { ValidAgentId } from './types';
 
 import { freezeAgentConfig } from './FreezeDiagnostic';
+import { logger } from '@/utils/logger';
 
 // Safety net: freeze all agent configurations to prevent shared state contamination
 AGENT_CONFIGS.forEach(agent => {
     try {
         freezeAgentConfig(agent);
     } catch (e) {
-        console.warn(`[agentConfig] Failed to freeze agent "${agent.id}":`, e);
+        logger.warn(`[agentConfig] Failed to freeze agent "${agent.id}":`, e);
     }
 });
 

@@ -19,6 +19,7 @@ import {
 import { useDDEXRelease, WizardStep } from '../hooks/useDDEXRelease';
 import type { DistributorId } from '@/services/distribution/types/distributor';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
+import { logger } from '@/utils/logger';
 
 // Step configuration
 const STEPS: { id: WizardStep; label: string; icon: React.ReactNode }[] = [
@@ -95,7 +96,7 @@ export default function ReleaseWizard({ onClose, onComplete }: ReleaseWizardProp
       const id = await submitRelease();
       onComplete?.(id);
     } catch (error) {
-      console.error('Release submission failed:', error);
+      logger.error('Release submission failed:', error);
     }
   };
 

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { StateCreator } from 'zustand';
 import { HistoryItem } from '@/core/types/history';
 
@@ -165,19 +166,19 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     addToHistory: (item: HistoryItem) => {
         // Use dynamic import to avoid circular dependency with store
         import('@/core/store').then(({ useStore }) => {
-            console.log("CreativeSlice: addToHistory called", item.id);
+            logger.debug("CreativeSlice: addToHistory called", item.id);
             const { currentOrganizationId } = useStore.getState();
             const enrichedItem = { ...item, orgId: item.orgId || currentOrganizationId };
 
             set((state) => ({ generatedHistory: [enrichedItem, ...state.generatedHistory] }));
-            console.log("CreativeSlice: generatedHistory updated", enrichedItem.id);
+            logger.debug("CreativeSlice: generatedHistory updated", enrichedItem.id);
 
             import('@/services/StorageService').then(({ StorageService }) => {
                 StorageService.saveItem(enrichedItem)
-                    .then(() => { console.log("CreativeSlice: Saved to Storage", enrichedItem.id) })
-                    .catch((err) => { console.error("CreativeSlice: Storage Save Error", err) });
-            }).catch(err => console.error("CreativeSlice: Failed to import StorageService", err));
-        }).catch(err => console.error("CreativeSlice: Failed to import store", err));
+                    .then(() => { logger.debug("CreativeSlice: Saved to Storage", enrichedItem.id) })
+                    .catch((err) => { logger.error("CreativeSlice: Storage Save Error", err) });
+            }).catch(err => logger.error("CreativeSlice: Failed to import StorageService", err));
+        }).catch(err => logger.error("CreativeSlice: Failed to import store", err));
     },
     initializeHistory: async () => {
         const { StorageService } = await import('@/services/StorageService');
@@ -234,7 +235,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                         // Resolve the initialization promise after the first snapshot
                         resolve();
                     }, (error) => {
-                        console.error('[CreativeSlice] History subscription error:', error);
+                        logger.error('[CreativeSlice] History subscription error:', error);
                         resolve(); // Resolve anyway to unblock UI
                     });
 
@@ -244,7 +245,7 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
                     });
 
                 } catch (err) {
-                    console.error('[CreativeSlice] Failed to initialize history:', err);
+                    logger.error('[CreativeSlice] Failed to initialize history:', err);
                     resolve();
                 }
             })();

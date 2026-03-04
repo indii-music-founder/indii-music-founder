@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore';
 import { RiderItem } from '@/modules/touring/types';
 import { z } from 'zod';
+import { logger } from '@/utils/logger';
 
 const COLLECTION = 'tour_rider_items';
 
@@ -50,7 +51,7 @@ export const RiderService = {
                         ...data
                     } as RiderItem;
                 } catch (error) {
-                    console.warn(`Skipping invalid rider item ${doc.id}:`, error);
+                    logger.warn(`Skipping invalid rider item ${doc.id}:`, error);
                     return null;
                 }
             }).filter((item): item is RiderItem => item !== null);

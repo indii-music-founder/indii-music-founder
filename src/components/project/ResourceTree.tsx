@@ -11,6 +11,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/core/context/ToastContext';
 import { FileTreeNode } from './FileTreeNode';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
+import { logger } from '@/utils/logger';
 
 interface ResourceTreeProps {
     className?: string;
@@ -105,7 +106,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                     }).then(() => {
                         toast.success(`Indexed ${file.name} for AI search`);
                     }).catch(err => {
-                        console.error("Indexing failed for", file.name, err);
+                        logger.error("Indexing failed for", file.name, err);
                     });
 
                     await createFileNode(
@@ -123,7 +124,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                     );
                     uploadedCount++;
                 } catch (error) {
-                    console.error(`Failed to upload ${file.name}:`, error);
+                    logger.error(`Failed to upload ${file.name}:`, error);
                     toast.error(`Failed to upload ${file.name}`);
                 }
             }
@@ -132,7 +133,7 @@ export const ResourceTree: React.FC<ResourceTreeProps> = ({ className }) => {
                 toast.success(`Successfully uploaded ${uploadedCount} file(s)`);
             }
         } catch (error) {
-            console.error("Upload process error:", error);
+            logger.error("Upload process error:", error);
             toast.error("An error occurred during upload");
         } finally {
             toast.dismiss(toastId);

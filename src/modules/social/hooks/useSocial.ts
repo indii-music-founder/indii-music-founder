@@ -6,6 +6,7 @@ import { SocialStats, ScheduledPost, SocialPost } from '@/services/social/types'
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 export function useSocial(userId?: string) {
     const { userProfile } = useStore();
@@ -39,7 +40,7 @@ export function useSocial(userId?: string) {
             setStats(fetchedStats);
             setScheduledPosts(fetchedScheduled);
         } catch (err) {
-            console.error("Failed to load social dashboard:", err);
+            logger.error("Failed to load social dashboard:", err);
             Sentry.captureException(err);
             toast.error("Failed to load dashboard stats.");
         }
@@ -53,7 +54,7 @@ export function useSocial(userId?: string) {
             const fetchedPosts = await SocialService.getFeed(targetId, filter);
             setPosts(fetchedPosts);
         } catch (err) {
-            console.error("Failed to load feed:", err);
+            logger.error("Failed to load feed:", err);
             Sentry.captureException(err);
             toast.error("Failed to refresh feed.");
         } finally {
@@ -114,7 +115,7 @@ export function useSocial(userId?: string) {
             setIsFeedLoading(false);
             setIsLoading(false);
         }, (err) => {
-            console.error("Feed error:", err);
+            logger.error("Feed error:", err);
             Sentry.captureException(err);
             setError("Failed to stream feed.");
             setIsFeedLoading(false);
@@ -140,7 +141,7 @@ export function useSocial(userId?: string) {
             loadDashboardData(); // Refresh calendar data
             return true;
         } catch (err) {
-            console.error("Error scheduling post:", err);
+            logger.error("Error scheduling post:", err);
             Sentry.captureException(err);
             toast.error("Failed to schedule post.");
             return false;
@@ -156,7 +157,7 @@ export function useSocial(userId?: string) {
             loadDashboardData(); // Update stats
             return true;
         } catch (err) {
-            console.error("Failed to create post:", err);
+            logger.error("Failed to create post:", err);
             Sentry.captureException(err);
             toast.error("Failed to publish post.");
             return false;

@@ -14,6 +14,7 @@ import {
 } from '@/services/distribution/types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { DDEX_CONFIG } from '@/core/config/ddex';
+import { logger } from '@/utils/logger';
 
 export class DistroKidAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'distrokid';
@@ -146,7 +147,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             }
 
             // 4. Fallback: Fail if SFTP/Credentials are missing
-            console.error('[DistroKid] SFTP unavailable or credentials missing.');
+            logger.error('[DistroKid] SFTP unavailable or credentials missing.');
             return {
                 success: false,
                 status: 'failed',
@@ -154,7 +155,7 @@ export class DistroKidAdapter extends BaseDistributorAdapter {
             };
 
         } catch (e) {
-            console.error('[DistroKid] Create Release Error:', e);
+            logger.error('[DistroKid] Create Release Error:', e);
             return {
                 success: false,
                 status: 'failed',

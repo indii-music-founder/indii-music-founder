@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
 
 // Define the structure of a task in the execution queue
 interface ExecutionTask {
@@ -109,7 +110,7 @@ export class WorkflowEngine {
             }
 
         } catch (error: unknown) {
-            console.error(`Error executing node ${node.id}:`, error);
+            logger.error(`Error executing node ${node.id}:`, error);
             if (error instanceof Error) {
                 this.updateNodeStatus(node.id, Status.ERROR, error.message);
             } else {
@@ -166,8 +167,8 @@ export class WorkflowEngine {
                 prompt,
                 userProfile,
                 null,
-                (_status) => { /* console.log(`[Research]: ${status}`) */ },
-                (_id, _status) => { /* console.log(`[Doc ${id}]: ${status}`) */ },
+                (_status) => { /* logger.debug(`[Research]: ${status}`) */ },
+                (_id, _status) => { /* logger.debug(`[Doc ${id}]: ${status}`) */ },
                 undefined // No fileContent currently available in workflow engine
             );
             return result.asset.content;

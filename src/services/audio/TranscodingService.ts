@@ -32,7 +32,7 @@ export class TranscodingService {
 
         // 1. Validate Input
         if (!this.isValidInput(options.inputPath)) {
-            console.error(`[TranscodingService] Invalid input file: ${options.inputPath}`);
+            logger.error(`[TranscodingService] Invalid input file: ${options.inputPath}`);
             return false;
         }
 
@@ -43,7 +43,7 @@ export class TranscodingService {
                 const result = await window.electronAPI.audio.transcode(options);
                 return result.success;
             } catch (error) {
-                console.error('[TranscodingService] Native transcode failed:', error);
+                logger.error('[TranscodingService] Native transcode failed:', error);
                 return false;
             }
         }
@@ -54,7 +54,7 @@ export class TranscodingService {
 
         // 4. Failure (No valid transcoding engine found)
         // Bolt Hardening: Fail explicitly instead of mocking success in production.
-        console.error('[TranscodingService] No transcoding engine available (Native/Cloud).');
+        logger.error('[TranscodingService] No transcoding engine available (Native/Cloud).');
         return false;
     }
 

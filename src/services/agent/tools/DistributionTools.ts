@@ -61,7 +61,7 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                 message: `Industrial DDEX ERN 4.3 generated via Python Engine.`
             };
         } catch (e) {
-            console.warn('[DistributionTools] Industrial DDEX generation failed, falling back to JS Service:', e);
+            logger.warn('[DistributionTools] Industrial DDEX generation failed, falling back to JS Service:', e);
         }
     }
 
@@ -200,7 +200,7 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
                 registry: 'Local'
             };
         } catch (e) {
-            console.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Authority Layer ISRC generation failed, falling back to JS:', e);
         }
     }
 
@@ -265,7 +265,7 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
                 };
             }
         } catch (e) {
-            console.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Bank Layer certification failed, falling back to JS:', e);
         }
     }
 
@@ -357,7 +357,7 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
                 message: `Industrial Waterfall Executed. Net Distributable: $${waterfallResult.report ? waterfallResult.report.net_revenue : 0}`
             };
         } catch (e) {
-            console.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Bank Layer waterfall failed, falling back to JS:', e);
         }
     }
 
@@ -404,7 +404,7 @@ const run_metadata_qc = wrapTool('run_metadata_qc', async (args: {
                 };
             }
         } catch (e) {
-            console.warn('[DistributionTools] Brain Layer QC failed, falling back to JS:', e);
+            logger.warn('[DistributionTools] Brain Layer QC failed, falling back to JS:', e);
         }
     }
 
@@ -479,7 +479,7 @@ const generate_bwarm = wrapTool('generate_bwarm', async (args: {
                 engine: 'Keys Layer (Python)'
             };
         } catch (e) {
-            console.warn('[DistributionTools] Keys Layer BWARM generation failed:', e);
+            logger.warn('[DistributionTools] Keys Layer BWARM generation failed:', e);
             throw e;
         }
     }
@@ -512,7 +512,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
             throw new Error("No report returned");
 
         } catch (e) {
-            console.warn('[DistributionTools] Keys Layer Merlin check failed:', e);
+            logger.warn('[DistributionTools] Keys Layer Merlin check failed:', e);
             throw e;
         }
     }
@@ -521,6 +521,7 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
 });
 
 import { MusicTools } from './MusicTools';
+import { logger } from '@/utils/logger';
 
 export const DistributionTools: Record<string, AnyToolFunction> = {
     prepare_release,

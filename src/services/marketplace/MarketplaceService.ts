@@ -16,6 +16,7 @@ import {
 import { Product, Purchase } from './types';
 import { paymentService } from '@/services/payment/PaymentService';
 import { revenueService } from '@/services/RevenueService';
+import { logger } from '@/utils/logger';
 
 export class MarketplaceService {
     private static PRODUCTS_COLLECTION = 'products';
@@ -83,7 +84,7 @@ export class MarketplaceService {
             this.productCache.set(productId, { product, timestamp: Date.now() });
             return product;
         } catch (error) {
-            console.error(`Failed to fetch product ${productId}:`, error);
+            logger.error(`Failed to fetch product ${productId}:`, error);
             return null;
         }
     }
@@ -182,7 +183,7 @@ export class MarketplaceService {
             return purchaseRef.id;
 
         } catch (error) {
-            console.error('[MarketplaceService] Purchase failed:', error);
+            logger.error('[MarketplaceService] Purchase failed:', error);
 
             // ROLLBACK: Restore inventory if payment failed
             if (hasInventoryTracking) {
@@ -192,7 +193,7 @@ export class MarketplaceService {
                     });
                     console.info(`[MarketplaceService] Rolled back inventory for ${productId}`);
                 } catch (rollbackError) {
-                    console.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
+                    logger.error(`[MarketplaceService] CRITICAL: Failed to rollback inventory for ${productId}`, rollbackError);
                     // In a real system, we'd log this to an admin alert queue
                 }
             }

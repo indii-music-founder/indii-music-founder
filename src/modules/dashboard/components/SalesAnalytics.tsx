@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Activity, TrendingUp, Users, MousePointerClick, AlertCircle, Loader2 } from 'lucide-react';
 import { DashboardService } from '@/services/dashboard/DashboardService';
 import { SalesAnalyticsData } from '@/services/dashboard/schema';
+import { logger } from '@/utils/logger';
 
 // Reusable Chart Component
 const LineChart = ({ data }: { data: number[] }) => (
@@ -84,7 +85,7 @@ export default function SalesAnalytics() {
             } catch (err) {
                 if (isMounted) {
                     setError('Failed to load sales analytics.');
-                    console.error(err);
+                    logger.error(err);
                 }
             } finally {
                 if (isMounted) {

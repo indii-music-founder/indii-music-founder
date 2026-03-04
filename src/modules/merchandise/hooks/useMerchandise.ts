@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { MerchandiseService, CatalogProduct } from '@/services/merchandise/MerchandiseService';
 import { revenueService } from '@/services/RevenueService';
 import { MerchProduct } from '../types';
+import { logger } from '@/utils/logger';
 
 export interface MerchStats {
     totalRevenue: number;
@@ -57,7 +58,7 @@ export const useMerchandise = () => {
             })
             .catch((err) => {
                 if (mounted) {
-                    console.warn("[Merchandise] Failed to load catalog (non-fatal):", err);
+                    logger.warn("[Merchandise] Failed to load catalog (non-fatal):", err);
                     setCatalog([]); // Non-fatal, just show empty catalog
                     setIsCatalogLoading(false);
                 }
@@ -66,7 +67,7 @@ export const useMerchandise = () => {
         // Defensive timeout
         const timer = setTimeout(() => {
             if (mounted && isCatalogLoading) {
-                console.warn("[Merchandise] Catalog load timed out, proceeding...");
+                logger.warn("[Merchandise] Catalog load timed out, proceeding...");
                 setIsCatalogLoading(false);
             }
         }, 5000);
@@ -97,7 +98,7 @@ export const useMerchandise = () => {
             setIsProductsLoading(false);
         }, (err) => {
             initialLoadComplete = true;
-            console.error("Product subscription failed, likely auth or permissions:", err);
+            logger.error("Product subscription failed, likely auth or permissions:", err);
             // Graceful fallback for E2E/No-Auth: Render empty dashboard instead of blocking error
             if (err?.code === 'permission-denied' || err?.code === 'failed-precondition' || err?.message?.includes('permission')) {
                 setProducts([]);
@@ -111,7 +112,7 @@ export const useMerchandise = () => {
         // Defensive timeout for products (e.g. if Firestore hangs)
         const safetyTimer = setTimeout(() => {
             if (!initialLoadComplete) {
-                console.warn("[Merchandise] Product subscription timed out (persistence check). forcing load.");
+                logger.warn("[Merchandise] Product subscription timed out (persistence check). forcing load.");
                 setProducts([]);
                 setIsProductsLoading(false);
             }
@@ -175,7 +176,7 @@ export const useMerchandise = () => {
                     setTopSellingProducts(topSellers);
                 }
             } catch (err) {
-                console.warn("[Merchandise] Failed to load merch stats or timed out:", err);
+                logger.warn("[Merchandise] Failed to load merch stats or timed out:", err);
             } finally {
                 setIsStatsLoading(false);
             }

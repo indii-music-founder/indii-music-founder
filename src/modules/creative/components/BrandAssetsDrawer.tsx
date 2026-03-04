@@ -5,6 +5,7 @@ import { X, Upload, Image as ImageIcon, Plus, Camera } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import FileUpload from '@/components/kokonutui/file-upload';
 import { StorageService } from '@/services/StorageService';
+import { logger } from '@/utils/logger';
 
 interface BrandAssetsDrawerProps {
     onClose: () => void;
@@ -78,7 +79,7 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 toast.success(`${files.length} asset(s) uploaded`);
             }
         } catch (error) {
-            console.error("Upload failed layout:", error);
+            logger.error("Upload failed layout:", error);
             toast.error("Failed to upload assets");
         } finally {
             setIsGenerating(false);
@@ -150,12 +151,12 @@ export default function BrandAssetsDrawer({ onClose, onSelect }: BrandAssetsDraw
                 setPrompt('');
                 setActiveTab('upload'); // Switch back to view it
             } else {
-                console.error("No image data in response", data);
+                logger.error("No image data in response", data);
                 toast.error("Failed to generate image");
             }
 
         } catch (error) {
-            console.error("Generation failed:", error);
+            logger.error("Generation failed:", error);
             toast.error("Generation failed");
         } finally {
             setIsGenerating(false);

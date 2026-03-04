@@ -46,6 +46,7 @@ import { OfflineBanner } from './components/OfflineBanner';
 import { LayoutGrid, BarChart2, CreditCard, Upload } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { ReleaseAssets, DistributorId, ReleaseStatus } from '@/services/distribution/types/distributor';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Publishing Dashboard — Three-Panel Layout                          */
@@ -303,7 +304,7 @@ export default function PublishingDashboard() {
                                 toast.success('Sales report integrated successfully');
                                 await fetchEarnings({ startDate: defaultDateRange.start, endDate: defaultDateRange.end });
                             } catch (error) {
-                                console.error('[DSR Upload] Error:', error);
+                                logger.error('[DSR Upload] Error:', error);
                                 toast.error('Failed to process sales report');
                             }
                         }}

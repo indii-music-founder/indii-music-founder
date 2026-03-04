@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Diagnostic utility to detect mutations to the shared agent config.
  * Call this at the start of any suspected mutation point.
@@ -6,11 +7,11 @@
  */
 export function freezeAgentConfig(agent: any) {
     if (!agent || !agent.tools || !Array.isArray(agent.tools)) {
-        console.warn(`[FreezeDiagnostic] Invalid agent target provided to freezeAgentConfig: ${agent?.id || 'unknown'}`);
+        logger.warn(`[FreezeDiagnostic] Invalid agent target provided to freezeAgentConfig: ${agent?.id || 'unknown'}`);
         return;
     }
 
-    console.log(`[FreezeDiagnostic] Freezing Agent "${agent.id}" tools schema...`);
+    logger.debug(`[FreezeDiagnostic] Freezing Agent "${agent.id}" tools schema...`);
 
     // Check for existing corruption before freezing
     agent.tools.forEach((t: any) => {
@@ -18,7 +19,7 @@ export function freezeAgentConfig(agent: any) {
             if (fn.name === 'analyze_brand_consistency') {
                 const required = fn.parameters?.required;
                 if (!required || required.length === 0) {
-                    console.error(' [CRITICAL] BrandAgent schema is ALREADY CORRUPTED at freeze time!', {
+                    logger.error(' [CRITICAL] BrandAgent schema is ALREADY CORRUPTED at freeze time!', {
                         agentId: agent.id,
                         toolName: fn.name,
                         required,
@@ -55,7 +56,7 @@ export function freezeAgentConfig(agent: any) {
     // Finally freeze the root agent object
     Object.freeze(agent);
 
-    console.log(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
+    logger.debug(`[FreezeDiagnostic] Agent "${agent.id}" tools schema is now IMMUTABLE.`);
 }
 
 /** @deprecated Use freezeAgentConfig */

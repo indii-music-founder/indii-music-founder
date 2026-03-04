@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { logger } from '@/utils/logger';
 
 // --- Validation Schemas ---
 
@@ -67,7 +68,7 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
             try {
                 pdfResult = await (window as any).electronAPI.publicist.generatePdf(validated);
             } catch (err) {
-                console.error('[PublicistTools] PDF generation failed:', err);
+                logger.error('[PublicistTools] PDF generation failed:', err);
             }
         }
 

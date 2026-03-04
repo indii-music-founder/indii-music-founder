@@ -4,6 +4,7 @@ import { openDB } from 'idb';
 import { Loader2, Share2, FileIcon, ImageIcon, Music, X } from 'lucide-react';
 import { useStore } from '../store';
 import { useShallow } from 'zustand/react/shallow';
+import { logger } from '@/utils/logger';
 
 interface SharedItem {
     id?: number;
@@ -47,7 +48,7 @@ export function ShareTargetHandler() {
                     // Or keep it until user explicitly handles it
                 }
             } catch (error) {
-                console.error('[ShareHandler] Failed to load content:', error);
+                logger.error('[ShareHandler] Failed to load content:', error);
             } finally {
                 setIsProcessing(false);
             }

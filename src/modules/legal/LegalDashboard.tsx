@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Legal Dashboard — Three-Panel Layout                                */
@@ -102,7 +103,7 @@ Only return valid JSON.
             ]);
             toast.success("Analysis complete!");
         } catch (error) {
-            console.error("Analysis failed:", error);
+            logger.error("Analysis failed:", error);
             toast.error("Analysis failed. Please ensure the file contains readable text.");
         } finally {
             setIsAnalyzing(false);

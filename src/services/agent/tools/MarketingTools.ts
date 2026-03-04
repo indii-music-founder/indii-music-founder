@@ -8,6 +8,7 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 // duplicate removed
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { logger } from '@/utils/logger';
 
 // --- Validation Schemas ---
 
@@ -72,7 +73,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
             } as any);
             console.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
         } catch (persistError) {
-            console.warn('[MarketingTools] Persistence failed:', persistError);
+            logger.warn('[MarketingTools] Persistence failed:', persistError);
         }
 
         return toolSuccess(parsed, `Campaign brief created for ${parsed.campaignName} and saved to Marketing Dashboard.`);

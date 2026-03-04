@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import * as fabric from 'fabric';
+import { logger } from '@/utils/logger';
 
 interface CanvasHistoryState {
   json: string;
@@ -80,7 +81,7 @@ export const useCanvasHistory = (
         };
       });
     } catch (error) {
-      console.error('[useCanvasHistory] Failed to save canvas state:', error);
+      logger.error('[useCanvasHistory] Failed to save canvas state:', error);
     }
   }, [canvas, maxHistorySize]);
 
@@ -118,7 +119,7 @@ export const useCanvasHistory = (
         isPerformingAction.current = false;
       }, 100);
     } catch (error) {
-      console.error('[useCanvasHistory] Failed to undo:', error);
+      logger.error('[useCanvasHistory] Failed to undo:', error);
       isPerformingAction.current = false;
     }
   }, [canvas, history]);
@@ -145,7 +146,7 @@ export const useCanvasHistory = (
         isPerformingAction.current = false;
       }, 100);
     } catch (error) {
-      console.error('[useCanvasHistory] Failed to redo:', error);
+      logger.error('[useCanvasHistory] Failed to redo:', error);
       isPerformingAction.current = false;
     }
   }, [canvas, history]);

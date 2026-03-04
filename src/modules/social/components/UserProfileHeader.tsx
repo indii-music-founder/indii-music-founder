@@ -4,6 +4,7 @@ import { UserService } from '@/services/UserService';
 import { SocialService } from '@/services/social/SocialService';
 import { useStore } from '@/core/store';
 import { Users, UserPlus, UserCheck, Edit, MapPin, Link as LinkIcon } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface UserProfileHeaderProps {
     userId?: string;
@@ -32,7 +33,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
             const data = await UserService.getUserProfile(targetId);
             setProfile(data);
         } catch (error) {
-            console.error("Failed to load profile", error);
+            logger.error("Failed to load profile", error);
         } finally {
             setLoading(false);
         }
@@ -77,7 +78,7 @@ export default function UserProfileHeader({ userId }: UserProfileHeaderProps) {
                 }
             }
         } catch (error) {
-            console.error("Failed to toggle follow", error);
+            logger.error("Failed to toggle follow", error);
         } finally {
             setFollowLoading(false);
         }

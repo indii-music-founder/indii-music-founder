@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { StoreState } from '..';
 import { FileNode, fileSystemService } from '@/services/FileSystemService';
+import { logger } from '@/utils/logger';
 
 export interface FileSystemSlice {
     fileNodes: FileNode[];
@@ -40,7 +41,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to fetch file nodes';
             set({ fileSystemError: message });
-            console.error('Error fetching file nodes:', error);
+            logger.error('Error fetching file nodes:', error);
         } finally {
             set({ isFileSystemLoading: false });
         }
@@ -62,7 +63,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to create folder';
             set({ fileSystemError: message });
-            console.error('Error creating folder:', error);
+            logger.error('Error creating folder:', error);
         }
     },
 
@@ -84,7 +85,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to create file';
             set({ fileSystemError: message });
-            console.error('Error creating file:', error);
+            logger.error('Error creating file:', error);
         }
     },
 
@@ -106,7 +107,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to move node';
             set({ fileNodes: previousNodes, fileSystemError: message });
-            console.error('Error moving node:', error);
+            logger.error('Error moving node:', error);
         }
     },
 
@@ -122,7 +123,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to rename node';
             set({ fileNodes: previousNodes, fileSystemError: message });
-            console.error('Error renaming node:', error);
+            logger.error('Error renaming node:', error);
         }
     },
 
@@ -152,7 +153,7 @@ export const createFileSystemSlice: StateCreator<StoreState, [], [], FileSystemS
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Failed to delete node';
             set({ fileNodes: previousNodes, fileSystemError: message });
-            console.error('Error deleting node:', error);
+            logger.error('Error deleting node:', error);
         }
     },
 

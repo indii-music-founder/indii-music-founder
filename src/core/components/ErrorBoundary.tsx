@@ -1,6 +1,7 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface Props {
     children: ReactNode;
@@ -35,16 +36,16 @@ export class ErrorBoundary extends Component<Props, State> {
 
             // If we haven't reloaded recently (within 10s), reload the page
             if (!lastReload || now - parseInt(lastReload) > RELOAD_THRESHOLD_MS) {
-                console.warn('[ErrorBoundary] Detected chunk load error, reloading...');
+                logger.warn('[ErrorBoundary] Detected chunk load error, reloading...');
                 sessionStorage.setItem(CHUNK_RELOAD_KEY, now.toString());
                 window.location.reload();
                 return;
             } else {
-                console.warn('[ErrorBoundary] Chunk load error persisted after reload.');
+                logger.warn('[ErrorBoundary] Chunk load error persisted after reload.');
             }
         }
 
-        console.error(`[ErrorBoundary] Uncaught error (${this.state.errorId}):`, error, errorInfo);
+        logger.error(`[ErrorBoundary] Uncaught error (${this.state.errorId}):`, error, errorInfo);
     }
 
     private isChunkLoadError(error: Error): boolean {

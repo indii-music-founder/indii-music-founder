@@ -3,6 +3,7 @@ import { X, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { Expense } from '@/services/finance/FinanceService';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 interface ExpenseManualEntryModalProps {
     onClose: () => void;
@@ -34,7 +35,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
             await onAdd(manualForm);
             onClose();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         } finally {
             setIsSubmitting(false);
         }

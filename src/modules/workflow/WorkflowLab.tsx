@@ -17,6 +17,7 @@ import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Workflow Lab — Three-Panel Layout                                   */
@@ -64,7 +65,7 @@ export default function WorkflowLab() {
 
                 setSaveStatus('saved');
             } catch (error) {
-                console.error("Auto-save failed:", error);
+                logger.error("Auto-save failed:", error);
                 setSaveStatus('unsaved'); // Revert to unsaved on error
             }
         }, 2000); // Debounce 2s
@@ -88,7 +89,7 @@ export default function WorkflowLab() {
                     setWorkflowName(name);
                     setSaveStatus('unsaved'); // It's a draft, so it's unsaved in cloud
                 } catch (e) {
-                    console.error("Failed to load draft", e);
+                    logger.error("Failed to load draft", e);
                 }
             }
         }
@@ -125,7 +126,7 @@ export default function WorkflowLab() {
             const engine = new WorkflowEngine(nodes, edges, setNodes);
             await engine.run();
         } catch (e) {
-            console.error("Workflow failed", e);
+            logger.error("Workflow failed", e);
         } finally {
             setIsRunning(false);
         }
@@ -144,7 +145,7 @@ export default function WorkflowLab() {
             setShowGenerator(false);
             setGeneratorPrompt('');
         } catch (error) {
-            console.error("Failed to generate workflow:", error);
+            logger.error("Failed to generate workflow:", error);
             alert("Failed to generate workflow. Please try again.");
         } finally {
             setIsGenerating(false);
@@ -183,7 +184,7 @@ export default function WorkflowLab() {
             );
             setCurrentWorkflowId(id);
         } catch (error) {
-            console.error("Failed to save workflow:", error);
+            logger.error("Failed to save workflow:", error);
             alert(`Failed to save workflow: ${error instanceof Error ? error.message : 'Unknown error'}`);
         } finally {
             setIsSaving(false);
@@ -201,7 +202,7 @@ export default function WorkflowLab() {
             const workflows = await getUserWorkflows(currentUser.uid);
             setSavedWorkflows(workflows);
         } catch (error) {
-            console.error("Failed to load workflows:", error);
+            logger.error("Failed to load workflows:", error);
         }
     };
 

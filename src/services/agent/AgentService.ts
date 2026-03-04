@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 import type { AgentMessage, AgentThought } from '@/core/store';
 // useStore removed
@@ -48,7 +49,7 @@ export class AgentService {
             await agentRegistry.warmup();
             this.isWarmedUp = true;
         } catch (e) {
-            console.warn('[indii:Service] Warmup failed, will retry on first message:', e);
+            logger.warn('[indii:Service] Warmup failed, will retry on first message:', e);
         }
     }
 
@@ -71,7 +72,7 @@ export class AgentService {
         // We redact BEFORE storage to prevent PII from leaking into the Context Pipeline via chat history.
         const redactedText = this.redactPII(text);
         if (redactedText !== text) {
-            console.log("🔒 PII Detected and Redacted from Agent Input");
+            logger.debug("🔒 PII Detected and Redacted from Agent Input");
         }
 
         // Add User Message (Redacted)
@@ -95,7 +96,7 @@ export class AgentService {
                 0.4,
                 'user',
                 state.activeSessionId
-            ).catch(err => console.warn('[AgentService] Failed to index user message:', err));
+            ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
         }
 
         try {
@@ -139,7 +140,7 @@ export class AgentService {
                     timeoutPromise
                 ]);
             } catch (err: unknown) {
-                console.error('[AgentService] Message Flow Failed:', err);
+                logger.error('[AgentService] Message Flow Failed:', err);
 
                 // TIMEOUT GRACE: Check if images were added to gallery during execution
                 const galleryCountAfter = useStore.getState().generatedHistory?.length || 0;
@@ -149,7 +150,7 @@ export class AgentService {
                 if (errorMessage.includes('Timeout')) {
                     if (newItemsGenerated) {
                         // Case A: Items were found in gallery (already handled by logic above, but keeping for clarity)
-                        console.log('[AgentService] Timeout grace: Generation detected in gallery');
+                        logger.debug('[AgentService] Timeout grace: Generation detected in gallery');
                         updateAgentMessage(responseId, {
                             text: `✅ **Generation Complete!** ${galleryCountAfter - galleryCountBefore} new item(s) added to your Gallery.`,
                             thoughts: [{
@@ -161,7 +162,7 @@ export class AgentService {
                         });
                     } else if (isGenerationRequest) {
                         // Case B: Generation request but no items yet - show "Taking longer" message
-                        console.log('[AgentService] Timeout nudge: Showing "taking longer" message');
+                        logger.debug('[AgentService] Timeout nudge: Showing "taking longer" message');
                         updateAgentMessage(responseId, {
                             text: `⏳ **Still working on it...** The synthesis is taking a bit longer than expected, but I'm still processing your request in the background. Keep an eye on your Gallery - your assets will appear there shortly!`,
                             thoughts: [{
@@ -342,7 +343,7 @@ export class AgentService {
                     0.4,
                     'agent',
                     state.activeSessionId
-                ).catch(err => console.warn('[AgentService] Failed to index agent response:', err));
+                ).catch(err => logger.warn('[AgentService] Failed to index agent response:', err));
             }
         } else {
             updateAgentMessage(responseId, {
@@ -640,17 +641,17 @@ If the user asks you to do something that requires tools (like generating images
             const projectId = context.projectId || (await import('@/core/store')).useStore.getState().currentProjectId;
             if (projectId && !context.memoryContext) {
                 try {
-                    console.log(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
+                    logger.debug(`[AgentService] Searching for relevant memories for task: "${task.substring(0, 50)}..."`);
                     const memories = await memoryService.retrieveRelevantMemories(projectId, task, 5);
                     if (memories && memories.length > 0) {
                         context.relevantMemories = memories.map((m: any) => m.content);
                         context.memoryContext = memories
                             .map((m: any) => `- [${new Date(m.timestamp).toLocaleDateString()}] (${m.type}): ${m.content}`)
                             .join('\n');
-                        console.log(`[AgentService] Injected ${memories.length} memories into context.`);
+                        logger.debug(`[AgentService] Injected ${memories.length} memories into context.`);
                     }
                 } catch (e) {
-                    console.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);
+                    logger.warn('[AgentService] Semantic retrieval failed (non-blocking):', e);
                 }
             }
 

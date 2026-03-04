@@ -3,6 +3,7 @@ import { SFTPTransporter } from './transport/SFTPTransporter';
 import { DistributorId, ExtendedGoldenMetadata, ReleaseAssets } from './types/distributor';
 import { ernService } from '@/services/ddex/ERNService';
 import { transcodingService } from '@/services/audio/TranscodingService';
+import { logger } from '@/utils/logger';
 
 // DSPs transcode audio themselves from the master file delivered in the DDEX package.
 // indiiOS delivers the original WAV/FLAC — do NOT pre-transcode to OGG or MP3.
@@ -82,14 +83,14 @@ export class DeliveryService {
                         // For now, we assume local file paths must be absolute or valid URLs.
                         // We reject paths attempting traversal.
                         if (sourceUrl.includes('..')) {
-                            console.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
+                            logger.warn(`[DeliveryService] Security Warning: Skipped potentially unsafe asset path: ${sourceUrl}`);
                             return;
                         }
 
                         if (fs.existsSync(sourceUrl)) {
                             await fs.promises.copyFile(sourceUrl, destPath);
                         } else {
-                            console.warn(`[DeliveryService] Asset file not found: ${sourceUrl}`);
+                            logger.warn(`[DeliveryService] Asset file not found: ${sourceUrl}`);
                         }
                     };
 
@@ -133,7 +134,7 @@ export class DeliveryService {
                 };
 
             } catch (fsError) {
-                console.warn('[DeliveryService] FileSystem access not available. Returning XML content only.', fsError);
+                logger.warn('[DeliveryService] FileSystem access not available. Returning XML content only.', fsError);
                 return {
                     success: true,
                     xml: generationResult.xml,
@@ -142,7 +143,7 @@ export class DeliveryService {
             }
 
         } catch (error) {
-            console.error('[DeliveryService] Failed to generate release package:', error);
+            logger.error('[DeliveryService] Failed to generate release package:', error);
             return {
                 success: false,
                 error: error instanceof Error ? error.message : 'Unknown error'
@@ -321,7 +322,7 @@ export class DeliveryService {
                 throw new Error('SFTP delivery is only supported in the Electron desktop environment. Please use the desktop app to distribute releases.');
             }
         } catch (error) {
-            console.error('[DeliveryService] Delivery failed:', error);
+            logger.error('[DeliveryService] Delivery failed:', error);
             if (await this.transporter.isConnected()) {
                 await this.transporter.disconnect();
             }

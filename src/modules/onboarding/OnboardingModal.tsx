@@ -16,6 +16,7 @@ import { TextEffect } from '@/components/motion-primitives/text-effect';
 import { AnimatedNumber } from '@/components/motion-primitives/animated-number';
 import type { ConversationFile } from '../../modules/workflow/types';
 import { v4 as uuidv4 } from 'uuid';
+import { logger } from '@/utils/logger';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
     const { userProfile, setUserProfile } = useStore();
@@ -152,7 +153,7 @@ export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose:
             }
 
         } catch (error: unknown) {
-            console.error("Full Onboarding Error:", error);
+            logger.error("Full Onboarding Error:", error);
             const errorMessage = error instanceof Error ? error.message : String(error);
             // Optionally logs to a tracking service if needed, but avoiding console log spam here.
 

@@ -7,6 +7,7 @@ import { QuotaExceededError } from '@/shared/types/errors';
 // Switch to File API resource types
 import { AI_MODELS } from '../../core/config/ai-models.ts';
 import { delay } from '@/utils/async';
+import { logger } from '@/utils/logger';
 
 export interface GeminiFile {
     name: string; // "files/..."
@@ -28,7 +29,7 @@ export class GeminiRetrievalService {
     constructor(apiKey?: string) {
         this.apiKey = apiKey || env.apiKey || '';
         if (!this.apiKey) {
-            console.error("GeminiRetrievalService: Missing API Key");
+            logger.error("GeminiRetrievalService: Missing API Key");
         }
         // Default to production if not set, or update local default to correct project
         // Note: For "The Gauntlet" E2E tests which run against local frontend but expect live backend
@@ -60,7 +61,7 @@ export class GeminiRetrievalService {
                 headers['Authorization'] = `Bearer ${idToken}`;
             }
         } catch (e) {
-            console.warn('[GeminiRetrieval] Could not get auth token:', e);
+            logger.warn('[GeminiRetrieval] Could not get auth token:', e);
         }
 
         while (attempt < maxRetries) {
@@ -78,7 +79,7 @@ export class GeminiRetrievalService {
                             throw new Error(`Gemini API Error (${endpoint}): ${response.status} ${response.statusText} - ${errorText}`);
                         }
                         const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
-                        console.warn(`Gemini API 429/5xx (${endpoint}). Retrying in ${waitTime}ms...`);
+                        logger.warn(`Gemini API 429/5xx (${endpoint}). Retrying in ${waitTime}ms...`);
                         await delay(waitTime);
                         continue;
                     }
@@ -93,7 +94,7 @@ export class GeminiRetrievalService {
                 attempt++;
                 if (attempt >= maxRetries) throw error;
                 const waitTime = Math.min(1000 * Math.pow(2, attempt), 5000);
-                console.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, errorMessage);
+                logger.warn(`Gemini Network Error (${endpoint}). Retrying in ${waitTime}ms...`, errorMessage);
                 await delay(waitTime);
             }
         }
@@ -215,7 +216,7 @@ export class GeminiRetrievalService {
                 }
             }
         } catch (e) {
-            console.warn("Failed to list FileSearchStores, trying create...", e);
+            logger.warn("Failed to list FileSearchStores, trying create...", e);
         }
 
         // 2. Create a new store if none found
@@ -230,7 +231,7 @@ export class GeminiRetrievalService {
             return newStoreName;
         } catch (e: unknown) {
             const err = e as Error;
-            console.error("Failed to create FileSearchStore:", err);
+            logger.error("Failed to create FileSearchStore:", err);
             throw new Error(`FileSearchStore Linkage Failed: ${err.message}`);
         }
     }
@@ -278,13 +279,13 @@ export class GeminiRetrievalService {
             if (op.error) {
                 // If error says "already exists", we can ignore. 
                 // But usually it just works or fails.
-                console.warn(`Import finished with potential error (or valid state): ${JSON.stringify(op.error)}`);
+                logger.warn(`Import finished with potential error (or valid state): ${JSON.stringify(op.error)}`);
             } else {
                 console.info("File imported successfully.");
             }
 
         } catch (e: unknown) {
-            console.error("Import to store failed:", e);
+            logger.error("Import to store failed:", e);
             throw e as Error;
         }
     }
@@ -318,7 +319,7 @@ export class GeminiRetrievalService {
                 }];
                 console.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
-                console.error("[RAG] File Search Setup Failed:", e);
+                logger.error("[RAG] File Search Setup Failed:", e);
             }
         }
 
@@ -355,7 +356,7 @@ export class GeminiRetrievalService {
                 if (fileUri) await this.importFileToStore(fileUri, storeName);
                 tools = [{ fileSearch: { fileSearchStoreNames: [storeName] } }];
             } catch (e) {
-                console.error("[RAG] Stream Query Setup Failed:", e);
+                logger.error("[RAG] Stream Query Setup Failed:", e);
             }
         }
 
@@ -381,7 +382,7 @@ export class GeminiRetrievalService {
                 streamHeaders['Authorization'] = `Bearer ${idToken}`;
             }
         } catch (e) {
-            console.warn('[GeminiRetrieval] streamQuery: Could not get auth token:', e);
+            logger.warn('[GeminiRetrieval] streamQuery: Could not get auth token:', e);
         }
 
         const response = await fetch(`${this.baseUrl}/models/${targetModel}:streamGenerateContent`, {

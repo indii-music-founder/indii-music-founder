@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+import { withServiceError } from '@/lib/errors';
 import { functionsWest1 as functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { firebaseAI } from '../ai/FirebaseAIService';
@@ -83,18 +85,18 @@ export class ImageGenerationService {
     }
 
     async generateImages(options: ImageGenerationOptions): Promise<{ id: string, url: string, prompt: string }[]> {
-        console.log('[ImageGen DEBUG] Entering generateImages', options);
+        logger.debug('[ImageGen DEBUG] Entering generateImages', options);
         const results: { id: string, url: string, prompt: string }[] = [];
         const count = options.count || 1;
 
         // Pre-flight quota check
         const userId = options.userProfile?.id;
         const quotaCheck = await subscriptionService.canPerformAction('generateImage', count, userId);
-        console.log('[ImageGen DEBUG] Quota check result:', quotaCheck);
+        logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
 
         if (!quotaCheck.allowed) {
             // ... existing error logic
-            console.error('[ImageGen DEBUG] Quota exceeded');
+            logger.error('[ImageGen] Quota exceeded');
             let tier: SubscriptionTier = 'free' as SubscriptionTier; // Bypassing strict enum mismatch if needed, MembershipTier includes 'free'
             try {
                 const sub = userId
@@ -102,7 +104,7 @@ export class ImageGenerationService {
                     : await subscriptionService.getCurrentSubscription();
                 tier = sub.tier;
             } catch (e) {
-                console.warn("Failed to fetch tier for QuotaExceededError, defaulting to free", e);
+                logger.warn('Failed to fetch tier for QuotaExceededError, defaulting to free', e);
             }
 
             throw new QuotaExceededError(
@@ -116,7 +118,7 @@ export class ImageGenerationService {
 
         try {
             const generateImage = httpsCallable(functions, 'generateImageV3');
-            console.log('[ImageGen DEBUG] Calling generateImageV3');
+            logger.debug('[ImageGen DEBUG] Calling generateImageV3');
 
             const fullPrompt = this.buildDistributorAwarePrompt(options);
             const aspectRatio = this.getAspectRatio(options);
@@ -130,7 +132,7 @@ export class ImageGenerationService {
                 // Gemini Image does not support thinking/grounding - removing from payload to prevent 400s
                 // Removing images: [] as it might trigger invalid argument for T2I
             });
-            console.log('[ImageGen DEBUG] generateImageV3 returned:', result);
+            logger.debug('[ImageGen DEBUG] generateImageV3 returned:', result);
 
             interface GenerateImageResponse {
                 images: Array<{
@@ -175,10 +177,9 @@ export class ImageGenerationService {
                         finalUrl = compressed.dataUri;
                     }
                 } catch (e) {
-                    console.warn("Failed to upload to cloud storage, falling back to compressed data URI:", e);
+                    logger.warn('Failed to upload to cloud storage, falling back to compressed data URI:', e);
                     try {
                         const { CloudStorageService } = await import('@/services/CloudStorageService');
-                        // Compress heavily for Firestore safety (max 1MB doc limit includes all thoughts)
                         const compressed = await CloudStorageService.compressImage(dataUri, {
                             maxWidth: 512,
                             maxHeight: 512,
@@ -186,7 +187,7 @@ export class ImageGenerationService {
                         });
                         finalUrl = compressed.dataUri;
                     } catch (compressionError) {
-                        console.warn("Compression failed, using original size:", compressionError);
+                        logger.warn('Compression failed, using original size:', compressionError);
                     }
                 }
 
@@ -203,14 +204,11 @@ export class ImageGenerationService {
             });
         } catch (err: unknown) {
             const errObj = err as { code?: string; details?: unknown };
-            console.error("❌ Image Generation Error:", err);
-            console.error("Error details:", {
+            logger.error('Image Generation Error', {
                 message: err instanceof Error ? err.message : String(err),
                 code: errObj.code,
                 details: errObj.details,
-                stack: err instanceof Error ? err.stack?.substring(0, 500) : undefined
             });
-
             throw err;
         }
 
@@ -248,7 +246,7 @@ export class ImageGenerationService {
                     maxRetries: 1,
                     queueOnFailure: true,
                 }).catch(err => {
-                    console.warn('[ImageGeneration] Failed to persist image metadata:', err);
+                    logger.warn('[ImageGeneration] Failed to persist image metadata:', err);
                 });
             }
         }
@@ -280,7 +278,7 @@ export class ImageGenerationService {
     }
 
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
-        try {
+        return withServiceError('ImageGeneration', 'remixImage', async () => {
             // Call local Python API if in Electron
             if (window.electronAPI) {
                 try {
@@ -294,20 +292,18 @@ export class ImageGenerationService {
                         return { url: localResult.url || localResult.data?.url };
                     }
                 } catch (localError) {
-                    console.warn("[ImageGenerationService] Local remix failed, falling back to Cloud Function:", localError);
+                    logger.warn('[ImageGenerationService] Local remix failed, falling back to Cloud Function:', localError);
                 }
             }
 
-            // Use Cloud Function for image editing (properly uses REST API)
-            const editImage = httpsCallable(functions, 'editImage');
+            const editImageFn = httpsCallable(functions, 'editImage');
 
-            const result = await editImage({
+            const result = await editImageFn({
                 prompt: options.prompt || 'Create a cinematic remix.',
                 image: options.contentImage?.data || '',
                 imageMimeType: options.contentImage?.mimeType || 'image/png',
             });
 
-            // The backend returns it in a candidates array for frontend compatibility
             const data = result.data as { candidates?: { content?: { parts?: { inlineData?: { mimeType?: string; data?: string } }[] } }[] };
 
             if (data?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data) {
@@ -316,14 +312,11 @@ export class ImageGenerationService {
                 return { url: `data:${mimeType};base64,${base64}` };
             }
             return null;
-        } catch (e) {
-            console.error("Remix Error:", e);
-            throw e;
-        }
+        });
     }
 
     async extractStyle(image: { mimeType: string; data: string }): Promise<{ prompt_desc?: string, style_context?: string, negative_prompt?: string }> {
-        try {
+        return withServiceError('ImageGeneration', 'extractStyle', async () => {
             const response = await firebaseAI.generateContent(
                 [{
                     role: 'user',
@@ -340,10 +333,7 @@ export class ImageGenerationService {
             );
 
             return firebaseAI.parseJSON(response.response.text());
-        } catch (e) {
-            console.error("Style Extraction Error:", e);
-            throw e;
-        }
+        });
     }
 
     async batchRemix(options: {
@@ -387,7 +377,7 @@ export class ImageGenerationService {
                     }
                     return null;
                 } catch (error) {
-                    console.error("Individual Batch Remix Error:", error);
+                    logger.error('Individual Batch Remix Error:', error);
                     return null;
                 }
             });
@@ -397,7 +387,7 @@ export class ImageGenerationService {
                 if (res) results.push(res);
             });
         } catch (e) {
-            console.error("Batch Remix Error:", e);
+            logger.error('Batch Remix Error:', e);
             throw e;
         }
         return results;
@@ -412,14 +402,11 @@ export class ImageGenerationService {
         maskMimeType?: string;
         refMimeType?: string;
     }): Promise<unknown> {
-        try {
-            const editImage = httpsCallable(functions, 'editImage');
-            const result = await editImage(options);
+        return withServiceError('ImageGeneration', 'editImage', async () => {
+            const editImageFn = httpsCallable(functions, 'editImage');
+            const result = await editImageFn(options);
             return result.data;
-        } catch (e) {
-            console.error("Image Edit Error:", e);
-            throw e;
-        }
+        });
     }
 
     /**
@@ -427,17 +414,13 @@ export class ImageGenerationService {
      * Used by the Whisk pipeline for Subject, Scene, and Style locking.
      */
     async captionImage(image: { mimeType: string, data: string }, category: 'subject' | 'scene' | 'style'): Promise<string> {
-        try {
+        return withServiceError('ImageGeneration', `captionImage(${category})`, async () => {
             const promptMap = {
                 subject: "Describe the primary subject of this image in detail. Focus on appearance, clothing, ethnicity, hair, and notable features. Keep it descriptive for an AI image generator.",
                 scene: "Describe the setting, environment, and background of this image. Focus on location, objects, architecture, and spatial arrangement.",
                 style: "Describe the artistic style, lighting, mood, color palette, and camera technique of this image. Focus on the visual 'vibe' rather than the content."
             };
 
-            // Fallback: If Flash failed (check logs), Pro is often more stable for Multimodal
-            // Flash is specifically optimized for fast multimodal analysis
-            // Use Pro (Agent) model for better multimodal stability and auth reliability
-            // Flash (Text) can sometimes trigger 403s on preview endpoints
             const response = await firebaseAI.generateContent(
                 [{
                     role: 'user',
@@ -451,13 +434,8 @@ export class ImageGenerationService {
                     ...AI_CONFIG.THINKING.LOW
                 }
             );
-            const responseText = response.response.text();
-
-            return responseText.trim();
-        } catch (e) {
-            console.error(`Captioning Error(${category}): `, e);
-            return "Visual reference"; // Fallback
-        }
+            return response.response.text().trim();
+        }, 'Visual reference');
     }
 }
 

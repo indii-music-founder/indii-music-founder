@@ -5,6 +5,7 @@ import { isrcService } from './ISRCService';
 import { taxService } from './TaxService';
 import { Timestamp } from 'firebase/firestore';
 import {
+import { logger } from '@/utils/logger';
     MerlinCheckData, MerlinReport,
     BWarmData,
     DDEXMetadata,
@@ -63,7 +64,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             [this.where('userId', '==', userId), this.orderBy('createdAt', 'desc')],
             callback,
             (error) => {
-                console.warn('[DistributionService] Subscription error:', error);
+                logger.warn('[DistributionService] Subscription error:', error);
                 if (onError) onError(error);
             }
         );
@@ -113,7 +114,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      */
     async calculateWithholding(userId: string, amount: number): Promise<TaxReport> {
         if (!window.electronAPI) {
-            console.warn('[Distribution] Electron API missing for tax calculation');
+            logger.warn('[Distribution] Electron API missing for tax calculation');
             throw new Error('Electron environment required for tax calculations');
         }
 
@@ -121,12 +122,12 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             // Updated to pass object as single argument matching new IPC signature
             const result = await window.electronAPI.distribution.calculateTax({ userId, amount });
             if (!result.success || !result.report) {
-                console.error('[Distribution] Tax calculation failed:', result.error);
+                logger.error('[Distribution] Tax calculation failed:', result.error);
                 throw new Error(result.error || 'Tax calculation failed');
             }
             return result.report;
         } catch (error) {
-            console.error('[Distribution] Unexpected tax engine error:', error);
+            logger.error('[Distribution] Unexpected tax engine error:', error);
             throw error;
         }
     }
@@ -162,7 +163,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             return (await taxService.getProfile(userId))!;
         } catch (error) {
-            console.error('[Distribution] Tax certification error:', error);
+            logger.error('[Distribution] Tax certification error:', error);
             throw error;
         }
     }
@@ -182,7 +183,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.report;
         } catch (error) {
-            console.error('[Distribution] Waterfall engine error:', error);
+            logger.error('[Distribution] Waterfall engine error:', error);
             throw error;
         }
     }
@@ -198,14 +199,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
         try {
             const result = await window.electronAPI.distribution.validateMetadata(metadata);
             if (!result.success) {
-                console.warn('[Distribution] Metadata validation failed:', result.report);
+                logger.warn('[Distribution] Metadata validation failed:', result.report);
                 // Don't throw error if validation fails, just return report so UI can show errors
                 // Unless it's an execution error
                 if (result.error) throw new Error(result.error);
             }
             return result.report || { valid: false, errors: ['Unknown validation error'] };
         } catch (error) {
-            console.error('[Distribution] Validation engine error:', error);
+            logger.error('[Distribution] Validation engine error:', error);
             throw error;
         }
     }
@@ -215,19 +216,19 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      */
     async generateContentIdAssets(data: ContentIdData): Promise<string> {
         if (!window.electronAPI) {
-            console.warn('[Distribution] Electron API missing for Content ID generation');
+            logger.warn('[Distribution] Electron API missing for Content ID generation');
             throw new Error('Electron environment required for Content ID generation');
         }
 
         try {
             const result = await window.electronAPI.distribution.generateContentIdCSV(data);
             if (!result.success || (!result.csvData && !result.report)) {
-                console.error('[Distribution] Content ID generation failed:', result.error);
+                logger.error('[Distribution] Content ID generation failed:', result.error);
                 throw new Error(result.error || 'Content ID generation failed');
             }
             return result.csvData || JSON.stringify(result.report);
         } catch (error) {
-            console.error('[Distribution] Content ID engine error:', error);
+            logger.error('[Distribution] Content ID engine error:', error);
             throw error;
         }
     }
@@ -237,14 +238,14 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
      */
     async assignISRCs(options?: ISRCGenerationOptions): Promise<string> {
         if (!window.electronAPI) {
-            console.warn('[Distribution] Electron API missing for ISRC generation');
+            logger.warn('[Distribution] Electron API missing for ISRC generation');
             throw new Error('Electron environment required for ISRC generation');
         }
 
         try {
             const result = await window.electronAPI.distribution.generateISRC(options);
             if (!result.success || !result.isrc) {
-                console.error('[Distribution] ISRC Generation failed:', result.error);
+                logger.error('[Distribution] ISRC Generation failed:', result.error);
                 throw new Error(result.error || 'ISRC Generation failed');
             }
 
@@ -266,7 +267,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
 
             return result.isrc;
         } catch (error) {
-            console.error('[Distribution] ISRC engine error:', error);
+            logger.error('[Distribution] ISRC engine error:', error);
             throw error;
         }
     }
@@ -286,7 +287,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.upc;
         } catch (error) {
-            console.error('[Distribution] UPC engine error:', error);
+            logger.error('[Distribution] UPC engine error:', error);
             throw error;
         }
     }
@@ -306,7 +307,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.xml;
         } catch (error) {
-            console.error('[Distribution] DDEX engine error:', error);
+            logger.error('[Distribution] DDEX engine error:', error);
             throw error;
         }
     }
@@ -326,7 +327,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.report;
         } catch (error) {
-            console.error('[Distribution] Merlin engine error:', error);
+            logger.error('[Distribution] Merlin engine error:', error);
             throw error;
         }
     }
@@ -346,7 +347,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.csv || JSON.stringify(result.report);
         } catch (error) {
-            console.error('[Distribution] BWARM engine error:', error);
+            logger.error('[Distribution] BWARM engine error:', error);
             throw error;
         }
     }
@@ -366,7 +367,7 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
             }
             return result.report;
         } catch (error) {
-            console.error('[Distribution] Transmission engine error:', error);
+            logger.error('[Distribution] Transmission engine error:', error);
             throw error;
         }
     }

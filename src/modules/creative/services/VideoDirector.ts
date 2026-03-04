@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { GenAI } from '@/services/ai/GenAI';
 import { SchemaType } from 'firebase/ai';
 import { useStore, HistoryItem } from '@/core/store';
@@ -127,7 +128,7 @@ export class VideoDirector {
 
         // --- Electron Path: Delegate to local Python API (Agent Zero sidecar) ---
         if (typeof window !== 'undefined' && (window as any).electronAPI) {
-            console.log('[VideoDirector] Routing animation to local Python API...');
+            logger.debug('[VideoDirector] Routing animation to local Python API...');
             try {
                 let imageBytes = '';
                 if (item.url.startsWith('data:')) {
@@ -150,7 +151,7 @@ export class VideoDirector {
                 }
                 return { success: false, error: response.error || 'Local video generation failed' };
             } catch (err: any) {
-                console.error('[VideoDirector] Local API Error:', err);
+                logger.error('[VideoDirector] Local API Error:', err);
                 // Surface the error — do NOT silently fall through to Cloud Function
                 // The Cloud Function payload shape is incompatible with animation requests
                 return { success: false, error: `Sidecar unavailable: ${err.message || 'Connection refused'}` };
@@ -181,7 +182,7 @@ export class VideoDirector {
             const response = await triggerVideoJob(cloudPayload);
             return response.data as { success: boolean; error?: string };
         } catch (err: any) {
-            console.error('[VideoDirector] Cloud Function Error:', err);
+            logger.error('[VideoDirector] Cloud Function Error:', err);
             return { success: false, error: err.message || 'Video generation failed' };
         }
     }

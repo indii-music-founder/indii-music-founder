@@ -4,6 +4,7 @@ type EssentiaModule = typeof import('essentia.js');
 import JSZip from 'jszip';
 import { musicLibraryService } from '@/services/music/MusicLibraryService';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
+import { logger } from '@/utils/logger';
 
 export interface TechnicalAudit {
     peakLevel: number;
@@ -105,7 +106,7 @@ export class AudioAnalysisService {
                 this.essentia = new Essentia(moduleInstance);
                 console.info("[AudioAnalysis] Essentia.js WASM engine ready.");
             } catch (error) {
-                console.error("[AudioAnalysis] Failed to initialize Essentia.js:", error);
+                logger.error("[AudioAnalysis] Failed to initialize Essentia.js:", error);
                 this.initPromise = null;
                 throw error;
             }
@@ -138,7 +139,7 @@ export class AudioAnalysisService {
                 return { features: cached.features as DeepAudioFeatures, fromCache: true };
             }
         } catch (e) {
-            console.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
+            logger.warn("[AudioAnalysis] Cache check failed, proceeding with fresh analysis", e);
         }
 
         // 3. Perform Fresh Analysis (Deep)
@@ -165,7 +166,7 @@ export class AudioAnalysisService {
         const features: DeepAudioFeatures = basicFeatures;
 
         // 2. Deep Learning Features (SKIPPED)
-        console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
+        logger.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
 
         // 3. Save to Cache only (local IndexedDB)
         const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
@@ -174,7 +175,7 @@ export class AudioAnalysisService {
         try {
             await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
         } catch (e) {
-            console.warn("[AudioAnalysis] Failed to save to local cache", e);
+            logger.warn("[AudioAnalysis] Failed to save to local cache", e);
         }
 
         return { features, fromCache: false };
@@ -234,7 +235,7 @@ export class AudioAnalysisService {
         }
 
         if (!hasSignal) {
-            console.warn("[AudioAnalysis] Input buffer appears to be silent (or extremely low volume).");
+            logger.warn("[AudioAnalysis] Input buffer appears to be silent (or extremely low volume).");
         }
 
         const signal = this.essentia.arrayToVector(channelData);

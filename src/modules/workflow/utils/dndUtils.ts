@@ -1,5 +1,6 @@
 import { XYPosition } from 'reactflow';
 import { Status } from '../types';
+import { logger } from '@/utils/logger';
 
 export const createNodeFromDrop = (
     event: React.DragEvent,
@@ -82,7 +83,7 @@ export const createNodeFromDrop = (
             start = parsed.start;
             end = parsed.end;
         } catch (e) {
-            console.error("Failed to parse audio segment data", e);
+            logger.error("Failed to parse audio segment data", e);
             return;
         }
 

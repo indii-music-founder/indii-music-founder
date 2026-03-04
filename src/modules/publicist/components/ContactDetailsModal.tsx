@@ -4,6 +4,7 @@ import { X, User, Mail, Globe, MessageCircle } from 'lucide-react';
 import { Contact } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface ContactDetailsModalProps {
     isOpen: boolean;
@@ -25,7 +26,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
             await PublicistService.updateContact(contact.id, { relationshipStrength: newStrength });
             toast.success(`Relationship updated to ${newStrength}`);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             toast.error("Failed to update relationship");
             setRelationship(contact.relationshipStrength); // Revert on error
         }
@@ -41,7 +42,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
             });
             toast.success("Interaction logged");
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             toast.error("Failed to save note");
         } finally {
             setIsSaving(false);

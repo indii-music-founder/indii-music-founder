@@ -6,6 +6,7 @@ import { CampaignAsset, MarketingStats } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { useToast } from '@/core/context/ToastContext';
 import * as Sentry from '@sentry/react';
+import { logger } from '@/utils/logger';
 
 export function useMarketing() {
     const { userProfile } = useStore();
@@ -44,7 +45,7 @@ export function useMarketing() {
                     setStats({ totalReach: 0, engagementRate: 0, activeCampaigns: 0 });
                 }
             }, (err) => {
-                console.error("Error listening to marketing stats:", err);
+                logger.error("Error listening to marketing stats:", err);
                 // Sentry.captureException(err); // Optional: Silence expected permission errors
                 setError(err);
             });
@@ -84,7 +85,7 @@ export function useMarketing() {
                 setCampaigns(campaignsData);
                 setIsLoading(false);
             }, (err) => {
-                console.error("Error listening to campaigns:", err);
+                logger.error("Error listening to campaigns:", err);
                 // Sentry.captureException(err);
                 setError(err);
                 setIsLoading(false);
@@ -100,7 +101,7 @@ export function useMarketing() {
                 unsubscribeCampaigns();
             };
         } catch (err) {
-            console.error("Setup failed:", err);
+            logger.error("Setup failed:", err);
             Sentry.captureException(err);
             const timer = setTimeout(() => {
                 setError(err as Error);
@@ -125,7 +126,7 @@ export function useMarketing() {
             toast.success("Campaign created successfully!");
             return true;
         } catch (err: any) {
-            console.error("Failed to create campaign:", err);
+            logger.error("Failed to create campaign:", err);
             Sentry.captureException(err);
 
             if (err.code === 'permission-denied') {
@@ -141,7 +142,7 @@ export function useMarketing() {
         try {
             await MarketingService.getMarketingStats();
         } catch (err) {
-            console.error("Refresh failed:", err);
+            logger.error("Refresh failed:", err);
         }
     }, []);
 

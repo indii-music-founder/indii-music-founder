@@ -5,6 +5,7 @@ import { MerchCard } from './MerchCard';
 import { Upload, Search, Image as ImageIcon, Sparkles } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { Button } from '@/components/ui/button';
+import { logger } from '@/utils/logger';
 
 export interface AssetLibraryProps {
     onAddAsset: (url: string, name: string) => Promise<void>;
@@ -82,7 +83,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             };
             reader.readAsDataURL(file);
         } catch (error) {
-            console.error('Upload error:', error);
+            logger.error('Upload error:', error);
             toast.error('Failed to upload image');
             setIsUploading(false);
         }
@@ -99,7 +100,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
             await onAddAsset(asset.url, asset.prompt || 'Image');
             toast.success('Asset added to canvas');
         } catch (error) {
-            console.error('Failed to add asset:', error);
+            logger.error('Failed to add asset:', error);
             toast.error('Failed to add asset');
         }
     };
@@ -202,7 +203,7 @@ export const AssetLibrary: React.FC<AssetLibraryProps> = ({ onAddAsset, onGenera
                                     loading="lazy"
                                     onError={(e) => {
                                         if (import.meta.env.DEV) {
-                                            console.error('❌ Image load failed:', asset.id, asset.url?.substring(0, 50));
+                                            logger.error('❌ Image load failed:', asset.id, asset.url?.substring(0, 50));
                                         }
                                         // Fallback: try full URL if thumbnail fails
                                         if (asset.thumbnailUrl && e.currentTarget.src === asset.thumbnailUrl) {

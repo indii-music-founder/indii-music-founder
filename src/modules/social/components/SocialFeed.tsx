@@ -8,6 +8,7 @@ import { Heart, MessageCircle, Share2, MoreHorizontal, Image as ImageIcon, Send,
 import { useSocial } from '../hooks/useSocial';
 import { areFeedItemPropsEqual } from './SocialFeed.utils';
 import { formatDate } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface SocialFeedProps {
     userId?: string;
@@ -48,7 +49,7 @@ const SocialFeed = React.memo(function SocialFeed({ userId }: SocialFeedProps) {
             const products = await MarketplaceService.getProductsByArtist(userProfile.id);
             setArtistProducts(products);
         } catch (error) {
-            console.error("Failed to load products for picker:", error);
+            logger.error("Failed to load products for picker:", error);
         }
     };
 

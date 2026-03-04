@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { SOCIAL_TOOLS } from '../tools';
 import BrandAssetsDrawer from '../../creative/components/BrandAssetsDrawer';
 import { ImageAsset } from '../types';
+import { logger } from '@/utils/logger';
 
 interface AccountCreationWizardProps {
     onClose: () => void;
@@ -46,7 +47,7 @@ export default function AccountCreationWizard({ onClose }: AccountCreationWizard
             setGeneratedIdentity(identity);
             toast.success("Identity ideas generated!");
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             toast.error("Failed to generate identity ideas. Please try again.");
             setGeneratedIdentity(null);
         } finally {

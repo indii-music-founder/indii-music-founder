@@ -7,6 +7,7 @@ import { PrintOnDemandService, PODProvider } from '@/services/pod/PrintOnDemandS
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { ProductType, CatalogProductSchema } from '../types';
+import { logger } from '@/utils/logger';
 
 interface ManufacturingPanelProps {
     theme: MerchTheme;
@@ -114,7 +115,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                     setBaseCost(DEFAULT_COSTS[productType] || 10.00);
                 }
             } catch (err: unknown) {
-                console.warn("[ManufacturingPanel] Failed to fetch live pricing:", err);
+                logger.warn("[ManufacturingPanel] Failed to fetch live pricing:", err);
                 if (mounted) setBaseCost(DEFAULT_COSTS[productType] || 10.00);
             } finally {
                 if (mounted) setIsLoadingPrices(false);
@@ -191,7 +192,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
 
             onClose?.();
         } catch (e: unknown) {
-            console.error("Production submission failed:", e);
+            logger.error("Production submission failed:", e);
             if (e instanceof Error) {
                 toast.error(e.message || "Failed to start production.");
             } else {
@@ -442,7 +443,7 @@ export default function ManufacturingPanel({ theme, productType, productId, desi
                             }
                             onClose?.();
                         } catch (e) {
-                            console.error("Sample request failed:", e);
+                            logger.error("Sample request failed:", e);
                             toast.error("Failed to order sample.");
                         }
                     }}

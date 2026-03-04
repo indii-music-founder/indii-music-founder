@@ -41,7 +41,7 @@ export class InputSanitizer {
 
         // 4. Length check (truncate)
         if (clean.length > this.MAX_PROMPT_LENGTH) {
-            console.warn(`[InputSanitizer] Input truncated from ${clean.length} to ${this.MAX_PROMPT_LENGTH}`);
+            logger.warn(`[InputSanitizer] Input truncated from ${clean.length} to ${this.MAX_PROMPT_LENGTH}`);
             clean = clean.substring(0, this.MAX_PROMPT_LENGTH);
         }
 

@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { Logger } from '@/core/logger/Logger';
 import {
+import { logger } from '@/utils/logger';
     CampaignBrief,
     CampaignAsset,
     GeneratedCampaignPlan,
@@ -120,7 +121,7 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
             setGeneratedPlan(plan);
             toast.success('Campaign plan generated!');
         } catch (error) {
-            // console.error('Generation failed:', error);
+            // logger.error('Generation failed:', error);
             toast.error('Failed to generate campaign. Please try again.');
         } finally {
             setIsGenerating(false);

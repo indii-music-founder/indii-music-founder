@@ -5,6 +5,7 @@ import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ernService } from '@/services/ddex/ERNService'; // Hook up the real service
 
 import { ddexValidator } from '@/services/ddex/DDEXValidator';
+import { logger } from '@/utils/logger';
 
 export const ReleaseManager: React.FC = () => {
     const [step, setStep] = useState<'upload' | 'analyzing' | 'edit' | 'exporting'>('upload');
@@ -64,11 +65,11 @@ export const ReleaseManager: React.FC = () => {
                     errors: validation.valid ? [] : validation.errors
                 });
             } else {
-                console.error(result.error);
+                logger.error(result.error);
                 setValidationResult({ isValid: false, errors: [result.error || 'Failed to generate ERN'] });
             }
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             setValidationResult({ isValid: false, errors: ['An unexpected error occurred'] });
         }
         setStep('edit'); // Go back to edit/view
