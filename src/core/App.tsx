@@ -60,9 +60,6 @@ const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'
 const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
 const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
 const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
-const AudioWorkspace = lazy(() => import('../modules/audio/AudioWorkspace'));
-
-
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -91,7 +88,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'files': FilePreview,
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
-    'audio': AudioWorkspace,
     'audio-analyzer': AudioAnalyzer,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,

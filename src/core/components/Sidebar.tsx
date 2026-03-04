@@ -40,7 +40,6 @@ export default function Sidebar() {
         { id: 'publicist', icon: Mic, label: 'Publicist' },
         { id: 'creative', icon: Palette, label: 'Creative Director' },
         { id: 'video', icon: Film, label: 'Video Producer' },
-        { id: 'audio', icon: Volume2, label: 'Audio Distribution' },
     ];
 
     const departmentItems: SidebarItem[] = [
