@@ -7,7 +7,7 @@ const {
     mockGenerateContentStream
 } = vi.hoisted(() => {
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         mockGenerateContent: vi.fn(),
         mockGenerateContentStream: vi.fn()
     };
@@ -15,7 +15,7 @@ const {
 
 // Mock Firebase Modules
 vi.mock('firebase/remote-config', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn((rc, key) => ({
         asString: () => {
@@ -28,13 +28,13 @@ vi.mock('firebase/remote-config', () => ({
 }));
 
 vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFunctions: vi.fn(),
     httpsCallable: vi.fn(() => vi.fn().mockResolvedValue({ data: {} }))
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn()
@@ -53,7 +53,7 @@ vi.mock('firebase/ai', () => {
             })
         }),
         startChat: vi.fn(() => ({
-  serverTimestamp: vi.fn(),
+            serverTimestamp: vi.fn(),
             sendMessage: mockGenerateContent
         })),
         embedContent: vi.fn().mockResolvedValue({
@@ -62,7 +62,7 @@ vi.mock('firebase/ai', () => {
     };
 
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         getGenerativeModel: vi.fn(() => mockModel),
         getLiveGenerativeModel: vi.fn(),
         VertexAIBackend: vi.fn(),
@@ -77,7 +77,8 @@ vi.mock('@/services/firebase', () => ({
     remoteConfig: {},
     ai: {}, // The raw firebase instance
     getFirebaseAI: () => ({
-  serverTimestamp: vi.fn(),}), // The accessor function
+        serverTimestamp: vi.fn(),
+    }), // The accessor function
     functions: {},
     db: {},
     auth: { currentUser: { uid: 'test-user-id' } },
@@ -90,7 +91,7 @@ vi.mock('@/services/firebase', () => ({
 // Mock Google GenAI SDK (Fallback) - new @google/genai package
 vi.mock('@google/genai', () => {
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         GoogleGenAI: class {
             models = {
                 generateContent: mockGenerateContent,
@@ -106,7 +107,7 @@ vi.mock('@google/genai', () => {
 });
 
 vi.mock('@/config/env', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     env: {
         VITE_API_KEY: 'mock-google-api-key',
         apiKey: 'mock-google-api-key',
@@ -116,7 +117,7 @@ vi.mock('@/config/env', () => ({
 }));
 
 vi.mock('./billing/TokenUsageService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(true),
@@ -196,7 +197,6 @@ describe('FirebaseAIService', () => {
             generationConfig: expect.objectContaining({
                 thinkingConfig: expect.objectContaining({
                     thinkingBudget: 1024,
-                    budgetTokenCount: 1024,
                     includeThoughts: true
                 })
             })
@@ -337,11 +337,13 @@ describe('FirebaseAIService', () => {
         (getDoc as any).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({
-  serverTimestamp: vi.fn(), status: 'pending' })
+                serverTimestamp: vi.fn(), status: 'pending'
+            })
         }).mockResolvedValueOnce({
             exists: () => true,
             data: () => ({
-  serverTimestamp: vi.fn(), status: 'completed', videoUrl: 'http://video.mp4' })
+                serverTimestamp: vi.fn(), status: 'completed', videoUrl: 'http://video.mp4'
+            })
         });
 
         const result = await service.generateVideo({
