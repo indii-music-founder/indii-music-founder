@@ -17,14 +17,13 @@ import {
 import { type AudioMetadata } from '@/services/audio/AudioPersistenceService';
 import { WaveformPlayer } from './components/WaveformPlayer';
 import { AnalyzeWorkspace } from './components/AnalyzeWorkspace';
-import { MasteringWorkspace } from './components/MasteringWorkspace';
 import { useVideoEditorStore } from '@/modules/video/store/videoEditorStore';
 
 // ============================================================================
 // Types
 // ============================================================================
 
-type AudioTab = 'generate' | 'analyze' | 'master' | 'library';
+type AudioTab = 'generate' | 'analyze' | 'library';
 type GenerateMode = 'soundfx' | 'music' | 'tts';
 
 // ============================================================================
@@ -233,13 +232,6 @@ const AudioWorkspace: React.FC = () => {
                     >
                         <ShieldCheck size={14} />
                         Compliance
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('master')}
-                        className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider transition-all ${activeTab === 'master' ? 'bg-amber-500 shadow-xl text-white' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                    >
-                        <Zap size={14} />
-                        Optimize
                     </button>
                     <button
                         onClick={() => setActiveTab('library')}
@@ -462,8 +454,6 @@ const AudioWorkspace: React.FC = () => {
                 )}
 
                 {activeTab === 'analyze' && <AnalyzeWorkspace />}
-
-                {activeTab === 'master' && <MasteringWorkspace />}
 
                 {activeTab === 'library' && (
                     <div className="max-w-6xl mx-auto space-y-6 animate-in fade-in duration-500">
