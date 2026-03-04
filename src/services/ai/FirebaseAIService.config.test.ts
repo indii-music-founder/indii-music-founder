@@ -7,7 +7,7 @@ const {
     mockGenerateContentStream
 } = vi.hoisted(() => {
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         mockGenerateContent: vi.fn(),
         mockGenerateContentStream: vi.fn()
     };
@@ -15,20 +15,21 @@ const {
 
 // Mock Firebase Modules
 vi.mock('firebase/remote-config', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     fetchAndActivate: vi.fn().mockResolvedValue(true),
     getValue: vi.fn(() => ({
-  serverTimestamp: vi.fn(), asString: () => '' }))
+        serverTimestamp: vi.fn(), asString: () => ''
+    }))
 }));
 
 vi.mock('firebase/functions', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFunctions: vi.fn(),
     httpsCallable: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     getDoc: vi.fn()
@@ -42,11 +43,12 @@ vi.mock('firebase/ai', () => {
     };
 
     return {
-    serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         getGenerativeModel: vi.fn(() => mockModel),
         getLiveGenerativeModel: vi.fn(),
         getFirebaseAI: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+            serverTimestamp: vi.fn(),
+        })),
     };
 });
 
@@ -57,7 +59,8 @@ vi.mock('@/services/firebase', () => ({
     remoteConfig: {},
     ai: {},
     getFirebaseAI: () => ({
-  serverTimestamp: vi.fn(),}),
+        serverTimestamp: vi.fn(),
+    }),
     functions: {},
     db: {},
     auth: { currentUser: { uid: 'test-user-id' } },
@@ -69,13 +72,14 @@ vi.mock('@/services/firebase', () => ({
 
 // Mock other dependencies
 vi.mock('@google/genai', () => ({
-  serverTimestamp: vi.fn(), GoogleGenAI: class {} }));
+    serverTimestamp: vi.fn(), GoogleGenAI: class { }
+}));
 vi.mock('@/config/env', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     env: { VITE_API_KEY: 'mock-key', appCheckKey: 'mock-key' }
 }));
 vi.mock('./billing/TokenUsageService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     TokenUsageService: {
         checkQuota: vi.fn().mockResolvedValue(true),
         checkRateLimit: vi.fn().mockResolvedValue(true),
@@ -83,7 +87,7 @@ vi.mock('./billing/TokenUsageService', () => ({
     }
 }));
 vi.mock('./context/CachedContextService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     CachedContextService: {
         shouldCache: vi.fn().mockReturnValue(false),
         generateHash: vi.fn(),
@@ -91,7 +95,7 @@ vi.mock('./context/CachedContextService', () => ({
     }
 }));
 vi.mock('./AIResponseCache', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     aiCache: { get: vi.fn(), set: vi.fn() }
 }));
 
@@ -107,7 +111,7 @@ describe('FirebaseAIService Configuration Mapping', () => {
         });
     });
 
-    it('should map thinkingBudget to budgetTokenCount and set includeThoughts in generateText', async () => {
+    it('should map thinkingBudget and set includeThoughts in generateText', async () => {
         const { getGenerativeModel } = await import('firebase/ai');
 
         await service.generateText('Prompt', 2048);
@@ -116,7 +120,6 @@ describe('FirebaseAIService Configuration Mapping', () => {
             generationConfig: expect.objectContaining({
                 thinkingConfig: {
                     thinkingBudget: 2048,
-                    budgetTokenCount: 2048,
                     includeThoughts: true
                 }
             })
@@ -136,7 +139,6 @@ describe('FirebaseAIService Configuration Mapping', () => {
             generationConfig: expect.objectContaining({
                 thinkingConfig: {
                     thinkingBudget: 1024,
-                    budgetTokenCount: 1024,
                     includeThoughts: true
                 }
             })
