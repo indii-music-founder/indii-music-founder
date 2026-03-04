@@ -24,6 +24,7 @@ import type {
 import { SubscriptionTier, getTierConfig } from './SubscriptionTier';
 import { cacheService } from '@/services/cache/CacheService';
 import { SubscriptionSchema, UsageStatsSchema } from './schemas';
+import { logger } from '@/utils/logger';
 
 export class SubscriptionService {
   private subscriptionCache: Map<string, Subscription> = new Map();
@@ -60,7 +61,7 @@ export class SubscriptionService {
       // Zod Validation (Bolt Hardening)
       const parsed = SubscriptionSchema.safeParse(result.data);
       if (!parsed.success) {
-        console.error("Subscription data validation failed:", parsed.error);
+        logger.error("Subscription data validation failed:", parsed.error);
         throw new Error("Received invalid subscription data from backend.");
       }
 
@@ -72,7 +73,7 @@ export class SubscriptionService {
 
       return subscription;
     } catch (error) {
-      console.error("SubscriptionService.getSubscription error:", error);
+      logger.error("SubscriptionService.getSubscription error:", error);
       throw new Error('Failed to fetch subscription. Please try again.');
     }
   }
@@ -108,7 +109,7 @@ export class SubscriptionService {
       // Zod Validation (Bolt Hardening)
       const parsed = UsageStatsSchema.safeParse(result.data);
       if (!parsed.success) {
-        console.error("Usage stats validation failed:", parsed.error);
+        logger.error("Usage stats validation failed:", parsed.error);
         throw new Error("Received invalid usage stats from backend.");
       }
 
@@ -119,7 +120,7 @@ export class SubscriptionService {
 
       return stats;
     } catch (error) {
-      console.error("SubscriptionService.getUsageStats error:", error);
+      logger.error("SubscriptionService.getUsageStats error:", error);
       throw new Error('Failed to fetch usage statistics. Please try again.');
     }
   }
@@ -145,7 +146,7 @@ export class SubscriptionService {
     // GOD MODE: Bypass for Builder
     if (auth.currentUser?.email === 'the.walking.agency.det@gmail.com') {
       if (action === 'generateVideo' && amount > 120) {
-        console.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
+        logger.warn(`[SubscriptionService] God Mode blocked: single request too large (${amount}s)`);
         return { allowed: false, reason: 'God Mode blocked: Single generation request too large.' };
       }
       return { allowed: true };
@@ -155,12 +156,12 @@ export class SubscriptionService {
 
     if (!targetUserId) {
       if (action === 'generateVideo' || action === 'generateImage') {
-        console.warn(`[SubscriptionService] Blocked unauthenticated AI generation (${action})`);
+        logger.warn(`[SubscriptionService] Blocked unauthenticated AI generation (${action})`);
         return { allowed: false, reason: 'Authentication required for AI generation.' };
       }
       // DEMO MODE: Allow limited actions for unauthenticated users
       // This enables the demo experience without blocking on auth
-      console.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
+      logger.warn('[SubscriptionService] Demo mode - allowing action for unauthenticated user');
       return { allowed: true };
     }
 
@@ -289,7 +290,7 @@ export class SubscriptionService {
     } catch (error: unknown) {
       // GRACEFUL DEGRADATION: If subscription check fails (timeout, auth, network),
       // allow the action to proceed for demo experience. The backend will enforce limits.
-      console.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error instanceof Error ? error.message : String(error));
+      logger.warn('[SubscriptionService] Quota check failed, allowing action with graceful degradation:', error instanceof Error ? error.message : String(error));
       return { allowed: true };
     }
   }

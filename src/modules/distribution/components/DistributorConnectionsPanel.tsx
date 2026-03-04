@@ -4,6 +4,7 @@ import { DistributorCard } from './DistributorCard';
 import ConnectDistributorModal from './ConnectDistributorModal';
 import { DistributorService } from '@/services/distribution/DistributorService';
 import type { IDistributorAdapter } from '@/services/distribution/types/distributor';
+import { logger } from '@/utils/logger';
 
 export const DistributorConnectionsPanel: React.FC = () => {
     const { distribution, fetchDistributors } = useStore();
@@ -22,7 +23,7 @@ export const DistributorConnectionsPanel: React.FC = () => {
             setSelectedAdapter(adapter);
             setIsModalOpen(true);
         } else {
-            console.error(`Adapter not found for ${id}`);
+            logger.error(`Adapter not found for ${id}`);
         }
     };
 

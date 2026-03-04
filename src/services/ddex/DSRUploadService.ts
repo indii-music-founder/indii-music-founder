@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { dsrService, type ProcessedSalesBatches } from '@/services/ddex/DSRService';
 import type { DSRReport, RoyaltyCalculation } from '@/services/ddex/types/dsr';
 import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
@@ -74,7 +75,7 @@ export class DSRUploadService {
             };
 
         } catch (error) {
-            console.error('[DSRUploadService] Upload failed:', error);
+            logger.error('[DSRUploadService] Upload failed:', error);
             Sentry.captureException(error);
 
             return {
@@ -142,9 +143,9 @@ export class DSRUploadService {
                 }
             });
 
-            console.log('[DSRUploadService] Report saved successfully:', batch.batchId);
+            logger.debug('[DSRUploadService] Report saved successfully:', batch.batchId);
         } catch (error) {
-            console.error('[DSRUploadService] Failed to save report:', error);
+            logger.error('[DSRUploadService] Failed to save report:', error);
             // Don't throw here - processing was successful even if save failed
             Sentry.captureException(error);
         }

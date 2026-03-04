@@ -6,6 +6,7 @@ import { ImageGeneration } from '@/services/image/ImageGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { useStore } from '@/core/store';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { logger } from '@/utils/logger';
 
 export interface AIGenerationDialogProps {
     isOpen: boolean;
@@ -67,7 +68,7 @@ export const AIGenerationDialog: React.FC<AIGenerationDialogProps> = ({
                 toast.error('No image generated');
             }
         } catch (error: any) {
-            console.error('AI generation error:', error);
+            logger.error('AI generation error:', error);
             toast.dismiss(loadingId);
 
             // Handle Quota Exceeded specifically

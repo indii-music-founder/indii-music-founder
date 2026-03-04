@@ -13,6 +13,7 @@ import { z } from 'zod';
 import { InputSanitizer } from '@/services/ai/utils/InputSanitizer';
 import { metadataPersistenceService } from '@/services/persistence/MetadataPersistenceService';
 import { VideoJob, VideoSafetyRating } from '@/types/video';
+import { logger } from '@/utils/logger';
 
 type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 
@@ -55,7 +56,7 @@ export class VideoGenerationService {
                 reason: quotaCheck.allowed ? undefined : quotaCheck.reason
             };
         } catch (e) {
-            console.error('[VideoGeneration] Quota check failed:', e);
+            logger.error('[VideoGeneration] Quota check failed:', e);
             if (import.meta.env.PROD) {
                 return { canGenerate: false, reason: 'Service unavailable. Please try again.' };
             }
@@ -180,7 +181,7 @@ export class VideoGenerationService {
             maxRetries: 1,
             queueOnFailure: true,
         }).catch(err => {
-            console.warn('[VideoGeneration] Failed to persist video metadata:', err);
+            logger.warn('[VideoGeneration] Failed to persist video metadata:', err);
         });
 
         // Return a mock entry that the UI can subscribe to via Firebase
@@ -261,7 +262,7 @@ export class VideoGenerationService {
                             } catch (e) {
                                 // Network error during verification should not block generation unless strictly required.
                                 // We log the warning for debugging purposes, but proceed with strict verification logic.
-                                console.warn("Lens: Video verification check failed", e);
+                                logger.warn("Lens: Video verification check failed", e);
                             }
                         }
 

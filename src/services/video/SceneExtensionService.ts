@@ -11,6 +11,7 @@ import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { logger } from '@/utils/logger';
 
 export interface SceneSegment {
     id: string;
@@ -77,7 +78,7 @@ class SceneExtensionServiceImpl {
 
         // Validate reference images
         if (options.referenceImages && options.referenceImages.length > this.MAX_REFERENCE_IMAGES) {
-            console.warn(`[SceneExtension] Trimming reference images to ${this.MAX_REFERENCE_IMAGES}`);
+            logger.warn(`[SceneExtension] Trimming reference images to ${this.MAX_REFERENCE_IMAGES}`);
             options.referenceImages = options.referenceImages.slice(0, this.MAX_REFERENCE_IMAGES);
         }
 

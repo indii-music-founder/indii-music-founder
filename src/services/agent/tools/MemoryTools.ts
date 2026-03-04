@@ -4,6 +4,7 @@ import { memoryService } from '@/services/agent/MemoryService';
 import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // Types for MemoryTools
@@ -24,7 +25,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         try {
             await memoryService.saveMemory(currentProjectId, args.content, args.type || 'fact');
         } catch (e) {
-            console.error('[MemoryTools] save_memory failed internally: (Non-blocking)', e);
+            logger.error('[MemoryTools] save_memory failed internally: (Non-blocking)', e);
         }
 
         return {
@@ -74,7 +75,7 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
         try {
             verification = JSON.parse(text);
         } catch (e) {
-            console.error('[MemoryTools] Failed to parse verification JSON:', text);
+            logger.error('[MemoryTools] Failed to parse verification JSON:', text);
             verification = { score: 0, pass: false, reasoning: 'Failed to parse AI response' };
         }
 

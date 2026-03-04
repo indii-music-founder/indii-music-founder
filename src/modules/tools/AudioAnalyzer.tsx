@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, Mic, RadioTower, AlertTriangle
+    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -9,6 +9,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { logger } from '@/utils/logger';
 
 const DEFAULT_TAGS = {
     'Mood': ['Energetic', 'Dark', 'Chill', 'Happy', 'Melancholic', 'Aggressive', 'Ethereal'],
@@ -60,7 +61,7 @@ const AudioAnalyzer: React.FC = () => {
             toast.success("Extraction Complete: Deep AI acoustic fingerprint generated.");
 
         } catch (error) {
-            console.error("Deep Extraction Failed", error);
+            logger.error("Deep Extraction Failed", error);
             toast.dismiss(extractToastId);
             toast.error("Deep Extraction failed. Gemini 3 limits or connectivity issues detected.");
         } finally {
@@ -78,7 +79,7 @@ const AudioAnalyzer: React.FC = () => {
             toast.dismiss(toastId);
             toast.success("DDEX Standards and Acoustic Profile logged to Database.");
         } catch (error) {
-            console.error("Save failed", error);
+            logger.error("Save failed", error);
             toast.dismiss(toastId);
             toast.error("Failed to log audit.");
         } finally {

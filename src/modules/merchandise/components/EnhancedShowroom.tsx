@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import React, { useState, useRef, useEffect } from 'react';
 import { Upload, Image as ImageIcon, Video, Loader2, MonitorPlay, Box, Shirt, Coffee, Smartphone, Framer, Target, Maximize, LayoutGrid, Sparkles, Disc3, ShoppingBag, CircleDot, Sticker, Music2, Square, Flag, Pin, Key } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
@@ -130,7 +131,7 @@ export default function EnhancedShowroom({ initialAsset = null, productId }: Enh
     // Sync state with prop if it changes from outside
     useEffect(() => {
         if (initialAsset) {
-            console.log("[EnhancedShowroom] Syncing initialAsset:", initialAsset.substring(0, 50) + "...");
+            logger.debug("[EnhancedShowroom] Syncing initialAsset:", initialAsset.substring(0, 50) + "...");
             setProductAsset(initialAsset);
         }
     }, [initialAsset]);
@@ -388,7 +389,7 @@ Style: High-end commercial product photography, 8K resolution, professional stud
                 toast.error("Failed to generate mockup.");
             }
         } catch (error: unknown) {
-            console.error(error);
+            logger.error(error);
             toast.dismiss(loadingId);
             if (error instanceof Error) {
                 toast.error(`Failed to generate mockup: ${error.message}`);
@@ -432,7 +433,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
             // Set job ID to trigger subscription
             setCurrentVideoJobId(jobId);
         } catch (error: unknown) {
-            console.error(error);
+            logger.error(error);
             toast.dismiss(loadingId);
             setIsGeneratingVideo(false);
             if (error instanceof Error) {

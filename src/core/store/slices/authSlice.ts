@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 
 import { StateCreator } from 'zustand';
 import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
@@ -83,12 +84,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     },
 
     initializeAuthListener: () => {
-        console.log('[Auth] Initializing Auth Listener...');
+        logger.debug('[Auth] Initializing Auth Listener...');
 
         // FAST FAIL: If no API key, don't wait for Firebase (it might hang or crash)
         const apiKey = auth.app.options.apiKey;
         if (!apiKey || apiKey.includes('Fake')) {
-            console.warn('[Auth] No valid API Key found.');
+            logger.warn('[Auth] No valid API Key found.');
             set({ authLoading: false, authError: "Firebase Configuration Missing" });
             return () => { };
         }
@@ -122,7 +123,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                         }, { merge: true });
                     }
                 } catch (e: unknown) {
-                    console.error("[Auth] Failed to sync user to Firestore", e);
+                    logger.error("[Auth] Failed to sync user to Firestore", e);
                 }
             }
         });

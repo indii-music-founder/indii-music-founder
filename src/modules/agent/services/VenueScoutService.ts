@@ -4,6 +4,7 @@ import { db } from '@/services/firebase';
 import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { delay } from '@/utils/async';
 import { VenueSchema, SearchOptionsSchema } from '../schemas';
+import { logger } from '@/utils/logger';
 
 // Initial Seed Data (Used only if DB is empty or offline)
 const SEED_VENUES: Omit<Venue, 'id'>[] = [
@@ -104,7 +105,7 @@ export class VenueScoutService {
         // Validate Inputs
         const validation = SearchOptionsSchema.safeParse({ city, genre, isAutonomous });
         if (!validation.success) {
-            console.error("Invalid search parameters:", validation.error);
+            logger.error("Invalid search parameters:", validation.error);
             throw new Error(`Invalid search parameters: ${validation.error.message}`);
         }
 
@@ -148,7 +149,7 @@ export class VenueScoutService {
                 if (parsed.success) {
                     results.push(parsed.data);
                 } else {
-                    console.warn(`Skipping invalid venue ${doc.id}:`, parsed.error);
+                    logger.warn(`Skipping invalid venue ${doc.id}:`, parsed.error);
                 }
             });
 
@@ -157,7 +158,7 @@ export class VenueScoutService {
 
              if (processed.length === 0) {
                  // Fallback to local seed if DB is empty or has no matches
-                 // Use a proper log level, not just console.log for info
+                 // Use a proper log level, not just logger.debug for info
                  return this._getFallbackData(city, genre);
              }
 
@@ -171,7 +172,7 @@ export class VenueScoutService {
              return processed;
 
         } catch (error) {
-            console.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
+            logger.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
             // Graceful Fallback
             return this._getFallbackData(city, genre);
         }
@@ -244,7 +245,7 @@ export class VenueScoutService {
                 }
             }
         } catch (e) {
-            // console.error("Autonomous search failed", e);
+            // logger.error("Autonomous search failed", e);
         }
         return [];
     }
@@ -263,7 +264,7 @@ export class VenueScoutService {
             await updateDoc(venueRef, updates);
             return updates;
         } catch (e) {
-            console.warn("Failed to enrich venue (offline?)", e);
+            logger.warn("Failed to enrich venue (offline?)", e);
             return { lastScoutedAt: Date.now() };
         }
     }
@@ -324,7 +325,7 @@ export class VenueScoutService {
 
         } catch (e) {
             // Silent fail is acceptable here as searchVenues will fallback to local seed
-            // console.error('[VenueScoutService] Error seeding venues:', e);
+            // logger.error('[VenueScoutService] Error seeding venues:', e);
         }
     }
 }

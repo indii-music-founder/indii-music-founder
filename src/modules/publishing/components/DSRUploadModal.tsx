@@ -5,6 +5,7 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { dsrService } from '@/services/ddex/DSRService';
 import { type DSRReport } from '@/services/ddex/types/dsr';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface DSRUploadModalProps {
     isOpen: boolean;
@@ -42,7 +43,7 @@ export const DSRUploadModal: React.FC<DSRUploadModalProps> = ({ isOpen, onClose,
                 toast.error('Parsing failed');
             }
         } catch (err: any) {
-            console.error('Error parsing DSR:', err);
+            logger.error('Error parsing DSR:', err);
             setError(err.message || 'Failed to parse DSR report. Ensure it follows DDEX standards.');
             toast.error('Parsing failed');
         } finally {

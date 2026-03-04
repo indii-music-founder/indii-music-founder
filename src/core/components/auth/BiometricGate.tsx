@@ -4,6 +4,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { BiometricService } from '@/services/security/BiometricService';
 import { Lock, Fingerprint, ScanFace } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 interface BiometricGateProps {
     children: React.ReactNode;
@@ -41,7 +42,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
             }
         } catch (error) {
             setVerificationError('An error occurred during verification.');
-            console.error(error);
+            logger.error(error);
         }
     };
 

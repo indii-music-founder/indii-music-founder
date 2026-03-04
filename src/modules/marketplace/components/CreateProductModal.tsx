@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { ProductType } from '@/services/marketplace/types';
 import { useStore } from '@/core/store';
+import { logger } from '@/utils/logger';
 
 interface CreateProductModalProps {
     onClose: () => void;
@@ -42,7 +43,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
             onProductCreated();
             onClose();
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             toast.error("Failed to create product");
         } finally {
             setIsLoading(false);

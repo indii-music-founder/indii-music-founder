@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { z } from 'zod';
 import { SpecializedAgent } from '@/services/agent/types';
 import { BatchedTask } from '@/services/agent/MaestroBatchingService';
+import { logger } from '@/utils/logger';
 // import { agentRegistry } from '@/services/agent/registry'; // Removed to break circular dependency
 
 const AgentSchema = z.object({
@@ -419,14 +420,14 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
                     };
                 });
             }, (error) => {
-                console.error('[AgentSlice] Sessions subscription error:', error);
+                logger.error('[AgentSlice] Sessions subscription error:', error);
             });
 
             import('@/core/store').then(({ useStore }) => {
                 useStore.getState().registerSubscription('agent_sessions', unsubscribe);
             });
         } catch (error) {
-            console.error('[AgentSlice] Failed to initialize sessions subscription:', error);
+            logger.error('[AgentSlice] Failed to initialize sessions subscription:', error);
         }
     },
 
@@ -441,7 +442,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
             const validatedAgents = agents.filter(agent => {
                 const result = AgentSchema.safeParse(agent);
                 if (!result.success) {
-                    console.warn(`[AgentSlice] Invalid agent data for ${agent.id}:`, result.error);
+                    logger.warn(`[AgentSlice] Invalid agent data for ${agent.id}:`, result.error);
                     return false;
                 }
                 return true;
@@ -449,7 +450,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
             set({ availableAgents: validatedAgents });
         } catch (error) {
-            console.error('[AgentSlice] Failed to load agents:', error);
+            logger.error('[AgentSlice] Failed to load agents:', error);
             set({ agentsError: (error as Error).message || 'Failed to load agents' });
         } finally {
             set({ isLoadingAgents: false });

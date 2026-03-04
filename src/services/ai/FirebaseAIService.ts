@@ -90,7 +90,7 @@ function isAppCheckConfigured(): boolean {
     });
 
     if (env.DEV && !env.appCheckDebugToken) {
-        console.warn('[FirebaseAIService] DEV mode detected without Debug Token. Disabling App Check.');
+        logger.warn('[FirebaseAIService] DEV mode detected without Debug Token. Disabling App Check.');
         return false;
     }
     return !!(env.appCheckKey || env.appCheckDebugToken);
@@ -144,7 +144,7 @@ export class FirebaseAIService {
      */
     private async triggerGlobalFallback(): Promise<void> {
         if (!this.useFallbackMode) {
-            console.warn('[FirebaseAIService] Global fallback triggered (App Check non-responsive or failing)');
+            logger.warn('[FirebaseAIService] Global fallback triggered (App Check non-responsive or failing)');
             await this.initializeFallbackMode();
         }
     }
@@ -162,7 +162,7 @@ export class FirebaseAIService {
 
         // Check if App Check is configured - if not, use direct Gemini SDK
         if (!isAppCheckConfigured()) {
-            console.warn('[FirebaseAIService] App Check not configured, using direct Gemini SDK fallback');
+            logger.warn('[FirebaseAIService] App Check not configured, using direct Gemini SDK fallback');
             await this.initializeFallbackMode();
             return;
         }
@@ -171,7 +171,7 @@ export class FirebaseAIService {
             // 1. Get Firebase AI instance (lazy initialized)
             const firebaseAI = getFirebaseAI();
             if (!firebaseAI) {
-                console.warn('[FirebaseAIService] Firebase AI not available, using fallback');
+                logger.warn('[FirebaseAIService] Firebase AI not available, using fallback');
                 await this.initializeFallbackMode();
                 return;
             }
@@ -209,7 +209,7 @@ export class FirebaseAIService {
                 if (isAppCheckError(configError)) {
                     throw configError;
                 }
-                console.warn('[FirebaseAIService] Failed to fetch remote config, using default model:', configError);
+                logger.warn('[FirebaseAIService] Failed to fetch remote config, using default model:', configError);
             }
 
             // 3. Initialize SDK
@@ -698,7 +698,7 @@ export class FirebaseAIService {
                                         aggResult.usageMetadata.candidatesTokenCount || 0
                                     );
                                 } catch (e) {
-                                    console.warn('[FirebaseAIService] Failed to track usage for stream:', e);
+                                    logger.warn('[FirebaseAIService] Failed to track usage for stream:', e);
                                 }
                             }
 
@@ -1295,7 +1295,7 @@ export class FirebaseAIService {
             // NORMAL MODE: Use Firebase AI SDK
             const firebaseAI = getFirebaseAI();
             if (!firebaseAI) {
-                console.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
+                logger.warn('[FirebaseAIService] Firebase AI not available for embeddings (batch), switching to fallback');
                 await this.initializeFallbackMode();
                 return this.batchEmbedContents(contents, modelOverride);
             }
@@ -1324,7 +1324,7 @@ export class FirebaseAIService {
             } catch (error) {
                 // If we hit an App Check error during normal mode, switch to fallback
                 if (isAppCheckError(error) && !this.useFallbackMode) {
-                    console.warn('[FirebaseAIService] App Check error during batch embedding, switching to fallback mode');
+                    logger.warn('[FirebaseAIService] App Check error during batch embedding, switching to fallback mode');
                     await this.initializeFallbackMode();
                     return this.batchEmbedContents(contents, modelOverride);
                 }
@@ -1467,7 +1467,7 @@ export class FirebaseAIService {
 
             // Auto-switch to fallback if Firebase AI is missing
             if (!firebaseAI) {
-                console.warn('[FirebaseAIService] Firebase AI not available for speech, switching to fallback');
+                logger.warn('[FirebaseAIService] Firebase AI not available for speech, switching to fallback');
                 await this.initializeFallbackMode();
                 return this.generateSpeech(text, voice, modelOverride);
             }
@@ -1502,7 +1502,7 @@ export class FirebaseAIService {
             } catch (error) {
                 // If we hit an App Check error during normal mode, switch to fallback
                 if (isAppCheckError(error) && !this.useFallbackMode) {
-                    console.warn('[FirebaseAIService] App Check error during speech, switching to fallback mode');
+                    logger.warn('[FirebaseAIService] App Check error during speech, switching to fallback mode');
                     await this.initializeFallbackMode();
                     return this.generateSpeech(text, voice, modelOverride);
                 }
@@ -1540,7 +1540,7 @@ export class FirebaseAIService {
 
             // Auto-switch to fallback if Firebase AI is missing
             if (!firebaseAI) {
-                console.warn('[FirebaseAIService] Firebase AI not available for embeddings, switching to fallback');
+                logger.warn('[FirebaseAIService] Firebase AI not available for embeddings, switching to fallback');
                 await this.initializeFallbackMode();
                 return this.embedContent(options);
             }
@@ -1558,7 +1558,7 @@ export class FirebaseAIService {
             } catch (error) {
                 // If we hit an App Check error during normal mode, switch to fallback
                 if (isAppCheckError(error) && !this.useFallbackMode) {
-                    console.warn('[FirebaseAIService] App Check error during embedding, switching to fallback mode');
+                    logger.warn('[FirebaseAIService] App Check error during embedding, switching to fallback mode');
                     await this.initializeFallbackMode();
                     return this.embedContent(options);
                 }
@@ -1665,7 +1665,7 @@ export class FirebaseAIService {
                     const backoff = (initialDelay * Math.pow(2, attempt)) + (Math.random() * 200);
                     const waitTime = Math.min(backoff, 15000); // Absolute cap at 15s
 
-                    console.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
+                    logger.warn(`[FirebaseAIService] Transient error, retrying in ${Math.round(waitTime)}ms... (Attempt ${attempt + 1}/${retries})`);
 
                     await new Promise((resolve, reject) => {
                         const timer = setTimeout(resolve, waitTime);
@@ -1716,6 +1716,14 @@ export class FirebaseAIService {
             aux: this.auxBreaker.getState()
         };
     }
+
+    private static instance: FirebaseAIService;
+    public static getInstance(): FirebaseAIService {
+        if (!FirebaseAIService.instance) {
+            FirebaseAIService.instance = new FirebaseAIService();
+        }
+        return FirebaseAIService.instance;
+    }
 }
 
-export const firebaseAI = new FirebaseAIService();
+export const firebaseAI = FirebaseAIService.getInstance();

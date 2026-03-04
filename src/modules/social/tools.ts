@@ -1,6 +1,7 @@
 import { GenAI as AI } from '../../services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { Schema, SchemaType } from 'firebase/ai';
+import { logger } from '@/utils/logger';
 
 export interface SocialIdentity {
     handles: string[];
@@ -65,7 +66,7 @@ export const SOCIAL_TOOLS = {
                 undefined, // systemInstruction
             );
         } catch (e) {
-            console.error("Failed to generate social identity", e);
+            logger.error("Failed to generate social identity", e);
             throw e; // Let the component handle the error
         }
     }

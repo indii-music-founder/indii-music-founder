@@ -14,6 +14,7 @@ import {
 import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
+import { logger } from '@/utils/logger';
 
 export class MarketingService {
     /**
@@ -33,11 +34,11 @@ export class MarketingService {
                 if (validation.success) {
                     return validation.data;
                 } else {
-                    console.warn("[MarketingService] Invalid marketing stats data:", validation.error);
+                    logger.warn("[MarketingService] Invalid marketing stats data:", validation.error);
                 }
             }
         } catch (e) {
-            console.warn("MarketingService: Stats fetch failed", e);
+            logger.warn("MarketingService: Stats fetch failed", e);
         }
 
         return {
@@ -72,12 +73,12 @@ export class MarketingService {
                 if (parseResult.success) {
                     results.push(parseResult.data as CampaignAsset);
                 } else {
-                    console.warn(`[MarketingService] Skipping invalid campaign ${doc.id}:`, parseResult.error);
+                    logger.warn(`[MarketingService] Skipping invalid campaign ${doc.id}:`, parseResult.error);
                 }
             }
             return results;
         } catch (e) {
-            console.error("MarketingService: Campaign fetch failed", e);
+            logger.error("MarketingService: Campaign fetch failed", e);
             return [];
         }
     }
@@ -96,12 +97,12 @@ export class MarketingService {
                 if (parseResult.success) {
                     return parseResult.data as CampaignAsset;
                 }
-                console.error(`[MarketingService] Invalid campaign data for ${id}:`, parseResult.error);
+                logger.error(`[MarketingService] Invalid campaign data for ${id}:`, parseResult.error);
                 return null;
             }
             return null;
         } catch (error) {
-            console.error("MarketingService: Failed to fetch campaign", error);
+            logger.error("MarketingService: Failed to fetch campaign", error);
             return null;
         }
     }
@@ -117,7 +118,7 @@ export class MarketingService {
         // Validate input structure before write (ignoring id)
         const validation = CampaignAssetSchema.safeParse(campaign);
         if (!validation.success) {
-             console.error("[MarketingService] Invalid campaign input:", validation.error);
+             logger.error("[MarketingService] Invalid campaign input:", validation.error);
              throw new Error("Invalid campaign data");
         }
 
@@ -151,7 +152,7 @@ export class MarketingService {
             const { id: _id, ...cleanUpdates } = updates;
             await updateDoc(docRef, { ...cleanUpdates, updatedAt: serverTimestamp() });
         } catch (error) {
-            console.error("MarketingService: Update failed", error);
+            logger.error("MarketingService: Update failed", error);
             throw error;
         }
     }

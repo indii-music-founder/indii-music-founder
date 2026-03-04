@@ -14,6 +14,7 @@ import {
 import { events, EventType } from '@/core/events';
 import { v4 as uuidv4 } from 'uuid';
 import { AgentContext, ProactiveTask } from './types';
+import { logger } from '@/utils/logger';
 
 export class ProactiveService {
     private unsubscribers: (() => void)[] = [];
@@ -134,7 +135,7 @@ export class ProactiveService {
             });
 
         } catch (error: any) {
-            console.error(`[ProactiveService] Failed to execute task ${task.id}:`, error);
+            logger.error(`[ProactiveService] Failed to execute task ${task.id}:`, error);
             await updateDoc(doc(db, 'proactive_tasks', task.id), {
                 status: 'failed',
                 lastError: error.message

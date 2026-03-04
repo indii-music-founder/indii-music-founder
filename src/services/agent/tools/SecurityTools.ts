@@ -8,6 +8,7 @@ import { db } from '@/services/firebase';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { generateSecureId } from '@/utils/security';
+import { logger } from '@/utils/logger';
 
 /**
  * Security Tools
@@ -82,7 +83,7 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
                 }, `Status retrieved for ${api_name} from inventory.`);
             }
         } catch (error) {
-            console.warn('[SecurityTools] Firestore unavailable, using fallback:', error);
+            logger.warn('[SecurityTools] Firestore unavailable, using fallback:', error);
         }
 
         // Fallback to static data
@@ -184,7 +185,7 @@ export const SecurityTools: Record<string, AnyToolFunction> = {
                     });
                 }
             } catch (e) {
-                console.warn('[SecurityTools] Failed to query real permissions:', e);
+                logger.warn('[SecurityTools] Failed to query real permissions:', e);
             }
         }
 

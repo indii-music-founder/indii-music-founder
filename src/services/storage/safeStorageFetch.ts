@@ -34,7 +34,7 @@ export async function safeStorageFetch(url: string): Promise<StorageFetchResult>
         const mimeType = blob.type || guessMimeFromUrl(url);
         return { blob, mimeType };
     } catch (directErr) {
-        console.warn('[safeStorageFetch] Direct fetch failed, attempting no-cors fallback:', directErr);
+        logger.warn('[safeStorageFetch] Direct fetch failed, attempting no-cors fallback:', directErr);
     }
 
     // --- Attempt 2: no-cors opaque fetch (gets the bytes but not headers) ---

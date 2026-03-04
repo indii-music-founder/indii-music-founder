@@ -1,4 +1,5 @@
 import type {
+import { logger } from '@/utils/logger';
   IDistributorAdapter,
   DistributorId,
   DistributorRequirements,
@@ -83,7 +84,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
     }
 
     if (typeof window === 'undefined' || !window.electronAPI?.sftp) {
-      console.warn('[BaseDistributorAdapter] SFTP upload skipped (not running in Electron)');
+      logger.warn('[BaseDistributorAdapter] SFTP upload skipped (not running in Electron)');
       return;
     }
 
@@ -100,7 +101,7 @@ export abstract class BaseDistributorAdapter implements IDistributorAdapter {
       }
       console.info(`[${this.name}] Upload complete.`);
     } catch (error) {
-      console.error(`[${this.name}] Upload error:`, error);
+      logger.error(`[${this.name}] Upload error:`, error);
       throw error;
     }
   }

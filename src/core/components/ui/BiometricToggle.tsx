@@ -4,6 +4,7 @@ import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
 import { BiometricService } from '@/services/security/BiometricService';
 import {
+import { logger } from '@/utils/logger';
     Tooltip,
     TooltipContent,
     TooltipProvider,
@@ -48,7 +49,7 @@ export function BiometricToggle() {
                 updatePreferences({ biometricEnabled: false });
             }
         } catch (err) {
-            console.error('Biometric toggle error:', err);
+            logger.error('Biometric toggle error:', err);
             setError('An error occurred.');
         } finally {
             setIsLoading(false);

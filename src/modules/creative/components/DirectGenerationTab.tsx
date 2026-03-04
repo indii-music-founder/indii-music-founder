@@ -5,6 +5,7 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast } from '@/core/context/ToastContext';
 import { Loader2, Image as ImageIcon, Video, Send, Settings2, Download } from 'lucide-react';
 import { WhiskService } from '@/services/WhiskService';
+import { logger } from '@/utils/logger';
 
 interface GeneratedItem {
     id: string;
@@ -100,7 +101,7 @@ export default function DirectGenerationTab() {
                 }
             }
         } catch (error: any) {
-            console.error("Direct Generation Failed:", error);
+            logger.error("Direct Generation Failed:", error);
 
             // Provide specific error messages based on error type
             if (error?.code === 'deadline-exceeded' || error?.message?.includes('timeout')) {

@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import { Loader2 } from "lucide-react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { logger } from '@/utils/logger';
 
 interface NewProjectModalProps {
   isOpen: boolean;
@@ -45,7 +46,7 @@ export default function NewProjectModal({
       await onCreate(name, type);
     } catch (e) {
       // Parent component handles error display via 'error' prop
-      console.error(e);
+      logger.error(e);
     } finally {
       setIsCreating(false);
     }

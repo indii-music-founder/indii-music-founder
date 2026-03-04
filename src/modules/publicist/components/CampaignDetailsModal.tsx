@@ -4,6 +4,7 @@ import { X, Save, Trash2, Calendar, Activity, BarChart2 } from 'lucide-react';
 import { Campaign } from '../types';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface CampaignDetailsModalProps {
     isOpen: boolean;
@@ -36,7 +37,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                 onClose();
             }
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             toast.error("Failed to update campaign");
         } finally {
             setIsSaving(false);

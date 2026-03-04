@@ -3,6 +3,7 @@ import { TrendingUp, Loader2, RefreshCw, AlertTriangle, Lightbulb, ThumbsUp, Mes
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { CampaignAsset, EngagementPrediction } from '../types';
+import { logger } from '@/utils/logger';
 
 interface AIPredictionPanelProps {
     campaign: CampaignAsset;
@@ -23,7 +24,7 @@ export default function AIPredictionPanel({ campaign }: AIPredictionPanelProps) 
             setPrediction(result);
             toast.success('Prediction generated!');
         } catch (error) {
-            console.error('Prediction failed:', error);
+            logger.error('Prediction failed:', error);
             toast.error('Failed to generate prediction. Please try again.');
         } finally {
             setIsLoading(false);

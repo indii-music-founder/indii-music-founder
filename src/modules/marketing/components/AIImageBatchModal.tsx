@@ -3,6 +3,7 @@ import { X, ImageIcon, Loader2, Check, AlertCircle, RefreshCw, Play, Pause } fro
 import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { CampaignAsset, ScheduledPost, BatchImageProgress } from '../types';
+import { logger } from '@/utils/logger';
 
 interface AIImageBatchModalProps {
     campaign: CampaignAsset;
@@ -92,7 +93,7 @@ export default function AIImageBatchModal({ campaign, onClose, onComplete }: AII
 
             toast.success(`Generated ${updatedPosts.filter(p => p.imageAsset.imageUrl).length} images!`);
         } catch (error) {
-            console.error('Batch generation failed:', error);
+            logger.error('Batch generation failed:', error);
             toast.error('Image generation failed. Some images may not have been generated.');
         } finally {
             setIsGenerating(false);

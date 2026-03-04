@@ -1,4 +1,5 @@
 import type { StoreState } from '@/core/store';
+import { logger } from '@/utils/logger';
 
 /**
  * Manages state snapshots for rollback capabilities.
@@ -35,7 +36,7 @@ export class StateManager {
                     (snapshot as any)[key] = JSON.parse(JSON.stringify(value));
                 }
             } catch (e) {
-                console.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
+                logger.warn(`[StateManager] Failed to deep clone slice ${String(key)}. Falling back to JSON/shallow.`, e);
                 try {
                     snapshot[key] = JSON.parse(JSON.stringify(value));
                 } catch (jsonErr) {
@@ -57,12 +58,12 @@ export class StateManager {
     async restoreSnapshot(transactionId: string) {
         const snapshot = this.snapshots.get(transactionId);
         if (snapshot) {
-            console.warn(`[StateManager] Restoring snapshot for ${transactionId}`);
+            logger.warn(`[StateManager] Restoring snapshot for ${transactionId}`);
             const { useStore } = await import('@/core/store');
             useStore.setState(snapshot);
             this.snapshots.delete(transactionId);
         } else {
-            console.warn(`[StateManager] No snapshot found for ${transactionId}`);
+            logger.warn(`[StateManager] No snapshot found for ${transactionId}`);
         }
     }
 

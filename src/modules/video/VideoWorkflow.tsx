@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useStore, HistoryItem } from '@/core/store';
@@ -79,11 +80,11 @@ export const processJobUpdate = (
             if (window.electronAPI?.video?.saveAsset) {
                 window.electronAPI.video.saveAsset(data.videoUrl, filename)
                     .then((path: string) => {
-                        console.log('Video saved locally to:', path);
+                        logger.debug('Video saved locally to:', path);
                         deps.updateHistoryItem(currentJobId, { localPath: path });
                     })
                     .catch((err: unknown) => {
-                        console.error('Failed to save to local folder:', err);
+                        logger.error('Failed to save to local folder:', err);
                         deps.toast.error('Failed to save video to local disk.');
                     });
             }
@@ -355,10 +356,10 @@ export default function VideoWorkflow() {
                         if (window.electronAPI?.video?.saveAsset) {
                             window.electronAPI.video.saveAsset(res.url, filename)
                                 .then((path: string) => {
-                                    console.log('Video saved locally to:', path);
+                                    logger.debug('Video saved locally to:', path);
                                     updateHistoryItem(res.id, { localPath: path });
                                 })
-                                .catch((err: unknown) => console.error('Failed to save to local folder:', err));
+                                .catch((err: unknown) => logger.error('Failed to save to local folder:', err));
                         }
 
                         const newAsset = {
@@ -383,7 +384,7 @@ export default function VideoWorkflow() {
             }
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Unknown error';
-            console.error("Video generation failed:", error);
+            logger.error("Video generation failed:", error);
             toast.error(`Trigger failed: ${message}`);
             setJobStatus('failed');
         }

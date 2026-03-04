@@ -4,6 +4,7 @@ import { RiderService } from '@/services/touring/RiderService';
 import { RiderItem } from '../types';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 export const useRider = () => {
     const { userProfile } = useStore();
@@ -39,7 +40,7 @@ export const useRider = () => {
             });
             toast.success("Rider item added");
         } catch (error) {
-            console.error("Failed to add rider item", error);
+            logger.error("Failed to add rider item", error);
             toast.error("Failed to add item");
         }
     };
@@ -48,7 +49,7 @@ export const useRider = () => {
         try {
             await RiderService.updateItem(id, { completed });
         } catch (error) {
-            console.error("Failed to toggle item", error);
+            logger.error("Failed to toggle item", error);
             toast.error("Failed to update status");
         }
     };
@@ -58,7 +59,7 @@ export const useRider = () => {
             await RiderService.deleteItem(id);
             toast.success("Item removed");
         } catch (error) {
-            console.error("Failed to delete item", error);
+            logger.error("Failed to delete item", error);
             toast.error("Failed to remove item");
         }
     };

@@ -22,6 +22,7 @@ import { safeJsonParse } from '@/services/utils/json';
 
 // Types
 import { Components } from 'react-markdown';
+import { logger } from '@/utils/logger';
 
 interface MessageItemProps {
     msg: AgentMessage;
@@ -76,7 +77,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             </div>
                         );
                     }
-                } catch (e) { console.warn("Failed to parse image tool output:", e); }
+                } catch (e) { logger.warn("Failed to parse image tool output:", e); }
             }
 
             // Detect Delegate Task Output
@@ -117,7 +118,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                         }
                         return <ReactMarkdown>{json.text}</ReactMarkdown>;
                     }
-                } catch (e) { console.warn("Failed to parse delegate tool output:", e); }
+                } catch (e) { logger.warn("Failed to parse delegate tool output:", e); }
             }
             return <p className="mb-4 last:mb-0">{children}</p>;
         },

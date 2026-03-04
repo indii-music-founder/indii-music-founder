@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { db } from '@/services/firebase';
 import {
@@ -80,7 +81,7 @@ export class RoyaltyService {
                                 balance: currentBalance,
                                 updatedAt: serverTimestamp()
                             });
-                            console.log(`[RoyaltyService] Recooped ${deduction} for ${releaseId}. Remaining: ${currentBalance}`);
+                            logger.debug(`[RoyaltyService] Recooped ${deduction} for ${releaseId}. Remaining: ${currentBalance}`);
                         }
                     }
 
@@ -105,7 +106,7 @@ export class RoyaltyService {
 
             return { success: true, payoutCount: totalPayoutsStored };
         } catch (error) {
-            console.error('[RoyaltyService] Ingestion failed:', error);
+            logger.error('[RoyaltyService] Ingestion failed:', error);
             return { success: false, payoutCount: 0, error: error instanceof Error ? error.message : 'Unknown error' };
         }
     }

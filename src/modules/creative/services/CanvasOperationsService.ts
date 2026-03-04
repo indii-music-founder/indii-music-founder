@@ -1,6 +1,7 @@
 import * as fabric from 'fabric';
 import { hexToRgba, scaleImageToCanvas } from '@/lib/canvasUtils';
 import { STUDIO_COLORS, CreativeColor } from '../constants';
+import { logger } from '@/utils/logger';
 
 export interface MaskData {
     mimeType: string;
@@ -79,7 +80,7 @@ export class CanvasOperationsService {
             this.canvas.renderAll();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
-            console.error(`Failed to load canvas from JSON: ${message}`);
+            logger.error(`Failed to load canvas from JSON: ${message}`);
         }
     }
 
@@ -172,7 +173,7 @@ export class CanvasOperationsService {
             return await res.blob();
         } catch (e: unknown) {
             const message = e instanceof Error ? e.message : 'Unknown error';
-            console.error(`Failed to create blob from canvas: ${message}`);
+            logger.error(`Failed to create blob from canvas: ${message}`);
             return null;
         }
     }

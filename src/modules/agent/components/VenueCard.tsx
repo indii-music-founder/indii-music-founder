@@ -1,6 +1,7 @@
 import * as React from 'react';
 import { Venue } from '../types';
 import { MapPin, Users, Globe, Mail, Plus, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface VenueCardProps {
     venue: Venue;
@@ -18,7 +19,7 @@ export const VenueCard: React.FC<VenueCardProps> = ({ venue, onAdd }) => {
             await onAdd(venue);
             setIsAdded(true);
         } catch (error) {
-            console.error("Failed to add venue:", error);
+            logger.error("Failed to add venue:", error);
             // Parent handles error toast
         } finally {
             setIsAdding(false);

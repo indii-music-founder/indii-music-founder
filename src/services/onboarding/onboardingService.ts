@@ -5,6 +5,7 @@ import type { UserProfile, ConversationFile, BrandAsset, KnowledgeDocument, Bran
 import type { FunctionDeclaration } from '@/shared/types/ai.dto';
 import { v4 as uuidv4 } from 'uuid';
 import { getSupportedDistributors } from './distributorRequirements';
+import { logger } from '@/utils/logger';
 
 // --- Types & Enums ---
 
@@ -585,7 +586,7 @@ ALWAYS preserve what they're NOT changing.`;
             functionCalls,
         };
     } catch (error) {
-        console.error("Error in onboarding conversation:", error);
+        logger.error("Error in onboarding conversation:", error);
         throw error;
     }
 }

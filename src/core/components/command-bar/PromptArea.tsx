@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/prompt-input';
 import { DelegateMenu } from './DelegateMenu';
 import { AttachmentList } from './AttachmentList';
+import { logger } from '@/utils/logger';
 
 interface PromptAreaProps {
     className?: string;
@@ -195,14 +196,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                 await agentService.sendMessage(currentInput, processedAttachments, targetAgentId);
                 setIsProcessing(false);
             } catch (error) {
-                console.error('PromptArea: Failed to send message:', error);
+                logger.error('PromptArea: Failed to send message:', error);
                 toast.error("Failed to send message.");
                 setCommandBarInput(currentInput);
                 setCommandBarAttachments(currentAttachments);
                 setIsProcessing(false);
             }
         } catch (fatalError) {
-            console.error("PromptArea: Fatal crash", fatalError);
+            logger.error("PromptArea: Fatal crash", fatalError);
             setIsProcessing(false);
         }
     }, [commandBarInput, commandBarAttachments, isAgentOpen, isRightPanelOpen, toggleAgentWindow, toggleRightPanel, currentModule, knownAgentIds, processAttachments, toast, isProcessing, isIndiiMode, setCommandBarInput, setCommandBarAttachments]);

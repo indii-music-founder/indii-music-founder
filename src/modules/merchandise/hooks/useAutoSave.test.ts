@@ -296,7 +296,8 @@ describe('useAutoSave', () => {
         const { setDoc: mockSetDoc } = await import('firebase/firestore');
         vi.mocked(mockSetDoc).mockResolvedValue(undefined);
 
-        const consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => { });
+        const loggerModule = await import('@/utils/logger');
+        const loggerDebugSpy = vi.spyOn(loggerModule.logger, 'debug').mockImplementation(() => { });
 
         const { result } = renderHook(() =>
             useAutoSave(mockCanvas, 'Test Design', 'design-123', { enabled: false })
@@ -307,11 +308,11 @@ describe('useAutoSave', () => {
         });
 
         await waitFor(() => {
-            expect(consoleLogSpy).toHaveBeenCalledWith(
+            expect(loggerDebugSpy).toHaveBeenCalledWith(
                 expect.stringContaining('Design "Test Design" auto-saved at')
             );
         });
 
-        consoleLogSpy.mockRestore();
+        loggerDebugSpy.mockRestore();
     });
 });

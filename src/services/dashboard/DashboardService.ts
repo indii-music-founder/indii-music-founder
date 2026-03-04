@@ -2,6 +2,7 @@ import { ModuleId } from '@/core/constants';
 import { HistoryItem } from '@/core/store/slices/creativeSlice';
 import { Project } from '@/core/store/slices/appSlice';
 import { SalesAnalyticsSchema, SalesAnalyticsData } from './schema';
+import { logger } from '@/utils/logger';
 
 export interface ProjectMetadata {
     id: string;
@@ -229,7 +230,7 @@ export class DashboardService {
             return metadata;
 
         } catch (error) {
-            console.error("Error creating project:", error);
+            logger.error('[Dashboard] Error creating project:', error);
             throw error;
         }
     }
@@ -294,7 +295,7 @@ export class DashboardService {
             return metadata;
 
         } catch (error) {
-            console.error("Error duplicating project:", error);
+            logger.error('[Dashboard] Error duplicating project:', error);
             throw error;
         }
     }
@@ -331,11 +332,11 @@ export class DashboardService {
                 const snapshot = await getDocs(q);
                 await Promise.all(snapshot.docs.map(d => deleteDoc(d.ref)));
             } catch (cleanupError) {
-                console.warn("Cleanup warning:", cleanupError);
+                logger.warn('[Dashboard] Cleanup warning:', cleanupError);
             }
 
         } catch (error) {
-            console.error("Error deleting project:", error);
+            logger.error('[Dashboard] Error deleting project:', error);
             throw error;
         }
     }
@@ -530,7 +531,7 @@ export class DashboardService {
 
                     return data;
                 } catch (apiError) {
-                    console.warn("API fetch failed, falling back to Firestore:", apiError);
+                    logger.warn('[Dashboard] API fetch failed, falling back to Firestore:', apiError);
                     // Fallthrough to Firestore
                 }
             }
@@ -548,11 +549,11 @@ export class DashboardService {
                             this.cache.set(period, { data: parseResult.data, timestamp: Date.now() });
                             return parseResult.data;
                         } else {
-                            console.warn("Firestore data failed schema validation:", parseResult.error);
+                            logger.warn('[Dashboard] Firestore data failed schema validation:', parseResult.error);
                         }
                     }
                 } catch (e) {
-                    console.warn("Firestore fetch failed:", e);
+                    logger.warn('[Dashboard] Firestore fetch failed:', e);
                 }
             }
 
@@ -561,7 +562,7 @@ export class DashboardService {
             return zeroState;
 
         } catch (error) {
-            console.error("Critical failure in getSalesAnalytics:", error);
+            logger.error('[Dashboard] Critical failure in getSalesAnalytics:', error);
             // Return safe default to prevent UI crash
             return zeroState;
         }

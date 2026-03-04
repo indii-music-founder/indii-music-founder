@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { RequestBatcher } from '@/utils/RequestBatcher';
 import { useStore } from '@/core/store';
 
@@ -85,7 +86,7 @@ export class MaestroBatchingService {
     }
 
     private async executeIndividualTask(task: BatchedTask): Promise<any> {
-        console.log(`[Maestro] Executing task ${task.id} for agent ${task.agentId} (Priority: ${task.priority})`);
+        logger.debug(`[Maestro] Executing task ${task.id} for agent ${task.agentId} (Priority: ${task.priority})`);
 
         try {
             // Dynamic import to avoid circular dependency with AgentService
@@ -104,7 +105,7 @@ export class MaestroBatchingService {
                 data: { taskId: task.id, thoughtSignature: result.thoughtSignature }
             };
         } catch (error: any) {
-            console.error(`[Maestro] Task ${task.id} failed:`, error);
+            logger.error(`[Maestro] Task ${task.id} failed:`, error);
             return {
                 success: false,
                 error: error.message,

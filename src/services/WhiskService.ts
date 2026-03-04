@@ -1,6 +1,7 @@
 import { WhiskState, WhiskItem } from '@/core/store/slices/creativeSlice';
 import { ImageGeneration } from './image/ImageGenerationService';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
 
 // Inspiration prompts for each category
 const INSPIRATION_SYSTEM_PROMPTS: Record<'subject' | 'scene' | 'style' | 'motion', string> = {
@@ -229,8 +230,8 @@ export class WhiskService {
             }
             return [];
         } catch (error) {
-            console.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
-            console.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
+            logger.error('[WHISK_DEBUG] WhiskService.generateInspiration error:', JSON.stringify(error, null, 2));
+            logger.error('[WHISK_DEBUG] Error message:', error instanceof Error ? error.message : String(error));
             // Strict No Mock policy: Return empty array on failure
             return [];
         }
@@ -253,7 +254,7 @@ export class WhiskService {
             }
             return null;
         } catch (error) {
-            console.error('WhiskService.generateInspirationImage error:', error);
+            logger.error('WhiskService.generateInspirationImage error:', error);
             return null;
         }
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { AGENT_CONFIGS } from './agentConfig';
 import { freezeAgentConfig } from './FreezeDiagnostic';
 
@@ -22,16 +23,16 @@ export class AgentRegistry {
         if (this.isInitialized) return;
 
         try {
-            console.log('[AgentRegistry] Pre-warming Generalist agent...');
+            logger.debug('[AgentRegistry] Pre-warming Generalist agent...');
             const generalist = await this.getAsync('generalist');
             if (generalist) {
-                console.log('[AgentRegistry] Generalist agent pre-warmed successfully');
+                logger.debug('[AgentRegistry] Generalist agent pre-warmed successfully');
                 this.isInitialized = true;
             } else {
-                console.error('[AgentRegistry] Failed to pre-warm Generalist agent');
+                logger.error('[AgentRegistry] Failed to pre-warm Generalist agent');
             }
         } catch (e) {
-            console.error('[AgentRegistry] Warmup error:', e);
+            logger.error('[AgentRegistry] Warmup error:', e);
         }
     }
 
@@ -63,7 +64,7 @@ export class AgentRegistry {
                 return agent;
             });
         } catch (e) {
-            console.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
+            logger.error("[AgentRegistry] CRITICAL: Failed to register GeneralistAgent:", e);
         }
 
         // Register Merchandise Agent (Class-based)
@@ -82,7 +83,7 @@ export class AgentRegistry {
                 return new MerchandiseAgent();
             });
         } catch (e) {
-            console.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
+            logger.warn("[AgentRegistry] Failed to register MerchandiseAgent:", e);
         }
 
         // Register config-based agents
@@ -105,7 +106,7 @@ export class AgentRegistry {
                         return agent;
                     });
                 } catch (e) {
-                    console.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
+                    logger.warn(`[AgentRegistry] Failed to register agent '${config?.id || 'unknown'}':`, e);
                 }
             });
         }
@@ -136,7 +137,7 @@ export class AgentRegistry {
                 return agent;
             });
         } catch (e) {
-            console.warn("[AgentRegistry] Failed to register Keeper agent:", e);
+            logger.warn("[AgentRegistry] Failed to register Keeper agent:", e);
         }
         // Register Curriculum Agent (Agent Zero Automation)
         try {
@@ -154,7 +155,7 @@ export class AgentRegistry {
                 return new CurriculumAgent();
             });
         } catch (e) {
-            console.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
+            logger.warn("[AgentRegistry] Failed to register CurriculumAgent:", e);
         }
     }
 
@@ -195,31 +196,31 @@ export class AgentRegistry {
         // Create the loading promise and cache it to prevent duplicate loads
         const loadPromise = (async (): Promise<SpecializedAgent | undefined> => {
             try {
-                console.log(`[AgentRegistry] Loading agent '${id}'...`);
+                logger.debug(`[AgentRegistry] Loading agent '${id}'...`);
                 const agent = await loader();
                 this.agents.set(id, agent);
                 // Clear any previous error state
                 this.loadErrors.delete(id);
-                console.log(`[AgentRegistry] Agent '${id}' loaded successfully`);
+                logger.debug(`[AgentRegistry] Agent '${id}' loaded successfully`);
                 return agent;
             } catch (e) {
                 const error = e instanceof Error ? e : new Error(String(e));
                 const existingError = this.loadErrors.get(id);
                 const attempts = (existingError?.attempts || 0) + 1;
 
-                console.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
+                logger.error(`[AgentRegistry] Failed to load agent '${id}' (attempt ${attempts}):`, error.message);
                 this.loadErrors.set(id, { error, timestamp: Date.now(), attempts });
 
                 // Retry with exponential backoff
                 if (retryCount < MAX_RETRIES) {
                     const delay = RETRY_DELAY_MS * Math.pow(2, retryCount);
-                    console.log(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
+                    logger.debug(`[AgentRegistry] Retrying '${id}' in ${delay}ms...`);
                     await new Promise(resolve => setTimeout(resolve, delay));
                     this.loadingPromises.delete(id); // Clear so retry can proceed
                     return this.getAsync(id, retryCount + 1);
                 }
 
-                console.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
+                logger.error(`[AgentRegistry] Agent '${id}' failed after ${MAX_RETRIES + 1} attempts`);
                 return undefined;
             } finally {
                 // Clean up loading promise after completion (unless retrying)

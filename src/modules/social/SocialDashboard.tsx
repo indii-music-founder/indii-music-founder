@@ -8,6 +8,7 @@ import { SocialStats, ScheduledPost } from '@/services/social/types';
 import { useStore } from '@/core/store';
 import { useSocial } from './hooks/useSocial';
 import SocialFeed from './components/SocialFeed';
+import { logger } from '@/utils/logger';
 
 /* ================================================================== */
 /*  Social Dashboard — Three-Panel Layout                               */
@@ -51,7 +52,7 @@ export default function SocialDashboard() {
                 scheduledTime: scheduledTimeNum
             });
         } catch (error) {
-            console.error(error);
+            logger.error(error);
         }
     };
 

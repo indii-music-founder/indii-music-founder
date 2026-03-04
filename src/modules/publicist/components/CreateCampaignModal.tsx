@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Loader2, Megaphone, Mic2, Disc, MapPin, DollarSign } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
+import { logger } from '@/utils/logger';
 
 interface CreateCampaignModalProps {
     isOpen: boolean;
@@ -44,7 +45,7 @@ export const CreateCampaignModal: React.FC<CreateCampaignModalProps> = ({ isOpen
             setType('Single');
             onClose();
         } catch (error) {
-            console.error("Failed to create campaign:", error);
+            logger.error("Failed to create campaign:", error);
             // Optionally add toast error here
         } finally {
             setIsSubmitting(false);

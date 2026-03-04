@@ -2,6 +2,7 @@ import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, serverTimestamp, orderBy, limit, doc, setDoc, FieldValue } from 'firebase/firestore';
 import type { DistributorEarnings } from './types/distributor';
 import type { DateRange } from '@/services/ddex/types/common';
+import { logger } from '@/utils/logger';
 
 export interface EarningsRecord extends Omit<DistributorEarnings, 'lastUpdated'> {
     id?: string;
@@ -43,7 +44,7 @@ export class EarningsService {
                 lastUpdated: data.lastUpdated?.toDate?.()?.toISOString() || new Date().toISOString()
             } as unknown) as DistributorEarnings;
         } catch (error) {
-            console.error('[EarningsService] Failed to fetch earnings:', error);
+            logger.error('[EarningsService] Failed to fetch earnings:', error);
             return null;
         }
     }
@@ -75,7 +76,7 @@ export class EarningsService {
                 } as unknown) as DistributorEarnings;
             });
         } catch (error) {
-            console.error('[EarningsService] Failed to fetch all earnings:', error);
+            logger.error('[EarningsService] Failed to fetch all earnings:', error);
             return [];
         }
     }
@@ -96,7 +97,7 @@ export class EarningsService {
             await setDoc(doc(db, this.COLLECTION, earningsId), record, { merge: true });
             return earningsId;
         } catch (error) {
-            console.error('[EarningsService] Failed to record earnings:', error);
+            logger.error('[EarningsService] Failed to record earnings:', error);
             throw error;
         }
     }

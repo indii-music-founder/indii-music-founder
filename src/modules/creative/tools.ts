@@ -3,6 +3,7 @@ import { StorageService } from '@/services/StorageService';
 import { HistoryItem } from '@/core/store';
 import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import type { AnyToolFunction } from '@/services/agent/types';
+import { logger } from '@/utils/logger';
 
 /**
  * Creative Studio Tools
@@ -49,7 +50,7 @@ export const CREATIVE_TOOLS: Record<string, AnyToolFunction> = {
 
             return toolSuccess(simplified, `Retrieved ${simplified.length} studio assets.`);
         } catch (e) {
-            console.error('CREATIVE_TOOLS.get_studio_assets error:', e);
+            logger.error('CREATIVE_TOOLS.get_studio_assets error:', e);
             return toolError("Error retrieving studio assets.", 'RETRIEVAL_ERROR');
         }
     })

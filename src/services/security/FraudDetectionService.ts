@@ -1,6 +1,7 @@
 import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, query, where, Timestamp } from 'firebase/firestore';
 import { fingerprintService } from '@/services/audio/FingerprintService';
+import { logger } from '@/utils/logger';
 
 export interface StreamingDataPoint {
     trackId: string;
@@ -130,7 +131,7 @@ export class FraudDetectionService {
                 }
             }
         } catch (e) {
-            console.error('[FraudDetection] Failed to query content rules', e);
+            logger.error('[FraudDetection] Failed to query content rules', e);
         }
 
         return { safe: true, fingerprint };
@@ -159,7 +160,7 @@ export class FraudDetectionService {
                 }
             }
         } catch (e) {
-            console.error('[FraudDetection] Failed to query content rules', e);
+            logger.error('[FraudDetection] Failed to query content rules', e);
         }
 
         return { safe: true };
@@ -188,7 +189,7 @@ export class FraudDetectionService {
                 }
             }
         } catch (e) {
-            console.error('[FraudDetection] Failed to query broad spectrum rules', e);
+            logger.error('[FraudDetection] Failed to query broad spectrum rules', e);
         }
 
         return { safe: true };
@@ -198,7 +199,7 @@ export class FraudDetectionService {
         try {
             await addDoc(collection(db, 'fraud_alerts'), { ...alert, createdAt: Timestamp.now() });
         } catch (e) {
-            console.error('[FraudDetection] Failed to persist alert', e);
+            logger.error('[FraudDetection] Failed to persist alert', e);
         }
     }
 }

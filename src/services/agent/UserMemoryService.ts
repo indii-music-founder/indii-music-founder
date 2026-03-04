@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * User Memory Service
  *
@@ -53,7 +54,7 @@ class UserMemoryService {
       try {
         return await AI.batchEmbedContents(texts as any, this.embeddingModel);
       } catch (error) {
-        console.error('[UserMemoryService] Batch embedding failed:', error);
+        logger.error('[UserMemoryService] Batch embedding failed:', error);
         throw error;
       }
     },
@@ -80,7 +81,7 @@ class UserMemoryService {
     try {
       return await this.embeddingBatcher.add(text);
     } catch (error) {
-      console.warn('[UserMemoryService] Failed to get embedding:', error);
+      logger.warn('[UserMemoryService] Failed to get embedding:', error);
       return [];
     }
   }
@@ -108,12 +109,12 @@ class UserMemoryService {
     try {
       existingMemories = await service.list();
     } catch (e) {
-      console.warn('[UserMemoryService] Failed to list memories for dedup: (Non-blocking)', e);
+      logger.warn('[UserMemoryService] Failed to list memories for dedup: (Non-blocking)', e);
     }
 
     const duplicate = existingMemories.find((m) => m.content === content);
     if (duplicate) {
-      console.log('[UserMemoryService] Duplicate memory detected, skipping');
+      logger.debug('[UserMemoryService] Duplicate memory detected, skipping');
       return duplicate.id;
     }
 
@@ -144,15 +145,15 @@ class UserMemoryService {
     try {
       memoryId = await service.add(memory);
     } catch (e) {
-      console.error('[UserMemoryService] Failed to save memory: (Non-blocking)', e);
+      logger.error('[UserMemoryService] Failed to save memory: (Non-blocking)', e);
     }
 
     // Update user context asynchronously
     this.updateUserContext(userId).catch((e) =>
-      console.error('[UserMemoryService] Failed to update user context:', e)
+      logger.error('[UserMemoryService] Failed to update user context:', e)
     );
 
-    console.log(`[UserMemoryService] Saved memory for user ${userId}: ${content.substring(0, 50)}...`);
+    logger.debug(`[UserMemoryService] Saved memory for user ${userId}: ${content.substring(0, 50)}...`);
     return memoryId;
   }
 
@@ -166,7 +167,7 @@ class UserMemoryService {
     if (memory) {
       // Update access stats
       this.updateAccessStats(userId, [memory]).catch((e) =>
-        console.warn('[UserMemoryService] Failed to update access stats: (Non-blocking)', e)
+        logger.warn('[UserMemoryService] Failed to update access stats: (Non-blocking)', e)
       );
     }
 
@@ -193,7 +194,7 @@ class UserMemoryService {
     updates.updatedAt = Timestamp.now();
     await service.update(memoryId, updates);
 
-    console.log(`[UserMemoryService] Updated memory ${memoryId} for user ${userId}`);
+    logger.debug(`[UserMemoryService] Updated memory ${memoryId} for user ${userId}`);
   }
 
   /**
@@ -202,7 +203,7 @@ class UserMemoryService {
   async deleteMemory(userId: string, memoryId: string): Promise<void> {
     const service = this.getService(userId);
     await service.delete(memoryId);
-    console.log(`[UserMemoryService] Deleted memory ${memoryId} for user ${userId}`);
+    logger.debug(`[UserMemoryService] Deleted memory ${memoryId} for user ${userId}`);
   }
 
   /**
@@ -210,7 +211,7 @@ class UserMemoryService {
    */
   async deactivateMemory(userId: string, memoryId: string): Promise<void> {
     await this.updateMemory(userId, memoryId, { isActive: false });
-    console.log(`[UserMemoryService] Deactivated memory ${memoryId} for user ${userId}`);
+    logger.debug(`[UserMemoryService] Deactivated memory ${memoryId} for user ${userId}`);
   }
 
   /**
@@ -225,7 +226,7 @@ class UserMemoryService {
       try {
         memories = await service.list();
       } catch (e) {
-        console.warn('[UserMemoryService] Failed to list memories for search: (Non-blocking)', e);
+        logger.warn('[UserMemoryService] Failed to list memories for search: (Non-blocking)', e);
         return [];
       }
 
@@ -325,11 +326,11 @@ class UserMemoryService {
       this.updateAccessStats(
         userId,
         results.map((r) => r.memory)
-      ).catch((e) => console.error('[UserMemoryService] Failed to update access stats:', e));
+      ).catch((e) => logger.error('[UserMemoryService] Failed to update access stats:', e));
 
       return results;
     } catch (error) {
-      console.error('[UserMemoryService] Error searching memories:', error);
+      logger.error('[UserMemoryService] Error searching memories:', error);
       return [];
     }
   }
@@ -433,7 +434,7 @@ Be specific and actionable. Avoid generic statements.
       );
       summary = result.response.text() || 'No summary available';
     } catch (error) {
-      console.error('[UserMemoryService] Failed to generate summary:', error);
+      logger.error('[UserMemoryService] Failed to generate summary:', error);
       summary = 'Unable to generate summary';
     }
 
@@ -521,7 +522,7 @@ Be specific and actionable. Avoid generic statements.
     try {
       await contextService.add(context);
     } catch (error) {
-      console.error('[UserMemoryService] Failed to save context:', error);
+      logger.error('[UserMemoryService] Failed to save context:', error);
     }
 
     return context;
@@ -546,7 +547,7 @@ Be specific and actionable. Avoid generic statements.
     const isStale = Date.now() - latestContext.lastUpdated.toMillis() > 86400000;
     if (isStale) {
       this.updateUserContext(userId).catch((e) =>
-        console.error('[UserMemoryService] Failed to refresh context:', e)
+        logger.error('[UserMemoryService] Failed to refresh context:', e)
       );
     }
 
@@ -578,7 +579,7 @@ Be specific and actionable. Avoid generic statements.
       );
 
       if (candidates.length < 5) {
-        console.log('[UserMemoryService] Not enough memories to consolidate');
+        logger.debug('[UserMemoryService] Not enough memories to consolidate');
         return { success: true, processedCount: 0, errorCount: 0, errors: [] };
       }
 
@@ -651,7 +652,7 @@ JSON FORMAT:
         await Promise.all(addPromises);
       }
 
-      console.log(
+      logger.debug(
         `[UserMemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries`
       );
 
@@ -662,7 +663,7 @@ JSON FORMAT:
         errors,
       };
     } catch (error) {
-      console.error('[UserMemoryService] Consolidation failed:', error);
+      logger.error('[UserMemoryService] Consolidation failed:', error);
       return {
         success: false,
         processedCount,
@@ -679,7 +680,7 @@ JSON FORMAT:
     const service = this.getService(userId);
     const memories = await service.list();
     await Promise.all(memories.map((m) => service.delete(m.id)));
-    console.log(`[UserMemoryService] Cleared all memories for user ${userId}`);
+    logger.debug(`[UserMemoryService] Cleared all memories for user ${userId}`);
   }
 
   /**

@@ -1,5 +1,6 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface Props {
     children: ReactNode;
@@ -22,7 +23,7 @@ export class ModuleErrorBoundary extends Component<Props, State> {
     }
 
     public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-        console.error(`[ModuleErrorBoundary] Error in ${this.props.moduleName || 'Module'}:`, error, errorInfo);
+        logger.error(`[ModuleErrorBoundary] Error in ${this.props.moduleName || 'Module'}:`, error, errorInfo);
     }
 
     private handleRetry = () => {

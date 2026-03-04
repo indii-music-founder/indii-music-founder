@@ -1,5 +1,6 @@
 import { GeminiRetrieval, GeminiFile } from '@/services/rag/GeminiRetrievalService';
 import { processForKnowledgeBase } from '@/services/rag/ragService';
+import { logger } from '@/utils/logger';
 
 export interface KnowledgeDoc {
     id: string; // The file URI or embedding ID
@@ -35,7 +36,7 @@ class KnowledgeBaseService {
             }
             return docs;
         } catch (error) {
-            console.error("KnowledgeBaseService: Failed to load docs", error);
+            logger.error("KnowledgeBaseService: Failed to load docs", error);
             throw error;
         }
     }
@@ -62,7 +63,7 @@ class KnowledgeBaseService {
                         throw new Error("Ingestion failed");
                     }
                 } catch (err) {
-                    console.error(`Upload Fail for ${file.name}:`, err);
+                    logger.error(`Upload Fail for ${file.name}:`, err);
                 }
             })());
         }

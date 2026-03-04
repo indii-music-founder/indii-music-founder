@@ -3,6 +3,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { User, X, Upload, AlertTriangle, Grid3x3, Eye, Palette, Pencil } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 /** Maximum file size for character reference images: 10MB */
 const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -130,7 +131,7 @@ export const CharacterLibrary: React.FC = () => {
         try {
             await processFile(file, characterReferences.length);
         } catch (err) {
-            console.error('[CharacterLibrary] Validation error:', err);
+            logger.error('[CharacterLibrary] Validation error:', err);
             toast.error('Failed to validate image. Please try a different file.');
         } finally {
             setIsValidating(false);
@@ -205,7 +206,7 @@ export const CharacterLibrary: React.FC = () => {
                 toast.error('No valid images found. Check file type, size, and resolution.');
             }
         } catch (err) {
-            console.error('[CharacterLibrary] Drop validation error:', err);
+            logger.error('[CharacterLibrary] Drop validation error:', err);
             toast.error('Failed to process dropped files.');
         } finally {
             setIsValidating(false);

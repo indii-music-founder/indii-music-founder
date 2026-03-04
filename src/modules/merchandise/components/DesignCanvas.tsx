@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import * as fabric from 'fabric';
 import { Loader2 } from 'lucide-react';
@@ -50,7 +51,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
         // Optional: Show toast notification when toggled
         // (Commented out to avoid too many toasts during development)
-        // console.log(`Snap to Grid: ${snapToGrid ? 'ON' : 'OFF'}`);
+        // logger.debug(`Snap to Grid: ${snapToGrid ? 'ON' : 'OFF'}`);
     }, [snapToGrid, isInitialized]);
 
     // Convert Fabric.js object to CanvasObject
@@ -154,7 +155,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                     });
                     (obj as FabricObjectWithMeta).thumbnail = thumbnail;
                 } catch (err) {
-                    console.warn('Failed to generate thumbnail:', err);
+                    logger.warn('Failed to generate thumbnail:', err);
                 }
             };
 
@@ -273,7 +274,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
                 fabricCanvasRef.current = null;
             };
         } catch (err) {
-            console.error('Error initializing canvas:', err);
+            logger.error('Error initializing canvas:', err);
             requestAnimationFrame(() => {
                 setError('Failed to initialize canvas');
             });
@@ -349,7 +350,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
             // Add image using the new addImageAtPosition function from useCanvasControls
             // We'll need to call this from the parent component since it's in the hook
-            console.log('Drop at position:', { x, y, url, name });
+            logger.debug('Drop at position:', { x, y, url, name });
 
             // For now, load the image directly here
             const img = new Image();
@@ -377,7 +378,7 @@ export const DesignCanvas: React.FC<DesignCanvasProps> = ({
 
             img.src = url;
         } catch (error) {
-            console.error('Failed to add dropped image:', error);
+            logger.error('Failed to add dropped image:', error);
             setError('Failed to add image');
         }
     }, []);
@@ -467,7 +468,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
             canvas.setActiveObject(img);
             canvas.renderAll();
         } catch (error) {
-            console.error('Failed to load image:', error);
+            logger.error('Failed to load image:', error);
             throw error;
         }
     }, [canvas, getSmartPosition]);
@@ -667,7 +668,7 @@ export const useCanvasControls = (canvas: fabric.Canvas | null) => {
 
             return dataURL;
         } catch (err) {
-            console.error('Export error:', err);
+            logger.error('Export error:', err);
             return null;
         }
     }, [canvas]);

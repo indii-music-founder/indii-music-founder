@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import * as fabric from 'fabric';
+import { logger } from '@/utils/logger';
 
 export interface MerchCanvasRef {
     exportToDataURL: () => string;
@@ -145,7 +146,7 @@ const MerchCanvas = forwardRef<MerchCanvasRef, MerchCanvasProps>(({ width = 400,
                 fabricCanvas.current.renderAll();
                 saveHistory();
             }).catch(err => {
-                console.error("Failed to load image", err);
+                logger.error("Failed to load image", err);
             });
         },
         changeColor: (color: string) => {

@@ -4,6 +4,7 @@ import { distributionService } from '@/services/distribution/DistributionService
 import { Loader2, DollarSign, FileCheck, Landmark, Users, Plus, Trash2, PieChart, ArrowDownRight, Shield } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { TaxReport, WaterfallReport, WaterfallData } from '@/types/distribution';
+import { logger } from '@/utils/logger';
 
 export const BankPanel: React.FC = () => {
     const { success, error: toastError } = useToast();
@@ -32,7 +33,7 @@ export const BankPanel: React.FC = () => {
             setTaxReport(result);
             success('Tax compliance verified.');
         } catch (error) {
-            console.error('Tax calc failed:', error);
+            logger.error('Tax calc failed:', error);
             toastError('Tax verification failed.');
         } finally {
             setLoading(false);
@@ -54,7 +55,7 @@ export const BankPanel: React.FC = () => {
             setWaterfallReport(result);
             success('Revenue waterfall executed.');
         } catch (error) {
-            console.error('Waterfall failed:', error);
+            logger.error('Waterfall failed:', error);
             toastError('Waterfall execution failed.');
         } finally {
             setLoading(false);

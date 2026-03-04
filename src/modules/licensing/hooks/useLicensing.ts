@@ -4,6 +4,7 @@ import { licensingService } from '@/services/licensing/LicensingService';
 import { useStore } from '@/core/store';
 import { License, LicenseRequest } from '@/services/licensing/types';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 /**
  * useLicensing Hook
@@ -38,7 +39,7 @@ export function useLicensing() {
       try {
         // Trigger seeding if needed by fetching once
         await licensingService.getActiveLicenses(userProfile.id).catch(err =>
-          console.error('[useLicensing] Seeding Error:', err)
+          logger.error('[useLicensing] Seeding Error:', err)
         );
 
         if (!isMounted) return;
@@ -49,7 +50,7 @@ export function useLicensing() {
             setLicensesLoaded(true);
           }
         }, userProfile.id, (err) => {
-          console.error('[useLicensing] License Subscription Error:', err);
+          logger.error('[useLicensing] License Subscription Error:', err);
           if (isMounted) {
             setError(err.message);
             // Ensure we don't hang if one stream fails
@@ -63,7 +64,7 @@ export function useLicensing() {
             setRequestsLoaded(true);
           }
         }, userProfile.id, (err) => {
-          console.error('[useLicensing] Request Subscription Error:', err);
+          logger.error('[useLicensing] Request Subscription Error:', err);
           if (isMounted) {
             setError(err.message);
             // Ensure we don't hang if one stream fails
@@ -72,7 +73,7 @@ export function useLicensing() {
         });
 
       } catch (err) {
-        console.error('[useLicensing] Setup Error:', err);
+        logger.error('[useLicensing] Setup Error:', err);
         if (isMounted) {
           const message = (err as Error).message;
           setError(message);
@@ -111,7 +112,7 @@ export function useLicensing() {
         }
       );
     } catch (error) {
-      console.error("Failed to initiate drafting:", error);
+      logger.error("Failed to initiate drafting:", error);
     }
   }, [toast]);
 

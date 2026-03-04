@@ -13,6 +13,7 @@ type VideoAspectRatio = z.infer<typeof VideoAspectRatioSchema>;
 type VideoResolution = z.infer<typeof VideoResolutionSchema>;
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/core/context/ToastContext';
+import { logger } from '@/utils/logger';
 
 interface VideoPanelProps {
     toggleRightPanel: () => void;
@@ -143,7 +144,7 @@ export default function VideoPanel({ toggleRightPanel }: VideoPanelProps) {
                 }
             }
         } catch (e) {
-            console.error("Video generation failed:", e);
+            logger.error("Video generation failed:", e);
             toast.error("Video generation failed");
             useVideoEditorStore.getState().setStatus('failed');
             useVideoEditorStore.getState().setProgress(0);

@@ -1,6 +1,7 @@
 import { StateCreator } from 'zustand';
 import { type DashboardEarningsSummary } from '@/services/revenue/schema';
 import { ProfileSlice } from './profileSlice';
+import { logger } from '@/utils/logger';
 
 export interface FinanceSlice {
     finance: {
@@ -22,7 +23,7 @@ export const createFinanceSlice: StateCreator<FinanceSlice & ProfileSlice, [], [
         const userId = state.userProfile?.id;
 
         if (!userId) {
-            console.warn('[FinanceSlice] No user ID found for fetching earnings.');
+            logger.warn('[FinanceSlice] No user ID found for fetching earnings.');
             return;
         }
 

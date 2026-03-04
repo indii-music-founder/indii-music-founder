@@ -3,6 +3,7 @@ import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 import { env } from '@/config/env';
 import { MembershipService } from '@/services/MembershipService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { logger } from '@/utils/logger';
 
 export interface VideoGenerationOptions {
     prompt: string;
@@ -54,7 +55,7 @@ export class VideoService {
                 error?.message?.includes('RESOURCE_EXHAUSTED');
 
             if (retries > 0 && isRetryable) {
-                console.warn(`[VideoService] Rate limited, retrying in ${delay}ms... (${retries} retries left)`);
+                logger.warn(`[VideoService] Rate limited, retrying in ${delay}ms... (${retries} retries left)`);
                 await new Promise(r => setTimeout(r, delay));
                 return this.withRetry(operation, retries - 1, delay * 2);
             }
@@ -92,7 +93,7 @@ export class VideoService {
 
             return uri || null;
         } catch (e) {
-            console.error("Motion Brush Error:", e);
+            logger.error("Motion Brush Error:", e);
             throw e;
         }
     }
@@ -179,13 +180,13 @@ export class VideoService {
                         await MembershipService.incrementUsage(userId, 'video', 1, durationSeconds);
                     }
                 } catch (e) {
-                    console.warn('[VideoService] Failed to track usage:', e);
+                    logger.warn('[VideoService] Failed to track usage:', e);
                 }
             }
 
             return uri || null;
         } catch (e) {
-            console.error("Video Generation Error:", e);
+            logger.error("Video Generation Error:", e);
             throw e;
         }
     }
@@ -205,7 +206,7 @@ export class VideoService {
             }));
             return uri || null;
         } catch (e) {
-            console.error("Keyframe Transition Error:", e);
+            logger.error("Keyframe Transition Error:", e);
             throw e;
         }
     }

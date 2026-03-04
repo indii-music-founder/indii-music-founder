@@ -32,14 +32,14 @@ class ScreenControlService {
 
     async requestPermission(): Promise<boolean> {
         if (!await this.isSupported()) {
-            console.warn("Window Management API not supported.");
+            logger.warn("Window Management API not supported.");
             return false;
         }
         try {
             this.screenDetails = await window.getScreenDetails();
             return true;
         } catch (e) {
-            console.error("Failed to get screen details:", e);
+            logger.error("Failed to get screen details:", e);
             return false;
         }
     }
@@ -50,7 +50,7 @@ class ScreenControlService {
 
     openProjectorWindow(contentUrl: string, screenIndex: number = 1) {
         if (!this.screenDetails) {
-            console.error("Permissions not granted or API not supported.");
+            logger.error("Permissions not granted or API not supported.");
             return;
         }
 

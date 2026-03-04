@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 
 import { db, storage } from './firebase';
 import { collection, query, orderBy, limit, Timestamp, where, getDocs, onSnapshot, Unsubscribe } from 'firebase/firestore';
@@ -107,19 +108,19 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
                     );
                     imageUrl = result.url;
                     thumbnailUrl = result.thumbnailUrl;
-                    console.log(`[StorageService] Image saved (${result.strategy}):`, item.id);
+                    logger.debug(`[StorageService] Image saved (${result.strategy}):`, item.id);
                 } catch (error) {
-                    console.error('[StorageService] Cloud upload failed:', error);
+                    logger.error('[StorageService] Cloud upload failed:', error);
                     // Critical protection: If it's large and upload failed, we CANNOT save it as-is
                     if (isLarge) {
                         imageUrl = 'placeholder:upload-failed-large-asset';
-                        console.error('[StorageService] Asset too large for Firestore, set to placeholder');
+                        logger.error('[StorageService] Asset too large for Firestore, set to placeholder');
                         events.emit('SYSTEM_ALERT', { level: 'warning', message: 'Large image upload failed. Saved as placeholder.' });
                     }
                 }
             } else if (import.meta.env.DEV) {
                 if (isLarge) {
-                    console.warn('[StorageService] No auth in dev - large image blocked. Use proper auth.');
+                    logger.warn('[StorageService] No auth in dev - large image blocked. Use proper auth.');
                     imageUrl = 'placeholder:dev-unauthenticated-large-asset';
                 }
             }
@@ -131,7 +132,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
 
         // DEV BYPASS: If no user is logged in during dev, skip Firestore to prevent permission errors
         if (import.meta.env.DEV && !auth.currentUser) {
-            console.warn("StorageService: Skipping Firestore write (Unauthenticated Dev Session)");
+            logger.warn("StorageService: Skipping Firestore write (Unauthenticated Dev Session)");
             return item.id;
         }
 
@@ -175,7 +176,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
         if (!orgId) {
-            console.warn("No organization selected, returning empty history.");
+            logger.warn("No organization selected, returning empty history.");
             return [];
         }
 
@@ -241,7 +242,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         const orgId = OrganizationService.getCurrentOrgId() || 'personal';
 
         if (!orgId) {
-            console.warn("No organization selected, returning empty history subscription.");
+            logger.warn("No organization selected, returning empty history subscription.");
             onUpdate([]);
             return () => { };
         }
@@ -276,7 +277,7 @@ class StorageServiceImpl extends FirestoreService<HistoryDocument> {
         }, (error) => {
             // Check if it's an index error, fallback to un-ordered query if so
             if (error.code === 'failed-precondition' || error.message.includes('index')) {
-                console.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
+                logger.warn('[StorageService] Index missing for history subscription, falling back to client-side sort.');
 
                 const fallbackConstraints = [
                     where('orgId', '==', orgId),

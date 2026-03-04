@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { getAudioData } from '@remotion/media-utils';
 import type { AudioData } from '@remotion/media-utils';
+import { logger } from '@/utils/logger';
 
 interface AudioWaveformProps {
     src: string;
@@ -36,7 +37,7 @@ export const AudioWaveform: React.FC<AudioWaveformProps> = ({ src, width, height
                     setAudioData(data);
                 }
             } catch (err) {
-                console.error("Failed to load audio waveform:", err);
+                logger.error("Failed to load audio waveform:", err);
                 if (isMounted) setError("Failed to load audio");
             }
         };

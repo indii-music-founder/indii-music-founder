@@ -4,6 +4,7 @@ import { User, Star, X, Loader2 } from 'lucide-react';
 import { PublicistService } from '@/services/publicist/PublicistService';
 import { useToast } from '@/core/context/ToastContext';
 import { Contact } from '../types';
+import { logger } from '@/utils/logger';
 
 interface CreateContactModalProps {
     isOpen: boolean;
@@ -46,7 +47,7 @@ export const CreateContactModal: React.FC<CreateContactModalProps> = ({ isOpen, 
             setTier('Mid');
             onClose();
         } catch (error) {
-            console.error("Failed to create contact:", error);
+            logger.error("Failed to create contact:", error);
             toast.error("Failed to add contact");
         } finally {
             setIsSubmitting(false);

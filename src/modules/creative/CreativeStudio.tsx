@@ -13,6 +13,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { WhiskService } from '@/services/WhiskService';
 import { QuotaExceededError } from '@/shared/types/errors';
 import DirectGenerationTab from './components/DirectGenerationTab';
+import { logger } from '@/utils/logger';
 const ReleaseManager = lazy(() => import('../release/ReleaseManager').then(module => ({ default: module.ReleaseManager })));
 
 // Lazy load CreativePanel for mobile controls tab
@@ -120,7 +121,7 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
                         toast.error("Generation returned no images. Please try again.");
                     }
                 } catch (e: any) {
-                    console.error("[CreativeStudio] Image generation error:", e);
+                    logger.error("[CreativeStudio] Image generation error:", e);
                     if (e?.name === 'QuotaExceededError' || e?.code === 'QUOTA_EXCEEDED') {
                         toast.error(e.message || "Quota exceeded. Please upgrade.");
                     } else {

@@ -2,6 +2,7 @@ import { db } from '@/services/firebase';
 import { doc, getDoc, setDoc, updateDoc, increment, serverTimestamp, FieldValue } from 'firebase/firestore';
 import { RATE_LIMITS, TIER_CONFIG } from '@/core/config/rate-limits';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
+import { logger } from '@/utils/logger';
 
 export interface UsageStats {
     date: string; // YYYY-MM-DD
@@ -133,7 +134,7 @@ export class TokenUsageService {
         } catch (error) {
             if (error instanceof AppException) throw error;
             // Fail open on DB error to avoid blocking legitimate user service during outages
-            console.error('Rate limit check failed (failing open):', error);
+            logger.error('Rate limit check failed (failing open):', error);
         }
     }
 }

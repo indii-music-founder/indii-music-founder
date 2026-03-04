@@ -16,6 +16,7 @@ import {
 } from './InstrumentTypes';
 import { VideoGenerationService } from '@/services/video/VideoGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
+import { logger } from '@/utils/logger';
 
 export class VideoGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
@@ -167,7 +168,7 @@ export class VideoGenerationInstrument implements Instrument {
 
       if (!userId) {
         if (import.meta.env.DEV) {
-          console.warn("[VideoGenerationInstrument] Anonymous user in DEV, using mock ID.");
+          logger.warn("[VideoGenerationInstrument] Anonymous user in DEV, using mock ID.");
           userId = 'dev_user_anonymous';
         } else {
           return {
@@ -255,7 +256,7 @@ export class VideoGenerationInstrument implements Instrument {
         }
       };
     } catch (error) {
-      console.error('[VideoGenerationInstrument] Execution failed:', error);
+      logger.error('[VideoGenerationInstrument] Execution failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

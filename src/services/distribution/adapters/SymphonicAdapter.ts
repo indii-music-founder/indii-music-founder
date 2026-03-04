@@ -13,6 +13,7 @@ import {
 } from '../types/distributor';
 import { earningsService } from '../EarningsService';
 import { distributionStore } from '../DistributionPersistenceService';
+import { logger } from '@/utils/logger';
 
 export class SymphonicAdapter extends BaseDistributorAdapter {
     readonly id: DistributorId = 'symphonic';
@@ -81,7 +82,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             }
 
             // Bolt Hardening: Fail if no real delivery method is available
-            console.error('[Symphonic] Real delivery not implemented or SFTP unavailable.');
+            logger.error('[Symphonic] Real delivery not implemented or SFTP unavailable.');
             return {
                 success: false,
                 status: 'failed',
@@ -94,7 +95,7 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             };
 
         } catch (error) {
-            console.error('[Symphonic] Delivery failed:', error);
+            logger.error('[Symphonic] Delivery failed:', error);
             return {
                 success: false,
                 status: 'failed',

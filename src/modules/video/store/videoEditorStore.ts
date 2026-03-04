@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import { MembershipService, MembershipTier } from '@/services/MembershipService';
 import type { ExtendedVideoProject, SceneSegment } from '@/services/video/SceneExtensionService';
+import { logger } from '@/utils/logger';
 
 export type ClipType = 'video' | 'image' | 'text' | 'audio';
 
@@ -183,7 +184,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
     setReferenceImages: (images) => set({ referenceImages: images.slice(0, 3) }),
     addReferenceImage: (image) => set((state) => {
         if (state.referenceImages.length >= 3) {
-            console.warn('[VideoEditor] Max 3 reference images allowed');
+            logger.warn('[VideoEditor] Max 3 reference images allowed');
             return state;
         }
         return { referenceImages: [...state.referenceImages, image] };
@@ -218,7 +219,7 @@ export const useVideoEditorStore = create<VideoEditorState>((set, get) => ({
                 newSettings.durationInFrames = maxDurationFrames;
                 const maxSeconds = MembershipService.getMaxVideoDurationSeconds(state.membershipTier);
                 const formattedDuration = MembershipService.formatDuration(maxSeconds);
-                console.warn(
+                logger.warn(
                     `Project duration limited to ${formattedDuration} (${MembershipService.getTierDisplayName(state.membershipTier)} tier). ` +
                     MembershipService.getUpgradeMessage(state.membershipTier, 'video')
                 );

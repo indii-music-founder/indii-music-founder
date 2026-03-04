@@ -44,6 +44,7 @@ import { DistroKidAdapter } from './adapters/DistroKidAdapter';
 import { TuneCoreAdapter } from './adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from './adapters/CDBabyAdapter';
 import { SymphonicAdapter } from './adapters/SymphonicAdapter';
+import { logger } from '@/utils/logger';
 
 class DistributorServiceImpl {
   private adapters: Map<DistributorId, IDistributorAdapter> = new Map();
@@ -128,7 +129,7 @@ class DistributorServiceImpl {
             maxAttempts: 3,
             initialDelayMs: 1000,
             onRetry: (attempt, error) => {
-              console.warn(`[DistributorService] Connection retry ${attempt}/3 for ${distributorId}:`, error.message);
+              logger.warn(`[DistributorService] Connection retry ${attempt}/3 for ${distributorId}:`, error.message);
             },
           }
         );
@@ -142,7 +143,7 @@ class DistributorServiceImpl {
         console.info(`[DistributorService] Credentials saved for ${distributorId}`);
       }
     } catch (error) {
-      console.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
+      logger.error(`[DistributorService] Connection failed for ${distributorId}:`, error);
       throw error;
     }
   }
@@ -162,7 +163,7 @@ class DistributorServiceImpl {
       await credentialService.deleteCredentials(distributorId);
       console.info(`[DistributorService] Disconnected from ${adapter.name}`);
     } catch (error) {
-      console.error(`[DistributorService] Disconnect failed for ${distributorId}:`, error);
+      logger.error(`[DistributorService] Disconnect failed for ${distributorId}:`, error);
       throw error;
     }
   }
@@ -460,7 +461,7 @@ class DistributorServiceImpl {
             return null;
           });
         } catch (error: unknown) {
-          console.warn(`[DistributorService] Failed to fetch earnings from ${id}:`, error instanceof Error ? error.message : error);
+          logger.warn(`[DistributorService] Failed to fetch earnings from ${id}:`, error instanceof Error ? error.message : error);
           return null;
         }
       })
@@ -632,7 +633,7 @@ class DistributorServiceImpl {
     const { useStore } = await import('@/core/store');
     const { userProfile, currentOrganizationId } = useStore.getState();
     if (!userProfile?.id || !currentOrganizationId) {
-      console.warn('[DistributorService] No user/org context for getAllReleases');
+      logger.warn('[DistributorService] No user/org context for getAllReleases');
       return [];
     }
 

@@ -3,6 +3,7 @@ import { FirestoreService } from '../FirestoreService';
 import { GenAI as AI } from '../ai/GenAI';
 import { AI_MODELS, APPROVED_MODELS } from '@/core/config/ai-models';
 import { RequestBatcher } from '@/utils/RequestBatcher';
+import { logger } from '@/utils/logger';
 
 export interface MemoryItem {
     id: string;
@@ -49,7 +50,7 @@ class MemoryService {
                 // Pass texts directly to batch API (FirebaseAIService handles the content wrapping)
                 return await AI.batchEmbedContents(texts as any, this.embeddingModel);
             } catch (error) {
-                console.error('[MemoryService] Batch embedding failed:', error);
+                logger.error('[MemoryService] Batch embedding failed:', error);
                 throw error;
             }
         },
@@ -69,7 +70,7 @@ class MemoryService {
             // Use the batcher instead of direct call
             return await this.embeddingBatcher.add(text);
         } catch (error) {
-            console.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
+            logger.warn('[MemoryService] Failed to get embedding, falling back to keyword search:', error);
             return [];
         }
     }
@@ -99,7 +100,7 @@ class MemoryService {
         try {
             existingMemories = await service.list();
         } catch (e) {
-            console.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
+            logger.warn('[MemoryService] Failed to list memories for dedup: (Non-blocking)', e);
         }
 
         if (existingMemories.some(m => m.content === content)) {
@@ -126,7 +127,7 @@ class MemoryService {
         try {
             await service.add(item);
         } catch (e) {
-            console.error('[MemoryService] Failed to save memory: (Non-blocking)', e);
+            logger.error('[MemoryService] Failed to save memory: (Non-blocking)', e);
         }
     }
 
@@ -150,7 +151,7 @@ class MemoryService {
             try {
                 memories = await service.list(); // In production, push filters to DB query if possible
             } catch (e) {
-                console.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
+                logger.warn('[MemoryService] Failed to list memories for retrieval: (Non-blocking)', e);
                 return [];
             }
 
@@ -251,7 +252,7 @@ class MemoryService {
             return relevantItems.map(m => m.content);
 
         } catch (error) {
-            console.error('[MemoryService] Error retrieving memories:', error);
+            logger.error('[MemoryService] Error retrieving memories:', error);
             return [];
         }
     }
@@ -265,7 +266,7 @@ class MemoryService {
             })
         );
         // We don't await this in the main path to keep retrieval fast
-        Promise.all(updates).catch(e => console.error('[MemoryService] Failed to update stats:', e));
+        Promise.all(updates).catch(e => logger.error('[MemoryService] Failed to update stats:', e));
     }
 
     async consolidateMemories(projectId: string): Promise<void> {
@@ -342,7 +343,7 @@ class MemoryService {
             console.info(`[MemoryService] Consolidated ${parsed.idsToDelete?.length || 0} memories into ${parsed.consolidated?.length || 0} summaries.`);
 
         } catch (e) {
-            console.error('[MemoryService] Consolidation failed:', e);
+            logger.error('[MemoryService] Consolidation failed:', e);
         }
     }
 

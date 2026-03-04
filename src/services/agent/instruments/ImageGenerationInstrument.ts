@@ -17,6 +17,7 @@ import {
 import { ImageGenerationService } from '@/services/image/ImageGenerationService';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
 import { CacheService } from '@/services/cache/CacheService';
+import { logger } from '@/utils/logger';
 
 export class ImageGenerationInstrument implements Instrument {
   metadata: InstrumentMetadata = {
@@ -151,7 +152,7 @@ export class ImageGenerationInstrument implements Instrument {
 
       if (!userId) {
         if (import.meta.env.DEV) {
-          console.warn("[ImageGenerationInstrument] Anonymous user in DEV, using mock ID.");
+          logger.warn("[ImageGenerationInstrument] Anonymous user in DEV, using mock ID.");
           userId = 'dev_user_anonymous';
         } else {
           return {
@@ -233,7 +234,7 @@ export class ImageGenerationInstrument implements Instrument {
         }
       };
     } catch (error) {
-      console.error('[ImageGenerationInstrument] Execution failed:', error);
+      logger.error('[ImageGenerationInstrument] Execution failed:', error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error occurred',

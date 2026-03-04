@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { initializeApp } from 'firebase/app';
 import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, doc, setDoc } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
@@ -44,7 +45,7 @@ export function getFirebaseAI(): AI | null {
     // Only initialize Firebase AI if App Check is configured
     // This prevents the Installations API error when App Check isn't set up
     if (!isAppCheckConfigured()) {
-        console.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
+        logger.warn('[Firebase] App Check not configured, Firebase AI will not be initialized (using fallback)');
         return null;
     }
 
@@ -53,10 +54,10 @@ export function getFirebaseAI(): AI | null {
             backend: new VertexAIBackend('global'),
             useLimitedUseAppCheckTokens: false
         });
-        console.log('[Firebase] Firebase AI initialized with Vertex AI backend');
+        logger.debug('[Firebase] Firebase AI initialized with Vertex AI backend');
         return _aiInstance;
     } catch (error) {
-        console.error('[Firebase] Failed to initialize Firebase AI:', error);
+        logger.error('[Firebase] Failed to initialize Firebase AI:', error);
         return null;
     }
 }
@@ -97,10 +98,10 @@ if (isDev && useEmulator && typeof window !== 'undefined') {
     try {
         connectFunctionsEmulator(functions, '127.0.0.1', 5001);
         connectFunctionsEmulator(functionsWest1, '127.0.0.1', 5001);
-        console.log('[Firebase] Connected to Functions emulator on port 5001');
+        logger.debug('[Firebase] Connected to Functions emulator on port 5001');
     } catch (e) {
         // Emulator connection may fail if already connected or emulator not running
-        console.warn('[Firebase] Functions emulator connection skipped:', e);
+        logger.warn('[Firebase] Functions emulator connection skipped:', e);
     }
 }
 
@@ -123,7 +124,7 @@ export const messaging = typeof window !== 'undefined' ? (() => {
     try {
         return getMessaging(app);
     } catch (e) {
-        console.warn('Firebase Messaging not supported:', e);
+        logger.warn('Firebase Messaging not supported:', e);
         return null;
     }
 })() : null;
@@ -141,7 +142,7 @@ if (typeof window !== 'undefined') {
     // This is a critical security control - App Check prevents unauthorized API access
     if (!env.DEV && !env.appCheckKey) {
         const errorMessage = 'SECURITY WARNING: App Check key missing in production. Application running without App Check.';
-        console.warn(errorMessage);
+        logger.warn(errorMessage);
     }
 
     // Initialize App Check if we have a valid key
@@ -158,7 +159,7 @@ if (typeof window !== 'undefined') {
 
     if (shouldInitAppCheck) {
         if (isElectron && env.appCheckDebugToken) {
-            console.log('[App Check] Initializing in Electron with Debug Token');
+            logger.debug('[App Check] Initializing in Electron with Debug Token');
         }
 
         try {
@@ -167,14 +168,14 @@ if (typeof window !== 'undefined') {
                 isTokenAutoRefreshEnabled: true
             });
         } catch (e) {
-            console.error('App Check initialization failed:', e);
+            logger.error('App Check initialization failed:', e);
             // In production, re-throw to prevent running without security
             if (!env.DEV) {
                 throw e;
             }
         }
     } else if (isElectron && env.appCheckKey) {
-        console.log('[App Check] Skipped initialization in Electron (missing debug token)');
+        logger.debug('[App Check] Skipped initialization in Electron (missing debug token)');
     }
 }
 export { appCheck };
@@ -197,7 +198,7 @@ declare global {
 // SECURE: Only expose Firebase internals in development builds with explicit env flag
 // Never expose based on runtime hostname check (can be spoofed)
 if (env.DEV && env.VITE_EXPOSE_INTERNALS === 'true' && typeof window !== 'undefined') {
-    console.log("[App] Exposing Firebase Internals for E2E (DEV ONLY)");
+    logger.debug("[App] Exposing Firebase Internals for E2E (DEV ONLY)");
     window.db = db;
     window.firebaseInternals = { doc, setDoc };
     window.functions = functions;

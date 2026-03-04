@@ -4,6 +4,7 @@ import { ContractStatus } from '@/modules/legal/types';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { logger } from '@/utils/logger';
 
 // ============================================================================
 // Types for LegalTools
@@ -61,7 +62,7 @@ Key Terms: ${args.terms}`;
                 title
             }, `Contract draft generated and saved to Legal Dashboard (ID: ${contractId})`);
         } catch (persistError) {
-            console.warn('[LegalTools] Failed to persist contract:', persistError);
+            logger.warn('[LegalTools] Failed to persist contract:', persistError);
             return toolSuccess({
                 content
             }, "Contract generated but failed to save to dashboard (Persistence Error).");

@@ -34,14 +34,14 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const nodeDefinition = getNodeDefinition(deptName);
     const jobDefinition = getJobDefinition(deptName, jobId);
 
-    // console.log("Node Result Data:", data.result);
+    // logger.debug("Node Result Data:", data.result);
 
     const status = statusConfig[data.status] || statusConfig[Status.PENDING];
     const StatusIcon = status.icon;
     const Icon = nodeDefinition?.icon || Settings;
 
     const renderResultPreview = () => {
-        // console.log("Rendering Node ID:", id, "Data:", data);
+        // logger.debug("Rendering Node ID:", id, "Data:", data);
 
         if (data.status === Status.ERROR) {
             return <p className="text-red-400 text-[10px] p-2 break-all leading-tight">{String(data.result).substring(0, 50)}...</p>;
@@ -140,7 +140,7 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const handleEdit = (e: React.MouseEvent) => {
         e.stopPropagation();
         // Placeholder for openPromptEditor action
-        // console.log("Edit node:", id);
+        // logger.debug("Edit node:", id);
     };
 
     // 3. Dynamic Handle Calculation

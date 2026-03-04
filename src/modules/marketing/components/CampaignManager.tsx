@@ -8,6 +8,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { CampaignExecutionRequest } from '../schemas';
+import { logger } from '@/utils/logger';
 
 interface CampaignManagerProps {
     campaigns: CampaignAsset[];
@@ -77,7 +78,7 @@ const CampaignManager: React.FC<CampaignManagerProps> = ({
             }
 
         } catch (error: unknown) {
-            console.error("Campaign Execution Failed:", error);
+            logger.error("Campaign Execution Failed:", error);
 
             // Revert status or set to FAILED
             onUpdateCampaign({ ...selectedCampaign, status: CampaignStatus.FAILED });

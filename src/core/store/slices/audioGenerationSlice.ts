@@ -1,5 +1,6 @@
 import { StateCreator } from 'zustand';
 import { audioPersistenceService, AudioMetadata } from '@/services/audio/AudioPersistenceService';
+import { logger } from '@/utils/logger';
 
 export interface AudioGenerationSlice {
     generatedAssets: AudioMetadata[];
@@ -23,7 +24,7 @@ export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (s
             const assets = await audioPersistenceService.listUserAudio();
             set({ generatedAssets: assets, isAudioLoading: false });
         } catch (error) {
-            console.error('[AudioGenSlice] Failed to fetch library:', error);
+            logger.error('[AudioGenSlice] Failed to fetch library:', error);
             set({
                 audioError: 'Failed to load audio library',
                 isAudioLoading: false
@@ -44,7 +45,7 @@ export const createAudioGenerationSlice: StateCreator<AudioGenerationSlice> = (s
                 generatedAssets: state.generatedAssets.filter(a => a.id !== id)
             }));
         } catch (error) {
-            console.error('[AudioGenSlice] Failed to delete asset:', error);
+            logger.error('[AudioGenSlice] Failed to delete asset:', error);
             throw error;
         }
     }

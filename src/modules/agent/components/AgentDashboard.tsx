@@ -13,6 +13,7 @@ import { ScoutControls } from './ScoutControls';
 import { useToast } from '@/core/context/ToastContext';
 import { RosterService } from '../services/RosterService';
 import { Venue } from '../types';
+import { logger } from '@/utils/logger';
 
 const AgentDashboard: React.FC = () => {
     // Hooks must be called unconditionally before early returns
@@ -42,7 +43,7 @@ const AgentDashboard: React.FC = () => {
             await RosterService.addToRoster(venue);
             showToast(`Added ${venue.name} to roster`, 'success');
         } catch (error) {
-            console.error('Failed to add to roster:', error);
+            logger.error('Failed to add to roster:', error);
             showToast('Failed to add venue to roster', 'error');
             throw error; // Let the card handle the loading state reset
         }
@@ -79,7 +80,7 @@ const AgentDashboard: React.FC = () => {
             }
 
         } catch (e) {
-            console.error("Scan failed", e);
+            logger.error("Scan failed", e);
             setScanStatus("Mission failed. Connection lost.");
         } finally {
             setScanning(false);

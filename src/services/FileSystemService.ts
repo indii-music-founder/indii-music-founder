@@ -13,6 +13,7 @@ import {
 import { db } from './firebase';
 import { FirestoreService } from './FirestoreService';
 import { events } from '@/core/events';
+import { logger } from '@/utils/logger';
 
 export interface FileNode {
     id: string;
@@ -55,7 +56,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
         } catch (error: unknown) {
             // Fallback for missing index error
             if (error && typeof error === 'object' && 'code' in error && error.code === 'failed-precondition') {
-                console.warn('Firestore index missing, falling back to client-side sort', error);
+                logger.warn('Firestore index missing, falling back to client-side sort', error);
                 const q = query(this.collection, where('projectId', '==', projectId));
                 const snapshot = await getDocs(q);
                 return snapshot.docs.map(doc => ({
@@ -63,7 +64,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                     ...doc.data()
                 } as FileNode)).sort((a, b) => a.createdAt - b.createdAt);
             }
-            console.error('Error fetching project nodes:', error);
+            logger.error('Error fetching project nodes:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to load project files' });
             throw error;
         }
@@ -83,7 +84,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 updatedAt: Date.now()
             } as FileNode;
         } catch (error) {
-            console.error('Error creating node:', error);
+            logger.error('Error creating node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to create file/folder' });
             throw error;
         }
@@ -97,7 +98,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
                 updatedAt: Date.now()
             });
         } catch (error) {
-            console.error('Error updating node:', error);
+            logger.error('Error updating node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to update file/folder' });
             throw error;
         }
@@ -108,7 +109,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             const docRef = doc(db, this.collectionPath, id);
             await deleteDoc(docRef);
         } catch (error) {
-            console.error('Error deleting node:', error);
+            logger.error('Error deleting node:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete item' });
             throw error;
         }
@@ -168,7 +169,7 @@ export class FileSystemService extends FirestoreService<FileNode> {
             await this.batchDelete(Array.from(idsToDelete));
             events.emit('SYSTEM_ALERT', { level: 'success', message: `Deleted ${idsToDelete.size} items` });
         } catch (error) {
-            console.error('Error batch deleting nodes:', error);
+            logger.error('Error batch deleting nodes:', error);
             events.emit('SYSTEM_ALERT', { level: 'error', message: 'Failed to delete folder contents' });
             throw error;
         }

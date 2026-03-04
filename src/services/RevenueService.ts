@@ -2,6 +2,7 @@
 import { db, auth } from '@/services/firebase';
 import { collection, query, where, getDocs, Timestamp, addDoc, serverTimestamp } from 'firebase/firestore';
 import { RevenueEntrySchema, RevenueStatsSchema, type RevenueEntry, type RevenueStats } from '@/services/revenue/schema';
+import { logger } from '@/utils/logger';
 
 // Re-export types for backward compatibility or direct use
 export type { RevenueEntry, RevenueStats } from '@/services/revenue/schema';
@@ -207,7 +208,7 @@ export class RevenueService {
       return result;
 
     } catch (error) {
-      console.error("[RevenueService] Failed to fetch stats:", error);
+      logger.error("[RevenueService] Failed to fetch stats:", error);
       throw error;
     }
   }
@@ -247,7 +248,7 @@ export class RevenueService {
       });
       console.info('[RevenueService] Sale recorded successfully');
     } catch (error) {
-      console.error("[RevenueService] Failed to record sale:", error);
+      logger.error("[RevenueService] Failed to record sale:", error);
       throw error;
     }
   }

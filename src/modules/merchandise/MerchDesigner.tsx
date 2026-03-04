@@ -19,6 +19,7 @@ import { Undo, Redo, Download, Type, Monitor, LayoutTemplate, Sparkles, Bot, Use
 import { useToast } from '@/core/context/ToastContext';
 import { cn } from '@/lib/utils';
 import { MerchCard } from './components/MerchCard';
+import { logger } from '@/utils/logger';
 
 type WorkMode = 'agent' | 'user';
 type ViewMode = 'design' | 'showroom';
@@ -118,7 +119,7 @@ export default function MerchDesigner() {
         try {
             await addImage(url, name);
         } catch (error) {
-            console.error('Failed to add asset:', error);
+            logger.error('Failed to add asset:', error);
             toast.error('Failed to add asset to canvas');
         }
     }, [addImage, toast]);
@@ -129,7 +130,7 @@ export default function MerchDesigner() {
             await addImage(url, name);
             toast.success('AI image added to canvas');
         } catch (error) {
-            console.error('Failed to add AI image:', error);
+            logger.error('Failed to add AI image:', error);
             toast.error('Failed to add AI image');
         }
     }, [addImage, toast]);
@@ -325,7 +326,7 @@ export default function MerchDesigner() {
                     canvas.add(rect);
                 }
             } catch (error) {
-                console.error('Failed to add template element:', error);
+                logger.error('Failed to add template element:', error);
             }
         }
 
@@ -354,7 +355,7 @@ export default function MerchDesigner() {
             setDesignName(version.name);
             toast.success(`Restored "${version.name}"`);
         } catch (error) {
-            console.error('Failed to restore version:', error);
+            logger.error('Failed to restore version:', error);
             toast.error('Failed to restore version');
         }
     }, [clear, toast]);
@@ -383,7 +384,7 @@ export default function MerchDesigner() {
                 await addImage(url, name || 'Dropped Image');
                 toast.success('Asset added to canvas');
             } catch (error) {
-                console.error('Failed to add dropped asset:', error);
+                logger.error('Failed to add dropped asset:', error);
                 toast.error('Failed to add asset');
             }
         }

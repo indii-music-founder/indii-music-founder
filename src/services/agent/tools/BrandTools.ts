@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { firebaseAI } from '@/services/ai/FirebaseAIService';
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
@@ -62,7 +63,7 @@ export const BrandTools: Record<string, AnyToolFunction> = {
     }) => {
         // 1. If an asset is provided, we use the Vision tool via Electron IPC
         if (args.assetPath && (window as any).electronAPI?.brand) {
-            console.log(`[BrandTools] Triggering vision analysis for: ${args.assetPath}`);
+            logger.debug(`[BrandTools] Triggering vision analysis for: ${args.assetPath}`);
             const response = await (window as any).electronAPI.brand.analyzeConsistency(
                 args.assetPath,
                 args.brandKit || { guidelines: args.brand_guidelines || "Follow artist's visual DNA" }

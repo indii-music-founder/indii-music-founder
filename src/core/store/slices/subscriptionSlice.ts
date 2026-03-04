@@ -1,4 +1,5 @@
 import { StateCreator } from 'zustand';
+import { logger } from '@/utils/logger';
 
 export type SubscriptionId = string;
 export type UnsubscribeFunction = () => void;
@@ -37,7 +38,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
 
         // Clean up existing subscription if overwriting
         if (activeSubscriptions[id]) {
-            console.warn(`[SubscriptionManager] Overwriting existing subscription for ID: ${id}`);
+            logger.warn(`[SubscriptionManager] Overwriting existing subscription for ID: ${id}`);
             activeSubscriptions[id]();
         }
 

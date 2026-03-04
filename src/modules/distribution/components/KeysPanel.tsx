@@ -8,6 +8,7 @@ import { MerlinReport, MerlinCheckData, MerlinTrack, BWarmWork } from '@/types/d
 import { ISRCRecordDocument } from '@/types/firestore';
 
 import { auth } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 
 export const KeysPanel: React.FC = () => {
     const { success, error } = useToast();
@@ -25,7 +26,7 @@ export const KeysPanel: React.FC = () => {
                 setCatalog(results);
                 setDataLoaded(true);
             } catch (err) {
-                console.error('[KeysPanel] Failed to load catalog:', err);
+                logger.error('[KeysPanel] Failed to load catalog:', err);
                 error('Failed to load your ISRC catalog.');
             }
         };

@@ -2,6 +2,7 @@ import { StateCreator } from 'zustand';
 import { UserProfile, BrandKit, UserPreferences } from '@/types/User';
 import { saveProfileToStorage, getProfileFromStorage } from '@/services/storage/repository';
 import { Timestamp } from 'firebase/firestore';
+import { logger } from '@/utils/logger';
 
 export interface Organization {
     id: string;
@@ -79,7 +80,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     setOrganization: (id) => {
         set((state) => {
             const newProfile = { ...state.userProfile, currentOrganizationId: id };
-            saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save org change:", err));
+            saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save org change:", err));
             return { currentOrganizationId: id, userProfile: newProfile };
         });
     },
@@ -87,7 +88,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
     setUserProfile: (profile) => {
         set({ userProfile: profile });
         // Persistence Strategy: Hybrid (IndexedDB for speed + Firestore for cloud backup)
-        saveProfileToStorage(profile).catch(err => console.error("[ProfileSlice] Failed to save profile:", err));
+        saveProfileToStorage(profile).catch(err => logger.error("[ProfileSlice] Failed to save profile:", err));
     },
     updateBrandKit: (updates) => set((state) => {
         const currentBrandKit = state.userProfile.brandKit || DEFAULT_BRAND_KIT;
@@ -95,7 +96,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             ...state.userProfile,
             brandKit: { ...currentBrandKit, ...updates }
         };
-        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save profile update:", err));
+        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save profile update:", err));
         return { userProfile: newProfile };
     }),
     loadUserProfile: async (uid: string) => {
@@ -144,12 +145,12 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         set({ currentOrganizationId: userOrgs[0].id });
                         if (profile && !profile.currentOrganizationId) {
                             const updatedProfile = { ...profile, currentOrganizationId: userOrgs[0].id };
-                            saveProfileToStorage(updatedProfile).catch(err => console.error("[ProfileSlice] Failed to sync default org:", err));
+                            saveProfileToStorage(updatedProfile).catch(err => logger.error("[ProfileSlice] Failed to sync default org:", err));
                         }
                     }
                 }
             } catch (orgErr) {
-                console.error('[Profile] Failed to load organizations:', orgErr);
+                logger.error('[Profile] Failed to load organizations:', orgErr);
             }
             // -----------------------------------------------------
 
@@ -178,15 +179,15 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         set({ userProfile: cloudProfile });
                     }
                 }, (error) => {
-                    console.error('[Profile] Real-time listener error:', error);
+                    logger.error('[Profile] Real-time listener error:', error);
                 });
 
                 useStore.getState().registerSubscription('global_profile', unsubscribe);
             } catch (err) {
-                console.error('[Profile] Failed to initialize real-time listener:', err);
+                logger.error('[Profile] Failed to initialize real-time listener:', err);
             }
         } catch (err) {
-            console.error('[Profile] Failed to load profile:', err);
+            logger.error('[Profile] Failed to load profile:', err);
         }
     },
     logout: async () => {
@@ -194,7 +195,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             const { useStore } = await import('@/core/store');
             useStore.getState().clearAllSubscriptions();
         } catch (err) {
-            console.error('[Profile] Failed to clear subscriptions on logout', err);
+            logger.error('[Profile] Failed to clear subscriptions on logout', err);
         }
         console.info('[System] Logout requested - resetting session state...');
         // In a no-auth world, "logout" might just reset preferences or switch to a guest profile.
@@ -209,7 +210,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             ...state.userProfile,
             preferences: { ...preferences, theme }
         };
-        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save theme update:", err));
+        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save theme update:", err));
         return { userProfile: newProfile };
     }),
     updatePreferences: (updates: Partial<UserPreferences>) => set((state) => {
@@ -218,7 +219,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             ...state.userProfile,
             preferences: { ...currentPrefs, ...updates }
         };
-        saveProfileToStorage(newProfile).catch(err => console.error("[ProfileSlice] Failed to save preferences:", err));
+        saveProfileToStorage(newProfile).catch(err => logger.error("[ProfileSlice] Failed to save preferences:", err));
         return { userProfile: newProfile };
     })
 });

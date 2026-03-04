@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { Camera, RefreshCw, Check, Loader2, X } from 'lucide-react';
+import { logger } from '@/utils/logger';
 
 interface WebcamCaptureProps {
     onCapture: (blob: Blob) => void;
@@ -27,7 +28,7 @@ export default function WebcamCapture({ onCapture, onClose }: WebcamCaptureProps
                 videoRef.current.srcObject = mediaStream;
             }
         } catch (err) {
-            console.error("Error accessing camera:", err);
+            logger.error("Error accessing camera:", err);
             setError("Could not access camera. Please check permissions.");
         } finally {
             setIsInitializing(false);

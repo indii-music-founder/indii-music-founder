@@ -4,6 +4,7 @@ import { agentRegistry } from '../registry';
 import { PipelineContext } from './ContextPipeline';
 import { AgentResponse, AgentProgressCallback } from '../types';
 import { AI_MODELS } from '@/core/config/ai-models';
+import { logger } from '@/utils/logger';
 
 /**
  * AgentExecutor handles the low-level execution of a specific agent.
@@ -35,7 +36,7 @@ export class AgentExecutor {
         let agent = await agentRegistry.getAsync(agentId);
 
         if (!agent) {
-            console.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
+            logger.warn(`[AgentExecutor] Agent '${agentId}' not found. Falling back to Generalist.`);
 
             // Try lowercase version first (handle LLM casing hallucinations)
             if (agentId !== agentId.toLowerCase()) {
@@ -56,7 +57,7 @@ export class AgentExecutor {
                 ? `Last error: ${loadError.error.message} (${loadError.attempts} attempts)`
                 : 'No error details available';
 
-            console.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
+            logger.error(`[AgentExecutor] FATAL: Agent load failure diagnostic:`, {
                 requestedAgentId: agentId,
                 generalistLoadError: loadError,
                 registeredAgents: agentRegistry.getAll().map(a => a.id)
@@ -128,7 +129,7 @@ export class AgentExecutor {
             return response;
         } catch (e: unknown) {
             const errorMsg = e instanceof Error ? e.message : String(e);
-            console.error(`[AgentExecutor] Agent ${agent.name} failed:`, e);
+            logger.error(`[AgentExecutor] Agent ${agent.name} failed:`, e);
             await TraceService.failTrace(traceId, errorMsg);
             throw e;
         }

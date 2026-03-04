@@ -4,6 +4,7 @@ import { z } from 'zod';
 
 import { wrapTool, toolSuccess, toolError } from '@/services/agent/utils/ToolUtils';
 import type { AnyToolFunction } from '@/services/agent/types';
+import { logger } from '@/utils/logger';
 
 /**
  * Publicist Tools
@@ -79,7 +80,7 @@ export const PUBLICIST_TOOLS: Record<string, AnyToolFunction> = {
             const result = PressReleaseSchema.parse(parsed);
             return toolSuccess(result, `Press release generated for ${args.headline}.`);
         } catch (e) {
-            console.error('PUBLICIST_TOOLS.write_press_release error:', e);
+            logger.error('PUBLICIST_TOOLS.write_press_release error:', e);
             return toolError("Error generating press release.", 'GENERATION_ERROR');
         }
     }),
@@ -107,7 +108,7 @@ export const PUBLICIST_TOOLS: Record<string, AnyToolFunction> = {
             const result = CrisisResponseSchema.parse(parsed);
             return toolSuccess(result, `Crisis response generated for: ${args.issue}.`);
         } catch (e) {
-            console.error('PUBLICIST_TOOLS.generate_crisis_response error:', e);
+            logger.error('PUBLICIST_TOOLS.generate_crisis_response error:', e);
             return toolError("Error generating crisis response.", 'GENERATION_ERROR');
         }
     }),
@@ -169,7 +170,7 @@ export const PUBLICIST_TOOLS: Record<string, AnyToolFunction> = {
 
             return toolSuccess(result, `Campaign assets generated for ${args.trackTitle}.`);
         } catch (e) {
-            console.error('PUBLICIST_TOOLS.generate_campaign_assets error:', e);
+            logger.error('PUBLICIST_TOOLS.generate_campaign_assets error:', e);
             return toolError("Error generating campaign assets.", 'GENERATION_ERROR');
         }
     })

@@ -11,6 +11,7 @@ import { livingFileService } from './living/LivingFileService';
 import { agentZeroService, type AgentZeroResponse } from './AgentZeroService';
 import { memoryService } from './MemoryService';
 import { auth } from '@/services/firebase';
+import { logger } from '@/utils/logger';
 
 export interface NucleusContext {
   soul: string;
@@ -84,7 +85,7 @@ export class IndiiNucleus {
       </system_dna>
     `.trim();
     } catch (error) {
-      console.error('[IndiiNucleus] DNA Splicing Failed:', error);
+      logger.error('[IndiiNucleus] DNA Splicing Failed:', error);
       // Fallback: return minimal identity so agent doesn't go generic
       return '<system_dna><directive>You are indii, an AI creative director. Operate in safe mode — personality data unavailable.</directive></system_dna>';
     }
@@ -112,7 +113,7 @@ export class IndiiNucleus {
       try {
         memories = await memoryService.retrieveRelevantMemories(projectId, query, 5);
       } catch (error) {
-        console.warn('[IndiiNucleus] Memory retrieval failed:', error);
+        logger.warn('[IndiiNucleus] Memory retrieval failed:', error);
       }
     }
 
@@ -173,7 +174,7 @@ export class IndiiNucleus {
       );
     } catch (error) {
       // Non-critical: don't fail the execution if logging fails
-      console.warn('[IndiiNucleus] Episodic logging failed:', error);
+      logger.warn('[IndiiNucleus] Episodic logging failed:', error);
     }
 
     return {

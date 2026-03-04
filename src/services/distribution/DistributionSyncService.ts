@@ -2,6 +2,7 @@ import { collection, query, where, getDocs, orderBy, onSnapshot, doc, getDoc } f
 import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DashboardRelease, ReleaseStatus } from '@/services/distribution/types/distributor';
+import { logger } from '@/utils/logger';
 
 export class DistributionSyncService {
     /**
@@ -49,7 +50,7 @@ export class DistributionSyncService {
             );
             onUpdate(releases);
         }, (error) => {
-            console.error('Error subscribing to releases:', error);
+            logger.error('Error subscribing to releases:', error);
             if (onError) onError(error);
         });
     }
@@ -70,7 +71,7 @@ export class DistributionSyncService {
                 this.mapRelease(doc.id, doc.data() as DDEXReleaseRecord)
             );
         } catch (error) {
-            console.error('Error fetching releases from Firestore:', error);
+            logger.error('Error fetching releases from Firestore:', error);
             throw error;
         }
     }
@@ -88,7 +89,7 @@ export class DistributionSyncService {
             }
             return null;
         } catch (error) {
-            console.error('Error fetching release:', error);
+            logger.error('Error fetching release:', error);
             throw error;
         }
     }

@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -11,7 +12,7 @@ import './index.css';
 initSentry();
 
 
-console.log("Indii OS Studio v1.2.6-manual-redeploy");
+logger.debug("Indii OS Studio v1.2.6-manual-redeploy");
 document.title = "indiiOS - Studio (v1.2.6)";
 
 ReactDOM.createRoot(document.getElementById('root')!).render(

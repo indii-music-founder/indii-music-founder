@@ -2,6 +2,7 @@ import { ContextResolver } from './ContextResolver';
 import { AgentContext } from '../types';
 import { HistoryManager } from './HistoryManager';
 import { memoryService } from '../MemoryService';
+import { logger } from '@/utils/logger';
 // useStore removed
 
 export interface PipelineContext extends AgentContext {
@@ -73,7 +74,7 @@ export class ContextPipeline {
 
             return memories;
         } catch (error) {
-            console.warn('[ContextPipeline] Failed to retrieve memories:', error);
+            logger.warn('[ContextPipeline] Failed to retrieve memories:', error);
             return [];
         }
     }

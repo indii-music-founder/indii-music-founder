@@ -15,6 +15,7 @@ import {
 import { DistroKidAdapter } from '@/services/distribution/adapters/DistroKidAdapter';
 import { TuneCoreAdapter } from '@/services/distribution/adapters/TuneCoreAdapter';
 import { CDBabyAdapter } from '@/services/distribution/adapters/CDBabyAdapter';
+import { logger } from '@/utils/logger';
 
 export class DistributionRevenueService {
     private adapters: Map<DistributorId, IDistributorAdapter>;
@@ -44,7 +45,7 @@ export class DistributionRevenueService {
                 }
                 return [];
             } catch (e) {
-                console.error(`Failed to fetch earnings from ${adapter.name}`, e);
+                logger.error(`Failed to fetch earnings from ${adapter.name}`, e);
                 return [];
             }
         });

@@ -1,6 +1,7 @@
 
 import { db } from '@/services/firebase';
 import {
+import { logger } from '@/utils/logger';
     doc,
     getDoc,
     setDoc,
@@ -94,7 +95,7 @@ export class LivingFileService {
                 return DEFAULT_TEMPLATES[fileName];
             }
         } catch (error) {
-            console.error(`[LivingFileService] Failed to read ${fileName}:`, error);
+            logger.error(`[LivingFileService] Failed to read ${fileName}:`, error);
             return DEFAULT_TEMPLATES[fileName]; // Fallback
         }
     }
@@ -109,7 +110,7 @@ export class LivingFileService {
      */
     async write(userId: string, fileName: LivingFileType, content: string, source: 'user' | 'agent' | 'system' = 'agent'): Promise<void> {
         if (!userId) {
-            console.error('[LivingFileService] Cannot write without userId');
+            logger.error('[LivingFileService] Cannot write without userId');
             return;
         }
 
@@ -126,7 +127,7 @@ export class LivingFileService {
 
             console.debug(`[LivingFileService] Wrote ${fileName} for user ${userId}`);
         } catch (error) {
-            console.error(`[LivingFileService] Failed to write ${fileName}:`, error);
+            logger.error(`[LivingFileService] Failed to write ${fileName}:`, error);
             throw error;
         }
     }

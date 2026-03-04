@@ -1,4 +1,5 @@
 import { Sentry } from '@/lib/sentry';
+import { logger } from '@/utils/logger';
 
 /**
  * Standard Application Logger
@@ -64,7 +65,7 @@ class LoggerService {
      */
     warn(module: string, message: string, data?: unknown) {
         if (this.isDev) {
-            console.warn(this.formatMessage(module, message), data !== undefined ? data : '');
+            logger.warn(this.formatMessage(module, message), data !== undefined ? data : '');
         }
         this.structuredLog('warn', module, message, data);
 
@@ -86,7 +87,7 @@ class LoggerService {
      */
     error(module: string, message: string, error?: unknown) {
         if (this.isDev) {
-            console.error(this.formatMessage(module, message), error !== undefined ? error : '');
+            logger.error(this.formatMessage(module, message), error !== undefined ? error : '');
         }
         this.structuredLog('error', module, message, error instanceof Error ? error.message : error);
 

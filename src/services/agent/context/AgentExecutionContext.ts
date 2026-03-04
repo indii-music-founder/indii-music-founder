@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Agent Execution Context - Phase 3: Architectural Improvements
  *
@@ -163,7 +164,7 @@ export class AgentExecutionContext {
      */
     async commit(): Promise<void> {
         if (this.isCommitted) {
-            console.warn('[ExecutionContext] Already committed');
+            logger.warn('[ExecutionContext] Already committed');
             return;
         }
         if (this.isRolledBack) {
@@ -176,7 +177,7 @@ export class AgentExecutionContext {
         // Check for conflicts (state changed since snapshot)
         const conflicts = this.detectConflicts(globalState);
         if (conflicts.length > 0) {
-            console.warn(`[ExecutionContext] Conflicts detected: ${conflicts.join(', ')}`);
+            logger.warn(`[ExecutionContext] Conflicts detected: ${conflicts.join(', ')}`);
             // For now, log but proceed (last-write-wins)
             // Future: implement merge strategies
         }
@@ -190,7 +191,7 @@ export class AgentExecutionContext {
         if (Object.keys(updates).length > 0) {
             const { useStore } = await import('@/core/store');
             useStore.setState(updates);
-            console.log(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications for agent ${this.options.agentId}`);
+            logger.debug(`[ExecutionContext] Committed ${Object.keys(updates).length} modifications for agent ${this.options.agentId}`);
         }
 
         this.isCommitted = true;
@@ -204,11 +205,11 @@ export class AgentExecutionContext {
             throw new Error('Cannot rollback committed execution context');
         }
         if (this.isRolledBack) {
-            console.warn('[ExecutionContext] Already rolled back');
+            logger.warn('[ExecutionContext] Already rolled back');
             return;
         }
 
-        console.log(`[ExecutionContext] Rolling back ${this.modifications.size} modifications for agent ${this.options.agentId}`);
+        logger.debug(`[ExecutionContext] Rolling back ${this.modifications.size} modifications for agent ${this.options.agentId}`);
 
         this.modifications.clear();
         this.changeHistory = [];

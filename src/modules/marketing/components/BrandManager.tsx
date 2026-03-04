@@ -20,6 +20,7 @@ import { Schema } from 'firebase/ai';
 import { BrandKit } from '@/modules/workflow/types';
 import { TourMap } from '@/modules/touring/components/TourMap';
 import UnifiedAssetLibrary from './UnifiedAssetLibrary';
+import { logger } from '@/utils/logger';
 
 // --- Sub-Components ---
 
@@ -197,7 +198,7 @@ const BrandManager: React.FC = () => {
     // -- IDENTITY SECTION HANDLERS --
     const handleSaveBio = async () => {
         if (!userProfile?.id) {
-            console.error("[BrandManager] Save failed: No userProfile.id");
+            logger.error("[BrandManager] Save failed: No userProfile.id");
             return;
         }
         console.info(`[BrandManager] Saving bio for user: ${userProfile.id}`, { bioDraft });
@@ -213,7 +214,7 @@ const BrandManager: React.FC = () => {
             setIsEditingBio(false);
             toast.success("Bio updated");
         } catch (e) {
-            console.error("[BrandManager] Bio save error:", e);
+            logger.error("[BrandManager] Bio save error:", e);
             toast.error("Failed to save bio");
         }
     };

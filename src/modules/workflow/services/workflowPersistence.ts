@@ -1,6 +1,7 @@
 import { db } from '@/services/firebase';
 import { collection, addDoc, getDocs, doc, getDoc, query, where, updateDoc } from 'firebase/firestore';
 import { SavedWorkflow, CustomNode, CustomEdge } from '../types';
+import { logger } from '@/utils/logger';
 
 const WORKFLOWS_COLLECTION = 'workflows';
 
@@ -16,7 +17,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
                 try {
                     return JSON.parse(JSON.stringify(node));
                 } catch (e) {
-                    console.error("Failed to serialize node", node, e);
+                    logger.error("Failed to serialize node", node, e);
                     throw e;
                 }
             }),
@@ -24,7 +25,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
                 try {
                     return JSON.parse(JSON.stringify(edge));
                 } catch (e) {
-                    console.error("Failed to serialize edge", edge, e);
+                    logger.error("Failed to serialize edge", edge, e);
                     throw e;
                 }
             })
@@ -44,7 +45,7 @@ export const saveWorkflow = async (workflow: Omit<SavedWorkflow, 'id'> & { id?: 
             return docRef.id;
         }
     } catch (error) {
-        console.error("Error saving workflow:", error);
+        logger.error("Error saving workflow:", error);
         throw error;
     }
 };
@@ -58,7 +59,7 @@ export const getUserWorkflows = async (userId: string): Promise<SavedWorkflow[]>
             ...doc.data()
         } as SavedWorkflow));
     } catch (error) {
-        console.error("Error getting user workflows:", error);
+        logger.error("Error getting user workflows:", error);
         throw error;
     }
 };
@@ -74,7 +75,7 @@ export const loadWorkflow = async (workflowId: string): Promise<SavedWorkflow | 
             return null;
         }
     } catch (error) {
-        console.error("Error loading workflow:", error);
+        logger.error("Error loading workflow:", error);
         throw error;
     }
 };

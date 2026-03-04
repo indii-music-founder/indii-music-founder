@@ -5,6 +5,7 @@ import { httpsCallable } from 'firebase/functions';
 import { InputSanitizer } from '../ai/utils/InputSanitizer';
 import { PromptBuilder } from './PromptBuilderService';
 import { agentZeroService } from '@/services/agent/AgentZeroService';
+import { logger } from '@/utils/logger';
 
 
 // Data URI regex - strict pattern for image MIME types
@@ -102,7 +103,7 @@ export class EditingService {
                     };
                 }
             } catch (localError) {
-                console.warn("[EditingService] Local edit failed, falling back to Cloud Function:", localError);
+                logger.warn("[EditingService] Local edit failed, falling back to Cloud Function:", localError);
             }
         }
 
@@ -253,7 +254,7 @@ export class EditingService {
         video: { mimeType: string; data: string };
         prompt: string;
     }): Promise<{ id: string; url: string; prompt: string } | null> {
-        console.warn('[EditingService] editVideo is deprecated - Gemini cannot edit videos. Use VideoGenerationService instead.');
+        logger.warn('[EditingService] editVideo is deprecated - Gemini cannot edit videos. Use VideoGenerationService instead.');
         return null;
     }
 
@@ -266,7 +267,7 @@ export class EditingService {
         prompt: string;
         onProgress?: (current: number, total: number) => void;
     }): Promise<{ id: string; url: string; prompt: string }[]> {
-        console.warn('[EditingService] batchEditVideo is deprecated - Gemini cannot edit videos. Use VideoGenerationService instead.');
+        logger.warn('[EditingService] batchEditVideo is deprecated - Gemini cannot edit videos. Use VideoGenerationService instead.');
         return [];
     }
 

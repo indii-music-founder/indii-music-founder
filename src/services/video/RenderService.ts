@@ -2,6 +2,7 @@
 // This service handles the composition and rendering of video assets in the browser/electron.
 
 import { renderMedia, RenderMediaOptions } from '@remotion/renderer';
+import { logger } from '@/utils/logger';
 
 export interface RenderConfig {
     compositionId: string;
@@ -46,7 +47,7 @@ export class RenderService {
             return config.outputLocation;
 
         } catch (error: any) {
-            console.error('[RenderService] Render failed:', error);
+            logger.error('[RenderService] Render failed:', error);
             throw new Error(`Failed to render composition: ${error.message}`);
         }
     }

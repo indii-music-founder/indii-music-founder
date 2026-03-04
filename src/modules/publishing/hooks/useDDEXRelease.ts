@@ -12,6 +12,7 @@ import { StorageService } from '@/services/StorageService';
 import { agentService } from '@/services/agent/AgentService';
 import type { ExtendedGoldenMetadata, DDEXReleaseRecord } from '@/services/metadata/types';
 import type { DistributorId, ReleaseAssets } from '@/services/distribution/types/distributor';
+import { logger } from '@/utils/logger';
 
 // Map display names from onboarding to DistributorId
 const DISTRIBUTOR_NAME_MAP: Record<string, DistributorId> = {
@@ -214,7 +215,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
 
       return url;
     } catch (error) {
-      console.error(`Error uploading ${type} asset:`, error);
+      logger.error(`Error uploading ${type} asset:`, error);
       throw error;
     }
   }, [activeOrg, userProfile, updateAssets]);
@@ -347,7 +348,7 @@ export function useDDEXRelease(): UseDDEXReleaseReturn {
           Cover Art URL: ${assets.coverArt?.url}`
         );
       } catch (agentError) {
-        console.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
+        logger.warn('[useDDEXRelease] Agent packaging trigger failed:', agentError);
         // We don't fail the whole submission if the agent trigger fails,
         // since the record is already saved.
       }

@@ -19,7 +19,7 @@ export class AcousticFingerprintService {
     async generateAcousticFingerprint(filePath: string): Promise<AcousticFingerprint | null> {
         // Prevent browser-side execution crashes
         if (typeof window !== 'undefined' && !((window as any).process?.type)) {
-            console.error('[AcousticFingerprint] Cannot run fpcalc in a pure browser environment.');
+            logger.error('[AcousticFingerprint] Cannot run fpcalc in a pure browser environment.');
             return null;
         }
 
@@ -41,7 +41,7 @@ export class AcousticFingerprintService {
                 duration: data.duration
             };
         } catch (error) {
-            console.error('[AcousticFingerprint] Failed to generate fingerprint:', error);
+            logger.error('[AcousticFingerprint] Failed to generate fingerprint:', error);
             return null;
         }
     }

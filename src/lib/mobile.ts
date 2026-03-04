@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 /**
  * Mobile Utilities
  * Provides haptic feedback, PWA install prompts, and mobile-specific features
@@ -83,7 +84,7 @@ export const initPWAInstall = (): void => {
 
     window.addEventListener('appinstalled', () => {
         deferredPrompt = null;
-        console.log('[PWA] App installed successfully');
+        logger.debug('[PWA] App installed successfully');
     });
 };
 
@@ -92,7 +93,7 @@ export const initPWAInstall = (): void => {
  */
 export const showPWAInstall = async (): Promise<boolean> => {
     if (!deferredPrompt) {
-        console.warn('[PWA] Install prompt not available');
+        logger.warn('[PWA] Install prompt not available');
         return false;
     }
 
@@ -131,7 +132,7 @@ export interface ShareData {
  */
 export const nativeShare = async (data: ShareData): Promise<boolean> => {
     if (!navigator.share) {
-        console.warn('[Share] Web Share API not supported');
+        logger.warn('[Share] Web Share API not supported');
         return false;
     }
 
@@ -143,7 +144,7 @@ export const nativeShare = async (data: ShareData): Promise<boolean> => {
             // User cancelled the share
             return false;
         }
-        console.error('[Share] Error:', error);
+        logger.error('[Share] Error:', error);
         return false;
     }
 };
@@ -173,7 +174,7 @@ let wakeLock: WakeLockSentinel | null = null;
  */
 export const requestWakeLock = async (): Promise<boolean> => {
     if (!('wakeLock' in navigator)) {
-        console.warn('[WakeLock] Wake Lock API not supported');
+        logger.warn('[WakeLock] Wake Lock API not supported');
         return false;
     }
 
@@ -181,12 +182,12 @@ export const requestWakeLock = async (): Promise<boolean> => {
         wakeLock = await navigator.wakeLock!.request('screen');
 
         wakeLock.addEventListener('release', () => {
-            console.log('[WakeLock] Released');
+            logger.debug('[WakeLock] Released');
         });
 
         return true;
     } catch (error) {
-        console.error('[WakeLock] Error:', error);
+        logger.error('[WakeLock] Error:', error);
         return false;
     }
 };
@@ -375,14 +376,14 @@ export const getBatteryStatus = async () => {
  */
 export const requestNotificationPermission = async (): Promise<boolean> => {
     if (!messaging || typeof window === 'undefined' || !('Notification' in window)) {
-        console.warn('[Notifications] Messaging not supported');
+        logger.warn('[Notifications] Messaging not supported');
         return false;
     }
 
     try {
         const permission = await Notification.requestPermission();
         if (permission === 'granted') {
-            console.log('[Notifications] Permission granted');
+            logger.debug('[Notifications] Permission granted');
 
             // Try to get token if VAPID key exists (not strictly required for local/PWA display, but needed for FCN)
             if (messaging) {
@@ -394,10 +395,10 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
                     const vapidKey = (import.meta as unknown as { env: Record<string, string> }).env.VITE_FIREBASE_VAPID_KEY;
                     if (vapidKey) {
                         const token = await getToken(messaging, { vapidKey });
-                        if (token) console.log('[Notifications] Token:', token);
+                        if (token) logger.debug('[Notifications] Token:', token);
                     }
                 } catch (e) {
-                    console.warn('[Notifications] Token retrieval warning:', e);
+                    logger.warn('[Notifications] Token retrieval warning:', e);
                 }
             }
 
@@ -405,7 +406,7 @@ export const requestNotificationPermission = async (): Promise<boolean> => {
         }
         return false;
     } catch (error) {
-        console.error('[Notifications] Error requesting permission:', error);
+        logger.error('[Notifications] Error requesting permission:', error);
         return false;
     }
 };
@@ -417,11 +418,11 @@ export const onMessageListener = (callback: (payload: unknown) => void) => {
     if (!messaging) return () => { };
     try {
         return onMessage(messaging, (payload) => {
-            console.log('[Notifications] Foreground message received:', payload);
+            logger.debug('[Notifications] Foreground message received:', payload);
             callback(payload);
         });
     } catch (e) {
-        console.error('[Notifications] Error setting up listener:', e);
+        logger.error('[Notifications] Error setting up listener:', e);
         return () => { };
     }
 };

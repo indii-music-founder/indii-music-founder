@@ -63,7 +63,7 @@ class OptimisticManager {
       try {
         await rollbackFn();
       } catch (rollbackError) {
-        console.error('[OptimisticManager] Rollback failed:', rollbackError);
+        logger.error('[OptimisticManager] Rollback failed:', rollbackError);
       }
 
       throw error;
@@ -110,7 +110,7 @@ class OptimisticManager {
       try {
         await action.rollbackFn();
       } catch (error) {
-        console.error('[OptimisticManager] Cancel rollback failed:', error);
+        logger.error('[OptimisticManager] Cancel rollback failed:', error);
       }
     }
   }

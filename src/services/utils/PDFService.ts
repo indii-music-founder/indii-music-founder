@@ -1,4 +1,5 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import { logger } from '@/utils/logger';
 
 // Initialize worker
 // This is the Vite-compatible way to load the worker
@@ -43,7 +44,7 @@ export class PDFService {
 
             return fullText.trim();
         } catch (error) {
-            console.error('PDF Extraction Error:', error);
+            logger.error('PDF Extraction Error:', error);
             throw new Error('Failed to extract text from PDF');
         }
     }

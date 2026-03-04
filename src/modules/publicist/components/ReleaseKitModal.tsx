@@ -4,6 +4,7 @@ import { X, Sparkles, Send, Copy, Check, FileText, Share2, Mail } from 'lucide-r
 import { PUBLICIST_TOOLS } from '../tools';
 import { usePublicist } from '../hooks/usePublicist';
 import { type ToolFunctionResult } from '@/services/agent/types';
+import { logger } from '@/utils/logger';
 
 interface ReleaseKitModalProps {
     isOpen: boolean;
@@ -44,11 +45,11 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 setAssets(result.data as GeneratedAssets);
                 setStep('results');
             } else {
-                console.error("Generation failed", result);
+                logger.error("Generation failed", result);
                 setStep('input'); // Reset on failure for now
             }
         } catch (e) {
-            console.error(e);
+            logger.error(e);
             setStep('input');
         }
     };

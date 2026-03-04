@@ -6,6 +6,7 @@ import { Product } from '@/services/marketplace/types';
 import { UserService } from '@/services/UserService';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { logger } from '@/utils/logger';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
@@ -30,7 +31,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
             const items = await MarketplaceService.getProductsByArtist(userProfile.id);
             setProducts(items);
         } catch (err) {
-            console.error("Failed to load products", err);
+            logger.error("Failed to load products", err);
         }
     }, [userProfile]);
 
@@ -42,7 +43,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                 setAssets(profile.brandKit.referenceImages);
             }
         } catch (err) {
-            console.error("Failed to load assets", err);
+            logger.error("Failed to load assets", err);
         }
     }, [userProfile]);
 
@@ -83,7 +84,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
             setPrice('0.99');
             setSelectedAsset(null);
         } catch (error) {
-            console.error(error);
+            logger.error(error);
             toast.error('Failed to mint asset.');
         }
     };

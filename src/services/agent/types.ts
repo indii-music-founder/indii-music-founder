@@ -195,6 +195,21 @@ export interface ProactiveTask {
 
 // Using types from @/modules/workflow/types via imports above
 
+// ============================================================================
+// Memory & Knowledge Types
+// ============================================================================
+
+export interface UserMemory {
+    id: string;
+    content: string;
+    type: 'fact' | 'preference' | 'rule' | 'summary';
+    timestamp: any; // Firestore Timestamp
+    metadata?: Record<string, any>;
+    important?: boolean;
+    consolidated?: boolean;
+    sourceIds?: string[];
+}
+
 export interface KnowledgeItem {
     id: string;
     title: string;

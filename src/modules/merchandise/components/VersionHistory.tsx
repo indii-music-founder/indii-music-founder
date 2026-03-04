@@ -4,6 +4,7 @@ import { collection, query, where, orderBy, getDocs, doc, deleteDoc, Timestamp }
 import { db } from '@/services/firebase';
 import { useStore } from '@/core/store';
 import { cn } from '@/lib/utils';
+import { logger } from '@/utils/logger';
 
 interface DesignVersion {
     id: string;
@@ -74,7 +75,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
                     setExpandedDates(new Set([firstDate]));
                 }
             } catch (error) {
-                console.error('Failed to fetch design versions:', error);
+                logger.error('Failed to fetch design versions:', error);
             } finally {
                 setLoading(false);
             }
@@ -108,7 +109,7 @@ export const VersionHistory: React.FC<VersionHistoryProps> = ({
             await deleteDoc(doc(db, 'designs', version.id));
             setVersions(prev => prev.filter(v => v.id !== version.id));
         } catch (error) {
-            console.error('Failed to delete version:', error);
+            logger.error('Failed to delete version:', error);
         }
     };
 

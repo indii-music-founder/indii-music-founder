@@ -3,6 +3,7 @@ import * as Sentry from '@sentry/react';
 import { collection, query, where, onSnapshot, orderBy, deleteDoc, doc, updateDoc, FirestoreError } from 'firebase/firestore';
 import { db } from '@/services/firebase';
 import type { DDEXReleaseRecord } from '@/services/metadata/types';
+import { logger } from '@/utils/logger';
 
 export interface ClientReleaseRecord extends DDEXReleaseRecord {
     _hasPendingWrites?: boolean;
@@ -45,7 +46,7 @@ export function useReleases(orgId: string | undefined) {
                 setHasPendingSync(snapshot.metadata.hasPendingWrites);
             },
             (err: FirestoreError) => {
-                console.error('Error fetching releases:', err);
+                logger.error('Error fetching releases:', err);
                 Sentry.captureException(err);
                 setError(err);
                 setLoading(false);
@@ -63,7 +64,7 @@ export function useReleases(orgId: string | undefined) {
             const releaseRef = doc(db, 'ddexReleases', releaseId);
             await deleteDoc(releaseRef);
         } catch (err) {
-            console.error('Error deleting release:', err);
+            logger.error('Error deleting release:', err);
             Sentry.captureException(err);
             throw err;
         }
@@ -74,7 +75,7 @@ export function useReleases(orgId: string | undefined) {
             const releaseRef = doc(db, 'ddexReleases', releaseId);
             await updateDoc(releaseRef, { status: 'archived' });
         } catch (err) {
-            console.error('Error archiving release:', err);
+            logger.error('Error archiving release:', err);
             Sentry.captureException(err);
             throw err;
         }
