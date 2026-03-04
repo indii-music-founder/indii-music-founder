@@ -96,7 +96,6 @@ export interface ThinkingConfig {
     thinkingLevel?: 'LOW' | 'MEDIUM' | 'HIGH';
     includeThoughts?: boolean;
     thinkingBudget?: number;
-    budgetTokenCount?: number;
 }
 
 export interface PersonGenerationConfig {

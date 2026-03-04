@@ -909,15 +909,28 @@ export class FirebaseAIService {
         let config: Record<string, unknown> = {};
         let systemInstruction: string | undefined;
 
+        if (typeof thinkingBudgetOrModel === 'string') {
+            model = thinkingBudgetOrModel;
+        }
+
+        const modelName = model || this.getModelName();
+        const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+
         if (typeof thinkingBudgetOrModel === 'number') {
-            config.thinkingConfig = {
-                thinkingBudget: thinkingBudgetOrModel,
-                budgetTokenCount: thinkingBudgetOrModel,
-                includeThoughts: true
-            };
+            const isGemini3 = modelName.includes('gemini-3');
+            if (isGemini3) {
+                config.thinkingConfig = {
+                    thinkingLevel: thinkingBudgetOrModel > 4096 ? 'HIGH' : 'MEDIUM',
+                    includeThoughts: true
+                };
+            } else {
+                config.thinkingConfig = {
+                    thinkingBudget: thinkingBudgetOrModel,
+                    includeThoughts: true
+                };
+            }
             systemInstruction = typeof systemInstructionOrConfig === 'string' ? systemInstructionOrConfig : undefined;
         } else if (typeof thinkingBudgetOrModel === 'string') {
-            model = thinkingBudgetOrModel;
             if (typeof systemInstructionOrConfig === 'string') {
                 systemInstruction = systemInstructionOrConfig;
             } else {
@@ -925,9 +938,6 @@ export class FirebaseAIService {
                 systemInstruction = config && typeof config === 'object' && 'systemInstruction' in config ? (config as { systemInstruction: string }).systemInstruction : undefined;
             }
         }
-
-        const modelName = model || this.getModelName();
-        const cacheKey = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
 
         // Semantic Cache Check
         const cached = await aiCache.get(cacheKey, modelName, config);
@@ -984,11 +994,18 @@ export class FirebaseAIService {
                 responseSchema: schema
             };
             if (thinkingBudget) {
-                config.thinkingConfig = {
-                    thinkingBudget,
-                    budgetTokenCount: thinkingBudget,
-                    includeThoughts: true
-                };
+                const isGemini3 = modelName.includes('gemini-3');
+                if (isGemini3) {
+                    config.thinkingConfig = {
+                        thinkingLevel: thinkingBudget > 4096 ? 'HIGH' : 'MEDIUM',
+                        includeThoughts: true
+                    };
+                } else {
+                    config.thinkingConfig = {
+                        thinkingBudget,
+                        includeThoughts: true
+                    };
+                }
             }
         }
 
