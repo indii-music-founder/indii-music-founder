@@ -361,7 +361,7 @@ const AudioAnalyzer: React.FC = () => {
     const handleSaveAnalysis = async () => {
         if (!file || !fullAnalysis || isAnalyzing) return;
         setIsSaving(true);
-        const toastId = toast.loading("Saving analysis to Knowledge Graph...");
+        const toastId = toast.loading("Logging compliance audit to Knowledge Graph...");
 
         try {
             // 1. Save to Knowledge Graph (Firestore)
@@ -384,11 +384,11 @@ const AudioAnalyzer: React.FC = () => {
 
             setIsFromCache(true);
             toast.dismiss(toastId);
-            toast.success("Analysis saved to Database & Library.");
+            toast.success("Compliance Audit logged to Database & Library.");
         } catch (error) {
             console.error("Save failed", error);
             toast.dismiss(toastId);
-            toast.error("Failed to save analysis.");
+            toast.error("Failed to log audit.");
         } finally {
             setIsSaving(false);
         }
