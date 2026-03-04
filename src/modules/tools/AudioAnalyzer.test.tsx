@@ -118,16 +118,15 @@ beforeEach(() => {
 describe('AudioAnalyzer (Sonic DNA Console)', () => {
     it('renders the new dashboad layout correctly', () => {
         render(<AudioAnalyzer />);
-        expect(screen.getByText('Sonic DNA Console')).toBeInTheDocument();
-        expect(screen.getByText('GLOBAL FINGERPRINT')).toBeInTheDocument();
-        expect(screen.getByText('METADATA MATRIX')).toBeInTheDocument();
+        expect(screen.getByText('Distribution Intelligence Tracker')).toBeInTheDocument();
+        expect(screen.getByText('Ingestion & Data Extraction')).toBeInTheDocument();
     });
 
     it('shows upload UI initially', () => {
         render(<AudioAnalyzer />);
         // The file input is hidden but there is text "Import Track"
-        expect(screen.getByText('Import Track')).toBeInTheDocument();
-        expect(screen.getByText('WAV, MP3, AIFF')).toBeInTheDocument();
+        expect(screen.getByText('Load Audio Master')).toBeInTheDocument();
+        expect(screen.getByText('Upload an audio master to extract precise metadata via Essentia + Gemini 3 Pro.')).toBeInTheDocument();
     });
 
     it('handles file upload and triggers analysis', async () => {
@@ -161,7 +160,7 @@ describe('AudioAnalyzer (Sonic DNA Console)', () => {
         // But since we can't easily access the hidden input in this test implementation without querySelector,
         // and we want to avoid no-node-access, we'll verify the presence of the upload label instead
 
-        expect(screen.getByText('Import Track')).toBeInTheDocument();
+        expect(screen.getByText('Load Audio Master')).toBeInTheDocument();
 
         // Skipping actual file upload simulation in this specific test to avoid lint issues with hidden inputs
         // The functionality is covered by E2E tests

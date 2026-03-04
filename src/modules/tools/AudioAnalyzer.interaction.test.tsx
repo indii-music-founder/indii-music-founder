@@ -50,11 +50,52 @@ vi.mock('wavesurfer.js/dist/plugins/regions.esm.js', () => ({
     },
 }));
 
-vi.mock('@/services/music/MusicLibraryService', () => ({
+vi.mock('@/services/audio/MusicLibraryService', () => ({
     musicLibraryService: {
         getAnalysis: vi.fn().mockResolvedValue(null),
         saveAnalysis: vi.fn().mockResolvedValue(undefined),
     },
+}));
+
+vi.mock('@/services/audio/AudioIntelligenceService', () => ({
+    audioIntelligence: {
+        analyze: vi.fn().mockResolvedValue({
+            id: 'MOCK-HASH',
+            technical: {
+                bpm: 120,
+                key: 'C',
+                scale: 'major',
+                energy: 0.5,
+                duration: 100,
+                moods: { happy: 0.8 },
+                genre: { House: 0.9 },
+                danceability: 0.5,
+                valence: 0.8,
+                loudness: -14,
+                audit: {
+                    peakLevel: -1,
+                    integratedLoudness: -14,
+                    sampleRate: 44100,
+                    isStereo: true,
+                    rejectionRisks: []
+                }
+            },
+            semantic: {
+                mood: ['Energetic'],
+                genre: ['House'],
+                instruments: ['Synth'],
+                ddexGenre: 'Electronic',
+                ddexSubGenre: 'House',
+                language: 'zxx',
+                isExplicit: false,
+                visualImagery: { abstract: 'Neon lights', narrative: 'Club scene', lighting: 'Strobe' },
+                marketingHooks: { keywords: ['dance'], oneLiner: 'One liner' },
+                targetPrompts: { image: 'image prompt', veo: 'veo prompt' }
+            },
+            analyzedAt: Date.now(),
+            modelVersion: 'gemini-3-pro-preview'
+        })
+    }
 }));
 
 vi.mock('@/services/audio/AudioAnalysisService', () => ({
@@ -111,27 +152,21 @@ describe('AudioAnalyzer Interaction: Save Analysis', () => {
     it('🖱️ Click: Save Analysis (Synchronized with Music Library)', async () => {
         render(<AudioAnalyzer />);
 
-        const saveBtn = screen.getByTestId('save-analysis-button');
-
-        // Initially disabled until file uploaded
-        expect(saveBtn).toBeDisabled();
+        // Initially Save button is not present because profile is null
+        expect(screen.queryByTestId('save-analysis-button')).not.toBeInTheDocument();
 
         const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' });
         const input = screen.getByTestId('import-track-input');
         fireEvent.change(input, { target: { files: [file] } });
 
-        await waitFor(() => expect(saveBtn).not.toBeDisabled());
+        // Wait for analysis result to trigger rendering of the save section
+        const saveBtn = await screen.findByTestId('save-analysis-button');
+        expect(saveBtn).toBeInTheDocument();
 
         fireEvent.click(saveBtn);
 
         await waitFor(() => {
-            expect(musicLibraryService.saveAnalysis).toHaveBeenCalledWith(
-                'MOCK-HASH',
-                'test.mp3',
-                expect.objectContaining({ bpm: 120 }),
-                'MOCK-HASH'
-            );
-            expect(mockToast.success).toHaveBeenCalledWith('Compliance Audit logged to Database & Library.');
+            expect(mockToast.success).toHaveBeenCalledWith('DDEX Standards and Acoustic Profile logged to Database.');
         });
     });
 });

@@ -167,34 +167,14 @@ export class AudioAnalysisService {
         // 2. Deep Learning Features (SKIPPED)
         console.warn("[AudioAnalysis] Deep analysis skipped: TensorFlow.js is not available in this environment.");
 
-        // 3. Save to Cache and Firestore with proper error handling
+        // 3. Save to Cache only (local IndexedDB)
         const fileHash = precalculatedHash || await this.generateFileHash(file instanceof File ? file : new File([file], "blob"));
         const filename = (file as File).name || 'audio';
 
-        // Save to local cache (IndexedDB)
         try {
             await musicLibraryService.saveAnalysis(fileHash, filename, features, fileHash);
         } catch (e) {
             console.warn("[AudioAnalysis] Failed to save to local cache", e);
-        }
-
-        // Save to Firestore with MetadataPersistenceService (includes retry + user feedback)
-        if (filename !== 'audio') {
-            const persistResult = await metadataPersistenceService.save('audio', {
-                filename,
-                fileHash,
-                features,
-                ...features, // Spread for backward compat
-                analyzedAt: new Date().toISOString(),
-            }, {
-                showToasts: true,
-                maxRetries: 2,
-                queueOnFailure: true,
-            });
-
-            if (!persistResult.success) {
-                console.error(`[AudioAnalysis] Failed to persist analysis for ${filename}:`, persistResult.error);
-            }
         }
 
         return { features, fromCache: false };
@@ -282,7 +262,7 @@ export class AudioAnalysisService {
             const rejectionRisks: string[] = [];
             if (maxPeak > 0.99) rejectionRisks.push('Peak levels too high (risk of clipping/distortion)');
             if (audioBuffer.sampleRate < 44100) rejectionRisks.push('Sample rate below industry standard (44.1kHz)');
-            
+
             const loudnessLUFS = -20 + (energyValue * 100); // Approximation
             if (loudnessLUFS > -10) rejectionRisks.push('Integrated loudness too high (risk of DSP normalization)');
             if (loudnessLUFS < -18) rejectionRisks.push('Integrated loudness too low');
@@ -303,7 +283,7 @@ export class AudioAnalysisService {
                 let subEnergy = 0;
                 for (let j = 0; j < subArr.length; j++) subEnergy += subArr[j] * subArr[j];
                 subEnergy = Math.sqrt(subEnergy / subArr.length);
-                
+
                 if (subEnergy > energyValue * 1.5) {
                     segments.push({ start: i / audioBuffer.sampleRate, label: 'High Energy / Hook candidate', energy: subEnergy });
                 }
@@ -329,14 +309,12 @@ export class AudioAnalysisService {
                 audit,
                 segments: segments.slice(0, 5), // Return top 5 interesting spots
                 // Simulated Deep Features for UI Metadata Matrix
-                genre: {
-                    [bpm > 115 && bpm < 130 ? 'Dance' : bpm > 140 ? 'Drum & Bass' : energy > 0.6 ? 'Rock' : 'Ambient']: 0.85
-                },
+                genre: {},
                 moods: {
-                    happy: isMinor ? 0.2 : 0.7,
-                    aggressive: energy > 0.7 ? 0.8 : 0.2,
-                    relaxed: energy < 0.4 ? 0.9 : 0.1,
-                    sad: isMinor && energy < 0.3 ? 0.8 : 0.1
+                    happy: 0,
+                    aggressive: 0,
+                    relaxed: 0,
+                    sad: 0
                 },
                 danceability_ml: danceabilityValue
             };
@@ -349,13 +327,12 @@ export class AudioAnalysisService {
 
     /**
      * Saves analysis result to Firestore using the centralized persistence service.
-     * This method is now a thin wrapper around MetadataPersistenceService.
-     * @deprecated Use metadataPersistenceService.save('audio', ...) directly for new code
      */
-    async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string): Promise<void> {
+    async saveAnalysisToFirestore(analysis: DeepAudioFeatures, filename: string, semantic?: any): Promise<void> {
         const result = await metadataPersistenceService.save('audio', {
             filename,
             features: analysis,
+            semantic,
             ...analysis,
             analyzedAt: new Date().toISOString(),
         }, {
@@ -368,7 +345,7 @@ export class AudioAnalysisService {
             throw new Error(result.error || 'Failed to save analysis');
         }
 
-        console.info(`[AudioAnalysis] Saved analysis for ${filename} via MetadataPersistenceService`);
+        console.info(`[AudioAnalysis] Saved full profile for ${filename} via MetadataPersistenceService`);
     }
 }
 

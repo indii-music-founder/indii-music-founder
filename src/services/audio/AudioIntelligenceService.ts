@@ -111,25 +111,25 @@ export class AudioIntelligenceService {
         const base64Audio = await this.fileToBase64(file);
 
         const systemPrompt = `
-You are an expert Creative Director and Audio Engineer. 
-Your task is to listen to this audio track and generate structured metadata for both creative expression and music industry distribution (DDEX).
+You are a world-class Musicologist, A&R Director, and Audio Engineer. 
+Your primary task is to physically LISTEN to this audio track and generate highly accurate, structured metadata for music industry distribution (DDEX) and creative expression agents.
 
-Technical Context (Use these to inform your vibe):
-- BPM: ${bpm}
+Technical Context (Do NOT ignore this):
+- BPM: ${Math.round(bpm)}
 - Key: ${key}
 
 Output Targets:
-1. DDEX Metadata:
-   - 'ddexGenre': Choose the most appropriate high-level genre (e.g., Pop, Rock, Electronic).
-   - 'ddexSubGenre': Choose a specific sub-genre.
-   - 'language': The ISO 639-2 code for the language of performance (e.g., 'eng', 'spa'). Use 'zxx' if instrumental.
+1. DDEX Metadata (Industry Standard):
+   - 'ddexGenre': Choose the exact primary genre (e.g., Rock, Hip-Hop, R&B, Electronic, Country, Pop, Jazz). Be extremely precise. DO NOT default to a genre.
+   - 'ddexSubGenre': Choose the exact sub-genre (e.g., Grunge, Nu-Metal, Trap, Ambient).
+   - 'language': The ISO 639-2 code for the language of performance (e.g., 'eng', 'spa'). Use 'zxx' if purely instrumental.
    - 'isExplicit': True if the lyrics contain explicit content, False otherwise.
 
-2. Creative Direction:
-   - 'targetPrompts.image': A visual prompt optimized for Google Gemini Image 3.1. Focus on lighting, texture, and composition.
-   - 'targetPrompts.veo': A video prompt optimized for Google Veo. Focus on motion, camera movement, and atmosphere.
+2. Creative Direction (For Agents):
+   - 'targetPrompts.image': A highly visual rendering prompt optimized for Google Gemini Image 3.1. What does this song LOOK like? Focus on lighting, texture, and cinematic composition matching the exact emotional vibe of the song.
+   - 'targetPrompts.veo': A video prompt optimized for Google Veo. What camera movement, atmosphere, and narrative perfectly fit the timbre and genre?
 
-Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what would it look like?
+Listen deeply to the instrumentation, vocal delivery, and mix. If it is aggressive, tag it aggressive. If it is sad, tag it sad. Do NOT hallucinate happiness if the tone is dark.
 `;
 
         const response = await firebaseAI.generateStructuredData<AudioSemanticData>(
@@ -143,8 +143,8 @@ Describe the audio's "Visual Vibe" — if this song was a scene in a movie, what
                 }
             ],
             SEMANTIC_SCHEMA,
-            undefined, // No thinking budget for standard analysis
-            "You are an expert audio analyst.",
+            4096, // High thinking budget for deep logic
+            "You are an expert musicologist and audio analyst.",
             AI_MODELS.TEXT.AGENT // Explicitly require Gemini 3 Pro
         );
 
