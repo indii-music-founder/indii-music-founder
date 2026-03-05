@@ -16,7 +16,9 @@ import {
   limit
 } from 'firebase/firestore';
 import {
-  DashboardEarningsSummarySchema,
+  EarningsSummarySchema,
+  type EarningsSummary,
+  DashboardEarningsSummarySchema, // Keep for dashboard summary if needed
   type DashboardEarningsSummary
 } from '@/services/revenue/schema';
 import { ExpenseSchema, type Expense } from '@/modules/finance/schemas';
@@ -60,7 +62,7 @@ export class FinanceService {
   /**
    * Fetch persistent earnings reports (DSR style).
    */
-  async fetchEarnings(userId: string): Promise<DashboardEarningsSummary | null> {
+  async fetchEarnings(userId: string): Promise<EarningsSummary | null> {
     try {
       if (!auth.currentUser || auth.currentUser.uid !== userId) {
         throw new Error('Unauthorized');
@@ -81,7 +83,7 @@ export class FinanceService {
       const docData = snapshot.docs[0].data();
 
       // Zod Validation for Production Safety
-      const parseResult = DashboardEarningsSummarySchema.safeParse(docData);
+      const parseResult = EarningsSummarySchema.safeParse(docData);
 
       if (!parseResult.success) {
         logger.error(`[FinanceService] Earnings data validation failed for ${userId}:`, parseResult.error);
@@ -194,7 +196,7 @@ export class FinanceService {
   /**
    * Subscribe to earnings reports for real-time updates.
    */
-  subscribeToEarnings(userId: string, callback: (earnings: DashboardEarningsSummary | null) => void): () => void {
+  subscribeToEarnings(userId: string, callback: (earnings: EarningsSummary | null) => void): () => void {
     if (!auth.currentUser || auth.currentUser.uid !== userId) {
       logger.error('Unauthorized subscribe to earnings');
       return () => { };
@@ -208,7 +210,7 @@ export class FinanceService {
     return onSnapshot(q, (snapshot) => {
       if (!snapshot.empty) {
         const docData = snapshot.docs[0].data();
-        const parseResult = DashboardEarningsSummarySchema.safeParse(docData);
+        const parseResult = EarningsSummarySchema.safeParse(docData);
 
         if (parseResult.success) {
           callback(parseResult.data);
