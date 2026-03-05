@@ -10,8 +10,13 @@ import { stripe, getPriceId } from '../stripe/config';
 import Stripe from 'stripe';
 import { CheckoutSessionParams, CheckoutSessionResponse } from '../shared/subscription/types';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
+import { stripeSecretKey } from '../config/secrets';
 
-export const createCheckoutSession = onCall(async (request) => {
+export const createCheckoutSession = onCall({
+  secrets: [stripeSecretKey],
+  timeoutSeconds: 60,
+  memory: '256MiB',
+}, async (request) => {
   const { userId, tier, successUrl, cancelUrl, customerEmail, trialDays } = request.data as CheckoutSessionParams;
 
   if (!userId || userId !== request.auth?.uid) {
