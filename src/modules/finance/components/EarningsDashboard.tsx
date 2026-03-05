@@ -48,7 +48,6 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
             </div>
         </div>
 
-        {/* Placeholder Stats */}
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
             <div className="absolute inset-0 bg-gradient-to-br from-dept-distribution/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
@@ -58,22 +57,40 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-3xl font-bold text-white mt-2">US</div>
-                <p className="text-xs text-gray-500 mt-1">42% of total revenue</p>
+                {(() => {
+                    const topTerritory = data.byTerritory.length > 0
+                        ? [...data.byTerritory].sort((a, b) => b.revenue - a.revenue)[0]
+                        : null;
+                    const percentage = topTerritory && data.totalNetRevenue > 0
+                        ? ((topTerritory.revenue / data.totalNetRevenue) * 100).toFixed(1)
+                        : "0";
+
+                    return topTerritory ? (
+                        <>
+                            <div className="text-3xl font-bold text-white mt-2">{topTerritory.territoryCode || 'N/A'}</div>
+                            <p className="text-xs text-gray-500 mt-1">{percentage}% of total revenue</p>
+                        </>
+                    ) : (
+                        <>
+                            <div className="text-3xl font-bold text-white mt-2">--</div>
+                            <p className="text-xs text-gray-500 mt-1">No data available</p>
+                        </>
+                    );
+                })()}
             </div>
         </div>
 
         <div className="group relative overflow-hidden bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 transition-all hover:bg-white/5 hover:border-white/20">
             <div className="absolute inset-0 bg-gradient-to-br from-dept-touring/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="flex flex-row items-center justify-between space-y-0 pb-2 relative z-10">
-                <h3 className="text-sm font-medium text-gray-400">Pending Payout</h3>
+                <h3 className="text-sm font-medium text-gray-400">Total Downloads</h3>
                 <div className="w-8 h-8 rounded-full bg-dept-touring/10 flex items-center justify-center text-dept-touring">
                     <ArrowUpRight size={16} />
                 </div>
             </div>
             <div className="relative z-10">
-                <div className="text-3xl font-bold text-white mt-2">$2,450.00</div>
-                <p className="text-xs text-gray-500 mt-1">Scheduled for Feb 15</p>
+                <div className="text-3xl font-bold text-white mt-2">{(data.totalDownloads || 0).toLocaleString()}</div>
+                <p className="text-xs text-gray-500 mt-1">Across all stores</p>
             </div>
         </div>
     </motion.div>
