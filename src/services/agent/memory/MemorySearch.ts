@@ -2,6 +2,7 @@ import { UserMemory } from '../types';
 import { db } from '../../firebase';
 import { collection, query, where, getDocs, orderBy, limit as firestoreLimit, addDoc, serverTimestamp, deleteDoc, doc } from 'firebase/firestore';
 import { FirebaseAIService as AIService } from '../../ai/FirebaseAIService';
+import { APPROVED_MODELS } from '@/core/config/ai-models';
 import { logger } from '../../../utils/logger';
 
 /**
@@ -18,12 +19,12 @@ export class MemorySearch {
         maxResults: number = 5
     ): Promise<UserMemory[]> {
         try {
-            // Get embedding for the query
+            // Get embedding for the query using the approved embedding model
             const result = await AIService.getInstance().embedContent({
-                model: 'text-embedding-004', // Using a standard embedding model
+                model: APPROVED_MODELS.EMBEDDING_DEFAULT,
                 content: { role: 'user', parts: [{ text: queryText }] }
             });
-            const embedding = result.values;
+            const _embedding = result.values;
 
             // Note: In a production environment, this would use a vector database
             // For now, we fetch recent memories and rank them manually (proto-vector search)
@@ -43,8 +44,20 @@ export class MemorySearch {
             // For now, we return the filtered candidates
             return candidates.slice(0, maxResults);
         } catch (error) {
-            logger.error('[MemorySearch] Similarity search failed:', error);
-            return [];
+            logger.error('[MemorySearch] Similarity search failed, falling back to recency:', error);
+            // Graceful fallback: return recent memories when embedding fails
+            try {
+                const memoryRef = collection(db, 'users', userId, 'memories');
+                const q = query(
+                    memoryRef,
+                    orderBy('timestamp', 'desc'),
+                    firestoreLimit(maxResults)
+                );
+                const snapshot = await getDocs(q);
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserMemory));
+            } catch {
+                return [];
+            }
         }
     }
 

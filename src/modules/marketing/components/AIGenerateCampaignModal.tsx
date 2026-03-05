@@ -4,7 +4,6 @@ import { useToast } from '@/core/context/ToastContext';
 import { CampaignAI } from '@/services/marketing/CampaignAIService';
 import { Logger } from '@/core/logger/Logger';
 import {
-import { logger } from '@/utils/logger';
     CampaignBrief,
     CampaignAsset,
     GeneratedCampaignPlan,

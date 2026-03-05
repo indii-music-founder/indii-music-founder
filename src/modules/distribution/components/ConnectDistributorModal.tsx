@@ -62,7 +62,7 @@ export default function ConnectDistributorModal({ isOpen, onClose, adapter, onSu
             onSuccess();
             onClose();
         } catch (err) {
-            logger.error(err);
+            logger.error("Operation failed:", err);
             setError(err instanceof Error ? err.message : 'Authentication failed. Please check your credentials.');
         } finally {
             setIsLoading(false);

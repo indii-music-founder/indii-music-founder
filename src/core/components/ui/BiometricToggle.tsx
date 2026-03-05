@@ -3,8 +3,8 @@ import { Fingerprint, Lock, Unlock, AlertCircle, Loader2 } from 'lucide-react';
 import { useStore } from '../../store';
 import { useShallow } from 'zustand/react/shallow';
 import { BiometricService } from '@/services/security/BiometricService';
-import {
 import { logger } from '@/utils/logger';
+import {
     Tooltip,
     TooltipContent,
     TooltipProvider,

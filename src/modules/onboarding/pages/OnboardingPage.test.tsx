@@ -81,7 +81,7 @@ describe('OnboardingPage', () => {
             render(<OnboardingPage />);
 
             // 1. Send user message to trigger response
-            const input = screen.getByPlaceholderText(/Tell me about your music/i);
+            const input = screen.getByPlaceholderText(/Tell indii about your music/i);
             fireEvent.change(input, { target: { value: 'Hi' } });
 
             // Note: This relies on the aria-label being present (which we added/ensured)

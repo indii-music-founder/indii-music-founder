@@ -1,28 +1,55 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Loader2, Mail, Lock, LogIn, Chrome, User } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User, UserPlus } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
 
 export default function LoginForm() {
-    const { loginWithGoogle, loginWithEmail, loginAsGuest, authLoading, authError } = useStore(useShallow(state => ({
+    const { loginWithGoogle, loginWithEmail, signUpWithEmail, loginAsGuest, authLoading, authError, isSignUpMode, setSignUpMode } = useStore(useShallow(state => ({
         loginWithGoogle: state.loginWithGoogle,
         loginWithEmail: state.loginWithEmail,
+        signUpWithEmail: state.signUpWithEmail,
         loginAsGuest: state.loginAsGuest,
         authLoading: state.authLoading,
         authError: state.authError,
+        isSignUpMode: state.isSignUpMode,
+        setSignUpMode: state.setSignUpMode,
     })));
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!email || !password) return;
-        try {
-            await loginWithEmail(email, password);
-        } catch (err) {
-            // Error handled by store
+
+        if (isSignUpMode) {
+            if (password !== confirmPassword) {
+                // Use store's error mechanism
+                useStore.setState({ authError: 'Passwords do not match.' });
+                return;
+            }
+            if (password.length < 6) {
+                useStore.setState({ authError: 'Password must be at least 6 characters.' });
+                return;
+            }
+            try {
+                await signUpWithEmail(email, password);
+            } catch (_err) {
+                // Error handled by store
+            }
+        } else {
+            try {
+                await loginWithEmail(email, password);
+            } catch (_err) {
+                // Error handled by store
+            }
         }
+    };
+
+    const toggleMode = () => {
+        setSignUpMode(!isSignUpMode);
+        setConfirmPassword('');
     };
 
     return (
@@ -62,6 +89,7 @@ export default function LoginForm() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="artist@indiios.com"
+                                autoComplete="email"
                                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
                                 required
                             />
@@ -78,11 +106,41 @@ export default function LoginForm() {
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
                                 placeholder="••••••••"
+                                autoComplete={isSignUpMode ? 'new-password' : 'current-password'}
                                 className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
                                 required
                             />
                         </div>
                     </div>
+
+                    {/* Confirm Password — only in Sign Up mode */}
+                    <AnimatePresence mode="wait">
+                        {isSignUpMode && (
+                            <motion.div
+                                key="confirm-password"
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="space-y-2 overflow-hidden"
+                            >
+                                <label className="text-xs font-mono text-gray-400 block ml-1 uppercase">Confirm Password</label>
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                    <input
+                                        aria-label="confirm password"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) => setConfirmPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                        autoComplete="new-password"
+                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                        required
+                                    />
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
                     {authError && (
                         <motion.p
@@ -102,6 +160,11 @@ export default function LoginForm() {
                         >
                             {authLoading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
+                            ) : isSignUpMode ? (
+                                <>
+                                    <UserPlus className="w-5 h-5" />
+                                    <span>Create Account</span>
+                                </>
                             ) : (
                                 <>
                                     <LogIn className="w-5 h-5" />
@@ -109,6 +172,18 @@ export default function LoginForm() {
                                 </>
                             )}
                             <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                        </button>
+                    </div>
+
+                    {/* Toggle between Sign In and Create Account */}
+                    <div className="text-center pt-1">
+                        <button
+                            type="button"
+                            onClick={toggleMode}
+                            className="text-sm text-purple-400 hover:text-purple-300 transition-colors font-medium"
+                            data-testid="toggle-auth-mode"
+                        >
+                            {isSignUpMode ? 'Already have an account? Sign In' : "Don't have an account? Create one"}
                         </button>
                     </div>
 

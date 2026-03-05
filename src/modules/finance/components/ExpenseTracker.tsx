@@ -109,7 +109,7 @@ export const ExpenseTracker: React.FC = React.memo(() => {
             };
             reader.readAsDataURL(file);
         } catch (e) {
-            logger.error(e);
+            logger.error("Operation failed:", e);
             toast.error("Failed to read file.");
             setIsAnalyzing(false);
         }

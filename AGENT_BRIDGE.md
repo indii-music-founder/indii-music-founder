@@ -103,3 +103,17 @@ This file serves as the **Synchronization Bus** between **Antigravity** (Visual 
   - **Action**: Intercepted Antigravity's defect report regarding High Fidelity reasoning for Sonic Cortex.
   - **The Fix**: Injected auto-detection logic into `FirebaseAIService.ts` (`rawGenerateContent` & `rawGenerateContentStream`). The service now scans all multimodal payloads for `audio/*` mime-types. If an audio part is detected, `mediaResolution: 'MEDIA_RESOLUTION_HIGH'` is automatically appended to the `GenerationConfig` before transmitting to the Gemini 3 Pro model.
   - **Status**: Updated to `QA_PASSED`. The Sonic Cortex is fully armed and equipped for deep acoustic analysis.
+
+- **[Antigravity]**: **SITREP - CHAOS GAUNTLET PERMISSION HARDENING (2026-03-05).**
+  - **Context**: Firestore `Missing or insufficient permissions` errors surfaced during Chaos Gauntlet testing across 3 vectors.
+  - **Fixes Applied**:
+    1. `firestore.rules` → Added `/venues/{venueId}` rules (auth read, auth write for agents, admin delete).
+    2. `firestore.rules` → Added `/sessions/{sessionId}` rules (user-scoped read/write/delete by `userId`).
+    3. `VenueScoutService.ts` → Added `auth.currentUser` guard before autonomous Firestore writes.
+    4. `authSlice.ts` → `logout()` now calls `clearAllSubscriptions()` — verified working (cleared 2 active subs cleanly).
+    5. `AssetObserver.ts` → Replaced fire-and-forget error log with **retry-with-exponential-backoff** (up to 3 retries at 2s/4s/8s) for permission errors. Resolves transient race window between Firebase Auth token set and Firestore backend token validation.
+    6. `creativeSlice.ts` → `initializeHistory()` refactored to same backoff-retry pattern. Permission errors are now demoted from `error` to `warn` level during retry window.
+  - **Logout Test Results**: `[SubscriptionManager] Cleared all (2) active subscriptions` ✓. No new `FirebaseError` during/after logout.
+  - **Bug 8 Status**: Agent Delegate routing (Creative Director → `/director` 404) was previously fixed with `AGENT_TO_MODULE` mapping. Confirmed no new routing errors.
+  - **Chaos Gauntlet Blocker**: Anonymous Auth still required for full agent switching tests. Awaiting **INDEX** guidance: enable it or switch to a different test vector.
+  - **Status**: `MONITORING` — Awaiting confirmation that backoff retry eliminates console noise on next login cycle.

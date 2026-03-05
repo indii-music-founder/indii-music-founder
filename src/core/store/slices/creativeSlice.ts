@@ -183,73 +183,88 @@ export const createCreativeSlice: StateCreator<CreativeSlice> = (set, get) => ({
     initializeHistory: async () => {
         const { StorageService } = await import('@/services/StorageService');
 
-        return new Promise<void>((resolve) => {
-            (async () => {
-                try {
-                    // Subscribe to real-time updates
-                    const unsubscribe = await StorageService.subscribeToHistory(50, (history) => {
-                        set((state) => {
-                            // Merge logic: If an item exists locally with a full data URI, 
-                            // and remote has a placeholder, keep the local one.
-                            const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
+        const attemptSubscribe = (retryCount = 0): Promise<void> => {
+            return new Promise<void>((resolve) => {
+                (async () => {
+                    try {
+                        const unsubscribe = await StorageService.subscribeToHistory(50, (history) => {
+                            set((state) => {
+                                const historyMap = new Map(state.generatedHistory.map(item => [item.id, item]));
 
-                            history.forEach(remItem => {
-                                const localItem = historyMap.get(remItem.id);
+                                history.forEach(remItem => {
+                                    const localItem = historyMap.get(remItem.id);
 
-                                if (localItem && localItem.url) {
-                                    if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
-                                        historyMap.set(remItem.id, { ...remItem, url: localItem.url });
+                                    if (localItem && localItem.url) {
+                                        if (localItem.url.startsWith('data:') && remItem.url === 'placeholder:dev-data-uri-too-large') {
+                                            historyMap.set(remItem.id, { ...remItem, url: localItem.url });
+                                        } else {
+                                            historyMap.set(remItem.id, remItem);
+                                        }
                                     } else {
                                         historyMap.set(remItem.id, remItem);
                                     }
-                                } else {
-                                    historyMap.set(remItem.id, remItem);
-                                }
-                            });
+                                });
 
-                            const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
+                                const mergedHistory = Array.from(historyMap.values()).sort((a, b) => b.timestamp - a.timestamp);
 
-                            const generated: HistoryItem[] = [];
-                            const uploadedImages: HistoryItem[] = [];
-                            const uploadedAudio: HistoryItem[] = [];
+                                const generated: HistoryItem[] = [];
+                                const uploadedImages: HistoryItem[] = [];
+                                const uploadedAudio: HistoryItem[] = [];
 
-                            for (const item of mergedHistory) {
-                                if (item.origin !== 'uploaded') {
-                                    generated.push(item);
-                                } else {
-                                    if (item.type === 'image') {
-                                        uploadedImages.push(item);
-                                    } else if (item.type === 'music') {
-                                        uploadedAudio.push(item);
+                                for (const item of mergedHistory) {
+                                    if (item.origin !== 'uploaded') {
+                                        generated.push(item);
+                                    } else {
+                                        if (item.type === 'image') {
+                                            uploadedImages.push(item);
+                                        } else if (item.type === 'music') {
+                                            uploadedAudio.push(item);
+                                        }
                                     }
                                 }
-                            }
 
-                            return {
-                                generatedHistory: generated,
-                                uploadedImages: uploadedImages,
-                                uploadedAudio: uploadedAudio
-                            };
+                                return {
+                                    generatedHistory: generated,
+                                    uploadedImages: uploadedImages,
+                                    uploadedAudio: uploadedAudio
+                                };
+                            });
+
+                            // Resolve after the first successful snapshot
+                            resolve();
+                        }, (error) => {
+                            const isPermissionError = (error as Error)?.message?.includes('Missing or insufficient permissions');
+                            const MAX_RETRIES = 3;
+
+                            if (isPermissionError && retryCount < MAX_RETRIES) {
+                                const backoffMs = Math.pow(2, retryCount + 1) * 1000; // 2s, 4s, 8s
+                                logger.warn(`[CreativeSlice] Permission error on history subscription, retrying in ${backoffMs / 1000}s (attempt ${retryCount + 1}/${MAX_RETRIES})`);
+                                setTimeout(() => {
+                                    attemptSubscribe(retryCount + 1).then(resolve);
+                                }, backoffMs);
+                            } else {
+                                // Resolve anyway to unblock UI; non-recoverable errors logged at warn level only
+                                if (!isPermissionError) {
+                                    logger.error('[CreativeSlice] History subscription error:', error);
+                                }
+                                resolve();
+                            }
                         });
 
-                        // Resolve the initialization promise after the first snapshot
+                        // Register with SubscriptionManager
+                        import('@/core/store').then(({ useStore }) => {
+                            useStore.getState().registerSubscription('creative_history', unsubscribe);
+                        });
+
+                    } catch (err) {
+                        logger.error('[CreativeSlice] Failed to initialize history:', err);
                         resolve();
-                    }, (error) => {
-                        logger.error('[CreativeSlice] History subscription error:', error);
-                        resolve(); // Resolve anyway to unblock UI
-                    });
+                    }
+                })();
+            });
+        };
 
-                    // Register with SubscriptionManager instead of saving to state local
-                    import('@/core/store').then(({ useStore }) => {
-                        useStore.getState().registerSubscription('creative_history', unsubscribe);
-                    });
-
-                } catch (err) {
-                    logger.error('[CreativeSlice] Failed to initialize history:', err);
-                    resolve();
-                }
-            })();
-        });
+        return attemptSubscribe();
     },
     updateHistoryItem: (id: string, updates: Partial<HistoryItem>) => {
         set((state) => {

@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * AcousticFingerprintService
  * Uses Chromaprint's fpcalc to generate a robust acoustic fingerprint.

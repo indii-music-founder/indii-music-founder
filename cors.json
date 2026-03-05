@@ -1,11 +1,19 @@
 [
     {
         "origin": [
-            "*"
+            "http://localhost:4242",
+            "http://localhost:3000",
+            "https://app.indiios.com",
+            "https://indiios.com",
+            "https://indiios-alpha.web.app",
+            "https://indiios-alpha.firebaseapp.com"
         ],
         "method": [
             "GET",
             "HEAD",
+            "PUT",
+            "POST",
+            "DELETE",
             "OPTIONS"
         ],
         "responseHeader": [
@@ -15,7 +23,11 @@
             "Content-Encoding",
             "Accept-Ranges",
             "Range",
-            "X-GUploader-UploadID"
+            "X-GUploader-UploadID",
+            "X-Firebase-Storage-Version",
+            "x-goog-meta-firebaseStorageDownloadTokens",
+            "Authorization",
+            "Cache-Control"
         ],
         "maxAgeSeconds": 3600
     }

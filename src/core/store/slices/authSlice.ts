@@ -1,7 +1,7 @@
 import { logger } from '@/utils/logger';
 
 import { StateCreator } from 'zustand';
-import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword } from 'firebase/auth';
+import { User, onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword, signInAnonymously } from 'firebase/auth';
 import { auth, db } from '@/services/firebase';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -16,12 +16,15 @@ export interface AuthSlice {
     user: User | null;
     authLoading: boolean;
     authError: string | null;
+    isSignUpMode: boolean;
 
     // Actions
     loginWithGoogle: () => Promise<void>;
     loginWithEmail: (email: string, pass: string) => Promise<void>;
+    signUpWithEmail: (email: string, pass: string) => Promise<void>;
     loginAsGuest: () => Promise<void>;
     logout: () => Promise<void>;
+    setSignUpMode: (isSignUp: boolean) => void;
     initializeAuthListener: () => () => void;
 }
 
@@ -30,6 +33,7 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
     user: null,
     authLoading: true,
     authError: null,
+    isSignUpMode: false,
 
     loginWithGoogle: async () => {
         try {
@@ -63,9 +67,63 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
         }
     },
 
+    signUpWithEmail: async (email: string, pass: string) => {
+        try {
+            set({ authLoading: true, authError: null });
+            await createUserWithEmailAndPassword(auth, email, pass);
+            // State update handled by listener — initializeAuthListener will create the user doc
+        } catch (error: unknown) {
+            const firebaseError = error as FirebaseAuthError;
+            let errorMessage: string;
+            switch (firebaseError.code) {
+                case 'auth/email-already-in-use':
+                    errorMessage = 'An account with this email already exists. Try signing in instead.';
+                    break;
+                case 'auth/weak-password':
+                    errorMessage = 'Password must be at least 6 characters.';
+                    break;
+                case 'auth/invalid-email':
+                    errorMessage = 'Please enter a valid email address.';
+                    break;
+                case 'auth/argument-error':
+                case 'auth/invalid-api-key':
+                    errorMessage = 'Firebase Config Missing. Check .env or use Guest Login.';
+                    break;
+                case 'auth/admin-restricted-operation':
+                    errorMessage = 'Email/Password sign-up is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Email/Password.';
+                    break;
+                default:
+                    errorMessage = firebaseError.message ?? 'Account creation failed';
+            }
+            set({ authError: errorMessage, authLoading: false });
+            throw error;
+        }
+    },
+
     loginAsGuest: async () => {
-        // SECURE: Guest login is disabled to enforce real authentication
-        throw new Error('Guest login is disabled. Please sign in with a real Google or Email account.');
+        if (!import.meta.env.DEV) {
+            throw new Error('Guest login is only available in development mode.');
+        }
+        try {
+            set({ authLoading: true, authError: null });
+            await signInAnonymously(auth);
+            // State update handled by listener
+        } catch (error: unknown) {
+            const firebaseError = error as FirebaseAuthError;
+            let errorMessage: string;
+            if (firebaseError.code === 'auth/admin-restricted-operation') {
+                errorMessage = 'Anonymous Auth is disabled. Enable it in Firebase Console → Authentication → Sign-in method → Anonymous.';
+            } else if (firebaseError.code === 'auth/argument-error' || firebaseError.code === 'auth/invalid-api-key') {
+                errorMessage = 'Firebase Config Missing. Check .env file.';
+            } else {
+                errorMessage = firebaseError.message ?? 'Guest login failed';
+            }
+            set({ authError: errorMessage, authLoading: false });
+        }
+    },
+
+    setSignUpMode: (isSignUp: boolean) => {
+        set({ isSignUpMode: isSignUp, authError: null });
     },
 
     logout: async () => {
@@ -76,7 +134,12 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             const { cacheService } = await import('@/services/cache/CacheService');
             cacheService.clear();
 
-            set({ user: null });
+            // Clear all active Firestore subscriptions to prevent permission errors
+            import('@/core/store').then(({ useStore }) => {
+                useStore.getState().clearAllSubscriptions();
+            }).catch(err => logger.error('[Auth] Failed to clear subscriptions during logout:', err));
+
+            set({ user: null, authError: null, isSignUpMode: false });
         } catch (error: unknown) {
             const message = error instanceof Error ? error.message : 'Logout failed';
             set({ authError: message });

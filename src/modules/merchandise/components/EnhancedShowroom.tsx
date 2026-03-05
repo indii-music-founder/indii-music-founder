@@ -389,7 +389,7 @@ Style: High-end commercial product photography, 8K resolution, professional stud
                 toast.error("Failed to generate mockup.");
             }
         } catch (error: unknown) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.dismiss(loadingId);
             if (error instanceof Error) {
                 toast.error(`Failed to generate mockup: ${error.message}`);
@@ -433,7 +433,7 @@ Style: Premium brand commercial, 4K cinematic quality.`;
             // Set job ID to trigger subscription
             setCurrentVideoJobId(jobId);
         } catch (error: unknown) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.dismiss(loadingId);
             setIsGeneratingVideo(false);
             if (error instanceof Error) {

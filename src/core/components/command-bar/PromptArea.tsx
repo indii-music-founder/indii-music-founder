@@ -117,7 +117,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         }
     }, [isListening, toast, commandBarInput, setCommandBarInput]);
 
-    const handleDelegate = useCallback((moduleId: string) => {
+    const handleDelegate = useCallback((agentId: string) => {
+        // Agent IDs don't always match module IDs — map them
+        const AGENT_TO_MODULE: Record<string, string> = {
+            'director': 'creative',
+            'generalist': 'dashboard',
+        };
+        const moduleId = AGENT_TO_MODULE[agentId] || agentId;
+
         if (moduleId !== 'dashboard') {
             setModule(moduleId as ModuleId);
         }

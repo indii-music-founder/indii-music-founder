@@ -49,7 +49,7 @@ export const ReleaseKitModal: React.FC<ReleaseKitModalProps> = ({ isOpen, onClos
                 setStep('input'); // Reset on failure for now
             }
         } catch (e) {
-            logger.error(e);
+            logger.error("Operation failed:", e);
             setStep('input');
         }
     };

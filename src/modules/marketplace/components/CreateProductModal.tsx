@@ -43,7 +43,7 @@ export default function CreateProductModal({ onClose, onProductCreated }: Create
             onProductCreated();
             onClose();
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.error("Failed to create product");
         } finally {
             setIsLoading(false);

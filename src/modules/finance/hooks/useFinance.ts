@@ -63,7 +63,7 @@ export function useFinance() {
             setExpenses(prev => [newExpense, ...prev]);
             return true;
         } catch (e) {
-            logger.error(e);
+            logger.error("Operation failed:", e);
             Sentry.captureException(e);
             toast.error("Failed to add expense.");
             return false;
