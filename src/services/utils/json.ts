@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 export function safeJsonParse<T = any>(str: string, fallback?: T): T | undefined {
     try {
         return JSON.parse(str) as T;

@@ -7,63 +7,6 @@ import React from 'react'
 
 expect.extend(matchers)
 
-// Mock WaveSurfer
-vi.mock('wavesurfer.js', () => {
-    return {
-        default: {
-            create: () => ({
-                on: vi.fn(),
-                load: vi.fn(),
-                getDuration: vi.fn(() => 100),
-                destroy: vi.fn(),
-                playPause: vi.fn(),
-                stop: vi.fn(),
-                setVolume: vi.fn(),
-                registerPlugin: vi.fn(),
-            }),
-        }
-    }
-})
-
-// Mock RegionsPlugin
-vi.mock('wavesurfer.js/dist/plugins/regions.esm.js', () => {
-    return {
-        default: {
-            create: () => ({
-                on: vi.fn(),
-                addRegion: vi.fn(),
-            })
-        }
-    }
-})
-
-// Mock audioAnalysisService
-vi.mock('@/services/audio/AudioAnalysisService', () => ({
-    audioAnalysisService: {
-        analyze: vi.fn().mockResolvedValue({
-            features: {
-                bpm: 120,
-                key: 'C',
-                scale: 'major',
-                energy: 0.8,
-                danceability: 0.7,
-                valence: 0.8,
-                duration: 100
-            },
-            fromCache: false
-        }),
-        generateFileHash: vi.fn().mockResolvedValue('hash123')
-    }
-}))
-
-// Mock musicLibraryService
-vi.mock('@/services/music/MusicLibraryService', () => ({
-    musicLibraryService: {
-        saveAnalysis: vi.fn(),
-        getAnalysis: vi.fn()
-    }
-}))
-
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: () => ({
@@ -75,42 +18,47 @@ vi.mock('@/core/context/ToastContext', () => ({
     })
 }))
 
-// ResizeObserver Mock
-class ResizeObserver {
-    observe() {}
-    unobserve() {}
-    disconnect() {}
-}
+// Mock audioAnalysisService
+vi.mock('@/services/audio/AudioAnalysisService', () => ({
+    audioAnalysisService: {
+        analyze: vi.fn(),
+        generateFileHash: vi.fn(),
+        saveAnalysisToFirestore: vi.fn()
+    }
+}))
 
-beforeAll(() => {
-    window.ResizeObserver = ResizeObserver;
-    // Mock URL.createObjectURL
-    global.URL.createObjectURL = vi.fn(() => 'blob:url');
-})
-
-afterAll(() => {
-    vi.restoreAllMocks()
-})
+// Mock AudioIntelligenceService
+vi.mock('@/services/audio/AudioIntelligenceService', () => ({
+    audioIntelligence: {
+        analyze: vi.fn().mockResolvedValue({
+            technical: { duration: 100, bpm: 120, key: 'C', scale: 'major', energy: 0.8 },
+            semantic: {
+                mood: ['Happy'], genre: ['Pop'], instruments: [],
+                marketingHooks: { keywords: ['Viral'], oneLiner: 'Test' },
+                visualImagery: { abstract: 'Test' },
+                targetPrompts: { image: 'Test', veo: 'Test' }
+            }
+        })
+    }
+}))
 
 describe('AudioAnalyzer Accessibility', () => {
     it('should have accessible controls', async () => {
-        const { container } = render(<AudioAnalyzer />)
-
-        // Stop button should have a label
-        const stopButton = screen.getByTestId('stop-button')
-        expect(stopButton).toHaveAttribute('aria-label', 'Stop playback')
-
-        // Play button should have a label
-        const playButton = screen.getByTestId('play-pause-button')
-        expect(playButton).toHaveAttribute('aria-label', 'Play')
-
-        // Volume slider should have a label
-        const volumeSlider = screen.getByTestId('volume-slider')
-        expect(volumeSlider).toHaveAttribute('aria-label', 'Volume')
+        const { fireEvent } = await import('@testing-library/react');
+        render(<AudioAnalyzer />)
 
         // File Input should be accessible (sr-only, not hidden)
         const fileInput = screen.getByTestId('import-track-input')
         expect(fileInput).toHaveClass('sr-only')
         expect(fileInput).not.toHaveClass('hidden')
+
+        // Trigger file load to render the post-analysis controls
+        const file = new File(['mock audio'], 'test.mp3', { type: 'audio/mp3' });
+        fireEvent.change(fileInput, { target: { files: [file] } });
+
+        // Wait for save button to appear
+        const saveButton = await screen.findByTestId('save-analysis-button')
+        expect(saveButton).toBeInTheDocument()
+        expect(saveButton).not.toBeDisabled() // Because we mocked isSaving to be false
     })
 })

@@ -26,7 +26,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
             await PublicistService.updateContact(contact.id, { relationshipStrength: newStrength });
             toast.success(`Relationship updated to ${newStrength}`);
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.error("Failed to update relationship");
             setRelationship(contact.relationshipStrength); // Revert on error
         }
@@ -42,7 +42,7 @@ export const ContactDetailsModal: React.FC<ContactDetailsModalProps> = ({ isOpen
             });
             toast.success("Interaction logged");
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.error("Failed to save note");
         } finally {
             setIsSaving(false);

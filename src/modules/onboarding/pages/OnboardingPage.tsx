@@ -66,6 +66,7 @@ export default function OnboardingPage() {
                 <button
                     onClick={() => setShowMobileStatus(true)}
                     className="p-2 text-gray-400 hover:text-white transition-colors"
+                    aria-label={`View profile progress, ${profileStatus.coreProgress}% complete`}
                 >
                     <Menu size={24} />
                 </button>
@@ -180,6 +181,7 @@ export default function OnboardingPage() {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSend()}
                                 placeholder="Tell indii about your music..."
+                                aria-label="Type your message"
                                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 pr-32 focus:outline-none focus:border-white/30 transition-all text-sm lg:text-base font-medium placeholder:text-gray-600 focus:bg-white/10"
                             />
                             <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5 p-1.5">
@@ -187,12 +189,14 @@ export default function OnboardingPage() {
                                     onClick={() => fileInputRef.current?.click()}
                                     className="p-3 text-gray-500 hover:text-white transition-all hover:bg-white/5 rounded-xl border border-transparent hover:border-white/5"
                                     title="Attach Assets"
+                                    aria-label="Attach file"
                                 >
                                     <Paperclip size={20} />
                                 </button>
                                 <button
                                     onClick={() => handleSend()}
                                     disabled={!input.trim() && files.length === 0}
+                                    aria-label="Send message"
                                     className="h-11 w-11 bg-white text-black flex items-center justify-center rounded-xl hover:bg-gray-200 transition-all shadow-xl shadow-white/5 disabled:opacity-50 disabled:cursor-not-allowed group"
                                 >
                                     <Send size={20} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />

@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 // Type definitions for Window Management API
 interface ScreenDetails {
     screens: ScreenDetailed[];

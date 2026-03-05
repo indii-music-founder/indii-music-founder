@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * InputSanitizer
  * Utilities for sanitizing and validating inputs before sending to AI models.

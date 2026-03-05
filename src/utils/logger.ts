@@ -11,24 +11,26 @@ export const logger = {
      * In development: Logs full error object and stack trace.
      * In production: Logs only the message (and name if available) to avoid leaking internals.
      */
-    error: (message: string, error?: unknown) => {
+    error: (message: string, ...args: unknown[]) => {
         if (isDev) {
-            console.error(message, error);
+            console.error(message, ...args);
         } else {
             // Production: Sanitize error output
-            let safeError = 'Unknown error';
-            if (error instanceof Error) {
-                safeError = `${error.name}: ${error.message}`;
-            } else if (typeof error === 'string') {
-                safeError = error;
-            } else if (typeof error === 'object' && error !== null) {
-                try {
-                    safeError = JSON.stringify(error);
-                } catch {
-                    safeError = '[Circular/Unserializable Object]';
+            const sanitizedArgs = args.map(arg => {
+                if (arg instanceof Error) {
+                    return `${arg.name}: ${arg.message}`;
+                } else if (typeof arg === 'string') {
+                    return arg;
+                } else if (typeof arg === 'object' && arg !== null) {
+                    try {
+                        return JSON.stringify(arg);
+                    } catch {
+                        return '[Circular/Unserializable Object]';
+                    }
                 }
-            }
-            console.error(message, safeError);
+                return 'Unknown error';
+            });
+            console.error(message, ...sanitizedArgs);
         }
     },
 

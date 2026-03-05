@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * SFTP Transporter
  * Handles secure file transmission to distributor endpoints via Electron IPC

@@ -159,9 +159,16 @@ export function registerAudioHandlers() {
         try {
             validateSender(event);
 
-            // Lazy-load mastering filters to avoid circular dependency
-            const { MasteringService } = await import('../../src/services/audio/MasteringService');
-            const filter = MasteringService.getFilterForStyle(style);
+            // Re-introduced logic locally instead of relying on a missing MasteringService
+            const getFilterForStyle = (s: string) => {
+                const styles: Record<string, string> = {
+                    'warm': 'equalizer=f=100:width_type=h:width=200:g=2, equalizer=f=10000:width_type=h:width=2000:g=-2',
+                    'punchy': 'compand=attacks=0:points=-80/-90|-40/-40|0/-10|20/-5',
+                    'bright': 'equalizer=f=5000:width_type=h:width=1000:g=3'
+                };
+                return styles[s] || 'anull';
+            };
+            const filter = getFilterForStyle(style);
 
             // Ensure output directory exists
             const outputDir = path.dirname(outputPath);

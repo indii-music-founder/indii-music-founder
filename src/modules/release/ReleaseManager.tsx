@@ -65,11 +65,11 @@ export const ReleaseManager: React.FC = () => {
                     errors: validation.valid ? [] : validation.errors
                 });
             } else {
-                logger.error(result.error);
+                logger.error("ERN generation failed:", result.error ?? "Unknown error");
                 setValidationResult({ isValid: false, errors: [result.error || 'Failed to generate ERN'] });
             }
         } catch (e) {
-            logger.error(e);
+            logger.error("Operation failed:", e);
             setValidationResult({ isValid: false, errors: ['An unexpected error occurred'] });
         }
         setStep('edit'); // Go back to edit/view

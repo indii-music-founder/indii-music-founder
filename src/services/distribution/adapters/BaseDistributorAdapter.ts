@@ -1,5 +1,4 @@
 import type {
-import { logger } from '@/utils/logger';
   IDistributorAdapter,
   DistributorId,
   DistributorRequirements,
@@ -12,6 +11,7 @@ import { logger } from '@/utils/logger';
   ExtendedGoldenMetadata,
   DateRange
 } from '../types/distributor';
+import { logger } from '@/utils/logger';
 
 export abstract class BaseDistributorAdapter implements IDistributorAdapter {
   abstract readonly id: DistributorId;

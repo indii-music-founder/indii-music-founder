@@ -46,7 +46,7 @@ export default function NewProjectModal({
       await onCreate(name, type);
     } catch (e) {
       // Parent component handles error display via 'error' prop
-      logger.error(e);
+      logger.error("Operation failed:", e);
     } finally {
       setIsCreating(false);
     }

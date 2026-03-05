@@ -35,7 +35,7 @@ export const ExpenseManualEntryModal: React.FC<ExpenseManualEntryModalProps> = (
             await onAdd(manualForm);
             onClose();
         } catch (error) {
-            logger.error(error);
+            logger.error("Failed to add expense:", error);
         } finally {
             setIsSubmitting(false);
         }

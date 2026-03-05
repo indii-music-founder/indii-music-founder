@@ -1,6 +1,6 @@
 import { Venue } from '../schemas';
 import { browserAgentDriver } from '../../../services/agent/BrowserAgentDriver';
-import { db } from '@/services/firebase';
+import { db, auth } from '@/services/firebase';
 import { collection, getDocs, addDoc, query, where, serverTimestamp, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { delay } from '@/utils/async';
 import { VenueSchema, SearchOptionsSchema } from '../schemas';
@@ -153,23 +153,23 @@ export class VenueScoutService {
                 }
             });
 
-             // 3. Client-side Filter & Scoring
-             const processed = this._processResults(results, genre);
+            // 3. Client-side Filter & Scoring
+            const processed = this._processResults(results, genre);
 
-             if (processed.length === 0) {
-                 // Fallback to local seed if DB is empty or has no matches
-                 // Use a proper log level, not just logger.debug for info
-                 return this._getFallbackData(city, genre);
-             }
+            if (processed.length === 0) {
+                // Fallback to local seed if DB is empty or has no matches
+                // Use a proper log level, not just logger.debug for info
+                return this._getFallbackData(city, genre);
+            }
 
-             // Update Cache
-             if (this.cache.size >= this.MAX_CACHE_SIZE) {
+            // Update Cache
+            if (this.cache.size >= this.MAX_CACHE_SIZE) {
                 const oldestKey = this.cache.keys().next().value;
                 if (oldestKey) this.cache.delete(oldestKey);
-             }
-             this.cache.set(cacheKey, { data: processed, timestamp: Date.now() });
+            }
+            this.cache.set(cacheKey, { data: processed, timestamp: Date.now() });
 
-             return processed;
+            return processed;
 
         } catch (error) {
             logger.warn('[VenueScoutService] Firestore/Network error, falling back to local seed data:', error);
@@ -190,7 +190,7 @@ export class VenueScoutService {
     }
 
     private static _processResults(venues: Venue[], genre: string): Venue[] {
-         return venues.filter(v =>
+        return venues.filter(v =>
             // Filter by Genre overlap
             v.genres.some(g => g.toLowerCase().includes(genre.toLowerCase()) || genre.toLowerCase().includes(g.toLowerCase()))
         ).map(v => ({
@@ -235,13 +235,18 @@ export class VenueScoutService {
 
                 // Save to Firestore so it's there next time
                 try {
+                    // Check authentication before attempting Firestore write
+                    if (!auth.currentUser) {
+                        logger.warn('[VenueScout] Skipping Firestore write: Not authenticated');
+                        return [{ id: 'temp-autonomous', ...newVenue } as Venue];
+                    }
                     const docRef = await addDoc(collection(db, this.COLLECTION_NAME), {
                         ...newVenue,
                         createdAt: serverTimestamp()
                     });
                     return [{ id: docRef.id, ...newVenue } as Venue];
                 } catch (e) {
-                     return [{ id: 'temp-autonomous', ...newVenue } as Venue];
+                    return [{ id: 'temp-autonomous', ...newVenue } as Venue];
                 }
             }
         } catch (e) {
@@ -255,7 +260,7 @@ export class VenueScoutService {
      */
     static async enrichVenue(venueId: string): Promise<Partial<Venue>> {
         try {
-             const venueRef = doc(db, this.COLLECTION_NAME, venueId);
+            const venueRef = doc(db, this.COLLECTION_NAME, venueId);
             await delay(1000);
             const updates = {
                 lastScoutedAt: Date.now(),

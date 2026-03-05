@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * Service for managing and versioning prompts.
  * Allows for centralized prompt definitions and testing.

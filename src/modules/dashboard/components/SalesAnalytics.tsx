@@ -85,7 +85,7 @@ export default function SalesAnalytics() {
             } catch (err) {
                 if (isMounted) {
                     setError('Failed to load sales analytics.');
-                    logger.error(err);
+                    logger.error("Operation failed:", err);
                 }
             } finally {
                 if (isMounted) {

@@ -1,3 +1,5 @@
+import { logger } from '@/utils/logger';
+
 /**
  * safeStorageFetch — Fetches a remote Storage (or CDN) asset
  * and converts it to a Blob with mime type detection.

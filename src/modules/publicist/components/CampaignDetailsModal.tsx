@@ -37,7 +37,7 @@ export const CampaignDetailsModal: React.FC<CampaignDetailsModalProps> = ({ isOp
                 onClose();
             }
         } catch (e) {
-            logger.error(e);
+            logger.error("Operation failed:", e);
             toast.error("Failed to update campaign");
         } finally {
             setIsSaving(false);

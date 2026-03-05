@@ -115,7 +115,7 @@ describe('DashboardService - Sales Analytics', () => {
         // We can verify a specific property known to be in the fallback but not in our mock invalid data just to be sure
         // But better yet, check that it logged a warning
         expect(console.warn).toHaveBeenCalledWith(
-            "Firestore data failed schema validation:",
+            "[Dashboard] Firestore data failed schema validation:",
             expect.anything()
         );
 
@@ -137,7 +137,7 @@ describe('DashboardService - Sales Analytics', () => {
         const result = await DashboardService.getSalesAnalytics();
 
         expect(console.warn).toHaveBeenCalledWith(
-            "Firestore fetch failed:",
+            "[Dashboard] Firestore fetch failed:",
             expect.any(Error)
         );
 

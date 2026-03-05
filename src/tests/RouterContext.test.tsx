@@ -64,7 +64,7 @@ vi.mock('../core/components/MobileNav', () => ({ MobileNav: () => <div>MobileNav
 
 // Silence background async services causing fetch overlap
 vi.mock('../core/logger/Logger', () => ({
-    logger: {
+    Logger: {
         info: vi.fn(),
         warn: vi.fn(),
         error: vi.fn(),

@@ -21,6 +21,7 @@ import { TransmissionMonitor } from '@/modules/distribution/components/Transmiss
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
+import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { ErrorButton } from './components/debug/ErrorButton';
@@ -182,24 +183,8 @@ function useAppInitialization() {
         // Log removed (Platinum Polish)
         const unsubscribe = initializeAuthListener();
 
-        // Initialize Proactive Service (Start Polling)
-        import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-            proactiveService.start();
-        });
-
-        // Initialize Asset Observer (Priority 34)
-        import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-            assetObserver.initialize();
-        });
-
         return () => {
             unsubscribe();
-            import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                proactiveService.dispose();
-            });
-            import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                assetObserver.stop();
-            });
         };
     }, [initializeAuthListener]);
 
@@ -212,7 +197,6 @@ function useAppInitialization() {
     }, [user, loadUserProfile]);
 
     // 3. Load Application Data (Projects, History) when Profile is ready
-    // We assume if user exists and profile is loaded (we don't have isProfileReady yet, but let's assume loose coupling)
     useEffect(() => {
         if (user) {
             // Log removed (Platinum Polish)
@@ -221,6 +205,25 @@ function useAppInitialization() {
 
             // Re-enable Agent if needed, but keep closed by default
             useStore.setState({ isAgentOpen: false });
+
+            // Initialize Proactive Service (Start Polling) — requires auth
+            import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
+                proactiveService.start();
+            });
+
+            // Initialize Asset Observer — requires auth for Firestore subscriptions
+            import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
+                assetObserver.initialize();
+            });
+
+            return () => {
+                import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
+                    proactiveService.dispose();
+                });
+                import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
+                    assetObserver.stop();
+                });
+            };
         }
     }, [user, initializeHistory, loadProjects]);
 
@@ -264,11 +267,43 @@ interface ModuleRendererProps {
     moduleId: ModuleId;
 }
 
+/**
+ * Renders the correct module component for a given module ID.
+ * Self-parses subPath from the URL to handle 404s for invalid deep links
+ * (e.g. /agent/999 where 999 is not a real agent).
+ */
 function ModuleRenderer({ moduleId }: ModuleRendererProps) {
+    const location = useLocation();
+    const subPath = useMemo(() => {
+        const segments = location.pathname.split('/').filter(Boolean);
+        return segments.length > 1 ? segments[1] : undefined;
+    }, [location.pathname]);
+
     const ModuleComponent = MODULE_COMPONENTS[moduleId];
 
     if (!ModuleComponent) {
-        return <div className="flex items-center justify-center h-full text-gray-500">Unknown module</div>;
+        return (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
+                <div className="text-6xl">404</div>
+                <div className="text-xl font-semibold text-gray-300">Module not found</div>
+                <div className="text-sm text-gray-500">The page <code className="text-purple-400">/{moduleId}</code> doesn't exist.</div>
+            </div>
+        );
+    }
+
+    // Check for invalid sub-paths: if the URL has a sub-segment that is purely numeric
+    // (e.g. /agent/999), it's an invalid deep link - show a 404 rather than silently
+    // rendering the parent module, which confuses users and Chaos tests.
+    if (subPath && /^\d+$/.test(subPath)) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full gap-4 text-gray-400">
+                <div className="text-6xl">404</div>
+                <div className="text-xl font-semibold text-gray-300">Not found</div>
+                <div className="text-sm text-gray-500">
+                    <code className="text-purple-400">/{moduleId}/{subPath}</code> doesn't exist.
+                </div>
+            </div>
+        );
     }
 
     // Special case for creative studio which needs initialMode prop
@@ -296,10 +331,9 @@ export default function App() {
     // Initialize app
     useAppInitialization();
     useOnboardingRedirect();
+    // URL sync: self-guards on authLoading internally, safe to call unconditionally here
+    useURLSync();
     const shortcutsModal = useGlobalShortcutsModal();
-
-    // Log module changes in dev
-
 
     // Determine if current module should show chrome (sidebar, command bar, etc.)
     const showChrome = useMemo(
@@ -307,12 +341,13 @@ export default function App() {
         [currentModule]
     );
 
-    // Call URL Sync Hook (must be inside Router context, which App is)
-    useURLSync();
-
     // SSR-safe media query for desktop detection
     const isDesktop = useMediaQuery('(min-width: 768px)');
 
+    // Gate: Block ALL rendering until Firebase onAuthStateChanged has fired at least once.
+    // This prevents the app from flashing <LoginForm/> on page reload before the user\'s
+    // IndexedDB session is re-hydrated. authLoading starts as `true` and is set to `false`
+    // exactly once by initializeAuthListener\'s onAuthStateChanged callback.
     if (authLoading) {
         return <LoadingFallback />;
     }

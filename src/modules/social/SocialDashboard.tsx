@@ -52,7 +52,7 @@ export default function SocialDashboard() {
                 scheduledTime: scheduledTimeNum
             });
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
         }
     };
 

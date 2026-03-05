@@ -42,7 +42,7 @@ export function BiometricGate({ children }: BiometricGateProps) {
             }
         } catch (error) {
             setVerificationError('An error occurred during verification.');
-            logger.error(error);
+            logger.error("Operation failed:", error);
         }
     };
 

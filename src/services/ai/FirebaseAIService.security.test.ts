@@ -1,5 +1,6 @@
 import { FirebaseAIService } from './FirebaseAIService';
 import { InputSanitizer } from './utils/InputSanitizer';
+import { logger } from '@/utils/logger';
 
 // Mock Dependencies
 vi.mock('@/services/firebase', () => ({
@@ -65,15 +66,15 @@ vi.mock('./billing/TokenUsageService', () => ({
 
 describe('FirebaseAIService Security', () => {
     let service: FirebaseAIService;
-    let consoleLogSpy: any;
+    let loggerDebugSpy: any;
 
     beforeEach(() => {
         service = new FirebaseAIService();
-        consoleLogSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+        loggerDebugSpy = vi.spyOn(logger, 'debug').mockImplementation(() => { });
     });
 
     afterEach(() => {
-        consoleLogSpy.mockRestore();
+        loggerDebugSpy.mockRestore();
     });
 
     it('should NOT leak raw PII in debug logs', async () => {
@@ -88,8 +89,8 @@ describe('FirebaseAIService Security', () => {
         // Call generateContent
         await service.generateContent(sensitivePrompt);
 
-        // Check calls to console.log
-        const calls = consoleLogSpy.mock.calls;
+        // Check calls to logger.debug
+        const calls = loggerDebugSpy.mock.calls;
         const promptLog = calls.find((args: any[]) => args[0] === '[DEBUG-PAYLOAD] prompt:');
 
         expect(promptLog).toBeDefined();

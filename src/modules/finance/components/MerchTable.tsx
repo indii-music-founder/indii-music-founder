@@ -84,7 +84,7 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
             setPrice('0.99');
             setSelectedAsset(null);
         } catch (error) {
-            logger.error(error);
+            logger.error("Operation failed:", error);
             toast.error('Failed to mint asset.');
         }
     };
