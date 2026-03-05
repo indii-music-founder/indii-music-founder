@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';
 import { RevenueProjections } from './RevenueProjections';
+import { SubscriptionTab } from './SubscriptionTab';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { motion } from 'motion/react';
 import { TrendingUp, Music, Globe, DollarSign, ArrowUpRight } from 'lucide-react';
@@ -150,6 +151,7 @@ export const EarningsDashboard: React.FC = () => {
                     <TabsTrigger value="overview" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">Overview</TabsTrigger>
                     <TabsTrigger value="platforms" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">By Platform</TabsTrigger>
                     <TabsTrigger value="releases" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">By Release</TabsTrigger>
+                    <TabsTrigger value="subscription" className="data-[state=active]:bg-white/10 data-[state=active]:text-white text-gray-400 rounded-lg">Subscription</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-6 outline-none">
@@ -239,6 +241,10 @@ export const EarningsDashboard: React.FC = () => {
                     >
                         <EarningsTable data={earningsSummary.byRelease} />
                     </motion.div>
+                </TabsContent>
+
+                <TabsContent value="subscription" className="outline-none">
+                    <SubscriptionTab />
                 </TabsContent>
             </Tabs>
         </div>

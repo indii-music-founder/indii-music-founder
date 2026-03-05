@@ -5,12 +5,10 @@
 import Stripe from 'stripe';
 import { Subscription, SubscriptionTier } from '../shared/subscription/types';
 
-// Initialize Stripe with secret key — MUST be set via environment variable
-if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('[Stripe] STRIPE_SECRET_KEY not set — Stripe operations will fail at runtime');
-}
+import { getStripeSecretKey } from '../config/secrets';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY ?? '', {
+// Initialize Stripe with secret key
+const stripe = new Stripe(getStripeSecretKey(), {
   apiVersion: '2025-12-15.clover',
   typescript: true
 });
@@ -73,10 +71,14 @@ export function mapStripeStatus(status: Stripe.Subscription.Status): Subscriptio
  * Map Stripe price tier to our subscription tier
  */
 export function mapStripeTierToSubscriptionTier(productId: string): SubscriptionTier | null {
-  // This would typically look up the product ID in a database
-  // For now, map based on known patterns
-  if (productId.includes('pro')) return SubscriptionTier.PRO_MONTHLY;
-  if (productId.includes('studio')) return SubscriptionTier.STUDIO;
+  // Check environment variables first (allows manual overrides)
+  if (process.env.STRIPE_PRODUCT_PRO && productId === process.env.STRIPE_PRODUCT_PRO) return SubscriptionTier.PRO_MONTHLY;
+  if (process.env.STRIPE_PRODUCT_STUDIO && productId === process.env.STRIPE_PRODUCT_STUDIO) return SubscriptionTier.STUDIO;
+
+  // For now, map based on known production/test patterns
+  const p = productId.toLowerCase();
+  if (p.includes('pro')) return SubscriptionTier.PRO_MONTHLY;
+  if (p.includes('studio')) return SubscriptionTier.STUDIO;
   return null;
 }
 

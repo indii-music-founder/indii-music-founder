@@ -7,8 +7,13 @@
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
 import { getFirestore } from 'firebase-admin/firestore';
 import { stripe } from '../stripe/config';
+import { stripeSecretKey } from '../config/secrets';
 
-export const getCustomerPortal = onCall(async (request) => {
+export const getCustomerPortal = onCall({
+  secrets: [stripeSecretKey],
+  timeoutSeconds: 30,
+  memory: '128MiB',
+}, async (request) => {
   const { userId, returnUrl } = request.data;
 
   if (!userId || userId !== request.auth?.uid) {
