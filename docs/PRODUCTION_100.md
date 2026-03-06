@@ -79,9 +79,67 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 *Owner: INDEX*
 
-*(INDEX: Overwrite this section with your 50 items when ready. Be explicit, technical, and exhaustive regarding the backend dependencies, Gemini integration, RAG, and cloud architecture.)*
+### RAG & Knowledge Base Infrastructure (51-60)
 
-- [ ] **51.**
-- [ ] **52.**
-- [ ] **53.**
-...
+- [ ] **51. File Search Corpus Creation:** Create 12 corpora in Gemini API (royalties, deals, publishing, licensing, contracts, touring, marketing, finance, merchandise, production, visual, career).
+- [ ] **52. Document Ingestion Pipeline:** Build automated pipeline to ingest all 58 knowledge base markdown files into File Search corpora.
+- [ ] **53. Embedding Sync Strategy:** Implement versioning system for knowledge base updates — re-index changed documents only.
+- [ ] **54. RAG Query Optimization:** Tune retrieval parameters (top-k, similarity thresholds) for each agent domain.
+- [ ] **55. Citation Injection:** Ensure all RAG responses include source citations linking back to knowledge base documents.
+- [ ] **56. Hybrid Search Implementation:** Combine File Search RAG with live web search (Brave API) for current information.
+- [ ] **57. RAG Agent Base Class:** Abstract `RAGAgent` class that all specialized agents inherit from.
+- [ ] **58. Query Routing Logic:** Agent Zero routes queries to appropriate corpora based on intent detection.
+- [ ] **59. RAG Cost Monitoring:** Track File Search indexing and query costs; alert if exceeding $50/month budget.
+- [ ] **60. Knowledge Base Versioning:** Git-track all knowledge base docs with semantic versioning for corpus updates.
+
+### Agent Orchestration & MCP (61-70)
+
+- [ ] **61. Agent Zero Router:** Implement central orchestrator that routes user queries to correct specialized agent.
+- [ ] **62. MCP Server Stability:** Harden MCP server against crashes; implement auto-restart with exponential backoff.
+- [ ] **63. Agent Handoff Protocol:** Define clear handoff mechanism between conversational agents and tool-enabled execution agents.
+- [ ] **64. Shared Memory Integration:** All agents read/write to shared memory for context persistence across sessions.
+- [ ] **65. Agent Capability Registry:** Dynamic registry where agents advertise their capabilities to Agent Zero.
+- [ ] **66. Multi-Agent Workflows:** Support chained agent workflows (e.g., Publishing Agent → Legal Agent → Finance Agent).
+- [ ] **67. Agent Performance Metrics:** Track response latency, accuracy, and user satisfaction per agent.
+- [ ] **68. Fallback Agent:** Default agent handles out-of-scope queries gracefully with helpful redirection.
+- [ ] **69. Agent State Management:** Persist agent conversation state for seamless session resumption.
+- [ ] **70. Agent Testing Framework:** Unit tests for each agent's core logic and integration tests for agent chains.
+
+### Firebase & Data Layer (71-80)
+
+- [ ] **71. Firestore Security Rules:** Comprehensive rules ensuring users only access their own data; no wildcard permissions.
+- [ ] **72. Firebase Authentication:** Multi-provider auth (Google, Apple, email) with email verification enforcement.
+- [ ] **73. Data Validation Layer:** Zod schemas validate all data at API boundary before Firestore writes.
+- [ ] **74. Real-time Listeners:** Implement efficient Firestore listeners for live data (distribution status, agent responses).
+- [ ] **75. Offline Persistence:** Enable Firestore offline caching; queue writes for sync when connectivity returns.
+- [ ] **76. Database Indexing:** Create composite indexes for common query patterns (userId + createdAt, etc.).
+- [ ] **77. Data Migration Strategy:** Versioned migration scripts for schema changes; zero-downtime deployments.
+- [ ] **78. Backup & Recovery:** Automated daily Firestore backups with 30-day retention; tested restore procedures.
+- [ ] **79. Data Retention Policies:** Automatic purging of old logs and temp data per GDPR/CCPA requirements.
+- [ ] **80. Firebase Cost Monitoring:** Alerts for unexpected read/write spikes; optimize hot document patterns.
+
+### Security & Compliance (81-90)
+
+- [ ] **81. API Key Rotation:** Automated rotation of Gemini, Brave, and third-party API keys every 90 days.
+- [ ] **82. Secret Management:** All secrets in Google Secret Manager; never hardcoded in repo or client.
+- [ ] **83. Input Sanitization:** Strict sanitization of all user inputs to prevent injection attacks.
+- [ ] **84. Rate Limiting:** Implement per-user rate limiting on all API endpoints to prevent abuse.
+- [ ] **85. Audit Logging:** Log all sensitive operations (auth, data export, agent executions) with immutable storage.
+- [ ] **86. CORS Configuration:** Strict CORS rules allowing only indiiOS domains; no wildcard origins.
+- [ ] **87. Content Security Policy:** CSP headers prevent XSS; no inline scripts; strict resource loading rules.
+- [ ] **88. Dependency Scanning:** Automated Snyk/Dependabot scans; block merges with high-severity vulnerabilities.
+- [ ] **89. GDPR Compliance:** Data export and deletion endpoints; privacy policy; cookie consent management.
+- [ ] **90. Penetration Testing:** Annual third-party security audit; bounty program for vulnerability disclosure.
+
+### Performance, Monitoring & DevOps (91-100)
+
+- [ ] **91. API Response Time SLA:** 95% of API calls complete in <500ms; monitoring and alerting on p95 latency.
+- [ ] **92. Error Tracking:** Sentry integration for real-time error tracking with source maps and user context.
+- [ ] **93. Health Check Endpoints:** `/health`, `/ready`, `/metrics` endpoints for load balancer and monitoring.
+- [ ] **94. Graceful Degradation:** Core features work even if AI services (Gemini) are temporarily unavailable.
+- [ ] **95. Load Testing:** Simulate 10,000 concurrent users; identify and fix bottlenecks before production.
+- [ ] **96. CI/CD Pipeline:** GitHub Actions for automated testing, building, and deployment to staging/production.
+- [ ] **97. Feature Flags:** LaunchDarkly or similar for gradual rollouts and instant rollback capability.
+- [ ] **98. Environment Parity:** Staging environment mirrors production; test data seeded realistically.
+- [ ] **99. Documentation:** API docs (OpenAPI/Swagger), architecture diagrams, runbooks for on-call engineers.
+- [ ] **100. Production Readiness Review:** Final checklist sign-off by INDEX, Ant, and wii before public launch.
