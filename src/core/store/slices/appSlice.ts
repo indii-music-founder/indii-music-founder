@@ -42,6 +42,8 @@ export interface AppSlice {
     isRightPanelOpen: boolean;
     toggleSidebar: () => void;
     toggleRightPanel: () => void;
+    isCommandMenuOpen: boolean;
+    setCommandMenuOpen: (open: boolean) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
@@ -106,4 +108,6 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     isRightPanelOpen: false,
     toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
     toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
+    isCommandMenuOpen: false,
+    setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),
 });
