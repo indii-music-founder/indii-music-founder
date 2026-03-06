@@ -14,6 +14,7 @@ import { generateVideoFn } from "./lib/video_generation";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
+
 import { estimateVideoCost } from "./config/pricing";
 import { enforceRateLimit, RATE_LIMITS } from "./lib/rateLimit";
 // import { generateThumbnail } from "./lib/image_resizing";
@@ -1018,15 +1019,25 @@ export const listBigQueryDatasets = functions
 // ----------------------------------------------------------------------------
 // Subscription Functions (Gen 2)
 // ----------------------------------------------------------------------------
-import { getSubscription } from './subscription/getSubscription';
-import { createCheckoutSession } from './subscription/createCheckoutSession';
-import { getCustomerPortal } from './subscription/getCustomerPortal';
-import { cancelSubscription } from './subscription/cancelSubscription';
-import { resumeSubscription } from './subscription/resumeSubscription';
-import { getUsageStats } from './subscription/getUsageStats';
-import { trackUsage } from './subscription/trackUsage';
+import { getSubscription } from "./subscription/getSubscription";
+import { createCheckoutSession } from "./subscription/createCheckoutSession";
+import { cancelSubscription } from "./subscription/cancelSubscription";
+import { resumeSubscription } from "./subscription/resumeSubscription";
+import { getCustomerPortal } from "./subscription/getCustomerPortal";
+import { getUsageStats } from "./subscription/getUsageStats";
+import { trackUsage } from "./subscription/trackUsage";
+import { stripeWebhook } from "./stripe/webhookHandler";
 
-export { getSubscription, createCheckoutSession, getCustomerPortal, cancelSubscription, resumeSubscription, getUsageStats, trackUsage };
+export {
+    getSubscription,
+    createCheckoutSession,
+    cancelSubscription,
+    resumeSubscription,
+    getCustomerPortal,
+    getUsageStats,
+    trackUsage,
+    stripeWebhook
+};
 
 // ----------------------------------------------------------------------------
 // Health Check Endpoint

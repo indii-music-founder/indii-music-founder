@@ -5,6 +5,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
@@ -94,175 +95,205 @@ const AudioAnalyzer: React.FC = () => {
     };
 
     return (
-        <ModuleDashboard title="Distribution Intelligence Tracker" description="Extract technical and DDEX-compliant DNA to feed AI Agents and platforms" icon={<Activity className="text-primary" />}>
-            <div className="flex flex-col h-full p-6 gap-6 overflow-y-auto custom-scrollbar">
-
-                {/* Top Actions */}
-                <div className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5">
-                    <div>
-                        <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                            <ShieldCheck className="text-green-400" size={24} />
-                            Ingestion & Data Extraction
-                        </h2>
-                        <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Essentia + Gemini 3 Pro.</p>
+        <ModuleDashboard title="Audio Distribution Hub" description="Music Data Audits, Delivery Optimization & Asset Generation" icon={<Activity className="text-primary" />}>
+            <div className="flex flex-col h-full bg-black/10">
+                <Tabs defaultValue="compliance" className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-6 border-b border-white/5 flex-shrink-0 bg-card/50">
+                        <TabsList className="bg-transparent gap-8 p-0 h-14 inline-flex">
+                            <TabsTrigger value="compliance" className="text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 h-full font-black transition-all text-xs uppercase tracking-widest whitespace-nowrap">
+                                Distribution QC
+                            </TabsTrigger>
+                            <TabsTrigger value="optimize" className="text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 h-full font-black transition-all text-xs uppercase tracking-widest whitespace-nowrap">
+                                Release Optimization
+                            </TabsTrigger>
+                        </TabsList>
                     </div>
-                    <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
-                        {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
-                        {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
-                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
-                    </label>
-                </div>
 
-                {/* Data Readout Matrix */}
-                {profile && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                                <Clock size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">Duration</span>
-                            </div>
-                            <span className="text-3xl font-mono text-white">{formatTime(profile.technical.duration)}</span>
-                        </div>
-                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                                <Activity size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">BPM (Tempo)</span>
-                            </div>
-                            <span className="text-3xl font-mono text-white">{Math.round(profile.technical.bpm)}</span>
-                        </div>
-                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                                <Music size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">Key & Scale</span>
-                            </div>
-                            <span className="text-3xl font-mono text-white">{profile.technical.key} {profile.technical.scale}</span>
-                        </div>
-                        <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
-                            <div className="flex items-center gap-2 text-muted-foreground mb-4">
-                                <BarChart2 size={16} />
-                                <span className="text-xs font-bold uppercase tracking-wider">Energy Index</span>
-                            </div>
-                            <span className="text-3xl font-mono text-white">{(profile.technical.energy * 100).toFixed(0)}%</span>
-                        </div>
-                    </div>
-                )}
-
-                {/* Gemini 3 Pro Deep Analysis & DDEX */}
-                {profile && (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
-
-                        {/* Box 1: DDEX Spec */}
-                        <div className="bg-card glass-panel border border-white/5 rounded-2xl p-6">
-                            <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2 mb-6">
-                                <Globe size={16} className="text-blue-400" />
-                                DDEX Delivery Spec
-                            </h3>
-                            <div className="space-y-4">
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+                        {/* Tab 1: Compliance */}
+                        <TabsContent value="compliance" className="mt-0 border-none outline-none flex flex-col gap-6">
+                            {/* Top Actions */}
+                            <div className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5">
                                 <div>
-                                    <span className="text-[10px] text-muted-foreground uppercase">Primary Genre</span>
-                                    <p className="text-sm font-bold text-white">{profile.semantic.ddexGenre}</p>
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <ShieldCheck className="text-green-400" size={24} />
+                                        Ingestion & Data Extraction
+                                    </h2>
+                                    <p className="text-sm text-muted-foreground mt-1">Upload an audio master to extract precise metadata via Essentia + Gemini 3 Pro.</p>
                                 </div>
-                                <div>
-                                    <span className="text-[10px] text-muted-foreground uppercase">Sub-Genre</span>
-                                    <p className="text-sm font-bold text-white">{profile.semantic.ddexSubGenre}</p>
-                                </div>
-                                <div>
-                                    <span className="text-[10px] text-muted-foreground uppercase">Language</span>
-                                    <p className="text-sm font-bold text-white uppercase">{profile.semantic.language}</p>
-                                </div>
-                                <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
-                                    <span className="text-xs font-bold text-white">Explicit Content</span>
-                                    {profile.semantic.isExplicit ?
-                                        <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle size={12} /> YES</Badge> :
-                                        <Badge className="bg-green-500/20 text-green-400">CLEAN</Badge>
-                                    }
-                                </div>
+                                <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3 shadow-[0_0_15px_rgba(var(--primary),0.2)]">
+                                    {isAnalyzing ? <Loader2 className="animate-spin" size={18} /> : <Upload size={18} />}
+                                    {isAnalyzing ? "Deep Analysis Running..." : "Load Audio Master"}
+                                    <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
+                                </label>
                             </div>
-                        </div>
 
-                        {/* Box 2: Visual & Agent Hooks */}
-                        <div className="lg:col-span-2 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
-                            <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
-                                <BrainCircuit size={16} className="text-indigo-400" />
-                                Prompt Genetics (For GenAI Agents)
-                            </h3>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div className="space-y-4">
-                                    <div>
-                                        <span className="text-[10px] text-indigo-300 uppercase">Visual Imagery & Vibe</span>
-                                        <p className="text-sm font-medium leading-relaxed text-indigo-100 mt-1">"{profile.semantic.visualImagery.abstract}"</p>
+                            {/* Data Readout Matrix */}
+                            {profile && (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                            <Clock size={16} />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Duration</span>
+                                        </div>
+                                        <span className="text-3xl font-mono text-white">{formatTime(profile.technical.duration)}</span>
                                     </div>
-                                    <div>
-                                        <span className="text-[10px] text-indigo-300 uppercase">Marketing One-Liner</span>
-                                        <p className="text-sm font-mono text-indigo-300/80 bg-black/40 p-3 rounded-lg border border-white/5 mt-1">
-                                            {profile.semantic.marketingHooks.oneLiner}
-                                        </p>
+                                    <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                            <Activity size={16} />
+                                            <span className="text-xs font-bold uppercase tracking-wider">BPM (Tempo)</span>
+                                        </div>
+                                        <span className="text-3xl font-mono text-white">{Math.round(profile.technical.bpm)}</span>
+                                    </div>
+                                    <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                            <Music size={16} />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Key & Scale</span>
+                                        </div>
+                                        <span className="text-3xl font-mono text-white">{profile.technical.key} {profile.technical.scale}</span>
+                                    </div>
+                                    <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col justify-between">
+                                        <div className="flex items-center gap-2 text-muted-foreground mb-4">
+                                            <BarChart2 size={16} />
+                                            <span className="text-xs font-bold uppercase tracking-wider">Energy Index</span>
+                                        </div>
+                                        <span className="text-3xl font-mono text-white">{(profile.technical.energy * 100).toFixed(0)}%</span>
                                     </div>
                                 </div>
-                                <div className="space-y-4">
-                                    <div>
-                                        <span className="text-[10px] text-indigo-300 uppercase block mb-2">Image Gen Payload (Gemini)</span>
-                                        <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
-                                            {profile.semantic.targetPrompts.image}
+                            )}
+
+                            {/* Gemini 3 Pro Deep Analysis & DDEX */}
+                            {profile && (
+                                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-5 duration-600">
+
+                                    {/* Box 1: DDEX Spec */}
+                                    <div className="bg-card glass-panel border border-white/5 rounded-2xl p-6">
+                                        <h3 className="text-sm font-bold text-white uppercase tracking-widest flex items-center gap-2 mb-6">
+                                            <Globe size={16} className="text-blue-400" />
+                                            DDEX Delivery Spec
+                                        </h3>
+                                        <div className="space-y-4">
+                                            <div>
+                                                <span className="text-[10px] text-muted-foreground uppercase">Primary Genre</span>
+                                                <p className="text-sm font-bold text-white">{profile.semantic.ddexGenre}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] text-muted-foreground uppercase">Sub-Genre</span>
+                                                <p className="text-sm font-bold text-white">{profile.semantic.ddexSubGenre}</p>
+                                            </div>
+                                            <div>
+                                                <span className="text-[10px] text-muted-foreground uppercase">Language</span>
+                                                <p className="text-sm font-bold text-white uppercase">{profile.semantic.language}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                                <span className="text-xs font-bold text-white">Explicit Content</span>
+                                                {profile.semantic.isExplicit ?
+                                                    <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle size={12} /> YES</Badge> :
+                                                    <Badge className="bg-green-500/20 text-green-400">CLEAN</Badge>
+                                                }
+                                            </div>
                                         </div>
                                     </div>
-                                    <div>
-                                        <span className="text-[10px] text-indigo-300 uppercase block mb-2">Video Gen Payload (Veo)</span>
-                                        <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
-                                            {profile.semantic.targetPrompts.veo}
+
+                                    {/* Box 2: Visual & Agent Hooks */}
+                                    <div className="lg:col-span-2 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border border-indigo-500/20 rounded-2xl p-6">
+                                        <h3 className="text-sm font-bold text-indigo-100 uppercase tracking-widest flex items-center gap-2 mb-6">
+                                            <BrainCircuit size={16} className="text-indigo-400" />
+                                            Prompt Genetics (For GenAI Agents)
+                                        </h3>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <span className="text-[10px] text-indigo-300 uppercase">Visual Imagery & Vibe</span>
+                                                    <p className="text-sm font-medium leading-relaxed text-indigo-100 mt-1">"{profile.semantic.visualImagery.abstract}"</p>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[10px] text-indigo-300 uppercase">Marketing One-Liner</span>
+                                                    <p className="text-sm font-mono text-indigo-300/80 bg-black/40 p-3 rounded-lg border border-white/5 mt-1">
+                                                        {profile.semantic.marketingHooks.oneLiner}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-4">
+                                                <div>
+                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">Image Gen Payload (Gemini)</span>
+                                                    <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
+                                                        {profile.semantic.targetPrompts.image}
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <span className="text-[10px] text-indigo-300 uppercase block mb-2">Video Gen Payload (Veo)</span>
+                                                    <div className="bg-black/30 p-2 rounded text-xs text-indigo-200/70 border border-indigo-500/10 custom-scrollbar overflow-x-auto whitespace-nowrap">
+                                                        {profile.semantic.targetPrompts.veo}
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                        </div>
-                    </div>
-                )}
+                            )}
 
-                {/* Bottom Matrix: Tagging and DB Log */}
-                {profile && (
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-10">
-                        {/* Tagging */}
-                        <div className="lg:col-span-8 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
-                            <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
-                                <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Metadata Tags</span>
-                                <Badge variant="outline" className="text-[10px] h-5 border-white/10">{tags.length} TAGS</Badge>
-                            </div>
-                            <TagMatrix
-                                tags={tags}
-                                onAddTag={(tag) => setTags([...tags, tag])}
-                                onRemoveTag={(tag) => setTags(tags.filter(t => t !== tag))}
-                                suggestions={DEFAULT_TAGS}
-                            />
-                        </div>
+                            {/* Bottom Matrix: Tagging and DB Log */}
+                            {profile && (
+                                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in slide-in-from-bottom-6 duration-700 pb-10">
+                                    {/* Tagging */}
+                                    <div className="lg:col-span-8 bg-card glass-panel rounded-2xl border border-white/5 overflow-hidden flex flex-col">
+                                        <div className="p-4 border-b border-white/5 bg-white/5 flex justify-between items-center">
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Metadata Tags</span>
+                                            <Badge variant="outline" className="text-[10px] h-5 border-white/10">{tags.length} TAGS</Badge>
+                                        </div>
+                                        <TagMatrix
+                                            tags={tags}
+                                            onAddTag={(tag) => setTags([...tags, tag])}
+                                            onRemoveTag={(tag) => setTags(tags.filter(t => t !== tag))}
+                                            suggestions={DEFAULT_TAGS}
+                                        />
+                                    </div>
 
-                        {/* Audit Logging */}
-                        <div className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
-                            <div>
-                                <div className="flex items-center justify-between mb-4">
-                                    <div className="flex items-center gap-2">
-                                        <Database className="text-primary" size={18} />
-                                        <h3 className="text-sm font-bold text-primary uppercase">Knowledge Graph</h3>
+                                    {/* Audit Logging */}
+                                    <div className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
+                                        <div>
+                                            <div className="flex items-center justify-between mb-4">
+                                                <div className="flex items-center gap-2">
+                                                    <Database className="text-primary" size={18} />
+                                                    <h3 className="text-sm font-bold text-primary uppercase">Knowledge Graph</h3>
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-muted-foreground leading-relaxed mb-6">
+                                                Pushing this profile persists DDEX metadata and generated prompt payloads to standard system schemas. Other agents (Marketer, Director) will inherit this context automatically.
+                                            </p>
+                                        </div>
+
+                                        <Button
+                                            className="w-full bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)] text-primary-foreground font-bold py-6 text-sm"
+                                            disabled={isSaving}
+                                            data-testid="save-analysis-button"
+                                            onClick={handleSaveAnalysis}
+                                        >
+                                            {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
+                                            Push Verified Data to Agents
+                                        </Button>
                                     </div>
                                 </div>
-                                <p className="text-xs text-muted-foreground leading-relaxed mb-6">
-                                    Pushing this profile persists DDEX metadata and generated prompt payloads to standard system schemas. Other agents (Marketer, Director) will inherit this context automatically.
+                            )}
+                        </TabsContent>
+
+                        {/* Tab 3: Optimize */}
+                        <TabsContent value="optimize" className="mt-0 border-none outline-none h-full min-h-[500px]">
+                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-card glass-panel rounded-2xl border border-white/5 p-12 text-center animate-in fade-in duration-500">
+                                <ShieldCheck size={48} className="mb-6 opacity-30 text-green-400" />
+                                <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Target Mastering Audit</h2>
+                                <p className="text-sm max-w-md mx-auto leading-relaxed mb-8">
+                                    Analyze LUFS, True Peak, and frequency spectrum distribution against specific platform targets (Spotify, Apple Music) before delivery. Does not modify the waveform.
                                 </p>
+                                <Button variant="outline" className="border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10">
+                                    <Upload size={16} className="mr-2" /> Upload Master for Audit
+                                </Button>
                             </div>
-
-                            <Button
-                                className="w-full bg-primary hover:bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)] text-primary-foreground font-bold py-6 text-sm"
-                                disabled={isSaving}
-                                data-testid="save-analysis-button"
-                                onClick={handleSaveAnalysis}
-                            >
-                                {isSaving ? <Loader2 className="animate-spin mr-2" size={18} /> : <Save size={18} className="mr-2" />}
-                                Push Verified Data to Agents
-                            </Button>
-                        </div>
+                        </TabsContent>
                     </div>
-                )}
-
+                </Tabs>
             </div>
         </ModuleDashboard>
     );

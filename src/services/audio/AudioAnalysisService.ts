@@ -59,12 +59,12 @@ export class AudioAnalysisService {
 
         this.initPromise = (async () => {
             try {
-                console.info("[AudioAnalysis] Initializing Essentia.js WASM engine...");
+                logger.info("[AudioAnalysis] Initializing Essentia.js WASM engine...");
 
                 const baseUrl = import.meta.env.BASE_URL || '/';
                 const wasmUrl = new URL('essentia-wasm.web.wasm', window.location.origin + baseUrl).href;
 
-                console.debug(`[AudioAnalysis] WASM URL: ${wasmUrl}`);
+                logger.debug(`[AudioAnalysis] WASM URL: ${wasmUrl}`);
 
                 (window as any).EssentiaWASM = {
                     locateFile: (path: string) => {
@@ -104,7 +104,7 @@ export class AudioAnalysisService {
                 }
 
                 this.essentia = new Essentia(moduleInstance);
-                console.info("[AudioAnalysis] Essentia.js WASM engine ready.");
+                logger.info("[AudioAnalysis] Essentia.js WASM engine ready.");
             } catch (error) {
                 logger.error("[AudioAnalysis] Failed to initialize Essentia.js:", error);
                 this.initPromise = null;
@@ -134,7 +134,7 @@ export class AudioAnalysisService {
         try {
             const cached = await musicLibraryService.getAnalysis(fileHash);
             if (cached) {
-                console.info(`[AudioAnalysis] Cache hit for ${file.name}`);
+                logger.info(`[AudioAnalysis] Cache hit for ${file.name}`);
                 // Safely cast cached features to DeepAudioFeatures if compatible, or just return as is
                 return { features: cached.features as DeepAudioFeatures, fromCache: true };
             }
@@ -222,7 +222,7 @@ export class AudioAnalysisService {
         await this.init();
         if (!this.essentia) throw new Error("Essentia not initialized");
 
-        console.info(`[AudioAnalysis] Analyzing buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate}Hz`);
+        logger.info(`[AudioAnalysis] Analyzing buffer: ${audioBuffer.duration.toFixed(2)}s, ${audioBuffer.sampleRate}Hz`);
 
         const channelData = audioBuffer.getChannelData(0);
 
@@ -290,7 +290,7 @@ export class AudioAnalysisService {
                 }
             }
 
-            console.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
+            logger.info(`[AudioAnalysis] Success: ${Math.round(bpm)} BPM, ${key} ${scale}, Energy: ${energyValue.toFixed(3)}`);
 
             // Mapping RMS to dynamic energy (0-1)
             const energy = Math.min(1, Math.max(0, energyValue * 4.0));
@@ -346,7 +346,7 @@ export class AudioAnalysisService {
             throw new Error(result.error || 'Failed to save analysis');
         }
 
-        console.info(`[AudioAnalysis] Saved full profile for ${filename} via MetadataPersistenceService`);
+        logger.info(`[AudioAnalysis] Saved full profile for ${filename} via MetadataPersistenceService`);
     }
 }
 
