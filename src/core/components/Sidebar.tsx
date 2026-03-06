@@ -3,7 +3,7 @@ import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
 import { type ModuleId } from '@/core/constants';
-import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2 } from 'lucide-react';
+import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users, Radio, PenTool, DollarSign, FileText, Mic, ChevronLeft, ChevronRight, Globe, LogOut, Shirt, ShoppingBag, Activity, Clock, Palette, AudioLines, Volume2, Search } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
@@ -131,6 +131,37 @@ export default function Sidebar() {
                     {isSidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
                 </button>
             </div>
+
+            {/* CMD+K Global Search Trigger */}
+            {isSidebarOpen ? (
+                <div className="px-4 pt-4 pb-2">
+                    <button
+                        onClick={() => useStore.getState().setCommandMenuOpen(true)}
+                        className="w-full flex items-center justify-between px-3 py-2 bg-black/20 hover:bg-white/5 border border-white/5 rounded-lg text-sm text-gray-400 hover:text-gray-200 transition-all group shadow-sm"
+                        aria-label="Open Command Menu"
+                    >
+                        <span className="flex items-center gap-2">
+                            <Search size={14} className="text-gray-500 group-hover:text-purple-400 transition-colors" />
+                            Search...
+                        </span>
+                        <div className="flex items-center gap-1">
+                            <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded text-[10px] font-mono whitespace-nowrap shadow-sm text-gray-500 group-hover:text-gray-300">⌘</kbd>
+                            <kbd className="px-1.5 py-[1px] bg-white/5 border border-white/10 rounded text-[10px] font-mono whitespace-nowrap shadow-sm text-gray-500 group-hover:text-gray-300">K</kbd>
+                        </div>
+                    </button>
+                </div>
+            ) : (
+                <div className="flex items-center justify-center pt-4 pb-2 border-b border-white/5 border-dashed">
+                    <button
+                        onClick={() => useStore.getState().setCommandMenuOpen(true)}
+                        className="p-2 rounded-lg text-gray-400 hover:text-purple-400 hover:bg-white/10 transition-colors shadow-sm"
+                        aria-label="Open Command Menu"
+                        title="Search (⌘K)"
+                    >
+                        <Search size={16} />
+                    </button>
+                </div>
+            )}
 
             <div className="flex-1 py-4 space-y-6">
                 {/* Manager's Office */}

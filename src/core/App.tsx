@@ -24,6 +24,7 @@ import { useURLSync } from '@/hooks/useURLSync';
 import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
+import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 
@@ -430,6 +431,9 @@ export default function App() {
                                 <CommandBar />
                             </ErrorBoundary>
                         )}
+
+                        {/* Global Command Menu (CMD+K) */}
+                        <UnifiedCommandMenu />
 
                         {/* Global Keyboard Shortcuts Help (press ?) */}
                         <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
