@@ -12,7 +12,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 - [x] **1. Unified Command Bar (CMD+K):** Implement global fuzzy search across all modules (artists, audio, finance, workflows).
 - [x] **2. Module Lazy-Loading Polish:** Add smooth suspense fallback skeletons for all 20+ feature modules to eliminate blank flashes.
-- [ ] **3. Persistent Sidebar State:** Remember collapsed/expanded sidebar state and active tabs across app restarts.
+- [x] **3. Persistent Sidebar State:** Remember collapsed/expanded sidebar state and active tabs across app restarts.
 - [ ] **4. Responsive Breakpoints:** Ensure perfect UI rendering on window resize, particularly down to minimum supported Electron width (1024px).
 - [ ] **5. Dynamic Theme Engine:** Fully functional Light/Dark/System sync with seamless CSS variable transitions globally.
 - [ ] **6. Contextual Help Overlays:** Implement intro tooltips/tours for complex views like the Workflow node editor and Audio Distribution Hub.

@@ -42,30 +42,44 @@ export interface StoreState extends
 
 import { OrganizationService } from '@/services/OrganizationService';
 
-export const useStore = create<StoreState>()((...a) => {
-    const store = {
-        ...createAppSlice(...a),
-        ...createProfileSlice(...a),
-        ...createAgentSlice(...a),
-        ...createCreativeSlice(...a),
-        ...createWorkflowSlice(...a),
-        ...createAuthSlice(...a),
-        ...createFinanceSlice(...a),
-        ...createDistributionSlice(...a),
-        ...createFileSystemSlice(...a),
-        ...createAudioIntelligenceSlice(...a),
-        ...createSubscriptionSlice(...a),
-        ...createSidecarSlice(...a),
-        ...createSyncSlice(...a),
-        ...createAudioGenerationSlice(...a),
-    };
+import { persist, createJSONStorage } from 'zustand/middleware';
 
+export const useStore = create<StoreState>()(
+    persist(
+        (...a) => {
+            const store = {
+                ...createAppSlice(...a),
+                ...createProfileSlice(...a),
+                ...createAgentSlice(...a),
+                ...createCreativeSlice(...a),
+                ...createWorkflowSlice(...a),
+                ...createAuthSlice(...a),
+                ...createFinanceSlice(...a),
+                ...createDistributionSlice(...a),
+                ...createFileSystemSlice(...a),
+                ...createAudioIntelligenceSlice(...a),
+                ...createSubscriptionSlice(...a),
+                ...createSidecarSlice(...a),
+                ...createSyncSlice(...a),
+                ...createAudioGenerationSlice(...a),
+            };
 
-    // Phase 3.6: Bridge store state to OrganizationService for synchronous access
-    OrganizationService.setStore({ getState: () => store });
+            // Phase 3.6: Bridge store state to OrganizationService for synchronous access
+            OrganizationService.setStore({ getState: () => store });
 
-    return store;
-});
+            return store;
+        },
+        {
+            name: 'indiios-app-storage',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                isSidebarOpen: state.isSidebarOpen,
+                // Add currentModule if we want to remember the last tab
+                currentModule: state.currentModule,
+            }),
+        }
+    )
+);
 
 // Expose store for testing purposes
 if (typeof window !== 'undefined') {
