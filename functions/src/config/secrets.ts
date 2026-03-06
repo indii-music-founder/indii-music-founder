@@ -7,6 +7,8 @@ export const geminiApiKey = defineSecret("GEMINI_API_KEY");
 export const googleMapsApiKey = defineSecret("GOOGLE_MAPS_API_KEY");
 export const inngestEventKey = defineSecret("INNGEST_EVENT_KEY");
 export const inngestSigningKey = defineSecret("INNGEST_SIGNING_KEY");
+export const stripeSecretKey = defineSecret("STRIPE_SECRET_KEY");
+export const stripeWebhookSecret = defineSecret("STRIPE_WEBHOOK_SECRET");
 
 /**
  * Helper to safely retrieve the Gemini API Key.
@@ -36,4 +38,38 @@ export function getGeminiApiKey(): string {
     }
 
     throw new Error("Gemini API Key not found. Please set GEMINI_API_KEY secret or environment variable.");
+}
+
+/**
+ * Helper to safely retrieve the Stripe Secret Key.
+ */
+export function getStripeSecretKey(): string {
+    const envKey = process.env.STRIPE_SECRET_KEY;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = stripeSecretKey.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch (e) {
+        if (process.env.STRIPE_SECRET_KEY) return process.env.STRIPE_SECRET_KEY;
+    }
+
+    throw new Error("Stripe Secret Key not found.");
+}
+
+/**
+ * Helper to safely retrieve the Stripe Webhook Secret.
+ */
+export function getStripeWebhookSecret(): string {
+    const envKey = process.env.STRIPE_WEBHOOK_SECRET;
+    if (envKey && envKey.trim().length > 0) return envKey;
+
+    try {
+        const secret = stripeWebhookSecret.value();
+        if (secret && secret.trim().length > 0) return secret;
+    } catch (e) {
+        if (process.env.STRIPE_WEBHOOK_SECRET) return process.env.STRIPE_WEBHOOK_SECRET;
+    }
+
+    throw new Error("Stripe Webhook Secret not found.");
 }

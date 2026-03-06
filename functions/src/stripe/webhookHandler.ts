@@ -9,6 +9,7 @@ import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import Stripe from 'stripe';
 import { stripe, mapStripeStatus, mapStripeTierToSubscriptionTier } from './config';
 import { SubscriptionTier, Subscription as LocalSubscription } from '../shared/subscription/types';
+import { stripeSecretKey, stripeWebhookSecret, getStripeWebhookSecret } from '../config/secrets';
 
 /**
  * Verify Stripe webhook signature
@@ -182,9 +183,12 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
 /**
  * Main webhook handler
  */
-export const stripeWebhook = onRequest(async (req, res) => {
+export const stripeWebhook = onRequest({
+  secrets: [stripeSecretKey, stripeWebhookSecret],
+  timeoutSeconds: 30,
+}, async (req, res) => {
   const signature = req.headers['stripe-signature'] as string;
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const webhookSecret = getStripeWebhookSecret();
 
   if (!webhookSecret) {
     console.error('[stripeWebhook] Webhook secret not configured');

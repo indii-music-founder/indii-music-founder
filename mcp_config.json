@@ -18,6 +18,16 @@
       "headers": {
         "X-Goog-Api-Key": "AIzaSyD4637xW1EmNoEfi0tPhQBYtUAeINSVcS0"
       }
+    },
+    "stripe": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@stripe/mcp"
+      ],
+      "env": {
+        "STRIPE_SECRET_KEY": "REDACTED_STRIPE_KEY"
+      }
     }
   }
 }

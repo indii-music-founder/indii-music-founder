@@ -6,6 +6,7 @@ import { fingerprintService } from './FingerprintService';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { musicLibraryService } from '@/services/music/MusicLibraryService'; // Import library service
 import { Logger } from '@/core/logger/Logger';
+import { withServiceError } from '@/lib/errors';
 
 const SEMANTIC_SCHEMA: Schema = {
     type: 'OBJECT' as const, // Cast to const to satisfy strict typing
@@ -54,53 +55,53 @@ export class AudioIntelligenceService {
      * 2. Semantic (Gemini 3 Pro - AI_MODELS.TEXT.AGENT)
      */
     async analyze(file: File): Promise<AudioIntelligenceProfile> {
-        Logger.info('AudioIntelligence', `Starting analysis for ${file.name}`);
+        return withServiceError('AudioIntelligence', 'analyze', async () => {
+            Logger.info('AudioIntelligence', `Starting analysis for ${file.name}`);
 
-        // 1. Generate ID (Fingerprint)
-        const id = await fingerprintService.generateFingerprint(file);
-        if (!id) {
-            throw new Error('Failed to generate audio fingerprint');
-        }
+            // 1. Generate ID (Fingerprint)
+            const id = await fingerprintService.generateFingerprint(file);
+            if (!id) {
+                throw new Error('Failed to generate audio fingerprint');
+            }
 
-        // 2. Check Cache
-        const cachedAnalysis = await musicLibraryService.getAnalysisByHash(id);
+            // 2. Check Cache
+            const cachedAnalysis = await musicLibraryService.getAnalysisByHash(id);
 
-        if (cachedAnalysis && cachedAnalysis.semantic) {
-            Logger.info('AudioIntelligence', `Cache hit for ${file.name}. Returning cached profile.`);
-            return {
+            if (cachedAnalysis && cachedAnalysis.semantic) {
+                Logger.info('AudioIntelligence', `Cache hit for ${file.name}. Returning cached profile.`);
+                return {
+                    id,
+                    technical: cachedAnalysis.features,
+                    semantic: cachedAnalysis.semantic,
+                    analyzedAt: new Date(cachedAnalysis.analyzedAt).getTime(),
+                    modelVersion: AI_MODELS.TEXT.AGENT
+                };
+            }
+
+            // 3. Technical Analysis (Cache miss or partial hit)
+
+            // 2. Run Technical Analysis (Parallelizable but fast enough to await)
+            Logger.info('AudioIntelligence', 'Running technical analysis...');
+            const analysisResult = await audioAnalysisService.analyze(file);
+            const technical = analysisResult.features;
+
+            // 3. Run Semantic Analysis
+            Logger.info('AudioIntelligence', 'Running semantic analysis...');
+            const semantic = await this.analyzeSemantic(file, technical.bpm, technical.key);
+
+            const profile: AudioIntelligenceProfile = {
                 id,
-                technical: cachedAnalysis.features,
-                semantic: cachedAnalysis.semantic,
-                analyzedAt: new Date(cachedAnalysis.analyzedAt).getTime(),
+                technical,
+                semantic,
+                analyzedAt: Date.now(),
                 modelVersion: AI_MODELS.TEXT.AGENT
             };
-        }
 
-        // 3. Technical Analysis (Cache miss or partial hit)
+            // 5. Save to Cache
+            await musicLibraryService.saveAnalysis(id, file.name, technical, id, semantic);
 
-        // 2. Run Technical Analysis (Parallelizable but fast enough to await)
-        Logger.info('AudioIntelligence', 'Running technical analysis...');
-        const analysisResult = await audioAnalysisService.analyze(file);
-        const technical = analysisResult.features;
-
-        // 3. Run Semantic Analysis
-        Logger.info('AudioIntelligence', 'Running semantic analysis...');
-        const semantic = await this.analyzeSemantic(file, technical.bpm, technical.key);
-
-        const profile: AudioIntelligenceProfile = {
-            id,
-            technical,
-            semantic,
-            analyzedAt: Date.now(),
-            modelVersion: AI_MODELS.TEXT.AGENT
-        };
-
-        // 5. Save to Cache
-        await musicLibraryService.saveAnalysis(id, file.name, technical, id, semantic);
-
-
-
-        return profile;
+            return profile;
+        });
     }
 
     /**
