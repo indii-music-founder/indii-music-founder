@@ -2,7 +2,11 @@
   "version": "1.0",
   "lastUpdated": "2026-03-05T21:56:00-05:00",
   "activeTask": "task-003",
-  "completed": ["task-001", "task-002"],
+  "completed": [
+    "task-001",
+    "task-002",
+    "task-003"
+  ],
   "queue": [
     {
       "id": "task-001",
@@ -32,7 +36,9 @@
         }
       ],
       "dependencies": [],
-      "blocks": ["task-002"]
+      "blocks": [
+        "task-002"
+      ]
     },
     {
       "id": "task-002",
@@ -68,7 +74,9 @@
           "deliverable": "royalty-rules.md"
         }
       ],
-      "dependencies": ["task-001"],
+      "dependencies": [
+        "task-001"
+      ],
       "blocks": []
     },
     {
@@ -77,9 +85,10 @@
       "description": "Build onboarding checklist for PRO, SoundExchange, MLC, copyright registration. Include progress tracking and release gating.",
       "priority": "medium",
       "assignee": "ant",
-      "status": "pending",
+      "status": "done",
       "created": "2026-03-05T21:56:00-05:00",
-      "started": null,
+      "started": "2026-03-06T15:00:00-05:00",
+      "completed": "2026-03-06T16:00:00-05:00",
       "due": null,
       "milestones": [],
       "dependencies": [],
