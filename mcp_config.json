@@ -1,10 +1,70 @@
 {
   "mcpServers": {
     "docker": {
+      "command": "docker",
       "args": [
         "mcp"
+      ]
+    },
+    "firebase-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "firebase-tools@14.20.0",
+        "mcp"
       ],
-      "command": "docker"
+      "env": {}
+    },
+    "exa": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "exa-mcp-server"
+      ],
+      "env": {
+        "EXA_API_KEY": "21daceb0-30c8-401e-bed7-534c738184b7"
+      },
+      "disabled": true
+    },
+    "sentry": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@sentry/mcp-server"
+      ],
+      "env": {
+        "SENTRY_AUTH_TOKEN": "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"
+      }
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "MOCK_KEY_DO_NOT_USE"
+      }
+    },
+    "mem0": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@mem0/mcp-server"
+      ],
+      "env": {
+        "MEM0_API_KEY": "m0-WKGoe6JwUAYl1q39pk7n8F9qBupWI6jbegBU6Fje"
+      }
+    },
+    "ref": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "ref-tools-mcp@latest"
+      ],
+      "env": {
+        "REF_API_KEY": "ref-09698396a3e5f63ca2c9"
+      }
     },
     "notebooklm": {
       "command": "npx",
@@ -19,15 +79,54 @@
         "X-Goog-Api-Key": "AIzaSyD4637xW1EmNoEfi0tPhQBYtUAeINSVcS0"
       }
     },
+    "genkit-mcp-server": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "genkit-cli@^1.28.0",
+        "mcp",
+        "--explicitProjectRoot",
+        "--no-update-notification",
+        "--non-interactive"
+      ],
+      "env": {},
+      "disabled": true
+    },
+    "index-shared-memory": {
+      "command": "node",
+      "args": [
+        "/Volumes/X SSD 2025/Users/narrowchannel/.openclaw/workspace/mcp-server/shared-memory.js"
+      ],
+      "env": {
+        "INDEX_WORKSPACE": "/Volumes/X SSD 2025/Users/narrowchannel/.openclaw/workspace"
+      }
+    },
+    "index": {
+      "command": "node",
+      "args": [
+        "/Volumes/X SSD 2025/Users/narrowchannel/.openclaw/workspace/mcp-server/index.js"
+      ],
+      "env": {
+        "INDEX_WORKSPACE": "/Volumes/X SSD 2025/Users/narrowchannel/.openclaw/workspace"
+      }
+    },
+    "jcodemunch": {
+      "command": "uvx",
+      "args": [
+        "jcodemunch-mcp"
+      ],
+      "env": {
+        "GITHUB_TOKEN": "MOCK_KEY_DO_NOT_USE"
+      }
+    },
     "stripe": {
       "command": "npx",
       "args": [
         "-y",
-        "@stripe/mcp"
+        "@stripe/mcp",
+        "--api-key=MOCK_KEY_DO_NOT_USE"
       ],
-      "env": {
-        "STRIPE_SECRET_KEY": "REDACTED_STRIPE_KEY"
-      }
+      "env": {}
     }
   }
 }
