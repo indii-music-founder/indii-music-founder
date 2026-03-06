@@ -1,0 +1,89 @@
+{
+  "version": "1.0",
+  "lastUpdated": "2026-03-05T21:56:00-05:00",
+  "activeTask": "task-003",
+  "completed": ["task-001", "task-002"],
+  "queue": [
+    {
+      "id": "task-001",
+      "title": "Fix Onboarding/Signup Flow",
+      "description": "Critical bug: new users cannot sign up. Port 3000 auth server offline, /signup redirects to /signin, missing Sign Up button on login page. Checkpoint every 20 min to work-logs/.",
+      "priority": "critical",
+      "assignee": "ant",
+      "status": "done",
+      "created": "2026-03-05T21:56:00-05:00",
+      "started": "2026-03-05T21:56:00-05:00",
+      "completed": "2026-03-05T22:02:00-05:00",
+      "due": null,
+      "milestones": [
+        {
+          "id": "m1",
+          "title": "Diagnose auth architecture",
+          "description": "Check port 3000 server, understand auth flow, identify why /signup redirects",
+          "status": "in_progress",
+          "deliverable": "Written diagnosis in work-logs/"
+        },
+        {
+          "id": "m2",
+          "title": "Fix routing and add Sign Up button",
+          "description": "Repair /signup route, add Sign Up button to login page, ensure flow works end-to-end",
+          "status": "pending",
+          "deliverable": "Working signup flow + commit"
+        }
+      ],
+      "dependencies": [],
+      "blocks": ["task-002"]
+    },
+    {
+      "id": "task-002",
+      "title": "Draft Royalty Collection Knowledge Schema",
+      "description": "Comprehensive schema for PROs (BMI, ASCAP, SESAC), SoundExchange, MLC, distributor workflows. Includes entity relationships, TypeScript models, business rules, state machines.",
+      "priority": "high",
+      "assignee": "index",
+      "status": "done",
+      "created": "2026-03-05T21:56:00-05:00",
+      "started": "2026-03-05T22:02:00-05:00",
+      "completed": "2026-03-05T22:15:00-05:00",
+      "due": null,
+      "milestones": [
+        {
+          "id": "m1",
+          "title": "Research and document royalty sources",
+          "description": "Map all royalty streams: PROs, SoundExchange, MLC, distributors, mechanicals. Document timing rules and critical deadlines.",
+          "status": "pending",
+          "deliverable": "royalty-sources.md"
+        },
+        {
+          "id": "m2",
+          "title": "Design data models",
+          "description": "Create TypeScript interfaces for RoyaltyProfile, RegistrationStatus, PaymentStream, SplitSheet, etc.",
+          "status": "pending",
+          "deliverable": "royalty-models.ts"
+        },
+        {
+          "id": "m3",
+          "title": "Define business logic rules",
+          "description": "State machines for registration workflows, validation rules, timing constraints, distributor migration logic",
+          "status": "pending",
+          "deliverable": "royalty-rules.md"
+        }
+      ],
+      "dependencies": ["task-001"],
+      "blocks": []
+    },
+    {
+      "id": "task-003",
+      "title": "Implement Royalty Registration Checklist UI",
+      "description": "Build onboarding checklist for PRO, SoundExchange, MLC, copyright registration. Include progress tracking and release gating.",
+      "priority": "medium",
+      "assignee": "ant",
+      "status": "pending",
+      "created": "2026-03-05T21:56:00-05:00",
+      "started": null,
+      "due": null,
+      "milestones": [],
+      "dependencies": [],
+      "blocks": []
+    }
+  ]
+}
