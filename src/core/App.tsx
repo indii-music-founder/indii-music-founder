@@ -25,6 +25,7 @@ import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
+import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 
@@ -101,53 +102,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
 // Helper Components
 // ============================================================================
 
-function LoadingFallback() {
-    const [show, setShow] = useState(false);
-
-    useEffect(() => {
-        // Delay showing the skeleton to prevent flash for fast module loads
-        const timer = setTimeout(() => setShow(true), 150);
-        return () => clearTimeout(timer);
-    }, []);
-
-    if (!show) {
-        return null;
-    }
-
-    return (
-        <div className="absolute inset-0 bg-background/95 backdrop-blur-sm animate-in fade-in duration-200">
-            <div className="h-full flex flex-col p-6 gap-4">
-                {/* Header skeleton */}
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-white/5 animate-pulse" />
-                        <div className="h-5 w-40 rounded bg-white/5 animate-pulse" />
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="h-8 w-20 rounded-lg bg-white/5 animate-pulse" />
-                        <div className="h-8 w-20 rounded-lg bg-white/5 animate-pulse" />
-                    </div>
-                </div>
-
-                {/* Content skeleton */}
-                <div className="flex-1 grid grid-cols-3 gap-4">
-                    <div className="col-span-2 space-y-4">
-                        <div className="h-48 rounded-xl bg-white/5 animate-pulse" />
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="h-32 rounded-xl bg-white/5 animate-pulse" />
-                            <div className="h-32 rounded-xl bg-white/5 animate-pulse" />
-                        </div>
-                    </div>
-                    <div className="space-y-4">
-                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
-                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
-                        <div className="h-24 rounded-xl bg-white/5 animate-pulse" />
-                    </div>
-                </div>
-            </div>
-        </div>
-    );
-}
+// Replaced inline LoadingFallback with external module-specific fallbacks
 
 
 function DevPortWarning() {
