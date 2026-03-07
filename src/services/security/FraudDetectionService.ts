@@ -151,7 +151,7 @@ export class FraudDetectionService {
 
         try {
             let fingerprint: string | null = null;
-            let audioFileUrl = typeof audioFileUrlOrFile === 'string' ? audioFileUrlOrFile : audioFileUrlLegacy;
+            const audioFileUrl = typeof audioFileUrlOrFile === 'string' ? audioFileUrlOrFile : audioFileUrlLegacy;
 
             // 1. Generate Acoustic Fingerprint if a File is provided
             if (audioFileUrlOrFile instanceof File) {
@@ -160,15 +160,6 @@ export class FraudDetectionService {
 
             if (!fingerprint && !audioFileUrl) {
                 console.warn('[FraudDetection] No file or URL provided for copyright scan. Proceeding as safe.');
-     */
-    static async checkCopyright(file: File, audioFileUrl?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
-        console.info(`[FraudDetection] Scanning audio for copyright infringement via fingerprint...`);
-
-        try {
-            // 1. Generate Acoustic Fingerprint
-            const fingerprint = await fingerprintService.generateFingerprint(file);
-            if (!fingerprint) {
-                console.warn('[FraudDetection] Could not generate fingerprint for copyright scan. Proceeding as safe.');
                 return { safe: true };
             }
 
@@ -183,7 +174,6 @@ export class FraudDetectionService {
             for (const doc of snapshot.docs) {
                 const rule = doc.data();
 
-                // Check if the generated fingerprint exactly matches a blocked fingerprint
                 if (fingerprint && rule.fingerprint && rule.fingerprint === fingerprint) {
                     return {
                         safe: false,
@@ -192,7 +182,6 @@ export class FraudDetectionService {
                     };
                 }
 
-                // Fallback for URL pattern matching if configured
                 if (audioFileUrl && rule.pattern && audioFileUrl.includes(rule.pattern)) {
                     return {
                         safe: false,
@@ -203,25 +192,6 @@ export class FraudDetectionService {
             }
 
             return { safe: true, fingerprint: fingerprint || undefined };
-                if (rule.fingerprint && rule.fingerprint === fingerprint) {
-                    return {
-                        safe: false,
-                        match: rule.matchMessage || 'Copyright Violation Detected: Uncleared Sample Match',
-                        fingerprint
-                    };
-                }
-
-                // Fallback for URL pattern matching if configured
-                if (audioFileUrl && rule.pattern && audioFileUrl.includes(rule.pattern)) {
-                    return {
-                        safe: false,
-                        match: rule.matchMessage || 'Copyright Violation Detected via URL Pattern',
-                        fingerprint
-                    };
-                }
-            }
-
-            return { safe: true, fingerprint };
 
         } catch (e) {
             logger.error('[FraudDetection] Failed to run Copyright AI filter', e);

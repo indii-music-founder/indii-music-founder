@@ -1,6 +1,5 @@
-import React, { useState, useRef, Suspense } from 'react';
 import React, { useState, useRef, Suspense, Component, ErrorInfo } from 'react';
-import { Canvas, useThree } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
 import { Download, Trash2, BoxSelect, MonitorPlay } from 'lucide-react';
@@ -17,46 +16,23 @@ interface DroppedAsset {
     scale: number;
 }
 
-// A generic GLTF model component that dynamically loads dropped assets
-const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
-    // We use a basic error boundary catch for invalid models
-    try {
-        const { scene } = useGLTF(url);
-        // Clone the scene so we can have multiple of the same model without conflict
-        const clonedScene = scene.clone();
-        return <primitive object={clonedScene} position={position} scale={scale} />;
-    } catch (e) {
-        console.error('Failed to load GLTF model:', e);
-        return null;
-    }
+// Error boundary so a bad GLTF file doesn't crash the whole canvas
 class ModelErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
     constructor(props: { children: React.ReactNode }) {
         super(props);
         this.state = { hasError: false };
     }
-
-    static getDerivedStateFromError(_: Error) {
-        return { hasError: true };
-    }
-
+    static getDerivedStateFromError(_: Error) { return { hasError: true }; }
     componentDidCatch(error: Error, errorInfo: ErrorInfo) {
         console.error('Failed to load GLTF model:', error, errorInfo);
     }
-
     render() {
-        if (this.state.hasError) {
-            return null;
-        }
+        if (this.state.hasError) return null;
         return this.props.children;
     }
 }
 
-// A generic GLTF model component that dynamically loads dropped assets
-const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
-    const { scene } = useGLTF(url);
-    // Clone the scene so we can have multiple of the same model without conflict
-// A generic GLTF model component that dynamically loads dropped assets.
-// useGLTF must be called unconditionally; Suspense + ErrorBoundary handle failures.
+// useGLTF must be called unconditionally (rules-of-hooks). Suspense + ModelErrorBoundary handle failures.
 const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
     const { scene } = useGLTF(url);
     const clonedScene = scene.clone();
@@ -168,7 +144,6 @@ export const SceneBuilder = () => {
                     <Suspense fallback={null}>
                         {/* Render all dropped assets */}
                         {assets.map((asset) => (
-                            <Model key={asset.id} url={asset.url} position={asset.position} scale={asset.scale} />
                             <ModelErrorBoundary key={asset.id}>
                                 <Model url={asset.url} position={asset.position} scale={asset.scale} />
                             </ModelErrorBoundary>
