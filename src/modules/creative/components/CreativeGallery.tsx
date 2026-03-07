@@ -2,6 +2,7 @@ import React, { useState, useRef, useMemo, memo, useCallback, useEffect } from '
 import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
@@ -265,6 +266,33 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     const isEmpty = allItems.length === 0;
 
+    // --- Virtualization Logic ---
+    const parentRef = useRef<HTMLDivElement>(null);
+    const [columns, setColumns] = useState(compact ? 2 : 4);
+
+    useEffect(() => {
+        if (!parentRef.current) return;
+        const observer = new ResizeObserver((entries) => {
+            const width = entries[0].contentRect.width;
+            if (compact) {
+                setColumns(2);
+            } else {
+                setColumns(width >= 1024 ? 4 : width >= 768 ? 3 : 2);
+            }
+        });
+        observer.observe(parentRef.current);
+        return () => observer.disconnect();
+    }, [compact]);
+
+    const rowCount = Math.ceil(allItems.length / columns);
+
+    const rowVirtualizer = useVirtualizer({
+        count: rowCount,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 200, // Will be dynamically measured after first render
+        overscan: 2,
+    });
+
     // ⚡ Bolt Optimization: Stable delete handler
     const handleDelete = useCallback((id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => {
         if (origin === 'uploaded') {
@@ -326,22 +354,46 @@ export default function CreativeGallery({ compact = false, onSelect, className =
             )}
 
             {/* Generation History */}
-            <div className="flex-1 p-4 overflow-y-auto custom-scrollbar">
+            <div ref={parentRef} className="flex-1 p-4 overflow-y-auto custom-scrollbar relative">
                 {!compact && <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">All Assets</h2>}
-                <div className={gridClass}>
-                    {allItems.map(item => (
-                        <GalleryItem
-                            key={item.id}
-                            item={item}
-                            onSelect={handleSelect}
-                            setVideoInput={setVideoInput}
-                            addCharacterReference={addCharacterReference}
-                            setSelectedItem={setSelectedItem}
-                            toast={toast}
-                            generationMode={generationMode}
-                            onDelete={handleDelete}
-                        />
-                    ))}
+
+                <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+                    {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                        const startIndex = virtualRow.index * columns;
+                        const rowItems = allItems.slice(startIndex, startIndex + columns);
+
+                        return (
+                            <div
+                                key={virtualRow.index}
+                                data-index={virtualRow.index}
+                                ref={rowVirtualizer.measureElement}
+                                style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    width: '100%',
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                    paddingBottom: '16px' // equivalent to gap-4
+                                }}
+                            >
+                                <div className={gridClass}>
+                                    {rowItems.map(item => (
+                                        <GalleryItem
+                                            key={item.id}
+                                            item={item}
+                                            onSelect={handleSelect}
+                                            setVideoInput={setVideoInput}
+                                            addCharacterReference={addCharacterReference}
+                                            setSelectedItem={setSelectedItem}
+                                            toast={toast}
+                                            generationMode={generationMode}
+                                            onDelete={handleDelete}
+                                        />
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
             </div>
         </div>
