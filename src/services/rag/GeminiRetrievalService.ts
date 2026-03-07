@@ -300,7 +300,7 @@ export class GeminiRetrievalService {
      * If fileUri is null/empty, it searches the entire store.
      */
     async query(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string) {
-        let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
+        let tools: any[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
@@ -312,11 +312,21 @@ export class GeminiRetrievalService {
                     await this.importFileToStore(fileUri, storeName);
                 }
 
-                tools = [{
-                    fileSearch: {
-                        fileSearchStoreNames: [storeName]
+                tools = [
+                    {
+                        fileSearch: {
+                            fileSearchStoreNames: [storeName]
+                        }
+                    },
+                    {
+                        googleSearchRetrieval: {
+                            dynamicRetrievalConfig: {
+                                mode: 'MODE_DYNAMIC',
+                                dynamicThreshold: 0.3
+                            }
+                        }
                     }
-                }];
+                ];
                 console.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
                 logger.error("[RAG] File Search Setup Failed:", e);
@@ -324,6 +334,10 @@ export class GeminiRetrievalService {
         }
 
         const body = {
+            systemInstruction: {
+                role: 'system',
+                parts: [{ text: "You must use the provided File Search tools to answer the query. You MUST include inline citations to the source documents used, formatting them as [Document Name]. Always base your answers strictly on the retrieved context." }]
+            },
             contents: [{
                 role: 'user',
                 parts: [
@@ -347,20 +361,27 @@ export class GeminiRetrievalService {
      * Streams query responses using the Gemini API.
      */
     async *streamQuery(fileUri: string | null, userQuery: string, fileContent?: string, model?: string, projectId?: string): AsyncGenerator<string> {
-        let tools: Array<{ fileSearch: { fileSearchStoreNames: string[] } }> | undefined;
+        let tools: any[] | undefined;
         const targetModel = model || AI_MODELS.TEXT.AGENT;
 
         if (!fileContent) {
             try {
                 const storeName = await this.ensureFileSearchStore(projectId);
                 if (fileUri) await this.importFileToStore(fileUri, storeName);
-                tools = [{ fileSearch: { fileSearchStoreNames: [storeName] } }];
+                tools = [
+                    { fileSearch: { fileSearchStoreNames: [storeName] } },
+                    { googleSearchRetrieval: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC', dynamicThreshold: 0.3 } } }
+                ];
             } catch (e) {
                 logger.error("[RAG] Stream Query Setup Failed:", e);
             }
         }
 
         const body = {
+            systemInstruction: {
+                role: 'system',
+                parts: [{ text: "You must use the provided File Search tools to answer the query. You MUST include inline citations to the source documents used, formatting them as [Document Name]. Always base your answers strictly on the retrieved context." }]
+            },
             contents: [{
                 role: 'user',
                 parts: [

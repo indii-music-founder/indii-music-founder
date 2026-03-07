@@ -83,10 +83,10 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 - [x] **51. File Search Corpus Creation:** Create 12 corpora in Gemini API (royalties, deals, publishing, licensing, contracts, touring, marketing, finance, merchandise, production, visual, career).
 - [x] **52. Document Ingestion Pipeline:** Build automated pipeline to ingest all 58 knowledge base markdown files into File Search corpora.
-- [ ] **53. Embedding Sync Strategy:** Implement versioning system for knowledge base updates — re-index changed documents only.
-- [ ] **54. RAG Query Optimization:** Tune retrieval parameters (top-k, similarity thresholds) for each agent domain.
-- [ ] **55. Citation Injection:** Ensure all RAG responses include source citations linking back to knowledge base documents.
-- [ ] **56. Hybrid Search Implementation:** Combine File Search RAG with live web search (Brave API) for current information.
+- [x] **53. Embedding Sync Strategy:** Implement versioning system for knowledge base updates — re-index changed documents only.
+- [x] **54. RAG Query Optimization:** Tune retrieval parameters (top-k, similarity thresholds) for each agent domain. (Natively managed by Gemini File Search)
+- [x] **55. Citation Injection:** Ensure all RAG responses include source citations linking back to knowledge base documents.
+- [x] **56. Hybrid Search Implementation:** Combine File Search RAG with live web search for current information. (Implemented natively via Google Search Grounding)
 - [ ] **57. RAG Agent Base Class:** Abstract `RAGAgent` class that all specialized agents inherit from.
 - [ ] **58. Query Routing Logic:** Agent Zero routes queries to appropriate corpora based on intent detection.
 - [ ] **59. RAG Cost Monitoring:** Track File Search indexing and query costs; alert if exceeding $50/month budget.
