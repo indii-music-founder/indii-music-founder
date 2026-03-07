@@ -6,7 +6,7 @@ import {
     TrendingUp, ShoppingBag, DollarSign, Plus, Loader2,
     LayoutGrid, PenTool, Package, Settings, LogOut,
     Palette, Truck, BarChart3, Sparkles, Star,
-    Store, Flame, Globe, Wallet, Shield
+    Store, Flame, Globe, Wallet, Shield, Lock
 } from 'lucide-react';
 
 import { useMerchandise, MerchStats } from './hooks/useMerchandise';
@@ -22,9 +22,10 @@ import { DropCampaignWizard } from './components/DropCampaignWizard';
 import { WalletConnectPanel } from './components/WalletConnectPanel';
 import { SmartContractGenerator } from './components/SmartContractGenerator';
 import { BlockchainLedger } from './components/BlockchainLedger';
+import { TokenGatedPreview } from './components/TokenGatedPreview';
 
 type CenterTab = 'dashboard' | 'inventory' | 'pricing' | 'pod' | 'web3';
-type Web3SubTab = 'wallet' | 'contracts' | 'ledger';
+type Web3SubTab = 'wallet' | 'contracts' | 'ledger' | 'gated';
 
 /* ================================================================== */
 /*  Merch Dashboard — Three-Panel Layout                               */
@@ -289,6 +290,7 @@ export default function MerchDashboard() {
                                     { id: 'wallet', label: 'Wallet', icon: Wallet },
                                     { id: 'contracts', label: 'Smart Contracts', icon: Shield },
                                     { id: 'ledger', label: 'Ledger', icon: Globe },
+                                    { id: 'gated', label: 'Gated Previews', icon: Lock },
                                 ] as { id: Web3SubTab; label: string; icon: React.ElementType }[]).map(t => (
                                     <button
                                         key={t.id}
@@ -302,6 +304,7 @@ export default function MerchDashboard() {
                             {web3SubTab === 'wallet' && <WalletConnectPanel />}
                             {web3SubTab === 'contracts' && <SmartContractGenerator />}
                             {web3SubTab === 'ledger' && <BlockchainLedger />}
+                            {web3SubTab === 'gated' && <TokenGatedPreview />}
                         </div>
                     )}
                 </div>
