@@ -1,8 +1,8 @@
 import React from 'react';
-import { Map, Truck, Coffee, Settings, ChevronRight, Route } from 'lucide-react';
+import { Map, Truck, Coffee, Settings, ChevronRight, Route, FileText } from 'lucide-react';
 import { motion } from 'motion/react';
 
-export type TouringTab = 'planning' | 'on-the-road' | 'rider' | 'route-optimizer';
+export type TouringTab = 'planning' | 'on-the-road' | 'rider' | 'route-optimizer' | 'tech-rider';
 
 interface RoadManagerSidebarProps {
     activeTab: TouringTab;
@@ -15,6 +15,7 @@ export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTa
         { id: 'on-the-road', label: 'On The Road', icon: Truck, description: 'Live Telemetry' },
         { id: 'rider', label: 'Hospitality Rider', icon: Coffee, description: 'Inventory & Needs' },
         { id: 'route-optimizer', label: 'Route Optimizer', icon: Route, description: 'Spotify Density Map' },
+        { id: 'tech-rider', label: 'Tech Rider', icon: FileText, description: 'Stage Plot & Requirements' },
     ];
 
     return (
