@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import { VideoProject, VideoClip } from '../../store/videoEditorStore';
+import { VideoProject, VideoClip, useVideoEditorStore } from '../../store/videoEditorStore';
 import { PanelSection, PropertyRow } from '@/components/studio/PropertiesPanel';
 import { KeyframeButton, StyledInput, StyledRange, StyledSelect, StyledTextArea } from './VideoPropertyInputs';
 import { Image as ImageIcon } from 'lucide-react';
@@ -81,10 +81,11 @@ ClipBasicsSection.displayName = 'ClipBasicsSection';
 interface TransformSectionProps {
     selectedClip: VideoClip;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
-    currentTime: number;
 }
 
-export const TransformSection = memo(({ selectedClip, updateClip, currentTime }: TransformSectionProps) => {
+export const TransformSection = memo(({ selectedClip, updateClip }: TransformSectionProps) => {
+    const ObjectCurrentTime = useVideoEditorStore(state => state.currentTime);
+    const currentTime = ObjectCurrentTime;
 
     // Keyframe Logic
     const handleAddKeyframe = useCallback((property: string, value: number) => {

@@ -22,8 +22,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
         selectedClipIdState,
         selectedClip,
         isExporting,
-        isPlaying,
-        currentTime,
         handlePlayPause,
         handleSeek,
         formatTime,
@@ -40,6 +38,8 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
     } = useVideoEditor(initialVideo);
 
     const { handleDragStart } = useTimelineDrag();
+
+    const handleAddTrackVideo = React.useCallback(() => addTrack('video'), [addTrack]);
 
     return (
         <div className="flex flex-col h-full bg-[--background] text-[--foreground]">
@@ -86,7 +86,6 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
                     project={project}
                     selectedClip={selectedClip}
                     updateClip={updateClip}
-                    currentTime={currentTime}
                 />
             </div>
 
@@ -97,11 +96,10 @@ export const VideoEditor: React.FC<VideoEditorProps> = ({ initialVideo }) => {
             >
                 <VideoTimeline
                     project={project}
-                    isPlaying={isPlaying}
                     selectedClipId={selectedClipIdState}
                     handlePlayPause={handlePlayPause}
                     handleSeek={handleSeek}
-                    handleAddTrack={() => addTrack('video')}
+                    handleAddTrack={handleAddTrackVideo}
                     handleAddSampleClip={handleAddSampleClip}
                     removeTrack={removeTrack}
                     removeClip={removeClip}
