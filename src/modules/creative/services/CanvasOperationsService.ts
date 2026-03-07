@@ -74,6 +74,77 @@ export class CanvasOperationsService {
     }
 
     /**
+     * Requirement 107: Fabric.js Canvas Batching
+     * Generates a batch of creative assets across multiple dimensions from a single canvas.
+     */
+    async exportBatchDimensions(): Promise<{
+        tiktok: string;   // 9:16
+        instagram: string; // 1:1
+        youtube: string;   // 16:9
+    } | null> {
+        if (!this.canvas) return null;
+
+        const originalWidth = this.canvas.getWidth();
+        const originalHeight = this.canvas.getHeight();
+        const jsonState = JSON.stringify(this.canvas.toJSON());
+
+        const exportForDimensions = async (targetWidth: number, targetHeight: number): Promise<string> => {
+            this.canvas!.setDimensions({ width: targetWidth, height: targetHeight });
+
+            // Using fabric.Canvas.getObjects directly since group scale could be problematic with clip paths
+            const objects = this.canvas!.getObjects();
+            if (objects.length > 0) {
+                const group = new fabric.Group(objects);
+
+                const scaleX = targetWidth / originalWidth;
+                const scaleY = targetHeight / originalHeight;
+                const scale = Math.min(scaleX, scaleY) * 0.95; // 95% fit
+
+                group.scale(scale);
+                this.canvas!.centerObject(group);
+                group.setCoords();
+
+                // Fabric 6 uses remove() or destroys implicitly by returning objects
+                group.removeAll();
+                this.canvas!.renderAll();
+            }
+
+            const dataUrl = this.canvas!.toDataURL({
+                format: 'png',
+                quality: 1,
+                multiplier: 1
+            });
+
+            return new Promise((resolve) => {
+                this.canvas!.loadFromJSON(jsonState, () => {
+                    resolve(dataUrl);
+                });
+            });
+        };
+
+        try {
+            // TikTok / Reels (9:16)
+            const tiktok = await exportForDimensions(1080, 1920);
+
+            // Instagram Post (1:1)
+            const instagram = await exportForDimensions(1080, 1080);
+
+            // YouTube Wide (16:9)
+            const youtube = await exportForDimensions(1920, 1080);
+
+            // Restore canvas
+            this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
+            this.canvas.renderAll();
+
+            return { tiktok, instagram, youtube };
+        } catch (error) {
+            console.error('[CanvasBatching] Failed to export batch dimensions:', error);
+            this.canvas.setDimensions({ width: originalWidth, height: originalHeight });
+            return null;
+        }
+    }
+
+    /**
      * Export canvas to JSON string
      */
 

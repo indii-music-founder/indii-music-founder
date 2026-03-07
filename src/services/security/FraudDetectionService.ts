@@ -140,10 +140,24 @@ export class FraudDetectionService {
     /**
      * Legacy URL-based copyright check (maintained for backward compatibility)
      */
-    static async checkCopyright(audioFileUrl: string): Promise<{ safe: boolean; match?: string }> {
-        console.info(`[FraudDetection] Scanning URL ${audioFileUrl} with ACR...`);
+    /**
+     * Requirement 108: Copyright AI Filter
+     * Implements a preliminary hashing/screening layer using the Audio Fingerprinting service
+     * before distribution to catch uncleared samples.
+     */
+    static async checkCopyright(file: File, audioFileUrl?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
+        console.info(`[FraudDetection] Scanning audio for copyright infringement via fingerprint...`);
 
         try {
+            // 1. Generate Acoustic Fingerprint
+            const fingerprint = await fingerprintService.generateFingerprint(file);
+            if (!fingerprint) {
+                console.warn('[FraudDetection] Could not generate fingerprint for copyright scan. Proceeding as safe.');
+                return { safe: true };
+            }
+
+            // 2. Cross-reference fingerprint with known copyright registry (Mocked via Firestore 'content_rules')
+            // In a production environment, this would hit ACRCloud or Audible Magic APIs.
             const q = query(
                 collection(db, 'content_rules'),
                 where('type', '==', 'copyright_infringement')
@@ -152,18 +166,34 @@ export class FraudDetectionService {
 
             for (const doc of snapshot.docs) {
                 const rule = doc.data();
-                if (rule.pattern && audioFileUrl.includes(rule.pattern)) {
+
+                // Check if the generated fingerprint exactly matches a blocked fingerprint
+                if (rule.fingerprint && rule.fingerprint === fingerprint) {
                     return {
                         safe: false,
-                        match: rule.matchMessage || 'Copyright Violation Detected'
+                        match: rule.matchMessage || 'Copyright Violation Detected: Uncleared Sample Match',
+                        fingerprint
+                    };
+                }
+
+                // Fallback for URL pattern matching if configured
+                if (audioFileUrl && rule.pattern && audioFileUrl.includes(rule.pattern)) {
+                    return {
+                        safe: false,
+                        match: rule.matchMessage || 'Copyright Violation Detected via URL Pattern',
+                        fingerprint
                     };
                 }
             }
-        } catch (e) {
-            logger.error('[FraudDetection] Failed to query content rules', e);
-        }
 
-        return { safe: true };
+            return { safe: true, fingerprint };
+
+        } catch (e) {
+            logger.error('[FraudDetection] Failed to run Copyright AI filter', e);
+            // Fail open so we don't block distribution completely on external API failure,
+            // but we log it heavily for manual review.
+            return { safe: true };
+        }
     }
 
     /**

@@ -27,6 +27,8 @@ vi.mock('@/core/context/ToastContext', () => ({
 vi.mock('fabric', () => {
     const CanvasMock = vi.fn().mockImplementation(function (this: any) {
         return {
+            on: vi.fn(),
+            off: vi.fn(),
             dispose: vi.fn(),
             add: vi.fn(),
             renderAll: vi.fn(),
