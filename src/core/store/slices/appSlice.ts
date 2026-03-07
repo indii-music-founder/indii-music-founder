@@ -117,9 +117,15 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     setPendingPrompt: (prompt) => set({ pendingPrompt: prompt }),
     apiKeyError: false,
     setApiKeyError: (error) => set({ apiKeyError: error }),
-    isSidebarOpen: true,
+    isSidebarOpen: typeof window !== 'undefined' ? localStorage.getItem('indiiOS_sidebarOpen') !== 'false' : true,
     isRightPanelOpen: false,
-    toggleSidebar: () => set((state) => ({ isSidebarOpen: !state.isSidebarOpen })),
+    toggleSidebar: () => set((state) => {
+        const newState = !state.isSidebarOpen;
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indiiOS_sidebarOpen', String(newState));
+        }
+        return { isSidebarOpen: newState };
+    }),
     toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
     isCommandMenuOpen: false,
     setCommandMenuOpen: (open) => set({ isCommandMenuOpen: open }),

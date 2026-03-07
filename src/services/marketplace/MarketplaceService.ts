@@ -111,6 +111,23 @@ export class MarketplaceService {
     }
 
     /**
+     * Deletes a product by marking it as inactive.
+     */
+    static async deleteProduct(productId: string): Promise<void> {
+        try {
+            const productRef = doc(db, this.PRODUCTS_COLLECTION, productId);
+            await updateDoc(productRef, {
+                isActive: false
+            });
+            // Clear cache
+            this.productCache.delete(productId);
+        } catch (error) {
+            logger.error(`Failed to delete product ${productId}:`, error);
+            throw error;
+        }
+    }
+
+    /**
      * Process a purchase for a product.
      */
     static async purchaseProduct(
