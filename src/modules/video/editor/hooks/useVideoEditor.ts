@@ -1,4 +1,5 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import { PlayerRef } from '@remotion/player';
 import { httpsCallable } from 'firebase/functions';
 import { functionsWest1 } from '@/services/firebase';
@@ -12,8 +13,19 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
     const {
         project, setProject, updateClip, addClip, removeClip,
         addTrack, removeTrack, setIsPlaying, setCurrentTime,
-        setSelectedClipId, isPlaying, currentTime
-    } = useVideoEditorStore();
+        setSelectedClipId
+    } = useVideoEditorStore(useShallow(state => ({
+        project: state.project,
+        setProject: state.setProject,
+        updateClip: state.updateClip,
+        addClip: state.addClip,
+        removeClip: state.removeClip,
+        addTrack: state.addTrack,
+        removeTrack: state.removeTrack,
+        setIsPlaying: state.setIsPlaying,
+        setCurrentTime: state.setCurrentTime,
+        setSelectedClipId: state.setSelectedClipId
+    })));
 
     const playerRef = useRef<PlayerRef>(null);
     const initializedRef = useRef(false);
@@ -54,16 +66,23 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
 
     // Sync player state with store
     useEffect(() => {
-        if (playerRef.current) {
-            if (isPlaying) {
-                playerRef.current.play();
-            } else {
-                playerRef.current.pause();
+        // We handle playing state differently now, using a subscription 
+        // to avoid re-rendering the whole editor
+        const unsub = useVideoEditorStore.subscribe((state, prevState) => {
+            if (state.isPlaying !== prevState.isPlaying) {
+                if (playerRef.current) {
+                    if (state.isPlaying) {
+                        playerRef.current.play();
+                    } else {
+                        playerRef.current.pause();
+                    }
+                }
             }
-        }
-    }, [isPlaying]);
+        });
+        return unsub;
+    }, []);
 
-    const handlePlayPause = useCallback(() => setIsPlaying(!isPlaying), [isPlaying, setIsPlaying]);
+    const handlePlayPause = useCallback(() => setIsPlaying(!useVideoEditorStore.getState().isPlaying), [setIsPlaying]);
 
     const handleSeek = useCallback((frame: number) => {
         if (playerRef.current) {
@@ -151,8 +170,6 @@ export function useVideoEditor(initialVideo?: HistoryItem) {
         setSelectedClipIdState,
         selectedClip,
         isExporting,
-        isPlaying,
-        currentTime,
         handlePlayPause,
         handleSeek,
         formatTime,

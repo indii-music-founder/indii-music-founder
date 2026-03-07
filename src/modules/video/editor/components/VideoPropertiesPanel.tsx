@@ -17,10 +17,9 @@ interface VideoPropertiesPanelProps {
     project: VideoProject;
     selectedClip: VideoClip | undefined;
     updateClip: (id: string, updates: Partial<VideoClip>) => void;
-    currentTime: number;
 }
 
-export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip, currentTime }) => {
+export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ project, selectedClip, updateClip }) => {
     const [isFrameModalOpen, setIsFrameModalOpen] = useState(false);
 
     const handleSourceSelect = useCallback((item: HistoryItem) => {
@@ -42,7 +41,6 @@ export const VideoPropertiesPanel: React.FC<VideoPropertiesPanelProps> = ({ proj
                     <TransformSection
                         selectedClip={selectedClip}
                         updateClip={updateClip}
-                        currentTime={currentTime}
                     />
 
                     <FiltersSection selectedClip={selectedClip} updateClip={updateClip} />

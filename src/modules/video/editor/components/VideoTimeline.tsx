@@ -9,7 +9,6 @@ import { useStableGroupedClips } from '../hooks/useStableGroupedClips';
 
 interface VideoTimelineProps {
     project: VideoProject;
-    isPlaying: boolean;
     // currentTime removed from props to prevent re-renders
     selectedClipId: string | null;
     handlePlayPause: () => void;
@@ -23,10 +22,11 @@ interface VideoTimelineProps {
 }
 
 export const VideoTimeline = memo(({
-    project, isPlaying, selectedClipId,
+    project, selectedClipId,
     handlePlayPause, handleSeek, handleAddTrack, handleAddSampleClip,
     removeTrack, removeClip, handleDragStart, formatTime
 }: VideoTimelineProps) => {
+    const isPlaying = useVideoEditorStore(state => state.isPlaying);
     const { addKeyframe, removeKeyframe, updateKeyframe } = useVideoEditorStore();
     const [expandedClipIds, setExpandedClipIds] = useState<Set<string>>(() => new Set());
 

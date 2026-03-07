@@ -50,7 +50,6 @@ describe('VideoPropertiesPanel', () => {
                 project={mockProject}
                 selectedClip={mockClip}
                 updateClip={mockUpdateClip}
-                currentTime={0}
             />
         );
 
@@ -65,7 +64,6 @@ describe('VideoPropertiesPanel', () => {
                 project={mockProject}
                 selectedClip={mockClip}
                 updateClip={mockUpdateClip}
-                currentTime={10}
             />
         );
 
@@ -95,7 +93,6 @@ describe('VideoPropertiesPanel', () => {
                 project={mockProject}
                 selectedClip={clipWithKeyframe}
                 updateClip={mockUpdateClip}
-                currentTime={10}
             />
         );
 
