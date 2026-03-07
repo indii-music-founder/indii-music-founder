@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle
+    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle, HelpCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -11,6 +11,8 @@ import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
 import { logger } from '@/utils/logger';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 const DEFAULT_TAGS = {
     'Mood': ['Energetic', 'Dark', 'Chill', 'Happy', 'Melancholic', 'Aggressive', 'Ethereal'],
@@ -27,6 +29,19 @@ const AudioAnalyzer: React.FC = () => {
     const [tags, setTags] = useState<string[]>([]);
 
     const [profile, setProfile] = useState<AudioIntelligenceProfile | null>(null);
+
+    const startTour = () => {
+        const driverObj = driver({
+            showProgress: true,
+            animate: true,
+            steps: [
+                { element: '#tour-audio-tabs', popover: { title: 'Distribution QC & Optimization', description: 'Switch between technical DDEX compliance extraction and mastering target optimization.' } },
+                { element: '#tour-audio-upload', popover: { title: 'Ingestion & Data Extraction', description: 'Upload a master track here to instantly extract the acoustic fingerprint and prepare DDEX metadata.' } },
+                { element: '#tour-audio-knowledge', popover: { title: 'Knowledge Graph', description: 'Once scanned, verify the metadata and push the payload directly into the system for other agents to use.' } },
+            ]
+        });
+        driverObj.drive();
+    };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const uploadedFile = e.target.files?.[0];
@@ -98,7 +113,7 @@ const AudioAnalyzer: React.FC = () => {
         <ModuleDashboard title="Audio Distribution Hub" description="Music Data Audits, Delivery Optimization & Asset Generation" icon={<Activity className="text-primary" />}>
             <div className="flex flex-col h-full bg-black/10">
                 <Tabs defaultValue="compliance" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-6 border-b border-white/5 flex-shrink-0 bg-card/50">
+                    <div id="tour-audio-tabs" className="px-6 border-b border-white/5 flex-shrink-0 bg-card/50 flex justify-between items-center">
                         <TabsList className="bg-transparent gap-8 p-0 h-14 inline-flex">
                             <TabsTrigger value="compliance" className="text-muted-foreground data-[state=active]:text-primary data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-primary rounded-none px-0 h-full font-black transition-all text-xs uppercase tracking-widest whitespace-nowrap">
                                 Distribution QC
@@ -107,13 +122,16 @@ const AudioAnalyzer: React.FC = () => {
                                 Release Optimization
                             </TabsTrigger>
                         </TabsList>
+                        <button onClick={startTour} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors" title="Take a Tour">
+                            <HelpCircle size={16} />
+                        </button>
                     </div>
 
                     <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
                         {/* Tab 1: Compliance */}
                         <TabsContent value="compliance" className="mt-0 border-none outline-none flex flex-col gap-6">
                             {/* Top Actions */}
-                            <div className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5">
+                            <div id="tour-audio-upload" className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5">
                                 <div>
                                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                                         <ShieldCheck className="text-green-400" size={24} />
@@ -252,7 +270,7 @@ const AudioAnalyzer: React.FC = () => {
                                     </div>
 
                                     {/* Audit Logging */}
-                                    <div className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
+                                    <div id="tour-audio-knowledge" className="lg:col-span-4 bg-gradient-to-br from-black/40 to-primary/10 rounded-2xl border border-white/5 flex flex-col p-6 justify-between">
                                         <div>
                                             <div className="flex items-center justify-between mb-4">
                                                 <div className="flex items-center gap-2">
