@@ -32,16 +32,6 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **117. Social Agent Sentiment Analysis:** Social agent crawls linked socials (X/IG) and provides weekly sentiment and trend reports.
 - [x] **118. Proactive Agent Calendar System:** The Hub Agent initiates push-notifications to the user based on metadata (e.g., "It's 2 weeks out from release, let's schedule TikTok drafts").
 - [x] **119. Brand Agent Visual Audit:** The Brand agent automatically audits all new visual outputs against the specific artist’s brand kit to enforce visual consistency.
-- [ ] **120. Publicist Agent Pitch Drafting:** The Publicist agent dynamically scrapes Spotify playlists and drafts personalized pitch emails for editors.
-- [ ] **111. Legal Agent Draft Verification:** Enable the Legal Agent to generate standard split sheets and immediately trigger digital signatures via a Docusign/PandaDoc API mock.
-- [ ] **112. Marketing Agent A/B Testing:** The Marketing agent automatically creates 3 variants of ad copy and sets up the tracking pixel framework for campaigns.
-- [ ] **113. Music/Publishing Agent Syncs:** The Publishing Agent automatically queries PROs (ASCAP/BMI) for existing catalog matches before registration.
-- [ ] **114. Finance Agent "Tax-Prep" Mode:** The Finance Agent auto-generates Schedule C reports and calculates split waterfalls, tagging 1099-worthy payouts.
-- [ ] **115. Video Agent Render Orchestration:** Video Agent acts as a supervisor, dynamically breaking down script timelines into prompts for `veo-3.1`.
-- [ ] **116. Agent-to-Agent Negotiation:** Enable multi-agent threads where the Legal Agent and Finance Agent negotiate contract terms before presenting them to the user.
-- [ ] **117. Social Agent Sentiment Analysis:** Social agent crawls linked socials (X/IG) and provides weekly sentiment and trend reports.
-- [ ] **118. Proactive Agent Calendar System:** The Hub Agent initiates push-notifications to the user based on metadata (e.g., "It's 2 weeks out from release, let's schedule TikTok drafts").
-- [ ] **119. Brand Agent Visual Audit:** The Brand agent automatically audits all new visual outputs against the specific artist’s brand kit to enforce visual consistency.
 - [x] **120. Publicist Agent Pitch Drafting:** The Publicist agent dynamically scrapes Spotify playlists and drafts personalized pitch emails for editors.
 
 ### Commerce, Merchandising & Web3 (121-130)
@@ -55,7 +45,6 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
 - [x] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
 - [x] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
-- [ ] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 - [x] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 
 ### Pro Artist Ecosystem: Legal, Touring, Licensing (131-140)
