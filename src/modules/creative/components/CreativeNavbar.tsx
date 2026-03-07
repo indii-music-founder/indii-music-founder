@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { ScreenControl } from '@/services/screen/ScreenControlService';
-import { Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare, Palette, PanelLeftClose, PanelRightClose, Maximize2 } from 'lucide-react';
+import { Sparkles, Image as ImageIcon, Video, MonitorPlay, MessageSquare, Palette, PanelLeftClose, PanelRightClose, Maximize2, Clock } from 'lucide-react';
 import PromptBuilder from './PromptBuilder';
 import ImageSubMenu from './ImageSubMenu';
 import DaisyChainControls from './DaisyChainControls';
 import { useToast } from '@/core/context/ToastContext';
 import BrandAssetsDrawer from './BrandAssetsDrawer';
+import PromptHistoryDrawer from './PromptHistoryDrawer';
 import FrameSelectionModal from '../../video/components/FrameSelectionModal';
 
 interface CreativeNavbarProps extends React.HTMLAttributes<HTMLDivElement> { }
@@ -16,6 +17,7 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     const toast = useToast();
     const [showPromptBuilder, setShowPromptBuilder] = useState(false);
     const [showBrandAssets, setShowBrandAssets] = useState(false);
+    const [showPromptHistory, setShowPromptHistory] = useState(false);
     const [showFrameModal, setShowFrameModal] = useState(false);
     const [frameModalTarget, setFrameModalTarget] = useState<'firstFrame' | 'lastFrame'>('firstFrame');
 
@@ -108,6 +110,15 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                             >
                                 <Sparkles size={12} /> Brand
                             </button>
+                            <button
+                                onClick={() => setShowPromptHistory(!showPromptHistory)}
+                                className={`flex items-center gap-1.5 px-2 py-1 rounded border transition-all text-[10px] font-medium uppercase tracking-wide
+                                    ${showPromptHistory
+                                        ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                                        : 'bg-white/5 border-white/5 text-gray-400 hover:bg-white/10'}`}
+                            >
+                                <Clock size={12} /> Library
+                            </button>
                         </div>
                     ) : (
                         <div className="flex items-center gap-2">
@@ -154,6 +165,11 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
             {/* Brand Assets Drawer */}
             {showBrandAssets && (
                 <BrandAssetsDrawer onClose={() => setShowBrandAssets(false)} />
+            )}
+
+            {/* Prompt History Drawer */}
+            {showPromptHistory && (
+                <PromptHistoryDrawer onClose={() => setShowPromptHistory(false)} />
             )}
 
             <FrameSelectionModal
