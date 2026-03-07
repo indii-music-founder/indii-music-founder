@@ -46,7 +46,10 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                 addUploadedAudio,
                 addUploadedImage,
                 addKnowledgeDocument,
-                currentProjectId
+                currentProjectId,
+                addUploadItems,
+                updateUploadProgress,
+                updateUploadStatus
             } = useStore.getState();
 
             let imagesVideoCount = 0;
@@ -68,63 +71,89 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                     file.name.endsWith('.docx');
 
                 if (isAudio || isImage || isVideo || isDocument) {
-                    const reader = new FileReader();
+                    const queueId = crypto.randomUUID();
+                    const itemType = isDocument ? 'document' : (isAudio ? 'music' : (isVideo ? 'video' : 'image'));
 
-                    reader.onload = (e) => {
-                        const result = e.target?.result as string;
-                        if (!result) return;
+                    addUploadItems([{
+                        id: queueId,
+                        fileName: file.name,
+                        fileSize: file.size,
+                        progress: 0,
+                        status: 'pending',
+                        type: itemType as any
+                    }]);
 
-                        if (isAudio || isImage || isVideo) {
-                            const newItem = {
-                                id: crypto.randomUUID(),
-                                type: isAudio ? 'music' : (isVideo ? 'video' : 'image') as any,
-                                url: result,
-                                prompt: file.name,
-                                timestamp: Date.now(),
-                                projectId: currentProjectId,
-                                origin: 'uploaded' as const
-                            };
+                    // Simulate upload delay and progress
+                    setTimeout(() => {
+                        updateUploadStatus(queueId, 'uploading');
+                        let currentProgress = 0;
+                        const interval = setInterval(() => {
+                            currentProgress += Math.floor(Math.random() * 20) + 10;
+                            if (currentProgress >= 100) {
+                                currentProgress = 100;
+                                clearInterval(interval);
+                                updateUploadProgress(queueId, 100);
 
-                            if (isAudio) {
-                                addUploadedAudio(newItem);
-                                audioCount++;
+                                // Actually read the file when "upload" finishes
+                                const reader = new FileReader();
+                                reader.onload = (e) => {
+                                    const result = e.target?.result as string;
+                                    if (!result) {
+                                        updateUploadStatus(queueId, 'error', 'Failed to read file');
+                                        return;
+                                    }
+
+                                    if (isAudio || isImage || isVideo) {
+                                        const newItem = {
+                                            id: crypto.randomUUID(),
+                                            type: itemType as any,
+                                            url: result,
+                                            prompt: file.name,
+                                            timestamp: Date.now(),
+                                            projectId: currentProjectId,
+                                            origin: 'uploaded' as const
+                                        };
+
+                                        if (isAudio) {
+                                            addUploadedAudio(newItem);
+                                            audioCount++;
+                                        } else {
+                                            addUploadedImage(newItem);
+                                            imagesVideoCount++;
+                                        }
+                                    } else if (isDocument) {
+                                        addKnowledgeDocument({
+                                            id: crypto.randomUUID(),
+                                            name: file.name,
+                                            content: result,
+                                            type: file.type || 'document',
+                                            indexingStatus: 'pending',
+                                            createdAt: Date.now()
+                                        });
+                                        docCount++;
+                                    }
+
+                                    updateUploadStatus(queueId, 'success');
+                                };
+
+                                if (isDocument && file.type.startsWith('text/')) {
+                                    reader.readAsText(file);
+                                } else {
+                                    reader.readAsDataURL(file);
+                                }
                             } else {
-                                addUploadedImage(newItem);
-                                imagesVideoCount++;
+                                updateUploadProgress(queueId, currentProgress);
                             }
-                        } else if (isDocument) {
-                            addKnowledgeDocument({
-                                id: crypto.randomUUID(),
-                                name: file.name,
-                                content: result, // for text files this might be base64 data url, we'd need to parse if string format needed
-                                type: file.type || 'document',
-                                indexingStatus: 'pending',
-                                createdAt: Date.now()
-                            });
-                            docCount++;
-                        }
-                    };
-
-                    if (isDocument && file.type.startsWith('text/')) {
-                        reader.readAsText(file);
-                    } else {
-                        reader.readAsDataURL(file);
-                    }
+                        }, 200 + Math.random() * 300); // Random chunk delay
+                    }, Math.random() * 1000); // Random start delay
                 }
             }
 
-            // Wait a moment before showing toast so async reads can complete conceptually 
-            // (a bit hacky but acceptable for simple UI feedback)
+            // The toast behavior is less predictable now with simulated async processing,
+            // we could remove it or leave it. We'll show a quick generic toast.
             setTimeout(() => {
-                let msg = '';
-                if (imagesVideoCount > 0) msg += `${imagesVideoCount} image(s)/video(s) `;
-                if (audioCount > 0) msg += `${audioCount > 0 && msg ? ', ' : ''}${audioCount} track(s) `;
-                if (docCount > 0) msg += `${docCount > 0 && msg ? ', ' : ''}${docCount} doc(s) `;
-
-                if (msg) {
-                    toast.success(`Successfully uploaded: ${msg}`);
-                } else {
-                    toast.error(`Unsupported file type(s) dropped.`);
+                if (files.length > 0) {
+                    toast.success(`Queued ${files.length} file(s) for upload...`);
                 }
             }, 500);
         };
