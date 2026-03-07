@@ -1,6 +1,7 @@
 import React from 'react';
 import { Radio } from 'lucide-react';
 import { ReleaseStatusCard } from './ReleaseStatusCard';
+import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
 interface ReleasesContentProps {
     releases: any[];
@@ -36,13 +37,16 @@ export function ReleasesContent({ releases, loading, error, onRetry }: ReleasesC
 
     if (releases.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center p-16 border border-white/5 rounded-xl bg-white/[0.02] text-center">
-                <Radio size={32} className="text-gray-600 mb-3" />
-                <h3 className="text-lg font-bold text-white mb-1">No active releases</h3>
-                <p className="text-gray-500 text-sm max-w-sm">
-                    Your distributed music will appear here once you start the rollout process from Publishing.
-                </p>
-            </div>
+            <ActionableEmptyState
+                icon={<Radio size={48} />}
+                title="NO ACTIVE RELEASES"
+                description="Your distributed music will appear here once you start the rollout process from Publishing."
+                colorClasses={{
+                    text: 'text-gray-500',
+                    bg: 'bg-white/5',
+                    border: 'border-white/5'
+                }}
+            />
         );
     }
 

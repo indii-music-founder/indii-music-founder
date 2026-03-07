@@ -6,6 +6,7 @@ import { useVirtualizer } from '@tanstack/react-virtual';
 import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star, RotateCw } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
+import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
 import { HistoryItem } from '@/core/store';
 
@@ -375,12 +376,20 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     if (isEmpty) {
         return (
-            <div className="flex-1 flex flex-col items-center justify-center p-8 text-gray-500">
-                <div onClick={() => fileInputRef.current?.click()} className="w-16 h-16 rounded-2xl bg-[#1a1a1a] border border-dashed border-gray-800 flex items-center justify-center mb-4 cursor-pointer hover:border-gray-600 hover:text-white transition-all">
-                    <Upload className="w-6 h-6 text-gray-600 group-hover:text-white" />
-                </div>
-                <p className="text-sm font-medium">No assets yet</p>
-                <p className="text-xs opacity-60 mt-1">Upload or generate to see them here</p>
+            <div className="flex-1 p-8">
+                <ActionableEmptyState
+                    icon={<ImageIcon size={48} />}
+                    title="GALLERY IS EMPTY"
+                    description="Upload media or generate new AI assets to see them appear in your gallery."
+                    actionLabel="Upload Media"
+                    onAction={() => fileInputRef.current?.click()}
+                    colorClasses={{
+                        text: 'text-gray-400',
+                        bg: 'bg-[#111]',
+                        border: 'border-white/5',
+                        glow: 'shadow-white/5'
+                    }}
+                />
                 <input
                     type="file"
                     ref={fileInputRef}

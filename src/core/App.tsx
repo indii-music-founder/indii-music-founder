@@ -19,6 +19,7 @@ import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModa
 
 import { PWAInstallPrompt } from '@/components/PWAInstallPrompt';
 import { TransmissionMonitor } from '@/modules/distribution/components/TransmissionMonitor';
+import { SessionTimeoutOverlay } from '@/components/shared/SessionTimeoutOverlay';
 import { STANDALONE_MODULES, type ModuleId } from './constants';
 import { env } from '@/config/env';
 import { useURLSync } from '@/hooks/useURLSync';
@@ -336,6 +337,7 @@ export default function App() {
             <ThemeProvider>
                 <ToastProvider>
                     <OfflineBanner />
+                    <SessionTimeoutOverlay />
                     {/* Skip to content link for keyboard accessibility */}
                     <a
                         href="#main-content"

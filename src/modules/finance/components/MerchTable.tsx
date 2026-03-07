@@ -8,6 +8,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
 import * as ContextMenu from '@radix-ui/react-context-menu';
+import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
@@ -236,11 +237,16 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
             {/* Product List Ledger */}
             <div className="space-y-4">
                 {products.length === 0 ? (
-                    <div className="text-center py-20 bg-white/5 border border-dashed border-white/10 rounded-[2rem] flex flex-col items-center">
-                        <Tag size={48} className="text-gray-700 mb-4" />
-                        <p className="text-gray-500 font-bold uppercase tracking-widest text-xs">VIRTUAL LEDGER IS EMPTY</p>
-                        <p className="text-gray-600 text-xs mt-2 font-medium">No active products or digital assets detected.</p>
-                    </div>
+                    <ActionableEmptyState
+                        icon={<Tag size={48} />}
+                        title="VIRTUAL LEDGER IS EMPTY"
+                        description="No active products or digital assets detected in your current catalog."
+                        colorClasses={{
+                            text: 'text-gray-500',
+                            bg: 'bg-white/5',
+                            border: 'border-white/10'
+                        }}
+                    />
                 ) : (
                     <div className="grid grid-cols-1 gap-3">
                         <AnimatePresence mode="popLayout">
