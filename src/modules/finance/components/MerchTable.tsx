@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { Package, Plus, DollarSign, Tag, Image as ImageIcon, Sparkles, Box, Trash2, ArrowRight } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { Package, Plus, DollarSign, Tag, Image as ImageIcon, Sparkles, Box, Trash2, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { Product } from '@/services/marketplace/types';
@@ -10,20 +10,28 @@ import { logger } from '@/utils/logger';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
+    pageSize?: number;
 }
 
-export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false }) => {
+export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false, pageSize = 6 }) => {
     const { userProfile } = useStore();
     const toast = useToast();
     const [products, setProducts] = useState<Product[]>([]);
     const [assets, setAssets] = useState<any[]>([]); // From BrandKit
     const [isMinting, setIsMinting] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1);
 
     // Minting Form State
     const [selectedAsset, setSelectedAsset] = useState<any>(null);
     const [price, setPrice] = useState('0.99');
     const [title, setTitle] = useState('');
     const [inventory, setInventory] = useState('100');
+
+    const totalPages = Math.ceil(products.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedProducts = useMemo(() =>
+        products.slice(startIndex, startIndex + pageSize),
+        [products, startIndex, pageSize]);
 
     const loadProducts = useCallback(async () => {
         if (!userProfile) return;
@@ -234,49 +242,78 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false 
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 gap-3">
-                        {products.map((product, index) => (
-                            <motion.div
-                                key={product.id}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: index * 0.05 }}
-                                className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
-                            >
-                                <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
+                        <AnimatePresence mode="popLayout">
+                            {paginatedProducts.map((product, index) => (
+                                <motion.div
+                                    key={product.id}
+                                    layout
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: 20 }}
+                                    transition={{ delay: (index % pageSize) * 0.05 }}
+                                    className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
+                                >
+                                    <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
 
-                                <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
-                                    {product.images[0] ? (
-                                        <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                    ) : (
-                                        <ImageIcon className="w-full h-full p-4 text-gray-700" />
-                                    )}
-                                </div>
+                                    <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
+                                        {product.images[0] ? (
+                                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                        ) : (
+                                            <ImageIcon className="w-full h-full p-4 text-gray-700" />
+                                        )}
+                                    </div>
 
-                                <div className="flex-1 min-w-0 pr-4">
-                                    <h4 className="text-lg font-bold text-white truncate group-hover:text-dept-royalties transition-colors uppercase tracking-tight">{product.title}</h4>
-                                    <div className="flex items-center gap-4 mt-2">
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                            <Tag size={10} className="text-dept-royalties" />
-                                            <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">{product.type}</span>
+                                    <div className="flex-1 min-w-0 pr-4">
+                                        <h4 className="text-lg font-bold text-white truncate group-hover:text-dept-royalties transition-colors uppercase tracking-tight">{product.title}</h4>
+                                        <div className="flex items-center gap-4 mt-2">
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
+                                                <Tag size={10} className="text-dept-royalties" />
+                                                <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">{product.type}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
+                                                <Package size={10} className="text-dept-licensing" />
+                                                <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">Stock: {product.inventory ?? '∞'}</span>
+                                            </div>
                                         </div>
-                                        <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                            <Package size={10} className="text-dept-licensing" />
-                                            <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">Stock: {product.inventory ?? '∞'}</span>
+                                    </div>
+
+                                    <div className="text-right flex flex-col items-end pr-2">
+                                        <div className="text-2xl font-black text-white group-hover:text-dept-licensing transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                                            ${(product.price / 100).toFixed(2)}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 mt-1 bg-dept-licensing/10 px-2 py-0.5 rounded-full border border-dept-licensing/20">
+                                            <div className="w-1.5 h-1.5 rounded-full bg-dept-licensing animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                                            <span className="text-[8px] font-bold text-dept-licensing uppercase tracking-widest">Active</span>
                                         </div>
                                     </div>
-                                </div>
+                                </motion.div>
+                            ))}
+                        </AnimatePresence>
 
-                                <div className="text-right flex flex-col items-end pr-2">
-                                    <div className="text-2xl font-black text-white group-hover:text-dept-licensing transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
-                                        ${(product.price / 100).toFixed(2)}
-                                    </div>
-                                    <div className="flex items-center gap-1.5 mt-1 bg-dept-licensing/10 px-2 py-0.5 rounded-full border border-dept-licensing/20">
-                                        <div className="w-1.5 h-1.5 rounded-full bg-dept-licensing animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                                        <span className="text-[8px] font-bold text-dept-licensing uppercase tracking-widest">Active</span>
-                                    </div>
+                        {/* Pagination Controls */}
+                        {totalPages > 1 && (
+                            <div className="flex items-center justify-between px-4 pt-4">
+                                <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                                    Page {currentPage} of {totalPages} <span className="ml-2 font-mono text-gray-600">({products.length} products)</span>
+                                </p>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                                        disabled={currentPage === 1}
+                                        className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        <ChevronLeft size={16} className="text-white" />
+                                    </button>
+                                    <button
+                                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                                    >
+                                        <ChevronRight size={16} className="text-white" />
+                                    </button>
                                 </div>
-                            </motion.div>
-                        ))}
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

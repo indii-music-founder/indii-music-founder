@@ -13,6 +13,7 @@ import LoginForm from './components/auth/LoginForm';
 import { ApiKeyErrorModal } from './components/ApiKeyErrorModal';
 import { ApprovalModal } from './components/ApprovalModal';
 import { BiometricGate } from './components/auth/BiometricGate';
+import { OfflineBanner } from './components/OfflineBanner';
 import { ShareTargetHandler } from '@/core/components/ShareTargetHandler';
 import { ApprovalManager } from '@/components/instruments/InstrumentApprovalModal';
 
@@ -200,6 +201,21 @@ function useAppInitialization() {
             return () => removeListener();
         }
     }, []);
+
+    // 5. Network Status Listener
+    useEffect(() => {
+        const { setIsOffline } = useStore.getState();
+        const handleOnline = () => setIsOffline(false);
+        const handleOffline = () => setIsOffline(true);
+
+        window.addEventListener('online', handleOnline);
+        window.addEventListener('offline', handleOffline);
+
+        return () => {
+            window.removeEventListener('online', handleOnline);
+            window.removeEventListener('offline', handleOffline);
+        };
+    }, []);
 }
 
 
@@ -319,6 +335,7 @@ export default function App() {
         <VoiceProvider>
             <ThemeProvider>
                 <ToastProvider>
+                    <OfflineBanner />
                     {/* Skip to content link for keyboard accessibility */}
                     <a
                         href="#main-content"

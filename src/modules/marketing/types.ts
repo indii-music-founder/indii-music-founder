@@ -101,6 +101,8 @@ export interface EngagementPrediction {
     overallScore: number;
     estimatedReach: number;
     estimatedEngagementRate: number;
+    viralProbability: number; // 0.0 to 1.0
+    highPotentialAssets: string[]; // List of post IDs with highest predicted performance
     platformBreakdown: PlatformPrediction[];
     recommendations: string[];
     riskFactors: string[];

@@ -23,6 +23,7 @@ export interface ElectronAPI {
     setPrivacyMode: (enabled: boolean) => Promise<void>;
     selectFile: (options?: { title?: string, filters?: { name: string, extensions: string[] }[] }) => Promise<string | null>;
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
+    showNotification: (title: string, body: string) => void;
 
     // Auth (Secure Main Process Flow)
     auth: {

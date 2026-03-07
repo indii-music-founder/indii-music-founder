@@ -1,8 +1,10 @@
-import { app, BrowserWindow, shell, ipcMain } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
-// import { registerAuthHandlers, handleDeepLink } from './handlers/auth';
+// import { registerAuthHandlers } from './handlers/auth';
+import { handleDeepLink } from './handlers/deeplink';
+import { setupMenu } from './menu';
 import { registerAudioHandlers } from './handlers/audio';
 import { registerNetworkHandlers } from './handlers/network';
 import { registerCredentialHandlers } from './handlers/credential';
@@ -18,6 +20,9 @@ import { registerSonicBridgeHandlers } from './handlers/sonic_bridge';
 import { configureSecurity } from './security';
 import { DockerService } from './services/DockerService';
 import { setupAutoUpdater } from './updater';
+import Store from 'electron-store';
+
+const store = new Store();
 
 // Configure logging
 log.transports.file.level = 'info';
@@ -26,22 +31,33 @@ log.transports.file.resolvePathFn = () => path.join(app.getPath('userData'), 'lo
 
 log.info(`App Started. PID: ${process.pid}, Args: ${JSON.stringify(process.argv)}`);
 
-/**
- * Window Management
- */
+let tray: Tray | null = null;
+let mainWindow: BrowserWindow | null = null;
+let isQuitting = false;
+
 const createWindow = () => {
     const isDev = !app.isPackaged || !!process.env.VITE_DEV_SERVER_URL;
     const devServerUrl = process.env.VITE_DEV_SERVER_URL || 'http://localhost:4242';
 
-    const mainWindow = new BrowserWindow({
+    const windowState = store.get('window-state', {
         width: 1280,
         height: 800,
+        x: undefined,
+        y: undefined,
+        isMaximized: false
+    }) as { width: number, height: number, x?: number, y?: number, isMaximized: boolean };
+
+    const win = new BrowserWindow({
+        width: windowState.width,
+        height: windowState.height,
+        x: windowState.x,
+        y: windowState.y,
         webPreferences: {
             devTools: !app.isPackaged,
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
-            sandbox: true, // Enabled for security
+            sandbox: true,
             safeDialogs: true,
             safeDialogsMessage: 'Stop seeing alerts from this page',
             webSecurity: !isDev,
@@ -50,23 +66,58 @@ const createWindow = () => {
         autoHideMenuBar: true,
         backgroundColor: '#000000',
         show: false,
+        icon: path.join(app.getAppPath(), 'public/icon-512.png'),
+    });
+
+    if (windowState.isMaximized) {
+        win.maximize();
+    }
+
+    const saveWindowState = () => {
+        const bounds = win.getBounds();
+        store.set('window-state', {
+            x: bounds.x,
+            y: bounds.y,
+            width: bounds.width,
+            height: bounds.height,
+            isMaximized: win.isMaximized()
+        });
+    };
+
+    win.on('resize', saveWindowState);
+    win.on('move', saveWindowState);
+    win.on('maximize', saveWindowState);
+    win.on('unmaximize', saveWindowState);
+
+    mainWindow = win;
+
+    // Handle close event to minimize to tray instead
+    win.on('close', (event) => {
+        if (!isQuitting) {
+            event.preventDefault();
+            win.hide();
+            if (process.platform === 'darwin') {
+                app.dock.hide();
+            }
+            return false;
+        }
     });
 
     // Configure Security for the session
-    configureSecurity(mainWindow.webContents.session);
+    configureSecurity(win.webContents.session);
 
     // Content Protection (MacOS/Windows only)
-    mainWindow.setContentProtection(true);
+    win.setContentProtection(true);
 
     // Console message logging from renderer
-    mainWindow.webContents.on('console-message', (_event, level, message) => {
+    win.webContents.on('console-message', (_event, level, message) => {
         const levels = ['DEBUG', 'INFO', 'WARN', 'ERROR'];
         const tag = levels[level] || 'INFO';
         log.info(`[Renderer][${tag}] ${message}`);
     });
 
     // Handle Window Open Requests
-    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith('https://accounts.google.com')) return { action: 'allow' };
         if (url.startsWith('https://indiios-v-1-1.firebaseapp.com')) return { action: 'allow' };
 
@@ -79,7 +130,7 @@ const createWindow = () => {
     });
 
     // Security Gate for WebNavigation
-    mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
+    win.webContents.on('will-navigate', (event, navigationUrl) => {
         const parsedUrl = new URL(navigationUrl);
         const allowedOrigins = ['https://accounts.google.com', 'https://accounts.youtube.com', 'https://indiios-v-1-1.firebaseapp.com'];
 
@@ -96,17 +147,18 @@ const createWindow = () => {
 
     if (isDev) {
         log.info(`Attempting to load Dev Server URL: ${devServerUrl}`);
-        mainWindow.loadURL(devServerUrl).catch(err => log.error(`Failed to load URL: ${err}`));
-        mainWindow.webContents.openDevTools();
+        win.loadURL(devServerUrl).catch(err => log.error(`Failed to load URL: ${err}`));
+        win.webContents.openDevTools();
     } else {
         const indexPath = path.join(__dirname, '../dist/index.html');
         log.info(`Loading Production File: ${indexPath}`);
-        mainWindow.loadFile(indexPath).catch(err => log.error(`Failed to load file: ${err}`));
+        win.loadFile(indexPath).catch(err => log.error(`Failed to load file: ${err}`));
     }
 
-    mainWindow.once('ready-to-show', () => {
-        mainWindow.show();
-        startHealthMonitoring(mainWindow);
+    win.once('ready-to-show', () => {
+        setupMenu(win);
+        win.show();
+        startHealthMonitoring(win);
     });
 };
 
@@ -114,17 +166,38 @@ const createWindow = () => {
  * Sidecar Health Monitor
  */
 let healthCheckInterval: NodeJS.Timeout | null = null;
+let sidecarFailureCount = 0;
+const MAX_SIDECAR_FAILURES = 3;
+let autoRestartCount = 0;
+const MAX_AUTO_RESTARTS = 3;
 
 const checkSidecarHealth = async (window: BrowserWindow) => {
     try {
         // Fetch is available in Node.js 18+ (Project requires Node 22)
         const response = await fetch('http://localhost:50080/health');
-        const status = response.ok ? 'online' : 'offline';
-        window.webContents.send('sidecar:status-update', status);
+        if (response.ok) {
+            sidecarFailureCount = 0;
+            autoRestartCount = 0; // Reset restart count on success
+            window.webContents.send('sidecar:status-update', 'online');
+        } else {
+            throw new Error('Health check response not OK');
+        }
     } catch (err) {
-        // Only log error in debug, as 'offline' is an expected state
-        log.debug('[Sidecar] Health check failed - sidecar is likely offline');
+        sidecarFailureCount++;
+        log.warn(`[Sidecar] Health check failed (${sidecarFailureCount}/${MAX_SIDECAR_FAILURES})`);
         window.webContents.send('sidecar:status-update', 'offline');
+
+        if (sidecarFailureCount >= MAX_SIDECAR_FAILURES && autoRestartCount < MAX_AUTO_RESTARTS) {
+            log.info('[Sidecar] Attempting automatic restart...');
+            sidecarFailureCount = 0;
+            autoRestartCount++;
+
+            showNotification('System Service Issue', 'The Python back-end seems to have crashed. Attempting auto-restart...');
+
+            DockerService.restartSystem().catch(restartErr => {
+                log.error(`[Sidecar] Auto-restart failed: ${restartErr}`);
+            });
+        }
     }
 };
 
@@ -138,6 +211,67 @@ const startHealthMonitoring = (window: BrowserWindow) => {
     healthCheckInterval = setInterval(() => {
         checkSidecarHealth(window);
     }, 30000);
+};
+
+/**
+ * Tray Management
+ */
+const createTray = () => {
+    const iconPath = path.join(app.getAppPath(), 'public/icon-192.png');
+    const icon = nativeImage.createFromPath(iconPath);
+    tray = new Tray(icon.resize({ width: 16, height: 16 }));
+
+    const contextMenu = Menu.buildFromTemplate([
+        {
+            label: 'Show IndiiOS',
+            click: () => {
+                mainWindow?.show();
+                if (process.platform === 'darwin') {
+                    app.dock.show();
+                }
+            }
+        },
+        { type: 'separator' },
+        {
+            label: 'Quit',
+            click: () => {
+                isQuitting = true;
+                app.quit();
+            }
+        }
+    ]);
+
+    tray.setToolTip('IndiiOS Studio');
+    tray.setContextMenu(contextMenu);
+
+    tray.on('double-click', () => {
+        mainWindow?.show();
+        if (process.platform === 'darwin') {
+            app.dock.show();
+        }
+    });
+};
+
+/**
+ * Desktop Notifications
+ */
+const showNotification = (title: string, body: string) => {
+    if (Notification.isSupported()) {
+        const notification = new Notification({
+            title,
+            body,
+            icon: path.join(app.getAppPath(), 'public/icon-192.png'),
+            silent: false,
+        });
+        notification.show();
+
+        notification.on('click', () => {
+            mainWindow?.show();
+            if (process.platform === 'darwin') {
+                app.dock.show();
+            }
+        });
+    }
 };
 
 
@@ -172,7 +306,7 @@ if (!gotTheLock) {
         const url = commandLine.find(arg => arg.startsWith('indii-os://'));
         if (url) {
             log.info(`Handling deep link from second-instance: ${url}`);
-            // handleDeepLink(url);
+            handleDeepLink(url, mainWindow);
         }
     });
 
@@ -180,7 +314,7 @@ if (!gotTheLock) {
     app.on('open-url', (event, url) => {
         event.preventDefault();
         log.info(`open-url event received: ${url}`);
-        // handleDeepLink(url);
+        handleDeepLink(url, mainWindow);
     });
 
     app.on('ready', () => {
@@ -222,6 +356,12 @@ if (!gotTheLock) {
         });
 
         createWindow();
+        createTray();
+
+        // Register Notification IPC
+        ipcMain.on('show-notification', (_event, { title, body }) => {
+            showNotification(title, body);
+        });
 
         // Auto-updater (production only)
         if (app.isPackaged) {
@@ -233,8 +373,6 @@ if (!gotTheLock) {
 app.on('window-all-closed', () => {
     if (process.platform !== 'darwin') app.quit();
 });
-
-let isQuitting = false;
 
 app.on('will-quit', async () => {
     isQuitting = true;

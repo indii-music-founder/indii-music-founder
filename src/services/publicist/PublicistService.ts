@@ -12,11 +12,57 @@ import { db } from '../firebase';
 import { Campaign, Contact } from '../../modules/publicist/types';
 import { CampaignSchema, ContactSchema } from '../../modules/publicist/schema';
 import { logger } from '@/utils/logger';
-
+import { firebaseAI } from '../ai/FirebaseAIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export class PublicistService {
     private static campaignsCollection = 'publicist_campaigns';
     private static contactsCollection = 'publicist_contacts';
+
+    /**
+     * Generate a professional press release using Gemini 3 Pro
+     */
+    static async generatePressRelease(metadata: {
+        artistName: string;
+        releaseTitle: string;
+        releaseDate: string;
+        genre: string;
+        story?: string;
+        keyFeatures?: string[];
+        location?: string;
+    }) {
+        const prompt = `Write a high-impact, professional music industry press release for the following release:
+        
+        Artist: ${metadata.artistName}
+        Title: ${metadata.releaseTitle}
+        Date: ${metadata.releaseDate}
+        Genre: ${metadata.genre}
+        Location: ${metadata.location || 'Global'}
+        Background Story: ${metadata.story || 'Innovative new sounds from an emerging creative force.'}
+        Key Highlights: ${metadata.keyFeatures?.join(', ') || 'Unique production, emotional depth, groundbreaking visuals.'}
+        
+        The press release should follow the standard format:
+        - FOR IMMEDIATE RELEASE header
+        - Catchy HEADLINE
+        - DATELINE (City, State / Date)
+        - LEAD PARAGRAPH (Who, What, When, Where, Why)
+        - BODY PARAGRAPHS (Quotes from the artist, background on the project)
+        - ABOUT THE ARTIST section
+        - MEDIA CONTACT placeholder
+        
+        Style: Sophisticated, trend-aware, and emotionally resonant. Use descriptive but direct language.`;
+
+        const response = await firebaseAI.generateContent(
+            [{ role: 'user', parts: [{ text: prompt }] }],
+            AI_MODELS.TEXT.AGENT, // Gemini 3.1 Pro Preview
+            {
+                ...AI_CONFIG.THINKING.HIGH,
+                temperature: 1.0 // Creative task
+            }
+        );
+
+        return response.response.text();
+    }
 
     /**
      * Subscribe to user's campaigns
@@ -154,8 +200,8 @@ export class PublicistService {
         let value = totalBudget;
         // Fallback for empty budget on live campaigns (Legacy support)
         if (value === 0) {
-             const liveCampaigns = campaigns.filter(c => c.status === 'Live').length;
-             value = liveCampaigns * 15000; // Legacy estimation fallback
+            const liveCampaigns = campaigns.filter(c => c.status === 'Live').length;
+            value = liveCampaigns * 15000; // Legacy estimation fallback
         }
 
         return {

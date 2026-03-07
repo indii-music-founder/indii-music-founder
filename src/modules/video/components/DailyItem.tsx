@@ -57,7 +57,7 @@ export const DailyItem = React.memo<DailyItemProps>(({
             `}
         >
             {video.url.startsWith('data:image') || video.url.includes('placehold') ? (
-                <img src={video.url} alt={video.prompt} className="w-full h-full object-cover" />
+                <img src={video.url} alt={video.prompt} loading="lazy" decoding="async" className="w-full h-full object-cover" />
             ) : (
                 // ⚡ Bolt Optimization: Use preload="metadata" to avoid downloading full video until needed
                 <video

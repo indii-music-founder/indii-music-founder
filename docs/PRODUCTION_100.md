@@ -6,7 +6,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ## Part 1: Frontend, Desktop (Electron), UI/UX, & Performance (Items 1-50)
 
-_Owner: Antigravity_
+### Owner: Antigravity
 
 ### Core UI & Navigation UX (1-10)
 
@@ -37,27 +37,27 @@ _Owner: Antigravity_
 ### Electron Desktop & OS Integration (21-30)
 
 - [ ] **21. Code Signing (Mac/Win):** Ensure macOS entitlements and Apple notarization are correctly automated in `electron-builder`.
-- [ ] **22. Auto-Updater Pipeline:** Implement smooth OTAs (Over-The-Air) updates using `electron-updater` with progress bars on the login screen.
-- [ ] **23. System Tray Integration:** Add a menu bar/system tray icon for background tasks and quick actions.
-- [ ] **24. Native File System Access:** Optimize Electron IPC bridges to allow direct folder imports for batch distributor uploads.
-- [ ] **25. OS Hardware Acceleration:** Validate WebGL and hardware acceleration settings to ensure Fabric.js and Three.js elements render at 60fps.
-- [ ] **26. Window State Memory:** Restore previous window bounds (x, y, width, height, maximized state) on app launch.
-- [ ] **27. Deep Linking:** Register a custom protocol (e.g., `indiios://`) to open the app from web links.
-- [ ] **28. Native Menus & Shortcuts:** map CMD+S, CMD+Z, CMD+W strictly to app actions via the Electron main process.
-- [ ] **29. Sidecar Daemon Health:** Complete Electron IPC logic to auto-restart the background Python sidecar if it crashes.
-- [ ] **30. Offline Persistence Sync UI:** Present a visible "Offline Mode" banner globally when network drops and indicate pending syncs.
+- [x] **22. Auto-Updater Pipeline:** Implement smooth OTAs (Over-The-Air) updates using `electron-updater` with progress bars on the login screen.
+- [x] **23. System Tray Integration:** Add a menu bar/system tray icon for background tasks and quick actions.
+- [x] **24. Native File System Access:** Optimize Electron IPC bridges to allow direct folder imports for batch distributor uploads.
+- [x] **25. OS Hardware Acceleration:** Validate WebGL and hardware acceleration settings to ensure Fabric.js and Three.js elements render at 60fps.
+- [x] **26. Window State Memory:** Restore previous window bounds (x, y, width, height, maximized state) on app launch.
+- [x] **27. Deep Linking:** Register a custom protocol (e.g., `indii-os://`) to open the app from web links.
+- [x] **28. Native Menus & Shortcuts:** map CMD+S, CMD+Z, CMD+W strictly to app actions via the Electron main process.
+- [x] **29. Sidecar Daemon Health:** Complete Electron IPC logic to auto-restart the background Python sidecar if it crashes.
+- [x] **30. Offline Persistence Sync UI:** Present a visible "Offline Mode" banner globally when network drops and indicate pending syncs.
 
 ### Frontend Data & State Management (31-40)
 
-- [ ] **31. Zustand Store Optimization:** Ensure `useShallow` is implemented across all slice subscriptions to prevent unnecessary re-renders.
+- [x] **31. Zustand Store Optimization:** Ensure `useShallow` is implemented across all slice subscriptions to prevent unnecessary re-renders.
 - [ ] **32. Optimistic UI Updates:** Forms should reflect success instantly on the UI while network requests resolve in the background.
 - [ ] **33. Real-time Firestore Sync:** Implement live listeners for critical data like Distribution pipeline statuses so the user never has to manual-refresh.
 - [ ] **34. Secure Local Storage:** Utilize Keytar (OS Keychain) or encrypted storage for sensitive tokens rather than standard `localStorage`.
-- [ ] **35. Form Validation (Zod):** Comprehensive client-side validation for complex objects like DDEX metadata to block invalid submissions early.
-- [ ] **36. Caching API Responses:** Implement SWR or custom caching for the Agent Zero interactions to avoid redundant API hits for unchanged queries.
-- [ ] **37. Image Lazy Loading:** Use standard intersection observers or modern `loading="lazy"` attributes across all creative/marketing views.
+- [x] **35. Form Validation (Zod):** Comprehensive client-side validation for complex objects like DDEX metadata to block invalid submissions early.
+- [x] **36. Caching API Responses:** Implement SWR or custom caching for the Agent Zero interactions to avoid redundant API hits for unchanged queries.
+- [x] **37. Image Lazy Loading:** Use standard intersection observers or modern `loading="lazy"` attributes across all creative/marketing views.
 - [ ] **38. Background Job Status UI:** Present clear visual indicators for long-running workflows (e.g., "Generative Video Rendering... 45%").
-- [ ] **39. Paginated Tables:** Data tables for finance/royalties must leverage efficient pagination rather than rendering 1000+ rows instantly.
+- [x] **39. Paginated Tables:** Data tables for finance/royalties must leverage efficient pagination rather than rendering 1000+ rows instantly.
 - [ ] **40. Session Timeout UI:** Beautiful lock screen or prompt to re-authenticate when a session expires.
 
 ### Specific Workflows & Edge Cases (41-50)
@@ -77,12 +77,12 @@ _Owner: Antigravity_
 
 ## Part 2: Backend, RAG, Firebase, Orchestration, & Security (Items 51-100)
 
-_Owner: INDEX_
+### Owner: INDEX
 
 ### RAG & Knowledge Base Infrastructure (51-60)
 
 - [ ] **51. File Search Corpus Creation:** Create 12 corpora in Gemini API (royalties, deals, publishing, licensing, contracts, touring, marketing, finance, merchandise, production, visual, career).
-- [ ] **52. Document Ingestion Pipeline:** Build automated pipeline to ingest all 58 knowledge base markdown files into File Search corpora.
+- [x] **52. Document Ingestion Pipeline:** Build automated pipeline to ingest all 58 knowledge base markdown files into File Search corpora.
 - [ ] **53. Embedding Sync Strategy:** Implement versioning system for knowledge base updates — re-index changed documents only.
 - [ ] **54. RAG Query Optimization:** Tune retrieval parameters (top-k, similarity thresholds) for each agent domain.
 - [ ] **55. Citation Injection:** Ensure all RAG responses include source citations linking back to knowledge base documents.

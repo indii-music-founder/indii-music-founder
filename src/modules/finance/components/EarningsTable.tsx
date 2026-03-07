@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     Table,
     TableBody,
@@ -8,55 +8,95 @@ import {
     TableRow,
 } from '@/components/ui/table';
 import { ReleaseEarnings } from '@/services/revenue/schema';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface EarningsTableProps {
     data: ReleaseEarnings[];
+    pageSize?: number;
 }
 
-export const EarningsTable = React.memo(({ data }: EarningsTableProps) => {
+export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableProps) => {
+    const [currentPage, setCurrentPage] = useState(1);
+
+    const totalPages = Math.ceil(data.length / pageSize);
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginatedData = useMemo(() =>
+        data.slice(startIndex, startIndex + pageSize),
+        [data, startIndex, pageSize]);
+
     return (
-        <div className="w-full overflow-hidden">
-            <Table>
-                <TableHeader className="bg-white/5">
-                    <TableRow className="border-white/10 hover:bg-transparent">
-                        <TableHead className="text-gray-400 font-semibold py-4">Release</TableHead>
-                        <TableHead className="text-gray-400 font-semibold py-4">ISRC</TableHead>
-                        <TableHead className="text-right text-gray-400 font-semibold py-4">Streams</TableHead>
-                        <TableHead className="text-right text-gray-400 font-semibold py-4">Downloads</TableHead>
-                        <TableHead className="text-right text-dept-licensing font-semibold py-4">Revenue</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {data.map((row, index) => (
-                        <motion.tr
-                            key={row.releaseId}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="border-white/5 hover:bg-white/5 transition-colors group cursor-default"
+        <div className="w-full space-y-4">
+            <div className="w-full overflow-hidden rounded-xl border border-white/10 bg-white/5 backdrop-blur-md">
+                <Table>
+                    <TableHeader className="bg-white/5">
+                        <TableRow className="border-white/10 hover:bg-transparent">
+                            <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px] py-4">Release</TableHead>
+                            <TableHead className="text-gray-400 font-bold uppercase tracking-widest text-[10px] py-4">ISRC</TableHead>
+                            <TableHead className="text-right text-gray-400 font-bold uppercase tracking-widest text-[10px] py-4">Streams</TableHead>
+                            <TableHead className="text-right text-gray-400 font-bold uppercase tracking-widest text-[10px] py-4">Downloads</TableHead>
+                            <TableHead className="text-right text-dept-licensing font-bold uppercase tracking-widest text-[10px] py-4">Revenue</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        <AnimatePresence mode="popLayout">
+                            {paginatedData.map((row, index) => (
+                                <motion.tr
+                                    key={row.releaseId}
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: -10 }}
+                                    transition={{ delay: index * 0.03 }}
+                                    className="border-white/5 hover:bg-white/10 transition-colors group cursor-default"
+                                >
+                                    <TableCell className="py-4">
+                                        <span className="font-bold text-white group-hover:text-dept-licensing transition-colors">
+                                            {row.releaseName}
+                                        </span>
+                                    </TableCell>
+                                    <TableCell className="text-gray-500 font-mono text-[10px] font-bold tracking-tighter">{row.isrc || 'N/A'}</TableCell>
+                                    <TableCell className="text-right text-gray-300 font-bold tabular-nums">
+                                        {row.streams.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right text-gray-300 font-bold tabular-nums">
+                                        {row.downloads.toLocaleString()}
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <span className="font-black text-white bg-dept-licensing/10 px-2 py-1 rounded-lg border border-dept-licensing/20 shadow-sm">
+                                            ${row.revenue.toFixed(2)}
+                                        </span>
+                                    </TableCell>
+                                </motion.tr>
+                            ))}
+                        </AnimatePresence>
+                    </TableBody>
+                </Table>
+            </div>
+
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+                <div className="flex items-center justify-between px-2 pt-2">
+                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">
+                        Page {currentPage} of {totalPages} <span className="ml-2 font-mono text-gray-600">({data.length} total records)</span>
+                    </p>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                            disabled={currentPage === 1}
+                            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
                         >
-                            <TableCell className="py-5">
-                                <span className="font-medium text-white group-hover:text-dept-royalties transition-colors">
-                                    {row.releaseName}
-                                </span>
-                            </TableCell>
-                            <TableCell className="text-gray-500 font-mono text-xs">{row.isrc || 'N/A'}</TableCell>
-                            <TableCell className="text-right text-gray-300">
-                                {row.streams.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-right text-gray-300">
-                                {row.downloads.toLocaleString()}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                <span className="font-bold text-white bg-dept-licensing/10 px-2 py-1 rounded-md border border-dept-licensing/20">
-                                    ${row.revenue.toFixed(2)}
-                                </span>
-                            </TableCell>
-                        </motion.tr>
-                    ))}
-                </TableBody>
-            </Table>
+                            <ChevronLeft size={16} className="text-white" />
+                        </button>
+                        <button
+                            onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                            disabled={currentPage === totalPages}
+                            className="p-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl disabled:opacity-20 disabled:cursor-not-allowed transition-all"
+                        >
+                            <ChevronRight size={16} className="text-white" />
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 });

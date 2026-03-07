@@ -15,8 +15,84 @@ import { useStore } from '@/core/store';
 import { CampaignAsset, CampaignStatus, MarketingStats } from '@/modules/marketing/types';
 import { CampaignAssetSchema, MarketingStatsSchema } from '@/modules/marketing/schemas';
 import { logger } from '@/utils/logger';
+import { firebaseAI } from '../ai/FirebaseAIService';
+import { AI_MODELS, AI_CONFIG } from '@/core/config/ai-models';
 
 export class MarketingService {
+    /**
+     * Analyze sentiment of social media mentions
+     * Fulfills Item 59 of the production checklist
+     */
+    static async analyzeSocialSentiment(mentions: string[]): Promise<{
+        score: number; // -1 to 1
+        label: 'positive' | 'neutral' | 'negative';
+        trendingTopics: string[];
+        summary: string;
+    }> {
+        if (mentions.length === 0) {
+            return { score: 0, label: 'neutral', trendingTopics: [], summary: 'No mentions found.' };
+        }
+
+        const prompt = `Analyze the sentiment and trending topics from the following social media mentions:
+        
+        ${mentions.slice(0, 50).join('\n---\n')}
+        
+        Return JSON format:
+        {
+          "score": number (from -1.0 to 1.0),
+          "label": "positive" | "neutral" | "negative",
+          "trendingTopics": ["string"],
+          "summary": "string"
+        }`;
+
+        const response = await firebaseAI.generateContent(
+            [{ role: 'user', parts: [{ text: prompt }] }],
+            AI_MODELS.TEXT.FAST, // Use Flash for high-speed analysis
+            {
+                responseMimeType: 'application/json',
+                ...AI_CONFIG.THINKING.LOW
+            }
+        );
+
+        const parsed = firebaseAI.parseJSON(response.response.text()) as any;
+        return {
+            score: typeof parsed.score === 'number' ? parsed.score : 0,
+            label: ['positive', 'neutral', 'negative'].includes(parsed.label) ? parsed.label : 'neutral',
+            trendingTopics: Array.isArray(parsed.trendingTopics) ? parsed.trendingTopics : [],
+            summary: typeof parsed.summary === 'string' ? parsed.summary : 'Summary unavailable'
+        };
+    }
+
+    /**
+     * Calculate Brand Trust Score
+     * Fulfills Item 60 of the production checklist
+     */
+    static calculateBrandTrustScore(stats: MarketingStats, campaigns: CampaignAsset[]) {
+        // Simple heuristic: Reach + Engagement weighted by consistency
+        const reachScore = Math.min(stats.totalReach / 100000, 40); // Max 40 points for reach
+        const engagementScore = Math.min(stats.engagementRate * 5, 30); // Max 30 points for engagement
+
+        // Consistency: active campaigns
+        const consistencyScore = Math.min(stats.activeCampaigns * 5, 20); // Max 20 points
+
+        // Diversity: variety of assets
+        const totalAssets = campaigns.reduce((acc, c) => acc + (c.posts?.length || 0), 0);
+        const diversityScore = Math.min(totalAssets / 2, 10); // Max 10 points
+
+        const total = Math.round(reachScore + engagementScore + consistencyScore + diversityScore);
+
+        return {
+            score: total, // 0 to 100
+            level: total > 80 ? 'Elite' : total > 50 ? 'Established' : 'Emerging',
+            breakdown: {
+                reach: Math.round(reachScore),
+                engagement: Math.round(engagementScore),
+                consistency: Math.round(consistencyScore),
+                diversity: Math.round(diversityScore)
+            }
+        };
+    }
+
     /**
      * Get Marketing Stats
      */
@@ -118,8 +194,8 @@ export class MarketingService {
         // Validate input structure before write (ignoring id)
         const validation = CampaignAssetSchema.safeParse(campaign);
         if (!validation.success) {
-             logger.error("[MarketingService] Invalid campaign input:", validation.error);
-             throw new Error("Invalid campaign data");
+            logger.error("[MarketingService] Invalid campaign input:", validation.error);
+            throw new Error("Invalid campaign data");
         }
 
         const campaignData = {
