@@ -3,7 +3,7 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star, RotateCw } from 'lucide-react';
+import { Play, Pause, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star, RotateCw } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -27,9 +27,14 @@ interface GalleryItemProps {
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
     setPrompt: (prompt: string) => void;
     setViewMode: (mode: any) => void;
+    playTrack: (track: HistoryItem) => void;
+    pauseTrack: () => void;
+    resumeTrack: () => void;
+    currentTrack: HistoryItem | null;
+    isPlaying: boolean;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode, playTrack, pauseTrack, resumeTrack, currentTrack, isPlaying }: GalleryItemProps) => {
     return (
         <div
             draggable
@@ -174,6 +179,27 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                         >
                             <Trash2 size={14} />
                         </button>
+                        {item.type === 'music' && (
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    const isCurrent = currentTrack?.id === item.id;
+                                    if (isCurrent && isPlaying) {
+                                        pauseTrack();
+                                    } else if (isCurrent) {
+                                        resumeTrack();
+                                    } else {
+                                        playTrack(item);
+                                    }
+                                }}
+                                data-testid="play-asset-btn"
+                                className={`p-1.5 rounded transition-colors ${currentTrack?.id === item.id && isPlaying ? 'bg-blue-600 text-white' : 'bg-gray-800/50 text-white hover:bg-blue-500'}`}
+                                title={currentTrack?.id === item.id && isPlaying ? "Pause" : "Play"}
+                                aria-label={currentTrack?.id === item.id && isPlaying ? "Pause" : "Play"}
+                            >
+                                {currentTrack?.id === item.id && isPlaying ? <Pause size={14} /> : <Play size={14} />}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>
@@ -194,7 +220,12 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode } = useStore(useShallow(state => ({
+    const {
+        generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage,
+        uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode,
+        setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode,
+        playTrack, stopTrack, currentTrack, isPlaying, pauseTrack, resumeTrack
+    } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeFromHistory: state.removeFromHistory,
         uploadedImages: state.uploadedImages,
@@ -210,7 +241,13 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setSelectedItem: state.setSelectedItem,
         addCharacterReference: state.addCharacterReference,
         setPrompt: state.setPrompt,
-        setViewMode: state.setViewMode
+        setViewMode: state.setViewMode,
+        playTrack: state.playTrack,
+        stopTrack: state.stopTrack,
+        currentTrack: state.currentTrack,
+        isPlaying: state.isPlaying,
+        pauseTrack: state.pauseTrack,
+        resumeTrack: state.resumeTrack
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -405,9 +442,14 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             setSelectedItem={setSelectedItem}
                                             toast={toast}
                                             generationMode={generationMode}
-                                            onDelete={handleDelete}
+                                            onDelete={item.origin === 'uploaded' ? (item.type === 'music' ? removeUploadedAudio : removeUploadedImage) : removeFromHistory}
                                             setPrompt={setPrompt}
                                             setViewMode={setViewMode}
+                                            playTrack={playTrack}
+                                            pauseTrack={pauseTrack}
+                                            resumeTrack={resumeTrack}
+                                            currentTrack={currentTrack}
+                                            isPlaying={isPlaying}
                                         />
                                     ))}
                                 </div>

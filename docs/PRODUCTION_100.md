@@ -31,7 +31,7 @@ _Owner: Antigravity_
 - [x] **16. Drag & Drop File Uploads:** Universal drag-and-drop zones across the app for audio, images, and legal documents.
 - [x] **17. Multi-File Upload Queue:** A persistent upload manager floating at the bottom right indicating progress, success, and errors.
 - [x] **18. AI Image Prompt History:** Store and display prompt history alongside the generated image outputs for easy re-rolling.
-- [ ] **19. Media Player PIP (Picture-in-Picture):** Allow audio playback to continue globally across the app in a mini-player widget.
+- [x] **19. Media Player PIP (Picture-in-Picture):** Allow audio playback to continue globally across the app in a mini-player widget.
 - [ ] **20. Audio Format Conversion:** Client-side checks warning if uploaded files don't meet absolute minimums (e.g., must be 16-bit/44.1kHz WAV).
 
 ### Electron Desktop & OS Integration (21-30)
