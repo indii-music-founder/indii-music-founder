@@ -25,7 +25,8 @@ export class CanvasOperationsService {
     initialize(
         canvasElement: HTMLCanvasElement,
         imageUrl?: string,
-        onReady?: () => void
+        onReady?: () => void,
+        onChange?: () => void
     ): fabric.Canvas {
         this.canvas = new fabric.Canvas(canvasElement, {
             width: 800,
@@ -43,6 +44,13 @@ export class CanvasOperationsService {
             });
         } else {
             onReady?.();
+        }
+
+        if (onChange) {
+            this.canvas.on('object:modified', onChange);
+            this.canvas.on('object:added', onChange);
+            this.canvas.on('object:removed', onChange);
+            this.canvas.on('path:created', onChange);
         }
 
         return this.canvas;
