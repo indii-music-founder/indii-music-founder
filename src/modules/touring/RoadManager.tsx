@@ -8,9 +8,10 @@ import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
 import { Itinerary } from './types';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
-import { RoadManagerSidebar } from './components/RoadManagerSidebar';
+import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
 import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
+import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { logger } from '@/utils/logger';
 
 interface LogisticsReport {
@@ -59,7 +60,7 @@ const RoadManager: React.FC = () => {
     const [isGenerating, setIsGenerating] = useState(false);
 
     // Feature Tabs
-    const [activeTab, setActiveTab] = useState<'planning' | 'on-the-road' | 'rider'>('planning');
+    const [activeTab, setActiveTab] = useState<TouringTab>('planning');
 
     // Logistics State
     const [isCheckingLogistics, setIsCheckingLogistics] = useState(false);
@@ -268,6 +269,12 @@ const RoadManager: React.FC = () => {
                             {activeTab === 'rider' && (
                                 <div className="h-full">
                                     <RiderChecklist />
+                                </div>
+                            )}
+
+                            {activeTab === 'route-optimizer' && (
+                                <div className="h-full p-6 overflow-y-auto">
+                                    <TourRouteOptimizer />
                                 </div>
                             )}
                         </motion.div>

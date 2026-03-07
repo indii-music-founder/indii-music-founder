@@ -1,18 +1,21 @@
 import React from 'react';
-import { Map, Truck, Coffee, Settings, ChevronRight } from 'lucide-react';
+import { Map, Truck, Coffee, Settings, ChevronRight, Route } from 'lucide-react';
 import { motion } from 'motion/react';
 
+export type TouringTab = 'planning' | 'on-the-road' | 'rider' | 'route-optimizer';
+
 interface RoadManagerSidebarProps {
-    activeTab: 'planning' | 'on-the-road' | 'rider';
-    setActiveTab: (tab: 'planning' | 'on-the-road' | 'rider') => void;
+    activeTab: TouringTab;
+    setActiveTab: (tab: TouringTab) => void;
 }
 
 export const RoadManagerSidebar: React.FC<RoadManagerSidebarProps> = ({ activeTab, setActiveTab }) => {
-    const navItems = [
+    const navItems: { id: TouringTab; label: string; icon: React.ElementType; description: string }[] = [
         { id: 'planning', label: 'Tour Planning', icon: Map, description: 'Logistics & Routing' },
         { id: 'on-the-road', label: 'On The Road', icon: Truck, description: 'Live Telemetry' },
         { id: 'rider', label: 'Hospitality Rider', icon: Coffee, description: 'Inventory & Needs' },
-    ] as const;
+        { id: 'route-optimizer', label: 'Route Optimizer', icon: Route, description: 'Spotify Density Map' },
+    ];
 
     return (
         <div className="w-64 bg-bg-dark border-r border-gray-800 flex flex-col h-full flex-shrink-0">
