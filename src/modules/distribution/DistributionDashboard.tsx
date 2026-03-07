@@ -19,6 +19,7 @@ import { QuickLinksPanel } from './components/QuickLinksPanel';
 import { QCQuickPanel } from './components/QCQuickPanel';
 import { KeysStatusPanel } from './components/KeysStatusPanel';
 import { AuthorityInfoPanel } from './components/AuthorityInfoPanel';
+import { RegistrationChecklistPanel } from './components/RegistrationChecklistPanel';
 
 /* ── Logic ── */
 import { useDistributionDashboard } from './hooks/useDistributionDashboard';
@@ -123,8 +124,9 @@ export default function DistributionDashboard() {
                 </Tabs>
             </div>
 
-            {/* ── RIGHT PANEL — QC, Keys & Authority ──────────────── */}
+            {/* ── RIGHT PANEL — QC, Keys, Authority, & Checklist ──────────────── */}
             <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
+                <RegistrationChecklistPanel />
                 <QCQuickPanel />
                 <KeysStatusPanel />
                 <AuthorityInfoPanel />

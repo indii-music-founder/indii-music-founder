@@ -1,12 +1,15 @@
 
 import { config } from 'dotenv';
 import { resolve, join, basename } from 'path';
-import { readdir, stat, readFile } from 'fs/promises';
+import { readdir, stat, readFile, writeFile } from 'fs/promises';
+import { createHash } from 'crypto';
+import fs from 'fs';
 
 config();
 
 const API_KEY = process.env.VITE_API_KEY;
 const BASE_URL = 'https://generativelanguage.googleapis.com/v1beta';
+const SYNC_STATE_FILE = resolve('.rag-sync-state.json');
 
 // Mapping between directories/files and corpus names
 const CORPUS_MAP: Record<string, string> = {
@@ -23,11 +26,35 @@ const CORPUS_MAP: Record<string, string> = {
     'merchandise.md': 'merchandise'
 };
 
+type SyncState = Record<string, { hash: string, fileId: string }>;
+let syncState: SyncState = {};
+
+async function loadSyncState() {
+    try {
+        if (fs.existsSync(SYNC_STATE_FILE)) {
+            const data = await readFile(SYNC_STATE_FILE, 'utf-8');
+            syncState = JSON.parse(data);
+        }
+    } catch (e) {
+        console.warn("⚠️ Could not load sync state, starting fresh.");
+    }
+}
+
+async function saveSyncState() {
+    await writeFile(SYNC_STATE_FILE, JSON.stringify(syncState, null, 2));
+}
+
+function computeHash(content: Buffer): string {
+    return createHash('sha256').update(content).digest('hex');
+}
+
 async function main() {
     if (!API_KEY) {
         console.error("VITE_API_KEY is missing in .env");
         process.exit(1);
     }
+
+    await loadSyncState();
 
     const kbPath = resolve('docs/knowledge-base');
     console.log(`🚀 Starting Bulk RAG Ingestion for ${kbPath}...`);
@@ -67,7 +94,7 @@ async function main() {
         }
     }
 
-    console.log("\n✨ Bulk ingestion complete.");
+    console.log("\n✨ Bulk ingestion & sync complete.");
 }
 
 async function listAllStores() {
@@ -103,9 +130,24 @@ async function ingestFile(filePath: string, storeResourceId: string, corpusName:
     process.stdout.write(`• ${corpusName.padEnd(12)} -> ${displayName.padEnd(30)} ... `);
 
     try {
-        const mimeType = 'text/markdown';
+        const fileContent = await readFile(filePath);
+        const currentHash = computeHash(fileContent);
+        const relativePath = filePath.replace(resolve(process.cwd()), '');
 
-        // Correct Upload URL structure
+        // Sync Check: Only upload if the file changed
+        if (syncState[relativePath] && syncState[relativePath].hash === currentHash) {
+            console.log("✓ Skipped (Unchanged)");
+            return;
+        }
+
+        // Deleting old version if it exists
+        if (syncState[relativePath]?.fileId) {
+            try {
+                await fetch(`${BASE_URL}/${syncState[relativePath].fileId}?key=${API_KEY}`, { method: 'DELETE' });
+            } catch (ignore) { /* Ignore if it fails */ }
+        }
+
+        const mimeType = 'text/markdown';
         const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${API_KEY}`;
 
         // 1. Upload
@@ -116,15 +158,11 @@ async function ingestFile(filePath: string, storeResourceId: string, corpusName:
                 'Content-Type': mimeType,
                 'X-Goog-Upload-Header-Content-Meta-Session-Data': JSON.stringify({ displayName })
             },
-            body: await readFile(filePath)
+            body: fileContent
         });
 
         if (!uploadRes.ok) {
             const err = await uploadRes.text();
-            if (err.includes("already exists")) {
-                console.log("✓ (Cached)");
-                return;
-            }
             throw new Error(`Upload failed: ${uploadRes.status} ${err}`);
         }
 
@@ -156,11 +194,16 @@ async function ingestFile(filePath: string, storeResourceId: string, corpusName:
         if (!importRes.ok) {
             const err = await importRes.text();
             if (err.includes("already exists")) {
-                console.log("✓ (Imported)");
+                console.log("✓ (Imported existing)");
+                syncState[relativePath] = { hash: currentHash, fileId: fileResourceName };
+                await saveSyncState();
                 return;
             }
             throw new Error(`Import failed: ${importRes.status} ${err}`);
         }
+
+        syncState[relativePath] = { hash: currentHash, fileId: fileResourceName };
+        await saveSyncState();
 
         console.log("✓ Done");
     } catch (e: any) {

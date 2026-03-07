@@ -12,8 +12,8 @@ export const LogicNode = UniversalNode;
 
 const NodeWrapper: React.FC<{ children: React.ReactNode, selected: boolean, className?: string }> = ({ children, selected, className = '' }) => (
     <div className={`
-        bg-gray-800/80 backdrop-blur-sm rounded-lg border-2 text-white shadow-md
-        ${selected ? 'border-teal-500 shadow-xl' : 'border-gray-600'}
+        bg-black/60 backdrop-blur-2xl rounded-2xl border text-white shadow-2xl relative overflow-hidden group/node transition-all duration-300
+        ${selected ? 'border-teal-400 shadow-[0_0_30px_rgba(45,212,191,0.3)]' : 'border-white/10 hover:border-white/20'}
         ${className}
     `}>
         {children}
@@ -37,7 +37,7 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
     };
 
     return (
-        <NodeWrapper selected={selected} className="w-64">
+        <NodeWrapper selected={selected} className="w-[280px]">
             {/* Standard Output Handle for Trigger/Text */}
             <Handle
                 type="source"
@@ -57,7 +57,7 @@ export const InputNode = memo(({ id, data, selected }: NodeProps<InputNodeData>)
                 </div>
                 <div className="p-2">
                     <textarea
-                        className="nodrag w-full min-h-[80px] bg-transparent text-sm text-gray-300 italic resize-none outline-none placeholder:text-gray-600 focus:bg-gray-800/50 rounded p-1 transition-colors"
+                        className="nodrag w-full min-h-[80px] bg-black/20 text-sm text-gray-300 italic resize-none outline-none placeholder:text-gray-600 focus:bg-white/5 border border-transparent focus:border-white/10 rounded-xl p-3 transition-colors"
                         value={data.prompt}
                         onChange={handleChange}
                         placeholder="Enter your prompt here..."
@@ -72,7 +72,7 @@ const formatTime = (seconds: number) => new Date(seconds * 1000).toISOString().s
 
 export const AudioSegmentNode = memo(({ data, selected }: NodeProps<AudioSegmentNodeData>) => {
     return (
-        <NodeWrapper selected={selected} className="w-64 border-purple-500">
+        <NodeWrapper selected={selected} className="w-[280px] border-purple-500/30">
             <Handle
                 type="source"
                 position={Position.Right}
@@ -107,7 +107,7 @@ export const OutputNode = memo(({ data, selected }: NodeProps<OutputNodeData>) =
     }
 
     return (
-        <NodeWrapper selected={selected} className="w-56 border-green-500/50">
+        <NodeWrapper selected={selected} className="w-[280px] border-green-500/30">
             <Handle
                 type="target"
                 position={Position.Left}

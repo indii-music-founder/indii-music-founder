@@ -148,18 +148,18 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
     const inputs = jobDefinition?.inputs || [{ id: 'default_in', label: 'Input', type: 'ANY' }];
     const outputs = jobDefinition?.outputs || [{ id: 'default_out', label: 'Output', type: 'ANY' }];
 
-    const headerColor = isLogic ? 'bg-indigo-900/50 border-indigo-800' : 'bg-gray-800/50 border-gray-700';
-    const borderColor = selected ? (isLogic ? 'border-indigo-500 shadow-indigo-500/20' : 'border-teal-500 shadow-teal-500/20') : 'border-gray-700 hover:border-gray-600';
+    const headerColor = isLogic ? 'bg-indigo-900/40 border-indigo-500/30' : 'bg-white/5 border-white/10';
+    const borderColor = selected ? (isLogic ? 'border-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.3)] shadow-indigo-500/20' : 'border-teal-400 shadow-[0_0_30px_rgba(45,212,191,0.3)] shadow-teal-500/20') : 'border-white/10 hover:border-white/20';
 
     return (
         <div className={`
-            w-64 bg-[#1e293b] rounded-lg shadow-lg border-2 transition-all duration-200 relative
+            w-[280px] bg-black/60 backdrop-blur-2xl rounded-2xl shadow-2xl border transition-all duration-300 relative overflow-hidden group/node
             ${borderColor}
         `}>
             {/* Header */}
-            <div className={`px-3 py-2 border-b ${headerColor} rounded-t-lg flex items-center justify-between`}>
-                <div className="flex items-center gap-2 overflow-hidden">
-                    <div className={`p-1 rounded ${selected ? (isLogic ? 'bg-indigo-800 text-indigo-300' : 'bg-teal-900/30 text-teal-400') : 'bg-gray-700/50 text-gray-400'}`}>
+            <div className={`px-4 py-3 border-b ${headerColor} flex items-center justify-between backdrop-blur-sm z-10 relative`}>
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <div className={`p-1.5 rounded-lg ${selected ? (isLogic ? 'bg-indigo-500/20 text-indigo-300' : 'bg-teal-500/20 text-teal-300') : 'bg-white/10 text-gray-400 group-hover/node:bg-white/20 transition-colors'}`}>
                         <Icon className="w-3.5 h-3.5" />
                     </div>
                     <div className="overflow-hidden">
@@ -171,11 +171,11 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
             </div>
 
             {/* Body */}
-            <div className="flex">
+            <div className="flex relative z-0 bg-gradient-to-b from-transparent to-black/40">
                 {/* Input Handles Column */}
-                <div className="flex flex-col justify-center py-3 gap-3 border-r border-gray-700/50 bg-gray-900/30 w-8 relative">
+                <div className="flex flex-col justify-center py-4 gap-4 border-r border-white/5 bg-black/20 w-10 relative">
                     {inputs.map((input, _i) => (
-                        <div key={input.id} className="relative group flex items-center justify-center h-3">
+                        <div key={input.id} className="relative group flex items-center justify-center h-4">
                             <Handle
                                 type="target"
                                 position={Position.Left}
@@ -213,15 +213,15 @@ const UniversalNode = ({ id, data, selected }: NodeProps<UniversalNodeData>) => 
                     </div>
 
                     {/* Result Preview */}
-                    <div className="aspect-video w-full bg-gray-900 flex items-center justify-center">
+                    <div className="aspect-video w-full bg-black/40 flex items-center justify-center overflow-hidden">
                         {renderResultPreview()}
                     </div>
                 </div>
 
                 {/* Output Handles Column */}
-                <div className="flex flex-col justify-center py-3 gap-3 border-l border-gray-700/50 bg-gray-900/30 w-8 relative">
+                <div className="flex flex-col justify-center py-4 gap-4 border-l border-white/5 bg-black/20 w-10 relative">
                     {outputs.map((output, i) => (
-                        <div key={output.id} className="relative group flex items-center justify-center h-3">
+                        <div key={output.id} className="relative group flex items-center justify-center h-4">
                             <Handle
                                 type="source"
                                 position={Position.Right}
