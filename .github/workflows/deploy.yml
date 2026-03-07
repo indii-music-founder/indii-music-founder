@@ -18,14 +18,30 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '22.x'
-          cache: 'npm'
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" \u003e\u003e $GITHUB_ENV
+
+      - uses: actions/cache@v4
+        name: Setup pnpm cache
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
 
       - name: Install root dependencies
-
-        run: npm install --legacy-peer-deps --ignore-scripts
+        run: pnpm install --no-frozen-lockfile --ignore-scripts
 
       - name: Run linting checks
-        run: npm run lint
+        run: pnpm run lint
 
       # - name: Run unit tests
       #   timeout-minutes: 30
@@ -47,11 +63,11 @@ jobs:
         run: |
           cd landing-page
           rm -rf dist .next
-          npm install --legacy-peer-deps --ignore-scripts
-          NODE_ENV=production npm run build
+          pnpm install --no-frozen-lockfile --ignore-scripts
+          NODE_ENV=production pnpm run build
 
       - name: Build studio app
-        run: npm run build:studio
+        run: pnpm run build:studio
         env:
           NODE_ENV: production
           VITE_API_KEY: ${{ secrets.VITE_API_KEY }}
