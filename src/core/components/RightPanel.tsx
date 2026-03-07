@@ -67,6 +67,7 @@ export default function RightPanel() {
                                     "text-xs font-bold uppercase tracking-wider transition-colors",
                                     view === 'messages' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
                                 )}
+                                aria-label="View Messages"
                             >
                                 Messages
                             </button>
@@ -76,6 +77,7 @@ export default function RightPanel() {
                                     "text-xs font-bold uppercase tracking-wider transition-colors",
                                     view === 'archives' ? "text-purple-400" : "text-gray-500 hover:text-gray-300"
                                 )}
+                                aria-label="View Archives"
                             >
                                 Archives
                             </button>
@@ -83,6 +85,7 @@ export default function RightPanel() {
                         <button
                             onClick={toggleAgentWindow}
                             className="p-1.5 hover:bg-white/10 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            aria-label="Close Chat Window"
                         >
                             <ChevronRight size={16} />
                         </button>
@@ -157,7 +160,7 @@ export default function RightPanel() {
                 return (
                     <div className="h-full flex flex-col bg-card relative">
                         <div className="absolute top-2 right-2 z-10">
-                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-foreground transition-colors">
+                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-foreground transition-colors" aria-label="Close Panel">
                                 <ChevronRight size={16} />
                             </button>
                         </div>
@@ -174,7 +177,7 @@ export default function RightPanel() {
                 return (
                     <div className="flex flex-col h-full">
                         <div className="p-4 flex justify-end">
-                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors">
+                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors" aria-label="Close Panel">
                                 <ChevronRight size={16} />
                             </button>
                         </div>
@@ -234,6 +237,7 @@ export default function RightPanel() {
                             onClick={toggleRightPanel}
                             className="p-2 hover:bg-white/10 rounded-xl text-gray-400 hover:text-white transition-colors mb-4"
                             title="Expand Panel"
+                            aria-label="Expand Panel"
                         >
                             <ChevronLeft size={16} />
                         </button>
@@ -243,6 +247,7 @@ export default function RightPanel() {
                                 onClick={() => handleToolClick('creative')}
                                 className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'creative' ? `${creativeTheme.bg} ${creativeTheme.text} shadow-[0_0_10px_rgba(168,85,247,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Image Studio"
+                                aria-label="Image Studio"
                             >
                                 <Palette size={20} />
                                 {currentModule === 'creative' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
@@ -252,6 +257,7 @@ export default function RightPanel() {
                                 onClick={() => handleToolClick('video')}
                                 className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'video' ? `${videoTheme.bg} ${videoTheme.text} shadow-[0_0_10px_rgba(59,130,246,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Video Studio"
+                                aria-label="Video Studio"
                             >
                                 <Film size={20} />
                                 {currentModule === 'video' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}
@@ -261,6 +267,7 @@ export default function RightPanel() {
                                 onClick={() => handleToolClick('files')}
                                 className={`p-2 rounded-xl transition-all flex justify-center relative group ${currentModule === 'files' ? `${filesTheme.bg} ${filesTheme.text} shadow-[0_0_10px_rgba(34,197,94,0.2)]` : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
                                 title="Project Files"
+                                aria-label="Project Files"
                             >
                                 <Folder size={20} />
                                 {currentModule === 'files' && <div className={`absolute inset-0 rounded-xl bg-current opacity-10 blur-sm`} />}

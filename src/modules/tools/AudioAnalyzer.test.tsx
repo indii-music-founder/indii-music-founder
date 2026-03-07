@@ -118,7 +118,7 @@ beforeEach(() => {
 describe('AudioAnalyzer (Sonic DNA Console)', () => {
     it('renders the new dashboad layout correctly', () => {
         render(<AudioAnalyzer />);
-        expect(screen.getByText('Distribution Intelligence Tracker')).toBeInTheDocument();
+        expect(screen.getByText('Audio Distribution Hub')).toBeInTheDocument();
         expect(screen.getByText('Ingestion & Data Extraction')).toBeInTheDocument();
     });
 

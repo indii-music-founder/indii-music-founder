@@ -3,6 +3,7 @@ import { MetadataEditor } from './components/MetadataEditor';
 import { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { ernService } from '@/services/ddex/ERNService'; // Hook up the real service
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 
 import { ddexValidator } from '@/services/ddex/DDEXValidator';
 import { logger } from '@/utils/logger';
@@ -13,6 +14,9 @@ export const ReleaseManager: React.FC = () => {
     const [metadata, setMetadata] = useState<ExtendedGoldenMetadata | null>(null);
     const [xmlOutput, setXmlOutput] = useState<string>('');
     const [validationResult, setValidationResult] = useState<{ isValid: boolean; errors: string[] } | null>(null);
+    const [isDirty, setIsDirty] = useState(false);
+
+    useUnsavedChanges(isDirty);
 
     // Mock Audio Load for Demo
     const handleLoadAudio = async () => {
@@ -45,6 +49,7 @@ export const ReleaseManager: React.FC = () => {
 
     const handleSaveMetadata = (data: ExtendedGoldenMetadata) => {
         setMetadata(data);
+        setIsDirty(true);
     };
 
     const handleExport = async () => {
@@ -64,6 +69,9 @@ export const ReleaseManager: React.FC = () => {
                     isValid: validation.valid,
                     errors: validation.valid ? [] : validation.errors
                 });
+                if (validation.valid) {
+                    setIsDirty(false); // Clear dirty flag on successful export
+                }
             } else {
                 logger.error("ERN generation failed:", result.error ?? "Unknown error");
                 setValidationResult({ isValid: false, errors: [result.error || 'Failed to generate ERN'] });
