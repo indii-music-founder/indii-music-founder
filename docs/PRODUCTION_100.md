@@ -6,7 +6,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ## Part 1: Frontend, Desktop (Electron), UI/UX, & Performance (Items 1-50)
 
-*Owner: Antigravity*
+_Owner: Antigravity_
 
 ### Core UI & Navigation UX (1-10)
 
@@ -16,8 +16,8 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **4. Responsive Breakpoints:** Ensure perfect UI rendering on window resize, particularly down to minimum supported Electron width (1024px).
 - [x] **5. Dynamic Theme Engine:** Fully functional Light/Dark/System sync with seamless CSS variable transitions globally.
 - [x] **6. Contextual Help Overlays:** Implement intro tooltips/tours for complex views like the Workflow node editor and Audio Distribution Hub.
-- [ ] **7. Global Error Boundaries:** Implement robust React Error Boundaries that gracefully catch renders and allow contextual reloading without crashing the shell.
-- [ ] **8. Toast Notification System:** Standardize all success/error notifications using a unified toast queue with proper stacking and timeout management.
+- [x] **7. Global Error Boundaries:** Implement robust React Error Boundaries that gracefully catch renders and allow contextual reloading without crashing the shell.
+- [x] **8. Toast Notification System:** Standardize all success/error notifications using a unified toast queue with proper stacking and timeout management.
 - [ ] **9. Keyboard Accessibility:** Ensure full tab-index navigation and ARIA labeling across all custom UI components (KokonutUI/Radix).
 - [ ] **10. "Unsaved Changes" Guards:** Warn users when navigating away from dirty forms in settings, creative studio, and distribution.
 
@@ -77,7 +77,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ## Part 2: Backend, RAG, Firebase, Orchestration, & Security (Items 51-100)
 
-*Owner: INDEX*
+_Owner: INDEX_
 
 ### RAG & Knowledge Base Infrastructure (51-60)
 

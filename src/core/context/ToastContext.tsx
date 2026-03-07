@@ -39,10 +39,14 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // ToastProvider Rendering
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
+    const MAX_TOASTS = 5;
 
     const addToast = useCallback((message: string, type: ToastType, duration?: number, progress?: number) => {
         const id = uuidv4();
-        setToasts(prev => [...prev, { id, message, type, duration, progress }]);
+        setToasts(prev => {
+            const next = [...prev, { id, message, type, duration, progress }];
+            return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
+        });
         return id;
     }, []);
 
