@@ -18,6 +18,8 @@ import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { logger } from '@/utils/logger';
+import { driver } from 'driver.js';
+import 'driver.js/dist/driver.css';
 
 /* ================================================================== */
 /*  Workflow Lab — Three-Panel Layout                                   */
@@ -119,6 +121,21 @@ export default function WorkflowLab() {
         );
     }
 
+    const startTour = () => {
+        const driverObj = driver({
+            showProgress: true,
+            animate: true,
+            steps: [
+                { element: '#tour-workflow-controls', popover: { title: 'Controls Panel', description: 'Manage your workflow files, run executions, and save changes here.' } },
+                { element: '#tour-workflow-generator', popover: { title: 'AI Generator', description: 'Describe what you want to achieve, and let AI build the initial node structure for you.' } },
+                { element: '#tour-workflow-canvas', popover: { title: 'Node Editor', description: 'Drag and drop nodes here. Connect them to build automation logic.' } },
+                { element: '#tour-workflow-library', popover: { title: 'Node Library', description: 'A collection of available triggers, actions, and logic gates.' } },
+                { element: '#tour-workflow-inspector', popover: { title: 'Inspector', description: 'Select a node to view and edit its detailed configuration.' } },
+            ]
+        });
+        driverObj.drive();
+    };
+
     const handleRunWorkflow = async () => {
         if (nodes.length === 0) return;
         setIsRunning(true);
@@ -218,11 +235,14 @@ export default function WorkflowLab() {
         <ModuleErrorBoundary moduleName="Workflow Lab">
             <div className="absolute inset-0 flex bg-[#0f0f0f]">
                 {/* ── LEFT PANEL — Controls & Actions ────── */}
-                <div className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
-                    <div className="p-4 border-b border-gray-800">
+                <div id="tour-workflow-controls" className="w-64 border-r border-gray-800 bg-[#1a1a1a] flex flex-col flex-shrink-0">
+                    <div className="p-4 border-b border-gray-800 flex items-center justify-between">
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
                             <GitBranch className="text-purple-500" /> Workflow Lab
                         </h2>
+                        <button onClick={startTour} className="p-1.5 rounded-lg bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 hover:text-white transition-colors" title="Take a Tour">
+                            <HelpCircle size={16} />
+                        </button>
                     </div>
 
                     <div className="p-4 space-y-2">
@@ -276,6 +296,7 @@ export default function WorkflowLab() {
                         </div>
 
                         <button
+                            id="tour-workflow-generator"
                             onClick={() => setShowGenerator(true)}
                             className="w-full py-2 px-4 bg-purple-600 hover:bg-purple-500 text-white rounded-lg font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-purple-900/20"
                         >
@@ -303,7 +324,7 @@ export default function WorkflowLab() {
                 </div>
 
                 {/* ── CENTER — Node Editor Canvas ────────────────────── */}
-                <div className="flex-1 relative min-w-0">
+                <div id="tour-workflow-canvas" className="flex-1 relative min-w-0">
                     <WorkflowEditor />
                     <NodePanel />
                 </div>
@@ -370,11 +391,10 @@ function SavedWorkflowsWidget({
                     <button
                         key={w.id}
                         onClick={() => onLoad(w)}
-                        className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${
-                            w.id === currentWorkflowId
-                                ? 'bg-purple-500/10 text-purple-400'
-                                : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
-                        }`}
+                        className={`w-full text-left flex items-center gap-2 py-2 px-2 rounded-lg transition-colors text-xs ${w.id === currentWorkflowId
+                            ? 'bg-purple-500/10 text-purple-400'
+                            : 'text-gray-400 hover:bg-white/[0.04] hover:text-white'
+                            }`}
                     >
                         <GitBranch size={12} className="flex-shrink-0" />
                         <span className="truncate">{w.name}</span>
@@ -402,7 +422,7 @@ function NodeLibraryPanel() {
     ];
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+        <div id="tour-workflow-library" className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Zap size={10} /> Node Library
             </h3>
@@ -431,7 +451,7 @@ function NodeInspectorPanel({ nodes }: { nodes: Array<{ id: string; data?: { lab
     const selectedCount = nodes.length;
 
     return (
-        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
+        <div id="tour-workflow-inspector" className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Settings size={10} /> Inspector
             </h3>

@@ -119,14 +119,24 @@ export default function LoginForm() {
 
                 </div>
 
-                <div className="text-center text-sm">
-                    <span className="text-gray-500">Don&apos;t have an account?</span>{' '}
-                    <Link
-                        to="/signup"
-                        className="font-medium text-purple-400 hover:text-purple-300 transition-colors"
-                    >
-                        Sign up for free
-                    </Link>
+                <div className="mt-6">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-white/10" />
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="bg-black/50 px-2 text-gray-500">New to indiiOS?</span>
+                        </div>
+                    </div>
+
+                    <div className="mt-6">
+                        <Link
+                            to="/signup"
+                            className="flex w-full justify-center rounded-lg bg-white/5 border border-white/10 px-4 py-2.5 text-sm font-bold text-white hover:bg-white/10 transition-all"
+                        >
+                            Create an account
+                        </Link>
+                    </div>
                 </div>
             </form>
         </div>
