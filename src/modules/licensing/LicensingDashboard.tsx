@@ -10,6 +10,7 @@ import { useLicensing } from './hooks/useLicensing';
 import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
 import { CatalogSearchTab } from './components/CatalogSearchTab';
+import { SyncBriefMatcher } from './components/SyncBriefMatcher';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 /* ================================================================== */
@@ -91,6 +92,9 @@ export default function LicensingDashboard() {
                                 </TabsTrigger>
                                 <TabsTrigger value="catalog" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
                                     Sync Catalog Search
+                                </TabsTrigger>
+                                <TabsTrigger value="briefs" className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white">
+                                    Brief Matcher
                                 </TabsTrigger>
                             </TabsList>
                         </div>
@@ -226,6 +230,10 @@ export default function LicensingDashboard() {
 
                         <TabsContent value="catalog" className="flex-1 px-4 md:px-6 m-0 border-none p-0 h-full data-[state=inactive]:hidden">
                             <CatalogSearchTab />
+                        </TabsContent>
+
+                        <TabsContent value="briefs" className="flex-1 px-4 md:px-6 m-0 border-none p-0 h-full overflow-y-auto pb-6 data-[state=inactive]:hidden">
+                            <SyncBriefMatcher />
                         </TabsContent>
                     </Tabs>
                 </div>
