@@ -1,7 +1,45 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useStore } from '@/core/store';
 import { useToast } from '@/core/context/ToastContext';
-import { FileUp, FileAudio, FileImage, FileText } from 'lucide-react';
+import { FileUp, FileAudio, FileImage, FileText, AlertTriangle } from 'lucide-react';
+
+async function validateAudioFormat(file: File): Promise<{ valid: boolean; error?: string }> {
+    if (file.type === 'audio/wav' || file.name.toLowerCase().endsWith('.wav')) {
+        return new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const buffer = e.target?.result as ArrayBuffer;
+                if (!buffer) return resolve({ valid: false, error: 'Could not read file' });
+                const view = new DataView(buffer);
+
+                try {
+                    // Check RIFF and WAVE
+                    const rift = String.fromCharCode(view.getUint8(0), view.getUint8(1), view.getUint8(2), view.getUint8(3));
+                    const wave = String.fromCharCode(view.getUint8(8), view.getUint8(9), view.getUint8(10), view.getUint8(11));
+
+                    if (rift !== 'RIFF' || wave !== 'WAVE') {
+                        return resolve({ valid: true }); // Might be another type or non-PCM
+                    }
+
+                    const sampleRate = view.getUint32(24, true);
+                    const bitsPerSample = view.getUint16(34, true);
+
+                    if (sampleRate < 44100 || bitsPerSample < 16) {
+                        return resolve({
+                            valid: false,
+                            error: `${file.name}: ${sampleRate}Hz ${bitsPerSample}-bit is below IndiiOS minimums (44.1kHz 16-bit).`
+                        });
+                    }
+                } catch (err) {
+                    console.error('Error parsing WAV header:', err);
+                }
+                resolve({ valid: true });
+            };
+            reader.readAsArrayBuffer(file.slice(0, 44));
+        });
+    }
+    return { valid: true };
+}
 
 export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [isDragging, setIsDragging] = useState(false);
@@ -71,6 +109,15 @@ export const GlobalDropZone: React.FC<{ children: React.ReactNode }> = ({ childr
                     file.name.endsWith('.docx');
 
                 if (isAudio || isImage || isVideo || isDocument) {
+                    // Item 20: Audio Format Validation
+                    if (isAudio) {
+                        const validation = await validateAudioFormat(file);
+                        if (!validation.valid) {
+                            toast.warning(validation.error || "Low quality audio detected", 8000);
+                            // We still let them upload in the Alpha, just warn them.
+                        }
+                    }
+
                     const queueId = crypto.randomUUID();
                     const itemType = isDocument ? 'document' : (isAudio ? 'music' : (isVideo ? 'video' : 'image'));
 
