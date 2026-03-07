@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { Loader2, Mail, Lock, LogIn, Chrome, User, UserPlus } from 'lucide-react';
@@ -18,6 +18,15 @@ export default function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+
+    useEffect(() => {
+        const path = window.location.pathname;
+        if (path === '/signup' || path === '/register') {
+            useStore.setState({ isSignUpMode: true });
+        } else if (path === '/signin' || path === '/login') {
+            useStore.setState({ isSignUpMode: false });
+        }
+    }, []);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();

@@ -58,8 +58,8 @@ export default function RightPanel() {
         // High priority: if the agent is open, show the chat overlay inside the right panel
         if (isAgentOpen) {
             return (
-                <div className="flex flex-col h-full bg-bg-dark border-l border-white/10 relative overflow-hidden">
-                    <div className="flex items-center justify-between p-4 border-b border-white/10 shrink-0">
+                <div className="flex flex-col h-full bg-card border-l border-border relative overflow-hidden">
+                    <div className="flex items-center justify-between p-4 border-b border-border shrink-0">
                         <div className="flex gap-4">
                             <button
                                 onClick={() => setView('messages')}
@@ -126,7 +126,7 @@ export default function RightPanel() {
                                 </div>
 
                                 {/* Inline PromptArea for Right Panel */}
-                                <div className="p-4 border-t border-white/10 bg-black/20">
+                                <div className="p-4 border-t border-border bg-black/20">
                                     <PromptArea isDocked className="!static !translate-x-0 !w-full !max-w-none shadow-none border-none bg-transparent" />
                                 </div>
 
@@ -155,9 +155,9 @@ export default function RightPanel() {
                 return <VideoPanel toggleRightPanel={toggleRightPanel} />;
             case 'files':
                 return (
-                    <div className="h-full flex flex-col bg-bg-dark relative">
+                    <div className="h-full flex flex-col bg-card relative">
                         <div className="absolute top-2 right-2 z-10">
-                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-white transition-colors">
+                            <button onClick={toggleRightPanel} className="p-1 hover:bg-white/10 rounded text-gray-400 hover:text-foreground transition-colors">
                                 <ChevronRight size={16} />
                             </button>
                         </div>
@@ -218,7 +218,7 @@ export default function RightPanel() {
             initial={false}
             animate={{ width: isRightPanelOpen ? 320 : 48 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="h-full border-l border-white/10 bg-bg-dark/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
+            className="h-full border-l border-border bg-card/80 backdrop-blur-xl flex-shrink-0 hidden lg:flex flex-col overflow-hidden z-20 shadow-2xl"
         >
             <AnimatePresence mode="wait">
                 {!isRightPanelOpen ? (

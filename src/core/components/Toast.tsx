@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { motion } from 'motion/react';
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -18,16 +18,38 @@ interface ToastProps {
 }
 
 export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const startProgressRef = useRef<number>(0);
+    const remainingTimeRef = useRef<number>(toast.duration || 4000);
+
     useEffect(() => {
-        // Loading toasts don't auto-dismiss
-        if (toast.type === 'loading') return;
+        const startTimer = () => {
+            if (toast.type === 'loading') return;
+            startProgressRef.current = Date.now();
+            timeoutRef.current = setTimeout(() => {
+                onDismiss(toast.id);
+            }, remainingTimeRef.current);
+        };
 
-        const timer = setTimeout(() => {
-            onDismiss(toast.id);
-        }, toast.duration || 3000);
+        const stopTimer = () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+                const elapsed = Date.now() - startProgressRef.current;
+                remainingTimeRef.current -= elapsed;
+            }
+        };
 
-        return () => clearTimeout(timer);
-    }, [toast, onDismiss]);
+        if (!isHovered) {
+            startTimer();
+        } else {
+            stopTimer();
+        }
+
+        return () => {
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, [isHovered, toast.type, onDismiss, toast.id]);
 
     const icons = {
         success: <CheckCircle size={18} className="text-green-400" />,
@@ -50,7 +72,9 @@ export const Toast: React.FC<ToastProps> = ({ toast, onDismiss }) => {
             initial={{ opacity: 0, y: 20, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.9 }}
-            className={`flex flex-col gap-2 px-4 py-3 rounded-lg border backdrop-blur-md shadow-xl min-w-[300px] ${bgColors[toast.type]}`}
+            className={`flex flex-col gap-2 px-4 py-3 rounded-lg border backdrop-blur-md shadow-xl min-w-[300px] pointer-events-auto ${bgColors[toast.type]}`}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
         >
             <div className="flex items-center gap-3">
                 {icons[toast.type]}
