@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification } from 'electron';
+import { app, BrowserWindow, shell, ipcMain, Tray, Menu, nativeImage, Notification, powerMonitor } from 'electron';
 import path from 'path';
 import log from 'electron-log';
 import { registerSystemHandlers } from './handlers/system';
@@ -364,7 +364,6 @@ if (!gotTheLock) {
         });
 
         // Power Monitor (Item 165: CPU Throttling)
-        const powerMonitor = require('electron').powerMonitor;
         powerMonitor.on('on-battery', () => {
             log.info('[PowerMonitor] System is on battery. Throttling CPU-heavy UI (Three.js/Animations).');
             BrowserWindow.getAllWindows().forEach(win => win.webContents.send('power:on-battery'));

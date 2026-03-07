@@ -254,6 +254,6 @@ export const {
     generate_campaign_from_audio,
     analyze_market_trends,
     create_ab_test_campaign,
-    tier_superfans
+    tier_superfans,
     create_ab_test_campaign
 } = MarketingTools;
