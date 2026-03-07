@@ -10,6 +10,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { TagMatrix } from './components/TagMatrix';
 import { AudioIntelligenceProfile } from '@/services/audio/types';
 import { audioAnalysisService } from '@/services/audio/AudioAnalysisService';
+import { AudioWaveformViewer } from '@/components/shared/AudioWaveformViewer';
 import { logger } from '@/utils/logger';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -24,6 +25,7 @@ const DEFAULT_TAGS = {
 const AudioAnalyzer: React.FC = () => {
     const toast = useToast();
     const [file, setFile] = useState<File | null>(null);
+    const [audioUrl, setAudioUrl] = useState<string | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [tags, setTags] = useState<string[]>([]);
@@ -48,6 +50,10 @@ const AudioAnalyzer: React.FC = () => {
         if (!uploadedFile) return;
 
         setFile(uploadedFile);
+        if (audioUrl) {
+            URL.revokeObjectURL(audioUrl);
+        }
+        setAudioUrl(URL.createObjectURL(uploadedFile));
         setTags([]);
         setProfile(null);
         await runAnalysis(uploadedFile);
@@ -145,6 +151,14 @@ const AudioAnalyzer: React.FC = () => {
                                     <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} data-testid="import-track-input" />
                                 </label>
                             </div>
+
+                            {/* Audio Waveform Viewer Feature */}
+                            {audioUrl && (
+                                <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 animate-in fade-in slide-in-from-bottom-3 duration-400">
+                                    <h3 className="text-sm font-semibold text-white/50 uppercase tracking-widest mb-4">Master Audio Preview</h3>
+                                    <AudioWaveformViewer audioUrl={audioUrl} height={80} />
+                                </div>
+                            )}
 
                             {/* Data Readout Matrix */}
                             {profile && (
