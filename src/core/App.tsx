@@ -25,6 +25,7 @@ import { useLocation } from 'react-router-dom';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
+import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
@@ -326,72 +327,74 @@ export default function App() {
 
                     {/* AuthWrapper handles session persistence */}
                     <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
-                        <ShareTargetHandler />
-                        <BiometricGate>
-                            <div className="flex w-full h-full">
-                                {/* Left Sidebar - Hidden for standalone modules */}
-                                {showChrome && (
-                                    <div className="hidden md:block h-full">
+                        <GlobalDropZone>
+                            <ShareTargetHandler />
+                            <BiometricGate>
+                                <div className="flex w-full h-full">
+                                    {/* Left Sidebar - Hidden for standalone modules */}
+                                    {showChrome && (
+                                        <div className="hidden md:block h-full">
+                                            <ErrorBoundary>
+                                                <Sidebar />
+                                            </ErrorBoundary>
+                                        </div>
+                                    )}
+
+                                    <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
+                                        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                                            <ErrorBoundary>
+                                                <Suspense fallback={<LoadingFallback />}>
+                                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
+                                                </Suspense>
+                                            </ErrorBoundary>
+                                        </div>
+
+
+                                    </main>
+
+                                    {/* Right Panel - Hidden for standalone modules and mobile */}
+                                    {showChrome && isDesktop && (
                                         <ErrorBoundary>
-                                            <Sidebar />
+                                            <RightPanel />
                                         </ErrorBoundary>
-                                    </div>
-                                )}
+                                    )}
+                                </div>
+                            </BiometricGate>
 
-                                <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
-                                    <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                                        <ErrorBoundary>
-                                            <Suspense fallback={<LoadingFallback />}>
-                                                <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                            </Suspense>
-                                        </ErrorBoundary>
-                                    </div>
+                            {/* Mobile Navigation - Hidden for standalone modules */}
+                            {showChrome && (
+                                <ErrorBoundary>
+                                    <MobileNav />
+                                </ErrorBoundary>
+                            )}
 
+                            {/* DevTools HUD - Only in Development */}
+                            {import.meta.env.DEV && (
+                                <Suspense fallback={null}>
+                                    <DevPortWarning />
+                                    <ErrorButton />
+                                </Suspense>
+                            )}
 
-                                </main>
+                            {/* Global Modals */}
+                            <ApprovalModal />
+                            <ApprovalManager />
+                            <PWAInstallPrompt />
+                            <TransmissionMonitor />
 
-                                {/* Right Panel - Hidden for standalone modules and mobile */}
-                                {showChrome && isDesktop && (
-                                    <ErrorBoundary>
-                                        <RightPanel />
-                                    </ErrorBoundary>
-                                )}
-                            </div>
-                        </BiometricGate>
+                            {/* Global Command Bar */}
+                            {showChrome && (
+                                <ErrorBoundary>
+                                    <CommandBar />
+                                </ErrorBoundary>
+                            )}
 
-                        {/* Mobile Navigation - Hidden for standalone modules */}
-                        {showChrome && (
-                            <ErrorBoundary>
-                                <MobileNav />
-                            </ErrorBoundary>
-                        )}
+                            {/* Global Command Menu (CMD+K) */}
+                            <UnifiedCommandMenu />
 
-                        {/* DevTools HUD - Only in Development */}
-                        {import.meta.env.DEV && (
-                            <Suspense fallback={null}>
-                                <DevPortWarning />
-                                <ErrorButton />
-                            </Suspense>
-                        )}
-
-                        {/* Global Modals */}
-                        <ApprovalModal />
-                        <ApprovalManager />
-                        <PWAInstallPrompt />
-                        <TransmissionMonitor />
-
-                        {/* Global Command Bar */}
-                        {showChrome && (
-                            <ErrorBoundary>
-                                <CommandBar />
-                            </ErrorBoundary>
-                        )}
-
-                        {/* Global Command Menu (CMD+K) */}
-                        <UnifiedCommandMenu />
-
-                        {/* Global Keyboard Shortcuts Help (press ?) */}
-                        <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
+                            {/* Global Keyboard Shortcuts Help (press ?) */}
+                            <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
+                        </GlobalDropZone>
                     </div>
                 </ToastProvider>
             </ThemeProvider>

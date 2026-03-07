@@ -28,7 +28,7 @@ _Owner: Antigravity_
 - [x] **13. Creative Studio State Persistence:** Ensure Canvas/Fabric.js sessions save automatically locally so users don't lose image generation edits.
 - [x] **14. Video Editor (Remotion) Scrubbing:** Smooth out timeline scrubbing performance and preview rendering in the Video module.
 - [x] **15. Asset Library Grid:** High-performance virtualized grid for browsing hundreds of generated AI images without DOM bloat.
-- [ ] **16. Drag & Drop File Uploads:** Universal drag-and-drop zones across the app for audio, images, and legal documents.
+- [x] **16. Drag & Drop File Uploads:** Universal drag-and-drop zones across the app for audio, images, and legal documents.
 - [ ] **17. Multi-File Upload Queue:** A persistent upload manager floating at the bottom right indicating progress, success, and errors.
 - [ ] **18. AI Image Prompt History:** Store and display prompt history alongside the generated image outputs for easy re-rolling.
 - [ ] **19. Media Player PIP (Picture-in-Picture):** Allow audio playback to continue globally across the app in a mini-player widget.
