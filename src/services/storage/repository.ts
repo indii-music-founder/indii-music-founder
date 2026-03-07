@@ -9,6 +9,7 @@ const DB_NAME = 'rndr-ai-db';
 const STORE_NAME = 'assets';
 const WORKFLOWS_STORE = 'workflows';
 const PROFILE_STORE = 'profile';
+const CANVAS_STORE = 'canvas_states';
 
 // ============================================================================
 // Sync Queue for offline-first asset uploads
@@ -74,8 +75,8 @@ export async function processSyncQueue(): Promise<void> {
 // ============================================================================
 
 export async function initDB() {
-    return openDB(DB_NAME, 3, {
-        upgrade(db) {
+    return openDB(DB_NAME, 4, {
+        upgrade(db, oldVersion) {
             if (!db.objectStoreNames.contains(STORE_NAME)) {
                 db.createObjectStore(STORE_NAME);
             }
@@ -84,6 +85,9 @@ export async function initDB() {
             }
             if (!db.objectStoreNames.contains(PROFILE_STORE)) {
                 db.createObjectStore(PROFILE_STORE, { keyPath: 'id' });
+            }
+            if (!db.objectStoreNames.contains(CANVAS_STORE)) {
+                db.createObjectStore(CANVAS_STORE, { keyPath: 'id' });
             }
         },
     });
@@ -268,16 +272,23 @@ export async function getWorkflowFromStorage(id: string): Promise<Workflow | und
 // --- Canvas States (Fabric JSON) ---
 
 export async function saveCanvasStateToStorage(id: string, json: string): Promise<void> {
+    const dbLocal = await initDB();
+
+    // 1. Save Locally
+    const stateObj: CanvasState = {
+        id,
+        json,
+        updatedAt: new Date().toISOString()
+    };
+    await dbLocal.put(CANVAS_STORE, stateObj);
+
+    // 2. Sync to Cloud
     const user = auth.currentUser;
     if (!user) return;
 
     try {
         const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
-        await setDoc(docRef, {
-            id,
-            json,
-            updatedAt: new Date().toISOString()
-        }, { merge: true });
+        await setDoc(docRef, stateObj, { merge: true });
         // Saved canvas state for ${id}
     } catch (_error) {
         // Failed to sync canvas state ${id} to cloud
@@ -285,6 +296,15 @@ export async function saveCanvasStateToStorage(id: string, json: string): Promis
 }
 
 export async function getCanvasStateFromStorage(id: string): Promise<string | undefined> {
+    const dbLocal = await initDB();
+
+    // 1. Try Local First
+    const localState = await dbLocal.get(CANVAS_STORE, id);
+    if (localState) {
+        return localState.json;
+    }
+
+    // 2. Try Cloud
     const user = auth.currentUser;
     if (!user) return undefined;
 
@@ -292,7 +312,9 @@ export async function getCanvasStateFromStorage(id: string): Promise<string | un
         const docRef = doc(db, 'users', user.uid, 'canvas_states', id);
         const snap = await getDoc(docRef);
         if (snap.exists()) {
-            return (snap.data() as CanvasState).json;
+            const data = snap.data() as CanvasState;
+            await dbLocal.put(CANVAS_STORE, data);
+            return data.json;
         }
     } catch (_error) {
         // Failed to fetch canvas state from cloud

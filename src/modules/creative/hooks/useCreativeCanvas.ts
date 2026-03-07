@@ -5,8 +5,20 @@ import { STUDIO_COLORS, CreativeColor } from '../constants';
 import { canvasOps } from '../services/CanvasOperationsService';
 import { VideoDirector } from '../services/VideoDirector';
 import { Editing } from '@/services/image/EditingService';
-import { saveAssetToStorage, saveCanvasStateToStorage } from '@/services/storage/repository';
+import { saveAssetToStorage, saveCanvasStateToStorage, getCanvasStateFromStorage } from '@/services/storage/repository';
 import { Candidate } from '../components/CandidatesCarousel';
+
+// Basic debounce helper
+function debounce<T extends (...args: any[]) => any>(
+    func: T,
+    wait: number
+): (...args: Parameters<T>) => void {
+    let timeout: ReturnType<typeof setTimeout> | null = null;
+    return function (...args: Parameters<T>) {
+        if (timeout) clearTimeout(timeout);
+        timeout = setTimeout(() => func(...args), wait);
+    };
+}
 
 interface UseCreativeCanvasProps {
     item: HistoryItem | null;
@@ -45,10 +57,48 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
 
     // Initialization
     useEffect(() => {
-        if (canvasEl.current && item && item.type === 'image') {
-            canvasOps.initialize(canvasEl.current, item.url);
+        let isMounted = true;
+
+        async function setupCanvas() {
+            if (!canvasEl.current || !item || item.type !== 'image') return;
+
+            const handleCanvasChange = debounce(async () => {
+                if (!canvasOps.isInitialized()) return;
+                try {
+                    const json = await canvasOps.toJSON();
+                    if (json) {
+                        await saveCanvasStateToStorage(item.id, json);
+                    }
+                } catch (err) {
+                    console.warn('[CreativeStudio] Auto-save failed', err);
+                }
+            }, 1000);
+
+            // Try to load any previous edits/annotations FIRST
+            try {
+                const savedState = await getCanvasStateFromStorage(item.id);
+                if (savedState && isMounted) {
+                    // Initialize WITHOUT image URL (loadFromJSON brings its own objects)
+                    canvasOps.initialize(canvasEl.current, undefined, async () => {
+                        if (isMounted) await canvasOps.loadFromJSON(savedState);
+                    }, handleCanvasChange);
+                } else if (isMounted) {
+                    // Initialize WITH base image URL
+                    canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
+                }
+            } catch (err) {
+                console.warn('[CreativeStudio] Failed to restore canvas state', err);
+                if (isMounted) {
+                    // Fallback to fresh canvas
+                    canvasOps.initialize(canvasEl.current, item.url, undefined, handleCanvasChange);
+                }
+            }
         }
+
+        setupCanvas();
+
         return () => {
+            isMounted = false;
             canvasOps.dispose();
         };
     }, [item]);
