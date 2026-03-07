@@ -357,6 +357,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
 
     const rowCount = Math.ceil(allItems.length / columns);
 
+    // eslint-disable-next-line react-hooks/incompatible-library
     const rowVirtualizer = useVirtualizer({
         count: rowCount,
         getScrollElement: () => parentRef.current,
