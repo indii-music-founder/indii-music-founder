@@ -105,5 +105,48 @@ export const CoreTools: Record<string, AnyToolFunction> = {
             text: args.text,
             message: `Prompt updated to: "${args.text}"`
         };
+    }),
+
+    agent_negotiate: wrapTool('agent_negotiate', async (args: {
+        initiatingAgentId: string;
+        targetAgentId: string;
+        topic: string;
+        initialTerms: string;
+    }) => {
+        // Mock multi-agent negotiation
+        const mockLog = [
+            `[${args.initiatingAgentId}] Proposed terms: ${args.initialTerms}`,
+            `[${args.targetAgentId}] Counter-proposal: Need adjustments for standard industry risk allocation.`,
+            `[${args.initiatingAgentId}] Acceptable, revised terms agreed.`
+        ];
+
+        return {
+            success: true,
+            initiatingAgentId: args.initiatingAgentId,
+            targetAgentId: args.targetAgentId,
+            topic: args.topic,
+            negotiationLog: mockLog,
+            finalTerms: `Revised ${args.topic} terms agreed upon by both agents.`,
+            message: `Negotiation between ${args.initiatingAgentId} and ${args.targetAgentId} concluded successfully regarding ${args.topic}.`
+        };
+    }),
+
+    check_calendar_notifications: wrapTool('check_calendar_notifications', async () => {
+        // Proactive Agent Calendar System logic mock (Hub Agent checking for notifications)
+        const notifications = [
+            {
+                type: "push_notification",
+                trigger: "2 weeks out from release",
+                message: "It's 2 weeks out from release, let's schedule TikTok drafts.",
+                action_required: "Schedule Content"
+            }
+        ];
+
+        return {
+            status: "checked",
+            newNotifications: notifications.length,
+            notifications,
+            message: `Hub Agent initiated ${notifications.length} push notifications to the user based on metadata.`
+        };
     })
 };

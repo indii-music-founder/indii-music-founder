@@ -102,5 +102,50 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
             },
             message: `Revenue forecast generated for ${args.currentStreams} streams on ${args.platform}. Estimated annual savings on manager fees: $${managerFeeSaved.year_1.toFixed(2)}.`
         }, `Revenue forecast generated.`);
+    }),
+
+    generate_schedule_c: wrapTool('generate_schedule_c', async (args: { taxYear: number; totalIncome: number; totalExpenses: number; ownerName: string }) => {
+        // Simple mock of a Schedule C generation
+        const netProfit = args.totalIncome - args.totalExpenses;
+        const taxPrepMode = "Active";
+
+        return toolSuccess({
+            taxYear: args.taxYear,
+            ownerName: args.ownerName,
+            grossReceipts: args.totalIncome,
+            totalExpenses: args.totalExpenses,
+            netProfitOrLoss: netProfit,
+            formType: 'Schedule C (Form 1040)',
+            taxPrepMode
+        }, `Schedule C draft generated for ${args.ownerName} (Tax Year ${args.taxYear}). Net Profit: $${netProfit.toFixed(2)}`);
+    }),
+
+    calculate_waterfall: wrapTool('calculate_waterfall', async (args: { trackTitle: string; totalRevenue: number; payees: Array<{ name: string; percentage: number; is1099Eligible: boolean }> }) => {
+        // Validation
+        const totalPercentage = args.payees.reduce((acc, p) => acc + p.percentage, 0);
+        if (Math.abs(totalPercentage - 100) > 0.01) {
+            return toolError("Payee percentages must sum to 100%.", "INVALID_SPLIT");
+        }
+
+        const waterfall = args.payees.map(p => {
+            const payout = args.totalRevenue * (p.percentage / 100);
+            return {
+                name: p.name,
+                percentage: p.percentage,
+                payout,
+                requires1099: p.is1099Eligible && payout >= 600 // Tagging 1099-worthy payouts
+            };
+        });
+
+        const total1099s = waterfall.filter(w => w.requires1099).length;
+
+        return toolSuccess({
+            trackTitle: args.trackTitle,
+            totalRevenue: args.totalRevenue,
+            waterfall,
+            flags: {
+                total1099FormsRequired: total1099s
+            }
+        }, `Waterfall calculated for "${args.trackTitle}". Total Revenue: $${args.totalRevenue}. Flagged ${total1099s} payouts for 1099 processing.`);
     })
 };

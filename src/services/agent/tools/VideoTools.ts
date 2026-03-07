@@ -410,6 +410,25 @@ export const VideoTools: Record<string, AnyToolFunction> = {
             }, `Sequence interpolated successfully: ${finalUrl}`);
         }
         return toolError("Interpolation failed (no result returned).", 'GENERATION_FAILED');
+    }),
+
+    orchestrate_video_render: wrapTool('orchestrate_video_render', async (args: { scriptTimeline: Array<{ sceneId: number, durationSeconds: number, description: string }> }) => {
+        // Mock Video Agent breaking down the script into veo prompts
+        const prompts = args.scriptTimeline.map(scene => {
+            return {
+                sceneId: scene.sceneId,
+                model: 'veo-3.1',
+                prompt: `Cinematic high-quality shot: ${scene.description}`,
+                duration: scene.durationSeconds,
+                status: 'queued'
+            };
+        });
+
+        return toolSuccess({
+            totalScenes: prompts.length,
+            estimatedTotalDuration: prompts.reduce((acc, p) => acc + p.duration, 0),
+            renderQueue: prompts
+        }, `Video Agent orchestrated render queue with ${prompts.length} scenes targeting veo-3.1.`);
     })
 };
 
@@ -421,5 +440,6 @@ export const {
     extend_video,
     update_keyframe,
     generate_video_chain,
-    interpolate_sequence
+    interpolate_sequence,
+    orchestrate_video_render
 } = VideoTools;
