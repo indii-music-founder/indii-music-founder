@@ -171,6 +171,21 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <ThumbsDown size={14} />
                         </button>
                         <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                import('@/utils/download').then(({ downloadAsset }) => {
+                                    downloadAsset(item.url, `${item.type}-export-${item.id.slice(0, 8)}`);
+                                    toast.success('Downloading asset...');
+                                });
+                            }}
+                            data-testid="download-asset-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-green-600 transition-colors"
+                            title="Download"
+                            aria-label="Download"
+                        >
+                            <Download size={14} />
+                        </button>
+                        <button
                             onClick={(e) => { e.stopPropagation(); onDelete(item.id, item.type, item.origin as any); }}
                             data-testid="delete-asset-btn"
                             className="p-1.5 bg-red-500/10 text-red-500 rounded hover:bg-red-500 hover:text-white transition-colors border border-red-500/20"

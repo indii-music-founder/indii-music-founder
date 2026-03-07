@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { X, Keyboard, Command } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useStore } from '@/core/store';
 
 interface ShortcutGroup {
     title: string;
@@ -18,6 +19,7 @@ const GLOBAL_SHORTCUT_GROUPS: ShortcutGroup[] = [
         title: 'General',
         shortcuts: [
             { keys: ['?'], description: 'Show keyboard shortcuts' },
+            { keys: ['Space'], description: 'Play / Pause audio' },
             { keys: ['Esc'], description: 'Close dialog / menu' },
             { keys: ['Enter'], description: 'Submit prompt / command' },
             { keys: ['Shift', 'Enter'], description: 'New line in prompt' },
@@ -132,14 +134,28 @@ export function useGlobalShortcutsModal() {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
-        if (e.key === '?' && !e.ctrlKey && !e.metaKey) {
-            const target = e.target as HTMLElement;
-            if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable) {
-                return;
-            }
+        const target = e.target as HTMLElement;
+        const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+        if (e.key === '?' && !e.ctrlKey && !e.metaKey && !isInput) {
             e.preventDefault();
             setIsOpen(prev => !prev);
+            return;
         }
+
+        if (e.code === 'Space' && !e.ctrlKey && !e.metaKey && !isInput) {
+            const state = useStore.getState();
+            if (state.currentTrack) {
+                e.preventDefault();
+                if (state.isPlaying) {
+                    state.pauseTrack();
+                } else {
+                    state.resumeTrack();
+                }
+            }
+            return;
+        }
+
         if (e.key === 'Escape' && isOpen) {
             setIsOpen(false);
         }

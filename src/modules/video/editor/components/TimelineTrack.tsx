@@ -54,7 +54,41 @@ export const TimelineTrack = memo(({
                 </div>
 
                 {/* Track Timeline */}
-                <div className="flex-1 relative overflow-hidden bg-gray-900/50">
+                <div
+                    className="flex-1 relative overflow-hidden bg-gray-900/50"
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.dataTransfer.dropEffect = 'copy';
+                    }}
+                    onDrop={(e) => {
+                        e.preventDefault();
+                        const files = Array.from(e.dataTransfer.files);
+                        if (files.length > 0) {
+                            const rect = e.currentTarget.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const frame = Math.max(0, Math.round(x / PIXELS_PER_FRAME));
+
+                            const file = files[0];
+                            const type = file.type.startsWith('video/') ? 'video' : file.type.startsWith('audio/') ? 'audio' : file.type.startsWith('image/') ? 'image' : 'video';
+                            const url = URL.createObjectURL(file);
+
+                            import('../../store/videoEditorStore').then(({ useVideoEditorStore }) => {
+                                useVideoEditorStore.getState().addClip({
+                                    type,
+                                    trackId: track.id,
+                                    name: file.name,
+                                    startFrame: frame,
+                                    durationInFrames: 300,
+                                    src: url,
+                                    opacity: 1,
+                                    scale: 1,
+                                    x: 0,
+                                    y: 0
+                                });
+                            });
+                        }
+                    }}
+                >
                     {/* Grid lines */}
                     <div className="absolute inset-0 pointer-events-none"
                         style={{

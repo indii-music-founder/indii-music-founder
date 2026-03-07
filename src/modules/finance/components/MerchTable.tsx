@@ -7,6 +7,7 @@ import { UserService } from '@/services/UserService';
 import { useToast } from '@/core/context/ToastContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { logger } from '@/utils/logger';
+import * as ContextMenu from '@radix-ui/react-context-menu';
 
 interface MerchTableProps {
     isDashboardView?: boolean;
@@ -244,49 +245,83 @@ export const MerchTable: React.FC<MerchTableProps> = ({ isDashboardView = false,
                     <div className="grid grid-cols-1 gap-3">
                         <AnimatePresence mode="popLayout">
                             {paginatedProducts.map((product, index) => (
-                                <motion.div
-                                    key={product.id}
-                                    layout
-                                    initial={{ opacity: 0, x: -20 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: 20 }}
-                                    transition={{ delay: (index % pageSize) * 0.05 }}
-                                    className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
-                                >
-                                    <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
+                                <ContextMenu.Root key={product.id}>
+                                    <ContextMenu.Trigger asChild>
+                                        <motion.div
+                                            layout
+                                            initial={{ opacity: 0, x: -20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            exit={{ opacity: 0, x: 20 }}
+                                            transition={{ delay: (index % pageSize) * 0.05 }}
+                                            className="group flex items-center gap-6 p-5 bg-white/5 backdrop-blur-sm rounded-[1.5rem] border border-white/5 hover:border-dept-royalties/30 hover:bg-white/10 transition-all cursor-default relative overflow-hidden shadow-xl"
+                                        >
+                                            <div className="absolute top-0 right-0 w-24 h-full bg-gradient-to-l from-dept-royalties/5 to-transparent pointer-events-none group-hover:from-dept-royalties/10 transition-all" />
 
-                                    <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
-                                        {product.images[0] ? (
-                                            <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                                        ) : (
-                                            <ImageIcon className="w-full h-full p-4 text-gray-700" />
-                                        )}
-                                    </div>
-
-                                    <div className="flex-1 min-w-0 pr-4">
-                                        <h4 className="text-lg font-bold text-white truncate group-hover:text-dept-royalties transition-colors uppercase tracking-tight">{product.title}</h4>
-                                        <div className="flex items-center gap-4 mt-2">
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                                <Tag size={10} className="text-dept-royalties" />
-                                                <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">{product.type}</span>
+                                            <div className="w-16 h-16 bg-white/10 rounded-2xl overflow-hidden shrink-0 border border-white/10 group-hover:border-dept-royalties/30 transition-all shadow-inner">
+                                                {product.images[0] ? (
+                                                    <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                                                ) : (
+                                                    <ImageIcon className="w-full h-full p-4 text-gray-700" />
+                                                )}
                                             </div>
-                                            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
-                                                <Package size={10} className="text-dept-licensing" />
-                                                <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">Stock: {product.inventory ?? '∞'}</span>
-                                            </div>
-                                        </div>
-                                    </div>
 
-                                    <div className="text-right flex flex-col items-end pr-2">
-                                        <div className="text-2xl font-black text-white group-hover:text-dept-licensing transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
-                                            ${(product.price / 100).toFixed(2)}
-                                        </div>
-                                        <div className="flex items-center gap-1.5 mt-1 bg-dept-licensing/10 px-2 py-0.5 rounded-full border border-dept-licensing/20">
-                                            <div className="w-1.5 h-1.5 rounded-full bg-dept-licensing animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
-                                            <span className="text-[8px] font-bold text-dept-licensing uppercase tracking-widest">Active</span>
-                                        </div>
-                                    </div>
-                                </motion.div>
+                                            <div className="flex-1 min-w-0 pr-4">
+                                                <h4 className="text-lg font-bold text-white truncate group-hover:text-dept-royalties transition-colors uppercase tracking-tight">{product.title}</h4>
+                                                <div className="flex items-center gap-4 mt-2">
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
+                                                        <Tag size={10} className="text-dept-royalties" />
+                                                        <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">{product.type}</span>
+                                                    </div>
+                                                    <div className="flex items-center gap-1.5 px-2 py-0.5 bg-white/5 border border-white/5 rounded-lg">
+                                                        <Package size={10} className="text-dept-licensing" />
+                                                        <span className="text-[10px] font-black text-gray-400 tracking-tighter uppercase">Stock: {product.inventory ?? '∞'}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="text-right flex flex-col items-end pr-2">
+                                                <div className="text-2xl font-black text-white group-hover:text-dept-licensing transition-all drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]">
+                                                    ${(product.price / 100).toFixed(2)}
+                                                </div>
+                                                <div className="flex items-center gap-1.5 mt-1 bg-dept-licensing/10 px-2 py-0.5 rounded-full border border-dept-licensing/20">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-dept-licensing animate-pulse shadow-[0_0_5px_rgba(16,185,129,0.5)]" />
+                                                    <span className="text-[8px] font-bold text-dept-licensing uppercase tracking-widest">Active</span>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    </ContextMenu.Trigger>
+                                    <ContextMenu.Portal>
+                                        <ContextMenu.Content className="min-w-[160px] bg-[#1a1c20] border border-white/10 rounded-xl p-1 shadow-2xl z-50 animate-in fade-in zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out data-[state=closed]:zoom-out-95">
+                                            <ContextMenu.Item
+                                                onSelect={() => navigator.clipboard.writeText(product.id)}
+                                                className="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded outline-none cursor-pointer font-bold"
+                                            >
+                                                Copy Product ID
+                                            </ContextMenu.Item>
+                                            <ContextMenu.Item
+                                                onSelect={() => navigator.clipboard.writeText(product.title)}
+                                                className="flex items-center gap-2 px-2 py-1.5 text-xs text-gray-300 hover:text-white hover:bg-white/10 rounded outline-none cursor-pointer font-bold"
+                                            >
+                                                Copy Title
+                                            </ContextMenu.Item>
+                                            <ContextMenu.Separator className="h-px bg-white/10 my-1" />
+                                            <ContextMenu.Item
+                                                onSelect={async () => {
+                                                    try {
+                                                        await MarketplaceService.deleteProduct(product.id);
+                                                        toast.success('Product deleted successfully');
+                                                        loadProducts();
+                                                    } catch (err) {
+                                                        toast.error('Failed to delete product');
+                                                    }
+                                                }}
+                                                className="flex items-center gap-2 px-2 py-1.5 text-xs text-red-400 hover:bg-red-400/10 rounded outline-none cursor-pointer font-bold"
+                                            >
+                                                Delete Product
+                                            </ContextMenu.Item>
+                                        </ContextMenu.Content>
+                                    </ContextMenu.Portal>
+                                </ContextMenu.Root>
                             ))}
                         </AnimatePresence>
 
