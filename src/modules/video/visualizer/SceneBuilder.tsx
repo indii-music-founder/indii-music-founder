@@ -16,18 +16,12 @@ interface DroppedAsset {
     scale: number;
 }
 
-// A generic GLTF model component that dynamically loads dropped assets
+// A generic GLTF model component that dynamically loads dropped assets.
+// useGLTF must be called unconditionally; Suspense + ErrorBoundary handle failures.
 const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
-    // We use a basic error boundary catch for invalid models
-    try {
-        const { scene } = useGLTF(url);
-        // Clone the scene so we can have multiple of the same model without conflict
-        const clonedScene = scene.clone();
-        return <primitive object={clonedScene} position={position} scale={scale} />;
-    } catch (e) {
-        console.error('Failed to load GLTF model:', e);
-        return null;
-    }
+    const { scene } = useGLTF(url);
+    const clonedScene = scene.clone();
+    return <primitive object={clonedScene} position={position} scale={scale} />;
 };
 
 const DroppableArea = ({ onDrop }: { onDrop: (url: string) => void }) => {
