@@ -3,7 +3,7 @@ import FileUpload from '@/components/kokonutui/file-upload';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star } from 'lucide-react';
+import { Play, Image as ImageIcon, Trash2, Maximize2, Upload, Plus, ArrowLeftToLine, ArrowRightToLine, Anchor, ThumbsUp, ThumbsDown, Flag, Download, Share2, Star, RotateCw } from 'lucide-react';
 
 import { useToast } from '@/core/context/ToastContext';
 
@@ -25,9 +25,11 @@ interface GalleryItemProps {
     toast: any;
     generationMode: string;
     onDelete: (id: string, type: 'image' | 'video' | 'music' | 'text', origin: 'generated' | 'uploaded') => void;
+    setPrompt: (prompt: string) => void;
+    setViewMode: (mode: any) => void;
 }
 
-const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete }: GalleryItemProps) => {
+const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference, setSelectedItem, toast, generationMode, onDelete, setPrompt, setViewMode }: GalleryItemProps) => {
     return (
         <div
             draggable
@@ -141,6 +143,20 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
                             <ThumbsUp size={14} />
                         </button>
                         <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setPrompt(item.prompt);
+                                setViewMode('direct');
+                                toast.success("Prompt loaded for re-roll!");
+                            }}
+                            data-testid="reroll-btn"
+                            className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-dept-creative/50 hover:text-white transition-colors"
+                            title="Re-roll with this prompt"
+                            aria-label="Re-roll with this prompt"
+                        >
+                            <RotateCw size={14} />
+                        </button>
+                        <button
                             onClick={(e) => { e.stopPropagation(); toast.success("Feedback recorded: Disliked"); }}
                             data-testid="dislike-btn"
                             className="p-1.5 bg-gray-800/50 text-white rounded hover:bg-orange-500 focus-visible:ring-2 focus-visible:ring-white/50 transition-colors"
@@ -178,7 +194,7 @@ const GalleryItem = memo(({ item, onSelect, setVideoInput, addCharacterReference
 
 export default function CreativeGallery({ compact = false, onSelect, className = '', searchQuery = '' }: CreativeGalleryProps) {
     // ⚡ Bolt Optimization: Use useShallow to prevent re-renders on unrelated store updates
-    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, addCharacterReference } = useStore(useShallow(state => ({
+    const { generatedHistory, removeFromHistory, uploadedImages, addUploadedImage, removeUploadedImage, uploadedAudio, addUploadedAudio, removeUploadedAudio, currentProjectId, generationMode, setVideoInput, selectedItem, setSelectedItem, addCharacterReference, setPrompt, setViewMode } = useStore(useShallow(state => ({
         generatedHistory: state.generatedHistory,
         removeFromHistory: state.removeFromHistory,
         uploadedImages: state.uploadedImages,
@@ -192,7 +208,9 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         setVideoInput: state.setVideoInput,
         selectedItem: state.selectedItem,
         setSelectedItem: state.setSelectedItem,
-        addCharacterReference: state.addCharacterReference
+        addCharacterReference: state.addCharacterReference,
+        setPrompt: state.setPrompt,
+        setViewMode: state.setViewMode
     })));
     const fileInputRef = useRef<HTMLInputElement>(null);
     const toast = useToast();
@@ -203,7 +221,7 @@ export default function CreativeGallery({ compact = false, onSelect, className =
         onSelectRef.current = onSelect;
     });
 
-    const { setViewMode } = useStore();
+
     const handleSelect = useCallback((item: HistoryItem) => {
         if (onSelectRef.current) {
             onSelectRef.current(item);
@@ -388,6 +406,8 @@ export default function CreativeGallery({ compact = false, onSelect, className =
                                             toast={toast}
                                             generationMode={generationMode}
                                             onDelete={handleDelete}
+                                            setPrompt={setPrompt}
+                                            setViewMode={setViewMode}
                                         />
                                     ))}
                                 </div>
