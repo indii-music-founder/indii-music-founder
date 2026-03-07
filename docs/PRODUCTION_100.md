@@ -58,7 +58,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **37. Image Lazy Loading:** Use standard intersection observers or modern `loading="lazy"` attributes across all creative/marketing views.
 - [ ] **38. Background Job Status UI:** Present clear visual indicators for long-running workflows (e.g., "Generative Video Rendering... 45%").
 - [x] **39. Paginated Tables:** Data tables for finance/royalties must leverage efficient pagination rather than rendering 1000+ rows instantly.
-- [ ] **40. Session Timeout UI:** Beautiful lock screen or prompt to re-authenticate when a session expires.
+- [x] **40. Session Timeout UI:** Beautiful lock screen or prompt to re-authenticate when a session expires.
 
 ### Specific Workflows & Edge Cases (41-50)
 
@@ -69,7 +69,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [ ] **45. Workflow Canvas (React Flow) Polish:** Custom node rendering and smooth zooming/panning in the automation builder.
 - [ ] **46. Marketing Asset Generator UI:** Step-by-step UI to convert an audio snippet into a TikTok/Reel visual using the AI video backend.
 - [ ] **47. Licensing Database Search UI:** Fast, debounced search filters for the Sync Licensing catalog module.
-- [ ] **48. Empty States:** Provide beautiful, actionable "Empty States" for every module when a new user has zero data (e.g., "Add your first track").
+- [x] **48. Empty States:** Provide beautiful, actionable "Empty States" for every module when a new user has zero data (e.g., "Add your first track").
 - [ ] **49. UI Performance Profiling:** Verify there are no memory leaks when keeping the app open for 48+ hours continuously.
 - [ ] **50. Visual QA Audit (The "WOW" Factor):** Final aesthetic pass ensuring glassmorphism, gradients, HSL colors, and micro-animations exude a premium feel.
 

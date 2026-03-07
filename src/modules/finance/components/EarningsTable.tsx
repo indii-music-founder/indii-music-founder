@@ -9,8 +9,9 @@ import {
 } from '@/components/ui/table';
 import { ReleaseEarnings } from '@/services/revenue/schema';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, DollarSign } from 'lucide-react';
 import * as ContextMenu from '@radix-ui/react-context-menu';
+import { ActionableEmptyState } from '@/components/shared/ActionableEmptyState';
 
 interface EarningsTableProps {
     data: ReleaseEarnings[];
@@ -25,6 +26,24 @@ export const EarningsTable = React.memo(({ data, pageSize = 10 }: EarningsTableP
     const paginatedData = useMemo(() =>
         data.slice(startIndex, startIndex + pageSize),
         [data, startIndex, pageSize]);
+
+    if (data.length === 0) {
+        return (
+            <div className="w-full">
+                <ActionableEmptyState
+                    icon={<DollarSign size={48} />}
+                    title="NO REVENUE LOGGED"
+                    description="When your streams and digital downloads generate revenue, they will appear here in the virtual ledger."
+                    colorClasses={{
+                        text: 'text-dept-licensing',
+                        bg: 'bg-dept-licensing/5',
+                        border: 'border-dept-licensing/20',
+                        glow: 'shadow-dept-licensing/10'
+                    }}
+                />
+            </div>
+        );
+    }
 
     return (
         <div className="w-full space-y-4">
