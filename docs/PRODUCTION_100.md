@@ -94,9 +94,9 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ### Agent Orchestration & MCP (61-70)
 
-- [ ] **61. Agent Zero Router:** Implement central orchestrator that routes user queries to correct specialized agent.
+- [x] **61. Agent Zero Router:** Implement central orchestrator that routes user queries to correct specialized agent (Implemented in AgentOrchestrator.ts).
 - [ ] **62. MCP Server Stability:** Harden MCP server against crashes; implement auto-restart with exponential backoff.
-- [ ] **63. Agent Handoff Protocol:** Define clear handoff mechanism between conversational agents and tool-enabled execution agents.
+- [x] **63. Agent Handoff Protocol:** Define clear handoff mechanism between conversational agents and tool-enabled execution agents (Implemented in BaseAgent.ts via delegation tools).
 - [ ] **64. Shared Memory Integration:** All agents read/write to shared memory for context persistence across sessions.
 - [ ] **65. Agent Capability Registry:** Dynamic registry where agents advertise their capabilities to Agent Zero.
 - [ ] **66. Multi-Agent Workflows:** Support chained agent workflows (e.g., Publishing Agent → Legal Agent → Finance Agent).
