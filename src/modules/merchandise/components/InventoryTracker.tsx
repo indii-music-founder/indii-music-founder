@@ -13,7 +13,7 @@ interface InventoryItem {
     physical: number;
     virtual: number;
     reorderThreshold: number;
-    channel: 'Printful' | 'Shopify' | 'Direct';
+    channel: 'Printful' | 'Printify' | 'Shopify' | 'Direct';
 }
 
 const MOCK_INVENTORY: InventoryItem[] = [

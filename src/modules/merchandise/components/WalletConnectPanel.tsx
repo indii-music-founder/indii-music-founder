@@ -3,7 +3,7 @@
  * Web3 wallet connection UI (mock-first, no ethers.js).
  * MetaMask + WalletConnect options, stores address in localStorage.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield } from 'lucide-react';
 
@@ -21,14 +21,9 @@ function generateMockAddress(): string {
 }
 
 export function WalletConnectPanel() {
-    const [address, setAddress] = useState<string | null>(null);
+    const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
     const [connecting, setConnecting] = useState<WalletProvider | null>(null);
     const [copied, setCopied] = useState(false);
-
-    useEffect(() => {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) setAddress(stored);
-    }, []);
 
     const handleConnect = async (provider: WalletProvider) => {
         setConnecting(provider);
