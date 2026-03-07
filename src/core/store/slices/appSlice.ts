@@ -44,13 +44,26 @@ export interface AppSlice {
     toggleRightPanel: () => void;
     isCommandMenuOpen: boolean;
     setCommandMenuOpen: (open: boolean) => void;
+    hasUnsavedChanges: boolean;
+    setHasUnsavedChanges: (hasUnsaved: boolean) => void;
 }
 
 export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
     currentModule: getInitialModule(),
     currentProjectId: 'default',
     projects: [],
+    hasUnsavedChanges: false,
+    setHasUnsavedChanges: (hasUnsaved) => set({ hasUnsavedChanges: hasUnsaved }),
     setModule: (module) => {
+        const state = get();
+        if (state.hasUnsavedChanges && state.currentModule !== module) {
+            const confirmLeave = window.confirm("You have unsaved changes that will be lost. Are you sure you want to leave?");
+            if (!confirmLeave) {
+                return;
+            }
+            set({ hasUnsavedChanges: false });
+        }
+
         // Aggressively tear down listeners from previous modules
         // This requires dynamic import of store to avoid circular dependency
         import('@/core/store').then(({ useStore }) => {

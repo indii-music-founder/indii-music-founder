@@ -12,6 +12,7 @@ import { useToast } from '@/core/context/ToastContext';
 
 import { WhiskService } from '@/services/WhiskService';
 import { QuotaExceededError } from '@/shared/types/errors';
+import { useUnsavedChanges } from '@/hooks/useUnsavedChanges';
 import DirectGenerationTab from './components/DirectGenerationTab';
 import { logger } from '@/utils/logger';
 const ReleaseManager = lazy(() => import('../release/ReleaseManager').then(module => ({ default: module.ReleaseManager })));
@@ -25,7 +26,9 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         selectedItem, setSelectedItem,
         generationMode, setGenerationMode,
         pendingPrompt, setPendingPrompt,
-        setPrompt, studioControls,
+        prompt, setPrompt,
+        isGenerating,
+        studioControls,
         addToHistory, currentProjectId,
         userProfile, whiskState
     } = useStore(useShallow(state => ({
@@ -37,16 +40,20 @@ export default function CreativeStudio({ initialMode }: { initialMode?: 'image' 
         setGenerationMode: state.setGenerationMode,
         pendingPrompt: state.pendingPrompt,
         setPendingPrompt: state.setPendingPrompt,
+        prompt: state.prompt,
         setPrompt: state.setPrompt,
+        isGenerating: state.isGenerating,
         studioControls: state.studioControls,
         addToHistory: state.addToHistory,
         currentProjectId: state.currentProjectId,
         userProfile: state.userProfile,
         whiskState: state.whiskState
     })));
-    // const { useToast } = require('@/core/context/ToastContext'); // Import locally to avoid top-level circular deps if any
     const toast = useToast();
     const [activeMobileTab, setActiveMobileTab] = React.useState<'controls' | 'studio'>('studio');
+
+    const isDirty = React.useMemo(() => (prompt && prompt.length > 0) || isGenerating, [prompt, isGenerating]);
+    useUnsavedChanges(isDirty);
 
     useEffect(() => {
         if (initialMode) {

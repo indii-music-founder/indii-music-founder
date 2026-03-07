@@ -18,8 +18,8 @@ _Owner: Antigravity_
 - [x] **6. Contextual Help Overlays:** Implement intro tooltips/tours for complex views like the Workflow node editor and Audio Distribution Hub.
 - [x] **7. Global Error Boundaries:** Implement robust React Error Boundaries that gracefully catch renders and allow contextual reloading without crashing the shell.
 - [x] **8. Toast Notification System:** Standardize all success/error notifications using a unified toast queue with proper stacking and timeout management.
-- [ ] **9. Keyboard Accessibility:** Ensure full tab-index navigation and ARIA labeling across all custom UI components (KokonutUI/Radix).
-- [ ] **10. "Unsaved Changes" Guards:** Warn users when navigating away from dirty forms in settings, creative studio, and distribution.
+- [x] **9. Keyboard Accessibility:** Ensure full tab-index navigation and ARIA labeling across all custom UI components (KokonutUI/Radix).
+- [x] **10. "Unsaved Changes" Guards:** Warn users when navigating away from dirty forms in settings, creative studio, and distribution.
 
 ### The Creative & Audio Pipeline (11-20)
 
