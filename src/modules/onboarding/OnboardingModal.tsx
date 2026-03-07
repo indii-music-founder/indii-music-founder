@@ -1,6 +1,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useStore } from '../../core/store';
+import { useShallow } from 'zustand/react/shallow';
 import {
     OnboardingTools,
     runOnboardingConversation,
@@ -19,7 +20,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { logger } from '@/utils/logger';
 
 export const OnboardingModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-    const { userProfile, setUserProfile } = useStore();
+    const { userProfile, setUserProfile } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            setUserProfile: state.setUserProfile
+        }))
+    );
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<{ role: string; parts: { text: string }[] }[]>([]);
     const [isProcessing, setIsProcessing] = useState(false);

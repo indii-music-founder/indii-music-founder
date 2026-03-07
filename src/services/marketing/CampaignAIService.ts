@@ -393,7 +393,8 @@ Return ONLY the image prompt, no explanation or formatting.
         const platformMix = this.getPlatformMix(campaign.posts);
 
         const prompt = `
-You are a social media analytics expert with deep knowledge of platform algorithms and engagement patterns.
+You are a social media analytics expert with deep knowledge of platform algorithms and viral mechanics.
+You specifically understand what triggers "TikTok FYP", "Instagram Explore", and "Twitter (X) Trending" algorithms.
 
 BRAND CONTEXT:
 ${brandContext}
@@ -406,24 +407,25 @@ CAMPAIGN DETAILS:
 - Platform Distribution: ${platformMix}
 - Posts with Images: ${campaign.posts.filter(p => p.imageAsset.imageUrl).length}/${campaign.posts.length}
 
-SAMPLE POSTS (first 10):
+POST DATA:
 ${JSON.stringify(postsAnalysis, null, 2)}
 
 TASK:
-Predict the engagement performance of this campaign and provide actionable recommendations.
+1. Predict the overall engagement performance.
+2. Calculate the 'Viral Probability' (0.0 to 1.0) of this campaign triggering a significant algorithmic surge.
+3. Identify exactly which Post IDs from the list have the highest potential for breakout success.
+4. Provide actionable recommendations to maximize the 'Viral Velocity'.
 
 Consider:
-- Posting frequency and timing
-- Content quality and variety
-- Platform-specific best practices
-- Visual content presence
-- Hashtag usage
-- Audience engagement patterns
+- High-hook opening lines in copy.
+- Visual continuity with brand aesthetic.
+- Shareability of specific concepts.
+- Algorithmic favorability (e.g., carousel potential on IG, controversial hooks on Twitter).
 
-Provide realistic estimates based on typical engagement rates:
-- Twitter: 1-3% engagement rate
-- Instagram: 3-6% engagement rate
-- LinkedIn: 2-4% engagement rate
+Provide realistic estimates:
+- Twitter: 1-3% engagement
+- Instagram: 3-6% engagement
+- LinkedIn: 2-4% engagement
 
 Base reach estimates on a modest following of 5,000-10,000 combined followers.
 `;
@@ -432,17 +434,14 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
             nullable: false,
             type: 'object',
             properties: {
-                overallScore: {
-                    type: 'number',
-                    description: 'Overall campaign quality score (0-100)'
-                },
-                estimatedReach: {
-                    type: 'number',
-                    description: 'Estimated total reach across all posts'
-                },
-                estimatedEngagementRate: {
-                    type: 'number',
-                    description: 'Estimated average engagement rate (percentage)'
+                overallScore: { type: 'number' },
+                estimatedReach: { type: 'number' },
+                estimatedEngagementRate: { type: 'number' },
+                viralProbability: { type: 'number', description: 'Probability of viral breakout (0.0-1.0)' },
+                highPotentialAssets: {
+                    type: 'array',
+                    items: { type: 'string' },
+                    description: 'IDs of posts with highest breakout potential'
                 },
                 platformBreakdown: {
                     type: 'array',
@@ -458,19 +457,10 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
                         required: ['platform', 'predictedLikes', 'predictedComments', 'predictedShares', 'confidence']
                     }
                 },
-                recommendations: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Actionable recommendations to improve performance'
-                },
-                riskFactors: {
-                    type: 'array',
-                    items: { type: 'string' },
-                    description: 'Potential risks or issues with the campaign'
-                }
+                recommendations: { type: 'array', items: { type: 'string' } },
+                riskFactors: { type: 'array', items: { type: 'string' } }
             },
-            required: ['overallScore', 'estimatedReach', 'estimatedEngagementRate',
-                'platformBreakdown', 'recommendations', 'riskFactors']
+            required: ['overallScore', 'estimatedReach', 'estimatedEngagementRate', 'viralProbability', 'highPotentialAssets', 'platformBreakdown', 'recommendations', 'riskFactors']
         };
 
         try {
@@ -480,6 +470,8 @@ Base reach estimates on a modest following of 5,000-10,000 combined followers.
                 overallScore: result.overallScore || 50,
                 estimatedReach: result.estimatedReach || 0,
                 estimatedEngagementRate: result.estimatedEngagementRate || 0,
+                viralProbability: result.viralProbability || 0,
+                highPotentialAssets: Array.isArray(result.highPotentialAssets) ? result.highPotentialAssets : [],
                 platformBreakdown: Array.isArray(result.platformBreakdown) ? result.platformBreakdown : [],
                 recommendations: Array.isArray(result.recommendations) ? result.recommendations : [],
                 riskFactors: Array.isArray(result.riskFactors) ? result.riskFactors : []

@@ -26,6 +26,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setPrivacyMode: (enabled: boolean) => ipcRenderer.invoke('privacy:toggle-protection', enabled),
     selectFile: (options?: any) => ipcRenderer.invoke('system:select-file', options),
     selectDirectory: (options?: any) => ipcRenderer.invoke('system:select-directory', options),
+    getDirectoryContents: (dirPath: string, options?: { recursive?: boolean, extensions?: string[] }) => ipcRenderer.invoke('system:get-directory-contents', dirPath, options),
+    getGpuInfo: () => ipcRenderer.invoke('system:get-gpu-info'),
+    showNotification: (title: string, body: string) => ipcRenderer.send('show-notification', { title, body }),
 
     // Auth (Simplified - login handled via Firebase SDK in renderer)
     auth: {

@@ -27,6 +27,7 @@ export class AgentService {
     private orchestrator: AgentOrchestrator;
     private hybridOrchestrator: HybridOrchestrator;
     private executor: AgentExecutor;
+    private responseCache = new Map<string, { text: string; thoughts: AgentThought[]; agentId: string }>();
 
     constructor() {
         // Components initialized. Agents are auto-registered in AgentRegistry singleton.
@@ -75,6 +76,9 @@ export class AgentService {
             logger.debug("🔒 PII Detected and Redacted from Agent Input");
         }
 
+        // Detect generation requests for longer timeout AND caching exclusion
+        const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
+
         // Add User Message (Redacted)
         const userMsg: AgentMessage = {
             id: uuidv4(),
@@ -99,13 +103,32 @@ export class AgentService {
             ).catch(err => logger.warn('[AgentService] Failed to index user message:', err));
         }
 
+        // Cache Check (Item 36): Only cache small conversational/lookup queries, not generation requests
+        const cacheKey = `${state.activeSessionId}:${redactedText.toLowerCase().trim()}`;
+        if (this.responseCache.has(cacheKey) && !isGenerationRequest) {
+            const cached = this.responseCache.get(cacheKey)!;
+            logger.debug(`[AgentService] ⚡ Cache Hit: ${cacheKey}`);
+
+            const responseId = uuidv4();
+            useStore.getState().addAgentMessage({
+                id: responseId,
+                role: 'model',
+                text: cached.text,
+                thoughts: cached.thoughts,
+                timestamp: Date.now(),
+                isStreaming: false,
+                agentId: cached.agentId
+            });
+            this.isProcessing = false;
+            return;
+        }
+
         try {
             // 1. Resolve Context
             const context = await this.contextPipeline.buildContext();
 
             // 2. Workflow Coordination (The Brain)
             const responseId = uuidv4();
-            const { useStore } = await import('@/core/store');
             const { addAgentMessage, updateAgentMessage } = useStore.getState();
 
             // Create placeholder for the response
@@ -119,8 +142,7 @@ export class AgentService {
                 agentId: 'generalist' // Default initially
             });
 
-            // Create a timeout controller - detect generation requests for longer timeout
-            const isGenerationRequest = /\b(generate|create|make|build)\b.*\b(image|video|asset|art|visual)\b/i.test(text);
+            // Create a timeout controller
             const timeoutMs = isGenerationRequest ? 600000 : 300000; // 10 min for generation, 5 min otherwise
 
             // Track gallery state before execution for timeout grace check
@@ -134,7 +156,19 @@ export class AgentService {
             try {
                 // Main execution logic wrapped in a race with timeout
                 await Promise.race([
-                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).finally(() => {
+                    this.executeFlow(redactedText, attachments, context, responseId, forcedAgentId).then(() => {
+                        // After success, populate cache if not a generation request
+                        if (!isGenerationRequest) {
+                            const resultMsg = useStore.getState().agentHistory.find(m => m.id === responseId);
+                            if (resultMsg && resultMsg.text) {
+                                this.responseCache.set(cacheKey, {
+                                    text: resultMsg.text,
+                                    thoughts: resultMsg.thoughts || [],
+                                    agentId: resultMsg.agentId || 'generalist'
+                                });
+                            }
+                        }
+                    }).finally(() => {
                         if (timeoutHandle) clearTimeout(timeoutHandle);
                     }),
                     timeoutPromise

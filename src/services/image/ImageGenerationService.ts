@@ -202,13 +202,28 @@ export class ImageGenerationService {
             parallelResults.forEach(res => {
                 if (res) results.push(res);
             });
+
+            if (results.length > 0 && window.electronAPI) {
+                window.electronAPI.showNotification(
+                    'Studio Generation Complete',
+                    `Successfully generated ${results.length} image${results.length > 1 ? 's' : ''}.`
+                );
+            }
         } catch (err: unknown) {
             const errObj = err as { code?: string; details?: unknown };
+            const errorMsg = err instanceof Error ? err.message : String(err);
             logger.error('Image Generation Error', {
-                message: err instanceof Error ? err.message : String(err),
+                message: errorMsg,
                 code: errObj.code,
                 details: errObj.details,
             });
+
+            if (window.electronAPI) {
+                window.electronAPI.showNotification(
+                    'Generation Failed',
+                    `Image generation error: ${errorMsg}`
+                );
+            }
             throw err;
         }
 

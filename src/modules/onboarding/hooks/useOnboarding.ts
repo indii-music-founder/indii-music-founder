@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 import {
     runOnboardingConversation,
     processFunctionCalls,
@@ -37,7 +38,13 @@ interface AskMultipleChoiceArgs {
 }
 
 export function useOnboarding() {
-    const { userProfile, setUserProfile, setModule } = useStore();
+    const { userProfile, setUserProfile, setModule } = useStore(
+        useShallow(state => ({
+            userProfile: state.userProfile,
+            setUserProfile: state.setUserProfile,
+            setModule: state.setModule
+        }))
+    );
     const { showToast } = useToast();
     const [input, setInput] = useState('');
     const [history, setHistory] = useState<HistoryItem[]>([]);

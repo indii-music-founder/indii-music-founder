@@ -101,12 +101,30 @@ class DistributionService extends FirestoreService<DistributionTaskDocument> {
                 metadata: { report: result.report }
             });
 
+            if (window.electronAPI) {
+                window.electronAPI.showNotification(
+                    status === 'COMPLETED' ? 'Forensics Pass' : 'Forensics Audit Required',
+                    `Spectral analysis for ${this.getBasename(filePath)} is complete.`
+                );
+            }
+
             return result.report;
         } catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'Unknown forensics error';
             await this.updateTask(taskId, { status: 'FAILED', error: errorMsg });
+
+            if (window.electronAPI) {
+                window.electronAPI.showNotification(
+                    'Forensics Error',
+                    `Failed to analyze ${this.getBasename(filePath)}: ${errorMsg}`
+                );
+            }
             throw error;
         }
+    }
+
+    private getBasename(path: string): string {
+        return path.split(/[\\/]/).pop() || path;
     }
 
     /**
