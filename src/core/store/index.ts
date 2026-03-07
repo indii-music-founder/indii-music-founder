@@ -18,6 +18,7 @@ import { SubscriptionSlice, createSubscriptionSlice } from './slices/subscriptio
 import { SidecarSlice, createSidecarSlice } from './slices/sidecarSlice';
 import { SyncSlice, createSyncSlice } from './slices/syncSlice';
 import { AudioGenerationSlice, createAudioGenerationSlice } from './slices/audioGenerationSlice';
+import { UploadQueueSlice, createUploadQueueSlice } from './slices/uploadQueueSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agentSlice';
@@ -37,7 +38,8 @@ export interface StoreState extends
     SubscriptionSlice,
     SidecarSlice,
     SyncSlice,
-    AudioGenerationSlice { }
+    AudioGenerationSlice,
+    UploadQueueSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -62,6 +64,7 @@ export const useStore = create<StoreState>()(
                 ...createSidecarSlice(...a),
                 ...createSyncSlice(...a),
                 ...createAudioGenerationSlice(...a),
+                ...createUploadQueueSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access

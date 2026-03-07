@@ -26,6 +26,7 @@ import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/shared/GlobalKeyboardShortcuts';
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
+import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
@@ -391,6 +392,9 @@ export default function App() {
 
                             {/* Global Command Menu (CMD+K) */}
                             <UnifiedCommandMenu />
+
+                            {/* Global Upload Manager Queue */}
+                            <UploadQueueMonitor />
 
                             {/* Global Keyboard Shortcuts Help (press ?) */}
                             <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
