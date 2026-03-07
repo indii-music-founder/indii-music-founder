@@ -305,6 +305,14 @@ export class GeminiRetrievalService {
 
         if (!fileContent) {
             try {
+                // Task 59: RAG Cost Monitoring (pre-check budget)
+                // Assuming an average RAG query costs ~$0.0005 (approx 10k tokens at $0.05/M)
+                const { MembershipService } = await import('@/services/MembershipService');
+                const budgetCheck = await MembershipService.checkBudget(0.0005);
+                if (!budgetCheck.allowed) {
+                    throw new Error(`RAG Cost Limit Exceeded. Remaining Budget: $${budgetCheck.remainingBudget}`);
+                }
+
                 // Use project-specific store if projectId is provided
                 const storeName = await this.ensureFileSearchStore(projectId);
 

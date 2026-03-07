@@ -45,10 +45,13 @@ export class AgentOrchestrator {
 
         const prompt = `
         You are indii, the AI agent orchestration system for indiiOS (the operating system for independent artists).
-        Your goal is to accurately route user requests to the most appropriate specialist agent.
+        Your goal is to accurately route user requests to the most appropriate specialist agent and determine the most relevant knowledge base corpus to query.
 
         AVAILABLE AGENTS:
         ${AGENTS.map(a => `- "${a.id}" (${a.name}): ${a.description}`).join('\n')}
+
+        AVAILABLE RAG CORPORA:
+        ["royalties", "deals", "publishing", "licensing", "contracts", "touring", "marketing", "finance", "merchandise", "production", "visual", "career", "general"]
 
         CURRENT CONTEXT:
         - Active Module: ${context.activeModule || 'none'}
@@ -56,28 +59,19 @@ export class AgentOrchestrator {
 
         USER REQUEST: "${sanitizedQuery}"
 
-        ABOUT INDII:
-        You are part of indii, an intelligent hub-and-spoke agent system. The "generalist"
-        agent acts as the hub (Agent Zero), coordinating with specialist agents (spokes)
-        to provide comprehensive assistance to independent artists.
-
         ROUTING RULES:
         1. You MUST return a JSON object with the following structure:
            {
              "targetAgentId": "string", // One of the available agent IDs
+             "ragCorpus": "string", // One of the AVAILABLE RAG CORPORA based on intent detection
              "confidence": number, // 0.0 to 1.0
-             "reasoning": "string" // Brief explanation of why this agent was chosen
+             "reasoning": "string" // Brief explanation of the choices
            }
-        2. If the request is about the current project's domain, prioritize that specialist.
-        3. If the request requires looking up information, general reasoning, or falls outside specific domains, use "generalist".
-        4. "legal" handles contracts, agreements, and splits.
-        5. "music" handles audio analysis, lyrics, and production.
-        6. "video" handles storyboards, treatments, and video editing.
-        7. "marketing" handles social media, campaigns, and brand strategy.
-        8. CRITICAL: Requests to GENERATE, CREATE, or MAKE new images, visuals, or album art must go to "generalist" (Agent Zero) or "director", NOT "merchandise". "merchandise" is ONLY for managing physical goods.
-        9. Use "director" specifically for high-fidelity visual concepts, cinematic aesthetics, character consistency, or when the user explicitly mentions creative/artistic direction.
-        10. Use "generalist" (Agent Zero) for multi-step orchestration, general inquiries, or when a specific specialist is not clearly required.
-        11. Use "distribution" for DDEX messages, ISRC/UPC codes, royalty calculations, tax compliance (W-8BEN, W-9), payout splits, and DSP delivery.
+        2. "legal" -> contracts, agreements, splits.
+        3. "music" -> audio analysis, lyrics, production.
+        4. "video" -> storyboards, treatments, video editing.
+        5. "marketing" -> social media, campaigns, brand strategy.
+        6. Use "general" for ragCorpus if no specific domain applies.
         `;
 
         try {
@@ -91,7 +85,7 @@ export class AgentOrchestrator {
             );
 
             const textResponse = res.response.text() || '{}';
-            let parsedResponse: { targetAgentId: string; confidence: number; reasoning: string };
+            let parsedResponse: { targetAgentId: string; ragCorpus: string; confidence: number; reasoning: string };
 
             try {
                 parsedResponse = JSON.parse(textResponse);
@@ -99,6 +93,7 @@ export class AgentOrchestrator {
                 logger.warn('[indii:Orchestrator] Failed to parse JSON response:', textResponse);
                 await TraceService.addStep(traceId, 'routing', {
                     selectedAgent: 'generalist',
+                    ragCorpus: 'general',
                     reasoning: 'JSON Parse Error, fallback to generalist',
                     rawResponse: textResponse
                 });
@@ -107,8 +102,15 @@ export class AgentOrchestrator {
             }
 
             const targetAgentId = parsedResponse.targetAgentId?.trim().toLowerCase();
+            const ragCorpus = parsedResponse.ragCorpus?.trim().toLowerCase();
             const confidence = parsedResponse.confidence;
             const reasoning = parsedResponse.reasoning;
+
+            // Optional enhancement: if a corpus was detected, attach it to context directly here.
+            if (ragCorpus && ragCorpus !== 'general') {
+                context.ragCorpus = ragCorpus;
+                console.info(`[AgentOrchestrator] Detected intent bound to RAG corpus: ${ragCorpus}`);
+            }
 
             const validRoutes = AGENTS.map(a => a.id);
             let finalRoute = validRoutes.includes(targetAgentId) ? targetAgentId : 'generalist';
@@ -124,13 +126,14 @@ export class AgentOrchestrator {
             console.info(`[AgentOrchestrator] Routing: "${sanitizedQuery}" -> ${finalRoute} (original: ${targetAgentId}, conf: ${confidence})`);
             await TraceService.addStep(traceId, 'routing', {
                 selectedAgent: finalRoute,
+                ragCorpus: ragCorpus || 'general',
                 confidence,
                 reasoning,
                 originalDecision: targetAgentId
             });
 
             // Complete Trace
-            await TraceService.completeTrace(traceId, { selectedAgent: finalRoute });
+            await TraceService.completeTrace(traceId, { selectedAgent: finalRoute, ragCorpus });
 
             return finalRoute;
 
