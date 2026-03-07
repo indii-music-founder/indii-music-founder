@@ -59,6 +59,7 @@
     "@remotion/player": "4.0.382",
     "@remotion/renderer": "4.0.382",
     "@sentry/react": "10.32.1",
+    "@tanstack/react-virtual": "^3.13.21",
     "@types/crypto-js": "4.2.2",
     "ajv": "8.17.1",
     "chokidar": "^5.0.0",
