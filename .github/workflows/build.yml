@@ -17,7 +17,24 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22.x'
-        cache: 'npm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" \u003e\u003e $GITHUB_ENV
+
+    - uses: actions/cache@v4
+      name: Setup pnpm cache
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install system dependencies (Linux)
       run: |
@@ -27,16 +44,16 @@ jobs:
     - name: Clean install dependencies
       run: |
         rm -rf node_modules package-lock.json
-        npm install --legacy-peer-deps
+        pnpm install --no-frozen-lockfile
 
     - name: Lint
-      run: npm run lint
+      run: pnpm run lint
 
     - name: Typecheck
-      run: npm run typecheck
+      run: pnpm run typecheck
 
     - name: Build Electron App
-      run: npm run electron:build
+      run: pnpm run electron:build
 
   build:
     needs: test
@@ -53,7 +70,24 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '22.x'
-        cache: 'npm'
+
+    - name: Install pnpm
+      uses: pnpm/action-setup@v4
+      with:
+        version: 9
+
+    - name: Get pnpm store directory
+      shell: bash
+      run: |
+        echo "STORE_PATH=$(pnpm store path --silent)" \u003e\u003e $GITHUB_ENV
+
+    - uses: actions/cache@v4
+      name: Setup pnpm cache
+      with:
+        path: ${{ env.STORE_PATH }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        restore-keys: |
+          ${{ runner.os }}-pnpm-store-
 
     - name: Install system dependencies (Linux)
       if: runner.os == 'Linux'
@@ -64,10 +98,10 @@ jobs:
     - name: Clean install dependencies
       run: |
         rm -rf node_modules package-lock.json
-        npm install --legacy-peer-deps
+        pnpm install --no-frozen-lockfile
 
     - name: Build Electron App
-      run: npm run electron:build
+      run: pnpm run electron:build
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
