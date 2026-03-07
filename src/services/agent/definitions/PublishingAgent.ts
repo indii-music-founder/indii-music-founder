@@ -91,6 +91,19 @@ Think in terms of "Writer's Share," "Publisher's Share," "Mechanicals," and "Bla
                 }
             },
             {
+                name: "check_pro_catalog",
+                description: "Queries PROs (ASCAP/BMI) for existing catalog matches to prevent duplicate registration.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackTitle: { type: "STRING", description: "Title of the musical work." },
+                        writerName: { type: "STRING", description: "Name of the writer to check." },
+                        ipiNumber: { type: "STRING", description: "The IPI (Interested Party Information) number of the writer (optional)." }
+                    },
+                    required: ["trackTitle", "writerName"]
+                }
+            },
+            {
                 name: "package_release_assets",
                 description: "Definitively package audio and artwork for DDEX distribution.",
                 parameters: {

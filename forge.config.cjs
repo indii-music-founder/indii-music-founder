@@ -36,6 +36,14 @@ module.exports = {
     asar: {
       integrity: true // Enforces integrity checksums on the archive (Tamper Resistance)
     },
+    // Ensure Apple Silicon and Universal builds (Item 167)
+    osxSign: {},
+    osxNotarize: {
+      tool: 'notarytool',
+      appleId: process.env.APPLE_ID,
+      appleIdPassword: process.env.APPLE_PASSWORD,
+      teamId: process.env.APPLE_TEAM_ID
+    },
     // Deep Link Protocol (indii-os://)
     protocols: [
       {

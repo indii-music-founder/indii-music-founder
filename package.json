@@ -31,6 +31,8 @@
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",
     "make": "electron-forge make",
+    "make:mac:arm64": "electron-forge make --platform darwin --arch arm64",
+    "make:mac:universal": "electron-forge make --platform darwin --arch universal",
     "package": "electron-forge package",
     "preview": "vite preview",
     "rebuild": "npx @electron/rebuild",
@@ -113,6 +115,9 @@
     "uuid": "13.0.0",
     "wavesurfer.js": "7.11.1",
     "xml2js": "0.6.2",
+    "y-protocols": "^1.0.7",
+    "y-websocket": "^3.0.0",
+    "yjs": "^13.6.29",
     "zod": "3.25.76",
     "zod-to-json-schema": "3.25.1",
     "zustand": "5.0.8"

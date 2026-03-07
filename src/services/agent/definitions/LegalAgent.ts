@@ -114,6 +114,29 @@ As a specialist (spoke), you operate under strict architectural rules:
                     },
                     required: ["query"]
                 }
+            },
+            {
+                name: "draft_split_sheet",
+                description: "Generates a standard split sheet for collaborators and initiates digital signatures via Docusign API mock.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        trackName: { type: "STRING" },
+                        collaborators: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    name: { type: "STRING" },
+                                    email: { type: "STRING" },
+                                    role: { type: "STRING", enum: ["Producer", "Songwriter", "Feature", "Publisher"] },
+                                    splitPercentage: { type: "NUMBER" }
+                                }
+                            }
+                        }
+                    },
+                    required: ["trackName", "collaborators"]
+                }
             }
         ]
     }]

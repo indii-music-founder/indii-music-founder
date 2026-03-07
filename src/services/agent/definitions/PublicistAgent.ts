@@ -296,6 +296,33 @@ Think in terms of "Media Placements," "Narrative Arc," and "Public Perception."
             }
         };
     })
+    .withTool({
+        functionDeclarations: [{
+            name: "generate_live_epk",
+            description: "Generates a dynamic public link (indii.os/artist/epk) that reflects the latest brand kit, bio, and approved press shots.",
+            parameters: {
+                type: "OBJECT",
+                properties: {
+                    artistName: { type: "STRING", description: "The name of the artist." },
+                    shortBio: { type: "STRING", description: "A concise 1-paragraph bio." },
+                    pressShotUrls: { type: "ARRAY", items: { type: "STRING" }, description: "List of URLs for approved high-res press photos." },
+                    featuredTracks: { type: "ARRAY", items: { type: "STRING" }, description: "List of Spotify/Apple track IDs or indiiOS audio URLs." },
+                    contactEmail: { type: "STRING", description: "Media contact email." }
+                },
+                required: ["artistName", "shortBio", "pressShotUrls", "contactEmail"]
+            }
+        }]
+    }, async (args: { artistName: string, shortBio: string, pressShotUrls: string[], featuredTracks?: string[], contactEmail: string }) => {
+        // Mocking the deployment of a Live EPK to the database routing table
+        return {
+            success: true,
+            data: {
+                message: `Live EPK generated for ${args.artistName}.`,
+                epkUrl: `https://indii.os/${args.artistName.toLowerCase().replace(/\s+/g, '-')}/epk`,
+                status: 'Published'
+            }
+        };
+    })
     .build();
 
 import { freezeAgentConfig } from '../FreezeDiagnostic';
