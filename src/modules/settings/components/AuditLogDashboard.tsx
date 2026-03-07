@@ -3,7 +3,7 @@ import { ShieldAlert, Database, FileText, ArrowRight } from 'lucide-react';
 
 export const AuditLogDashboard: React.FC = () => {
     // Mock Audit Logs GUI (Item 158)
-    const [logs] = useState([
+    const [logs] = useState(() => [
         { id: '1', timestamp: new Date(Date.now() - 500000).toISOString(), agent: 'Finance Agent', action: 'Initiate Escrow', resource: 'Track: Neon Nights', status: 'Success' },
         { id: '2', timestamp: new Date(Date.now() - 3600000).toISOString(), agent: 'System', action: 'API Sync', resource: 'Spotify API', status: 'Success' },
         { id: '3', timestamp: new Date(Date.now() - 86400000).toISOString(), agent: 'Legal Agent', action: 'Generate Contract', resource: 'Split Sheet: Midnight Drive', status: 'Success' },
