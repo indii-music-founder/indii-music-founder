@@ -12,6 +12,7 @@ import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar'
 import { RiderChecklist } from './components/RiderChecklist';
 import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
+import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { logger } from '@/utils/logger';
 
 interface LogisticsReport {
@@ -275,6 +276,12 @@ const RoadManager: React.FC = () => {
                             {activeTab === 'route-optimizer' && (
                                 <div className="h-full p-6 overflow-y-auto">
                                     <TourRouteOptimizer />
+                                </div>
+                            )}
+
+                            {activeTab === 'tech-rider' && (
+                                <div className="h-full p-6 overflow-y-auto">
+                                    <TechnicalRiderGenerator />
                                 </div>
                             )}
                         </motion.div>

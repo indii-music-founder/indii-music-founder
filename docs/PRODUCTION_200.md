@@ -60,7 +60,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 ### Pro Artist Ecosystem: Legal, Touring, Licensing (131-140)
 
 - [x] **131. Tour Routing Optimizer:** The Touring agent plots geo-optimized tour routes based on regional Spotify listener density.
-- [ ] **132. Technical Rider Generator:** Form-based builder to generate PDF stage plots and technical riders for promoters.
+- [x] **132. Technical Rider Generator:** Form-based builder to generate PDF stage plots and technical riders for promoters.
 - [ ] **133. Sync Licensing Brief Matching:** Parse ingested daily licensing briefs and automatically suggest which catalog tracks fit the mood/BPM.
 - [ ] **134. Micro-Licensing Portal:** Allow creators to generate their own beat-leasing contracts (exclusive/non-exclusive) in a visual builder.
 - [ ] **135. Split Sheet Escrow:** Hold funds in Stripe Connect escrow until all collaborators mathematically sign off on their splits.
