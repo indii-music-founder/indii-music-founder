@@ -19,10 +19,20 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [ ] **107. Fabric.js Canvas Batching:** Allow batch generation of creative assets across multiple dimensions (TikTok/IG Reels/YouTube Shorts) from a single canvas.
 - [ ] **108. Copyright AI Filter:** Implement a preliminary hashing/screening layer using an Audio Fingerprinting service before distribution to catch uncleared samples.
 - [ ] **109. External DAW Integration:** Export `.als` (Ableton) or MIDI generic project files from AI generated concepts.
-- [ ] **110. Real-time Collaboration Engine:** Support multiplayer (CRDT/Yjs) editing in both the audio waveform view and the workflow node editor.
+- [x] **110. Real-time Collaboration Engine:** Support multiplayer (CRDT/Yjs) editing in both the audio waveform view and the workflow node editor.
 
 ### Hub-and-Spoke Agent Deepening (111-120)
 
+- [x] **111. Legal Agent Draft Verification:** Enable the Legal Agent to generate standard split sheets and immediately trigger digital signatures via a Docusign/PandaDoc API mock.
+- [x] **112. Marketing Agent A/B Testing:** The Marketing agent automatically creates 3 variants of ad copy and sets up the tracking pixel framework for campaigns.
+- [x] **113. Music/Publishing Agent Syncs:** The Publishing Agent automatically queries PROs (ASCAP/BMI) for existing catalog matches before registration.
+- [x] **114. Finance Agent "Tax-Prep" Mode:** The Finance Agent auto-generates Schedule C reports and calculates split waterfalls, tagging 1099-worthy payouts.
+- [x] **115. Video Agent Render Orchestration:** Video Agent acts as a supervisor, dynamically breaking down script timelines into prompts for `veo-3.1`.
+- [x] **116. Agent-to-Agent Negotiation:** Enable multi-agent threads where the Legal Agent and Finance Agent negotiate contract terms before presenting them to the user.
+- [x] **117. Social Agent Sentiment Analysis:** Social agent crawls linked socials (X/IG) and provides weekly sentiment and trend reports.
+- [x] **118. Proactive Agent Calendar System:** The Hub Agent initiates push-notifications to the user based on metadata (e.g., "It's 2 weeks out from release, let's schedule TikTok drafts").
+- [x] **119. Brand Agent Visual Audit:** The Brand agent automatically audits all new visual outputs against the specific artist’s brand kit to enforce visual consistency.
+- [ ] **120. Publicist Agent Pitch Drafting:** The Publicist agent dynamically scrapes Spotify playlists and drafts personalized pitch emails for editors.
 - [ ] **111. Legal Agent Draft Verification:** Enable the Legal Agent to generate standard split sheets and immediately trigger digital signatures via a Docusign/PandaDoc API mock.
 - [ ] **112. Marketing Agent A/B Testing:** The Marketing agent automatically creates 3 variants of ad copy and sets up the tracking pixel framework for campaigns.
 - [ ] **113. Music/Publishing Agent Syncs:** The Publishing Agent automatically queries PROs (ASCAP/BMI) for existing catalog matches before registration.

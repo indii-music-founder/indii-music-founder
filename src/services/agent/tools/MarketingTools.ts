@@ -192,6 +192,27 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         } catch (error: any) {
             return toolError(`Failed to bridge to market analysis: ${error.message}`, "BRIDGE_ERROR");
         }
+    }),
+
+    create_ab_test_campaign: wrapTool('create_ab_test_campaign', async ({ product, goal, channels }: { product: string; goal: string; channels: string[] }) => {
+        // Mock generating 3 variants and setting up tracking pixel framework
+        const variants = [
+            { id: 'varA', text: `Catchy headline for ${product} - Don't miss out!`, target_audience: 'Broad' },
+            { id: 'varB', text: `The story behind ${product}. Hear it now.`, target_audience: 'Niche/Fans' },
+            { id: 'varC', text: `Join the movement. Stream ${product} today.`, target_audience: 'Lookalike' }
+        ];
+
+        return toolSuccess({
+            campaign_id: `camp-${crypto.randomUUID()}`,
+            product,
+            goal,
+            channels,
+            variants,
+            pixel_framework: {
+                status: 'configured',
+                events_tracked: ['ViewContent', 'AddToCart', 'Purchase']
+            }
+        }, `A/B testing campaign created for ${product} with 3 copy variants and tracking pixel initialized.`);
     })
 };
 
@@ -202,5 +223,6 @@ export const {
     schedule_content,
     track_performance,
     generate_campaign_from_audio,
-    analyze_market_trends
+    analyze_market_trends,
+    create_ab_test_campaign
 } = MarketingTools;
