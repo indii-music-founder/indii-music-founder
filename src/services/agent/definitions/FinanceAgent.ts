@@ -78,15 +78,39 @@ Think in terms of "Gross vs. Net," "Artist Share," and "Burn Rate."
         },
         analyze_receipt: async (args: { image_data: string, mime_type: string }) => {
             /**
-             * Extract details from a receipt image using structured data generation.
+             * Requirement 160: Expense Receipt OCR
+             * Use Gemini Vision to OCR uploaded physical receipts for touring expenses to sync with Finance.
              */
-            const prompt = `Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals). Return as JSON.`;
+            const prompt = `You are a strict financial accountant. Extract the following details from this receipt image: Vendor, Date, Total Amount, Tax, and Category (e.g., Travel, Equipment, Meals, Lodging). Ensure the amounts are formatted as numbers. Return as structured JSON.`;
             try {
-                const response = await firebaseAI.generateStructuredData(prompt, { type: 'object', nullable: false } as Schema);
-                return { success: true, data: { receipt_data: response } };
+                // Formatting the image data for Gemini Vision via FirebaseAIService
+                const contents: any[] = [
+                    {
+                        role: 'user',
+                        parts: [
+                            {
+                                inlineData: {
+                                    data: args.image_data,
+                                    mimeType: args.mime_type
+                                }
+                            },
+                            { text: prompt }
+                        ]
+                    }
+                ];
+
+                // Using standard generateContent to handle multimodal inputs natively
+                const result = await firebaseAI.generateContent(contents, 'gemini-2.5-flash');
+                const textResult = result.response?.text() || '{}';
+
+                // Extract JSON if it's wrapped in markdown code blocks
+                const jsonMatch = textResult.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+                const rawJson = jsonMatch ? jsonMatch[1] : textResult;
+
+                return { success: true, data: { receipt_data: JSON.parse(rawJson) } };
             } catch (error: unknown) {
                 const message = error instanceof Error ? error.message : String(error);
-                return { success: false, error: message };
+                return { success: false, error: `Vision OCR Failed: ${message}` };
             }
         },
         audit_distribution: async (args: { trackTitle: string; distributor: string }) => {
@@ -201,6 +225,29 @@ Think in terms of "Gross vs. Net," "Artist Share," and "Burn Rate."
                         selector: { type: "STRING" }
                     },
                     required: ["action"]
+                }
+            },
+            {
+                name: "generate_tax_report",
+                description: "Generates a tax prep report (Schedule C) by calculating split waterfalls and flagging payouts over $600 for 1099 reporting.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        year: { type: "NUMBER", description: "The tax year to process." },
+                        transactions: {
+                            type: "ARRAY",
+                            description: "List of transaction objects to process.",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    payee: { type: "STRING" },
+                                    amount: { type: "NUMBER" },
+                                    date: { type: "STRING" }
+                                }
+                            }
+                        }
+                    },
+                    required: ["year", "transactions"]
                 }
             }
         ]

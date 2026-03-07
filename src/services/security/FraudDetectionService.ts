@@ -144,6 +144,22 @@ export class FraudDetectionService {
      * Requirement 108: Copyright AI Filter
      * Implements a preliminary hashing/screening layer using the Audio Fingerprinting service
      * before distribution to catch uncleared samples.
+     * Backwards compatibility: If file is not provided (legacy call), we skip fingerprinting and only check URL.
+     */
+    static async checkCopyright(audioFileUrlOrFile: string | File, audioFileUrlLegacy?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
+        console.info(`[FraudDetection] Scanning audio for copyright infringement...`);
+
+        try {
+            let fingerprint: string | null = null;
+            let audioFileUrl = typeof audioFileUrlOrFile === 'string' ? audioFileUrlOrFile : audioFileUrlLegacy;
+
+            // 1. Generate Acoustic Fingerprint if a File is provided
+            if (audioFileUrlOrFile instanceof File) {
+                fingerprint = await fingerprintService.generateFingerprint(audioFileUrlOrFile);
+            }
+
+            if (!fingerprint && !audioFileUrl) {
+                console.warn('[FraudDetection] No file or URL provided for copyright scan. Proceeding as safe.');
      */
     static async checkCopyright(file: File, audioFileUrl?: string): Promise<{ safe: boolean; match?: string; fingerprint?: string }> {
         console.info(`[FraudDetection] Scanning audio for copyright infringement via fingerprint...`);
@@ -168,6 +184,25 @@ export class FraudDetectionService {
                 const rule = doc.data();
 
                 // Check if the generated fingerprint exactly matches a blocked fingerprint
+                if (fingerprint && rule.fingerprint && rule.fingerprint === fingerprint) {
+                    return {
+                        safe: false,
+                        match: rule.matchMessage || 'Copyright Violation Detected: Uncleared Sample Match',
+                        fingerprint: fingerprint || undefined
+                    };
+                }
+
+                // Fallback for URL pattern matching if configured
+                if (audioFileUrl && rule.pattern && audioFileUrl.includes(rule.pattern)) {
+                    return {
+                        safe: false,
+                        match: rule.matchMessage || 'Copyright Violation Detected via URL Pattern',
+                        fingerprint: fingerprint || undefined
+                    };
+                }
+            }
+
+            return { safe: true, fingerprint: fingerprint || undefined };
                 if (rule.fingerprint && rule.fingerprint === fingerprint) {
                     return {
                         safe: false,

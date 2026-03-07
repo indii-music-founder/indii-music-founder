@@ -122,6 +122,19 @@ Think in terms of "Frame Rate," "Dynamic Range," "Motion Vectors," and "Rhythmic
                     },
                     required: ["prompt"]
                 }
+            },
+            {
+                name: "orchestrate_timeline",
+                description: "Acts as a render supervisor, dynamically breaking down a master script/timeline into sequential 5-second descriptive prompts optimized for Veo generation.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        masterScript: { type: "STRING", description: "The overall vision or script for the video." },
+                        totalDuration: { type: "NUMBER", description: "Total intended duration of the video in seconds." },
+                        artStyle: { type: "STRING", description: "The overarching visual style to append to each prompt (e.g., 'Cinematic 35mm, neon noir')." }
+                    },
+                    required: ["masterScript", "totalDuration", "artStyle"]
+                }
             }
         ]
     }]

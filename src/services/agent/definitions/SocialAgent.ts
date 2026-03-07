@@ -195,6 +195,52 @@ Think in terms of "Virality," "Engagement Rate," and "Sound Uses."
                     },
                     required: ["topic", "platform", "threadLength"]
                 }
+            },
+            {
+                name: "analyze_sentiment",
+                description: "Crawls recent comments/mentions across linked socials (X/IG) and provides a sentiment and trend report.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        platform: { type: "STRING", enum: ["All", "X", "Instagram", "TikTok"], description: "The platform to analyze." },
+                        timeframe: { type: "STRING", enum: ["7d", "14d", "30d"], description: "How far back to analyze." }
+                    },
+                    required: ["platform", "timeframe"]
+                }
+            },
+            {
+                name: "multi_platform_autopost",
+                description: "Direct API integration tool to automatically queue and post a single video to multiple short-form platforms (TikTok, YouTube Shorts, IG Reels) natively.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        videoUrl: { type: "STRING", description: "Public URL of the 9:16 short form video to upload." },
+                        caption: { type: "STRING", description: "The caption to include across all platforms." },
+                        hashtags: { type: "ARRAY", items: { type: "STRING" }, description: "List of hashtags to append." },
+                        platforms: {
+                            type: "ARRAY",
+                            items: { type: "STRING", enum: ["TikTok", "YouTube Shorts", "IG Reels"] },
+                            description: "Which platforms to push to simultaneously."
+                        }
+                    },
+                    required: ["videoUrl", "caption", "platforms"]
+                }
+            },
+            {
+                name: "dispatch_community_webhook",
+                description: "Dispatches an automated announcement (with rich embeds) into an artist's Discord or Telegram community server via webhook.",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        platform: { type: "STRING", enum: ["Discord", "Telegram"], description: "The community platform." },
+                        webhookUrl: { type: "STRING", description: "The secure webhook URL." },
+                        messageContent: { type: "STRING", description: "The main text of the announcement." },
+                        embedTitle: { type: "STRING", description: "Title of the rich embed (e.g., 'New Drop!')." },
+                        embedImageUrl: { type: "STRING", description: "URL of the cover art or promo image." },
+                        embedLink: { type: "STRING", description: "Call to action link (e.g., pre-save link)." }
+                    },
+                    required: ["platform", "webhookUrl", "messageContent"]
+                }
             }
         ]
     }]

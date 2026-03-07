@@ -201,6 +201,20 @@ Provide:
                     },
                     required: ["action", "service"]
                 }
+            },
+            {
+                name: "generate_visa_checklist",
+                description: "Generates an automated documentation tracker for international touring requirements (e.g., P2 visas for US, Tier 5 for UK).",
+                parameters: {
+                    type: "OBJECT",
+                    properties: {
+                        artistCitizenship: { type: "STRING", description: "The origin country of the artist." },
+                        tourDestination: { type: "STRING", description: "The destination country or region (e.g., 'United States', 'European Union')." },
+                        crewSize: { type: "NUMBER", description: "Total number of touring personnel needing visas." },
+                        timelineDays: { type: "NUMBER", description: "Days until the first tour date." }
+                    },
+                    required: ["artistCitizenship", "tourDestination", "timelineDays"]
+                }
             }
         ]
     }]
