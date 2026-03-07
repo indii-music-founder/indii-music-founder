@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, Lightbulb, Zap } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -371,6 +371,38 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Plan/Execute Toggle */}
+                        <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
+                            <button
+                                onClick={() => setChatChannel('indii')}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
+                                    isIndiiMode
+                                        ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
+                                        : "text-gray-400 hover:text-gray-200"
+                                )}
+                                aria-label="Plan mode"
+                                aria-pressed={isIndiiMode}
+                            >
+                                <Lightbulb size={12} />
+                                <span>Plan</span>
+                            </button>
+                            <button
+                                onClick={() => setChatChannel('agent')}
+                                className={cn(
+                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
+                                    !isIndiiMode
+                                        ? "bg-green-600 text-white shadow-lg shadow-green-500/20"
+                                        : "text-gray-400 hover:text-gray-200"
+                                )}
+                                aria-label="Execute mode"
+                                aria-pressed={!isIndiiMode}
+                            >
+                                <Zap size={12} />
+                                <span>Execute</span>
+                            </button>
+                        </div>
+
                         {!isDocked && (
                             <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">
                                 <PromptInputAction tooltip="Collapse Chat">
