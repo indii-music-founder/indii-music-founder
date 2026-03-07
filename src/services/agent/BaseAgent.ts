@@ -274,7 +274,7 @@ export class BaseAgent implements SpecializedAgent {
     /**
      * Internal execution method (separated to support locking mechanism)
      */
-    private async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
+    protected async _executeInternal(task: string, context?: AgentContext, onProgress?: AgentProgressCallback, signal?: AbortSignal, attachments?: { mimeType: string; base64: string }[]): Promise<AgentResponse> {
         // Lazy import AI Service to prevent circular deps during registry loading
         const { GenAI } = await import('@/services/ai/GenAI');
 

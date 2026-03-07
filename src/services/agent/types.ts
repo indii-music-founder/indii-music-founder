@@ -168,6 +168,7 @@ export interface AgentContext {
     brandKit?: BrandKit;
     memoryContext?: string;
     relevantMemories?: string[];
+    ragCorpus?: string;
     activeModule?: string;
     userProfile?: UserProfile;
     distributor?: DistributorInfo;

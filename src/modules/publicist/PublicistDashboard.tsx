@@ -119,7 +119,7 @@ export default function PublicistDashboard() {
                             label="Media Network"
                         />
                         <NavButton
-                            isActive={activeTab === 'superfans'}
+                            isActive={(activeTab as string) === 'superfans'}
                             onClick={() => setActiveTab('superfans' as any)}
                             icon={Crown}
                             label="Superfan CRM"
@@ -169,7 +169,7 @@ export default function PublicistDashboard() {
                     <header className="h-20 shrink-0 px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-4">
                             <h2 className="text-2xl font-bold text-white tracking-tight">
-                                {activeTab === 'campaigns' ? 'Campaigns' : activeTab === 'superfans' ? 'Superfan CRM' : 'Media Network'}
+                                {activeTab === 'campaigns' ? 'Campaigns' : (activeTab as string) === 'superfans' ? 'Superfan CRM' : 'Media Network'}
                             </h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
 
@@ -286,7 +286,7 @@ export default function PublicistDashboard() {
                                         </motion.button>
                                     )}
                                 </motion.div>
-                            ) : (
+                            ) : activeTab === 'contacts' ? (
                                 <motion.div
                                     key="contacts-view"
                                     initial={{ opacity: 0, x: 20 }}

@@ -32,19 +32,19 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [ ] **117. Social Agent Sentiment Analysis:** Social agent crawls linked socials (X/IG) and provides weekly sentiment and trend reports.
 - [ ] **118. Proactive Agent Calendar System:** The Hub Agent initiates push-notifications to the user based on metadata (e.g., "It's 2 weeks out from release, let's schedule TikTok drafts").
 - [ ] **119. Brand Agent Visual Audit:** The Brand agent automatically audits all new visual outputs against the specific artist’s brand kit to enforce visual consistency.
-- [ ] **120. Publicist Agent Pitch Drafting:** The Publicist agent dynamically scrapes Spotify playlists and drafts personalized pitch emails for editors.
+- [x] **120. Publicist Agent Pitch Drafting:** The Publicist agent dynamically scrapes Spotify playlists and drafts personalized pitch emails for editors.
 
 ### Commerce, Merchandising & Web3 (121-130)
 
-- [ ] **121. Print-On-Demand (POD) API Link:** Connect to Printful/Printify APIs to automatically mock up merchandise using the AI image generator.
-- [ ] **122. E-commerce Storefront Previews:** One-click deployment of a mini-storefront (via Stripe Payment Links) for merch items.
-- [ ] **123. Native Inventory Tracking UI:** Visual dashboard tracking physical vs. virtual merch sales across connected channels.
-- [ ] **124. Dynamic Pricing Engine:** Provide recommendations for merch pricing based on comparable indie margins.
-- [ ] **125. Limited Drop Campaigns:** Workflow system to countdown drops, lock pre-sales, and notify superfans.
-- [ ] **126. Web3 Authentication/Wallet Connnect:** Allow signing in via MetaMask/WalletConnect to gate experiences.
-- [ ] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
-- [ ] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
-- [ ] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
+- [x] **121. Print-On-Demand (POD) API Link:** Connect to Printful/Printify APIs to automatically mock up merchandise using the AI image generator.
+- [x] **122. E-commerce Storefront Previews:** One-click deployment of a mini-storefront (via Stripe Payment Links) for merch items.
+- [x] **123. Native Inventory Tracking UI:** Visual dashboard tracking physical vs. virtual merch sales across connected channels.
+- [x] **124. Dynamic Pricing Engine:** Provide recommendations for merch pricing based on comparable indie margins.
+- [x] **125. Limited Drop Campaigns:** Workflow system to countdown drops, lock pre-sales, and notify superfans.
+- [x] **126. Web3 Authentication/Wallet Connnect:** Allow signing in via MetaMask/WalletConnect to gate experiences.
+- [x] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
+- [x] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
+- [x] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
 - [ ] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 
 ### Pro Artist Ecosystem: Legal, Touring, Licensing (131-140)

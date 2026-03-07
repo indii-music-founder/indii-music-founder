@@ -100,8 +100,10 @@ export class AgentRegistry {
                     } as SpecializedAgent;
 
                     this.registerLazy(meta, async () => {
-                        const { BaseAgent } = await import('./BaseAgent');
-                        const agent = new BaseAgent(config);
+                        const { RAGAgent } = await import('./RAGAgent');
+                        // Use RAGAgent which automatically queries File Search before execution
+                        // RAGAgent extends BaseAgent.
+                        const agent = new RAGAgent(config);
                         freezeAgentConfig(agent);
                         return agent;
                     });
