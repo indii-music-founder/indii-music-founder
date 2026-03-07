@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import {
-    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle, HelpCircle
+    Activity, Upload, Database, Save, Loader2, Music, Clock, BarChart2, ShieldCheck, BrainCircuit, Globe, AlertTriangle, HelpCircle, Target, Waves, CheckCircle2, XCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ModuleDashboard } from '@/components/layout/ModuleDashboard';
@@ -312,17 +312,102 @@ const AudioAnalyzer: React.FC = () => {
                         </TabsContent>
 
                         {/* Tab 3: Optimize */}
-                        <TabsContent value="optimize" className="mt-0 border-none outline-none h-full min-h-[500px]">
-                            <div className="flex flex-col items-center justify-center h-full text-muted-foreground bg-card glass-panel rounded-2xl border border-white/5 p-12 text-center animate-in fade-in duration-500">
-                                <ShieldCheck size={48} className="mb-6 opacity-30 text-green-400" />
-                                <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Target Mastering Audit</h2>
-                                <p className="text-sm max-w-md mx-auto leading-relaxed mb-8">
-                                    Analyze LUFS, True Peak, and frequency spectrum distribution against specific platform targets (Spotify, Apple Music) before delivery. Does not modify the waveform.
-                                </p>
-                                <Button variant="outline" className="border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10">
-                                    <Upload size={16} className="mr-2" /> Upload Master for Audit
-                                </Button>
-                            </div>
+                        <TabsContent value="optimize" className="mt-0 border-none outline-none min-h-[500px] flex flex-col gap-6">
+                            {!profile ? (
+                                <div className="flex flex-col items-center justify-center flex-1 text-muted-foreground bg-card glass-panel rounded-2xl border border-white/5 p-12 text-center animate-in fade-in duration-500">
+                                    <ShieldCheck size={48} className="mb-6 opacity-30 text-green-400" />
+                                    <h2 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Target Mastering Audit</h2>
+                                    <p className="text-sm max-w-md mx-auto leading-relaxed mb-8">
+                                        Analyze LUFS, True Peak, and frequency spectrum distribution against specific platform targets (Spotify, Apple Music) before delivery.
+                                    </p>
+                                    <label className="border border-dept-publishing/50 text-dept-publishing hover:bg-dept-publishing/10 cursor-pointer inline-flex h-10 items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition-colors">
+                                        <Upload size={16} className="mr-2" /> Upload Master for Audit
+                                        <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
+                                    </label>
+                                </div>
+                            ) : (
+                                <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                    <div className="flex items-center justify-between bg-card glass-panel rounded-2xl p-6 border border-white/5 mb-6">
+                                        <div>
+                                            <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                                <Target className="text-dept-publishing" size={24} />
+                                                DSP Compliance Report
+                                            </h2>
+                                            <p className="text-sm text-muted-foreground mt-1">Loudness Penalty and True Peak analysis for Spotify/Apple Music targets.</p>
+                                        </div>
+                                        <label className="bg-primary hover:bg-primary/90 text-primary-foreground font-bold px-6 py-3 rounded-xl cursor-pointer transition-all flex items-center gap-3">
+                                            <Upload size={18} /> Re-Audit New File
+                                            <input type="file" accept="audio/*" className="sr-only" onChange={handleFileUpload} disabled={isAnalyzing} />
+                                        </label>
+                                    </div>
+
+                                    {profile.technical.audit && (
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                            {/* LUFS Metric */}
+                                            <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-6 opacity-5">
+                                                    <Waves size={100} />
+                                                </div>
+                                                <div className="flex items-center gap-2 text-muted-foreground mb-6">
+                                                    <span className="text-sm font-bold uppercase tracking-wider">Integrated Loudness (LUFS)</span>
+                                                </div>
+                                                <div className="flex items-end gap-3 mb-4">
+                                                    <span className="text-5xl font-mono text-white tracking-tighter">{profile.technical.audit.integratedLoudness.toFixed(1)}</span>
+                                                    <span className="text-xl text-white/50 pb-1">LUFS</span>
+                                                </div>
+
+                                                <div className="space-y-3 mt-auto">
+                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                                        <span className="text-xs font-bold text-white flex items-center gap-2">Spotify Target (-14 LUFS)</span>
+                                                        {profile.technical.audit.integratedLoudness > -12 ? (
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                        ) : profile.technical.audit.integratedLoudness < -16 ? (
+                                                            <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
+                                                        )}
+                                                    </div>
+                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                                        <span className="text-xs font-bold text-white flex items-center gap-2">Apple Music Target (-16 LUFS)</span>
+                                                        {profile.technical.audit.integratedLoudness > -14 ? (
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><XCircle size={12} /> Penalyzed</Badge>
+                                                        ) : profile.technical.audit.integratedLoudness < -18 ? (
+                                                            <Badge variant="outline" className="text-yellow-400 border-yellow-400/30">Too Quiet</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* True Peak Metric */}
+                                            <div className="bg-card glass-panel rounded-2xl p-6 border border-white/5 flex flex-col relative overflow-hidden">
+                                                <div className="absolute top-0 right-0 p-6 opacity-5">
+                                                    <Activity size={100} />
+                                                </div>
+                                                <div className="flex items-center gap-2 text-muted-foreground mb-6">
+                                                    <span className="text-sm font-bold uppercase tracking-wider">True Peak (Approximation)</span>
+                                                </div>
+                                                <div className="flex items-end gap-3 mb-4">
+                                                    <span className="text-5xl font-mono text-white tracking-tighter">{profile.technical.audit.peakLevel.toFixed(2)}</span>
+                                                    <span className="text-xl text-white/50 pb-1">dB</span>
+                                                </div>
+
+                                                <div className="space-y-3 mt-auto">
+                                                    <div className="flex items-center justify-between p-3 rounded-lg bg-white/5">
+                                                        <span className="text-xs font-bold text-white flex items-center gap-2">DSP Target (-1.0 dBTP max)</span>
+                                                        {profile.technical.audit.peakLevel > -0.5 ? (
+                                                            <Badge variant="destructive" className="flex items-center gap-1"><AlertTriangle size={12} /> Clipping Risk</Badge>
+                                                        ) : (
+                                                            <Badge className="bg-green-500/20 text-green-400 border border-green-500/30 flex items-center gap-1"><CheckCircle2 size={12} /> Optimal</Badge>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </TabsContent>
                     </div>
                 </Tabs>

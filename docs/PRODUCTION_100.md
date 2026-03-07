@@ -24,7 +24,7 @@ _Owner: Antigravity_
 ### The Creative & Audio Pipeline (11-20)
 
 - [x] **11. Audio Waveform Viewer:** Integrate interactive `wavesurfer.js` visualizations for master files.
-- [ ] **12. LUFS & Spectrum Analysis:** Display real-time mastering metrics (integrated LUFS, true peak) to ensure DSP compliance.
+- [x] **12. LUFS & Spectrum Analysis:** Display real-time mastering metrics (integrated LUFS, true peak) to ensure DSP compliance.
 - [ ] **13. Creative Studio State Persistence:** Ensure Canvas/Fabric.js sessions save automatically locally so users don't lose image generation edits.
 - [ ] **14. Video Editor (Remotion) Scrubbing:** Smooth out timeline scrubbing performance and preview rendering in the Video module.
 - [ ] **15. Asset Library Grid:** High-performance virtualized grid for browsing hundreds of generated AI images without DOM bloat.
