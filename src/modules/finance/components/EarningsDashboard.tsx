@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RevenueChart } from './RevenueChart';
 import { EarningsTable } from './EarningsTable';
 import { RevenueProjections } from './RevenueProjections';
+import { WaterfallChart } from './WaterfallChart';
 import { SubscriptionTab } from './SubscriptionTab';
 import { type EarningsSummary as ValidatedEarningsSummary } from '@/services/revenue/schema';
 import { motion } from 'motion/react';
@@ -223,6 +224,18 @@ export const EarningsDashboard: React.FC = () => {
                             </div>
                         </motion.div>
                     </div>
+
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mt-6 overflow-hidden"
+                    >
+                        <WaterfallChart
+                            grossRevenue={earningsSummary.totalGrossRevenue || 12500}
+                            netRevenue={earningsSummary.totalNetRevenue || 8200}
+                        />
+                    </motion.div>
                 </TabsContent>
 
                 <TabsContent value="platforms" className="outline-none">

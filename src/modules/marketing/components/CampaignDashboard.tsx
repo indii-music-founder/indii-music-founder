@@ -4,6 +4,7 @@ import CreateCampaignModal from './CreateCampaignModal';
 import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
 import AIGenerateCampaignModal from './AIGenerateCampaignModal';
+import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
@@ -139,6 +140,8 @@ const CampaignDashboard: React.FC = () => {
                                 onAIGenerate={handleAIGenerate}
                             />
                         )
+                    ) : activeTab === 'asset-generator' ? (
+                        <MarketingAssetGeneratorUI />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
                             <p className="text-lg">This module is correctly under development.</p>

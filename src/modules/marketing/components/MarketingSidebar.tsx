@@ -7,7 +7,8 @@ import {
     Settings,
     Plus,
     History,
-    Target
+    Target,
+    Wand2
 } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -22,6 +23,7 @@ export const MarketingSidebar: React.FC<MarketingSidebarProps> = ({ activeTab, o
     const mainNav = [
         { id: 'overview', label: 'Overview', icon: LayoutDashboard },
         { id: 'campaigns', label: 'Campaigns', icon: Megaphone },
+        { id: 'asset-generator', label: 'Asset Generator', icon: Wand2 },
         { id: 'calendar', label: 'Calendar', icon: Calendar },
         { id: 'analytics', label: 'Analytics', icon: BarChart },
     ];

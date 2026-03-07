@@ -68,9 +68,11 @@ export const processJobUpdate = (
 
         if (data.progress !== undefined) {
             deps.setJobProgress(data.progress);
+            useStore.getState().updateJobProgress(currentJobId, data.progress);
         }
 
         if (newStatus === 'completed' && data.videoUrl) {
+            useStore.getState().updateJobStatus(currentJobId, 'success');
             // ⚡ Automatic Local Save (Veo 3.1 Requirement)
             // The AI community/app needs access to this file locally first.
             const filename = `veo_${currentJobId}.mp4`;
@@ -109,6 +111,7 @@ export const processJobUpdate = (
             deps.setJobStatus('idle');
             deps.resetEditorProgress();
         } else if (newStatus === 'failed') {
+            useStore.getState().updateJobStatus(currentJobId, 'error', data.stitchError || 'Generation failed');
             deps.toast.error(data.stitchError ? `Stitching failed: ${data.stitchError}` : 'Generation failed');
             deps.setJobId(null);
             deps.setJobStatus('failed');
@@ -207,9 +210,7 @@ export default function VideoWorkflow() {
     // Sync pending prompt
     useEffect(() => {
         if (pendingPrompt) {
-            // eslint-disable-next-line react-hooks/set-state-in-effect
             setLocalPrompt(pendingPrompt);
-
             setPrompt(pendingPrompt);
 
             setPendingPrompt(null);
@@ -380,6 +381,13 @@ export default function VideoWorkflow() {
                     // Start listening for the background job
                     setJobId(firstResult.id);
                     setJobStatus('processing');
+                    useStore.getState().addJob({
+                        id: firstResult.id,
+                        title: `Generative Video: Rendering scene...`,
+                        progress: 0,
+                        status: 'running',
+                        type: 'video_render'
+                    });
                 }
             }
         } catch (error: unknown) {

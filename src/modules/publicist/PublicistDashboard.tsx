@@ -11,7 +11,8 @@ import {
     LayoutGrid,
     List,
     Loader2,
-    Sparkles
+    Sparkles,
+    Crown
 } from 'lucide-react';
 import { usePublicist } from './hooks/usePublicist';
 import { CampaignCard } from './components/CampaignCard';
@@ -24,6 +25,8 @@ import { ContactDetailsModal } from './components/ContactDetailsModal';
 import { ProTipsModal } from './components/ProTipsModal';
 import { OnboardingModal } from '../onboarding/OnboardingModal';
 import { ReleaseKitModal } from './components/ReleaseKitModal';
+import { PitchDraftingModal } from './components/PitchDraftingModal';
+import { SuperfanCRM } from './components/SuperfanCRM';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { Campaign, Contact } from './types';
 
@@ -49,6 +52,7 @@ export default function PublicistDashboard() {
     const [isTipsOpen, setIsTipsOpen] = useState(false);
     const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
     const [isReleaseKitOpen, setIsReleaseKitOpen] = useState(false);
+    const [pitchContact, setPitchContact] = useState<Contact | null>(null);
 
     if (loading) {
         return (
@@ -114,6 +118,12 @@ export default function PublicistDashboard() {
                             icon={Users}
                             label="Media Network"
                         />
+                        <NavButton
+                            isActive={activeTab === 'superfans'}
+                            onClick={() => setActiveTab('superfans' as any)}
+                            icon={Crown}
+                            label="Superfan CRM"
+                        />
                         {/* Reports & Identity - Future / Lower priority tabs */}
                         <NavButton
                             isActive={false}
@@ -159,7 +169,7 @@ export default function PublicistDashboard() {
                     <header className="h-20 shrink-0 px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
                         <div className="flex items-center gap-4">
                             <h2 className="text-2xl font-bold text-white tracking-tight">
-                                {activeTab === 'campaigns' ? 'Campaigns' : 'Media Network'}
+                                {activeTab === 'campaigns' ? 'Campaigns' : activeTab === 'superfans' ? 'Superfan CRM' : 'Media Network'}
                             </h2>
                             <div className="h-6 w-px bg-white/10 mx-2" />
 
@@ -306,6 +316,7 @@ export default function PublicistDashboard() {
                                         <ContactList
                                             contacts={contacts}
                                             onSelectContact={(c) => setSelectedContact(c)}
+                                            onPitchContact={(c) => setPitchContact(c)}
                                         />
                                         {contacts.length === 0 && (
                                             <div className="py-20 text-center text-slate-500 text-sm">
@@ -314,7 +325,18 @@ export default function PublicistDashboard() {
                                         )}
                                     </div>
                                 </motion.div>
-                            )}
+                            ) : (activeTab as string) === 'superfans' ? (
+                                <motion.div
+                                    key="superfans-view"
+                                    initial={{ opacity: 0, x: 20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    exit={{ opacity: 0, x: -20 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="h-full -m-8"
+                                >
+                                    <SuperfanCRM contacts={contacts} />
+                                </motion.div>
+                            ) : null}
                         </AnimatePresence>
                     </div>
                 </main>
@@ -353,6 +375,11 @@ export default function PublicistDashboard() {
             <ReleaseKitModal
                 isOpen={isReleaseKitOpen}
                 onClose={() => setIsReleaseKitOpen(false)}
+            />
+            <PitchDraftingModal
+                isOpen={!!pitchContact}
+                onClose={() => setPitchContact(null)}
+                contact={pitchContact}
             />
         </ModuleErrorBoundary >
     );

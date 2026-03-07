@@ -1,14 +1,15 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Contact } from '../types';
-import { User, Star, TrendingUp, Radio } from 'lucide-react';
+import { User, Star, TrendingUp, Radio, Sparkles } from 'lucide-react';
 
 interface ContactListProps {
     contacts: Contact[];
     onSelectContact: (contact: Contact) => void;
+    onPitchContact?: (contact: Contact) => void;
 }
 
-export function ContactList({ contacts, onSelectContact }: ContactListProps) {
+export function ContactList({ contacts, onSelectContact, onPitchContact }: ContactListProps) {
     return (
         <div className="space-y-3">
             <AnimatePresence mode="popLayout">
@@ -79,6 +80,17 @@ export function ContactList({ contacts, onSelectContact }: ContactListProps) {
                                 {contact.relationshipStrength}
                             </div>
                         </div>
+
+                        {/* AI Pitch Button */}
+                        {onPitchContact && (
+                            <button
+                                onClick={(e) => { e.stopPropagation(); onPitchContact(contact); }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-dept-marketing/10 border border-dept-marketing/20 text-dept-marketing-glow text-[10px] font-bold hover:bg-dept-marketing/20"
+                            >
+                                <Sparkles size={10} />
+                                AI Pitch
+                            </button>
+                        )}
                     </motion.div>
                 ))}
             </AnimatePresence>

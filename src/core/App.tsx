@@ -29,6 +29,7 @@ import { GlobalKeyboardShortcuts, useGlobalShortcutsModal } from '@/components/s
 import { UnifiedCommandMenu } from '@/components/shared/UnifiedCommandMenu';
 import { GlobalDropZone } from '@/components/shared/GlobalDropZone';
 import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
+import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
@@ -415,6 +416,7 @@ export default function App() {
 
                             {/* Global Upload Manager Queue */}
                             <UploadQueueMonitor />
+                            <BackgroundJobMonitor />
                             <AudioPIPPlayer />
 
                             {/* Global Keyboard Shortcuts Help (press ?) */}
