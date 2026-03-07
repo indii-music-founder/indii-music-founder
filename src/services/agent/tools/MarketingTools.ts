@@ -242,6 +242,22 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
                 superfan: args.minSpendForSuperfan
             }
         }, `Fan CRM successfully tiered: ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
+    }),
+
+    track_post_release_momentum: wrapTool('track_post_release_momentum', async (args: { trackId: string; adSpend: number; organicStreams: number; dsp: string }) => {
+        // Mock Post-Release Momentum Tracking (Item 150)
+        const roi = (args.organicStreams * 0.004) / (args.adSpend || 1);
+        const momentumScore = Math.min(100, (args.organicStreams / 1000) * 5 + (roi * 10));
+
+        return toolSuccess({
+            trackId: args.trackId,
+            dsp: args.dsp,
+            adSpend: args.adSpend,
+            organicStreams: args.organicStreams,
+            momentumScore: Math.round(momentumScore),
+            estimatedRoiMultiplier: Number(roi.toFixed(2)),
+            trend: momentumScore > 50 ? 'Accelerating' : 'Decelerating'
+        }, `Post-release momentum tracked for ${args.trackId} on ${args.dsp}. Momentum Score: ${Math.round(momentumScore)}/100. Trend: ${momentumScore > 50 ? 'Accelerating' : 'Decelerating'}.`);
     })
 };
 
@@ -254,5 +270,6 @@ export const {
     generate_campaign_from_audio,
     analyze_market_trends,
     create_ab_test_campaign,
-    tier_superfans
+    tier_superfans,
+    track_post_release_momentum
 } = MarketingTools;

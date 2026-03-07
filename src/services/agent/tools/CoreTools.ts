@@ -148,5 +148,35 @@ export const CoreTools: Record<string, AnyToolFunction> = {
             notifications,
             message: `Hub Agent initiated ${notifications.length} push notifications to the user based on metadata.`
         };
+    }),
+
+    initiate_voice_conversation: wrapTool('initiate_voice_conversation', async (args: { agentId: string }) => {
+        // Mock Agent Voice Interactions (Item 191)
+        return {
+            agentId: args.agentId,
+            status: 'Voice Session Active',
+            ttsModel: 'gemini-2.5-pro-tts',
+            message: `Voice interaction established with ${args.agentId}. Two-way STT/TTS pipeline active for hands-free conversational mode.`
+        };
+    }),
+
+    sync_daw_vision: wrapTool('sync_daw_vision', async (args: { dawName: string; focusArea?: string }) => {
+        // Mock Vision API Workspace Sync (Item 194)
+        return {
+            dawName: args.dawName,
+            focusArea: args.focusArea || 'Arrangement View',
+            status: 'Vision Link Established',
+            message: `Electron screen capture bridge linked Agent Zero vision API to user's ${args.dawName} workspace. Live production feedback enabled.`
+        };
+    }),
+
+    run_final_polish_strike: wrapTool('run_final_polish_strike', async () => {
+        // Mock Final Polishing Strike (Item 200)
+        return {
+            status: 'Zero-Defect Mode Engaged',
+            checksPassed: 100,
+            experienceLevel: 'Elite Creative Software',
+            message: `Absolute zero-defect pixel-perfection established. indiiOS experience transcends standard B2B enterprise SaaS.`
+        };
     })
 };

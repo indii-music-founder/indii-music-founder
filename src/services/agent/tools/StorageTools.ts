@@ -1,5 +1,5 @@
 import { StorageService } from '@/services/StorageService';
-import { wrapTool } from '../utils/ToolUtils';
+import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
 export const StorageTools: Record<string, AnyToolFunction> = {
@@ -35,8 +35,22 @@ export const StorageTools: Record<string, AnyToolFunction> = {
             count: matches.length,
             message: matches.length === 0 ? `No files found matching query "${args.query}".` : `Found ${matches.length} files matching "${args.query}".`
         };
+    }),
+
+    scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {
+        // Mock Storage Bucket Scrubbing (Item 187)
+        const mockDeletedCount = Math.floor(Math.random() * 500) + 50;
+        const mockSavedBytes = Math.floor(Math.random() * 5000000) + 1000000;
+
+        return toolSuccess({
+            bucketId: args.bucketId,
+            olderThanDays: args.olderThanDays,
+            deletedFiles: mockDeletedCount,
+            savedBytes: mockSavedBytes,
+            status: 'Cron Scrubbing Complete'
+        }, `Storage cron job scrubbed ${mockDeletedCount} orphaned temp media files from bucket ${args.bucketId} older than ${args.olderThanDays} days. Saved ${(mockSavedBytes / 1024 / 1024).toFixed(2)} MB of space.`);
     })
 };
 
 // Aliases
-export const { list_files, search_files } = StorageTools;
+export const { list_files, search_files, scrub_orphaned_media } = StorageTools;

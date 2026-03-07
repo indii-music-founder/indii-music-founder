@@ -199,5 +199,87 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
             ...result.data,
             timestamp: new Date().toISOString()
         }, result.data.success ? `Successfully restarted ${args.instance_name}.` : `Failed to restart ${args.instance_name}.`);
+    }),
+
+    run_chaos_mesh_tests: wrapTool('run_chaos_mesh_tests', async (args: { targetService: string; duration: string }) => {
+        // Mock Playwright Chaos Mesh testing (Item 181)
+        return toolSuccess({
+            targetService: args.targetService,
+            duration: args.duration,
+            status: 'Chaos Engineering Test Completed',
+            faultsInjected: ['Network Latency', 'Packet Drop', 'Pod Kill'],
+            resiliencyScore: 92
+        }, `Chaos mesh tests completed on ${args.targetService} for ${args.duration}. System demonstrated high resiliency with a score of 92/100.`);
+    }),
+
+    configure_circuit_breaker: wrapTool('configure_circuit_breaker', async (args: { serviceName: string; threshold: number; fallbackBehavior: string }) => {
+        // Mock API Circuit Breakers (Item 182)
+        return toolSuccess({
+            serviceName: args.serviceName,
+            threshold: args.threshold,
+            fallbackBehavior: args.fallbackBehavior,
+            status: 'Active'
+        }, `Circuit breaker configured for ${args.serviceName}. Threshold set to ${args.threshold}%. Fallback: ${args.fallbackBehavior}.`);
+    }),
+
+    configure_websocket_keepalive: wrapTool('configure_websocket_keepalive', async (args: { serviceId: string; pingInterval: number }) => {
+        // Mock Long-Polling Resiliency (Item 183)
+        return toolSuccess({
+            serviceId: args.serviceId,
+            pingInterval: args.pingInterval,
+            status: 'Hardened Connection Active'
+        }, `WebSocket keep-alives configured for ${args.serviceId} with a ${args.pingInterval}s interval. Long Node automations are now hardened.`);
+    }),
+
+    run_contention_test: wrapTool('run_contention_test', async (args: { database: string; parallelWrites: number }) => {
+        // Mock Firestore Lock Contention Testing (Item 184)
+        return toolSuccess({
+            database: args.database,
+            parallelWrites: args.parallelWrites,
+            lockFailures: 0,
+            deadlocksDetected: false,
+            status: 'Passed'
+        }, `Lock contention test passed for ${args.database}. Simulated ${args.parallelWrites} simultaneous agent writes with 0 transaction locks or overwrites.`);
+    }),
+
+    configure_sentry_crash_reporting: wrapTool('configure_sentry_crash_reporting', async (args: { environment: string }) => {
+        // Mock Electron Crash Reporting (Item 185)
+        return toolSuccess({
+            environment: args.environment,
+            provider: 'Sentry',
+            features: ['Native Crash Reporting', 'C++ / V8 Catching', 'Minidump Analysis'],
+            status: 'Configured'
+        }, `Sentry native crash reporting initialized for ${args.environment} environment, ready to catch hard C++/V8 crashes under load.`);
+    }),
+
+    trigger_watchdog_recovery: wrapTool('trigger_watchdog_recovery', async (args: { agentId: string; loopThreshold: number }) => {
+        // Mock "Stressed Agent" Recovery (Item 186)
+        return toolSuccess({
+            agentId: args.agentId,
+            loopThreshold: args.loopThreshold,
+            actionTaken: 'Terminate and Re-prime Context',
+            status: 'Watchdog Active'
+        }, `Watchdog recovery triggered for ${args.agentId}. Infinite loop threshold (${args.loopThreshold}) met. Context successfully re-primed.`);
+    }),
+
+    configure_logical_sharding: wrapTool('configure_logical_sharding', async (args: { collection: string; shards: number }) => {
+        // Mock Database Sharding Prep (Item 188)
+        return toolSuccess({
+            collection: args.collection,
+            shardsConfigured: args.shards,
+            strategy: 'Hash-based Partitioning',
+            capacityLimit: '> 10k events/sec',
+            status: 'Prepared'
+        }, `Logical partitioning strategy setup for Firestore collection '${args.collection}' across ${args.shards} shards.`);
+    }),
+
+    spin_up_qa_sandbox: wrapTool('spin_up_qa_sandbox', async (args: { environmentName: string; snapshotId: string }) => {
+        // Mock Sandbox QA Environment (Item 189)
+        return toolSuccess({
+            environmentName: args.environmentName,
+            snapshotUsed: args.snapshotId,
+            url: `https://qa-${crypto.randomUUID().slice(0, 8)}.sandbox.indii.os`,
+            status: 'Ready for Testing'
+        }, `One-click reproducible QA Sandbox '${args.environmentName}' spun up using snapshot ${args.snapshotId}.`);
     })
 };

@@ -122,5 +122,35 @@ Key Terms: ${args.terms}`;
             status: 'sent',
             sentTo: args.signers.map(s => s.email)
         }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
+    }),
+
+    generate_dmca_takedown: wrapTool('generate_dmca_takedown', async (args: { infringingUrl: string; originalWorkTitle: string; rightsholderName: string }) => {
+        // Mock pre-filled DMCA/Takedown Notices generator (Item 136)
+        const mockDraft = `
+**DMCA TAKEDOWN NOTICE**
+To whom it may concern,
+I am the authorized representative for ${args.rightsholderName}.
+The following URL (${args.infringingUrl}) contains unauthorized use of the copyrighted work "${args.originalWorkTitle}".
+...
+        `.trim();
+
+        return toolSuccess({
+            infringingUrl: args.infringingUrl,
+            originalWorkTitle: args.originalWorkTitle,
+            rightsholderName: args.rightsholderName,
+            draftText: mockDraft,
+            status: 'Pre-filled Draft Created'
+        }, `DMCA Takedown Notice generated for "${args.originalWorkTitle}" against URL ${args.infringingUrl}. Draft ready for review and sending.`);
+    }),
+
+    verify_mechanical_license: wrapTool('verify_mechanical_license', async (args: { trackTitle: string; originalArtist: string }) => {
+        // Mock Mechanical Licensing Verification (Item 177)
+        return toolSuccess({
+            coverSong: args.trackTitle,
+            originalArtist: args.originalArtist,
+            hfaStatus: 'Clearance Required',
+            userAcknowledged: false,
+            link: `https://www.songfile.com/`
+        }, `Mechanical licensing verification required for cover song "${args.trackTitle}". User must acknowledge HFA/Music Reports compliance before delivery.`);
     })
 };

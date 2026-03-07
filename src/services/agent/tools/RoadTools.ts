@@ -129,12 +129,48 @@ export const RoadTools: Record<string, AnyToolFunction> = {
         }, `Logistics booked for ${item} on ${date}.`);
     }),
 
-    ...MapsTools
+    ...MapsTools,
+
+    optimize_tour_route: wrapTool('optimize_tour_route', async (args: { venues: string[] }) => {
+        // Mock Tour Routing Optimizer using regional Spotify listener density (Item 131)
+        const optimizedRoute = args.venues.sort(() => Math.random() - 0.5); // Randomize for mock optimization
+        return toolSuccess({
+            inputVenues: args.venues,
+            optimizedRoute,
+            densityScore: Math.floor(Math.random() * 50) + 50,
+            factors: ['Spotify Regional Data', 'Drive Time', 'Venue Availability']
+        }, `Tour route optimized based on regional listener density: ${optimizedRoute.join(' -> ')}`);
+    }),
+
+    generate_technical_rider: wrapTool('generate_technical_rider', async (args: { artistName: string; stageSetup: string; audioRequirements: string }) => {
+        // Mock Technical Rider Generator (Item 132)
+        const pdfMockUrl = `https://docs.indii.os/riders/${args.artistName.replace(/\s+/g, '').toLowerCase()}_tech_rider.pdf`;
+        return toolSuccess({
+            artistName: args.artistName,
+            stageSetup: args.stageSetup,
+            audioRequirements: args.audioRequirements,
+            pdfUrl: pdfMockUrl
+        }, `Technical rider generated for ${args.artistName} including stage plot and audio requirements. Available at ${pdfMockUrl}`);
+    }),
+
+    log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
+        // Mock Live Setlist Analytics for ASCAP/BMI (Item 138)
+        return toolSuccess({
+            venue: args.venue,
+            date: args.date,
+            tracksLogged: args.tracks.length,
+            submissionStatus: 'Queued for ASCAP/BMI Submission',
+            estimatedPerformanceRoyalties: `$${(args.tracks.length * 15.50).toFixed(2)}`
+        }, `Live setlist logged for ${args.venue} on ${args.date}. ${args.tracks.length} tracks queued for PRO performance royalty submission.`);
+    })
 };
 
 // Aliases for historical reasons if needed
 export const {
     plan_tour_route,
     calculate_tour_budget,
-    generate_itinerary
+    generate_itinerary,
+    optimize_tour_route,
+    generate_technical_rider,
+    log_live_setlist_for_pro
 } = RoadTools;

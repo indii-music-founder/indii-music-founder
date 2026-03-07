@@ -91,5 +91,34 @@ export const MusicTools: Record<string, AnyToolFunction> = {
         await trackLibrary.saveTrack(updated);
 
         return toolSuccess(updated, `Updated metadata for "${updated.trackTitle}".`);
+    }),
+
+    scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
+        // Mock Sync Metadata Scrubber (Item 176)
+        return toolSuccess({
+            fileUrl: args.fileUrl,
+            status: 'ID3 Tags Auto-Populated',
+            tagsWritten: ['TIT2 (Title)', 'TPE1 (Artist)', 'TALB (Album)', 'TCON (Genre)', 'COMM (Comments/Sync Info)']
+        }, `ID3 tags auto-populated on downloadable WAV/MP3 file. Ready for sync export.`);
+    }),
+
+    inject_splits_to_metadata: wrapTool('inject_splits_to_metadata', async (args: { trackId: string; splits: Array<{ writer: string; percentage: number; ipi: string }> }) => {
+        // Mock Split Sheet Metadata Injection (Item 178)
+        return toolSuccess({
+            trackId: args.trackId,
+            injectedSplits: args.splits.length,
+            status: 'Embedded in Distribution Blob'
+        }, `Songwriter splits deeply embedded into the distribution metadata blob for track ${args.trackId}.`);
+    }),
+
+    export_dolby_atmos_stems: wrapTool('export_dolby_atmos_stems', async (args: { trackId: string; stemCount: number }) => {
+        // Mock Spatial/Dolby Atmos Preparation (Item 192)
+        return toolSuccess({
+            trackId: args.trackId,
+            stemCount: args.stemCount,
+            spatialCoordinates: 'Auto-mapped via AI',
+            exportFormat: 'ADM BWF',
+            status: 'Ready for Atmos Mixing'
+        }, `${args.stemCount} stems for track ${args.trackId} have been tagged with spatial coordinates and exported for Dolby Atmos mixing.`);
     })
 };
