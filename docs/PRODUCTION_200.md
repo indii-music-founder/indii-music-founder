@@ -55,6 +55,7 @@ This document contains **Part 3** and **Part 4** of the master production readin
 - [x] **127. Smart Contract Generation:** Generate basic royalty-splitting ERC-1155 or ERC-721 smart contracts for digital collectibles.
 - [x] **128. Blockchain Royalty Tracing:** Mirror traditional DDEX splits to a private ledger or IPFS pinning for indisputable rights tracking.
 - [x] **129. Superfan CRM Tiering:** Integrate fan data tracking to automatically tier fans (Standard, VIP, Superfan) based on spend.
+- [ ] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 - [x] **130. Token-gated Audio Previews:** Generate hidden landing pages where only proven fans can stream unreleased tracks.
 
 ### Pro Artist Ecosystem: Legal, Touring, Licensing (131-140)

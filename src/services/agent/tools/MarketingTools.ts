@@ -213,6 +213,35 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
                 events_tracked: ['ViewContent', 'AddToCart', 'Purchase']
             }
         }, `A/B testing campaign created for ${product} with 3 copy variants and tracking pixel initialized.`);
+    }),
+
+    tier_superfans: wrapTool('tier_superfans', async (args: { minSpendForVIP: number; minSpendForSuperfan: number }) => {
+        // Superfan CRM Tiering mock
+        const mockFans = [
+            { id: 'f1', email: 'fan1@example.com', spend: 15 },
+            { id: 'f2', email: 'fan2@example.com', spend: 85 },
+            { id: 'f3', email: 'fan3@example.com', spend: 250 }
+        ];
+
+        const results = {
+            Standard: 0,
+            VIP: 0,
+            Superfan: 0
+        };
+
+        mockFans.forEach(fan => {
+            if (fan.spend >= args.minSpendForSuperfan) results.Superfan++;
+            else if (fan.spend >= args.minSpendForVIP) results.VIP++;
+            else results.Standard++;
+        });
+
+        return toolSuccess({
+            tiers: results,
+            thresholds: {
+                vip: args.minSpendForVIP,
+                superfan: args.minSpendForSuperfan
+            }
+        }, `Fan CRM successfully tiered: ${results.Superfan} Superfans, ${results.VIP} VIPs, ${results.Standard} Standard.`);
     })
 };
 
@@ -224,5 +253,7 @@ export const {
     track_performance,
     generate_campaign_from_audio,
     analyze_market_trends,
+    create_ab_test_campaign,
+    tier_superfans
     create_ab_test_campaign
 } = MarketingTools;

@@ -110,6 +110,22 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
 
         const validated = PitchStorySchema.parse(data);
         return toolSuccess(validated, `Email pitch created: ${validated.subject_line}`);
+    }),
+
+    draft_pitch_email: wrapTool('draft_pitch_email', async (args: { playlistName: string; genre: string; trackTitle: string }) => {
+        const schema = zodToJsonSchema(PitchStorySchema);
+        const prompt = `
+        You are a PR Specialist. Scrape info for Spotify playlist "${args.playlistName}" (Genre: ${args.genre})
+        and draft a highly personalized pitch email for the track "${args.trackTitle}".
+        `;
+
+        const data = await firebaseAI.generateStructuredData(
+            [{ text: prompt }],
+            schema as any
+        );
+
+        const validated = PitchStorySchema.parse(data);
+        return toolSuccess(validated, `Personalized pitch email drafted for Spotify playlist "${args.playlistName}".`);
     })
 };
 
@@ -117,5 +133,6 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
 export const {
     write_press_release,
     generate_crisis_response,
-    pitch_story
+    pitch_story,
+    draft_pitch_email
 } = PublicistTools;
