@@ -57,15 +57,27 @@ export function useFinance() {
     }, [userProfile?.id]);
 
     const addExpense = useCallback(async (expenseData: Omit<Expense, 'id' | 'createdAt'>) => {
+        const tempId = `temp-${Date.now()}`;
+        const tentativeExpense: Expense = {
+            ...expenseData,
+            id: tempId,
+            createdAt: new Date().toISOString()
+        };
+
+        // Optimistic UI update
+        setExpenses(prev => [tentativeExpense, ...prev]);
+
         try {
             const newExpense = await financeService.addExpense(expenseData);
-            // ⚡ Bolt Optimization: Update local state instead of re-fetching
-            setExpenses(prev => [newExpense, ...prev]);
+            // Replace temporary with actual from server (or rely on subscription)
+            setExpenses(prev => prev.map(e => e.id === tempId ? newExpense : e));
             return true;
         } catch (e) {
             logger.error("Operation failed:", e);
             Sentry.captureException(e);
             toast.error("Failed to add expense.");
+            // Rollback optimistic update
+            setExpenses(prev => prev.filter(e => e.id !== tempId));
             return false;
         }
     }, [toast]);

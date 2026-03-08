@@ -11,6 +11,9 @@ import { logger } from '@/utils/logger';
 export class TraceService {
     private static readonly COLLECTION = 'agent_traces';
 
+    // Part 1: Map to track local start times for duration calculation
+    private static startTimeMap: Map<string, number> = new Map();
+
     /**
      * Start a new execution trace
      */
@@ -34,6 +37,9 @@ export class TraceService {
 
             const docRef = doc(collection(db, this.COLLECTION));
             const traceId = docRef?.id || crypto.randomUUID();
+
+            // Record local start time for duration calculation
+            this.startTimeMap.set(traceId, performance.now());
 
             const trace: Partial<AgentTrace> = {
                 id: traceId,
@@ -196,11 +202,15 @@ export class TraceService {
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
+        const startTime = this.startTimeMap.get(traceId);
+        const durationMs = startTime ? Math.round(performance.now() - startTime) : undefined;
+        this.startTimeMap.delete(traceId);
 
         try {
             await updateDoc(ref, cleanFirestoreData({
                 status: 'completed',
                 endTime: serverTimestamp(),
+                durationMs,
                 ...(output ? { output } : {})
             }));
         } catch (error) {
@@ -215,11 +225,15 @@ export class TraceService {
         if (!traceId) return;
 
         const ref = doc(db, this.COLLECTION, traceId);
+        const startTime = this.startTimeMap.get(traceId);
+        const durationMs = startTime ? Math.round(performance.now() - startTime) : undefined;
+        this.startTimeMap.delete(traceId);
 
         try {
             await updateDoc(ref, cleanFirestoreData({
                 status: 'failed',
                 endTime: serverTimestamp(),
+                durationMs,
                 error
             }));
         } catch (e) {

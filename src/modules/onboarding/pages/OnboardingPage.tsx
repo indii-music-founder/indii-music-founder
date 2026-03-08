@@ -19,6 +19,8 @@ import {
     CreativeDirectionCard,
     DistributorInfoCard
 } from '../components/GenerativeUIComponents';
+import { StepStepper } from '../components/StepStepper';
+import { determinePhase } from '@/services/onboarding/onboardingService';
 
 export default function OnboardingPage() {
     const {
@@ -47,6 +49,8 @@ export default function OnboardingPage() {
         setEditedBio
     } = useOnboarding();
 
+    const currentPhase = determinePhase(userProfile);
+
     return (
         <div className="flex flex-col lg:flex-row h-full w-full bg-bg-dark text-white overflow-hidden relative">
             {/* Background Atmosphere */}
@@ -74,71 +78,78 @@ export default function OnboardingPage() {
 
             <main className="flex-1 flex flex-col h-full min-w-0 z-10 relative">
                 <div className="flex-1 overflow-y-auto px-4 py-8 lg:px-12 scrollbar-hide">
-                    <div className="max-w-3xl mx-auto space-y-8">
-                        <AnimatePresence mode="popLayout">
-                            {history.map((msg, idx) => (
-                                <motion.div
-                                    key={idx}
-                                    initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                                    transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
-                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                                >
-                                    <div className={`max-w-[85%] lg:max-w-[80%] ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
-                                        <div className={`
+                    <div className="max-w-3xl mx-auto flex flex-col h-full space-y-8">
+
+                        <div className="pt-4 pb-8 sticky top-0 bg-bg-dark/80 backdrop-blur-md z-20 mx-[-1rem] px-[1rem] lg:mx-0 lg:px-0">
+                            <StepStepper currentPhase={currentPhase} />
+                        </div>
+
+                        <div className="space-y-8">
+                            <AnimatePresence mode="popLayout">
+                                {history.map((msg, idx) => (
+                                    <motion.div
+                                        key={idx}
+                                        initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                                        transition={{ duration: 0.4, ease: [0.23, 1, 0.32, 1] }}
+                                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                    >
+                                        <div className={`max-w-[85%] lg:max-w-[80%] ${msg.role === 'user' ? 'order-1' : 'order-2'}`}>
+                                            <div className={`
                                             p-4 lg:p-6 rounded-2xl shadow-xl backdrop-blur-md
                                             ${msg.role === 'user'
-                                                ? 'bg-white text-black font-medium border border-white/20'
-                                                : 'bg-white/5 border border-white/10 text-gray-200'
-                                            }
+                                                    ? 'bg-white text-black font-medium border border-white/20'
+                                                    : 'bg-white/5 border border-white/10 text-gray-200'
+                                                }
                                         `}>
-                                            <p className="text-sm lg:text-[15px] leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</p>
+                                                <p className="text-sm lg:text-[15px] leading-relaxed whitespace-pre-wrap">{msg.parts[0].text}</p>
 
-                                            {/* Generative UI Components */}
-                                            {msg.toolCall?.name === 'askMultipleChoice' && (
-                                                <MultipleChoiceRenderer
-                                                    options={msg.toolCall.args.options}
-                                                    hasBeenAnswered={idx < history.length - 1}
-                                                    onSelect={(opt) => handleSend(opt)}
-                                                />
-                                            )}
+                                                {/* Generative UI Components */}
+                                                {msg.toolCall?.name === 'askMultipleChoice' && (
+                                                    <MultipleChoiceRenderer
+                                                        options={msg.toolCall.args.options}
+                                                        hasBeenAnswered={idx < history.length - 1}
+                                                        onSelect={(opt) => handleSend(opt)}
+                                                    />
+                                                )}
 
-                                            {msg.toolCall?.name === 'shareInsight' && (
-                                                <IndustryInsightCard
-                                                    insight={msg.toolCall.args.insight}
-                                                    action_suggestion={msg.toolCall.args.action_suggestion}
-                                                />
-                                            )}
+                                                {msg.toolCall?.name === 'shareInsight' && (
+                                                    <IndustryInsightCard
+                                                        insight={msg.toolCall.args.insight}
+                                                        action_suggestion={msg.toolCall.args.action_suggestion}
+                                                    />
+                                                )}
 
-                                            {msg.toolCall?.name === 'suggestCreativeDirection' && (
-                                                <CreativeDirectionCard
-                                                    suggestion={msg.toolCall.args.suggestion}
-                                                    rationale={msg.toolCall.args.rationale}
-                                                    examples={msg.toolCall.args.examples}
-                                                />
-                                            )}
+                                                {msg.toolCall?.name === 'suggestCreativeDirection' && (
+                                                    <CreativeDirectionCard
+                                                        suggestion={msg.toolCall.args.suggestion}
+                                                        rationale={msg.toolCall.args.rationale}
+                                                        examples={msg.toolCall.args.examples}
+                                                    />
+                                                )}
 
-                                            {msg.toolCall?.name === 'shareDistributorInfo' && (
-                                                <DistributorInfoCard distributorName={msg.toolCall.args.distributor_name} />
-                                            )}
+                                                {msg.toolCall?.name === 'shareDistributorInfo' && (
+                                                    <DistributorInfoCard distributorName={msg.toolCall.args.distributor_name} />
+                                                )}
+                                            </div>
                                         </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                            {isProcessing && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex justify-start"
+                                >
+                                    <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
+                                        <Loader2 className="animate-spin text-purple-400" size={18} />
+                                        <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">indii is thinking...</span>
                                     </div>
                                 </motion.div>
-                            ))}
-                        </AnimatePresence>
-                        {isProcessing && (
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                className="flex justify-start"
-                            >
-                                <div className="bg-white/5 border border-white/10 p-4 rounded-2xl flex items-center gap-3">
-                                    <Loader2 className="animate-spin text-purple-400" size={18} />
-                                    <span className="text-xs text-gray-400 font-bold uppercase tracking-widest">indii is thinking...</span>
-                                </div>
-                            </motion.div>
-                        )}
-                        <div ref={messagesEndRef} />
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
                     </div>
                 </div>
 
