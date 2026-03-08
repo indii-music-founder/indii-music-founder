@@ -129,7 +129,7 @@ indiiOS-Alpha-Electron/
 │   ├── api/                    # REST API handlers
 │   └── helpers/                # MCP server, task scheduler
 │
-├── e2e/                        # Playwright E2E tests (60+ spec files)
+├── e2e/                        # Playwright E2E tests (10 spec files: a11y, navigation, chat, agent flows, creative persistence, mobile, distribution, finance, maestro, chaos)
 ├── landing-page/               # Separate marketing site (React + Vite)
 ├── docs/                       # Documentation (specs, plans, design, testing)
 ├── scripts/                    # Build and utility scripts
@@ -182,7 +182,7 @@ indiiOS-Alpha-Electron/
 | Tool | Purpose |
 |------|---------|
 | Vitest 4.0 | Unit tests (jsdom environment) |
-| Playwright 1.57 | E2E tests (60+ specs) |
+| Playwright 1.57 | E2E tests (10 specs covering a11y, navigation, chat, agent flows, creative, mobile, distribution, finance, maestro workflows, chaos) |
 | Testing Library 16.3 | Component testing |
 | axe-core 4.11 | Accessibility testing |
 
@@ -309,8 +309,8 @@ All frontend env vars use the `VITE_` prefix. Copy `.env.example` to `.env` for 
 - Run: `npm test` (watch) or `npm test -- --run` (CI)
 
 ### E2E Tests (Playwright)
-- Test files in `/e2e/` directory (60+ specs)
-- Categories: agent flows, chat interaction, creative persistence, mobile responsiveness, maestro workflows, chaos testing
+- Test files in `/e2e/` directory (10 spec files)
+- Categories: a11y, navigation, chat interaction, agent flows, creative persistence, mobile responsiveness, distribution workflow, finance workflow, maestro workflows, chaos testing
 - Run: `npm run test:e2e`
 
 ---

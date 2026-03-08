@@ -1,5 +1,5 @@
 import * as React from 'react';
-import { useState } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Sparkles, Filter } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
@@ -10,15 +10,32 @@ import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
 import { AgentSidebar } from './AgentSidebar';
 import { AgentToolbar } from './AgentToolbar';
 import { ScoutControls } from './ScoutControls';
+import { SpecialistSelector } from './SpecialistSelector';
+import { TaskTracker } from './TaskTracker';
 import { useToast } from '@/core/context/ToastContext';
 import { RosterService } from '../services/RosterService';
 import { Venue } from '../types';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { agentService } from '@/services/agent/AgentService';
+import { ChatMessage } from '@/core/components/chat/ChatMessage';
+import { PromptArea } from '@/core/components/command-bar/PromptArea';
+import { useStore } from '@/core/store';
+import { useShallow } from 'zustand/react/shallow';
 
 const AgentDashboard: React.FC = () => {
     // Hooks must be called unconditionally before early returns
-    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser'>('scout');
+    const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks'>('scout');
+    const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
+    const chatBottomRef = useRef<HTMLDivElement>(null);
+    const { messages } = useStore(useShallow(s => ({ messages: s.messages })));
+
+    // Auto-scroll chat to bottom on new messages
+    useEffect(() => {
+        if (activeTab === 'chat') {
+            chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [messages, activeTab]);
     const { venues, isScanning, setScanning, addVenue } = useAgentStore();
     const { showToast } = useToast();
     const [city, setCity] = useState('Nashville');
@@ -193,7 +210,45 @@ const AgentDashboard: React.FC = () => {
                             </div>
                         )}
 
-                        {activeTab !== 'scout' && activeTab !== 'browser' && (
+                        {activeTab === 'chat' && (
+                            <div className="flex flex-col h-full overflow-hidden">
+                                {/* Specialist selector toolbar */}
+                                <div className="flex items-center gap-3 px-4 py-2 border-b border-slate-800 shrink-0">
+                                    <span className="text-xs text-slate-500 font-medium">Route to:</span>
+                                    <SpecialistSelector
+                                        selectedAgentId={selectedAgentId}
+                                        onSelect={setSelectedAgentId}
+                                    />
+                                </div>
+
+                                {/* Message history */}
+                                <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-2">
+                                    {messages.length === 0 && (
+                                        <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
+                                            <Sparkles size={28} className="opacity-40" />
+                                            <p className="text-sm">Start a conversation with your AI team.</p>
+                                        </div>
+                                    )}
+                                    {messages.map((msg) => (
+                                        <ChatMessage key={msg.id} message={msg} />
+                                    ))}
+                                    <div ref={chatBottomRef} />
+                                </div>
+
+                                {/* Inline prompt area */}
+                                <div className="shrink-0 border-t border-slate-800 px-4 py-3">
+                                    <PromptArea />
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'tasks' && (
+                            <div className="h-full overflow-hidden">
+                                <TaskTracker />
+                            </div>
+                        )}
+
+                        {activeTab !== 'scout' && activeTab !== 'browser' && activeTab !== 'chat' && activeTab !== 'tasks' && (
                             <div className="flex flex-col items-center justify-center h-full text-slate-500 space-y-4">
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
                                     <Filter size={32} className="opacity-50" />
