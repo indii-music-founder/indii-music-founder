@@ -32,6 +32,10 @@ paths = [
 
     # SFTP key for distributor uploads (Electron-only, packaged in desktop build)
     '''models/id_ed25519''',
+
+    # Documentation files containing Firebase API key identifiers (not secrets)
+    # Per API Credentials Policy: Firebase keys are identifiers, secured by rules
+    '''docs/.*\.md$''',
 ]
 
 # Also allow specific fake/placeholder values
