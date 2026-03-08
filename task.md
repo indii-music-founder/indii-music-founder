@@ -14,12 +14,17 @@
 | 1.8 | Implement Legal Archiver & Versioning | [x] | PRODUCTION_200:101(?) |
 | 1.9 | Implement Reusable Contract Snippets | [x] | PRODUCTION_200:104(?) |
 | 1.10 | Automated API Key Rotation Script | [x] | PRODUCTION_100:81 |
-| 2.1 | Audio Stem Separation (Spleeter/Demucs) | [ ] | PRODUCTION_200:101 |
-| 2.2 | AI-Assisted Mastering Presets | [ ] | PRODUCTION_200:102 |
-| 2.3 | Generative Audio Continuation | [ ] | PRODUCTION_200:103 |
-| 2.4 | Video Rendering Queue Optimization | [ ] | PRODUCTION_200:104 |
-| 2.5 | Ad Buying Automation (Basic Graph API) | [ ] | PRODUCTION_200:142 |
-| 2.6 | Email Marketing Integration | [ ] | PRODUCTION_200:143 |
+| 2.1 | Audio Stem Separation (Spleeter/Demucs) | [x] | PRODUCTION_200:101 |
+| 2.2 | AI-Assisted Mastering Presets | [x] | PRODUCTION_200:102 |
+| 2.3 | Generative Audio Continuation | [x] | PRODUCTION_200:103 |
+| 2.4 | Video Rendering Queue Optimization | [x] | PRODUCTION_200:104 |
+| 2.5 | Ad Buying Automation (Basic Graph API) | [x] | PRODUCTION_200:142 |
+| 2.6 | Email Marketing Integration | [x] | PRODUCTION_200:143 |
+| 3.1 | Multi-Platform Auto-Poster | [ ] | PRODUCTION_200:141 |
+| 3.2 | Influencer Bounty Board | [ ] | PRODUCTION_200:149 |
+| 3.3 | Fabric.js Canvas Batching | [ ] | PRODUCTION_200:107 |
+| 3.4 | Advanced 3D Scene Builder | [ ] | PRODUCTION_200:105 |
+| 3.5 | Lip-Sync & Avatar Generation | [ ] | PRODUCTION_200:106 |
 
 ---
 *Self-managed task list for Antigravity.*
