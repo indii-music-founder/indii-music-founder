@@ -5,6 +5,16 @@ import { MarketingSidebar } from './MarketingSidebar';
 import { MarketingToolbar } from './MarketingToolbar';
 import AIGenerateCampaignModal from './AIGenerateCampaignModal';
 import MarketingAssetGeneratorUI from './MarketingAssetGeneratorUI';
+import AdBuyingPanel from './AdBuyingPanel';
+import EmailMarketingPanel from './EmailMarketingPanel';
+import PreSaveCampaignBuilder from './PreSaveCampaignBuilder';
+import SMSMarketingPanel from './SMSMarketingPanel';
+import FanDataEnrichment from './FanDataEnrichment';
+import EPKGenerator from './EPKGenerator';
+import CommunityWebhookPanel from './CommunityWebhookPanel';
+import InfluencerBountyBoard from './InfluencerBountyBoard';
+import MomentumTracker from './MomentumTracker';
+import MultiPlatformPoster from './MultiPlatformPoster';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
@@ -142,9 +152,27 @@ const CampaignDashboard: React.FC = () => {
                         )
                     ) : activeTab === 'asset-generator' ? (
                         <MarketingAssetGeneratorUI />
+                    ) : activeTab === 'ad-buying' ? (
+                        <AdBuyingPanel />
+                    ) : activeTab === 'email' ? (
+                        <EmailMarketingPanel />
+                    ) : activeTab === 'pre-save' ? (
+                        <PreSaveCampaignBuilder />
+                    ) : activeTab === 'sms' ? (
+                        <SMSMarketingPanel />
+                    ) : activeTab === 'fan-data' ? (
+                        <FanDataEnrichment />
+                    ) : activeTab === 'epk' ? (
+                        <EPKGenerator />
+                    ) : activeTab === 'community' ? (
+                        <CommunityWebhookPanel />
+                    ) : activeTab === 'influencers' ? (
+                        <InfluencerBountyBoard />
+                    ) : activeTab === 'momentum' ? (
+                        <MomentumTracker />
                     ) : (
                         <div className="h-full flex flex-col items-center justify-center text-gray-500">
-                            <p className="text-lg">This module is correctly under development.</p>
+                            <p className="text-lg">This module is under development.</p>
                             <p className="text-sm opacity-60">Check back later for {activeTab} features.</p>
                         </div>
                     )}

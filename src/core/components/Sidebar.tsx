@@ -1,4 +1,5 @@
 import React from 'react';
+import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
 import { getColorForModule } from '../theme/moduleColors';
@@ -9,9 +10,12 @@ import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
 import { SidecarStatus } from './SidecarStatus';
 import { SyncStatus } from './SyncStatus';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 
 export default function Sidebar() {
+    const { isThrottled } = usePowerState();
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, updatePreferences, logout } = useStore(
         useShallow((state) => ({
@@ -106,7 +110,19 @@ export default function Sidebar() {
     };
 
     return (
-        <nav aria-label="Main navigation" className={`${isSidebarOpen ? 'w-64' : 'w-16'} hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar transition-all duration-300 z-sidebar`}>
+        <motion.nav
+            aria-label="Main navigation"
+            animate={{ width: isSidebarOpen ? 280 : 80 }}
+            transition={{
+                type: isThrottled ? 'tween' : 'spring',
+                stiffness: isThrottled ? 0 : 300,
+                damping: 30,
+                duration: isThrottled ? 0.2 : 0.4
+            }}
+            className={cn(
+                "hidden md:flex h-full bg-bg-dark border-r border-white/5 flex-col flex-shrink-0 overflow-y-auto custom-scrollbar z-sidebar"
+            )}
+        >
             {/* Header */}
             <div className={`p-4 border-b border-white/5 flex items-center ${isSidebarOpen ? 'justify-between' : 'justify-center'}`}>
                 {isSidebarOpen && (
@@ -275,6 +291,6 @@ export default function Sidebar() {
                     </p>
                 )}
             </div>
-        </nav>
+        </motion.nav>
     );
 };

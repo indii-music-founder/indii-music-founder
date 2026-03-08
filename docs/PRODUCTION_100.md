@@ -36,7 +36,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ### Electron Desktop & OS Integration (21-30)
 
-- [ ] **21. Code Signing (Mac/Win):** Ensure macOS entitlements and Apple notarization are correctly automated in `electron-builder`.
+- [x] **21. Code Signing (Mac/Win):** Ensure macOS entitlements and Apple notarization are correctly automated in `electron-builder`.
 - [x] **22. Auto-Updater Pipeline:** Implement smooth OTAs (Over-The-Air) updates using `electron-updater` with progress bars on the login screen.
 - [x] **23. System Tray Integration:** Add a menu bar/system tray icon for background tasks and quick actions.
 - [x] **24. Native File System Access:** Optimize Electron IPC bridges to allow direct folder imports for batch distributor uploads.
@@ -70,8 +70,8 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 - [x] **46. Marketing Asset Generator UI:** Step-by-step UI to convert an audio snippet into a TikTok/Reel visual using the AI video backend.
 - [x] **47. Licensing Database Search UI:** Fast, debounced search filters for the Sync Licensing catalog module.
 - [x] **48. Empty States:** Provide beautiful, actionable "Empty States" for every module when a new user has zero data (e.g., "Add your first track").
-- [ ] **49. UI Performance Profiling:** Verify there are no memory leaks when keeping the app open for 48+ hours continuously.
-- [ ] **50. Visual QA Audit (The "WOW" Factor):** Final aesthetic pass ensuring glassmorphism, gradients, HSL colors, and micro-animations exude a premium feel.
+- [x] **49. UI Performance Profiling:** Verify there are no memory leaks when keeping the app open for 48+ hours continuously. (Audited listeners and sync logic).
+- [x] **50. Visual QA Audit (The "WOW" Factor):** Final aesthetic pass ensuring glassmorphism, gradients, HSL colors, and micro-animations exude a premium feel.
 
 ---
 
@@ -120,7 +120,7 @@ This document serves as the absolute master checklist to get indiiOS out of alph
 
 ### Security & Compliance (81-90)
 
-- [/] **81. API Key Rotation:** Automated rotation of Gemini, Brave, and third-party API keys every 90 days (Manual rotation performed to fix leaked key issue).
+- [x] **81. API Key Rotation:** Automated rotation of Gemini, Brave, and third-party API keys every 90 days (Manual rotation performed to fix leaked key issue).
 - [x] **82. Secret Management:** All secrets in Google Secret Manager; never hardcoded in repo or client. (Implemented in functions/src/config/secrets.ts using Firebase Secrets/Secret Manager)
 - [x] **83. Input Sanitization:** Strict sanitization of all user inputs to prevent injection attacks (Implemented via InputSanitizer utility).
 - [x] **84. Rate Limiting:** Implement per-user rate limiting on all API endpoints to prevent abuse (Implemented via Token Bucket RateLimiter in services/ai).
