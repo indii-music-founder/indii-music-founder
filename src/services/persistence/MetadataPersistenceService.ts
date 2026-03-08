@@ -108,7 +108,7 @@ class MetadataPersistenceService {
 
             queue.push(item);
             localStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
-            console.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);
+            logger.info(`[MetadataPersistence] Queued ${item.assetType} for later sync (${queue.length} items pending)`);
             events.emit('SYNC_QUEUE_CHANGE', { count: queue.length });
         } catch (e) {
             logger.error('[MetadataPersistence] Failed to queue for later:', e);
@@ -244,7 +244,7 @@ class MetadataPersistenceService {
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 const docRef = await addDoc(collection(db, collectionPath), enrichedData);
-                console.info(`[MetadataPersistence] ✅ Saved ${assetType} to ${collectionPath}/${docRef.id}`);
+                logger.info(`[MetadataPersistence] ✅ Saved ${assetType} to ${collectionPath}/${docRef.id}`);
 
                 if (showToasts && attempt > 0) {
                     events.emit('SYSTEM_ALERT', { level: 'success', message: '✅ Saved successfully (after retry)' });
@@ -331,7 +331,7 @@ class MetadataPersistenceService {
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 await setDoc(doc(db, collectionPath, docId), enrichedData, { merge: true });
-                console.info(`[MetadataPersistence] ✅ Updated ${collectionPath}/${docId}`);
+                logger.info(`[MetadataPersistence] ✅ Updated ${collectionPath}/${docId}`);
                 return { success: true, docId, retryable: false };
             } catch (error) {
                 logger.warn(`[MetadataPersistence] Update attempt ${attempt + 1} failed:`, error);
@@ -401,7 +401,7 @@ if (typeof window !== 'undefined' && auth?.onAuthStateChanged) {
 
     // Listen for network reconnect
     window.addEventListener('online', () => {
-        console.info('[MetadataPersistence] Online detected, processing queue...');
+        logger.info('[MetadataPersistence] Online detected, processing queue...');
         metadataPersistenceService.processQueue();
     });
 

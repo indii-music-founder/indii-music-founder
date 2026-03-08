@@ -35,7 +35,16 @@ export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
 
-// App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
+// App Check enforcement flag — controls whether Firebase App Check tokens are validated.
+// PRODUCTION ENABLEMENT (Item 247):
+//   1. Set up reCAPTCHA Enterprise in GCP Console for your project.
+//   2. Register your app in Firebase Console → App Check → reCAPTCHA Enterprise.
+//   3. Add VITE_FIREBASE_APP_CHECK_KEY to your .env and CI secrets.
+//   4. Set ENFORCE_APP_CHECK=true in Cloud Functions environment config:
+//      firebase functions:config:set appcheck.enforce=true
+//      OR set the environment variable in GCP Console → Cloud Run → Environment Variables.
+//   5. Deploy: firebase deploy --only functions
+//   CAUTION: Enabling this without configured reCAPTCHA will block ALL client requests.
 const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
 
 /**

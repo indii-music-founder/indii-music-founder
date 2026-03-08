@@ -76,7 +76,7 @@ export class FinanceService {
       const snapshot = await getDocs(q);
 
       if (snapshot.empty) {
-        console.info(`[FinanceService] No earnings data found for user: ${userId}`);
+        logger.info(`[FinanceService] No earnings data found for user: ${userId}`);
         return null;
       }
 

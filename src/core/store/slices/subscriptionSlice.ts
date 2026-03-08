@@ -49,7 +49,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
             }
         }));
 
-        console.debug(`[SubscriptionManager] Registered subscription: ${id}`);
+        logger.debug(`[SubscriptionManager] Registered subscription: ${id}`);
     },
 
     clearSubscription: (id) => {
@@ -58,7 +58,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
 
         if (unsubscribe) {
             unsubscribe();
-            console.debug(`[SubscriptionManager] Cleared subscription: ${id}`);
+            logger.debug(`[SubscriptionManager] Cleared subscription: ${id}`);
 
             set((state) => {
                 const newSubscriptions = { ...state.activeSubscriptions };
@@ -79,7 +79,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
             keysToRemove.forEach(key => {
                 newSubscriptions[key](); // Execute unsubscribe
                 delete newSubscriptions[key];
-                console.debug(`[SubscriptionManager] Cleared subscription by prefix: ${key}`);
+                logger.debug(`[SubscriptionManager] Cleared subscription by prefix: ${key}`);
             });
             return { activeSubscriptions: newSubscriptions };
         });
@@ -95,7 +95,7 @@ export const createSubscriptionSlice: StateCreator<SubscriptionSlice> = (set, ge
             activeSubscriptions[key]();
         });
 
-        console.info(`[SubscriptionManager] Cleared all (${keys.length}) active subscriptions`);
+        logger.info(`[SubscriptionManager] Cleared all (${keys.length}) active subscriptions`);
         set({ activeSubscriptions: {} });
     }
 });

@@ -39,6 +39,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
 initViewportFixes();
 initKeyboardDetection();
 
+// Item 260: Core Web Vitals reporting
+import('@/lib/webVitals').then(({ initWebVitals }) => initWebVitals()).catch(() => { });
+
 // Disable Default Drag-and-Drop (HEY Audit Hardening)
 // Prevents the app from navigating to dropped files (potential RCE)
 document.addEventListener('dragover', (event) => event.preventDefault());

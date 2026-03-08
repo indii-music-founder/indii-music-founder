@@ -73,7 +73,7 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5F: Legal Document Real Integrations (241–245)
 
-- [ ] **241. DocuSign API Real Envelope Sending:** `DigitalSignatureService.ts:37` uses `setTimeout(..., 1500)` as a mock. Replace with real DocuSign `envelopes.create()` API calls with actual split sheet PDFs attached.
+- [x] **241. DocuSign API Real Envelope Sending:** `DigitalSignatureService.ts:37` uses `setTimeout(..., 1500)` as a mock. Replace with real DocuSign `envelopes.create()` API calls with actual split sheet PDFs attached.
 - [ ] **242. PandaDoc Alternative Provider:** Implement `PandaDocAdapter.ts` as a fallback to DocuSign — some music industry attorneys prefer PandaDoc. Route based on user preference in settings.
 - [ ] **243. Contract Template Version Control:** Store contract templates in Firestore with version history so that a change to a split sheet template doesn't retroactively affect previously signed agreements.
 - [ ] **244. Immutable Legal Audit Trail:** Legal actions (signature requests, completions, rejections) must write to an append-only Firestore collection with server timestamps — cannot be edited or deleted by any client.
@@ -83,18 +83,18 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5G: Security Hardening (246–258)
 
-- [ ] **246. Remove Hardcoded Sentry DSN:** `src/lib/sentry.ts:3` contains the production Sentry DSN as a hardcoded string fallback. Move to `VITE_SENTRY_DSN` env var with no fallback — fail loudly in CI if missing.
-- [ ] **247. Enable Firebase App Check in Production:** Cloud Functions have `ENFORCE_APP_CHECK` toggled via env var but default OFF. Set this to `true` in production to block unauthenticated bots from invoking AI generation functions.
-- [ ] **248. Content Security Policy Headers:** Add strict CSP headers in `firebase.json` hosting config — currently missing. Block inline scripts and restrict `connect-src` to Firebase, Gemini, and Sentry domains only.
-- [ ] **249. CORS Origin Restriction:** Cloud Functions currently use permissive CORS. Lock `Access-Control-Allow-Origin` to `https://app.indiios.com` and `https://localhost:4242` only.
+- [x] **246. Remove Hardcoded Sentry DSN:** `src/lib/sentry.ts:3` contains the production Sentry DSN as a hardcoded string fallback. Move to `VITE_SENTRY_DSN` env var with no fallback — fail loudly in CI if missing.
+- [x] **247. Enable Firebase App Check in Production:** Cloud Functions have `ENFORCE_APP_CHECK` toggled via env var but default OFF. Set this to `true` in production to block unauthenticated bots from invoking AI generation functions.
+- [x] **248. Content Security Policy Headers:** Add strict CSP headers in `firebase.json` hosting config — currently missing. Block inline scripts and restrict `connect-src` to Firebase, Gemini, and Sentry domains only.
+- [x] **249. CORS Origin Restriction:** Cloud Functions currently use permissive CORS. Lock `Access-Control-Allow-Origin` to `https://app.indiios.com` and `https://localhost:4242` only.
 - [ ] **250. AI Prompt Injection Sanitization:** User-provided text passed to `GenAI.generateText()` is unsanitized. Add a prompt sanitizer that strips jailbreak patterns before sending to Gemini.
-- [ ] **251. Secrets Scanner in CI:** Add `truffleHog` or `gitleaks` as a GitHub Actions pre-commit step to automatically block any commit that contains API keys, tokens, or secrets.
+- [x] **251. Secrets Scanner in CI:** Add `truffleHog` or `gitleaks` as a GitHub Actions pre-commit step to automatically block any commit that contains API keys, tokens, or secrets.
 - [ ] **252. Dependency Vulnerability Scanning:** Add `npm audit --audit-level=high` and Snyk GitHub Action to the CI pipeline to catch supply chain vulnerabilities in dependencies.
 - [ ] **253. Firestore Security Rules Unit Tests:** Add Firebase Emulator-based rules tests (`@firebase/rules-unit-testing`) to CI to prevent security regressions when rules change.
 - [ ] **254. Electron contextIsolation Audit:** Verify every `electron/preload.ts` exposure uses `contextBridge.exposeInMainWorld()` — confirm `nodeIntegration: false` and `contextIsolation: true` for all `BrowserWindow` instances.
-- [ ] **255. HTTP Strict Transport Security:** Add `Strict-Transport-Security: max-age=31536000; includeSubDomains` to Firebase Hosting headers to prevent protocol downgrade attacks.
+- [x] **255. HTTP Strict Transport Security:** Add `Strict-Transport-Security: max-age=31536000; includeSubDomains` to Firebase Hosting headers to prevent protocol downgrade attacks.
 - [ ] **256. API Key Rotation Runbook:** Document a step-by-step key rotation procedure for Firebase API Key, Gemini API Key, and Stripe Secret Key — including which services need redeployment.
-- [ ] **257. God Mode Quota Bypass Removal:** `functions/src/index.ts:361–364` grants unlimited AI generation to a hardcoded email list. Replace with a proper enterprise plan entitlement check tied to the subscription system.
+- [x] **257. God Mode Quota Bypass Removal:** `functions/src/index.ts:361–364` grants unlimited AI generation to a hardcoded email list. Replace with a proper enterprise plan entitlement check tied to the subscription system.
 - [ ] **258. Audit Log Hash Chain:** Each audit log entry in `users/{uid}/auditLogs` should include a `prevHash` field (SHA-256 of previous entry) to create a tamper-evident chain — without this, entries can be silently deleted.
 
 ---
@@ -121,7 +121,7 @@ This document contains **Part 5** of the master production readiness checklist (
 - [ ] **271. Focus Trap in Modals:** All modal dialogs (`PitchDraftingModal`, `StorefrontPreviewModal`, `DropCampaignWizard`, etc.) must trap focus inside when open using a `useFocusTrap` hook — currently focus escapes into the background DOM.
 - [ ] **272. Aria-Live Regions for Async Updates:** Agent responses, sync status changes, and toast notifications must be announced via `aria-live="polite"` regions for screen readers.
 - [ ] **273. Color Contrast Audit:** Run `axe-core` against the dark theme — all text must meet WCAG 4.5:1 contrast ratio. The muted gray text on dark backgrounds (`text-gray-400 on gray-800`) is likely failing.
-- [ ] **274. Skip to Main Content Link:** Add a visually-hidden `<a href="#main-content">Skip to main content</a>` as the first focusable element in `App.tsx` for keyboard and screen reader users.
+- [x] **274. Skip to Main Content Link:** Add a visually-hidden `<a href="#main-content">Skip to main content</a>` as the first focusable element in `App.tsx` for keyboard and screen reader users.
 - [ ] **275. Explicit Form Label Associations:** Every `<input>`, `<textarea>`, and `<select>` across all module forms must have an explicit `<label htmlFor>` or `aria-label` — currently most forms rely on placeholder text only.
 - [ ] **276. Prefers-Reduced-Motion Support:** Wrap all Framer Motion `animate` and `transition` props with a `useReducedMotion()` check — users with vestibular disorders should see instant transitions when `prefers-reduced-motion: reduce` is set.
 
@@ -142,22 +142,22 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5K: UX Polish & Onboarding (285–292)
 
-- [ ] **285. Onboarding Flow Wiring:** `StepStepper.tsx` was created but is not mounted anywhere in `App.tsx` or the onboarding module router. Wire it to the first-run experience for new user accounts.
+- [x] **285. Onboarding Flow Wiring:** `StepStepper.tsx` was created but is not mounted anywhere in `App.tsx` or the onboarding module router. Wire it to the first-run experience for new user accounts.
 - [ ] **286. Empty State Illustrations:** All data panels (Tracks, Releases, Campaigns, Tours, Merch) show blank divs when there's no data. Add meaningful empty states with illustration, headline, and a primary CTA.
 - [ ] **287. Loading Skeleton Screens:** Replace all `isLoading ? null : <Content/>` patterns with proper skeleton placeholder components — reduces perceived load time and prevents layout shift.
-- [ ] **288. Per-Module Error Boundaries:** Wrap every lazy-loaded module in `src/core/App.tsx` with a `<ErrorBoundary>` component that shows a friendly fallback instead of a white screen on runtime error.
+- [x] **288. Per-Module Error Boundaries:** Wrap every lazy-loaded module in `src/core/App.tsx` with a `<ErrorBoundary>` component that shows a friendly fallback instead of a white screen on runtime error.
 - [ ] **289. Toast Deduplication & Queue Cap:** `SYSTEM_ALERT` events can fire multiple times simultaneously (e.g., during offline sync). Implement a toast queue that deduplicates identical messages within a 2-second window.
 - [ ] **290. Contextual First-Run Tooltips:** Add a Shepherd.js or Intro.js guided tour for first-time users that highlights the Command Bar, module switcher, and AI Chat affordances.
-- [ ] **291. Destructive Action Confirmation Dialogs:** Actions like "Delete Release," "Remove Collaborator," and "Cancel Subscription" have no confirmation dialog — a single misclick is destructive and non-recoverable.
+- [x] **291. Destructive Action Confirmation Dialogs:** Actions like "Delete Release," "Remove Collaborator," and "Cancel Subscription" have no confirmation dialog — a single misclick is destructive and non-recoverable.
 - [ ] **292. Undo Support for Drag-Drop Widgets:** `CustomDashboard.tsx` allows users to rearrange widgets but there is no undo for accidental drops. Add a single-level undo via a `previousLayout` ref.
 
 ---
 
 ## Part 5L: Infrastructure & DevOps (293–302)
 
-- [ ] **293. Staging Firebase Project:** Create a `indiiOS-staging` Firebase project with its own Firestore, Auth, and Storage — currently there is only one project, so all dev testing hits the production database.
+- [x] **293. Staging Firebase Project:** Create a `indiiOS-staging` Firebase project with its own Firestore, Auth, and Storage — currently there is only one project, so all dev testing hits the production database.
 - [ ] **294. Blue/Green Deploy via Firebase Hosting Channels:** Use `firebase hosting:channel:deploy preview-{branch}` in GitHub Actions for PR previews — allows QA sign-off before merging to production.
-- [ ] **295. Automated Daily Firestore Export:** Set up a Cloud Scheduler job running `gcloud firestore export` to a dedicated backup GCS bucket daily — there is currently no backup strategy.
+- [x] **295. Automated Daily Firestore Export:** Set up a Cloud Scheduler job running `gcloud firestore export` to a dedicated backup GCS bucket daily — there is currently no backup strategy.
 - [ ] **296. Disaster Recovery Runbook:** Document RTO (Recovery Time Objective) and RPO (Recovery Point Objective) targets and the step-by-step restoration procedure for a full Firestore data loss event.
 - [ ] **297. Secrets Migration to Google Secret Manager:** All secrets currently live in GitHub Actions secrets and local `.env` files. Migrate to Google Cloud Secret Manager with fine-grained IAM access control.
 - [ ] **298. Cloud Functions Memory & Concurrency Tuning:** Audit function memory allocation — AI generation functions currently run on default 256MB. Video/image generation likely needs 2GB+ and concurrency of 1 to prevent OOM crashes.
@@ -170,13 +170,13 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5M: Data, Privacy & Legal Compliance (303–312)
 
-- [ ] **303. GDPR Cookie Consent Banner:** EU users must see an explicit consent banner before any analytics or Sentry tracking fires. Currently Sentry and Firebase Analytics initialize unconditionally on page load.
-- [ ] **304. CCPA "Do Not Sell" Opt-Out:** Add a "Do Not Sell My Data" link in the Privacy settings page for California residents — required for any app serving US users.
-- [ ] **305. COPPA Age Gate:** Enforce a date-of-birth check during signup — users under 13 must be blocked from creating an account per COPPA.
+- [x] **303. GDPR Cookie Consent Banner:** EU users must see an explicit consent banner before any analytics or Sentry tracking fires. Currently Sentry and Firebase Analytics initialize unconditionally on page load.
+- [x] **304. CCPA "Do Not Sell" Opt-Out:** Add a "Do Not Sell My Data" link in the Privacy settings page for California residents — required for any app serving US users.
+- [x] **305. COPPA Age Gate:** Enforce a date-of-birth check during signup — users under 13 must be blocked from creating an account per COPPA.
 - [ ] **306. Right to Erasure (GDPR Article 17):** Implement a "Delete My Account" flow that removes all user data from Firestore, Storage, and any third-party services (Stripe customer, Sentry user) within 30 days.
 - [ ] **307. Data Export (GDPR Article 20):** Allow users to export all their data (tracks, releases, analytics, contracts) as a ZIP file — the portability right must be fulfilled within 30 days of request.
-- [ ] **308. DMCA Agent Registration:** Register a DMCA designated agent with the US Copyright Office (required under 17 U.S.C. § 512(c)(2)) and display the agent's contact information in the Terms of Service.
-- [ ] **309. Terms of Service & Privacy Policy Pages:** Add real, attorney-reviewed ToS and Privacy Policy documents — currently the app links to placeholder pages.
+- [x] **308. DMCA Agent Registration:** Register a DMCA designated agent with the US Copyright Office (required under 17 U.S.C. § 512(c)(2)) and display the agent's contact information in the Terms of Service.
+- [x] **309. Terms of Service & Privacy Policy Pages:** Add real, attorney-reviewed ToS and Privacy Policy documents — currently the app links to placeholder pages.
 - [ ] **310. Sync Licensing Usage Clearance Docs:** Before a sync brief match is delivered, require the artist to upload proof of clearance for any sampled elements — add a document upload step to the sync licensing workflow.
 - [ ] **311. Mechanical Royalty Accounting Integration:** Connect to Harry Fox Agency (Songfile) or Music Reports API to automatically generate and pay mechanical licenses for cover songs before distribution.
 - [ ] **312. Label Deal Recoupment Tracking:** Add a Finance module section that tracks label advance amounts, recoupment thresholds, and royalty rate escalators — critical for artists on label deals who use indiiOS.

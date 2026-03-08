@@ -43,7 +43,7 @@ export async function processSyncQueue(): Promise<void> {
     const user = auth.currentUser;
     if (!user || syncQueue.size === 0) return;
 
-    console.info(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
+    logger.info(`[Repository] Processing sync queue (${syncQueue.size} items)...`);
 
     const itemsToRemove: string[] = [];
 
@@ -52,7 +52,7 @@ export async function processSyncQueue(): Promise<void> {
             const storageRef = ref(storage, `users/${user.uid}/assets/${id}`);
             await uploadBytes(storageRef, item.data);
             itemsToRemove.push(id);
-            console.info(`[Repository] Successfully synced queued asset ${id}`);
+            logger.info(`[Repository] Successfully synced queued asset ${id}`);
         } catch (error) {
             logger.warn(`[Repository] Failed to sync queued asset ${id}:`, error);
             item.retryCount++;
@@ -67,7 +67,7 @@ export async function processSyncQueue(): Promise<void> {
 
     // Clean up processed items
     itemsToRemove.forEach(id => syncQueue.delete(id));
-    console.info(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
+    logger.info(`[Repository] Sync queue processed. ${syncQueue.size} items remaining.`);
 }
 
 // ============================================================================
@@ -200,7 +200,7 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
             const snap = await getDoc(docRef);
             if (snap.exists()) {
                 const cloudProfile = snap.data() as UserProfile;
-                console.info('[Repository] Fetched fresh profile from Cloud');
+                logger.info('[Repository] Fetched fresh profile from Cloud');
 
                 // Update Local Cache
                 await dbLocal.put(PROFILE_STORE, cloudProfile);
@@ -214,7 +214,7 @@ export async function getProfileFromStorage(profileId?: string): Promise<UserPro
     // 2. Fallback to Local
     const localProfile = await dbLocal.get(PROFILE_STORE, targetId);
     if (localProfile) {
-        console.info('[Repository] Serving profile from Local Cache');
+        logger.info('[Repository] Serving profile from Local Cache');
         return localProfile;
     }
 

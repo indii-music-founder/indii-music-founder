@@ -17,13 +17,13 @@
 | 4.6 | Accessibility (a11y) & Contrast Testing | [x] | TOP_50:47 |
 | 4.7 | PRORightsService type fixes | [x] | Alignment audit |
 
-## Sprint 5 — Production Hardening Phase 2
+## Sprint 5 — Production Hardening Phase 2 (COMPLETE)
 
 | ID | Task | Status | Source |
 | :--- | :--- | :--- | :--- |
-| 5.1 | Type Safety Phase 2: Agent Tools (19 `as any`) | [ ] | implementation_plan |
-| 5.2 | Logging Hygiene (19 raw `console.*` calls) | [ ] | implementation_plan |
-| 5.3 | i18n Shell Integration (Sidebar `t()`) | [ ] | implementation_plan |
+| 5.1 | Type Safety Phase 2: Agent Tools (18 `as any`) | [x] | implementation_plan |
+| 5.2 | Logging Hygiene (11 files migrated) | [x] | implementation_plan |
+| 5.3 | i18n Shell Integration (Sidebar `t()`) | [x] | implementation_plan |
 
 ---
 *Self-managed task list for Antigravity.*

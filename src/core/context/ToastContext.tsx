@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, useEffect } from 'react';
+import React, { createContext, useContext, useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { AnimatePresence } from 'motion/react';
 import { Toast, ToastMessage, ToastType } from '../components/Toast';
 import { v4 as uuidv4 } from 'uuid';
@@ -39,16 +39,40 @@ export const useToast = () => {
 export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     // ToastProvider Rendering
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
-    const MAX_TOASTS = 5;
+    const MAX_TOASTS = 3; // Item 289: Reduced from 5 to 3 for cleaner UX
+
+    // Item 289: Deduplication — track recent messages to prevent duplicates within 2s window
+    const recentMessages = useRef<Map<string, number>>(new Map());
+    const DEDUP_WINDOW_MS = 2000;
+
+    const isDuplicate = useCallback((message: string, type: ToastType): boolean => {
+        const key = `${type}:${message}`;
+        const lastShown = recentMessages.current.get(key);
+        if (lastShown && Date.now() - lastShown < DEDUP_WINDOW_MS) {
+            return true;
+        }
+        recentMessages.current.set(key, Date.now());
+        // Clean old entries periodically
+        if (recentMessages.current.size > 50) {
+            const cutoff = Date.now() - DEDUP_WINDOW_MS;
+            for (const [k, v] of recentMessages.current) {
+                if (v < cutoff) recentMessages.current.delete(k);
+            }
+        }
+        return false;
+    }, []);
 
     const addToast = useCallback((message: string, type: ToastType, duration?: number, progress?: number) => {
+        // Item 289: Skip duplicate messages within the dedup window
+        if (isDuplicate(message, type)) return '';
+
         const id = uuidv4();
         setToasts(prev => {
             const next = [...prev, { id, message, type, duration, progress }];
             return next.length > MAX_TOASTS ? next.slice(next.length - MAX_TOASTS) : next;
         });
         return id;
-    }, []);
+    }, [isDuplicate]);
 
     const removeToast = useCallback((id: string) => {
         setToasts(prev => prev.filter(t => t.id !== id));

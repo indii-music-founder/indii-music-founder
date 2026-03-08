@@ -100,7 +100,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         return { userProfile: newProfile };
     }),
     loadUserProfile: async (uid: string) => {
-        console.info('[Profile] Loading user profile for:', uid);
+        logger.info('[Profile] Loading user profile for:', uid);
 
         // localStorage.getItem('currentOrgId') removed - handled in organization sync below
 
@@ -129,7 +129,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                 });
 
                 if (userOrgs.length > 0) {
-                    console.info('[Profile] Loaded organizations:', userOrgs.map(o => o.id));
+                    logger.info('[Profile] Loaded organizations:', userOrgs.map(o => o.id));
                     set({ organizations: userOrgs });
 
                     // Resolve Current Org ID
@@ -141,7 +141,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
                         set({ currentOrganizationId: isValidPreferred.id });
                     } else {
                         // Default to the first found org and sync back to cloud if possible
-                        console.info('[Profile] Defaulting to first org:', userOrgs[0].id);
+                        logger.info('[Profile] Defaulting to first org:', userOrgs[0].id);
                         set({ currentOrganizationId: userOrgs[0].id });
                         if (profile && !profile.currentOrganizationId) {
                             const updatedProfile = { ...profile, currentOrganizationId: userOrgs[0].id };
@@ -155,11 +155,11 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
             // -----------------------------------------------------
 
             if (profile) {
-                console.info('[Profile] Loaded profile for:', uid);
+                logger.info('[Profile] Loaded profile for:', uid);
                 // Ensure legacy profiles align with new schema if needed (runtime migration could go here)
                 set({ userProfile: profile });
             } else {
-                console.info('[Profile] No profile found, creating default for:', uid);
+                logger.info('[Profile] No profile found, creating default for:', uid);
                 // Create a new profile for this user
                 const newProfile = { ...DEFAULT_USER_PROFILE, id: uid, uid: uid };
                 set({ userProfile: newProfile });
@@ -197,7 +197,7 @@ export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({
         } catch (err) {
             logger.error('[Profile] Failed to clear subscriptions on logout', err);
         }
-        console.info('[System] Logout requested - resetting session state...');
+        logger.info('[System] Logout requested - resetting session state...');
         // In a no-auth world, "logout" might just reset preferences or switch to a guest profile.
         // For now, we just reload the page to clear transient state
         window.location.reload();

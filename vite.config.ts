@@ -181,7 +181,9 @@ export default defineConfig({
           'vendor-wavesurfer': ['wavesurfer.js'],
           'vendor-ui': ['lucide-react', 'clsx', 'tailwind-merge'],
           'vendor-fabric': ['fabric'],
-
+          // Item 268: Heavy libs split into isolated chunks (loaded on-demand by lazy modules)
+          'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
+          'vendor-remotion': ['remotion', '@remotion/renderer', '@remotion/cli'],
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
         },
       },

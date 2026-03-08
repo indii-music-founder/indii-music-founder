@@ -1,12 +1,12 @@
-import { useState, useCallback, type ReactNode } from 'react';
-import * as AlertDialogPrimitive from '@radix-ui/react-alert-dialog';
-import { AlertTriangle, Trash2, XCircle } from 'lucide-react';
+import { useState, useCallback } from 'react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { AlertTriangle, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 /**
  * Item 291: Reusable Destructive Action Confirmation Dialog
  *
- * Wraps Radix AlertDialog to provide a consistent confirm/cancel UI
+ * Wraps Radix Dialog to provide a consistent confirm/cancel UI
  * for irreversible actions (delete release, remove collaborator, cancel subscription, etc.).
  */
 
@@ -66,12 +66,12 @@ export function ConfirmDialog({
     }, [onConfirm, onOpenChange]);
 
     return (
-        <AlertDialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
-            <AlertDialogPrimitive.Portal>
-                <AlertDialogPrimitive.Overlay
+        <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
+            <DialogPrimitive.Portal>
+                <DialogPrimitive.Overlay
                     className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm animate-in fade-in-0"
                 />
-                <AlertDialogPrimitive.Content
+                <DialogPrimitive.Content
                     className={cn(
                         'fixed z-[101] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2',
                         'w-full max-w-md p-6 rounded-xl',
@@ -79,27 +79,31 @@ export function ConfirmDialog({
                         'animate-in fade-in-0 zoom-in-95 duration-200',
                         'focus:outline-none'
                     )}
+                    aria-describedby="confirm-dialog-description"
                 >
-                    {/* Icon */}
+                    {/* Icon + Title */}
                     <div className="flex items-center gap-4 mb-4">
                         <div className={cn('flex items-center justify-center w-12 h-12 rounded-full', config.iconBg)}>
                             <Icon className={cn('w-6 h-6', config.iconColor)} />
                         </div>
                         <div className="flex-1">
-                            <AlertDialogPrimitive.Title className="text-lg font-semibold text-white">
+                            <DialogPrimitive.Title className="text-lg font-semibold text-white">
                                 {title}
-                            </AlertDialogPrimitive.Title>
+                            </DialogPrimitive.Title>
                         </div>
                     </div>
 
                     {/* Description */}
-                    <AlertDialogPrimitive.Description className="text-sm text-gray-400 mb-6 leading-relaxed">
+                    <DialogPrimitive.Description
+                        id="confirm-dialog-description"
+                        className="text-sm text-gray-400 mb-6 leading-relaxed"
+                    >
                         {description}
-                    </AlertDialogPrimitive.Description>
+                    </DialogPrimitive.Description>
 
                     {/* Actions */}
                     <div className="flex items-center justify-end gap-3">
-                        <AlertDialogPrimitive.Cancel
+                        <DialogPrimitive.Close
                             className={cn(
                                 'px-4 py-2 text-sm font-medium rounded-lg',
                                 'bg-gray-800 text-gray-300 border border-gray-600',
@@ -109,9 +113,9 @@ export function ConfirmDialog({
                             )}
                         >
                             {cancelLabel}
-                        </AlertDialogPrimitive.Cancel>
+                        </DialogPrimitive.Close>
 
-                        <AlertDialogPrimitive.Action
+                        <button
                             onClick={handleConfirm}
                             disabled={loading}
                             className={cn(
@@ -130,11 +134,11 @@ export function ConfirmDialog({
                             ) : (
                                 confirmLabel
                             )}
-                        </AlertDialogPrimitive.Action>
+                        </button>
                     </div>
-                </AlertDialogPrimitive.Content>
-            </AlertDialogPrimitive.Portal>
-        </AlertDialogPrimitive.Root>
+                </DialogPrimitive.Content>
+            </DialogPrimitive.Portal>
+        </DialogPrimitive.Root>
     );
 }
 
