@@ -35,11 +35,14 @@ async function checkFirestore(): Promise<ServiceHealth> {
     }
 }
 
+const AGENT_ZERO_URL = (import.meta.env.VITE_AGENT_ZERO_URL as string | undefined) ?? 'http://localhost:50080';
+
 async function checkAgentZero(): Promise<ServiceHealth> {
     const start = Date.now();
     try {
         const ctrl = new AbortController();
         const timeout = setTimeout(() => ctrl.abort(), 3000);
+        const res = await fetch(`${AGENT_ZERO_URL}/ping`, { signal: ctrl.signal });
         const res = await fetch('http://localhost:50080/ping', { signal: ctrl.signal });
         clearTimeout(timeout);
         return {
