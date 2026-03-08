@@ -13,6 +13,7 @@ import { SplitSheetEscrow } from './components/SplitSheetEscrow';
 import { ReceiptOCR } from './components/ReceiptOCR';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import {
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, ArrowDownRight, Wallet,
