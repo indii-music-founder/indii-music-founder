@@ -8,7 +8,7 @@ Centralized to prevent "hard coating" and ensure compliance with Model Policy.
 APPROVED_MODELS = {
     "TEXT_AGENT": "gemini-3.1-pro-preview",
     "TEXT_FAST": "gemini-3-flash-preview",
-    "IMAGE_GEN": "gemini-3.1-pro-image-preview",
+    "IMAGE_GEN": "gemini-3-pro-image-preview",
     "IMAGE_FAST": "gemini-3.1-flash-image-preview",
     "AUDIO_PRO": "gemini-1.5-pro", # Placeholder until 2.5/3.0 audio IDs confirmed
     "AUDIO_FLASH": "gemini-1.5-flash",

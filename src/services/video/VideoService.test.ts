@@ -29,23 +29,23 @@ vi.mock('@/config/env', () => ({
 // Mock AI models config
 vi.mock('@/core/config/ai-models', () => ({
     APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-3-pro-preview',
-        TEXT_FAST: 'gemini-3-pro-preview',
+        TEXT_AGENT: 'gemini-3.1-pro-preview',
+        TEXT_FAST: 'gemini-3.1-pro-preview',
         IMAGE_GEN: 'gemini-3-pro-image-preview',
         VIDEO_GEN: 'veo-3.1-generate-preview'
     },
     AI_MODELS: {
-        TEXT: { AGENT: 'gemini-3-pro-preview', FAST: 'gemini-3-pro-preview' },
+        TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' },
         VIDEO: { GENERATION: 'veo-3.1-generate-preview', EDIT: 'veo-3.1-generate-preview' }
     },
     AI_CONFIG: {
         THINKING: { HIGH: { thinkingConfig: { thinkingLevel: 'HIGH' } } }
     },
     IMAGE_FAST: 'gemini-3-pro-image-preview',
-    AUDIO_PRO: 'gemini-3-pro-preview',
-    AUDIO_FLASH: 'gemini-3-pro-preview',
+    AUDIO_PRO: 'gemini-3.1-pro-preview',
+    AUDIO_FLASH: 'gemini-3.1-pro-preview',
     VIDEO_GEN: 'veo-3.1-generate-preview',
-    BROWSER_AGENT: 'gemini-3-pro-preview',
+    BROWSER_AGENT: 'gemini-3.1-pro-preview',
     EMBEDDING_DEFAULT: 'gemini-embedding-001',
     validateModels: () => { },
     ModelIdSchema: { parse: (v: string) => v }

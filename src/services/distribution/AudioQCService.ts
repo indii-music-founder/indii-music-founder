@@ -137,4 +137,187 @@ export class AudioQCService {
             });
         }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 234: LUFS Loudness Compliance Validation
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Measure approximate integrated loudness (LUFS-I) from an AudioBuffer.
+     *
+     * Uses a simplified ITU-R BS.1770 power measurement:
+     *   - Apply a K-weighting filter approximation via squared RMS
+     *   - Average across all channels (linked gating not applied)
+     *
+     * Accurate LUFS measurement requires a proper K-weighting IIR filter
+     * (stage 1: high-shelf pre-filter, stage 2: high-pass RLB filter).
+     * For production, delegate to the Electron main process which can use
+     * the FFmpeg loudnorm filter for authoritative LUFS measurement.
+     *
+     * Returns: loudness in LUFS (approximate)
+     */
+    static measureLUFS(buffer: AudioBuffer): number {
+        let sumSquares = 0;
+        let totalSamples = 0;
+
+        for (let ch = 0; ch < buffer.numberOfChannels; ch++) {
+            const data = buffer.getChannelData(ch);
+            for (let i = 0; i < data.length; i++) {
+                sumSquares += data[i] * data[i];
+            }
+            totalSamples += data.length;
+        }
+
+        if (totalSamples === 0) return -Infinity;
+        const meanSquare = sumSquares / totalSamples;
+        if (meanSquare === 0) return -Infinity;
+
+        // Convert to LUFS: LUFS = -0.691 + 10 * log10(mean_square)
+        return -0.691 + 10 * Math.log10(meanSquare);
+    }
+
+    /**
+     * Item 234: Check LUFS compliance for a specific DSP target.
+     * Spotify: -14 LUFS-I target (blocks above -1 LUFS-I)
+     * Apple Music: -16 LUFS-I target
+     * YouTube: -14 LUFS-I target
+     *
+     * Returns errors (blocking) if the track is excessively loud.
+     * Warnings if the track may be normalized down (quiet is fine, just not optimal).
+     */
+    static checkLUFSCompliance(
+        buffer: AudioBuffer,
+        errors: ValidationError[],
+        warnings: ValidationWarning[],
+        target: 'spotify' | 'apple' | 'youtube' | 'default' = 'default'
+    ): number {
+        const lufs = this.measureLUFS(buffer);
+        const targets: Record<typeof target, { integrated: number; peak: number }> = {
+            spotify: { integrated: -14, peak: -1 },
+            apple: { integrated: -16, peak: -1 },
+            youtube: { integrated: -14, peak: -1 },
+            default: { integrated: -14, peak: -1 },
+        };
+
+        const { integrated, peak } = targets[target];
+
+        if (lufs > peak) {
+            errors.push({
+                code: 'QC_LUFS_TOO_LOUD',
+                message: `Track is too loud (${lufs.toFixed(1)} LUFS). Maximum allowed: ${peak} LUFS. Will be rejected by streaming platforms.`,
+                severity: 'error',
+            });
+        } else if (lufs > integrated) {
+            warnings.push({
+                code: 'QC_LUFS_HIGH',
+                message: `Track loudness (${lufs.toFixed(1)} LUFS) exceeds the ${target} target (${integrated} LUFS). It will be normalized down, potentially losing dynamic impact.`,
+                severity: 'warning',
+            });
+        } else if (lufs < integrated - 6) {
+            warnings.push({
+                code: 'QC_LUFS_LOW',
+                message: `Track loudness (${lufs.toFixed(1)} LUFS) is below the ${target} target (${integrated} LUFS). Consider bringing the mix up.`,
+                severity: 'warning',
+            });
+        }
+
+        return lufs;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Item 235: Apple Digital Masters Badge Qualification
+    // ──────────────────────────────────────────────────────────────
+
+    /**
+     * Item 235: Check if a track qualifies for the Apple Digital Masters badge.
+     *
+     * Apple Digital Masters requirements:
+     * - Source master: 24-bit minimum bit depth
+     * - Sample rate: 96kHz or higher (88.2kHz also accepted)
+     * - No limiting or loudness normalization applied to the master
+     * - Delivered as 24-bit ALAC or WAV
+     *
+     * Note: The Web Audio API decodes to float32 at the system sample rate,
+     * so bit depth must be reported from file metadata, not the decoded buffer.
+     * This method validates the sample rate from the decoded buffer and expects
+     * bitDepth to be passed from the file parser.
+     */
+    static checkAppleDigitalMasters(
+        buffer: AudioBuffer,
+        bitDepth: number,
+        errors: ValidationError[],
+        warnings: ValidationWarning[]
+    ): boolean {
+        let qualifies = true;
+
+        if (bitDepth < 24) {
+            errors.push({
+                code: 'QC_ADM_BIT_DEPTH',
+                message: `Apple Digital Masters requires 24-bit depth. This file is ${bitDepth}-bit. Export your master as 24-bit WAV.`,
+                severity: 'error',
+            });
+            qualifies = false;
+        }
+
+        const acceptableSampleRates = [88200, 96000, 176400, 192000];
+        if (!acceptableSampleRates.includes(buffer.sampleRate)) {
+            if (buffer.sampleRate < 88200) {
+                errors.push({
+                    code: 'QC_ADM_SAMPLE_RATE',
+                    message: `Apple Digital Masters requires 88.2kHz or 96kHz sample rate. This file is ${(buffer.sampleRate / 1000).toFixed(1)}kHz.`,
+                    severity: 'error',
+                });
+                qualifies = false;
+            } else {
+                warnings.push({
+                    code: 'QC_ADM_SAMPLE_RATE_WARNING',
+                    message: `Sample rate ${(buffer.sampleRate / 1000).toFixed(1)}kHz is high-res but not a standard ADM rate (88.2 / 96kHz).`,
+                    severity: 'warning',
+                });
+            }
+        }
+
+        return qualifies;
+    }
+
+    /**
+     * Full QC check including LUFS + Apple Digital Masters (Items 234-235).
+     * @param buffer The decoded audio buffer
+     * @param bitDepth Bit depth from file metadata (16, 24, or 32)
+     * @param lufsTarget DSP target for LUFS compliance check
+     * @param checkADM Whether to validate Apple Digital Masters eligibility
+     */
+    static async performFullQC(
+        buffer: AudioBuffer,
+        options: {
+            requirements?: DistributorRequirements['audio'];
+            bitDepth?: number;
+            lufsTarget?: 'spotify' | 'apple' | 'youtube' | 'default';
+            checkADM?: boolean;
+        } = {}
+    ): Promise<ValidationResult & { lufs?: number; admEligible?: boolean }> {
+        const errors: ValidationError[] = [];
+        const warnings: ValidationWarning[] = [];
+
+        // Standard checks
+        this.checkTechnicalSpecs(buffer, options.requirements, errors, warnings);
+        this.checkAcoustics(buffer, errors, warnings);
+
+        // Item 234: LUFS
+        const lufs = this.checkLUFSCompliance(buffer, errors, warnings, options.lufsTarget || 'default');
+
+        // Item 235: Apple Digital Masters
+        let admEligible: boolean | undefined;
+        if (options.checkADM && options.bitDepth !== undefined) {
+            admEligible = this.checkAppleDigitalMasters(buffer, options.bitDepth, errors, warnings);
+        }
+
+        return {
+            isValid: errors.length === 0,
+            errors,
+            warnings,
+            lufs,
+            admEligible,
+        };
+    }
 }

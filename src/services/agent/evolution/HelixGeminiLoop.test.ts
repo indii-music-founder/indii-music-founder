@@ -37,7 +37,7 @@ describe('🧬 Helix: Gemini 3 Pro Evolutionary Loop', () => {
     id: 'genesis',
     name: 'Genesis Agent',
     systemPrompt: 'You are a helpful AI.',
-    parameters: { temperature: 0.5, model: 'gemini-3-pro-preview' },
+    parameters: { temperature: 0.5, model: 'gemini-3.1-pro-preview' },
     generation: 0,
     lineage: []
   };

@@ -10,6 +10,17 @@ import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 
+/** Typed Electron IPC bridge for marketing tools */
+interface ElectronMarketingBridge {
+    analyzeTrends: (opts: { category?: string }) => Promise<{ success: boolean; error?: string; analysis?: unknown }>;
+}
+
+interface ElectronWindowAPI {
+    electronAPI?: {
+        marketing?: ElectronMarketingBridge;
+    };
+}
+
 // --- Validation Schemas ---
 
 const CreateCampaignBriefSchema = z.object({
@@ -54,7 +65,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         ${assetIds ? `Attached Asset IDs: ${assetIds.join(', ')} (Incorporate these into the strategy)` : ''}
         `;
 
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof CreateCampaignBriefSchema>>(prompt, schema as Record<string, unknown>);
         const parsed = CreateCampaignBriefSchema.parse(data);
 
         // AUTO-PERSIST: Save the generated brief to the database
@@ -64,14 +75,14 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
                 name: parsed.campaignName,
                 platform: parsed.channels[0] || 'general',
                 startDate: Date.now(),
-                status: 'PENDING' as any,
+                status: 'PENDING',
                 budget: parseFloat(parsed.budget.replace(/[^0-9.]/g, '')) || 0,
                 spent: 0,
                 performance: { reach: 0, clicks: 0 },
                 attachedAssets: assetIds || [],
                 ...briefData
-            } as any);
-            console.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
+            } as unknown as Parameters<typeof MarketingService.createCampaign>[0]);
+            logger.info(`[MarketingTools] Campaign brief persisted: ${parsed.campaignName}`);
         } catch (persistError) {
             logger.warn('[MarketingTools] Persistence failed:', persistError);
         }
@@ -85,7 +96,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         You are a Market Researcher. Analyze the target audience for genre: ${genre}.
         ${similar_artists ? `Similar Artists: ${similar_artists.join(', ')}` : ''}
         `;
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof AnalyzeAudienceSchema>>(prompt, schema as Record<string, unknown>);
         const validated = AnalyzeAudienceSchema.parse(data);
         return toolSuccess(validated, `Audience analysis completed for ${genre}. Estimated reach: ${validated.reach}.`);
     }),
@@ -134,7 +145,7 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
         const prompt = `
         You are a Marketing Analyst. Generate a simulated performance report for Campaign ID: ${campaignId}.
         `;
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof TrackPerformanceSchema>>(prompt, schema as Record<string, unknown>);
         const validated = TrackPerformanceSchema.parse(data);
         return toolSuccess(validated, `Performance tracking report generated for Campaign ID: ${campaignId}. ROI: ${validated.roi}.`);
     }),
@@ -172,25 +183,28 @@ export const MarketingTools: Record<string, AnyToolFunction> = {
                 }
             }, "Audio analyzed. Use this data to run `create_campaign_brief`.");
 
-        } catch (error: any) {
-            return toolError(`Failed to analyze audio for campaign: ${error.message}`, "ANALYSIS_FAILED");
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to analyze audio for campaign: ${msg}`, "ANALYSIS_FAILED");
         }
     }),
 
     analyze_market_trends: wrapTool('analyze_market_trends', async ({ category }: { category?: string }) => {
-        if (!(window as any).electronAPI?.marketing) {
+        const electronWin = window as unknown as ElectronWindowAPI;
+        if (!electronWin.electronAPI?.marketing) {
             return toolError("Marketing analysis bridge unavailable.", "IPC_ERROR");
         }
 
         try {
-            const result = await (window as any).electronAPI.marketing.analyzeTrends({ category });
+            const result = await electronWin.electronAPI.marketing.analyzeTrends({ category });
             if (!result.success) {
                 return toolError(result.error || "Analysis failed", "SCRAPE_FAILED");
             }
 
             return toolSuccess(result.analysis, `Market analysis complete for ${category || 'pop'}.`);
-        } catch (error: any) {
-            return toolError(`Failed to bridge to market analysis: ${error.message}`, "BRIDGE_ERROR");
+        } catch (error: unknown) {
+            const msg = error instanceof Error ? error.message : 'Unknown error';
+            return toolError(`Failed to bridge to market analysis: ${msg}`, "BRIDGE_ERROR");
         }
     }),
 

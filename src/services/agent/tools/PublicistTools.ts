@@ -6,6 +6,17 @@ import { wrapTool, toolSuccess } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 import { logger } from '@/utils/logger';
 
+/** Typed Electron IPC bridge for publicist tools */
+interface ElectronPublicistBridge {
+    generatePdf: (data: unknown) => Promise<{ success: boolean; path?: string }>;
+}
+
+interface ElectronWindowAPI {
+    electronAPI?: {
+        publicist?: ElectronPublicistBridge;
+    };
+}
+
 // --- Validation Schemas ---
 
 const WritePressReleaseSchema = z.object({
@@ -58,15 +69,16 @@ export const PublicistTools: Record<string, AnyToolFunction> = {
 
         const data = await firebaseAI.generateStructuredData(
             [{ text: prompt }],
-            schema as any
+            schema as Record<string, unknown>
         );
 
         const validated = WritePressReleaseSchema.parse(data);
 
-        let pdfResult = null;
-        if (generate_pdf && (window as any).electronAPI?.publicist) {
+        let pdfResult: { success: boolean; path?: string } | null = null;
+        const electronWin = window as unknown as ElectronWindowAPI;
+        if (generate_pdf && electronWin.electronAPI?.publicist) {
             try {
-                pdfResult = await (window as any).electronAPI.publicist.generatePdf(validated);
+                pdfResult = await electronWin.electronAPI.publicist.generatePdf(validated);
             } catch (err) {
                 logger.error('[PublicistTools] PDF generation failed:', err);
             }

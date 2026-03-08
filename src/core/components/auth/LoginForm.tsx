@@ -1,8 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
-import { Loader2, Mail, Lock, LogIn, Chrome, User, UserPlus } from 'lucide-react';
+import { Loader2, Mail, Lock, LogIn, Chrome, User, UserPlus, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+
+/**
+ * Item 305: COPPA Age Gate Utility
+ * Calculate age from date of birth string. Returns -1 if invalid.
+ */
+function calculateAge(dateOfBirth: string): number {
+    const dob = new Date(dateOfBirth);
+    if (isNaN(dob.getTime())) return -1;
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+        age--;
+    }
+    return age;
+}
 
 export default function LoginForm() {
     const { loginWithGoogle, loginWithEmail, signUpWithEmail, loginAsGuest, authLoading, authError, isSignUpMode, setSignUpMode } = useStore(useShallow(state => ({
@@ -18,6 +34,7 @@ export default function LoginForm() {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
+    const [dateOfBirth, setDateOfBirth] = useState('');
 
     useEffect(() => {
         const path = window.location.pathname;
@@ -33,8 +50,22 @@ export default function LoginForm() {
         if (!email || !password) return;
 
         if (isSignUpMode) {
+            // COPPA Age Gate (Item 305)
+            if (!dateOfBirth) {
+                useStore.setState({ authError: 'Date of birth is required to create an account.' });
+                return;
+            }
+            const age = calculateAge(dateOfBirth);
+            if (age < 0) {
+                useStore.setState({ authError: 'Please enter a valid date of birth.' });
+                return;
+            }
+            if (age < 13) {
+                useStore.setState({ authError: 'You must be at least 13 years old to create an account (COPPA compliance).' });
+                return;
+            }
+
             if (password !== confirmPassword) {
-                // Use store's error mechanism
                 useStore.setState({ authError: 'Passwords do not match.' });
                 return;
             }
@@ -122,30 +153,51 @@ export default function LoginForm() {
                         </div>
                     </div>
 
-                    {/* Confirm Password — only in Sign Up mode */}
+                    {/* Confirm Password & Date of Birth — only in Sign Up mode */}
                     <AnimatePresence mode="wait">
                         {isSignUpMode && (
                             <motion.div
-                                key="confirm-password"
+                                key="signup-fields"
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
                                 exit={{ opacity: 0, height: 0 }}
                                 transition={{ duration: 0.2 }}
-                                className="space-y-2 overflow-hidden"
+                                className="space-y-4 overflow-hidden"
                             >
-                                <label className="text-xs font-mono text-gray-400 block ml-1 uppercase">Confirm Password</label>
-                                <div className="relative">
-                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
-                                    <input
-                                        aria-label="confirm password"
-                                        type="password"
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        placeholder="••••••••"
-                                        autoComplete="new-password"
-                                        className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
-                                        required
-                                    />
+                                {/* Confirm Password */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-mono text-gray-400 block ml-1 uppercase">Confirm Password</label>
+                                    <div className="relative">
+                                        <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        <input
+                                            aria-label="confirm password"
+                                            type="password"
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="••••••••"
+                                            autoComplete="new-password"
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all placeholder:text-gray-600"
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* COPPA Age Gate (Item 305) */}
+                                <div className="space-y-2">
+                                    <label className="text-xs font-mono text-gray-400 block ml-1 uppercase">Date of Birth</label>
+                                    <div className="relative">
+                                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                                        <input
+                                            aria-label="date of birth"
+                                            type="date"
+                                            value={dateOfBirth}
+                                            onChange={(e) => setDateOfBirth(e.target.value)}
+                                            max={new Date().toISOString().split('T')[0]}
+                                            className="w-full pl-12 pr-4 py-4 bg-white/5 border border-white/10 rounded-2xl focus:border-purple-500/50 focus:ring-1 focus:ring-purple-500/50 outline-none transition-all text-white [color-scheme:dark]"
+                                            required
+                                        />
+                                    </div>
+                                    <p className="text-[10px] text-gray-500 ml-1">You must be 13 or older to create an account.</p>
                                 </div>
                             </motion.div>
                         )}

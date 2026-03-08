@@ -35,6 +35,7 @@ import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
+import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
 
 cleanupLocalStorage();
 
@@ -423,6 +424,9 @@ export default function App() {
 
                             {/* Global Keyboard Shortcuts Help (press ?) */}
                             <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
+
+                            {/* GDPR Cookie Consent Banner (Item 303) */}
+                            <CookieConsentBanner />
                         </GlobalDropZone>
                     </div>
                 </ToastProvider>

@@ -31,5 +31,5 @@ export interface AudioIntelligenceProfile {
     technical: AudioFeatures; // Speed, Key, Energy
     semantic: AudioSemanticData; // Vibe, Imagery, Prompts
     analyzedAt: number;
-    modelVersion: string;   // e.g., "gemini-3-pro-preview"
+    modelVersion: string;   // e.g., "gemini-3.1-pro-preview"
 }

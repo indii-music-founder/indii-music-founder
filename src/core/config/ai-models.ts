@@ -12,7 +12,7 @@ import { logger } from '@/utils/logger';
 export const APPROVED_MODELS = {
     TEXT_AGENT: 'gemini-3.1-pro-preview',
     TEXT_FAST: 'gemini-3-flash-preview',
-    IMAGE_GEN: 'gemini-3.1-pro-image-preview',
+    IMAGE_GEN: 'gemini-3-pro-image-preview',
     IMAGE_FAST: 'gemini-3.1-flash-image-preview',
     AUDIO_PRO: 'gemini-3.1-pro-preview',
     AUDIO_FLASH: 'gemini-3-flash-preview',
@@ -75,7 +75,7 @@ export const AI_CONFIG = {
             maxReferenceImages: 14
         },
         FAST: {
-            imageConfig: { imageSize: '1K' }, // Nano Banana Flash supports up to 1K
+            imageConfig: { imageSize: '1K' }, // Nano Banana 2 (Flash) supports up to 1K
             mediaResolution: 'MEDIA_RESOLUTION_LOW',
             maxReferenceImages: 8
         }
@@ -106,7 +106,7 @@ export const AI_CONFIG = {
 export const MODEL_PRICING = {
     'gemini-3.1-pro-preview': { input: 2.50, output: 7.50 },
     'gemini-3-flash-preview': { input: 0.10, output: 0.40 },
-    'gemini-3.1-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
+    'gemini-3-pro-image-preview': { output: 120.00, resolution: "4K", capacity: 14 },
     'gemini-3.1-flash-image-preview': { output: 30.00, resolution: "1K", capacity: 8 },
     'veo-3.1-generate-preview': {
         perSecond: 0.20,     // 720p/1080p Video Only
@@ -136,8 +136,9 @@ export function calculateVideoTimeout(durationSeconds: number): number {
 
 const FORBIDDEN_PATTERNS: RegExp[] = [
     /gemini-1\./i,            // Block all legacy 1.x models
-    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS, image, pro, flash)
-    /imagen/i,                // Block all Imagen models (replaced by Gemini Image models)
+    /gemini-2\.0/i,           // Block 2.0 models — allow 2.5.x (TTS only)
+    /imagen/i,                // Block all Imagen models (replaced by Nano Banana)
+    /gemini-2\.5-flash-image/i, // Block legacy Nano Banana OG (use Nano Banana 2 or Pro only)
 ];
 
 function validateModels(): void {

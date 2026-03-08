@@ -28,20 +28,20 @@ vi.mock('./GeminiRetrievalService', () => ({
 vi.mock('@/core/config/ai-models', () => ({
 
     AI_MODELS: {
-        TEXT: { AGENT: 'gemini-3-pro-preview', FAST: 'gemini-3-pro-preview' }
+        TEXT: { AGENT: 'gemini-3.1-pro-preview', FAST: 'gemini-3.1-pro-preview' }
     },
     AI_CONFIG: {
         THINKING: { LOW: { thinkingConfig: { thinkingLevel: 'LOW' } } }
     },
     APPROVED_MODELS: {
-        TEXT_AGENT: 'gemini-3-pro-preview',
-        TEXT_FAST: 'gemini-3-pro-preview',
+        TEXT_AGENT: 'gemini-3.1-pro-preview',
+        TEXT_FAST: 'gemini-3.1-pro-preview',
         IMAGE_GEN: 'gemini-3-pro-image-preview',
         IMAGE_FAST: 'gemini-3-pro-image-preview',
-        AUDIO_PRO: 'gemini-3-pro-preview',
-        AUDIO_FLASH: 'gemini-3-pro-preview',
+        AUDIO_PRO: 'gemini-3.1-pro-preview',
+        AUDIO_FLASH: 'gemini-3.1-pro-preview',
         VIDEO_GEN: 'veo-3.1-generate-preview',
-        BROWSER_AGENT: 'gemini-3-pro-preview',
+        BROWSER_AGENT: 'gemini-3.1-pro-preview',
         EMBEDDING_DEFAULT: 'gemini-embedding-001'
     },
     validateModels: () => { },
