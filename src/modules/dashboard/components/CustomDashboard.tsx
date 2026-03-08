@@ -25,7 +25,7 @@ interface Widget {
     order: number;
 }
 
-const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: React.ComponentType<{ size?: number; className?: string }>; description: string }> = {
+const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: React.ElementType; description: string }> = {
     streams_today: { label: 'Streams Today', icon: Music, description: 'Daily stream count across all DSPs' },
     revenue_mtd: { label: 'Revenue MTD', icon: DollarSign, description: 'Month-to-date royalty revenue' },
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },

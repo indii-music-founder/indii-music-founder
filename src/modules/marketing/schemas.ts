@@ -11,7 +11,7 @@ export const ImageAssetSchema = z.object({
 
 export const ScheduledPostSchema = z.object({
     id: z.string(),
-    platform: z.enum(['Twitter', 'Instagram', 'LinkedIn']),
+    platform: z.enum(['Twitter', 'Instagram', 'LinkedIn', 'Email']),
     copy: z.string(),
     imageAsset: ImageAssetSchema,
     day: z.number(),

@@ -35,7 +35,7 @@ export class AvatarGenerationService {
             title: `Avatar Lip-Sync: Processing...`,
             progress: 0,
             status: 'running',
-            type: 'video_process'
+            type: 'video_render'
         });
 
         try {

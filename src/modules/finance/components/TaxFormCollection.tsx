@@ -27,7 +27,7 @@ const INITIAL_COLLABORATORS: TaxCollaborator[] = [
     { id: 6, name: 'Aiko Tanaka', country: 'Japan', formType: 'W-8BEN', status: 'needed', email: 'aiko@tokyosound.jp' },
 ];
 
-const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
     verified: { label: 'Verified', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20', icon: CheckCircle },
     submitted: { label: 'Under Review', color: 'text-yellow-400', bg: 'bg-yellow-500/10 border-yellow-500/20', icon: Clock },
     needed: { label: 'Needed', color: 'text-red-400', bg: 'bg-red-500/10 border-red-500/20', icon: AlertCircle },

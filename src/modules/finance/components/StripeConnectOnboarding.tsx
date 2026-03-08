@@ -24,7 +24,7 @@ const INITIAL_COLLABORATORS: Collaborator[] = [
     { id: 4, name: 'Sofia Almeida', email: 'sofia@waveworks.pt', splitPct: 10, status: 'not_started' },
 ];
 
-const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon: React.ComponentType<{ size?: number; className?: string }> }> = {
+const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon: React.ElementType }> = {
     active: { label: 'Active', color: 'text-green-400 bg-green-500/10 border-green-500/20', icon: CheckCircle },
     pending: { label: 'Pending', color: 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20', icon: Clock },
     not_started: { label: 'Not Started', color: 'text-gray-400 bg-gray-500/10 border-gray-500/20', icon: AlertCircle },

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Map, Truck, Coffee, ChevronRight, Route, FileText, ListMusic, Globe } from 'lucide-react';
+import { Map, Truck, Coffee, ChevronRight, Route, FileText, ListMusic, Globe, Settings } from 'lucide-react';
 import { motion } from 'motion/react';
 
 export type TouringTab = 'planning' | 'on-the-road' | 'rider' | 'route-optimizer' | 'tech-rider' | 'setlist' | 'visa';
