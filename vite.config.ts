@@ -4,6 +4,7 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import tailwindcss from '@tailwindcss/vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 // Enforce minimum Node.js version at build time
 const [major] = process.versions.node.split('.').map(Number);
@@ -63,6 +64,14 @@ export default defineConfig({
     // }, ['node_modules/**']),
     // Sentry source map upload (production only, when SENTRY_AUTH_TOKEN is set)
     ...(sentryPlugin ? [sentryPlugin] : []),
+    // Item 261: Bundle size analysis (production builds only)
+    process.env.ANALYZE === 'true' && visualizer({
+      filename: 'reports/bundle-stats.html',
+      open: false,
+      gzipSize: true,
+      brotliSize: true,
+      template: 'treemap',
+    }),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: path.resolve(__dirname, 'src'),
