@@ -81,6 +81,7 @@ export const createCheckoutSession = onCall({
       cancel_url: cancelUrl,
       metadata: { userId, tier },
       allow_promotion_codes: true,
+      automatic_tax: { enabled: true },
       client_reference_id: userId
     };
 

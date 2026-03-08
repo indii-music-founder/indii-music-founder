@@ -148,7 +148,9 @@ async function handleSubscriptionDeleted(event: Stripe.Event): Promise<void> {
 }
 
 /**
- * Handle invoice.paid event
+ * Handle invoice.paid event — updates subscription status and writes a
+ * ledger entry so the Finance dashboard reflects accurate billing history.
+ * Item 208: Revenue Share Ledger real-time sync.
  */
 async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
@@ -166,10 +168,36 @@ async function handleInvoicePaid(event: Stripe.Event): Promise<void> {
   }
 
   await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaid', updateData);
+
+  // Write ledger entry for Finance dashboard
+  const db = getFirestore();
+  const subSnapshot = await db.collection('subscriptions')
+    .where('stripeCustomerId', '==', invoice.customer as string)
+    .limit(1)
+    .get();
+
+  if (!subSnapshot.empty) {
+    const userId = subSnapshot.docs[0].id;
+    await db.collection(`users/${userId}/ledger`).add({
+      type: 'subscription_payment',
+      invoiceId: invoice.id,
+      invoiceNumber: invoice.number || invoice.id,
+      amount: invoice.total,
+      currency: invoice.currency || 'usd',
+      status: 'paid',
+      periodStart: (invoice as any).period_start ? (invoice as any).period_start * 1000 : null,
+      periodEnd: (invoice as any).period_end ? (invoice as any).period_end * 1000 : null,
+      pdfUrl: invoice.invoice_pdf || null,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    console.log(`[handleInvoicePaid] Ledger entry written for user ${userId}`);
+  }
 }
 
 /**
- * Handle invoice.payment_failed event
+ * Handle invoice.payment_failed event — marks subscription as past_due and
+ * writes a dunning notification record so the UI can prompt re-authentication.
+ * Item 204: Failed Payment Dunning Flow.
  */
 async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
   const invoice = event.data.object as Stripe.Invoice;
@@ -178,6 +206,35 @@ async function handleInvoicePaymentFailed(event: Stripe.Event): Promise<void> {
   await updateSubscriptionByCustomer(invoice.customer as string, 'handleInvoicePaymentFailed', {
     status: 'past_due'
   });
+
+  // Write a dunning notification so the client can surface a re-auth prompt.
+  // When an email provider (e.g. SendGrid) is configured, process this queue
+  // via a separate Cloud Function subscribed to Firestore triggers on
+  // `dunning_notifications`.
+  const db = getFirestore();
+  const subSnapshot = await db.collection('subscriptions')
+    .where('stripeCustomerId', '==', invoice.customer as string)
+    .limit(1)
+    .get();
+
+  if (!subSnapshot.empty) {
+    const userId = subSnapshot.docs[0].id;
+    await db.collection('dunning_notifications').add({
+      userId,
+      stripeCustomerId: invoice.customer as string,
+      invoiceId: invoice.id,
+      amount: invoice.total,
+      currency: invoice.currency || 'usd',
+      attemptCount: (invoice as any).attempt_count || 1,
+      nextPaymentAttempt: (invoice as any).next_payment_attempt
+        ? (invoice as any).next_payment_attempt * 1000
+        : null,
+      customerEmail: invoice.customer_email || null,
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    console.log(`[handleInvoicePaymentFailed] Dunning notification queued for user ${userId}`);
+  }
 }
 
 /**

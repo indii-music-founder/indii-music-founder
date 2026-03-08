@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard } from 'lucide-react';
+import { CheckCircle2, Clock, Lock, Unlock, DollarSign, Users, AlertTriangle, CreditCard, Loader2 } from 'lucide-react';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 /* ================================================================== */
 /*  Split Sheet Escrow — Collaborative Funds Release Tool              */
@@ -11,10 +12,12 @@ interface Collaborator {
     role: string;
     splitPct: number;
     signed: boolean;
+    /** Stripe Connect account ID — required for real transfer; undefined = not yet onboarded */
+    accountId?: string;
 }
 
 const MOCK_COLLABORATORS: Collaborator[] = [
-    { id: '1', name: 'Marcus Webb', role: 'Producer', splitPct: 40, signed: false },
+    { id: '1', name: 'Marcus Webb', role: 'Producer', splitPct: 40, signed: false, accountId: 'acct_mock_marcus' },
     { id: '2', name: 'Jasmine Cole', role: 'Vocalist', splitPct: 30, signed: false },
     { id: '3', name: 'Devon Park', role: 'Co-Writer', splitPct: 20, signed: false },
     { id: '4', name: 'Tara Singh', role: 'Mixing Engineer', splitPct: 10, signed: false },
@@ -25,6 +28,8 @@ const ESCROW_AMOUNT = 4800;
 export function SplitSheetEscrow() {
     const [collaborators, setCollaborators] = useState<Collaborator[]>(MOCK_COLLABORATORS);
     const [released, setReleased] = useState(false);
+    const [releasing, setReleasing] = useState(false);
+    const [releaseError, setReleaseError] = useState<string | null>(null);
 
     const signedCount = collaborators.filter(c => c.signed).length;
     const totalCount = collaborators.length;
@@ -37,8 +42,40 @@ export function SplitSheetEscrow() {
         );
     };
 
-    const handleReleaseFunds = () => {
-        if (allSigned) setReleased(true);
+    /**
+     * Item 202: Wire release to the real createTransfer Cloud Function.
+     * Each collaborator with a connected Stripe account receives a transfer
+     * proportional to their split percentage.
+     */
+    const handleReleaseFunds = async () => {
+        if (!allSigned || releasing) return;
+        setReleasing(true);
+        setReleaseError(null);
+
+        const functions = getFunctions();
+        const createTransfer = httpsCallable<
+            { amount: number; destinationId: string; currency?: string },
+            { transferId: string }
+        >(functions, 'createTransfer');
+
+        try {
+            // Only attempt real transfers for collaborators with a connected account.
+            // Others are acknowledged but not transferred (they need to complete onboarding first).
+            const transferPromises = collaborators
+                .filter(c => c.accountId)
+                .map(c => {
+                    const splitAmount = Math.round((ESCROW_AMOUNT * 100 * c.splitPct) / 100); // cents
+                    return createTransfer({ amount: splitAmount, destinationId: c.accountId! });
+                });
+
+            await Promise.all(transferPromises);
+            setReleased(true);
+        } catch (err: any) {
+            console.error('[SplitSheetEscrow] Transfer failed:', err);
+            setReleaseError(err.message || 'Transfer failed. Please try again.');
+        } finally {
+            setReleasing(false);
+        }
     };
 
     return (
@@ -195,16 +232,27 @@ export function SplitSheetEscrow() {
 
                     {/* Release Funds Button */}
                     <div className="space-y-3">
+                        {releaseError && (
+                            <div className="flex items-start gap-2 p-3 rounded-lg bg-red-500/5 border border-red-500/20">
+                                <AlertTriangle size={12} className="text-red-400 flex-shrink-0 mt-0.5" />
+                                <p className="text-[10px] text-red-300/80 leading-relaxed">{releaseError}</p>
+                            </div>
+                        )}
                         <button
                             onClick={handleReleaseFunds}
-                            disabled={!allSigned}
-                            className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${allSigned
+                            disabled={!allSigned || releasing}
+                            className={`w-full py-3 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${allSigned && !releasing
                                 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
                                 : 'bg-white/[0.02] border border-white/5 text-gray-600 cursor-not-allowed'
                                 }`}
                         >
-                            {allSigned ? <Unlock size={16} /> : <Lock size={16} />}
-                            {allSigned ? 'Release Funds via Stripe Connect' : `Waiting for ${totalCount - signedCount} more signature${totalCount - signedCount !== 1 ? 's' : ''}...`}
+                            {releasing ? (
+                                <><Loader2 size={16} className="animate-spin" />Processing Transfers...</>
+                            ) : allSigned ? (
+                                <><Unlock size={16} />Release Funds via Stripe Connect</>
+                            ) : (
+                                <><Lock size={16} />{`Waiting for ${totalCount - signedCount} more signature${totalCount - signedCount !== 1 ? 's' : ''}...`}</>
+                            )}
                         </button>
 
                         <div className="flex items-start gap-2 p-3 rounded-lg bg-blue-500/5 border border-blue-500/10">

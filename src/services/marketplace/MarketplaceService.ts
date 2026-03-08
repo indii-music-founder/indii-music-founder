@@ -14,7 +14,7 @@ import {
     increment
 } from 'firebase/firestore';
 import { Product, Purchase } from './types';
-import { paymentService } from '@/services/payment/PaymentService';
+import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { revenueService } from '@/services/RevenueService';
 import { logger } from '@/utils/logger';
 
@@ -160,25 +160,34 @@ export class MarketplaceService {
             });
         }
 
-        // 2. Process Payment via PaymentService
+        // 2. Process Payment via Stripe Checkout (redirects user to Stripe hosted page).
+        // The webhook handler completes the purchase recording on checkout.session.completed.
         try {
-            const transaction = await paymentService.processPayment({
-                buyerId,
-                sellerId,
-                amount,
-                currency: 'USD',
-                productId
+            const checkoutUrl = await createOneTimePayment({
+                userId: buyerId,
+                items: [{
+                    name: productData.title,
+                    amount: Math.round(amount * 100), // convert to cents
+                    quantity: 1,
+                    metadata: { productId, sellerId, source, sourceId: sourceId || '' },
+                }],
+                metadata: { productId, sellerId, source },
             });
 
-            // 3. Record Purchase
+            // Redirect to Stripe Checkout — purchase recording happens via webhook
+            if (typeof window !== 'undefined') {
+                window.location.href = checkoutUrl;
+            }
+
+            // Return a pending purchase record ID so the caller can track intent
             const purchaseData: Omit<Purchase, 'id'> = {
                 buyerId,
                 sellerId,
                 productId,
                 amount,
                 currency: 'USD',
-                status: 'completed',
-                transactionId: transaction.id,
+                status: 'pending',
+                transactionId: 'stripe_checkout_pending',
                 createdAt: new Date().toISOString()
             };
 
