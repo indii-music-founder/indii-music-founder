@@ -1,7 +1,7 @@
 import { firebaseAI } from '../ai/FirebaseAIService';
 import { AI_CONFIG } from '@/core/config/ai-models';
 import { v4 as uuidv4 } from 'uuid';
-import { functionsWest1 as functions, db, auth } from '@/services/firebase';
+import { functionsWest1, db, auth } from '@/services/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { httpsCallable } from 'firebase/functions';
 import { subscriptionService } from '@/services/subscription/SubscriptionService';
@@ -342,7 +342,7 @@ export class VideoGenerationService {
         const jobId = `long_${uuidv4()}`;
         const { useStore } = await import('@/core/store');
         const orgId = useStore.getState().currentOrganizationId;
-        const triggerLongFormVideoJob = httpsCallable(functions, 'triggerLongFormVideoJob');
+        const triggerLongFormVideoJob = httpsCallable(functionsWest1, 'triggerLongFormVideoJob');
 
         // Enrich prompt with distributor context
         const enrichedPrompt = this.enrichPrompt(sanitizedPrompt, {
@@ -389,7 +389,7 @@ export class VideoGenerationService {
     }
 
     async triggerVideoGeneration(options: VideoGenerationOptions & { orgId: string }): Promise<{ jobId: string }> {
-        const triggerVideoJob = httpsCallable(functions, 'triggerVideoJob');
+        const triggerVideoJob = httpsCallable(functionsWest1, 'triggerVideoJob');
 
         const jobId = uuidv4();
 
