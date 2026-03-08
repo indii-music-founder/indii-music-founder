@@ -61,11 +61,10 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
                             {/* Auto option */}
                             <button
                                 onClick={() => { onSelect(null); setOpen(false); }}
-                                className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                                    selectedAgentId === null
-                                        ? 'bg-emerald-500/20 text-emerald-300'
-                                        : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                }`}
+                                className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${selectedAgentId === null
+                                    ? 'bg-emerald-500/20 text-emerald-300'
+                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                    }`}
                             >
                                 <Sparkles size={14} className="mt-0.5 shrink-0 text-emerald-400" />
                                 <div>
@@ -80,11 +79,10 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
                                         <button
                                             key={agent.id}
                                             onClick={() => { onSelect(agent.id); setOpen(false); }}
-                                            className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${
-                                                selectedAgentId === agent.id
-                                                    ? 'bg-emerald-500/20 text-emerald-300'
-                                                    : 'text-slate-400 hover:bg-slate-800 hover:text-white'
-                                            }`}
+                                            className={`w-full flex items-start gap-3 px-3 py-2 rounded-lg text-left transition-colors ${selectedAgentId === agent.id
+                                                ? 'bg-emerald-500/20 text-emerald-300'
+                                                : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                                                }`}
                                         >
                                             <Bot size={14} className="mt-0.5 shrink-0" />
                                             <div>

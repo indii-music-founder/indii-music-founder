@@ -61,6 +61,7 @@ test.describe('Finance Module', () => {
 
     test('EarningsDashboard or revenue summary is visible', async ({ page }) => {
         const earningsContent = page.locator(
+            // eslint-disable-next-line no-useless-escape
             '[class*="earnings"], [class*="revenue"], [class*="dashboard"], text=/revenue|earnings|\$/i'
         ).first();
         const contentVisible = await earningsContent.isVisible().catch(() => false);

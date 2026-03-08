@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from 'react';
+import { useRef, useCallback, useEffect, useState } from 'react';
 
 /**
  * Item 270: Keyboard Navigation Hook — Roving Tabindex pattern
@@ -68,7 +68,7 @@ export function useKeyboardNav(
         onActiveChange,
     } = options;
 
-    const activeIndexRef = useRef(initialIndex);
+    const [activeIndex, setActiveIndexState] = useState(initialIndex);
     const itemRefs = useRef<Map<number, HTMLElement>>(new Map());
 
     // Focus the current active item
@@ -82,7 +82,7 @@ export function useKeyboardNav(
 
     const setActiveIndex = useCallback((index: number) => {
         const clamped = Math.max(0, Math.min(index, itemCount - 1));
-        activeIndexRef.current = clamped;
+        setActiveIndexState(clamped);
         focusItem(clamped);
         onActiveChange?.(clamped);
     }, [itemCount, focusItem, onActiveChange]);
@@ -91,7 +91,7 @@ export function useKeyboardNav(
         const prevKey = orientation === 'vertical' ? 'ArrowUp' : 'ArrowLeft';
         const nextKey = orientation === 'vertical' ? 'ArrowDown' : 'ArrowRight';
 
-        let newIndex = activeIndexRef.current;
+        let newIndex = activeIndex;
         let handled = false;
 
         switch (e.key) {
@@ -132,15 +132,15 @@ export function useKeyboardNav(
             e.stopPropagation();
             setActiveIndex(newIndex);
         }
-    }, [orientation, itemCount, wrap, setActiveIndex]);
+    }, [orientation, itemCount, wrap, setActiveIndex, activeIndex]);
 
-    // Sync initial focus on mount
+    // Sync initial index on mount
     useEffect(() => {
-        activeIndexRef.current = Math.min(initialIndex, itemCount - 1);
+        setActiveIndexState(Math.min(initialIndex, itemCount - 1));
     }, [initialIndex, itemCount]);
 
     const getItemProps = useCallback((index: number): ItemProps => ({
-        tabIndex: index === activeIndexRef.current ? 0 : -1,
+        tabIndex: index === activeIndex ? 0 : -1,
         ref: (el: HTMLElement | null) => {
             if (el) {
                 itemRefs.current.set(index, el);
@@ -149,7 +149,7 @@ export function useKeyboardNav(
             }
         },
         'data-nav-index': index,
-    }), []);
+    }), [activeIndex]);
 
     const containerProps: ContainerProps = {
         role: orientation === 'vertical' ? 'listbox' : 'tablist',
@@ -160,7 +160,7 @@ export function useKeyboardNav(
     return {
         getItemProps,
         containerProps,
-        activeIndex: activeIndexRef.current,
+        activeIndex,
         setActiveIndex,
     };
 }
