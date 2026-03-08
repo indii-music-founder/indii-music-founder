@@ -20,11 +20,11 @@
 | 2.4 | Video Rendering Queue Optimization | [x] | PRODUCTION_200:104 |
 | 2.5 | Ad Buying Automation (Basic Graph API) | [x] | PRODUCTION_200:142 |
 | 2.6 | Email Marketing Integration | [x] | PRODUCTION_200:143 |
-| 3.1 | Multi-Platform Auto-Poster | [ ] | PRODUCTION_200:141 |
-| 3.2 | Influencer Bounty Board | [ ] | PRODUCTION_200:149 |
-| 3.3 | Fabric.js Canvas Batching | [ ] | PRODUCTION_200:107 |
-| 3.4 | Advanced 3D Scene Builder | [ ] | PRODUCTION_200:105 |
-| 3.5 | Lip-Sync & Avatar Generation | [ ] | PRODUCTION_200:106 |
+| 3.1 | Multi-Platform Auto-Poster | [x] | PRODUCTION_200:141 |
+| 3.2 | Influencer Bounty Board | [x] | PRODUCTION_200:149 |
+| 3.3 | Fabric.js Canvas Batching | [x] | PRODUCTION_200:107 |
+| 3.4 | Advanced 3D Scene Builder | [x] | PRODUCTION_200:105 |
+| 3.5 | Lip-Sync & Avatar Generation | [x] | PRODUCTION_200:106 |
 
 ---
 *Self-managed task list for Antigravity.*

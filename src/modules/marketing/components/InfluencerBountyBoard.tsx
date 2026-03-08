@@ -4,6 +4,8 @@ import {
     Clock, Star, TrendingUp, Music, Video
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { influencerBountyService } from '@/services/marketing/InfluencerBountyService';
+import { useToast } from '@/core/context/ToastContext';
 
 type ActionType = 'TikTok' | 'IG Reel' | 'YouTube Short';
 type BountyStatus = 'pending' | 'verified' | 'paid';
@@ -78,14 +80,6 @@ const STATUS_STYLES: Record<BountyStatus, string> = {
     paid: 'bg-green-500/10 text-green-400 border-green-500/20',
 };
 
-function generateRefCode(): string {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = 'REF-';
-    for (let i = 0; i < 5; i++) {
-        code += chars[Math.floor(Date.now() * (i + 1)) % chars.length];
-    }
-    return code;
-}
 
 export default function InfluencerBountyBoard() {
     const [bounties, setBounties] = useState<Bounty[]>(MOCK_BOUNTIES);
@@ -94,23 +88,40 @@ export default function InfluencerBountyBoard() {
     const [action, setAction] = useState<ActionType>('TikTok');
     const [influencerName, setInfluencerName] = useState('');
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
+    const [isCreating, setIsCreating] = useState(false);
+    const toast = useToast();
 
-    const handleCreateBounty = () => {
+    const handleCreateBounty = async () => {
         if (!influencerName) return;
-        const refCode = generateRefCode();
-        const newBounty: Bounty = {
-            id: `b${Date.now()}`,
-            track: selectedTrack,
-            reward,
-            action,
-            influencer: influencerName.startsWith('@') ? influencerName : `@${influencerName}`,
-            link: '',
-            status: 'pending',
-            refCode,
-            views: 0,
-        };
-        setBounties(prev => [newBounty, ...prev]);
-        setInfluencerName('');
+        setIsCreating(true);
+
+        try {
+            const bounty = await influencerBountyService.generateBountyLink(
+                influencerName.startsWith('@') ? influencerName : `@${influencerName}`,
+                selectedTrack,
+                reward
+            );
+
+            const newBounty: Bounty = {
+                id: bounty.id,
+                track: selectedTrack,
+                reward,
+                action,
+                influencer: bounty.influencerId,
+                link: bounty.targetUrl,
+                status: 'pending',
+                refCode: bounty.referralCode,
+                views: 0,
+            };
+
+            setBounties(prev => [newBounty, ...prev]);
+            setInfluencerName('');
+            toast.success("Bounty and referral link created!");
+        } catch (error) {
+            toast.error("Failed to create bounty.");
+        } finally {
+            setIsCreating(false);
+        }
     };
 
     const handleCopyRefLink = (refCode: string) => {
@@ -178,11 +189,10 @@ export default function InfluencerBountyBoard() {
                                 <button
                                     key={a}
                                     onClick={() => setAction(a)}
-                                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                                        action === a
+                                    className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${action === a
                                             ? 'bg-dept-marketing/20 border border-dept-marketing/40 text-dept-marketing'
                                             : 'bg-white/5 border border-white/10 text-gray-500 hover:border-white/20'
-                                    }`}
+                                        }`}
                                 >
                                     {a}
                                 </button>
@@ -205,11 +215,20 @@ export default function InfluencerBountyBoard() {
 
                 <button
                     onClick={handleCreateBounty}
-                    disabled={!influencerName}
+                    disabled={!influencerName || isCreating}
                     className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-dept-marketing text-white font-semibold text-sm hover:bg-dept-marketing/90 transition-all disabled:opacity-50 shadow-lg shadow-dept-marketing/20"
                 >
-                    <Plus size={15} />
-                    Create Bounty + Generate Referral Link
+                    {isCreating ? (
+                        <>
+                            <Clock size={15} className="animate-spin" />
+                            Generating Tracking Node...
+                        </>
+                    ) : (
+                        <>
+                            <Plus size={15} />
+                            Create Bounty + Generate Referral Link
+                        </>
+                    )}
                 </button>
             </div>
 
