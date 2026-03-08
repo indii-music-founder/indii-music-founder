@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
     LayoutDashboard,
@@ -208,6 +208,7 @@ export function CustomDashboard() {
     const [showPicker, setShowPicker] = useState(false);
     const [dragId, setDragId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
+    const widgetCounter = useRef(0);
 
     // Persist to localStorage whenever widgets change
     useEffect(() => {
@@ -227,8 +228,9 @@ export function CustomDashboard() {
     function addWidget(type: WidgetType) {
         const existing = widgets.find((w) => w.type === type);
         if (existing) return; // don't add duplicates
+        widgetCounter.current += 1;
         const newWidget: Widget = {
-            id: `w_${Date.now()}`,
+            id: `w_${widgetCounter.current}`,
             type,
             order: widgets.length,
         };

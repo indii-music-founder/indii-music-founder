@@ -55,6 +55,8 @@ function generateData(days: number): DataPoint[] {
 
 const ALL_DATA = generateData(90);
 
+const RANGE_DAYS: Record<DateRange, number> = { '7d': 7, '30d': 30, '90d': 90 };
+
 const KEY_MOMENTS = [
     { day: 1, icon: Flame, text: 'Release Day — 8.2K streams in first 24 hours', color: 'text-purple-400' },
     { day: 7, icon: TrendingUp, text: 'Week 1 total: 85K streams. Editorial playlist add confirmed', color: 'text-blue-400' },
@@ -85,14 +87,12 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
 export default function MomentumTracker() {
     const [dateRange, setDateRange] = useState<DateRange>('30d');
 
-    const rangeDays = { '7d': 7, '30d': 30, '90d': 90 };
-
     const chartData = useMemo(() => {
-        return ALL_DATA.slice(0, rangeDays[dateRange]);
+        return ALL_DATA.slice(0, RANGE_DAYS[dateRange]);
     }, [dateRange]);
 
     const relevantMilestones = useMemo(
-        () => MILESTONE_EVENTS.filter(m => m.day <= rangeDays[dateRange]),
+        () => MILESTONE_EVENTS.filter(m => m.day <= RANGE_DAYS[dateRange]),
         [dateRange]
     );
 
@@ -105,7 +105,7 @@ export default function MomentumTracker() {
     }, [totalStreams, totalAdSpend]);
 
     const relevantMoments = useMemo(
-        () => KEY_MOMENTS.filter(m => m.day <= rangeDays[dateRange]),
+        () => KEY_MOMENTS.filter(m => m.day <= RANGE_DAYS[dateRange]),
         [dateRange]
     );
 
