@@ -45,7 +45,7 @@ export const ReleaseManager: React.FC = () => {
                     targetPrompts: { image: '', veo: '' }
                 },
                 analyzedAt: Date.now(),
-                modelVersion: 'gemini-3-pro-preview'
+                modelVersion: 'gemini-3.1-pro-preview'
             };
             setAudioProfile(mockProfile);
             setStep('edit');

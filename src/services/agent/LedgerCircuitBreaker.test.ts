@@ -16,7 +16,7 @@ vi.mock('@/services/ai/GenAI', () => ({
         generateContent: vi.fn()
     },
     AI_MODELS: {
-        TEXT: { AGENT: 'gemini-3-pro-preview' }
+        TEXT: { AGENT: 'gemini-3.1-pro-preview' }
     },
     AI_CONFIG: { THINKING: { LOW: {} } }
 }));
@@ -159,7 +159,7 @@ describe('Ledger Circuit Breaker (Integration)', () => {
         // Assertions
 
         // 1. Verify recordSpend was called with correct amount
-        // Input cost for gemini-3-pro-preview is $2.50 per 1M.
+        // Input cost for gemini-3.1-pro-preview is $2.50 per 1M.
         // We used 1M tokens. Cost should be $2.50.
         expect(MembershipService.recordSpend).toHaveBeenCalledWith('ledger-test-user', 2.5);
 

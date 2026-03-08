@@ -105,6 +105,14 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     // Duration (computed from audio)
     durationSeconds?: number;
     durationFormatted?: string; // "3:45"
+
+    // Rights & Publishing (PRO Registration)
+    composerName?: string; // Composer legal name (may differ from artistName)
+    composerIPI?: string; // Interested Parties Information number
+    publisherName?: string; // Publisher entity name
+    publisherShare?: number; // Publisher ownership percentage (0-100)
+    isCoverSong?: boolean; // Requires mechanical license if true
+    originalSongTitle?: string; // Title of the original work (for cover songs)
 }
 
 // Type for release status in distribution

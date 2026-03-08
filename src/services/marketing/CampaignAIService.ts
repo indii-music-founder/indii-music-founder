@@ -36,7 +36,7 @@ export class CampaignAIService {
 
     /**
      * Generate a complete campaign plan from a brief
-     * Uses gemini-3-pro-preview for complex reasoning
+     * Uses gemini-3.1-pro-preview for complex reasoning
      */
     async generateCampaign(brief: CampaignBrief): Promise<GeneratedCampaignPlan> {
         const brandContext = await this.getBrandContext();

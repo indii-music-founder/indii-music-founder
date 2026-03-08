@@ -93,7 +93,7 @@ vi.mock('@/services/audio/AudioIntelligenceService', () => ({
                 targetPrompts: { image: 'image prompt', veo: 'veo prompt' }
             },
             analyzedAt: Date.now(),
-            modelVersion: 'gemini-3-pro-preview'
+            modelVersion: 'gemini-3.1-pro-preview'
         })
     }
 }));

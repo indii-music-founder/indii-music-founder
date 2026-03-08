@@ -5,6 +5,27 @@ import { zodToJsonSchema } from 'zod-to-json-schema';
 import { wrapTool } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
 
+/** Typed Electron IPC bridge for brand tools */
+interface ElectronBrandBridge {
+    analyzeConsistency: (assetPath: string, brandKit: Record<string, unknown>) => Promise<{
+        success: boolean;
+        error?: string;
+        report: {
+            consistent: boolean;
+            consistency_score: number;
+            findings?: Array<{ category: string; status: string; feedback: string }>;
+            recommendations?: string[];
+            summary?: string;
+        };
+    }>;
+}
+
+interface ElectronWindowAPI {
+    electronAPI?: {
+        brand?: ElectronBrandBridge;
+    };
+}
+
 // --- Zod Schemas ---
 
 const VerifyOutputSchema = z.object({
@@ -45,7 +66,7 @@ export const BrandTools: Record<string, AnyToolFunction> = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof VerifyOutputSchema>>(prompt, schema as Record<string, unknown>);
         const validated = VerifyOutputSchema.parse(data);
         return {
             ...validated,
@@ -58,15 +79,16 @@ export const BrandTools: Record<string, AnyToolFunction> = {
     analyze_brand_consistency: wrapTool('analyze_brand_consistency', async (args: {
         content?: string;
         assetPath?: string;
-        brandKit?: any;
+        brandKit?: Record<string, unknown>;
         brand_guidelines?: string;
     }) => {
         // 1. If an asset is provided, we use the Vision tool via Electron IPC
-        if (args.assetPath && (window as any).electronAPI?.brand) {
+        const electronWin = window as unknown as ElectronWindowAPI;
+        if (args.assetPath && electronWin.electronAPI?.brand) {
             logger.debug(`[BrandTools] Triggering vision analysis for: ${args.assetPath}`);
-            const response = await (window as any).electronAPI.brand.analyzeConsistency(
+            const response = await electronWin.electronAPI.brand.analyzeConsistency(
                 args.assetPath,
-                args.brandKit || { guidelines: args.brand_guidelines || "Follow artist's visual DNA" }
+                (args.brandKit || { guidelines: args.brand_guidelines || "Follow artist's visual DNA" }) as Record<string, unknown>
             );
 
             if (!response.success) {
@@ -78,8 +100,8 @@ export const BrandTools: Record<string, AnyToolFunction> = {
                 consistent: report.consistent,
                 score: report.consistency_score,
                 issues: report.findings
-                    ?.filter((f: any) => f.status !== 'PASS')
-                    ?.map((f: any) => `${f.category}: ${f.feedback}`) || [],
+                    ?.filter((f) => f.status !== 'PASS')
+                    ?.map((f) => `${f.category}: ${f.feedback}`) || [],
                 recommendations: report.recommendations || [],
                 summary: report.summary,
                 message: report.consistent
@@ -100,7 +122,7 @@ export const BrandTools: Record<string, AnyToolFunction> = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof AnalyzeBrandConsistencySchema>>(prompt, schema as Record<string, unknown>);
         const validated = AnalyzeBrandConsistencySchema.parse(data);
         return {
             ...validated,
@@ -120,7 +142,7 @@ export const BrandTools: Record<string, AnyToolFunction> = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof GenerateBrandGuidelinesSchema>>(prompt, schema as Record<string, unknown>);
         const validated = GenerateBrandGuidelinesSchema.parse(data);
         return {
             ...validated,
@@ -138,7 +160,7 @@ export const BrandTools: Record<string, AnyToolFunction> = {
         ${JSON.stringify(schema, null, 2)}
         `;
 
-        const data = await firebaseAI.generateStructuredData<any>(prompt, schema as any);
+        const data = await firebaseAI.generateStructuredData<z.infer<typeof AuditVisualAssetsSchema>>(prompt, schema as Record<string, unknown>);
         const validated = AuditVisualAssetsSchema.parse(data);
         return {
             ...validated,

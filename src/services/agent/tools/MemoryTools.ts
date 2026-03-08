@@ -5,6 +5,7 @@ import { wrapTool, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction, AgentContext } from '../types';
 import type { ToolExecutionContext } from '../ToolExecutionContext';
 import { logger } from '@/utils/logger';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 // ============================================================================
 // Types for MemoryTools
@@ -65,12 +66,12 @@ export const MemoryTools: Record<string, AnyToolFunction> = {
 
         const response = await GenAI.rawGenerateContent(
             [{ role: 'user', parts: [{ text: prompt }] }],
-            'gemini-3-pro-preview',
+            AI_MODELS.TEXT.FAST,
             { responseMimeType: 'application/json' }
         ) as any;
 
         const text = response.text?.() || response.response?.text?.() || '{}';
-        
+
         let verification;
         try {
             verification = JSON.parse(text);

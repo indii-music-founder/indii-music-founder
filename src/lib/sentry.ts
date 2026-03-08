@@ -18,7 +18,14 @@ export function initSentry(): void {
         logger.warn('[Sentry] Initializing in Development Mode for testing purposes.');
     }
 
-    const dsn = import.meta.env.VITE_SENTRY_DSN || "https://70a3cd3c32290fe54f43c227f6a058a3@o4510109129244672.ingest.us.sentry.io/4510318323040256";
+    const dsn = import.meta.env.VITE_SENTRY_DSN;
+
+    // SECURITY (Item 246): DSN must come from environment — no hardcoded fallback.
+    // In CI, set VITE_SENTRY_DSN. If missing, Sentry is silently disabled.
+    if (!dsn) {
+        logger.error('[Sentry] VITE_SENTRY_DSN is not set. Sentry will NOT initialize. Set it in .env or CI secrets.');
+        return;
+    }
 
     try {
         Sentry.init({

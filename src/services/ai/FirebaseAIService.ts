@@ -336,7 +336,7 @@ export class FirebaseAIService {
 
         const candidateModel = modelOverride || this.model?.model || FALLBACK_MODEL;
 
-        // Try to reverse-lookup the key (e.g. "gemini-3-pro-preview" -> "TEXT_AGENT")
+        // Try to reverse-lookup the key (e.g. "gemini-3.1-pro-preview" -> "TEXT_AGENT")
         const configKey = getModelKey(candidateModel);
 
         if (configKey) {
