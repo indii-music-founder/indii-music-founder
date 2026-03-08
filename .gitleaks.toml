@@ -1,0 +1,43 @@
+# Gitleaks Configuration
+# Suppress known false positives per API Credentials Policy (docs/API_CREDENTIALS_POLICY.md)
+#
+# Firebase API keys are IDENTIFIERS, not secrets. Security is enforced via
+# Firestore Security Rules and API restrictions in the GCP Console.
+# See: https://firebase.google.com/docs/projects/api-keys
+
+title = "indiiOS Gitleaks Config"
+
+[extend]
+# Extend the default gitleaks rules
+useDefault = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Allowlisted paths — files that intentionally contain non-secret patterns
+# ─────────────────────────────────────────────────────────────────────────────
+
+[allowlist]
+description = "Known safe patterns per indiiOS API Credentials Policy"
+
+paths = [
+    # Test files containing mock/fake secrets for testing redaction logic
+    '''.*\.test\.ts$''',
+    '''.*\.test\.tsx$''',
+
+    # MCP server config (local dev tooling, not deployed)
+    '''mcp_config\.json''',
+
+    # Model capability metadata (API responses cached, not real keys)
+    '''config/model_capabilities\.json''',
+    '''model_capabilities\.json''',
+
+    # SFTP key for distributor uploads (Electron-only, packaged in desktop build)
+    '''models/id_ed25519''',
+]
+
+# Also allow specific fake/placeholder values
+regexes = [
+    # Fake Firebase dev bypass key
+    '''AIzaSy_FAKE_KEY_FOR_DEV_BYPASS''',
+    # Placeholder mock values
+    '''MOCK_KEY_DO_NOT_USE''',
+]
