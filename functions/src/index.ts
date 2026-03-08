@@ -11,6 +11,7 @@ import { GenerateSpeechRequestSchema } from "./lib/audio";
 
 import { LongFormVideoJobSchema, generateLongFormVideoFn, stitchVideoFn } from "./lib/long_form_video";
 import { generateVideoFn } from "./lib/video_generation";
+import { generateVideoDirect } from "./lib/video_generation_direct";
 import { generateImageV3Fn, editImageFn } from "./lib/image_generation";
 import { analyzeAudioFn } from "./lib/audio";
 import { FUNCTION_AI_MODELS } from "./config/models";
@@ -217,7 +218,6 @@ const TIER_LIMITS: Record<MembershipTier, TierLimits> = {
 export const triggerVideoJob = functions
     .region("us-west1")
     .runWith({
-        secrets: [inngestEventKey],
         timeoutSeconds: 60,
         memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
@@ -275,34 +275,93 @@ export const triggerVideoJob = functions
                 updatedAt: admin.firestore.FieldValue.serverTimestamp()
             });
 
-            // 2. Publish Event to Inngest
-            const inngest = getInngestClient();
+            // 2. Fire-and-forget: Call executeVideoJob directly (bypasses dead Inngest pipeline)
+            //    This is a self-invocation pattern — triggerVideoJob calls executeVideoJob
+            //    which runs for up to 540s. We don't await the response.
+            const projectId = process.env.GCLOUD_PROJECT || process.env.GCP_PROJECT || 'indiios-v-1-1';
+            const executeUrl = `https://us-west1-${projectId}.cloudfunctions.net/executeVideoJob`;
 
-            await inngest.send({
-                name: "video/generate.requested",
-                data: {
-                    jobId: jobId,
-                    userId: userId,
-                    orgId: orgId || "personal",
-                    prompt: prompt,
-                    options: options,
-                    timestamp: Date.now(),
+            // Get a valid ID token to self-invoke the function
+            const { GoogleAuth: AuthLib } = await import('google-auth-library');
+            const selfAuth = new AuthLib();
+            const idTokenClient = await selfAuth.getIdTokenClient(executeUrl);
+            const headers = await idTokenClient.getRequestHeaders(executeUrl);
+
+            // Fire-and-forget — don't await the response
+            fetch(executeUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...headers
                 },
-                user: {
-                    id: userId,
-                }
+                body: JSON.stringify({
+                    jobId,
+                    userId,
+                    orgId: orgId || "personal",
+                    prompt,
+                    options
+                })
+            }).catch(err => {
+                console.error(`[VideoJob] Fire-and-forget to executeVideoJob failed:`, err);
             });
 
             console.log(`[VideoJob] Triggered for JobID: ${jobId}, User: ${userId}`);
 
-            return { success: true, message: "Video generation job queued." };
+            return { success: true, message: "Video generation job started." };
 
         } catch (error: any) {
-            console.error("[VideoJob] Error triggering Inngest:", error);
+            console.error("[VideoJob] Error triggering video generation:", error);
             throw new functions.https.HttpsError(
                 "internal",
                 `Failed to queue video job: ${error.message}`
             );
+        }
+    });
+
+/**
+ * Execute Video Job (Long-Running)
+ *
+ * This is the actual video generation worker. It runs the full Vertex AI pipeline
+ * directly, bypassing the broken Inngest callback system.
+ *
+ * Called by triggerVideoJob via fire-and-forget HTTP POST.
+ * 540s timeout (9 minutes) — enough for Vertex AI video generation + polling.
+ */
+export const executeVideoJob = functions
+    .region("us-west1")
+    .runWith({
+        timeoutSeconds: 540, // 9 minutes
+        memory: "2GB"
+    })
+    .https.onRequest(async (req, res) => {
+        // Only accept POST
+        if (req.method !== 'POST') {
+            res.status(405).send('Method Not Allowed');
+            return;
+        }
+
+        const { jobId, userId, orgId, prompt, options } = req.body;
+
+        if (!jobId || !userId || !prompt) {
+            res.status(400).send('Missing required fields: jobId, userId, prompt');
+            return;
+        }
+
+        // Return immediately — the actual work happens asynchronously below
+        res.status(202).json({ accepted: true, jobId });
+
+        // Run the generation in the background (the response has already been sent)
+        try {
+            await generateVideoDirect({
+                jobId,
+                userId,
+                orgId: orgId || 'personal',
+                prompt,
+                options: options || {}
+            });
+        } catch (error: any) {
+            // Error is already handled inside generateVideoDirect (Firestore updated to "failed")
+            console.error(`[executeVideoJob] Unhandled error for ${jobId}:`, error);
         }
     });
 
