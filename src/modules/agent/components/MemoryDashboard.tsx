@@ -362,6 +362,7 @@ export const MemoryDashboard: React.FC = () => {
             loadAlwaysOnInsights?.(userId);
             refreshAlwaysOnEngineStatus?.(userId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isMemoryDashboardOpen]);
 
     // Filter memories

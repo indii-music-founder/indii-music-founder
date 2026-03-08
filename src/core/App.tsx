@@ -103,7 +103,6 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'distribution': DistributionDashboard,
     'merch': MerchStudio,
     'marketplace': MarketplaceModule,
-    'marketplace': MarketplaceStorefront,
     'audio-analyzer': AudioAnalyzer,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,

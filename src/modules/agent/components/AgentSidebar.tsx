@@ -8,7 +8,7 @@ interface AgentSidebarProps {
     setActiveTab: (tab: AgentTab) => void;
 }
 
-const NAV_ITEMS: Array<{ id: AgentTab; icon: React.FC<{ size?: number }>; label: string }> = [
+const NAV_ITEMS: Array<{ id: AgentTab; icon: React.ComponentType<{ size?: string | number; className?: string }>; label: string }> = [
     { id: 'scout', icon: Map, label: 'The Scout' },
     { id: 'browser', icon: Globe, label: 'Browser Agent' },
     { id: 'chat', icon: MessageSquare, label: 'Chat' },
@@ -26,11 +26,10 @@ export const AgentSidebar: React.FC<AgentSidebarProps> = ({ activeTab, setActive
                     <button
                         key={id}
                         onClick={() => setActiveTab(id)}
-                        className={`p-3 rounded-xl transition-all duration-200 group relative ${
-                            activeTab === id
-                                ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
-                                : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                        }`}
+                        className={`p-3 rounded-xl transition-all duration-200 group relative ${activeTab === id
+                            ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20'
+                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                            }`}
                         title={label}
                         aria-label={label}
                         aria-pressed={activeTab === id}

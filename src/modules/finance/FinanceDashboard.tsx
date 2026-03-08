@@ -20,7 +20,6 @@ import {
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
     FileText, Activity, Shield, Camera, GitMerge
 } from 'lucide-react';
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
 /*  Finance Dashboard — Three-Panel Layout                             */
