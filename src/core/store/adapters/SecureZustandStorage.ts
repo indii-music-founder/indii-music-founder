@@ -13,7 +13,7 @@ export const SecureZustandStorage: StateStorage = {
         try {
             // Check if running in Electron with the credentials API available
             if (window.electronAPI?.credentials) {
-                const creds = await window.electronAPI.credentials.get(name);
+                const creds = await window.electronAPI.credentials.get(name) as { payload?: string } | null;
                 if (creds && creds.payload) {
                     return creds.payload;
                 }

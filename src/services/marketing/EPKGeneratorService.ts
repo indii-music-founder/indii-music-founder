@@ -6,7 +6,6 @@
  */
 
 import { useStore } from '@/core/store';
-import { uploadService } from '@/services/video/VideoUploadService';
 import { logger } from '@/utils/logger';
 
 export interface EPKData {
@@ -49,13 +48,13 @@ export class EPKGeneratorService {
             profileImage: profile.photoURL || '',
             brandColors: brandKit?.colors || ['#000000', '#ffffff'],
             fonts: brandKit?.fonts || 'Inter',
-            socials: brandKit?.socials || {},
-            pressShots: brandKit?.brandAssets || [],
+            socials: (brandKit?.socials as Record<string, string> | undefined) || {},
+            pressShots: (brandKit?.brandAssets || []).map((a: any) => (typeof a === 'string' ? a : a?.url ?? '')),
             latestRelease: releaseDetails ? {
                 title: releaseDetails.title,
                 type: releaseDetails.type,
                 genre: releaseDetails.genre,
-                coverArt: brandKit?.referenceImages?.[0] || undefined
+                coverArt: brandKit?.referenceImages?.[0] ? String(brandKit.referenceImages[0]) : undefined
             } : undefined,
             contactEmail: profile.email || ''
         };
