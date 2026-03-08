@@ -7,7 +7,7 @@
 
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
-import { uploadService } from '@/services/video/VideoUploadService';
+import { VideoUploadService } from '@/services/video/VideoUploadService';
 
 export interface ContinuationResults {
     variations: {
@@ -40,7 +40,7 @@ export class AudioContinuationService {
             logger.info(`[AudioContinuation] Dispatching ${file.name} for AI continuation...`);
 
             // 2. Upload the context (the stem) to Cloud Storage
-            const uploadedUrl = await uploadService.uploadMedia(file, `audio/continuation/pending/${jobId}`);
+            const uploadedUrl = await VideoUploadService.uploadVideo(file, `audio/stems/pending/${jobId}`);
 
             // 3. Trigger Vertex AI MusicFX or Sidecar (Conceptual)
             // Example Vertex AI: POST /v1/projects/{project}/locations/{location}/publishers/google/models/music-fx:predict
