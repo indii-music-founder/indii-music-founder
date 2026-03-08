@@ -7,7 +7,7 @@
 
 import { useStore } from '@/core/store';
 import { logger } from '@/utils/logger';
-import { uploadService } from '@/services/video/VideoUploadService';
+import { VideoUploadService } from '@/services/video/VideoUploadService';
 
 export interface StemResults {
     vocalsUrl: string;
@@ -38,7 +38,7 @@ export class StemSeparationService {
             logger.info(`[StemSeparation] Dispatching ${file.name} to AI separator...`);
 
             // 2. Upload to Cloud Storage if needed, or send directly to sidecar
-            const uploadedUrl = await uploadService.uploadMedia(file, `audio/stems/pending/${jobId}`);
+            const uploadedUrl = await VideoUploadService.uploadVideo(file, `audio/stems/pending/${jobId}`);
 
             // 3. Trigger Sidecar/Python Tool (Conceptual)
             // In a production environment, this would hit the Python sidecar on localhost:50080
