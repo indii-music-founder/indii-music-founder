@@ -57,7 +57,7 @@ export class HybridOrchestrator {
 
         while (currentTurn < this.MAX_TURNS && !isTaskComplete) {
             currentTurn++;
-            console.info(`[indii:Hybrid] Turn ${currentTurn}/${this.MAX_TURNS}...`);
+            logger.info(`[indii:Hybrid] Turn ${currentTurn}/${this.MAX_TURNS}...`);
 
             const AGENTS = agentRegistry.getAll().map(a => ({
                 id: a.id,
@@ -121,7 +121,7 @@ export class HybridOrchestrator {
 
                 // Specialists Invocation
                 if (decision.callAgentId && decision.task) {
-                    console.info(`[indii:Hybrid] Delegating to specialist: ${decision.callAgentId}`);
+                    logger.info(`[indii:Hybrid] Delegating to specialist: ${decision.callAgentId}`);
                     try {
                         if (!service) throw new Error('AgentService instance not provided for delegation');
                         const result = await service.runAgent(decision.callAgentId, decision.task, context, traceId);
@@ -140,7 +140,7 @@ export class HybridOrchestrator {
 
                 // System Tools Invocation
                 if (decision.useTool === 'knowledge_base') {
-                    console.info(`[indii:Hybrid] Using system tool: knowledge_base`);
+                    logger.info(`[indii:Hybrid] Using system tool: knowledge_base`);
                     try {
                         const { KnowledgeTools } = await import('../tools/KnowledgeTools');
                         const result = await KnowledgeTools.search_knowledge({ query: decision.args?.query || sanitizedQuery }, context);
@@ -158,7 +158,7 @@ export class HybridOrchestrator {
                 }
 
                 if (decision.useTool === 'browser_control') {
-                    console.info(`[indii:Hybrid] Using system tool: browser_control`);
+                    logger.info(`[indii:Hybrid] Using system tool: browser_control`);
                     try {
                         const { BrowserTools } = await import('../tools/BrowserTools');
                         let result;
@@ -184,7 +184,7 @@ export class HybridOrchestrator {
                 }
 
                 if (decision.useTool === 'agent_zero_deep') {
-                    console.info(`[indii:Hybrid] Delegating deep task to Agent Zero Container...`);
+                    logger.info(`[indii:Hybrid] Delegating deep task to Agent Zero Container...`);
                     try {
                         const { agentZeroService } = await import('../AgentZeroService');
                         const result = await agentZeroService.sendMessage(decision.task || decision.args?.query || sanitizedQuery);

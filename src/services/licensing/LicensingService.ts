@@ -1,5 +1,6 @@
 import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
+import { logger } from '@/utils/logger';
 
 import { FirestoreService } from '../FirestoreService';
 import { License, LicenseRequest } from './types';
@@ -144,7 +145,7 @@ export class LicensingService {
      * Seed initial data for a new user/org
      */
     private async seedDatabase(userId: string) {
-        console.info(`[LicensingService] Seeding database for ${userId}...`);
+        logger.info(`[LicensingService] Seeding database for ${userId}...`);
 
         const initialLicenses = [
             {

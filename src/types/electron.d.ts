@@ -25,6 +25,14 @@ export interface ElectronAPI {
     selectDirectory: (options?: { title?: string }) => Promise<string | null>;
     showNotification: (title: string, body: string) => void;
 
+    // Filesystem (Electron IPC)
+    fs?: {
+        listFiles: (path: string) => Promise<{ name: string; path: string; extension: string; sizeBytes: number }[]>;
+        readTextFile: (path: string) => Promise<string>;
+        readBinaryFile: (path: string) => Promise<Uint8Array>;
+        mkdir: (path: string) => Promise<void>;
+    };
+
     // Auth (Secure Main Process Flow)
     auth: {
         login: () => Promise<void>;

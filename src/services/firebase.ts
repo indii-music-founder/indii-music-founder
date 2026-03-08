@@ -129,6 +129,30 @@ export const messaging = typeof window !== 'undefined' ? (() => {
     }
 })() : null;
 
+// Item 259: Initialize Firebase Performance Monitoring
+// Lazy-loaded to avoid adding to the critical path
+let _perfInstance: ReturnType<typeof import('firebase/performance').getPerformance> | null = null;
+export function getFirebasePerf() {
+    if (_perfInstance) return _perfInstance;
+    if (typeof window === 'undefined') return null;
+    try {
+        // Dynamic import to avoid bundling perf SDK in critical path
+        import('firebase/performance').then(({ getPerformance }) => {
+            _perfInstance = getPerformance(app);
+            logger.info('[Firebase] Performance Monitoring initialized');
+        }).catch(() => {
+            logger.debug('[Firebase] Performance Monitoring not available');
+        });
+    } catch {
+        // Silently skip if not available
+    }
+    return null;
+}
+// Auto-initialize on load
+if (typeof window !== 'undefined') {
+    getFirebasePerf();
+}
+
 // Initialize App Check
 let appCheck = null;
 if (typeof window !== 'undefined') {

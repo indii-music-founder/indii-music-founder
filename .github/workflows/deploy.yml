@@ -45,6 +45,21 @@ jobs:
       - name: Install root dependencies
         run: pnpm install --no-frozen-lockfile --ignore-scripts
 
+      - name: Audit dependencies for vulnerabilities (Item 252)
+        run: pnpm audit --audit-level=high || echo "::warning::Dependency vulnerabilities detected (non-blocking)"
+        continue-on-error: true
+
+      # Item 294: Deploy PR preview channel for QA sign-off
+      - name: Deploy PR Preview Channel
+        if: github.event_name == 'pull_request'
+        run: |
+          npx firebase-tools hosting:channel:deploy pr-${{ github.event.pull_request.number }} \
+            --project ${{ secrets.VITE_FIREBASE_PROJECT_ID }} \
+            --token "${{ secrets.FIREBASE_CI_TOKEN }}" \
+            --expires 7d \
+            --only app
+        continue-on-error: true
+
       - name: Run linting checks
         run: pnpm run lint
 

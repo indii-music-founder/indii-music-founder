@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { usePowerState } from '@/core/hooks/usePowerState';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from '../store';
@@ -15,6 +16,7 @@ import { cn } from '@/lib/utils';
 
 
 export default function Sidebar() {
+    const { t } = useTranslation();
     const { isThrottled } = usePowerState();
     // Select specific state slices with shallow comparison to prevent unnecessary re-renders on unrelated store updates
     const { currentModule, setModule, isSidebarOpen, toggleSidebar, userProfile, updatePreferences, logout } = useStore(
@@ -60,6 +62,7 @@ export default function Sidebar() {
         { id: 'audio-analyzer', icon: Radio, label: 'Audio Analyzer' },
         { id: 'workflow', icon: Network, label: 'Workflow Builder' },
         { id: 'knowledge', icon: Book, label: 'Knowledge Base' },
+        { id: 'memory', icon: AudioLines, label: 'Memory Agent' },
         { id: 'history', icon: Clock, label: 'History' },
     ];
 

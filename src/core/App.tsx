@@ -71,6 +71,7 @@ const HistoryDashboard = lazy(() => import('../modules/history/HistoryDashboard'
 const MultimodalGauntlet = lazy(() => import('../modules/debug/MultimodalGauntlet'));
 const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
 const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
+const MemoryDashboard = lazy(() => import('../modules/memory/MemoryDashboard'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -104,6 +105,7 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
     'capture': GhostCapture,
+    'memory': MemoryDashboard,
 };
 
 // ============================================================================
@@ -178,6 +180,11 @@ function useAppInitialization() {
             // Initialize Asset Observer — requires auth for Firestore subscriptions
             import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
                 assetObserver.initialize();
+            });
+
+            // Initialize Always-On Memory Engine — starts background consolidation
+            import('@/services/agent/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
+                alwaysOnMemoryEngine.start(user.uid);
             });
 
             return () => {

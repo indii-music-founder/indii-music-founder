@@ -41,7 +41,7 @@ export class SmartContractService {
      * In production, this would interact with Ethereum/Polygon/Solana.
      */
     async deploySplitContract(config: SplitContractConfig): Promise<string> {
-        console.info(`[SmartContract] Deploying Split Contract for ISRC: ${config.isrc}...`);
+        logger.info(`[SmartContract] Deploying Split Contract for ISRC: ${config.isrc}...`);
 
         // validate inputs
         const total = config.payees.reduce((sum, p) => sum + p.percentage, 0);
@@ -71,7 +71,7 @@ export class SmartContractService {
      * Takes incoming revenue (e.g. USDC) and distributes it according to the contract.
      */
     async executePayout(contractAddress: string, amountUSDC: number): Promise<boolean> {
-        console.info(`[SmartContract] Executing Payout of ${amountUSDC} USDC via ${contractAddress}`);
+        logger.info(`[SmartContract] Executing Payout of ${amountUSDC} USDC via ${contractAddress}`);
 
         // Logic: Check recoupment, then distribute
         // (Simplified stub)
@@ -85,7 +85,7 @@ export class SmartContractService {
      * Mints a token representing equity in the recording.
      */
     async tokenizeAsset(isrc: string, totalShares: number): Promise<string> {
-        console.info(`[SmartContract] Minting ${totalShares} SongShares for ${isrc}...`);
+        logger.info(`[SmartContract] Minting ${totalShares} SongShares for ${isrc}...`);
 
         const tokenContract = `0xToken${Math.random().toString(16).slice(2, 10)}`;
         await this.recordToLedger('TOKEN_MINT', isrc, `Minted ${totalShares} shares at ${tokenContract}`);
@@ -108,7 +108,7 @@ export class SmartContractService {
 
         try {
             await addDoc(collection(db, this.LEDGER_COLLECTION), entry);
-            console.info(`[Blockchain Ledger] New Block: ${entry.hash} | ${action} | ${entityId}`);
+            logger.info(`[Blockchain Ledger] New Block: ${entry.hash} | ${action} | ${entityId}`);
         } catch (error) {
             logger.error('[Blockchain Ledger] Failed to persist entry:', error);
         }

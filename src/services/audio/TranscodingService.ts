@@ -30,7 +30,7 @@ export class TranscodingService {
      * @returns Promise<boolean> success
      */
     async transcode(options: TranscodeOptions): Promise<boolean> {
-        console.info(`[TranscodingService] Starting job: ${options.inputPath} -> ${options.outputPath} (${options.targetFormat})`);
+        logger.info(`[TranscodingService] Starting job: ${options.inputPath} -> ${options.outputPath} (${options.targetFormat})`);
 
         // 1. Validate Input
         if (!this.isValidInput(options.inputPath)) {

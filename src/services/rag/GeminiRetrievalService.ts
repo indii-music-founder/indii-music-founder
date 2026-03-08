@@ -211,7 +211,7 @@ export class GeminiRetrievalService {
                 const match = listRes.fileSearchStores.find((s: any) => s.displayName === displayName);
                 if (match) {
                     this.storeCache.set(cacheKey, match.name);
-                    console.info(`[RAG] Found existing store for ${cacheKey}:`, match.name);
+                    logger.info(`[RAG] Found existing store for ${cacheKey}:`, match.name);
                     return match.name;
                 }
             }
@@ -227,7 +227,7 @@ export class GeminiRetrievalService {
             });
             const newStoreName = createRes.name;
             this.storeCache.set(cacheKey, newStoreName);
-            console.info(`[RAG] Created new FileSearchStore for ${cacheKey}:`, newStoreName);
+            logger.info(`[RAG] Created new FileSearchStore for ${cacheKey}:`, newStoreName);
             return newStoreName;
         } catch (e: unknown) {
             const err = e as Error;
@@ -254,7 +254,7 @@ export class GeminiRetrievalService {
             resourceName = `files/${resourceName}`;
         }
 
-        console.info(`Importing ${resourceName} into ${storeName}...`);
+        logger.info(`Importing ${resourceName} into ${storeName}...`);
 
         try {
             const url = `${storeName}:importFile`; // e.g. fileSearchStores/123:importFile
@@ -264,7 +264,7 @@ export class GeminiRetrievalService {
                     fileName: resourceName
                 })
             });
-            console.info("Import Operation started:", res.name);
+            logger.info("Import Operation started:", res.name);
 
             // Wait for operation to complete (simple poll)
             let op = res;
@@ -281,7 +281,7 @@ export class GeminiRetrievalService {
                 // But usually it just works or fails.
                 logger.warn(`Import finished with potential error (or valid state): ${JSON.stringify(op.error)}`);
             } else {
-                console.info("File imported successfully.");
+                logger.info("File imported successfully.");
             }
 
         } catch (e: unknown) {
@@ -335,7 +335,7 @@ export class GeminiRetrievalService {
                         }
                     }
                 ];
-                console.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
+                logger.info(`[RAG] Querying Store: ${storeName} ${projectId ? `(Project: ${projectId})` : ''} ${fileUri ? `(Ensuring file: ${fileUri})` : '(Store-wide)'}`);
             } catch (e) {
                 logger.error("[RAG] File Search Setup Failed:", e);
             }
