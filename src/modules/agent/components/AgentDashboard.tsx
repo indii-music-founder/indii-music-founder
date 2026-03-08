@@ -20,7 +20,7 @@ import { Venue } from '../types';
 import { logger } from '@/utils/logger';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { agentService } from '@/services/agent/AgentService';
-import { ChatMessage } from '@/core/components/chat/ChatMessage';
+import { MessageItem } from '@/core/components/chat/ChatMessage';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
@@ -166,14 +166,14 @@ const AgentDashboard: React.FC = () => {
     const [activeTab, setActiveTab] = useState<'scout' | 'campaigns' | 'inbox' | 'browser' | 'chat' | 'tasks'>('scout');
     const [selectedAgentId, setSelectedAgentId] = useState<string | null>(null);
     const chatBottomRef = useRef<HTMLDivElement>(null);
-    const { messages } = useStore(useShallow(s => ({ messages: s.messages })));
+    const { agentMessages } = useStore(useShallow(s => ({ agentMessages: s.agentHistory })));
 
     // Auto-scroll chat to bottom on new messages
     useEffect(() => {
         if (activeTab === 'chat') {
             chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
         }
-    }, [messages, activeTab]);
+    }, [agentMessages, activeTab]);
     const { venues, isScanning, setScanning, addVenue } = useAgentStore();
     const { showToast } = useToast();
     const [city, setCity] = useState('Nashville');
@@ -361,14 +361,14 @@ const AgentDashboard: React.FC = () => {
 
                                 {/* Message history */}
                                 <div className="flex-1 overflow-y-auto custom-scrollbar px-4 py-4 space-y-2">
-                                    {messages.length === 0 && (
+                                    {agentMessages.length === 0 && (
                                         <div className="flex flex-col items-center justify-center h-full text-slate-600 space-y-3">
                                             <Sparkles size={28} className="opacity-40" />
                                             <p className="text-sm">Start a conversation with your AI team.</p>
                                         </div>
                                     )}
-                                    {messages.map((msg) => (
-                                        <ChatMessage key={msg.id} message={msg} />
+                                    {agentMessages.map((msg) => (
+                                        <MessageItem key={msg.id} msg={msg} />
                                     ))}
                                     <div ref={chatBottomRef} />
                                 </div>
@@ -394,11 +394,6 @@ const AgentDashboard: React.FC = () => {
                             </div>
                         )}
 
-                        {activeTab === 'tasks' && (
-                            <div className="h-full overflow-hidden">
-                                <TaskTracker />
-                            </div>
-                        )}
 
                         {activeTab === 'campaigns' && (
                             <CampaignsTab />

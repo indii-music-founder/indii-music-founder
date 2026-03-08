@@ -378,6 +378,16 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverBg: 'hover:bg-teal-500/5',
         cssVar: '--color-dept-licensing',
     },
+    marketplace: {
+        // Marketplace shares Brand's amber (product identity)
+        text: 'text-dept-brand',
+        bg: 'bg-dept-brand/10',
+        border: 'border-dept-brand',
+        ring: 'focus-within:ring-dept-brand/50',
+        hoverText: 'hover:text-dept-brand',
+        hoverBg: 'hover:bg-dept-brand/5',
+        cssVar: '--color-dept-brand',
+    },
 };
 
 export const getColorForModule = (moduleId: ModuleId): ModuleColor => {

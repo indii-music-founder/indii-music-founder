@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/react/shallow';
 import type { BatchedTask } from '@/services/agent/MaestroBatchingService';
 
 const STATUS_CONFIG: Record<BatchedTask['status'], {
-    icon: React.FC<{ size?: number; className?: string }>;
+    icon: React.FC<{ size?: string | number; className?: string }>;
     color: string;
     label: string;
 }> = {
@@ -95,16 +95,14 @@ export const TaskTracker: React.FC = () => {
                     return (
                         <div
                             key={task.id}
-                            className={`px-4 py-3 transition-opacity ${
-                                task.status === 'completed' ? 'opacity-50' : 'opacity-100'
-                            }`}
+                            className={`px-4 py-3 transition-opacity ${task.status === 'completed' ? 'opacity-50' : 'opacity-100'
+                                }`}
                         >
                             <div className="flex items-start gap-3">
                                 <StatusIcon
                                     size={16}
-                                    className={`mt-0.5 shrink-0 ${config.color} ${
-                                        task.status === 'processing' ? 'animate-spin' : ''
-                                    }`}
+                                    className={`mt-0.5 shrink-0 ${config.color} ${task.status === 'processing' ? 'animate-spin' : ''
+                                        }`}
                                 />
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
