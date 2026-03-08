@@ -380,6 +380,38 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         }
     };
 
+    const batchExportDimensions = async () => {
+        if (!item) return;
+        setIsProcessing(true);
+        setProcessingStatus("Generating Batch Formats...");
+        try {
+            const results = await canvasOps.exportBatchDimensions();
+            if (results) {
+                toast.success("Batch formats generated! (TikTok, IG, YT)");
+
+                // Helper to trigger download
+                const download = (url: string, suffix: string) => {
+                    const link = document.createElement('a');
+                    link.download = `format-${suffix}-${item.id}.png`;
+                    link.href = url;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                };
+
+                // Trigger downloads
+                download(results.tiktok, '9-16-tiktok');
+                download(results.instagram, '1-1-ig');
+                download(results.youtube, '16-9-yt');
+            }
+        } catch (error: any) {
+            toast.error("Batch export failed.");
+        } finally {
+            setIsProcessing(false);
+            setProcessingStatus('');
+        }
+    };
+
     return {
         // State
         isProcessing,
@@ -417,5 +449,6 @@ export function useCreativeCanvas({ item, onClose, onRefine }: UseCreativeCanvas
         saveCanvas,
         handleRefine: onRefine || handleRefineInternal,
         handleCreateLastFrame,
+        batchExportDimensions,
     };
 }

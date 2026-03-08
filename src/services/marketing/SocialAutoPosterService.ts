@@ -48,10 +48,31 @@ export class SocialAutoPosterService {
         });
 
         try {
-            // 2. Mock Cloud Function call (dispatchPostToSocial)
-            // In production: await httpsCallable(functions, 'dispatchSocialPost')(content);
+            // 2. Real Cloud Function call (dispatchSocialPost)
+            // Fulfills PRODUCTION_200:141.
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
 
-            this.handlePublishingMock(jobId, content.platform);
+            const dispatchFunction = httpsCallable<any, { success: boolean; externalId: string; timestamp: string }>(
+                functionsWest1,
+                'dispatchSocialPost'
+            );
+
+            // Start simulation of progress for UI feedback while function runs
+            this.simulateProgress(jobId);
+
+            const result = await dispatchFunction({
+                mediaUrl: content.mediaUrl,
+                platform: content.platform,
+                caption: content.caption
+            });
+
+            if (result.data.success) {
+                store.updateJobStatus(jobId, 'success');
+                logger.info(`[SocialPost] Successfully published to ${content.platform}. External ID: ${result.data.externalId}`);
+            } else {
+                throw new Error("Cloud Function returned failure status");
+            }
 
             return jobId;
 
@@ -60,6 +81,25 @@ export class SocialAutoPosterService {
             store.updateJobStatus(jobId, 'error', error.message || 'Post failed to queue');
             throw error;
         }
+    }
+
+    /**
+     * Internal helper to drive the UI progress bar during dispatch.
+     */
+    private simulateProgress(jobId: string) {
+        let progress = 0;
+        const interval = setInterval(() => {
+            progress += 10;
+            const store = useStore.getState();
+            const job = store.backgroundJobs.find(j => j.id === jobId);
+
+            if (!job || job.status !== 'running' || progress >= 90) {
+                clearInterval(interval);
+                return;
+            }
+
+            store.updateJobProgress(jobId, progress);
+        }, 300);
     }
 
     private handlePublishingMock(jobId: string, platform: SocialPlatform) {

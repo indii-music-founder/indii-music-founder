@@ -32,25 +32,43 @@ export class InfluencerBountyService {
     /**
      * Generates a unique tracked referral link for an influencer.
      */
-    async generateBountyLink(influencerId: string, targetUrl: string): Promise<BountyLink> {
+    async generateBountyLink(influencerHandle: string, trackName: string, rewardAmount: number): Promise<BountyLink> {
         const id = `bl_${Date.now()}`;
-        const referralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
+        logger.info(`[BountyService] Requesting link for ${influencerHandle} on ${trackName}`);
 
-        logger.info(`[BountyService] Generating link for influencer ${influencerId}: ${referralCode}`);
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
 
-        const bounty: BountyLink = {
-            id,
-            influencerId,
-            targetUrl: `${targetUrl}?ref=${referralCode}`,
-            referralCode,
-            totalClicks: 0,
-            totalConversions: 0,
-            earnedCommission: 0,
-            status: 'active'
-        };
+            const createBountyFunction = httpsCallable<any, { success: boolean; refCode: string; link: string }>(
+                functionsWest1,
+                'createInfluencerBounty'
+            );
 
-        // In production: Persist to 'bounty_links' collection in Firestore
-        return bounty;
+            const result = await createBountyFunction({
+                influencerHandle,
+                trackName,
+                rewardAmount
+            });
+
+            if (!result.data.success) throw new Error("Bounty creation failed");
+
+            const bounty: BountyLink = {
+                id,
+                influencerId: influencerHandle,
+                targetUrl: result.data.link,
+                referralCode: result.data.refCode,
+                totalClicks: 0,
+                totalConversions: 0,
+                earnedCommission: 0,
+                status: 'active'
+            };
+
+            return bounty;
+        } catch (error: any) {
+            logger.error(`[BountyService] Failed to create bounty:`, error);
+            throw error;
+        }
     }
 
     /**

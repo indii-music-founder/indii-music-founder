@@ -112,9 +112,9 @@ interface VideoEditorState {
     timelineZoom: number;
     setTimelineZoom: (zoom: number) => void;
 
-    // View Mode (Director vs Editor)
-    viewMode: 'director' | 'editor';
-    setViewMode: (mode: 'director' | 'editor') => void;
+    // View Mode (Director vs Editor vs Visualizer)
+    viewMode: 'director' | 'editor' | 'visualizer';
+    setViewMode: (mode: 'director' | 'editor' | 'visualizer') => void;
 }
 
 const INITIAL_PROJECT: VideoProject = {

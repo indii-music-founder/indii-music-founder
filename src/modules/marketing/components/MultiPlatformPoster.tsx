@@ -4,6 +4,9 @@ import {
     Plus, Trash2, Upload, Video, Calendar, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { socialAutoPosterService } from '@/services/marketing/SocialAutoPosterService';
+import { useStore } from '@/core/store';
+import { useToast } from '@/core/context/ToastContext';
 
 interface Platform {
     id: string;
@@ -87,6 +90,8 @@ export default function MultiPlatformPoster() {
     const [newCaption, setNewCaption] = useState('');
     const [newPlatforms, setNewPlatforms] = useState<string[]>(['tiktok']);
     const [isPosting, setIsPosting] = useState<string | null>(null);
+    const toast = useToast();
+    const store = useStore();
 
     const togglePlatform = (id: string) => {
         setNewPlatforms(prev =>
@@ -111,12 +116,29 @@ export default function MultiPlatformPoster() {
         setShowNewPost(false);
     };
 
-    const handlePostNow = async (postId: string) => {
-        setIsPosting(postId);
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'posting' } : p));
-        await new Promise(r => setTimeout(r, 2000));
-        setPosts(prev => prev.map(p => p.id === postId ? { ...p, status: 'posted', scheduledAt: new Date() } : p));
-        setIsPosting(null);
+    const handlePostNow = async (post: ScheduledPost) => {
+        setIsPosting(post.id);
+        setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posting' } : p));
+
+        try {
+            // In a real scenario, we would have the mediaUrl in the post object
+            // For the demo, we use a placeholder or the title as a reference
+            await socialAutoPosterService.queuePost({
+                id: post.id,
+                mediaUrl: `gs://assets/videos/${post.id}.mp4`,
+                caption: post.caption,
+                hashtags: [],
+                platform: post.platforms[0] as any // Simplified for demo
+            });
+
+            toast.success(`Post dispatched to ${post.platforms.join(', ')}`);
+            setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'posted', scheduledAt: new Date() } : p));
+        } catch (error) {
+            toast.error("Failed to post now.");
+            setPosts(prev => prev.map(p => p.id === post.id ? { ...p, status: 'failed' } : p));
+        } finally {
+            setIsPosting(null);
+        }
     };
 
     const handleDelete = (postId: string) => {
@@ -202,11 +224,10 @@ export default function MultiPlatformPoster() {
                                     <button
                                         key={p.id}
                                         onClick={() => togglePlatform(p.id)}
-                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${
-                                            newPlatforms.includes(p.id)
+                                        className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${newPlatforms.includes(p.id)
                                                 ? 'bg-dept-marketing/20 border-dept-marketing text-dept-marketing'
                                                 : 'border-white/10 text-gray-500 hover:border-white/20'
-                                        }`}
+                                            }`}
                                     >
                                         <div className={`w-2 h-2 rounded-full ${p.color}`} />
                                         {p.name}
@@ -272,7 +293,7 @@ export default function MultiPlatformPoster() {
                                 <div className="flex items-center gap-2 flex-shrink-0">
                                     {STATUS_ICONS[post.status]}
                                     <button
-                                        onClick={() => handlePostNow(post.id)}
+                                        onClick={() => handlePostNow(post)}
                                         disabled={isPosting === post.id}
                                         className="px-3 py-1 bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing rounded-lg text-[10px] font-bold transition-colors"
                                     >

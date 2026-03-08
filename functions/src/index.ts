@@ -878,6 +878,8 @@ export const calculateFuelLogistics = touringService.calculateFuelLogistics;
 
 // Marketing
 export const executeCampaign = marketingService.executeCampaign;
+export const dispatchSocialPost = marketingService.dispatchSocialPost;
+export const createInfluencerBounty = marketingService.createInfluencerBounty;
 
 /**
  * Get GKE Cluster Status

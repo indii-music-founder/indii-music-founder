@@ -13,7 +13,8 @@ import { ErrorBoundary } from '@/core/components/ErrorBoundary';
 // Components
 import { DirectorPromptBar } from './components/DirectorPromptBar';
 import { DailiesStrip } from './components/DailiesStrip';
-import { VideoStage } from './components/VideoStage'; // ⚡ Bolt Optimization
+import { VideoStage } from './components/VideoStage';
+import { SceneBuilder } from './visualizer/SceneBuilder';
 import { useToast, ToastContextType } from '@/core/context/ToastContext';
 
 /** Valid job status values for video generation */
@@ -441,6 +442,24 @@ export default function VideoWorkflow() {
                     setVideoInputs={setVideoInputs}
                 />
 
+                {/* Mode Switcher Shortcut buttons (Overlay) */}
+                <div className="absolute top-24 left-4 z-40 flex flex-col gap-2">
+                    <button
+                        onClick={() => setViewMode('visualizer')}
+                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-blue-400 hover:bg-blue-500/10 transition-all shadow-xl backdrop-blur-md"
+                        title="Open 3D Stage Builder"
+                    >
+                        <Layout size={18} />
+                    </button>
+                    <button
+                        onClick={() => setViewMode('editor')}
+                        className="w-10 h-10 bg-black/40 border border-white/10 rounded-lg flex items-center justify-center text-gray-400 hover:text-purple-400 hover:bg-purple-500/10 transition-all shadow-xl backdrop-blur-md"
+                        title="Open Timeline Editor"
+                    >
+                        <Settings size={18} />
+                    </button>
+                </div>
+
                 {/* Technical Settings Panel (Collapsible, Bottom-Right) */}
                 <div className="absolute bottom-24 right-4 z-30 w-72">
                     <button
@@ -558,6 +577,34 @@ export default function VideoWorkflow() {
                             </div>
                         </React.Suspense>
                     </ErrorBoundary>
+                </div>
+            )}
+            {/* 3D Visualizer Container */}
+            {viewMode === 'visualizer' && (
+                <div className="absolute inset-0 z-50 bg-background flex flex-col p-4">
+                    <div className="flex justify-between items-center mb-4">
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => setViewMode('director')}
+                                className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+                            >
+                                <ChevronDown size={20} className="rotate-90" />
+                            </button>
+                            <h2 className="text-white font-bold uppercase tracking-wider text-sm flex items-center gap-2">
+                                <Layout size={16} className="text-blue-400" />
+                                Interactive 3D Stage
+                            </h2>
+                        </div>
+                        <button
+                            onClick={() => setViewMode('director')}
+                            className="p-2 hover:bg-red-900/40 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
+                        >
+                            <Trash2 size={20} />
+                        </button>
+                    </div>
+                    <div className="flex-1 min-h-0">
+                        <SceneBuilder />
+                    </div>
                 </div>
             )}
         </div>
