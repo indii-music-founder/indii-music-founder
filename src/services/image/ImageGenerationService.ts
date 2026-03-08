@@ -95,7 +95,6 @@ export class ImageGenerationService {
         logger.debug('[ImageGen DEBUG] Quota check result:', quotaCheck);
 
         if (!quotaCheck.allowed) {
-            // ... existing error logic
             logger.error('[ImageGen] Quota exceeded');
             let tier: SubscriptionTier = 'free' as SubscriptionTier; // Bypassing strict enum mismatch if needed, MembershipTier includes 'free'
             try {

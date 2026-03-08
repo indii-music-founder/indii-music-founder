@@ -98,7 +98,7 @@ export class ThreeSceneBuilderService {
             version: '1.0',
             sceneId,
             renderer: 'react-three-fiber',
-            // ... serialized assets
+            timestamp: new Date().toISOString()
         };
 
         return JSON.stringify(manifest);
