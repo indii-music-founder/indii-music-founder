@@ -1,0 +1,77 @@
+# Item 284: Artillery Load Test Configuration
+#
+# Tests the indiiOS app endpoints under load:
+#   - Phase 1: Warm up (10 users/sec for 30s)
+#   - Phase 2: Ramp up (10→50 users/sec over 60s)
+#   - Phase 3: Sustained (50 users/sec for 120s)
+#
+# Run: npx artillery run artillery.yml --output reports/load-test.json
+# Report: npx artillery report reports/load-test.json
+
+config:
+  target: "http://localhost:4242"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+      name: "Warm up"
+    - duration: 60
+      arrivalRate: 10
+      rampTo: 50
+      name: "Ramp up"
+    - duration: 120
+      arrivalRate: 50
+      name: "Sustained load"
+
+  defaults:
+    headers:
+      Accept: "text/html,application/json"
+      User-Agent: "Artillery/indiiOS-LoadTest"
+
+  # Response time thresholds
+  ensure:
+    thresholds:
+      - http.response_time.p95: 2000   # 95th percentile < 2s
+      - http.response_time.p99: 5000   # 99th percentile < 5s
+      - http.codes.5xx: 0              # Zero 5xx errors
+
+scenarios:
+  - name: "SPA Initial Load"
+    weight: 40
+    flow:
+      - get:
+          url: "/"
+          capture:
+            - regexp: "<title>(.*?)</title>"
+              as: "pageTitle"
+
+  - name: "Static Asset Load"
+    weight: 30
+    flow:
+      - get:
+          url: "/assets/index.js"
+      - get:
+          url: "/assets/index.css"
+
+  - name: "Module Navigation"
+    weight: 20
+    flow:
+      - get:
+          url: "/"
+      - think: 2
+      - get:
+          url: "/#creative"
+      - think: 1
+      - get:
+          url: "/#distribution"
+      - think: 1
+      - get:
+          url: "/#finance"
+
+  - name: "Rapid Navigation Stress"
+    weight: 10
+    flow:
+      - loop:
+          - get:
+              url: "/"
+          - think: 0.5
+        count: 10

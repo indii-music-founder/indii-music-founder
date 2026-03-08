@@ -1,0 +1,88 @@
+{
+    "common": {
+        "save": "Guardar",
+        "cancel": "Cancelar",
+        "delete": "Eliminar",
+        "confirm": "Confirmar",
+        "close": "Cerrar",
+        "loading": "Cargando…",
+        "error": "Algo salió mal",
+        "retry": "Reintentar",
+        "search": "Buscar",
+        "noResults": "No se encontraron resultados",
+        "back": "Atrás",
+        "next": "Siguiente",
+        "submit": "Enviar",
+        "copy": "Copiar",
+        "copied": "¡Copiado!",
+        "settings": "Configuración",
+        "logout": "Cerrar sesión",
+        "login": "Iniciar sesión",
+        "signUp": "Registrarse"
+    },
+    "sidebar": {
+        "dashboard": "Panel principal",
+        "creative": "Estudio creativo",
+        "video": "Producción de video",
+        "distribution": "Distribución",
+        "marketing": "Marketing",
+        "finance": "Finanzas",
+        "legal": "Legal",
+        "licensing": "Licencias",
+        "publishing": "Publicación",
+        "merchandise": "Mercancía",
+        "social": "Redes sociales",
+        "touring": "Giras",
+        "workflow": "Flujo de trabajo",
+        "knowledge": "Base de conocimiento",
+        "files": "Archivos",
+        "agent": "Agente",
+        "settings": "Configuración"
+    },
+    "dashboard": {
+        "title": "Panel principal",
+        "welcome": "Bienvenido de nuevo, {{name}}",
+        "recentActivity": "Actividad reciente",
+        "quickActions": "Acciones rápidas"
+    },
+    "creative": {
+        "title": "Estudio creativo",
+        "generateImage": "Generar imagen",
+        "generateVideo": "Generar video",
+        "promptPlaceholder": "Describe lo que quieres crear…",
+        "generating": "Generando…",
+        "downloadImage": "Descargar imagen",
+        "saveToLibrary": "Guardar en biblioteca"
+    },
+    "distribution": {
+        "title": "Distribución",
+        "newRelease": "Nuevo lanzamiento",
+        "status": "Estado",
+        "distributed": "Distribuido",
+        "pending": "Pendiente",
+        "failed": "Fallido"
+    },
+    "agent": {
+        "title": "Asistente de IA",
+        "placeholder": "Pregúntame lo que quieras…",
+        "thinking": "Pensando…",
+        "sidecarOnline": "Servicio de IA en línea",
+        "sidecarOffline": "Servicio de IA sin conexión",
+        "sidecarChecking": "Verificando servicio de IA…",
+        "restart": "Reiniciar servicio de IA"
+    },
+    "sync": {
+        "synced": "Todos los cambios sincronizados",
+        "syncing": "Sincronizando…",
+        "pending": "{{count}} cambio pendiente",
+        "pending_plural": "{{count}} cambios pendientes",
+        "error": "Error de sincronización"
+    },
+    "auth": {
+        "emailLabel": "Correo electrónico",
+        "passwordLabel": "Contraseña",
+        "forgotPassword": "¿Olvidaste tu contraseña?",
+        "noAccount": "¿No tienes una cuenta?",
+        "hasAccount": "¿Ya tienes una cuenta?"
+    }
+}
