@@ -168,6 +168,8 @@ const CampaignDashboard: React.FC = () => {
                         <CommunityWebhookPanel />
                     ) : activeTab === 'influencers' ? (
                         <InfluencerBountyBoard />
+                    ) : activeTab === 'auto-poster' ? (
+                        <MultiPlatformPoster />
                     ) : activeTab === 'momentum' ? (
                         <MomentumTracker />
                     ) : (
