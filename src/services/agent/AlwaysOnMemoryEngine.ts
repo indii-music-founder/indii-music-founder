@@ -87,6 +87,13 @@ export class AlwaysOnMemoryEngine {
     private isConsolidating = false;
     private isIngesting = false;
 
+    // ─── Cached FirestoreService Instances ─────────────────────
+    // Reuse service instances per userId to prevent Firestore SDK
+    // INTERNAL ASSERTION errors caused by rapid re-instantiation.
+    private memoryServiceCache = new Map<string, FirestoreService<AlwaysOnMemory>>();
+    private insightServiceCache = new Map<string, FirestoreService<ConsolidationInsight>>();
+    private ingestionServiceCache = new Map<string, FirestoreService<IngestionEvent>>();
+
     private embeddingBatcher = new RequestBatcher<string, number[]>(
         async (texts) => {
             try {
@@ -108,18 +115,33 @@ export class AlwaysOnMemoryEngine {
         { maxBatchSize: 10, maxWaitMs: 50 }
     );
 
-    // ─── Collection Accessors ──────────────────────────────────
+    // ─── Cached Collection Accessors ───────────────────────────
 
     private getMemoryService(userId: string): FirestoreService<AlwaysOnMemory> {
-        return new FirestoreService<AlwaysOnMemory>(memoriesPath(userId));
+        let service = this.memoryServiceCache.get(userId);
+        if (!service) {
+            service = new FirestoreService<AlwaysOnMemory>(memoriesPath(userId));
+            this.memoryServiceCache.set(userId, service);
+        }
+        return service;
     }
 
     private getInsightService(userId: string): FirestoreService<ConsolidationInsight> {
-        return new FirestoreService<ConsolidationInsight>(insightsPath(userId));
+        let service = this.insightServiceCache.get(userId);
+        if (!service) {
+            service = new FirestoreService<ConsolidationInsight>(insightsPath(userId));
+            this.insightServiceCache.set(userId, service);
+        }
+        return service;
     }
 
     private getIngestionService(userId: string): FirestoreService<IngestionEvent> {
-        return new FirestoreService<IngestionEvent>(ingestionEventsPath(userId));
+        let service = this.ingestionServiceCache.get(userId);
+        if (!service) {
+            service = new FirestoreService<IngestionEvent>(ingestionEventsPath(userId));
+            this.ingestionServiceCache.set(userId, service);
+        }
+        return service;
     }
 
     private async getEmbedding(text: string): Promise<number[]> {
@@ -179,6 +201,12 @@ export class AlwaysOnMemoryEngine {
         }
         this.isRunning = false;
         this.userId = null;
+
+        // Clear cached FirestoreService instances to prevent stale references
+        this.memoryServiceCache.clear();
+        this.insightServiceCache.clear();
+        this.ingestionServiceCache.clear();
+
         logger.info('[AlwaysOnMemoryEngine] Stopped.');
     }
 
