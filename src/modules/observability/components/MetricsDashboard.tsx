@@ -55,6 +55,11 @@ export const MetricsDashboard: React.FC = () => {
 
     const agentChartData = metrics
         ? Object.entries(metrics.agentBreakdown).map(([name, data]) => ({
+              name: name.replace('-agent', '').replace('_', ' '),
+              calls: data.count,
+              cost: Number(data.cost.toFixed(4)),
+              tokens: data.tokens,
+          }))
             name: name.replace('-agent', '').replace('_', ' '),
             calls: data.count,
             cost: Number(data.cost.toFixed(4)),
@@ -72,6 +77,11 @@ export const MetricsDashboard: React.FC = () => {
                         <button
                             key={range}
                             onClick={() => setTimeRange(range)}
+                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
+                                timeRange === range
+                                    ? 'bg-slate-700 text-white'
+                                    : 'text-slate-500 hover:text-white'
+                            }`}
                             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${timeRange === range
                                     ? 'bg-slate-700 text-white'
                                     : 'text-slate-500 hover:text-white'
@@ -113,6 +123,8 @@ export const MetricsDashboard: React.FC = () => {
                                 metrics.totalTokens > 1_000_000
                                     ? `${(metrics.totalTokens / 1_000_000).toFixed(2)}M`
                                     : metrics.totalTokens > 1_000
+                                    ? `${(metrics.totalTokens / 1_000).toFixed(1)}K`
+                                    : metrics.totalTokens.toString()
                                         ? `${(metrics.totalTokens / 1_000).toFixed(1)}K`
                                         : metrics.totalTokens.toString()
                             }

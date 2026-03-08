@@ -1,4 +1,8 @@
 import * as React from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw } from 'lucide-react';
+import { MarketingService } from '@/services/marketing/MarketingService';
+import { CampaignAsset } from '@/modules/marketing/types';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { MapPin, Sparkles, Filter } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
@@ -22,6 +26,143 @@ import { ChatMessage } from '@/core/components/chat/ChatMessage';
 import { PromptArea } from '@/core/components/command-bar/PromptArea';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
+
+const STATUS_COLORS: Record<string, string> = {
+    active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
+    expired: 'bg-slate-700/50 text-slate-500 border-slate-700',
+};
+
+const CampaignsTab: React.FC = () => {
+    const [campaigns, setCampaigns] = React.useState<CampaignAsset[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    const fetchCampaigns = React.useCallback(async () => {
+        setLoading(true);
+        try {
+            const data = await MarketingService.getCampaigns();
+            setCampaigns(data);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    React.useEffect(() => { fetchCampaigns(); }, [fetchCampaigns]);
+
+    return (
+        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Megaphone size={18} className="text-emerald-400" /> Campaigns
+                </h2>
+                <button
+                    onClick={fetchCampaigns}
+                    className="p-2 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-800"
+                    aria-label="Refresh campaigns"
+                >
+                    <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
+                </button>
+            </div>
+
+            {loading ? (
+                <div className="space-y-3">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="h-20 bg-slate-900 rounded-xl animate-pulse border border-slate-800" />
+                    ))}
+                </div>
+            ) : campaigns.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-20 text-slate-600 space-y-3">
+                    <Megaphone size={32} className="opacity-30" />
+                    <p className="text-sm">No campaigns yet. Create one in the Marketing module.</p>
+                    <a
+                        href="?module=marketing"
+                        className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+                    >
+                        Go to Marketing <ExternalLink size={10} />
+                    </a>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {campaigns.map((c) => (
+                        <div key={c.id ?? c.title} className="bg-slate-900 rounded-xl border border-slate-800 p-4 hover:border-slate-700 transition-colors">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium text-white truncate">{c.title}</p>
+                                    {c.description && (
+                                        <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">{c.description}</p>
+                                    )}
+                                    <p className="text-xs text-slate-600 mt-1">
+                                        {c.startDate}{c.endDate ? ` → ${c.endDate}` : ''} · {c.durationDays}d · {c.posts.length} posts
+                                    </p>
+                                </div>
+                                <span className={`text-xs px-2 py-0.5 rounded-full border capitalize flex-shrink-0 ${STATUS_COLORS[c.status] ?? STATUS_COLORS['expired']}`}>
+                                    {c.status}
+                                </span>
+                            </div>
+                            {c.budget !== undefined && (
+                                <p className="text-xs text-slate-500 mt-2">Budget: ${c.budget.toLocaleString()}</p>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
+    );
+};
+
+const MOCK_INBOX = [
+    { id: '1', from: 'Venue Contact', subject: 'Re: Booking inquiry – The Shelter', preview: "Hey, thanks for reaching out! We have a Friday slot open in April...", time: '2h ago', unread: true },
+    { id: '2', from: 'DistroKid', subject: 'Your release is live', preview: "Your track 'Midnight Drive' is now available on all platforms.", time: '1d ago', unread: false },
+    { id: '3', from: 'Sync Agent', subject: 'Licensing opportunity – Film project', preview: "A director is interested in licensing your catalog for...", time: '2d ago', unread: true },
+];
+
+const InboxTab: React.FC = () => {
+    return (
+        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
+            <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Mail size={18} className="text-emerald-400" /> Inbox
+                    <span className="bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                        {MOCK_INBOX.filter(m => m.unread).length}
+                    </span>
+                </h2>
+                <p className="text-xs text-slate-600">Aggregated from connected integrations</p>
+            </div>
+
+            <div className="space-y-1">
+                {MOCK_INBOX.map((msg) => (
+                    <div
+                        key={msg.id}
+                        className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-slate-700 ${
+                            msg.unread ? 'bg-slate-900 border-slate-800' : 'bg-slate-900/40 border-transparent'
+                        }`}
+                    >
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-400">
+                            {msg.from[0]}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                                <p className={`text-sm truncate ${msg.unread ? 'font-semibold text-white' : 'text-slate-300'}`}>
+                                    {msg.from}
+                                </p>
+                                <span className="text-xs text-slate-600 flex-shrink-0">{msg.time}</span>
+                            </div>
+                            <p className={`text-xs truncate mt-0.5 ${msg.unread ? 'text-slate-300' : 'text-slate-500'}`}>
+                                {msg.subject}
+                            </p>
+                            <p className="text-xs text-slate-600 truncate mt-0.5">{msg.preview}</p>
+                        </div>
+                        {msg.unread && <div className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0 mt-1.5" />}
+                    </div>
+                ))}
+            </div>
+
+            <p className="text-center text-xs text-slate-700 pt-2">
+                Full email integration coming soon. Connect Gmail / Outlook in Settings.
+            </p>
+        </div>
+    );
+};
 
 const AgentDashboard: React.FC = () => {
     // Hooks must be called unconditionally before early returns
@@ -253,8 +394,21 @@ const AgentDashboard: React.FC = () => {
                                 <div className="p-4 bg-slate-900 rounded-full border border-slate-800">
                                     <Filter size={32} className="opacity-50" />
                                 </div>
-                                <p className="text-lg font-medium">Module under construction</p>
                             </div>
+                        )}
+
+                        {activeTab === 'tasks' && (
+                            <div className="h-full overflow-hidden">
+                                <TaskTracker />
+                            </div>
+                        )}
+
+                        {activeTab === 'campaigns' && (
+                            <CampaignsTab />
+                        )}
+
+                        {activeTab === 'inbox' && (
+                            <InboxTab />
                         )}
 
                     </div>

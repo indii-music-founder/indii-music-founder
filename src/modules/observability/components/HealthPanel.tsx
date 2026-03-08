@@ -97,6 +97,8 @@ export const HealthPanel: React.FC = () => {
     const overallStatus: HealthStatus = services.some(s => s.status === 'down')
         ? 'down'
         : services.some(s => s.status === 'degraded' || s.status === 'checking')
+        ? 'degraded'
+        : 'healthy';
             ? 'degraded'
             : 'healthy';
 
@@ -108,6 +110,13 @@ export const HealthPanel: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold text-white">System Health</h2>
+                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${
+                        overallStatus === 'healthy'
+                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                            : overallStatus === 'degraded'
+                            ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                            : 'bg-red-500/10 text-red-400 border-red-500/20'
+                    }`}>
                     <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${overallStatus === 'healthy'
                             ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
                             : overallStatus === 'degraded'
