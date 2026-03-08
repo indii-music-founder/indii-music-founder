@@ -219,7 +219,7 @@ export const triggerVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
@@ -316,7 +316,7 @@ export const triggerLongFormVideoJob = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
@@ -481,7 +481,7 @@ export const renderVideo = functions
     .runWith({
         secrets: [inngestEventKey],
         timeoutSeconds: 60,
-        memory: "256MB",
+        memory: "2GB",
         enforceAppCheck: ENFORCE_APP_CHECK
     })
     .https.onCall(async (data: unknown, context: functions.https.CallableContext) => {
