@@ -21,6 +21,7 @@ import {
 } from '../components/GenerativeUIComponents';
 import { StepStepper } from '../components/StepStepper';
 import { determinePhase } from '@/services/onboarding/onboardingService';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 export default function OnboardingPage() {
     const {
@@ -52,6 +53,7 @@ export default function OnboardingPage() {
     const currentPhase = determinePhase(userProfile);
 
     return (
+        <ModuleErrorBoundary moduleName="Onboarding">
         <div className="flex flex-col lg:flex-row h-full w-full bg-bg-dark text-white overflow-hidden relative">
             {/* Background Atmosphere */}
             <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -309,5 +311,6 @@ export default function OnboardingPage() {
                 )}
             </AnimatePresence>
         </div>
+        </ModuleErrorBoundary>
     );
 }

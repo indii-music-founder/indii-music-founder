@@ -4,6 +4,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
 import { DocumentCard } from './components/DocumentCard';
 import { KnowledgeChat } from './components/KnowledgeChat';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 export default function KnowledgeBase() {
     const toast = useToast();
@@ -95,6 +96,7 @@ export default function KnowledgeBase() {
     );
 
     return (
+        <ModuleErrorBoundary moduleName="Knowledge Base">
         <div className="h-full flex flex-col bg-bg-dark text-white overflow-hidden relative">
             <div className="flex-1 overflow-y-auto p-8"
                 onDragOver={handleDragOver}
@@ -199,5 +201,6 @@ export default function KnowledgeBase() {
                 activeDoc={activeChatDoc}
             />
         </div>
+        </ModuleErrorBoundary>
     );
 }

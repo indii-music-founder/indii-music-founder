@@ -1,5 +1,6 @@
 import React from 'react';
 import CampaignDashboard from './components/CampaignDashboard';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /**
  * Main Marketing Module Entry Point
@@ -8,5 +9,5 @@ import CampaignDashboard from './components/CampaignDashboard';
  * following Platinum Polish standards.
  */
 export default function MarketingDashboard() {
-    return <CampaignDashboard />;
+    return <ModuleErrorBoundary moduleName="Marketing"><CampaignDashboard /></ModuleErrorBoundary>;
 }

@@ -14,6 +14,7 @@ import { ReceiptOCR } from './components/ReceiptOCR';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import {
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, ArrowDownRight, Wallet,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
@@ -34,6 +35,7 @@ import {
 
 export default function FinanceDashboard() {
     return (
+        <ModuleErrorBoundary moduleName="Finance">
         <div className="absolute inset-0 flex">
             {/* ── LEFT PANEL — Quick Stats & Summary ──────────────── */}
             <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
@@ -151,6 +153,7 @@ export default function FinanceDashboard() {
                 <AlertsPanel />
             </aside>
         </div>
+        </ModuleErrorBoundary>
     );
 }
 

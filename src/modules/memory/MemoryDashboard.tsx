@@ -32,6 +32,7 @@ import {
     Upload,
 } from 'lucide-react';
 import type { AlwaysOnMemory, AlwaysOnMemoryCategory, MemoryTier } from '@/types/AlwaysOnMemory';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 // ─── Constants ──────────────────────────────────────────────────
 
@@ -217,6 +218,7 @@ export default function MemoryDashboard() {
     // ─── Render ─────────────────────────────────────────────────
 
     return (
+        <ModuleErrorBoundary moduleName="Memory">
         <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden" data-testid="memory-dashboard">
             {/* Header */}
             <div className="flex-shrink-0 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl">
@@ -331,6 +333,7 @@ export default function MemoryDashboard() {
                 </div>
             </div>
         </div>
+        </ModuleErrorBoundary>
     );
 }
 
