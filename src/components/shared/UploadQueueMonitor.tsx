@@ -18,7 +18,7 @@ export const UploadQueueMonitor: React.FC = () => {
         clearCompletedUploads: state.clearCompletedUploads,
     })));
 
-    if (uploadQueue.length === 0) return null;
+    if (!uploadQueue || uploadQueue.length === 0) return null;
 
     const inProgressCount = uploadQueue.filter(i => i.status === 'pending' || i.status === 'uploading').length;
     const completedCount = uploadQueue.filter(i => i.status === 'success').length;

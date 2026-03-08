@@ -9,24 +9,16 @@ import userEvent from '@testing-library/user-event';
 
 // --- Mocks ---
 
-// Mock Store
-const mockAddToHistory = vi.fn();
-const mockSetJobId = vi.fn();
-const mockSetJobStatus = vi.fn();
-const mockSetProgress = vi.fn();
-const mockSetPrompt = vi.fn();
-
-vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
-    useStore: vi.fn(() => ({
-  serverTimestamp: vi.fn(),
+const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorStore } = vi.hoisted(() => {
+    const store = {
         generatedHistory: [],
         selectedItem: null,
         pendingPrompt: null,
         setPendingPrompt: vi.fn(),
-        addToHistory: mockAddToHistory,
-        setPrompt: mockSetPrompt,
-        studioControls: { resolution: '1080p', duration: 10, aspectRatio: '16:9' }, // Duration > 8 triggers Long Form
+        addToHistory: vi.fn(),
+        updateHistoryItem: vi.fn(),
+        setPrompt: vi.fn(),
+        studioControls: { resolution: '1080p', duration: 10, aspectRatio: '16:9' },
         videoInputs: {},
         currentOrganizationId: 'org-123',
         currentProjectId: 'proj-123',
@@ -38,35 +30,59 @@ vi.mock('@/core/store', () => ({
             motion: [],
             preciseReference: false,
             targetMedia: 'video'
+        },
+        characterReferences: [],
+        setStudioControls: vi.fn(),
+        addJob: vi.fn(),
+        updateJobProgress: vi.fn(),
+        updateJobStatus: vi.fn()
+    };
+
+    const editorStore = {
+        viewMode: 'director',
+        setViewMode: vi.fn(),
+        jobId: null,
+        setJobId: vi.fn(),
+        status: 'idle' as const,
+        setStatus: vi.fn(),
+        progress: 0,
+        setProgress: vi.fn(),
+        inputAudio: null,
+        setInputAudio: vi.fn()
+    };
+
+    const useStoreMock = Object.assign(
+        vi.fn((selector) => selector ? selector(store) : store),
+        {
+            getState: vi.fn(() => store),
+            setState: vi.fn((patch: any) => Object.assign(store, typeof patch === 'function' ? patch(store) : patch))
         }
-    })),
+    );
+
+    const useVideoEditorStoreMock = Object.assign(
+        vi.fn((selector) => selector ? selector(editorStore) : editorStore),
+        {
+            getState: vi.fn(() => editorStore),
+            setState: vi.fn((patch: any) => Object.assign(editorStore, typeof patch === 'function' ? patch(editorStore) : patch))
+        }
+    );
+
+    return {
+        mockStoreState: store,
+        mockVideoEditorState: editorStore,
+        mockUseStore: useStoreMock,
+        mockUseVideoEditorStore: useVideoEditorStoreMock
+    };
+});
+
+vi.mock('@/core/store', () => ({
+    useStore: mockUseStore,
+    serverTimestamp: vi.fn()
 }));
 
-// Mock Video Editor Store
-const editorStoreState = {
-    status: 'idle',
-    jobId: null,
-    progress: 0,
-    viewMode: 'director',
-};
-
-vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn(() => ({
-  serverTimestamp: vi.fn(),
-        ...editorStoreState,
-        setJobId: mockSetJobId,
-        setStatus: mockSetJobStatus,
-        setProgress: mockSetProgress,
-        setViewMode: vi.fn(),
-    }));
-    (fn as any).getState = vi.fn(() => ({
-  serverTimestamp: vi.fn(),
-        status: editorStoreState.status,
-        setProgress: mockSetProgress
-    }));
-    return {
-    serverTimestamp: vi.fn(), useVideoEditorStore: fn };
-});
+vi.mock('./store/videoEditorStore', () => ({
+    useVideoEditorStore: mockUseVideoEditorStore
+}));
 
 // Mock Toast
 const mockToastError = vi.fn();
@@ -74,9 +90,9 @@ const mockToastSuccess = vi.fn();
 const mockToastInfo = vi.fn();
 
 vi.mock('@/core/context/ToastContext', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useToast: vi.fn(() => ({
-  serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         success: mockToastSuccess,
         error: mockToastError,
         info: mockToastInfo,
@@ -89,7 +105,7 @@ let subscribeCallback: ((data: any) => void) | null = null;
 let resolveGeneratePromise: ((value: any) => void) | null = null;
 
 vi.mock('@/services/video/VideoGenerationService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     VideoGeneration: {
         generateVideo: vi.fn(),
         subscribeToJob: vi.fn((id, cb) => {
@@ -103,9 +119,10 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 }));
 
 vi.mock('../../utils/video', () => ({
-  serverTimestamp: vi.fn(), extractVideoFrame: vi.fn() }));
+    serverTimestamp: vi.fn(), extractVideoFrame: vi.fn()
+}));
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(),
     doc: vi.fn(),
     onSnapshot: vi.fn(),
@@ -127,11 +144,7 @@ vi.mock('@/services/firebase', () => ({
 
 // Helper to update store mock during test execution
 const updateStoreMock = (overrides: any) => {
-    Object.assign(editorStoreState, overrides);
-    (useVideoEditorStore as any).getState.mockReturnValue({
-        status: editorStoreState.status,
-        setProgress: mockSetProgress
-    });
+    Object.assign(mockVideoEditorState, overrides);
 };
 
 describe('Pulse: Video Workflow Long Form Generation', () => {
@@ -140,10 +153,15 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         subscribeCallback = null;
         resolveGeneratePromise = null;
         // Reset store state
-        editorStoreState.status = 'idle';
-        editorStoreState.jobId = null;
-        editorStoreState.progress = 0;
-        editorStoreState.viewMode = 'director';
+        Object.assign(mockVideoEditorState, {
+            status: 'idle',
+            jobId: null,
+            progress: 0,
+            viewMode: 'director'
+        });
+        Object.assign(mockStoreState, {
+            studioControls: { resolution: '1080p', duration: 10, aspectRatio: '16:9' }
+        });
     });
 
     afterEach(() => {
@@ -166,7 +184,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
 
         // 3. QUEUED STATE
         expect(mockToastInfo).toHaveBeenCalledWith(expect.stringContaining('Queuing scene generation'));
-        expect(mockSetJobStatus).toHaveBeenCalledWith('queued');
+        expect(mockVideoEditorState.setStatus).toHaveBeenCalledWith('queued');
 
         // Simulate state change to Queued
         act(() => {
@@ -190,8 +208,8 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
             }
         });
 
-        expect(mockSetJobId).toHaveBeenCalledWith(mockJobId);
-        expect(mockSetJobStatus).toHaveBeenCalledWith('processing');
+        expect(mockVideoEditorState.setJobId).toHaveBeenCalledWith(mockJobId);
+        expect(mockVideoEditorState.setStatus).toHaveBeenCalledWith('processing');
 
         // Simulate state change to Processing
         act(() => {
@@ -218,7 +236,7 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
 
         expect(screen.getByText(/AI Director is framing the scene/i)).toBeInTheDocument();
         expect(screen.getByText(/\(45%\)/i)).toBeInTheDocument();
-        expect(mockSetProgress).toHaveBeenCalledWith(45);
+        expect(mockVideoEditorState.setProgress).toHaveBeenCalledWith(45);
 
         // 6. SUCCESS STATE
         const videoUrl = 'https://example.com/long.mp4';
@@ -230,10 +248,10 @@ describe('Pulse: Video Workflow Long Form Generation', () => {
         await new Promise(resolve => setTimeout(resolve, 150));
 
         expect(mockToastSuccess).toHaveBeenCalledWith('Scene generated!');
-        expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockStoreState.addToHistory).toHaveBeenCalledWith(expect.objectContaining({
             id: mockJobId,
             url: videoUrl
         }));
-        expect(mockSetJobStatus).toHaveBeenCalledWith('idle');
+        expect(mockVideoEditorState.setStatus).toHaveBeenCalledWith('idle');
     });
 });

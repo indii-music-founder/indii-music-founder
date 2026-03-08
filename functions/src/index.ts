@@ -29,6 +29,9 @@ admin.initializeApp();
 // Stripe Connect Functions
 export { createStripeAccount, createTransfer } from './stripe/connect';
 
+// Distribution Functions (Item 218: Delivery Status Polling)
+export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
+
 // App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
 const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
 

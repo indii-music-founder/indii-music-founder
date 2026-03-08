@@ -29,6 +29,21 @@ interface AgentZeroRawResponse {
     [key: string]: unknown;
 }
 
+/** Item shape passed to the distribution relay after asset finalisation */
+export interface DistributionRelayItem {
+    id: string;
+    type: string;
+    prompt: string;
+    [key: string]: unknown;
+}
+
+/** Options for the shipIt convenience method */
+export interface ShipItOptions {
+    projectId?: string;
+    target?: string;
+    [key: string]: unknown;
+}
+
 export interface AgentTaskRequest {
     project_id: string;
     instruction: string;
@@ -358,7 +373,7 @@ class AgentZeroService {
      * The "Ship It" command - Initiates a multi-agent relay for distribution.
      * This coordinates Legal, Brand, and Distribution agents.
      */
-    async shipIt(assetId: string, options: Record<string, any> = {}): Promise<AgentTaskResponse> {
+    async shipIt(assetId: string, options: ShipItOptions = {}): Promise<AgentTaskResponse> {
         return this.executeTask({
             project_id: options.projectId || 'global',
             instruction: `/ship-it asset=${assetId} target=${options.target || 'staging'}`,
@@ -374,7 +389,7 @@ class AgentZeroService {
      * Triggers the distribution relay after an asset is finalized.
      * This is internally called by AssetObserver but can be invoked manually.
      */
-    async triggerDistributionRelay(item: any) {
+    async triggerDistributionRelay(item: DistributionRelayItem) {
         // 1. Notify Legal (Simulated/Agentic check)
         const legalCheck = await this.sendMessage(
             `I have a new ${item.type} finalized. Please perform a quick rights check for: ${item.prompt.substring(0, 50)}`,

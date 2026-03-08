@@ -116,7 +116,7 @@ class AssetObserver {
         // We wrap this in a timeout to ensure the UI has updated first
         setTimeout(async () => {
             try {
-                await agentZeroService.triggerDistributionRelay(item);
+                await agentZeroService.triggerDistributionRelay(item as any);
             } catch (err) {
                 Logger.error('AssetObserver', 'Failed to trigger distribution relay:', err);
             }

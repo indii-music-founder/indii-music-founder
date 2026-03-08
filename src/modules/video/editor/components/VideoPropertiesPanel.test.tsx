@@ -12,6 +12,22 @@ vi.mock('@/core/context/ToastContext', () => ({
     }),
 }));
 
+// Mock Video Editor Store
+vi.mock('../../store/videoEditorStore', async (importOriginal) => {
+    const actual = await importOriginal<any>();
+    return {
+        ...actual,
+        useVideoEditorStore: vi.fn((selector) => {
+            const mockState = {
+                currentTime: 10,
+                isPlaying: false,
+                selectedClipId: 'clip-1'
+            };
+            return selector ? selector(mockState) : mockState;
+        }),
+    };
+});
+
 describe('VideoPropertiesPanel', () => {
     const mockUpdateClip = vi.fn();
     const mockProject: VideoProject = {

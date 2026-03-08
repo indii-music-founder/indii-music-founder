@@ -19,7 +19,7 @@ export const BackgroundJobMonitor: React.FC = () => {
         clearCompletedJobs: state.clearCompletedJobs,
     })));
 
-    if (backgroundJobs.length === 0) return null;
+    if (!backgroundJobs || backgroundJobs.length === 0) return null;
 
     const inProgressCount = backgroundJobs.filter(i => i.status === 'running').length;
     const completedCount = backgroundJobs.filter(i => i.status === 'success').length;
