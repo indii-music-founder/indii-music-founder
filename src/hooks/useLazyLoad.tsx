@@ -34,7 +34,7 @@ interface UseLazyLoadOptions {
 
 interface UseLazyLoadResult {
     /** Ref to attach to the element to observe */
-    ref: React.RefObject<HTMLDivElement | null>;
+    ref: React.MutableRefObject<HTMLDivElement | null>;
     /** Whether the element is (or was) visible */
     isVisible: boolean;
 }

@@ -23,6 +23,7 @@ import { RegistrationChecklistPanel } from './components/RegistrationChecklistPa
 
 /* ── Logic ── */
 import { useDistributionDashboard } from './hooks/useDistributionDashboard';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
 /*  Distribution Dashboard — Three-Panel Layout                        */
@@ -42,6 +43,7 @@ export default function DistributionDashboard() {
     ];
 
     return (
+        <ModuleErrorBoundary moduleName="Distribution">
         <div className="absolute inset-0 flex bg-bg-dark/50">
             {/* ── LEFT PANEL — Distributor Status & Health ────────── */}
             <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0 bg-black/20 backdrop-blur-md">
@@ -132,5 +134,6 @@ export default function DistributionDashboard() {
                 <AuthorityInfoPanel />
             </aside>
         </div>
+        </ModuleErrorBoundary>
     );
 }

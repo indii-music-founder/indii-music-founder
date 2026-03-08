@@ -3,6 +3,7 @@ import { motion } from 'motion/react';
 import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
 import { LayoutDashboard, Bot } from 'lucide-react';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 type DashboardTab = 'agent' | 'custom';
 
@@ -10,7 +11,7 @@ export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<DashboardTab>('agent');
 
     return (
-        <div className="absolute inset-0 flex flex-col">
+        <ModuleErrorBoundary moduleName="Dashboard">
             {/* Tab Bar */}
             <div className="flex-shrink-0 border-b border-white/5 px-6 flex gap-6">
                 {([
@@ -20,11 +21,10 @@ export default function Dashboard() {
                     <button
                         key={id}
                         onClick={() => setActiveTab(id)}
-                        className={`flex items-center gap-2 h-12 text-xs font-bold border-b-2 transition-all ${
-                            activeTab === id
-                                ? 'border-dept-marketing text-dept-marketing'
-                                : 'border-transparent text-muted-foreground hover:text-white'
-                        }`}
+                        className={`flex items-center gap-2 h-12 text-xs font-bold border-b-2 transition-all ${activeTab === id
+                            ? 'border-dept-marketing text-dept-marketing'
+                            : 'border-transparent text-muted-foreground hover:text-white'
+                            }`}
                     >
                         <Icon size={14} />
                         {label}
@@ -52,6 +52,6 @@ export default function Dashboard() {
                     </div>
                 )}
             </div>
-        </div>
+        </ModuleErrorBoundary>
     );
 }

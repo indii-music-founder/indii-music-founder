@@ -7,6 +7,7 @@ import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
 import { LegalTools } from '@/services/agent/tools/LegalTools';
 import { logger } from '@/utils/logger';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
 /*  Legal Dashboard — Three-Panel Layout                                */
@@ -149,6 +150,7 @@ Only return valid JSON.
     };
 
     return (
+        <ModuleErrorBoundary moduleName="Legal">
         <div className="absolute inset-0 flex">
             {/* ── LEFT PANEL — Templates & Quick Tools ──────────── */}
             <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
@@ -299,6 +301,7 @@ Only return valid JSON.
                 <CounselPanel onFindCounsel={handleFindCounsel} />
             </aside>
         </div>
+        </ModuleErrorBoundary>
     );
 }
 

@@ -16,6 +16,7 @@ import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
 import { SetlistAnalytics } from './components/SetlistAnalytics';
 import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 interface LogisticsReport {
     isFeasible: boolean;
@@ -209,108 +210,110 @@ const RoadManager: React.FC = () => {
     };
 
     return (
-        <div className="absolute inset-0 flex text-white">
-            {/* ── LEFT PANEL — Road Manager Sidebar ──────────────── */}
-            <RoadManagerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        <ModuleErrorBoundary moduleName="Road Manager">
+            <div className="absolute inset-0 flex text-white">
+                {/* ── LEFT PANEL — Road Manager Sidebar ──────────────── */}
+                <RoadManagerSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
 
-            {/* ── CENTER — Main Content ──────────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0 overflow-y-auto selection:bg-yellow-500/30">
-                <main className="flex-1 p-6 md:p-8 w-full">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                            className="h-full"
-                        >
-                            {activeTab === 'planning' && (
-                                <PlanningTab
-                                    startDate={startDate}
-                                    setStartDate={setStartDate}
-                                    endDate={endDate}
-                                    setEndDate={setEndDate}
-                                    locations={locations}
-                                    newLocation={newLocation}
-                                    setNewLocation={setNewLocation}
-                                    handleAddLocation={handleAddLocation}
-                                    handleRemoveLocation={handleRemoveLocation}
-                                    handleGenerateItinerary={handleGenerateItinerary}
-                                    isGenerating={isGenerating}
-                                    itinerary={itinerary}
-                                    handleCheckLogistics={handleCheckLogistics}
-                                    isCheckingLogistics={isCheckingLogistics}
-                                    logisticsReport={logisticsReport}
-                                    onUpdateStop={handleUpdateStop}
-                                />
-                            )}
+                {/* ── CENTER — Main Content ──────────────────────────── */}
+                <div className="flex-1 flex flex-col min-w-0 overflow-y-auto selection:bg-yellow-500/30">
+                    <main className="flex-1 p-6 md:p-8 w-full">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.2, ease: 'easeOut' }}
+                                className="h-full"
+                            >
+                                {activeTab === 'planning' && (
+                                    <PlanningTab
+                                        startDate={startDate}
+                                        setStartDate={setStartDate}
+                                        endDate={endDate}
+                                        setEndDate={setEndDate}
+                                        locations={locations}
+                                        newLocation={newLocation}
+                                        setNewLocation={setNewLocation}
+                                        handleAddLocation={handleAddLocation}
+                                        handleRemoveLocation={handleRemoveLocation}
+                                        handleGenerateItinerary={handleGenerateItinerary}
+                                        isGenerating={isGenerating}
+                                        itinerary={itinerary}
+                                        handleCheckLogistics={handleCheckLogistics}
+                                        isCheckingLogistics={isCheckingLogistics}
+                                        logisticsReport={logisticsReport}
+                                        onUpdateStop={handleUpdateStop}
+                                    />
+                                )}
 
-                            {activeTab === 'on-the-road' && (
-                                <OnTheRoadTab
-                                    currentLocation={currentLocation}
-                                    setCurrentLocation={setCurrentLocation}
-                                    handleFindGasStations={handleFindGasStations}
-                                    isFindingPlaces={isFindingPlaces}
-                                    nearbyPlaces={nearbyPlaces}
-                                    fuelStats={vehicleStats || {
-                                        milesDriven: 0,
-                                        fuelLevelPercent: 50,
-                                        tankSizeGallons: 15,
-                                        mpg: 8,
-                                        gasPricePerGallon: 3.50,
-                                        userId: ''
-                                    }}
-                                    setFuelStats={saveVehicleStats}
-                                    handleCalculateFuel={handleCalculateFuel}
-                                    isCalculatingFuel={isCalculatingFuel}
-                                    fuelLogistics={fuelLogistics}
-                                    itinerary={itinerary}
-                                />
-                            )}
+                                {activeTab === 'on-the-road' && (
+                                    <OnTheRoadTab
+                                        currentLocation={currentLocation}
+                                        setCurrentLocation={setCurrentLocation}
+                                        handleFindGasStations={handleFindGasStations}
+                                        isFindingPlaces={isFindingPlaces}
+                                        nearbyPlaces={nearbyPlaces}
+                                        fuelStats={vehicleStats || {
+                                            milesDriven: 0,
+                                            fuelLevelPercent: 50,
+                                            tankSizeGallons: 15,
+                                            mpg: 8,
+                                            gasPricePerGallon: 3.50,
+                                            userId: ''
+                                        }}
+                                        setFuelStats={saveVehicleStats}
+                                        handleCalculateFuel={handleCalculateFuel}
+                                        isCalculatingFuel={isCalculatingFuel}
+                                        fuelLogistics={fuelLogistics}
+                                        itinerary={itinerary}
+                                    />
+                                )}
 
-                            {activeTab === 'rider' && (
-                                <div className="h-full">
-                                    <RiderChecklist />
-                                </div>
-                            )}
+                                {activeTab === 'rider' && (
+                                    <div className="h-full">
+                                        <RiderChecklist />
+                                    </div>
+                                )}
 
-                            {activeTab === 'route-optimizer' && (
-                                <div className="h-full p-6 overflow-y-auto">
-                                    <TourRouteOptimizer />
-                                </div>
-                            )}
+                                {activeTab === 'route-optimizer' && (
+                                    <div className="h-full p-6 overflow-y-auto">
+                                        <TourRouteOptimizer />
+                                    </div>
+                                )}
 
-                            {activeTab === 'tech-rider' && (
-                                <div className="h-full p-6 overflow-y-auto">
-                                    <TechnicalRiderGenerator />
-                                </div>
-                            )}
+                                {activeTab === 'tech-rider' && (
+                                    <div className="h-full p-6 overflow-y-auto">
+                                        <TechnicalRiderGenerator />
+                                    </div>
+                                )}
 
-                            {activeTab === 'setlist' && (
-                                <div className="h-full p-6 overflow-y-auto">
-                                    <SetlistAnalytics />
-                                </div>
-                            )}
+                                {activeTab === 'setlist' && (
+                                    <div className="h-full p-6 overflow-y-auto">
+                                        <SetlistAnalytics />
+                                    </div>
+                                )}
 
-                            {activeTab === 'visa' && (
-                                <div className="h-full p-6 overflow-y-auto">
-                                    <VisaChecklist />
-                                </div>
-                            )}
-                        </motion.div>
-                    </AnimatePresence>
-                </main>
+                                {activeTab === 'visa' && (
+                                    <div className="h-full p-6 overflow-y-auto">
+                                        <VisaChecklist />
+                                    </div>
+                                )}
+                            </motion.div>
+                        </AnimatePresence>
+                    </main>
+                </div>
+
+                {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <ItinerarySummaryPanel itinerary={itinerary} />
+                    <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
+                    <RiderQuickPanel />
+                    <EmergencyContactsPanel />
+                </aside>
             </div>
-
-            {/* ── RIGHT PANEL — On The Road Info ─────────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <ItinerarySummaryPanel itinerary={itinerary} />
-                <VehicleStatusPanel vehicleStats={vehicleStats} fuelLogistics={fuelLogistics} />
-                <RiderQuickPanel />
-                <EmergencyContactsPanel />
-            </aside>
-        </div>
+        </ModuleErrorBoundary>
     );
 };
 
@@ -379,11 +382,10 @@ function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: any
                     </div>
                 </div>
                 {fuelLogistics && (
-                    <div className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${
-                        fuelLogistics.status === 'CRITICAL' ? 'bg-red-500/10 border border-red-500/20 text-red-300' :
+                    <div className={`p-2.5 rounded-lg text-xs flex items-start gap-2 ${fuelLogistics.status === 'CRITICAL' ? 'bg-red-500/10 border border-red-500/20 text-red-300' :
                         fuelLogistics.status === 'LOW' ? 'bg-yellow-500/10 border border-yellow-500/20 text-yellow-300' :
-                        'bg-green-500/10 border border-green-500/20 text-green-300'
-                    }`}>
+                            'bg-green-500/10 border border-green-500/20 text-green-300'
+                        }`}>
                         <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
                         <span>Range: {fuelLogistics.currentRangeMiles} mi · ${fuelLogistics.costToFill} to fill</span>
                     </div>
