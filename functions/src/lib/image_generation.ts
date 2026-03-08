@@ -194,96 +194,68 @@ class GeminiImageService {
     }
 
     /**
-     * Advanced Instruction-Based Editing (Dual-View / Ghost Mask)
+     * Advanced Instruction-Based Editing via Gemini generateContent
+     * Sends the source image + text instruction as multimodal parts.
      */
     async edit(data: any): Promise<{ base64: string; mimeType: string; thoughtSignature?: string; aiMetadata: any; aiGenerationInfo: any }> {
-        const { GoogleAuth } = await import("google-auth-library");
         const modelId = FUNCTION_AI_MODELS.IMAGE.GENERATION;
 
         try {
             console.log(`[GeminiImageService:edit] Model: ${modelId} | Instruction: "${data.prompt.substring(0, 50)}..."`);
 
-            const referenceImages: any[] = [
-                {
-                    referenceId: 0,
-                    referenceType: "REFERENCE_TYPE_RAW",
-                    referenceImage: {
-                        bytesBase64Encoded: data.image
-                    }
-                }
-            ];
+            const client = this.getClient();
 
-            if (data.mask) {
-                referenceImages.push({
-                    referenceId: 1,
-                    referenceType: "REFERENCE_TYPE_MASK",
-                    referenceImage: {
-                        bytesBase64Encoded: data.mask
+            // Build multimodal parts: source image + text instruction
+            const parts: any[] = [];
+
+            // Add the source image as inline data
+            if (data.image) {
+                parts.push({
+                    inlineData: {
+                        mimeType: data.imageMimeType || "image/png",
+                        data: data.image
                     }
                 });
             }
 
-            // Using pure REST API to Vertex AI instead of Node SDK to bypass 'toReferenceImageAPI' class validation bugs
-            const auth = new GoogleAuth({
-                scopes: ['https://www.googleapis.com/auth/cloud-platform']
-            });
-            const client = await auth.getClient();
-            const projectId = await auth.getProjectId();
-            const accessToken = await client.getAccessToken();
-
-            const endpoint = `https://us-central1-aiplatform.googleapis.com/v1beta1/projects/${projectId}/locations/us-central1/publishers/google/models/${modelId}:predict`;
-
-            const requestBody = {
-                instances: [
-                    {
-                        prompt: data.prompt,
-                        referenceImages
+            // Add mask image if provided
+            if (data.mask) {
+                parts.push({
+                    inlineData: {
+                        mimeType: data.maskMimeType || "image/png",
+                        data: data.mask
                     }
-                ],
-                parameters: {
-                    sampleCount: 1,
-                    editConfig: {
-                        editMode: data.mask ? "EDIT_MODE_INPAINT_INSERTION" : "EDIT_MODE_CONTROLLED_EDITING",
-                        numberOfImages: 1,
-                        aspectRatio: data.aspectRatio || "1:1"
-                    }
-                }
-            };
+                });
+                // When mask is provided, instruct the model to edit within the masked region
+                parts.push({ text: `Edit the masked region of this image: ${data.prompt}` });
+            } else {
+                parts.push({ text: data.prompt });
+            }
 
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${accessToken.token}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(requestBody)
+            const result = await client.models.generateContent({
+                model: modelId,
+                contents: [{ role: "user", parts }],
+                config: {
+                    responseModalities: ["IMAGE"],
+                } as any
             });
 
-            if (!response.ok) {
-                let errorText = await response.text();
-                try {
-                    const parsedError = JSON.parse(errorText);
-                    errorText = parsedError.error?.message || errorText;
-                } catch (e) { /* ignore JSON parse error */ }
-                console.error(`[GeminiImageService:edit] Vertex REST API Error: ${response.status} ${errorText}`);
-                throw new Error(`Vertex AI Image Edit API Error: ${response.status} ${errorText}`);
+            if (!result.candidates || result.candidates.length === 0) {
+                throw new Error("No candidates returned from Gemini Edit API");
             }
 
-            const result = await response.json();
+            const imageParts = result.candidates![0].content!.parts!
+                .filter(p => !!p.inlineData);
 
-            if (!result.predictions || result.predictions.length === 0) {
-                throw new Error("No images returned from Gemini Edit API");
+            if (imageParts.length === 0) {
+                throw new Error("No image data found in edit response");
             }
 
-            const genImg = result.predictions[0];
-
-            if (!genImg.bytesBase64Encoded) {
-                throw new Error("Generated image object is missing from Gemini response");
-            }
+            const genImg = imageParts[0];
 
             return {
-                base64: genImg.bytesBase64Encoded,
-                mimeType: genImg.mimeType || "image/png",
+                base64: genImg.inlineData!.data as string,
+                mimeType: (genImg.inlineData!.mimeType as string) || "image/png",
                 thoughtSignature: undefined, // Not provided by editImage response
                 aiMetadata: {
                     toolName: modelId,
