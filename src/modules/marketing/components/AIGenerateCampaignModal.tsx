@@ -34,7 +34,8 @@ const TONES: { id: CampaignTone; label: string }[] = [
 const PLATFORMS: { id: Platform; label: string; icon: string }[] = [
     { id: 'Instagram', label: 'Instagram', icon: '📸' },
     { id: 'Twitter', label: 'X / Twitter', icon: '🐦' },
-    { id: 'LinkedIn', label: 'LinkedIn', icon: '💼' }
+    { id: 'LinkedIn', label: 'LinkedIn', icon: '💼' },
+    { id: 'Email', label: 'Email', icon: '✉️' }
 ];
 
 export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateCampaignModalProps) {
@@ -389,7 +390,8 @@ export default function AIGenerateCampaignModal({ onClose, onSave }: AIGenerateC
                                                     </span>
                                                     <span className={`text-xs px-2 py-1 rounded ${post.platform === 'Instagram' ? 'bg-pink-900/30 text-pink-300' :
                                                         post.platform === 'Twitter' ? 'bg-blue-900/30 text-blue-300' :
-                                                            'bg-indigo-900/30 text-indigo-300'
+                                                            post.platform === 'Email' ? 'bg-yellow-900/30 text-yellow-300' :
+                                                                'bg-indigo-900/30 text-indigo-300'
                                                         }`}>
                                                         {post.platform}
                                                     </span>

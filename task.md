@@ -1,14 +1,25 @@
-# Phase 1: Audio Generation Task List
+# Production Readiness Task List
 
-## Active Focus: 1.12 Audio Module UI foundation
+## Active Focus: Stripe Connect, Finance, and ISRC Services
 
-| ID | Task | Status | Notes |
-|---|---|---|---|
-| 1.1 | Audio Waveform Display | [ ] | Visual waveform for uploaded audio masters (View only) |
-| 1.2 | Audio Analysis Dashboard | [ ] | Display key analysis data (BPM, key, loudness, spectrum) |
-| 1.3 | Metadata & QC History | [ ] | Save analysis and DDEX metadata to history |
-| 1.4 | Target Mastering Audit | [ ] | Analyze LUFS and spectrum for platform readiness (Spotify/Apple) |
-| 1.5 | Audio Module UI foundation | [x] | Unified Audio Distribution Hub (Tabs implemented) |
+| ID | Task | Status | Source |
+| :--- | :--- | :--- | :--- |
+| 1.1 | Complete Stripe Connect Integration (Backend) | [x] | PRODUCTION_200:154 |
+| 1.2 | Implement Multi-region Health Check (us-west1) | [x] | PRODUCTION_100:12 |
+| 1.3 | Implement Manual Payouts & Waterfall Engine | [x] | PRODUCTION_200:153(?) |
+| 1.4 | Implement Multi-currency Support | [x] | PRODUCTION_200:153 |
+| 1.5 | Implement Receipt OCR (Gemini Vision) | [x] | PRODUCTION_200:160 |
+| 1.6 | Implement Power State Optimization UI | [x] | PRODUCTION_200:165 |
+| 1.7 | Implement Automated ISRC Assignment | [x] | PRODUCTION_200:172 |
+| 1.8 | Implement Legal Archiver & Versioning | [x] | PRODUCTION_200:101(?) |
+| 1.9 | Implement Reusable Contract Snippets | [x] | PRODUCTION_200:104(?) |
+| 1.10 | Automated API Key Rotation Script | [x] | PRODUCTION_100:81 |
+| 2.1 | Audio Stem Separation (Spleeter/Demucs) | [ ] | PRODUCTION_200:101 |
+| 2.2 | AI-Assisted Mastering Presets | [ ] | PRODUCTION_200:102 |
+| 2.3 | Generative Audio Continuation | [ ] | PRODUCTION_200:103 |
+| 2.4 | Video Rendering Queue Optimization | [ ] | PRODUCTION_200:104 |
+| 2.5 | Ad Buying Automation (Basic Graph API) | [ ] | PRODUCTION_200:142 |
+| 2.6 | Email Marketing Integration | [ ] | PRODUCTION_200:143 |
 
 ---
-*Generated from @master_completion_plan.md*
+*Self-managed task list for Antigravity.*

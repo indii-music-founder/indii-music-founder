@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio } from 'lucide-react';
+import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
 import { GenAI as AI } from '@/services/ai/GenAI';
 import { AI_MODELS } from '@/core/config/ai-models';
@@ -175,6 +177,19 @@ Only return valid JSON.
                     </div>
                 </div>
 
+                <Tabs defaultValue="analyzer" className="flex-1 flex flex-col overflow-hidden">
+                    <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
+                        <TabsList className="bg-transparent gap-6 p-0 h-12">
+                            <TabsTrigger value="analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <FileText size={14} /> Contract Analysis
+                            </TabsTrigger>
+                            <TabsTrigger value="dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <Shield size={14} /> DMCA Notices
+                            </TabsTrigger>
+                        </TabsList>
+                    </div>
+
+                    <TabsContent value="analyzer" className="flex-1 overflow-y-auto m-0">
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto custom-scrollbar p-4 md:p-6">
                     {!analysisResult && !isAnalyzing && (
@@ -269,6 +284,12 @@ Only return valid JSON.
                         </div>
                     )}
                 </div>
+                    </TabsContent>
+
+                    <TabsContent value="dmca" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
+                        <DMCANoticeGenerator />
+                    </TabsContent>
+                </Tabs>
             </div>
 
             {/* ── RIGHT PANEL — History & Risk Scores ────────────── */}

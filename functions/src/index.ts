@@ -26,6 +26,9 @@ import { GoogleGenAI } from "@google/genai"; // Keep for specific legacy/stream 
 // Initialize Firebase Admin
 admin.initializeApp();
 
+// Stripe Connect Functions
+export { createStripeAccount, createTransfer } from './stripe/connect';
+
 // App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
 const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
 
@@ -1170,4 +1173,20 @@ export const healthCheck = functions
 
         const httpStatus = status.status === "ok" ? 200 : 503;
         res.status(httpStatus).json(status);
+    });
+
+/**
+ * Health Check (Secondary Region: us-west1)
+ * Part of PRODUCTION_100 Item 12 (Multi-region Deployment)
+ */
+export const healthCheckWest1 = functions
+    .region("us-west1")
+    .runWith({ timeoutSeconds: 60, memory: "256MB" })
+    .https.onRequest(async (_req, res) => {
+        res.status(200).json({
+            status: "ok",
+            timestamp: new Date().toISOString(),
+            region: "us-west1",
+            purpose: "Multi-region Failover Check"
+        });
     });

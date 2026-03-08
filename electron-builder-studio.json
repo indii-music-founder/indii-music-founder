@@ -35,12 +35,17 @@
   "mac": {
     "category": "public.app-category.productivity",
     "gatekeeperAssess": false,
-    "hardenedRuntime": false,
+    "hardenedRuntime": true,
+    "entitlements": "build/entitlements.mac.plist",
+    "entitlementsInherit": "build/entitlements.mac.inherit.plist",
     "icon": "assets/icon-studio.icns",
     "target": [
       "dmg",
       "zip"
-    ]
+    ],
+    "notarize": {
+      "teamId": "${env.APPLE_TEAM_ID}"
+    }
   },
   "dmg": {
     "backgroundColor": "#0d1117",

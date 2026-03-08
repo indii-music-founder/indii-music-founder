@@ -66,6 +66,7 @@ PLATFORM GUIDELINES:
 - Twitter: Punchy, conversation-starting, max 280 chars, 2-3 hashtags
 - Instagram: Story-driven, visual-first, up to 2200 chars, 10-15 hashtags
 - LinkedIn: Professional, value-driven, industry insights, 3-5 hashtags
+- Email: Compelling subject line, personalized body, call-to-action focus
 
 Total posts needed: ${brief.durationDays * brief.postsPerDay}
 `;
@@ -81,9 +82,10 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
                     items: {
                         type: 'object',
                         properties: {
-                            platform: { type: 'string', enum: ['Twitter', 'Instagram', 'LinkedIn'] },
+                            platform: { type: 'string', enum: ['Twitter', 'Instagram', 'LinkedIn', 'Email'] },
                             day: { type: 'number', description: 'Day number (1-indexed)' },
-                            copy: { type: 'string', description: 'Full post text' },
+                            subject: { type: 'string', description: 'Email subject line (Email only)' },
+                            copy: { type: 'string', description: 'Full post text or email body' },
                             imagePrompt: { type: 'string', description: 'Detailed prompt for image generation' },
                             hashtags: { type: 'array', items: { type: 'string' } },
                             bestTimeToPost: { type: 'string', description: 'Suggested posting time (e.g., "9:00 AM EST")' }
@@ -116,7 +118,8 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         const posts: ScheduledPost[] = plan.posts.map((p, index) => ({
             id: `post_${Date.now()}_${index}`,
             platform: p.platform as Platform,
-            copy: p.copy + '\n\n' + p.hashtags.join(' '),
+            subject: (p as any).subject,
+            copy: (p as any).subject ? p.copy : (p.copy + '\n\n' + p.hashtags.join(' ')),
             imageAsset: {
                 assetType: 'image' as const,
                 title: `${plan.title} - Day ${p.day}`,
@@ -165,7 +168,8 @@ Total posts needed: ${brief.durationDays * brief.postsPerDay}
         const platformLimits: Record<Platform, number> = {
             Twitter: 280,
             Instagram: 2200,
-            LinkedIn: 3000
+            LinkedIn: 3000,
+            Email: 10000 // Arbitrary high limit for email
         };
 
         const prompt = `
@@ -222,6 +226,50 @@ Ensure all versions respect the platform's character limit.
             };
         } catch (error) {
             throw new Error('Failed to enhance post copy. Please try again.');
+        }
+    }
+
+    // =========================================================================
+    // 2.5 AI VIDEO GENERATION (Marketing Assets)
+    // =========================================================================
+
+    /**
+     * Generate a short-form video asset for marketing
+     */
+    async generateMarketingVideo(
+        prompt: string,
+        style: string,
+        audioUrl?: string,
+        config?: Record<string, any>
+    ): Promise<string> {
+        const brandContext = await this.getBrandContext();
+
+        const enhancedPrompt = `
+Generate a high-fidelity marketing video asset.
+
+BRAND CONTEXT:
+${brandContext}
+
+VISUAL STYLE: ${style}
+BASE PROMPT: ${prompt}
+
+The video should be visually striking, on-brand, and optimized for short-form social media (Reels, TikTok).
+Focus on dynamic movements, high-quality textures, and brand alignment.
+`;
+
+        try {
+            return await GenAI.generateVideo({
+                jobId: `asset_${Date.now()}`,
+                prompt: enhancedPrompt,
+                model: AI_MODELS.VIDEO.GENERATION,
+                config: {
+                    durationSeconds: 15, // Default for short-form
+                    aspectRatio: '9:16', // Vertical for reels/tiktok
+                    ...config
+                }
+            });
+        } catch (error) {
+            throw new Error('Failed to generate marketing video. Please try again.');
         }
     }
 

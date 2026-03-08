@@ -34,6 +34,7 @@ import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { ErrorButton } from './components/debug/ErrorButton';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
+import { UpdaterMonitor } from './components/UpdaterMonitor';
 
 cleanupLocalStorage();
 
@@ -403,6 +404,7 @@ export default function App() {
                             <ApprovalManager />
                             <PWAInstallPrompt />
                             <TransmissionMonitor />
+                            <UpdaterMonitor />
 
                             {/* Global Command Bar */}
                             {showChrome && (

@@ -13,6 +13,8 @@ import { RiderChecklist } from './components/RiderChecklist';
 import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
 import { TourRouteOptimizer } from './components/TourRouteOptimizer';
 import { TechnicalRiderGenerator } from './components/TechnicalRiderGenerator';
+import { SetlistAnalytics } from './components/SetlistAnalytics';
+import { VisaChecklist } from './components/VisaChecklist';
 import { logger } from '@/utils/logger';
 
 interface LogisticsReport {
@@ -282,6 +284,18 @@ const RoadManager: React.FC = () => {
                             {activeTab === 'tech-rider' && (
                                 <div className="h-full p-6 overflow-y-auto">
                                     <TechnicalRiderGenerator />
+                                </div>
+                            )}
+
+                            {activeTab === 'setlist' && (
+                                <div className="h-full p-6 overflow-y-auto">
+                                    <SetlistAnalytics />
+                                </div>
+                            )}
+
+                            {activeTab === 'visa' && (
+                                <div className="h-full p-6 overflow-y-auto">
+                                    <VisaChecklist />
                                 </div>
                             )}
                         </motion.div>

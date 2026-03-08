@@ -15,8 +15,9 @@ export interface ImageAsset {
 
 export interface ScheduledPost {
     id: string;
-    platform: 'Twitter' | 'Instagram' | 'LinkedIn';
+    platform: 'Twitter' | 'Instagram' | 'LinkedIn' | 'Email';
     copy: string;
+    subject?: string; // Optional for Email
     imageAsset: ImageAsset;
     day: number; // Keep for backward compatibility or relative scheduling
     scheduledTime?: Date;
@@ -49,7 +50,7 @@ export interface MarketingStats {
 
 export type CampaignObjective = 'awareness' | 'engagement' | 'conversion' | 'launch';
 export type CampaignTone = 'professional' | 'casual' | 'edgy' | 'inspirational';
-export type Platform = 'Twitter' | 'Instagram' | 'LinkedIn';
+export type Platform = 'Twitter' | 'Instagram' | 'LinkedIn' | 'Email';
 
 export interface CampaignBrief {
     topic: string;

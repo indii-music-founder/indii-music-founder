@@ -8,15 +8,27 @@ export default function MarketingAssetGeneratorUI() {
     const [prompt, setPrompt] = useState<string>('');
     const [style, setStyle] = useState<string>('cinematic');
     const [isGenerating, setIsGenerating] = useState(false);
+    const [videoUrl, setVideoUrl] = useState<string | null>(null);
+    const [error, setError] = useState<string | null>(null);
 
-    const handleGenerate = () => {
+    const handleGenerate = async () => {
+        if (!prompt.trim()) return;
+
         setStep(3);
         setIsGenerating(true);
-        // Simulate backend video generation
-        setTimeout(() => {
-            setIsGenerating(false);
+        setError(null);
+
+        try {
+            const { CampaignAI } = await import('@/services/marketing/CampaignAIService');
+            const url = await CampaignAI.generateMarketingVideo(prompt, style);
+            setVideoUrl(url);
             setStep(4);
-        }, 4000);
+        } catch (err: any) {
+            setError(err.message || "Failed to generate video");
+            setStep(2); // Go back to allow editing
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     const reset = () => {
@@ -24,6 +36,8 @@ export default function MarketingAssetGeneratorUI() {
         setAudioFile(null);
         setPrompt('');
         setStyle('cinematic');
+        setVideoUrl(null);
+        setError(null);
     };
 
     const styles = [
@@ -61,10 +75,10 @@ export default function MarketingAssetGeneratorUI() {
                     {[1, 2, 3, 4].map((s) => (
                         <React.Fragment key={s}>
                             <div className={`flex items-center justify-center w-8 h-8 rounded-full border text-xs font-bold transition-colors ${step === s
-                                    ? 'bg-dept-marketing border-dept-marketing text-white shadow-[0_0_15px_rgba(var(--color-dept-marketing),0.5)]'
-                                    : step > s
-                                        ? 'bg-dept-marketing/20 border-dept-marketing text-dept-marketing'
-                                        : 'bg-black/40 border-white/10 text-gray-500'
+                                ? 'bg-dept-marketing border-dept-marketing text-white shadow-[0_0_15px_rgba(var(--color-dept-marketing),0.5)]'
+                                : step > s
+                                    ? 'bg-dept-marketing/20 border-dept-marketing text-dept-marketing'
+                                    : 'bg-black/40 border-white/10 text-gray-500'
                                 }`}>
                                 {step > s ? <CheckCircle2 size={14} /> : s}
                             </div>
@@ -131,6 +145,11 @@ export default function MarketingAssetGeneratorUI() {
                                 className="flex-1 flex flex-col"
                             >
                                 <h2 className="text-xl font-bold text-white mb-2">Visual Direction</h2>
+                                {error && (
+                                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs p-3 rounded-lg mb-4 flex items-center gap-2">
+                                        <RefreshCw size={14} /> {error}
+                                    </div>
+                                )}
                                 <p className="text-sm text-gray-400 mb-6">Describe what you want the AI video to look like.</p>
 
                                 <div className="space-y-6 flex-1">
@@ -152,8 +171,8 @@ export default function MarketingAssetGeneratorUI() {
                                                     key={s.id}
                                                     onClick={() => setStyle(s.id)}
                                                     className={`cursor-pointer border rounded-xl p-4 transition-all ${style === s.id
-                                                            ? 'bg-dept-marketing/10 border-dept-marketing text-white'
-                                                            : 'bg-white/[0.02] border-white/5 text-gray-400 py-4 hover:border-white/20'
+                                                        ? 'bg-dept-marketing/10 border-dept-marketing text-white'
+                                                        : 'bg-white/[0.02] border-white/5 text-gray-400 py-4 hover:border-white/20'
                                                         }`}
                                                 >
                                                     <h4 className={`font-bold mb-1 ${style === s.id ? 'text-dept-marketing' : 'text-gray-300'}`}>{s.label}</h4>
@@ -231,15 +250,26 @@ export default function MarketingAssetGeneratorUI() {
                                 </div>
 
                                 <div className="flex-1 rounded-xl bg-black/60 border border-white/5 flex items-center justify-center relative overflow-hidden group">
-                                    {/* Simulated video player placeholder */}
-                                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10" />
-                                    <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center text-white cursor-pointer group-hover:scale-110 transition-transform">
-                                        <Play size={32} className="ml-2" />
-                                    </div>
-                                    <div className="absolute bottom-4 left-4 right-4 flex justify-between text-xs font-mono text-gray-400">
-                                        <span>0:00</span>
-                                        <span>0:15</span>
-                                    </div>
+                                    {videoUrl ? (
+                                        <video
+                                            src={videoUrl}
+                                            controls
+                                            className="w-full h-full object-contain"
+                                            poster="/api/placeholder/400/711"
+                                        />
+                                    ) : (
+                                        <>
+                                            {/* Simulated video player placeholder fallback */}
+                                            <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/10 to-purple-500/10" />
+                                            <div className="w-20 h-20 rounded-full bg-white/10 border border-white/20 backdrop-blur flex items-center justify-center text-white cursor-pointer group-hover:scale-110 transition-transform">
+                                                <Play size={32} className="ml-2" />
+                                            </div>
+                                            <div className="absolute bottom-4 left-4 right-4 flex justify-between text-xs font-mono text-gray-400">
+                                                <span>0:00</span>
+                                                <span>0:15</span>
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
                             </motion.div>
                         )}
