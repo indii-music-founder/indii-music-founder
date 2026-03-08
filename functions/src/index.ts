@@ -32,6 +32,9 @@ export { createStripeAccount, createTransfer } from './stripe/connect';
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
+// Social Functions (Item 226: Scheduled Post Background Delivery)
+export { deliverScheduledPosts } from './social/deliverScheduledPosts';
+
 // App Check enforcement flag - set to true when reCAPTCHA Enterprise is configured
 const ENFORCE_APP_CHECK = process.env.ENFORCE_APP_CHECK === 'true';
 

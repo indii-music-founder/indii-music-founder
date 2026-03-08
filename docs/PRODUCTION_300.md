@@ -38,14 +38,14 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5C: Social Media Real API Integrations (221–228)
 
-- [ ] **221. Twitter/X API v2 Real Posting:** `SocialAutoPosterService.ts` writes scheduled posts to Firestore but does NOT call the Twitter API. Implement `POST /2/tweets` using the stored OAuth tokens.
-- [ ] **222. Instagram Graph API Real Posting:** Same issue — posts are stored in Firestore, never delivered. Implement the Instagram Content Publishing API (`POST /{ig-user-id}/media` + `/{ig-user-id}/media_publish`).
-- [ ] **223. TikTok Content Posting API:** Implement TikTok's Content Posting API (v2) for direct video upload to TikTok — the service currently has no TikTok delivery logic.
-- [ ] **224. YouTube Data API v3 Upload:** Wire `YouTube.videos.insert()` for direct video uploads to the artist's connected YouTube channel — bypasses the current Firestore-only approach.
-- [ ] **225. Spotify for Artists Real Stats Sync:** `DSPAnalyticsService` reads from mock data. Implement real Spotify for Artists API polling (or webhook) to pull genuine stream counts and listener geography.
-- [ ] **226. Scheduled Post Background Delivery:** The pre-save campaign and social scheduling system stores posts with a `scheduledAt` timestamp but has no background job that fires the post at the right time. Implement a Cloud Scheduler + Cloud Function to execute the delivery.
-- [ ] **227. Social Analytics Aggregation Dashboard:** Unify real social platform analytics (X follower growth, IG impressions, TikTok plays) into a single normalized dashboard panel instead of mock data arrays.
-- [ ] **228. Social OAuth Token Refresh:** Social API access tokens expire. Implement automatic token refresh using stored refresh tokens before they expire, and surface a re-auth prompt when refresh fails.
+- [x] **221. Twitter/X API v2 Real Posting:** `SocialAutoPosterService.ts` writes scheduled posts to Firestore but does NOT call the Twitter API. Implement `POST /2/tweets` using the stored OAuth tokens.
+- [x] **222. Instagram Graph API Real Posting:** Same issue — posts are stored in Firestore, never delivered. Implement the Instagram Content Publishing API (`POST /{ig-user-id}/media` + `/{ig-user-id}/media_publish`).
+- [x] **223. TikTok Content Posting API:** Implement TikTok's Content Posting API (v2) for direct video upload to TikTok — the service currently has no TikTok delivery logic.
+- [x] **224. YouTube Data API v3 Upload:** Wire `YouTube.videos.insert()` for direct video uploads to the artist's connected YouTube channel — bypasses the current Firestore-only approach.
+- [x] **225. Spotify for Artists Real Stats Sync:** `DSPAnalyticsService` reads from mock data. Implement real Spotify for Artists API polling (or webhook) to pull genuine stream counts and listener geography.
+- [x] **226. Scheduled Post Background Delivery:** The pre-save campaign and social scheduling system stores posts with a `scheduledAt` timestamp but has no background job that fires the post at the right time. Implement a Cloud Scheduler + Cloud Function to execute the delivery.
+- [x] **227. Social Analytics Aggregation Dashboard:** Unify real social platform analytics (X follower growth, IG impressions, TikTok plays) into a single normalized dashboard panel instead of mock data arrays.
+- [x] **228. Social OAuth Token Refresh:** Social API access tokens expire. Implement automatic token refresh using stored refresh tokens before they expire, and surface a re-auth prompt when refresh fails.
 
 ---
 
