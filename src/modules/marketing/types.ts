@@ -117,3 +117,36 @@ export interface BatchImageProgress {
     currentPostId: string;
     status: 'generating' | 'complete' | 'error';
 }
+
+// Fan Enrichment Types
+
+export interface FanRecord {
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    city?: string;
+    country?: string;
+    phone?: string;
+}
+
+export interface EnrichedFanData extends FanRecord {
+    location?: string;
+    ageRange?: string;
+    incomeBracket?: string;
+    topGenre?: string;
+    interests?: string[];
+    socialProfiles?: {
+        platform: string;
+        url: string;
+    }[];
+    lastEnriched?: string;
+}
+
+export type EnrichmentProvider = 'Clearbit' | 'Apollo';
+
+export interface EnrichmentProgress {
+    processed: number;
+    total: number;
+    currentEmail?: string;
+    status: 'idle' | 'loading' | 'processing' | 'completed' | 'error';
+}
