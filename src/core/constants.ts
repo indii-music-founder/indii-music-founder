@@ -25,6 +25,7 @@ export const MODULE_IDS = [
     'distribution',
     'files',
     'merch',
+    'marketplace',
     'audio-analyzer',
     'observability',
     'history',

@@ -22,6 +22,7 @@ import { UploadQueueSlice, createUploadQueueSlice } from './slices/uploadQueueSl
 import { AudioPlayerSlice, createAudioPlayerSlice } from './slices/audioPlayerSlice';
 import { BackgroundJobsSlice, createBackgroundJobsSlice } from './slices/backgroundJobsSlice';
 import { MemoryAgentSlice, createMemoryAgentSlice } from './slices/memoryAgentSlice';
+import { MarketplaceSlice, createMarketplaceSlice } from './slices/marketplaceSlice';
 
 
 export type { AgentMessage, AgentThought } from './slices/agentSlice';
@@ -45,7 +46,8 @@ export interface StoreState extends
     UploadQueueSlice,
     AudioPlayerSlice,
     BackgroundJobsSlice,
-    MemoryAgentSlice { }
+    MemoryAgentSlice,
+    MarketplaceSlice { }
 
 
 import { OrganizationService } from '@/services/OrganizationService';
@@ -75,6 +77,7 @@ export const useStore = create<StoreState>()(
                 ...createAudioPlayerSlice(...a),
                 ...createBackgroundJobsSlice(...a),
                 ...createMemoryAgentSlice(...a),
+                ...createMarketplaceSlice(...a),
             };
 
             // Phase 3.6: Bridge store state to OrganizationService for synchronous access
