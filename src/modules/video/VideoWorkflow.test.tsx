@@ -9,24 +9,77 @@ import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
 
 // Mock Store
+const mockStoreState = {
+    generatedHistory: [],
+    selectedItem: null,
+    pendingPrompt: null,
+    setPendingPrompt: vi.fn(),
+    addToHistory: vi.fn(),
+    updateHistoryItem: vi.fn(),
+    setPrompt: vi.fn(),
+    studioControls: { resolution: '1080p' },
+    videoInputs: {},
+    setVideoInput: vi.fn(),
+    setVideoInputs: vi.fn(),
+    currentOrganizationId: 'org-123',
+    whiskState: {
+        subjects: [],
+        scenes: [],
+        styles: [],
+        motion: [],
+        preciseReference: false,
+        targetMedia: 'video'
+    },
+    characterReferences: [],
+    setStudioControls: vi.fn(),
+    addJob: vi.fn(),
+    updateJobProgress: vi.fn(),
+    updateJobStatus: vi.fn()
+};
+
+const useStoreMock = Object.assign(
+    vi.fn((selector) => selector ? selector(mockStoreState) : mockStoreState),
+    {
+        getState: vi.fn(() => mockStoreState),
+        setState: vi.fn((patch: any) => Object.assign(mockStoreState, typeof patch === 'function' ? patch(mockStoreState) : patch))
+    }
+);
+
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
-    useStore: vi.fn(),
+    useStore: useStoreMock,
+    serverTimestamp: vi.fn()
 }));
 
-vi.mock('./store/videoEditorStore', () => {
-    const fn = vi.fn();
-    (fn as any).getState = vi.fn(() => ({
-  serverTimestamp: vi.fn(), status: 'idle', setProgress: vi.fn() }));
-    return {
-    serverTimestamp: vi.fn(), useVideoEditorStore: fn };
-});
+const mockVideoEditorState = {
+    viewMode: 'director',
+    setViewMode: vi.fn(),
+    jobId: null,
+    setJobId: vi.fn(),
+    status: 'idle' as const,
+    setStatus: vi.fn(),
+    progress: 0,
+    setProgress: vi.fn(),
+    inputAudio: null,
+    setInputAudio: vi.fn()
+};
+
+const useVideoEditorStoreMock = Object.assign(
+    vi.fn((selector) => selector ? selector(mockVideoEditorState) : mockVideoEditorState),
+    {
+        getState: vi.fn(() => mockVideoEditorState),
+        setState: vi.fn((patch: any) => Object.assign(mockVideoEditorState, typeof patch === 'function' ? patch(mockVideoEditorState) : patch))
+    }
+);
+
+vi.mock('./store/videoEditorStore', () => ({
+    useVideoEditorStore: useVideoEditorStoreMock
+}));
 
 // Mock Toast
 vi.mock('@/core/context/ToastContext', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useToast: vi.fn(() => ({
-  serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         success: vi.fn(),
         error: vi.fn(),
         info: vi.fn(),
@@ -36,13 +89,13 @@ vi.mock('@/core/context/ToastContext', () => ({
 
 // Mock extractVideoFrame
 vi.mock('../../utils/video', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     extractVideoFrame: vi.fn()
 }));
 
 // Mock FrameSelectionModal
 vi.mock('./components/FrameSelectionModal', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     default: ({ isOpen, onSelect, target }: any) => isOpen ? (
         <div data-testid="frame-modal">
             <button onClick={() => onSelect({ id: 'vid1', type: 'video', url: 'http://video.mp4' })}>
@@ -57,7 +110,7 @@ vi.mock('./components/FrameSelectionModal', () => ({
 const mockGenerateVideo = vi.fn();
 const mockSubscribeToJob = vi.fn();
 vi.mock('@/services/video/VideoGenerationService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     VideoGeneration: {
         generateVideo: (...args: any[]) => mockGenerateVideo(...args),
         subscribeToJob: (...args: any[]) => mockSubscribeToJob(...args),
@@ -67,9 +120,10 @@ vi.mock('@/services/video/VideoGenerationService', () => ({
 // Mock Firestore
 const mockOnSnapshot = vi.fn();
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getFirestore: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+        serverTimestamp: vi.fn(),
+    })),
     doc: vi.fn(),
     onSnapshot: (...args: any[]) => mockOnSnapshot(...args),
     collection: vi.fn(),
@@ -105,41 +159,20 @@ describe('VideoWorkflow', () => {
         vi.clearAllMocks();
         (extractVideoFrame as any).mockResolvedValue('data:image/jpeg;base64,extracted-frame');
 
-        (useStore as any).mockReturnValue({
+        // Reset mock states
+        Object.assign(mockStoreState, {
             generatedHistory: [],
             selectedItem: null,
             pendingPrompt: null,
-            setPendingPrompt: vi.fn(),
-            addToHistory: mockAddToHistory,
-            setPrompt: vi.fn(),
-            studioControls: { resolution: '1080p' },
             videoInputs: {},
-            setVideoInput: vi.fn(),
-            currentOrganizationId: 'org-123',
-            whiskState: {
-                subjects: [],
-                scenes: [],
-                styles: [],
-                motion: [],
-                preciseReference: false,
-                targetMedia: 'video'
-            }
+            studioControls: { resolution: '1080p' }
         });
 
-        // Mock functional update capability for setJobStatus
-        mockSetJobStatus.mockImplementation((arg) => {
-            // Basic mock
-        });
-
-        (useVideoEditorStore as any).mockReturnValue({
+        Object.assign(mockVideoEditorState, {
             jobId: null,
             status: 'idle',
-            setJobId: mockSetJobId,
-            setStatus: mockSetJobStatus,
+            progress: 0
         });
-
-        // Ensure getState Returns correctly
-        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'idle', setProgress: vi.fn() });
 
         (useToast as any).mockReturnValue(mockToast);
     });
@@ -162,20 +195,14 @@ describe('VideoWorkflow', () => {
 
         await waitFor(() => {
             expect(mockGenerateVideo).toHaveBeenCalled();
-            expect(mockSetJobStatus).toHaveBeenCalledWith('queued');
+            expect(mockVideoEditorState.setStatus).toHaveBeenCalledWith('queued');
         });
     });
 
     it('listens to job updates via VideoGeneration service', async () => {
         // Setup store with a jobId
-        (useVideoEditorStore as any).mockReturnValue({
-            jobId: 'job-123',
-            status: 'queued',
-            setJobId: mockSetJobId,
-            setStatus: mockSetJobStatus,
-        });
-
-        (useVideoEditorStore as any).getState.mockReturnValue({ status: 'queued', setProgress: vi.fn() });
+        (mockVideoEditorState as any).jobId = 'job-123';
+        (mockVideoEditorState as any).status = 'queued';
 
         // Mock subscribeToJob
         mockSubscribeToJob.mockImplementation((id, callback) => {
@@ -198,7 +225,7 @@ describe('VideoWorkflow', () => {
             expect(mockSubscribeToJob).toHaveBeenCalledWith('job-123', expect.any(Function));
         });
 
-        expect(mockAddToHistory).toHaveBeenCalledWith(expect.objectContaining({
+        expect(mockStoreState.addToHistory).toHaveBeenCalledWith(expect.objectContaining({
             id: 'job-123',
             url: 'http://video.url',
             type: 'video'

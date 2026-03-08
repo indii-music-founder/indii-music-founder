@@ -9,18 +9,21 @@ export interface PaymentTransaction {
     status: PaymentStatus;
     productId?: string;
     createdAt: string;
-    processorId?: string; // Stripe PaymentIntent ID, etc.
+    /** Stripe PaymentIntent ID or Checkout Session ID */
+    processorId?: string;
     error?: string;
 }
 
-export interface PaymentProvider {
-    name: string;
-    processPayment(transaction: Omit<PaymentTransaction, 'id' | 'status' | 'createdAt'>): Promise<PaymentTransaction>;
-    refundPayment(transactionId: string): Promise<boolean>;
-}
-
-export interface PaymentConfig {
-    provider: 'stripe' | 'lemonsqueezy' | 'mock';
-    enabled: boolean;
-    apiKey?: string;
+/** Ledger entry written to Firestore when an invoice is paid */
+export interface LedgerEntry {
+    type: 'subscription_payment' | 'one_time_payment' | 'payout' | 'refund';
+    invoiceId?: string;
+    invoiceNumber?: string;
+    amount: number;
+    currency: string;
+    status: 'paid' | 'pending' | 'failed';
+    periodStart?: number | null;
+    periodEnd?: number | null;
+    pdfUrl?: string | null;
+    createdAt: unknown; // Firestore ServerTimestamp
 }
