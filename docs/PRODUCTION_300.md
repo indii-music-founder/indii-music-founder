@@ -23,16 +23,16 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5B: Distributor Adapter Completion (211–220)
 
-- [ ] **211. TuneCore Adapter Real API Calls:** `src/services/distribution/adapters/TuneCorAdapter.ts` is a skeleton — no actual HTTP requests. Implement OAuth token exchange and metadata upload endpoint calls against the TuneCore API.
-- [ ] **212. CD Baby Adapter Real API Calls:** Same as TuneCore — skeleton with no live API calls. Implement the CD Baby album creation and audio delivery endpoints.
-- [ ] **213. Symphonic SFTP Delivery Fix:** `SymphonicAdapter.ts` throws "Real delivery not implemented or SFTP unavailable." Complete the SFTP connection using `electron/main.ts`'s existing SSH2 client.
-- [ ] **214. DistroKid Credential Onboarding UI:** Add a Settings panel for artists to securely enter their DistroKid SFTP credentials — currently no UI path exists to configure this.
-- [ ] **215. Onerpm Distributor Adapter:** Add a new `OnerpmAdapter.ts` — Onerpm is a top-5 indie distributor with a documented API and is conspicuously absent from the adapter registry.
-- [ ] **216. Believe Digital Adapter:** Add `BelieveAdapter.ts` — Believe is the #1 independent distributor globally by market share and has no adapter.
-- [ ] **217. UnitedMasters Adapter:** Add `UnitedMastersAdapter.ts` for the UnitedMasters direct deal flow — popular with hip-hop and R&B artists who are the core indiiOS demographic.
-- [ ] **218. Delivery Status Polling & Webhooks:** After SFTP/API delivery, currently there is no status polling. Add a background Cloud Function that checks delivery status every hour and updates the release's `deliveryStatus` field.
-- [ ] **219. DDEX ERN XSD Schema Validation:** Run the generated ERN XML through an XSD validator before SFTP upload to catch schema violations before distributors reject the delivery.
-- [ ] **220. Multi-Territory Rights Splits:** The current split sheet system applies one set of splits globally. Add territory-scoped splits so EU publishing rights can go to one entity and US rights to another.
+- [x] **211. TuneCore Adapter Real API Calls:** `src/services/distribution/adapters/TuneCorAdapter.ts` is a skeleton — no actual HTTP requests. Implement OAuth token exchange and metadata upload endpoint calls against the TuneCore API.
+- [x] **212. CD Baby Adapter Real API Calls:** Same as TuneCore — skeleton with no live API calls. Implement the CD Baby album creation and audio delivery endpoints.
+- [x] **213. Symphonic SFTP Delivery Fix:** `SymphonicAdapter.ts` throws "Real delivery not implemented or SFTP unavailable." Complete the SFTP connection using `electron/main.ts`'s existing SSH2 client.
+- [x] **214. DistroKid Credential Onboarding UI:** Add a Settings panel for artists to securely enter their DistroKid SFTP credentials — currently no UI path exists to configure this.
+- [x] **215. Onerpm Distributor Adapter:** Add a new `OnerpmAdapter.ts` — Onerpm is a top-5 indie distributor with a documented API and is conspicuously absent from the adapter registry.
+- [x] **216. Believe Digital Adapter:** Add `BelieveAdapter.ts` — Believe is the #1 independent distributor globally by market share and has no adapter.
+- [x] **217. UnitedMasters Adapter:** Add `UnitedMastersAdapter.ts` for the UnitedMasters direct deal flow — popular with hip-hop and R&B artists who are the core indiiOS demographic.
+- [x] **218. Delivery Status Polling & Webhooks:** After SFTP/API delivery, currently there is no status polling. Add a background Cloud Function that checks delivery status every hour and updates the release's `deliveryStatus` field.
+- [x] **219. DDEX ERN XSD Schema Validation:** Run the generated ERN XML through an XSD validator before SFTP upload to catch schema violations before distributors reject the delivery.
+- [x] **220. Multi-Territory Rights Splits:** The current split sheet system applies one set of splits globally. Add territory-scoped splits so EU publishing rights can go to one entity and US rights to another.
 
 ---
 

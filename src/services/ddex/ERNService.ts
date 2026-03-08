@@ -57,6 +57,16 @@ export class ERNService {
             // Generate XML using the parser
             const xml = DDEXParser.buildERN(ern);
 
+            // Item 219: Structural XML validation before returning
+            const structureErrors = ERNService.validateERNXML(xml);
+            if (structureErrors.length > 0) {
+                logger.warn('[ERNService] ERN structural validation failed:', structureErrors);
+                return {
+                    success: false,
+                    error: `ERN structural validation failed: ${structureErrors.join('; ')}`,
+                };
+            }
+
             return { success: true, xml };
         } catch (error) {
             return {
@@ -71,6 +81,38 @@ export class ERNService {
      */
     parseERN(xml: string): { success: boolean; data?: ERNMessage; error?: string } {
         return DDEXParser.parseERN(xml);
+    }
+
+    /**
+     * Item 219: Validate a generated ERN XML string for required structural elements.
+     * Runs before SFTP delivery to catch schema violations early.
+     * Returns an array of error strings; empty array = valid.
+     */
+    static validateERNXML(xml: string): string[] {
+        const errors: string[] = [];
+
+        if (!xml || xml.trim().length === 0) {
+            errors.push('ERN XML is empty');
+            return errors;
+        }
+
+        const required = [
+            { tag: 'NewReleaseMessage', label: '<NewReleaseMessage> root element' },
+            { tag: 'MessageHeader', label: '<MessageHeader> block' },
+            { tag: 'MessageId', label: '<MessageId> identifier' },
+            { tag: 'MessageSender', label: '<MessageSender> party' },
+            { tag: 'MessageRecipient', label: '<MessageRecipient> party' },
+            { tag: 'ResourceList', label: '<ResourceList> (audio/image resources)' },
+            { tag: 'ReleaseList', label: '<ReleaseList> (release metadata)' },
+        ];
+
+        for (const { tag, label } of required) {
+            if (!xml.includes(`<${tag}`) && !xml.includes(`<ern:${tag}`)) {
+                errors.push(`Missing required element: ${label}`);
+            }
+        }
+
+        return errors;
     }
 
     /**

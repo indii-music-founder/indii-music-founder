@@ -39,7 +39,7 @@ import {
     GenerationConfig,
     ContentPart,
     SafetySetting,
-    ToolConfig
+    ToolConfig,
 } from '@/shared/types/ai.dto';
 
 import { CircuitBreaker } from './utils/CircuitBreaker';
@@ -53,6 +53,59 @@ import { generateSecureId } from '@/utils/security';
 import { logger } from '@/utils/logger';
 import { CachedContextService } from './context/CachedContextService';
 import { RateLimiter } from './RateLimiter';
+
+// ============================================================================
+// SDK Bridge Types — Bridging Firebase AI SDK ↔ @google/genai SDK
+// These interfaces cover shape mismatches between the two SDKs.
+// ============================================================================
+
+/** Vite import.meta.env with optional Google/Gemini API keys */
+interface ImportMetaEnvWithKeys {
+    env?: {
+        GOOGLE_API_KEY?: string;
+        GEMINI_API_KEY?: string;
+        [key: string]: string | undefined;
+    };
+}
+
+/** Shape returned by @google/genai embedContent — differs from Firebase SDK */
+interface GenAIEmbedResult {
+    embeddings?: { values: number[] }[];
+    embedding?: { values: number[] };
+}
+
+/** Extended Part type supporting fileData (used for audio/video analysis) */
+interface FileDataPart {
+    fileData: {
+        mimeType: string;
+        fileUri: string;
+    };
+}
+
+/** Model options shape accepted by getGenerativeModel */
+interface FirebaseModelOptions {
+    model: string;
+    generationConfig?: Record<string, unknown>;
+    systemInstruction?: string;
+    tools?: unknown[];
+    toolConfig?: ToolConfig;
+    safetySettings?: SafetySetting[] | FirebaseSafetySetting[];
+    cachedContent?: string;
+}
+
+/** Result shape from @google/genai generateContent */
+interface GenAIGenerateResult {
+    candidates?: unknown[];
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
+    text?: string;
+}
+
+/** Chunk shape from @google/genai generateContentStream */
+interface GenAIStreamChunk {
+    candidates?: { content?: { parts?: unknown[] } }[];
+    usageMetadata?: { promptTokenCount?: number; candidatesTokenCount?: number; totalTokenCount?: number };
+    text?: string | (() => string);
+}
 
 // ============================================================================
 // App Check Detection & Fallback Mode
@@ -246,8 +299,8 @@ export class FirebaseAIService {
         const keySources = {
             'env.VITE_API_KEY': env.VITE_API_KEY,
             'env.apiKey': env.apiKey,
-            'import.meta.env.GOOGLE_API_KEY': (import.meta as any).env?.GOOGLE_API_KEY,
-            'import.meta.env.GEMINI_API_KEY': (import.meta as any).env?.GEMINI_API_KEY
+            'import.meta.env.GOOGLE_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GOOGLE_API_KEY,
+            'import.meta.env.GEMINI_API_KEY': (import.meta as unknown as ImportMetaEnvWithKeys).env?.GEMINI_API_KEY
         };
 
         const foundSource = Object.entries(keySources).find(([_, val]) => !!val);
@@ -391,7 +444,7 @@ export class FirebaseAIService {
                             const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
                             if (lastContent.parts.length > 0) {
                                 const lastPartIdx = lastContent.parts.length - 1;
-                                (lastContent.parts[lastPartIdx] as any).thoughtSignature = options.thoughtSignature;
+                                (lastContent.parts[lastPartIdx] as ContentPart).thoughtSignature = options.thoughtSignature;
                             }
                         }
 
@@ -405,7 +458,7 @@ export class FirebaseAIService {
                             if (c.parts) {
                                 for (const p of c.parts) {
                                     if (('inlineData' in p && p.inlineData && p.inlineData.mimeType?.startsWith('audio/')) ||
-                                        ('fileData' in p && (p as any).fileData && (p as any).fileData.mimeType?.startsWith('audio/'))) {
+                                        ('fileData' in p && (p as unknown as FileDataPart).fileData && (p as unknown as FileDataPart).fileData.mimeType?.startsWith('audio/'))) {
                                         hasAudio = true;
                                         break;
                                     }
@@ -415,7 +468,7 @@ export class FirebaseAIService {
                         }
 
                         if (hasAudio && !mergedConfig.mediaResolution) {
-                            mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH' as any;
+                            mergedConfig.mediaResolution = 'MEDIA_RESOLUTION_HIGH';
                         }
 
                         // 7. Normal vs Fallback Generation
@@ -445,15 +498,15 @@ export class FirebaseAIService {
                             };
 
                             if (cachedContent) {
-                                (modelOptions as any).cachedContent = cachedContent;
+                                (modelOptions as FirebaseModelOptions).cachedContent = cachedContent;
                             }
 
-                            const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as any);
+                            const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
                             try {
-                                return await (modelCallback as any).generateContent(
+                                return await (modelCallback as unknown as { generateContent(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentResult> }).generateContent(
                                     typeof sanitizedPrompt === 'string'
                                         ? sanitizedPrompt
-                                        : { contents: sanitizedPrompt },
+                                        : { contents: sanitizedPrompt as Content[] },
                                     { signal: internalSignal }
                                 );
                             } catch (error) {
@@ -523,15 +576,15 @@ export class FirebaseAIService {
 
             const result = await this.fallbackClient.models.generateContent({
                 model: modelName,
-                contents: contents as any,
+                contents: contents as unknown as Record<string, unknown>[],
                 config: {
                     ...config,
                     systemInstruction,
-                    tools: tools as any,
+                    tools: tools as unknown as Record<string, unknown>[],
                     toolConfig,
-                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as any,
+                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
                     abortSignal: options?.signal
-                } as any,
+                } as Record<string, unknown>,
             });
 
             // Convert to Firebase AI SDK format for compatibility
@@ -610,7 +663,7 @@ export class FirebaseAIService {
                         const lastContent = sanitizedPrompt[sanitizedPrompt.length - 1];
                         if (lastContent.parts.length > 0) {
                             const lastPartIdx = lastContent.parts.length - 1;
-                            (lastContent.parts[lastPartIdx] as any).thoughtSignature = options.thoughtSignature;
+                            (lastContent.parts[lastPartIdx] as ContentPart).thoughtSignature = options.thoughtSignature;
                         }
                     }
 
@@ -642,11 +695,11 @@ export class FirebaseAIService {
                         modelOptions.cachedContent = cachedContent;
                     }
 
-                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as any);
+                    const modelCallback = getGenerativeModel(getFirebaseAI()!, modelOptions as unknown as Parameters<typeof getGenerativeModel>[1]);
 
                     try {
-                        const result: GenerateContentStreamResult = await (modelCallback as any).generateContentStream(
-                            typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt },
+                        const result: GenerateContentStreamResult = await (modelCallback as unknown as { generateContentStream(req: string | { contents: Content[] }, opts?: { signal?: AbortSignal }): Promise<GenerateContentStreamResult> }).generateContentStream(
+                            typeof sanitizedPrompt === 'string' ? sanitizedPrompt : { contents: sanitizedPrompt as Content[] },
                             { signal: internalSignal }
                         );
 
@@ -660,13 +713,14 @@ export class FirebaseAIService {
                                     for await (const chunk of result.stream) {
                                         chunks.push(chunk as unknown as GenerateContentResponse);
                                         const part = chunk.candidates?.[0]?.content?.parts?.[0] || chunk;
-                                        const chunkText = typeof (part as any).text === 'function'
-                                            ? (part as any).text()
-                                            : ((part as any).text || '');
+                                        const partWithText = part as unknown as { text?: string | (() => string) };
+                                        const chunkText = typeof partWithText.text === 'function'
+                                            ? partWithText.text()
+                                            : (partWithText.text || '');
                                         finalText += chunkText;
 
                                         const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+                                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
 
                                         controller.enqueue({
                                             text: () => chunkText,
@@ -675,7 +729,7 @@ export class FirebaseAIService {
                                                 const parts = chunk.candidates?.[0]?.content?.parts || [];
                                                 return parts
                                                     .filter(p => 'functionCall' in p)
-                                                    .map(p => (p as any).functionCall);
+                                                    .map(p => (p as FunctionCallPart).functionCall);
                                             }
                                         });
                                     }
@@ -705,7 +759,7 @@ export class FirebaseAIService {
                             // Extract thoughtSignature from first chunk if available
                             const firstWithSignature = chunks.find(c => {
                                 const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                                return part && 'thoughtSignature' in part && (part as any).thoughtSignature;
+                                return part && 'thoughtSignature' in part && (part as ContentPart).thoughtSignature;
                             });
                             const signature = firstWithSignature?.candidates?.[0]?.content?.parts?.[0]?.thoughtSignature;
 
@@ -716,7 +770,7 @@ export class FirebaseAIService {
                                     const parts = aggResult.candidates?.[0]?.content?.parts || [];
                                     return parts
                                         .filter(p => 'functionCall' in p)
-                                        .map(p => (p as any).functionCall);
+                                        .map(p => (p as FunctionCallPart).functionCall);
                                 },
                                 usage: () => aggResult.usageMetadata,
                                 thoughtSignature: signature
@@ -766,14 +820,14 @@ export class FirebaseAIService {
 
         const result = await this.fallbackClient.models.generateContentStream({
             model: modelName,
-            contents: contents as any,
+            contents: contents as unknown as Record<string, unknown>[],
             config: {
                 ...config,
                 systemInstruction,
-                tools: tools as any,
+                tools: tools as unknown as Record<string, unknown>[],
                 toolConfig: options?.toolConfig,
-                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as any,
-            } as any,
+                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
+            } as Record<string, unknown>,
         });
 
         // Collect chunks for final response
@@ -787,12 +841,12 @@ export class FirebaseAIService {
                         chunks.push(chunk as unknown as GenerateContentResponse);
                         let chunkText = '';
                         try {
-                            const c = chunk as any;
+                            const c = chunk as unknown as GenAIStreamChunk;
                             chunkText = typeof c.text === 'function' ? c.text() : (c.text || '');
                         } catch (e) { logger.debug('CAUGHT CHUNK ERROR', e); }
                         finalText += chunkText;
                         const firstPart = chunk.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+                        const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
 
                         controller.enqueue({
                             text: () => chunkText,
@@ -818,10 +872,10 @@ export class FirebaseAIService {
             // Find the first chunk that had a thoughtSignature
             const firstWithSignature = chunks.find(c => {
                 const part = c.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-                return part && 'thoughtSignature' in part && (part as any).thoughtSignature;
+                return part && 'thoughtSignature' in part && (part as ContentPart).thoughtSignature;
             });
             const firstPart = firstWithSignature?.candidates?.[0]?.content?.parts?.[0] as ContentPart | undefined;
-            const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as any).thoughtSignature : undefined;
+            const thoughtSignature = firstPart && 'thoughtSignature' in firstPart ? (firstPart as ContentPart).thoughtSignature : undefined;
 
             // Track usage for fallback mode
             if (userId && lastChunk?.usageMetadata) {
@@ -1117,7 +1171,7 @@ export class FirebaseAIService {
                 }
             } : undefined
         }] as unknown as Tool[];
-        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as any);
+        return this.rawGenerateContent(prompt, this.model!.model, {}, undefined, tools as unknown as Tool[]);
     }
 
     /**
@@ -1162,7 +1216,7 @@ export class FirebaseAIService {
             return safeJsonParse(cleaned) as T;
         } catch {
             logger.error('[FirebaseAIService] Failed to parse JSON:', text);
-            return {} as any;
+            return {} as T;
         }
     }
 
@@ -1284,10 +1338,11 @@ export class FirebaseAIService {
                     const text = c.parts.map(p => 'text' in p ? p.text : '').join(' ');
                     const result = await this.fallbackClient!.models.embedContent({
                         model: modelName,
-                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
                         config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
                     });
-                    return (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [];
+                    const embedResult = result as unknown as GenAIEmbedResult;
+                    return embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [];
                 });
                 return Promise.all(promises);
             }
@@ -1358,7 +1413,7 @@ export class FirebaseAIService {
             // 2. Setup Config
             const generationConfig: GenerationConfig = {
                 responseModalities: ['IMAGE'], // Specific to Gemini 3 Image
-                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as any,
+                mediaResolution: AI_CONFIG.IMAGE.DEFAULT.mediaResolution as GenerationConfig['mediaResolution'],
                 imageConfig: {
                     aspectRatio: config?.aspectRatio || '1:1',
                     imageSize: '4K', // "Perfect" quality
@@ -1432,8 +1487,8 @@ export class FirebaseAIService {
                 try {
                     const result = await this.fallbackClient.models.generateContent({
                         model: modelName,
-                        contents: [{ role: 'user', parts: [{ text }] }] as any,
-                        config: config as any
+                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
+                        config: config as unknown as Record<string, unknown>
                     });
 
                     const candidates = result.candidates;
@@ -1526,10 +1581,11 @@ export class FirebaseAIService {
                     const text = options.content.parts.map(p => 'text' in p ? p.text : '').join(' ');
                     const result = await this.fallbackClient.models.embedContent({
                         model: options.model,
-                        contents: [{ role: 'user', parts: [{ text }] }] as any,
+                        contents: [{ role: 'user', parts: [{ text }] }] as unknown as Record<string, unknown>[],
                         config: { outputDimensionality: AI_CONFIG.EMBEDDING.DIMENSIONS }
                     });
-                    return { values: (result as any).embeddings?.[0]?.values || (result as any).embedding?.values || [] };
+                    const embedResult = result as unknown as GenAIEmbedResult;
+                    return { values: embedResult.embeddings?.[0]?.values || embedResult.embedding?.values || [] };
                 } catch (error) {
                     throw this.handleError(error);
                 }

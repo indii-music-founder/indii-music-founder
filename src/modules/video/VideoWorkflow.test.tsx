@@ -8,71 +8,81 @@ import { useVideoEditorStore } from './store/videoEditorStore';
 import { VideoGeneration } from '@/services/video/VideoGenerationService';
 import { useToast, ToastProvider } from '@/core/context/ToastContext';
 
-// Mock Store
-const mockStoreState = {
-    generatedHistory: [],
-    selectedItem: null,
-    pendingPrompt: null,
-    setPendingPrompt: vi.fn(),
-    addToHistory: vi.fn(),
-    updateHistoryItem: vi.fn(),
-    setPrompt: vi.fn(),
-    studioControls: { resolution: '1080p' },
-    videoInputs: {},
-    setVideoInput: vi.fn(),
-    setVideoInputs: vi.fn(),
-    currentOrganizationId: 'org-123',
-    whiskState: {
-        subjects: [],
-        scenes: [],
-        styles: [],
-        motion: [],
-        preciseReference: false,
-        targetMedia: 'video'
-    },
-    characterReferences: [],
-    setStudioControls: vi.fn(),
-    addJob: vi.fn(),
-    updateJobProgress: vi.fn(),
-    updateJobStatus: vi.fn()
-};
+// --- Mocks ---
 
-const useStoreMock = Object.assign(
-    vi.fn((selector) => selector ? selector(mockStoreState) : mockStoreState),
-    {
-        getState: vi.fn(() => mockStoreState),
-        setState: vi.fn((patch: any) => Object.assign(mockStoreState, typeof patch === 'function' ? patch(mockStoreState) : patch))
-    }
-);
+const { mockStoreState, mockVideoEditorState, mockUseStore, mockUseVideoEditorStore } = vi.hoisted(() => {
+    const store = {
+        generatedHistory: [],
+        selectedItem: null,
+        pendingPrompt: null,
+        setPendingPrompt: vi.fn(),
+        addToHistory: vi.fn(),
+        updateHistoryItem: vi.fn(),
+        setPrompt: vi.fn(),
+        studioControls: { resolution: '1080p' },
+        videoInputs: {},
+        setVideoInput: vi.fn(),
+        setVideoInputs: vi.fn(),
+        currentOrganizationId: 'org-123',
+        whiskState: {
+            subjects: [],
+            scenes: [],
+            styles: [],
+            motion: [],
+            preciseReference: false,
+            targetMedia: 'video'
+        },
+        characterReferences: [],
+        setStudioControls: vi.fn(),
+        addJob: vi.fn(),
+        updateJobProgress: vi.fn(),
+        updateJobStatus: vi.fn()
+    };
+
+    const editorStore = {
+        viewMode: 'director',
+        setViewMode: vi.fn(),
+        jobId: null,
+        setJobId: vi.fn(),
+        status: 'idle' as const,
+        setStatus: vi.fn(),
+        progress: 0,
+        setProgress: vi.fn(),
+        inputAudio: null,
+        setInputAudio: vi.fn()
+    };
+
+    const useStore = Object.assign(
+        vi.fn((selector) => selector ? selector(store) : store),
+        {
+            getState: vi.fn(() => store),
+            setState: vi.fn((patch: any) => Object.assign(store, typeof patch === 'function' ? patch(store) : patch))
+        }
+    );
+
+    const useVideoEditorStore = Object.assign(
+        vi.fn((selector) => selector ? selector(editorStore) : editorStore),
+        {
+            getState: vi.fn(() => editorStore),
+            setState: vi.fn((patch: any) => Object.assign(editorStore, typeof patch === 'function' ? patch(editorStore) : patch))
+        }
+    );
+
+    return {
+        mockStoreState: store,
+        mockVideoEditorState: editorStore,
+        mockUseStore: useStore,
+        mockUseVideoEditorStore: useVideoEditorStore
+    };
+});
 
 vi.mock('@/core/store', () => ({
-    useStore: useStoreMock,
+    useStore: mockUseStore,
     serverTimestamp: vi.fn()
 }));
 
-const mockVideoEditorState = {
-    viewMode: 'director',
-    setViewMode: vi.fn(),
-    jobId: null,
-    setJobId: vi.fn(),
-    status: 'idle' as const,
-    setStatus: vi.fn(),
-    progress: 0,
-    setProgress: vi.fn(),
-    inputAudio: null,
-    setInputAudio: vi.fn()
-};
-
-const useVideoEditorStoreMock = Object.assign(
-    vi.fn((selector) => selector ? selector(mockVideoEditorState) : mockVideoEditorState),
-    {
-        getState: vi.fn(() => mockVideoEditorState),
-        setState: vi.fn((patch: any) => Object.assign(mockVideoEditorState, typeof patch === 'function' ? patch(mockVideoEditorState) : patch))
-    }
-);
-
 vi.mock('./store/videoEditorStore', () => ({
-    useVideoEditorStore: useVideoEditorStoreMock
+    useVideoEditorStore: mockUseVideoEditorStore
 }));
 
 // Mock Toast

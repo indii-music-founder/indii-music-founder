@@ -6,6 +6,7 @@ import App from './core/App';
 import { ErrorBoundary } from './core/components/ErrorBoundary';
 import { initViewportFixes, initKeyboardDetection } from '@/lib/mobile';
 import { initSentry } from '@/lib/sentry';
+import '@/core/i18n'; // Initialize i18n before any component renders
 import './index.css';
 
 // Initialize Sentry error tracking BEFORE rendering

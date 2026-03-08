@@ -71,8 +71,28 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
             const folderReleaseId = metadata.upc || `REL-${Date.now()}`;
 
             if (typeof window !== 'undefined' && window.electronAPI?.sftp && this.credentials?.sftpHost) {
-                console.info('[Symphonic] Delivering via Electron SFTP IPC...');
-                // Integration point: window.electronAPI.sftp.put(folderReleaseId, packageBuffer)
+                console.info('[Symphonic] Delivering via Electron SFTP...');
+
+                // Generate DDEX ERN for Symphonic delivery
+                const { ernService } = await import('@/services/ddex/ERNService');
+                const { DDEX_CONFIG } = await import('@/core/config/ddex');
+                const ernResult = await ernService.generateERN(
+                    metadata, DDEX_CONFIG.PARTY_ID, 'symphonic', assets
+                );
+
+                if (ernResult.success && ernResult.xml && window.electronAPI.distribution?.stageRelease) {
+                    const stagingResult = await window.electronAPI.distribution.stageRelease(
+                        folderReleaseId,
+                        [{ type: 'content', data: ernResult.xml, name: 'batch.xml' }]
+                    );
+
+                    if (stagingResult.success && stagingResult.packagePath) {
+                        // Item 213: Execute real SFTP delivery via base class uploadBundle
+                        await this.uploadBundle(stagingResult.packagePath, `/deliveries/${folderReleaseId}`);
+                        logger.info(`[Symphonic] SFTP delivery complete for ${folderReleaseId}`);
+                    }
+                }
+
                 return {
                     success: true,
                     status: 'processing',
@@ -81,14 +101,14 @@ export class SymphonicAdapter extends BaseDistributorAdapter {
                 };
             }
 
-            // Bolt Hardening: Fail if no real delivery method is available
-            logger.error('[Symphonic] Real delivery not implemented or SFTP unavailable.');
+            // Fail explicitly if SFTP credentials are missing
+            logger.error('[Symphonic] SFTP credentials required. Configure them in Settings > Integrations.');
             return {
                 success: false,
                 status: 'failed',
                 errors: [{
                     code: 'DELIVERY_UNAVAILABLE',
-                    message: 'Symphonic delivery requires active SFTP session.'
+                    message: 'Symphonic delivery requires SFTP credentials. Go to Settings > Integrations to configure.'
                 }],
                 releaseId,
                 distributorReleaseId: releaseId

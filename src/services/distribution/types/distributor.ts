@@ -34,10 +34,37 @@ export type LegacyAggregatorId =
   | 'awal'
   | 'unitedmasters'
   | 'amuse'
-  | 'symphonic';
+  | 'symphonic'
+  | 'onerpm'    // Item 215: Added Onerpm adapter
+  | 'believe';  // Item 216: Added Believe adapter
 
 /** Full distributor ID union — direct DSPs + legacy migration connectors */
 export type DistributorId = DirectDSPId | LegacyAggregatorId;
+
+/**
+ * Item 220: Territory-scoped rights split configuration.
+ * Allows different rights holders per territory (e.g., EU publishing → entity A,
+ * US rights → entity B). Each entry overrides the global split for the listed territories.
+ */
+export interface TerritoryRightsSplit {
+    /** ISO 3166-1 alpha-2 territory codes, or 'WORLD' for worldwide */
+    territories: string[];
+    /** Rights holder name */
+    rightsHolder: string;
+    /** Percentage (0–100) for this holder in these territories */
+    percentage: number;
+    /** Type of rights covered */
+    rightsType: 'master' | 'publishing' | 'sync' | 'performance' | 'mechanical';
+    /** Optional Stripe Connect account ID for payout routing */
+    accountId?: string;
+}
+
+/** Territory rights configuration attached to a release */
+export interface TerritoryRightsConfig {
+    /** Whether territory-specific splits override the global split */
+    enabled: boolean;
+    splits: TerritoryRightsSplit[];
+}
 
 // ... (existing code)
 
@@ -103,6 +130,7 @@ export interface ReleaseResult {
     upcAssigned?: string;
     isrcAssigned?: string;
     packagePath?: string;
+    note?: string;
   };
 }
 

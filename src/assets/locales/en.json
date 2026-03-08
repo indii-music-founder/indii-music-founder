@@ -1,0 +1,88 @@
+{
+    "common": {
+        "save": "Save",
+        "cancel": "Cancel",
+        "delete": "Delete",
+        "confirm": "Confirm",
+        "close": "Close",
+        "loading": "Loading…",
+        "error": "Something went wrong",
+        "retry": "Retry",
+        "search": "Search",
+        "noResults": "No results found",
+        "back": "Back",
+        "next": "Next",
+        "submit": "Submit",
+        "copy": "Copy",
+        "copied": "Copied!",
+        "settings": "Settings",
+        "logout": "Log Out",
+        "login": "Log In",
+        "signUp": "Sign Up"
+    },
+    "sidebar": {
+        "dashboard": "Dashboard",
+        "creative": "Creative Studio",
+        "video": "Video Production",
+        "distribution": "Distribution",
+        "marketing": "Marketing",
+        "finance": "Finance",
+        "legal": "Legal",
+        "licensing": "Licensing",
+        "publishing": "Publishing",
+        "merchandise": "Merchandise",
+        "social": "Social",
+        "touring": "Touring",
+        "workflow": "Workflow",
+        "knowledge": "Knowledge Base",
+        "files": "Files",
+        "agent": "Agent",
+        "settings": "Settings"
+    },
+    "dashboard": {
+        "title": "Dashboard",
+        "welcome": "Welcome back, {{name}}",
+        "recentActivity": "Recent Activity",
+        "quickActions": "Quick Actions"
+    },
+    "creative": {
+        "title": "Creative Studio",
+        "generateImage": "Generate Image",
+        "generateVideo": "Generate Video",
+        "promptPlaceholder": "Describe what you want to create…",
+        "generating": "Generating…",
+        "downloadImage": "Download Image",
+        "saveToLibrary": "Save to Library"
+    },
+    "distribution": {
+        "title": "Distribution",
+        "newRelease": "New Release",
+        "status": "Status",
+        "distributed": "Distributed",
+        "pending": "Pending",
+        "failed": "Failed"
+    },
+    "agent": {
+        "title": "AI Assistant",
+        "placeholder": "Ask me anything…",
+        "thinking": "Thinking…",
+        "sidecarOnline": "AI Service Online",
+        "sidecarOffline": "AI Service Offline",
+        "sidecarChecking": "Checking AI Service…",
+        "restart": "Restart AI Service"
+    },
+    "sync": {
+        "synced": "All changes synced",
+        "syncing": "Syncing…",
+        "pending": "{{count}} change pending",
+        "pending_plural": "{{count}} changes pending",
+        "error": "Sync error"
+    },
+    "auth": {
+        "emailLabel": "Email",
+        "passwordLabel": "Password",
+        "forgotPassword": "Forgot Password?",
+        "noAccount": "Don't have an account?",
+        "hasAccount": "Already have an account?"
+    }
+}
