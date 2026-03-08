@@ -10,22 +10,35 @@ export default function MarketingAssetGeneratorUI() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [generatorMode, setGeneratorMode] = useState<'reel' | 'avatar'>('reel');
+    const [avatarImage, setAvatarImage] = useState<File | null>(null);
 
     const handleGenerate = async () => {
-        if (!prompt.trim()) return;
+        if (generatorMode === 'reel' && !prompt.trim()) return;
+        if (generatorMode === 'avatar' && (!audioFile || !avatarImage)) return;
 
         setStep(3);
         setIsGenerating(true);
         setError(null);
 
         try {
-            const { CampaignAI } = await import('@/services/marketing/CampaignAIService');
-            const url = await CampaignAI.generateMarketingVideo(prompt, style);
-            setVideoUrl(url);
+            if (generatorMode === 'reel') {
+                const { CampaignAI } = await import('@/services/marketing/CampaignAIService');
+                const url = await CampaignAI.generateMarketingVideo(prompt, style);
+                setVideoUrl(url);
+            } else {
+                const { avatarGenerationService } = await import('@/services/video/AvatarGenerationService');
+                // Create object URLs for mock processing
+                const audioUrl = URL.createObjectURL(audioFile!);
+                const imgUrl = URL.createObjectURL(avatarImage!);
+                await avatarGenerationService.generateLipSync(imgUrl, audioUrl);
+                // Mock result
+                setVideoUrl('https://storage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4');
+            }
             setStep(4);
         } catch (err: any) {
-            setError(err.message || "Failed to generate video");
-            setStep(2); // Go back to allow editing
+            setError(err.message || "Failed to generate asset");
+            setStep(2);
         } finally {
             setIsGenerating(false);
         }
@@ -34,6 +47,7 @@ export default function MarketingAssetGeneratorUI() {
     const reset = () => {
         setStep(1);
         setAudioFile(null);
+        setAvatarImage(null);
         setPrompt('');
         setStyle('cinematic');
         setVideoUrl(null);
@@ -64,9 +78,20 @@ export default function MarketingAssetGeneratorUI() {
                         <h1 className="text-2xl lg:text-3xl font-black text-white uppercase tracking-tighter">
                             Short-Form Asset Generator
                         </h1>
-                        <p className="text-gray-400 text-sm font-medium tracking-wide">
-                            AI-POWERED AUDIO REEL CONVERSION
-                        </p>
+                        <div className="flex items-center gap-4 mt-1">
+                            <button
+                                onClick={() => setGeneratorMode('reel')}
+                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'reel' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+                            >
+                                Cinematic Reel
+                            </button>
+                            <button
+                                onClick={() => setGeneratorMode('avatar')}
+                                className={`text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded transition-colors ${generatorMode === 'avatar' ? 'bg-dept-marketing text-white' : 'bg-white/5 text-gray-500 hover:text-gray-300'}`}
+                            >
+                                AI Avatar Lip-Sync
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -123,9 +148,28 @@ export default function MarketingAssetGeneratorUI() {
                                     </p>
                                 </div>
 
+                                {generatorMode === 'avatar' && (
+                                    <div className="mt-4 flex-1">
+                                        <h3 className="text-xs font-bold text-gray-400 uppercase mb-2">Target Avatar (Static Portrait)</h3>
+                                        <div
+                                            className="h-32 border-2 border-dashed border-white/10 hover:border-dept-marketing/50 bg-white/[0.02] hover:bg-dept-marketing/5 transition-all rounded-xl flex flex-col items-center justify-center cursor-pointer group p-4"
+                                            onClick={() => {
+                                                setAvatarImage(new File([], "artist_portrait.jpg"));
+                                            }}
+                                        >
+                                            <div className="w-10 h-10 rounded-full bg-white/5 group-hover:bg-dept-marketing/20 text-gray-400 group-hover:text-dept-marketing flex items-center justify-center mb-2 transition-colors">
+                                                {avatarImage ? <CheckCircle2 size={20} /> : <Upload size={20} />}
+                                            </div>
+                                            <p className="text-white text-xs font-semibold">
+                                                {avatarImage ? avatarImage.name : 'Upload Avatar Image'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
                                 <div className="flex justify-end mt-8">
                                     <button
-                                        disabled={!audioFile}
+                                        disabled={generatorMode === 'reel' ? !audioFile : (!audioFile || !avatarImage)}
                                         onClick={() => setStep(2)}
                                         className="btn-primary bg-dept-marketing hover:bg-dept-marketing/80 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
@@ -191,11 +235,11 @@ export default function MarketingAssetGeneratorUI() {
                                         Back
                                     </button>
                                     <button
-                                        disabled={!prompt.trim()}
+                                        disabled={generatorMode === 'reel' ? !prompt.trim() : false}
                                         onClick={handleGenerate}
                                         className="btn-primary bg-gradient-to-r from-dept-marketing to-purple-600 hover:opacity-90 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-[0_0_20px_rgba(var(--color-dept-marketing),0.3)]"
                                     >
-                                        <Wand2 size={18} /> Generate Video
+                                        <Wand2 size={18} /> {generatorMode === 'reel' ? 'Generate Video' : 'Begin Lip-Sync'}
                                     </button>
                                 </div>
                             </motion.div>
