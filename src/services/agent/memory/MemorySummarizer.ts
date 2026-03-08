@@ -5,6 +5,36 @@ import type { AlwaysOnMemory, MemoryEntity, ConsolidationInsight, MemoryConnecti
 import { Timestamp } from 'firebase/firestore';
 
 /**
+ * Robust JSON parser for AI responses.
+ * Strips markdown code fences (`\`\`\`json ... \`\`\``) and trims whitespace
+ * before parsing. Returns a default value on failure instead of throwing.
+ */
+function safeParseJson<T>(raw: string, fallback: T): T {
+    try {
+        const cleaned = raw
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/```\s*$/, '')
+            .trim();
+        return JSON.parse(cleaned) as T;
+    } catch {
+        // Attempt to find the first { or [ and parse from there
+        const firstBrace = raw.indexOf('{');
+        const firstBracket = raw.indexOf('[');
+        const start = firstBrace >= 0 && (firstBracket < 0 || firstBrace < firstBracket)
+            ? firstBrace : firstBracket;
+        if (start >= 0) {
+            try {
+                return JSON.parse(raw.slice(start)) as T;
+            } catch {
+                // Final fallback
+            }
+        }
+        logger.warn('[MemorySummarizer] Failed to parse AI JSON response:', raw.slice(0, 200));
+        return fallback;
+    }
+}
+
+/**
  * MemorySummarizer handles the logic for condensing multiple memory entries
  * into a single, cohesive summary, extracting entities and topics, and
  * generating cross-cutting insights during consolidation.
@@ -99,7 +129,7 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
                 } as any
             );
 
-            const parsed = JSON.parse(response);
+            const parsed = safeParseJson(response, { insight: '', confidence: 0, connections: [] });
 
             if (!parsed.insight || parsed.confidence < 0.3) {
                 return null;
@@ -164,7 +194,7 @@ Only include clearly identifiable entities. Be precise with names. Return an emp
                 } as any
             );
 
-            const parsed = JSON.parse(response);
+            const parsed = safeParseJson(response, { entities: [] });
             return (parsed.entities || []).map((e: any) => ({
                 name: String(e.name),
                 type: e.type || 'other',
@@ -207,7 +237,7 @@ Respond in JSON format:
                 } as any
             );
 
-            const parsed = JSON.parse(response);
+            const parsed = safeParseJson(response, { topics: [] });
             return (parsed.topics || []).map((t: any) => String(t).toLowerCase());
         } catch (error) {
             logger.error('[MemorySummarizer] Topic assignment failed:', error);
@@ -258,7 +288,7 @@ Respond with ONLY a JSON object: {"importance": 0.X}`;
                 } as any
             );
 
-            const parsed = JSON.parse(response);
+            const parsed = safeParseJson(response, { importance: 0.5 });
             const score = parseFloat(parsed.importance);
             return isNaN(score) ? 0.5 : Math.max(0, Math.min(1, score));
         } catch (error) {

@@ -61,6 +61,7 @@ export const test = base.extend<AuthFixtures>({
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
 
+        // eslint-disable-next-line react-hooks/rules-of-hooks
         await use(page);
     },
 });

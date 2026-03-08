@@ -222,7 +222,7 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
                             return null;
                         }
 
-                        const json = safeJsonParse(jsonStr); if(!json) return null;
+                        const json = safeJsonParse(jsonStr); if (!json) return null;
                         const toolName = thought.toolName || 'unknown_tool';
 
                         if ((toolName === 'generate_image' || toolName === 'batch_edit_images' || toolName === 'generate_high_res_asset' || toolName === 'remix_image') && (json.urls || json.image_ids)) {
@@ -318,3 +318,6 @@ export const MessageItem = memo(({ msg, avatarUrl, variant = 'default', agentIde
 });
 
 MessageItem.displayName = 'MessageItem';
+
+// Alias for backwards compatibility — AgentDashboard imports { ChatMessage }
+export { MessageItem as ChatMessage };

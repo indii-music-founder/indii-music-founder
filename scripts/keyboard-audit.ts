@@ -95,7 +95,7 @@ async function getAllFocusableElements(page: Page): Promise<FocusableElement[]> 
 async function checkTabOrder(page: Page): Promise<{ order: string[]; reachable: number; issues: TabOrderIssue[] }> {
     const order: string[] = [];
     const issues: TabOrderIssue[] = [];
-    let maxTabs = 50;
+    const maxTabs = 50;
     let reachable = 0;
 
     // Tab through the page
