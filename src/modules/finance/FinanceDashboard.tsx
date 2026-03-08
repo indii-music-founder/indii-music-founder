@@ -14,12 +14,12 @@ import { ReceiptOCR } from './components/ReceiptOCR';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { motion } from 'motion/react';
 import {
-import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
     Briefcase, CreditCard, ShoppingBag, TrendingUp,
     DollarSign, ArrowUpRight, ArrowDownRight, Wallet,
     AlertTriangle, Calendar, PiggyBank, Globe, Users,
     FileText, Activity, Shield, Camera, GitMerge
 } from 'lucide-react';
+import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 
 /* ================================================================== */
 /*  Finance Dashboard — Three-Panel Layout                             */
@@ -36,123 +36,147 @@ import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 export default function FinanceDashboard() {
     return (
         <ModuleErrorBoundary moduleName="Finance">
-        <div className="absolute inset-0 flex">
-            {/* ── LEFT PANEL — Quick Stats & Summary ──────────────── */}
-            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <QuickStatsPanel />
-                <RecentTransactionsPanel />
-                <TaxSummaryPanel />
-            </aside>
+            <div className="absolute inset-0 flex">
+                {/* ── LEFT PANEL — Quick Stats & Summary ──────────────── */}
+                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <QuickStatsPanel />
+                    <RecentTransactionsPanel />
+                    <TaxSummaryPanel />
+                </aside>
 
-            {/* ── CENTER — Tabbed Content ─────────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                    <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-royalties/8 blur-[100px] pointer-events-none rounded-full" />
-                    <div className="relative z-10 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-dept-royalties to-dept-royalties-glow flex items-center justify-center shadow-lg shadow-dept-royalties/20">
-                            <TrendingUp size={18} className="text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Finance</h1>
-                            <p className="text-muted-foreground font-medium tracking-wide text-[10px]">REAL-TIME FISCAL OPERATIONS</p>
+                {/* ── CENTER — Tabbed Content ─────────────────────────── */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Header */}
+                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-dept-royalties/8 blur-[100px] pointer-events-none rounded-full" />
+                        <div className="relative z-10 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-dept-royalties to-dept-royalties-glow flex items-center justify-center shadow-lg shadow-dept-royalties/20">
+                                <TrendingUp size={18} className="text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Finance</h1>
+                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">REAL-TIME FISCAL OPERATIONS</p>
+                            </div>
                         </div>
                     </div>
+
+                    {/* Tabs */}
+                    <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
+                        <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
+                            <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
+                                <TabsTrigger value="earnings" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Briefcase size={14} /> Earnings
+                                </TabsTrigger>
+                                <TabsTrigger value="expenses" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <CreditCard size={14} /> Expenses
+                                </TabsTrigger>
+                                <TabsTrigger value="merch" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <ShoppingBag size={14} /> Merchandise
+                                </TabsTrigger>
+                                <TabsTrigger value="royalties" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <TrendingUp size={14} /> Royalties
+                                </TabsTrigger>
+                                <TabsTrigger value="currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Globe size={14} /> Multi-Currency
+                                </TabsTrigger>
+                                <TabsTrigger value="splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <GitMerge size={14} /> Split Escrow
+                                </TabsTrigger>
+                                <TabsTrigger value="onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Users size={14} /> Stripe Connect
+                                </TabsTrigger>
+                                <TabsTrigger value="tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <FileText size={14} /> Tax Forms
+                                </TabsTrigger>
+                                <TabsTrigger value="anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Activity size={14} /> Anomaly
+                                </TabsTrigger>
+                                <TabsTrigger value="audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Shield size={14} /> Audit Logs
+                                </TabsTrigger>
+                                <TabsTrigger value="budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <DollarSign size={14} /> Budget
+                                </TabsTrigger>
+                                <TabsTrigger value="receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
+                                    <Camera size={14} /> Receipt OCR
+                                </TabsTrigger>
+                            </TabsList>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                            <div className="p-4 md:p-6">
+                                <TabsContent value="earnings" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Earnings">
+                                        <EarningsDashboard />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="expenses" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Expenses">
+                                        <ExpenseTracker />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="merch" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Merchandise">
+                                        <MerchandiseDashboard />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="royalties" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Royalties">
+                                        <RoyaltiesPrediction />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="currency" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Currency">
+                                        <MultiCurrencyLedger />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="splits" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Splits">
+                                        <SplitSheetEscrow />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="onboarding" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Stripe Onboarding">
+                                        <StripeConnectOnboarding />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="tax" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Tax">
+                                        <TaxFormCollection />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="anomaly" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Anomaly Detection">
+                                        <AnomalyDetector />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="audit" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Audit Logs">
+                                        <AuditLogsPanel />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="budget" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Budget">
+                                        <BudgetVsActuals />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                                <TabsContent value="receipts" className="mt-0 outline-none">
+                                    <ModuleErrorBoundary moduleName="Finance / Receipts">
+                                        <ReceiptOCR />
+                                    </ModuleErrorBoundary>
+                                </TabsContent>
+                            </div>
+                        </div>
+                    </Tabs>
                 </div>
 
-                {/* Tabs */}
-                <Tabs defaultValue="earnings" className="flex-1 flex flex-col overflow-hidden">
-                    <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0 overflow-x-auto">
-                        <TabsList className="bg-transparent gap-4 p-0 h-12 flex-nowrap">
-                            <TabsTrigger value="earnings" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Briefcase size={14} /> Earnings
-                            </TabsTrigger>
-                            <TabsTrigger value="expenses" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <CreditCard size={14} /> Expenses
-                            </TabsTrigger>
-                            <TabsTrigger value="merch" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <ShoppingBag size={14} /> Merchandise
-                            </TabsTrigger>
-                            <TabsTrigger value="royalties" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <TrendingUp size={14} /> Royalties
-                            </TabsTrigger>
-                            <TabsTrigger value="currency" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Globe size={14} /> Multi-Currency
-                            </TabsTrigger>
-                            <TabsTrigger value="splits" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <GitMerge size={14} /> Split Escrow
-                            </TabsTrigger>
-                            <TabsTrigger value="onboarding" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Users size={14} /> Stripe Connect
-                            </TabsTrigger>
-                            <TabsTrigger value="tax" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <FileText size={14} /> Tax Forms
-                            </TabsTrigger>
-                            <TabsTrigger value="anomaly" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Activity size={14} /> Anomaly
-                            </TabsTrigger>
-                            <TabsTrigger value="audit" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Shield size={14} /> Audit Logs
-                            </TabsTrigger>
-                            <TabsTrigger value="budget" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <DollarSign size={14} /> Budget
-                            </TabsTrigger>
-                            <TabsTrigger value="receipts" className="text-muted-foreground data-[state=active]:text-dept-royalties data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-dept-royalties rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs whitespace-nowrap">
-                                <Camera size={14} /> Receipt OCR
-                            </TabsTrigger>
-                        </TabsList>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto custom-scrollbar">
-                        <div className="p-4 md:p-6">
-                            <TabsContent value="earnings" className="mt-0 outline-none">
-                                <EarningsDashboard />
-                            </TabsContent>
-                            <TabsContent value="expenses" className="mt-0 outline-none">
-                                <ExpenseTracker />
-                            </TabsContent>
-                            <TabsContent value="merch" className="mt-0 outline-none">
-                                <MerchandiseDashboard />
-                            </TabsContent>
-                            <TabsContent value="royalties" className="mt-0 outline-none">
-                                <RoyaltiesPrediction />
-                            </TabsContent>
-                            <TabsContent value="currency" className="mt-0 outline-none">
-                                <MultiCurrencyLedger />
-                            </TabsContent>
-                            <TabsContent value="splits" className="mt-0 outline-none">
-                                <SplitSheetEscrow />
-                            </TabsContent>
-                            <TabsContent value="onboarding" className="mt-0 outline-none">
-                                <StripeConnectOnboarding />
-                            </TabsContent>
-                            <TabsContent value="tax" className="mt-0 outline-none">
-                                <TaxFormCollection />
-                            </TabsContent>
-                            <TabsContent value="anomaly" className="mt-0 outline-none">
-                                <AnomalyDetector />
-                            </TabsContent>
-                            <TabsContent value="audit" className="mt-0 outline-none">
-                                <AuditLogsPanel />
-                            </TabsContent>
-                            <TabsContent value="budget" className="mt-0 outline-none">
-                                <BudgetVsActuals />
-                            </TabsContent>
-                            <TabsContent value="receipts" className="mt-0 outline-none">
-                                <ReceiptOCR />
-                            </TabsContent>
-                        </div>
-                    </div>
-                </Tabs>
+                {/* ── RIGHT PANEL — Forecast & Alerts ─────────────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <RevenueForecastPanel />
+                    <ExpenseBreakdownPanel />
+                    <AlertsPanel />
+                </aside>
             </div>
-
-            {/* ── RIGHT PANEL — Forecast & Alerts ─────────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <RevenueForecastPanel />
-                <ExpenseBreakdownPanel />
-                <AlertsPanel />
-            </aside>
-        </div>
         </ModuleErrorBoundary>
     );
 }
@@ -328,11 +352,10 @@ function AlertsPanel() {
                 {alerts.map((a, i) => (
                     <div
                         key={i}
-                        className={`flex items-start gap-2 p-2.5 rounded-lg text-xs ${
-                            a.level === 'warn'
-                                ? 'bg-amber-500/5 border border-amber-500/10 text-amber-300'
-                                : 'bg-blue-500/5 border border-blue-500/10 text-blue-300'
-                        }`}
+                        className={`flex items-start gap-2 p-2.5 rounded-lg text-xs ${a.level === 'warn'
+                            ? 'bg-amber-500/5 border border-amber-500/10 text-amber-300'
+                            : 'bg-blue-500/5 border border-blue-500/10 text-blue-300'
+                            }`}
                     >
                         <AlertTriangle size={12} className="flex-shrink-0 mt-0.5" />
                         <span>{a.text}</span>
