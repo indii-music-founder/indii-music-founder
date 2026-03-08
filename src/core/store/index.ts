@@ -49,6 +49,7 @@ export interface StoreState extends
 import { OrganizationService } from '@/services/OrganizationService';
 
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { SecureZustandStorage } from './adapters/SecureZustandStorage';
 
 export const useStore = create<StoreState>()(
     persist(
@@ -80,7 +81,7 @@ export const useStore = create<StoreState>()(
         },
         {
             name: 'indiios-app-storage',
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => SecureZustandStorage),
             partialize: (state) => ({
                 isSidebarOpen: state.isSidebarOpen,
                 // Add currentModule if we want to remember the last tab

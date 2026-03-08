@@ -152,6 +152,7 @@ export function useOnboarding() {
                 if (isFinished) {
                     const { coreProgress: cp, releaseProgress: rp } = calculateProfileStatus(updatedProfile);
                     onboardingAnalytics.completed(cp, rp, history.filter(h => h.role === 'user').length);
+                    setModule('dashboard');
                 }
 
                 const uiToolNames = ['askMultipleChoice', 'shareInsight', 'suggestCreativeDirection', 'shareDistributorInfo'];

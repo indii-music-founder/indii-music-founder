@@ -19,8 +19,8 @@ const firebaseConfig = {
     apiKey: process.env.VITE_FIREBASE_API_KEY || process.env.VITE_API_KEY,
     authDomain: process.env.VITE_FIREBASE_AUTH_DOMAIN || "indiios-v-1-1.firebaseapp.com",
     projectId: process.env.VITE_FIREBASE_PROJECT_ID || "indiios-v-1-1",
-    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "indiios-alpha-electron.firebasestorage.app",
-    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:3af738739465ea4095e9bd"
+    storageBucket: process.env.VITE_FIREBASE_STORAGE_BUCKET || "indiios-alpha-electron",
+    appId: process.env.VITE_FIREBASE_APP_ID || "1:223837784072:web:28eabcf0c5dd985395e9bd"
 };
 
 const email = process.env.AUDITOR_EMAIL;
@@ -43,7 +43,7 @@ async function audit() {
     console.log("\n🔒 Auditing Authentication Provider...");
     let user;
     try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
+        const cred = await signInWithEmailAndPassword(auth, email!, password!);
         user = cred.user;
         console.log(`✅ Auth Success: Service Account Active (${user.uid})`);
     } catch (e: any) {
@@ -56,12 +56,13 @@ async function audit() {
     const content = new TextEncoder().encode("Auditor Verification Timestamp: " + new Date().toISOString());
 
     // Test 2.1: Write Access (Private)
-    const myRef = ref(storage, `users/${user.uid}/auditor-test.txt`);
+    const myRef = ref(storage, `users/${user.uid}/auditor-test.json`);
     try {
-        await uploadBytes(myRef, content);
+        await uploadBytes(myRef, content, { contentType: 'application/json' });
         console.log("✅ Storage Write: Success (Own Path)");
     } catch (e: any) {
         console.error(`❌ Storage Write Failed: ${e.message}`);
+        console.error("Full Error:", JSON.stringify(e, null, 2));
         process.exit(1);
     }
 
@@ -74,9 +75,9 @@ async function audit() {
     }
 
     // Test 2.3: Security Rule Enforcement (Deny Other)
-    const otherRef = ref(storage, `users/other-user/auditor-hack.txt`);
+    const otherRef = ref(storage, `users/other-user/auditor-hack.json`);
     try {
-        await uploadBytes(otherRef, content);
+        await uploadBytes(otherRef, content, { contentType: 'application/json' });
         console.error("❌ Security Failure: Write to Other User Path SUCCEEDED (Should Fail)");
         process.exit(1);
     } catch (e: any) {

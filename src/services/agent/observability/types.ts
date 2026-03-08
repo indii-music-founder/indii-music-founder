@@ -29,5 +29,6 @@ export interface AgentTrace {
     metadata?: Record<string, any>;
     swarmId?: string;
     error?: string;
+    durationMs?: number;
     totalUsage?: UsageMetrics;
 }
