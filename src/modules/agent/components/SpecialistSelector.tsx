@@ -12,25 +12,27 @@ export const SpecialistSelector: React.FC<SpecialistSelectorProps> = ({
     selectedAgentId,
     onSelect,
 }) => {
-    const [agents, setAgents] = useState<SpecializedAgent[]>([]);
+    const [agents, setAgents] = useState<SpecializedAgent[]>(() => {
+        try {
+            return agentRegistry.getAll();
+        } catch {
+            return [];
+        }
+    });
     const [open, setOpen] = useState(false);
 
+    // Retry loading agents if registry wasn't warmed up at mount
     useEffect(() => {
-        // Load registered agents — warmup may already have run
-        try {
-            const all = agentRegistry.getAll();
-            setAgents(all);
-        } catch {
-            // Registry not warmed up yet — try after a delay
-            setTimeout(() => {
-                try {
-                    setAgents(agentRegistry.getAll());
-                } catch {
-                    // silently fail — no agents available
-                }
-            }, 1000);
-        }
-    }, []);
+        if (agents.length > 0) return;
+        const timer = setTimeout(() => {
+            try {
+                setAgents(agentRegistry.getAll());
+            } catch {
+                // silently fail — no agents available
+            }
+        }, 1000);
+        return () => clearTimeout(timer);
+    }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
     const selectedAgent = agents.find(a => a.id === selectedAgentId);
 

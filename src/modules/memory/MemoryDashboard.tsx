@@ -127,7 +127,6 @@ export default function MemoryDashboard() {
     const [activePanel, setActivePanel] = useState<'feed' | 'query' | 'ingest'>('feed');
 
     // Initial load
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (userId) {
             // Start engine if not running
@@ -138,14 +137,15 @@ export default function MemoryDashboard() {
             loadAlwaysOnInsights(userId);
             refreshAlwaysOnEngineStatus(userId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
     // Reload when filters change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (userId) {
             loadAlwaysOnMemories(userId);
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [memoryFilterCategory, memoryFilterTier, memorySearchQuery, userId]);
 
     const selectedMemory = useMemo(
@@ -196,12 +196,12 @@ export default function MemoryDashboard() {
         [userId, deleteAlwaysOnMemory]
     );
 
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     const handleRefresh = useCallback(() => {
         if (!userId) return;
         loadAlwaysOnMemories(userId);
         loadAlwaysOnInsights(userId);
         refreshAlwaysOnEngineStatus(userId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [userId]);
 
     const formatDate = (timestamp: any) => {
@@ -219,120 +219,120 @@ export default function MemoryDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Memory">
-        <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden" data-testid="memory-dashboard">
-            {/* Header */}
-            <div className="flex-shrink-0 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl">
-                <div className="flex items-center justify-between px-6 py-4">
-                    <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-gradient-to-br from-purple-600/30 to-violet-600/30 border border-purple-500/20">
-                            <Brain size={20} className="text-purple-400" />
+            <div className="h-full flex flex-col bg-[#0d1117] text-white overflow-hidden" data-testid="memory-dashboard">
+                {/* Header */}
+                <div className="flex-shrink-0 border-b border-white/5 bg-[#0d1117]/80 backdrop-blur-xl">
+                    <div className="flex items-center justify-between px-6 py-4">
+                        <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-xl bg-gradient-to-br from-purple-600/30 to-violet-600/30 border border-purple-500/20">
+                                <Brain size={20} className="text-purple-400" />
+                            </div>
+                            <div>
+                                <h1 className="text-lg font-semibold tracking-tight">Memory Agent</h1>
+                                <p className="text-xs text-gray-500">Always-On Persistent Memory System</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-lg font-semibold tracking-tight">Memory Agent</h1>
-                            <p className="text-xs text-gray-500">Always-On Persistent Memory System</p>
-                        </div>
-                    </div>
 
-                    {/* Engine Status Badge */}
-                    <div className="flex items-center gap-3">
-                        <div
-                            className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${engineStatus.isRunning
-                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                : 'bg-red-500/10 text-red-400 border-red-500/20'
-                                }`}
-                        >
-                            <span
-                                className={`w-1.5 h-1.5 rounded-full ${engineStatus.isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
-                                    }`}
-                            />
-                            {engineStatus.isRunning ? 'Running' : 'Stopped'}
-                        </div>
-                        <button
-                            onClick={handleRefresh}
-                            className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
-                            title="Refresh"
-                        >
-                            <RefreshCw size={14} />
-                        </button>
-                    </div>
-                </div>
-
-                {/* Stats Bar */}
-                <div className="flex items-center gap-6 px-6 pb-3">
-                    <StatBadge icon={Database} label="Memories" value={engineStatus.totalMemories} />
-                    <StatBadge icon={Sparkles} label="Insights" value={engineStatus.totalInsights} />
-                    <StatBadge icon={Zap} label="Unconsolidated" value={engineStatus.unconsolidatedCount} />
-                    <div className="flex gap-2 ml-auto">
-                        {(['feed', 'query', 'ingest'] as const).map((panel) => (
-                            <button
-                                key={panel}
-                                onClick={() => setActivePanel(panel)}
-                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePanel === panel
-                                    ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
-                                    : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                        {/* Engine Status Badge */}
+                        <div className="flex items-center gap-3">
+                            <div
+                                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border ${engineStatus.isRunning
+                                    ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
                                     }`}
                             >
-                                {panel === 'feed' ? '📋 Feed' : panel === 'query' ? '🔍 Query' : '📥 Ingest'}
+                                <span
+                                    className={`w-1.5 h-1.5 rounded-full ${engineStatus.isRunning ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'
+                                        }`}
+                                />
+                                {engineStatus.isRunning ? 'Running' : 'Stopped'}
+                            </div>
+                            <button
+                                onClick={handleRefresh}
+                                className="p-2 rounded-lg hover:bg-white/5 text-gray-400 hover:text-white transition-colors"
+                                title="Refresh"
+                            >
+                                <RefreshCw size={14} />
                             </button>
-                        ))}
+                        </div>
+                    </div>
+
+                    {/* Stats Bar */}
+                    <div className="flex items-center gap-6 px-6 pb-3">
+                        <StatBadge icon={Database} label="Memories" value={engineStatus.totalMemories} />
+                        <StatBadge icon={Sparkles} label="Insights" value={engineStatus.totalInsights} />
+                        <StatBadge icon={Zap} label="Unconsolidated" value={engineStatus.unconsolidatedCount} />
+                        <div className="flex gap-2 ml-auto">
+                            {(['feed', 'query', 'ingest'] as const).map((panel) => (
+                                <button
+                                    key={panel}
+                                    onClick={() => setActivePanel(panel)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${activePanel === panel
+                                        ? 'bg-purple-600/20 text-purple-300 border border-purple-500/30'
+                                        : 'text-gray-500 hover:text-gray-300 hover:bg-white/5'
+                                        }`}
+                                >
+                                    {panel === 'feed' ? '📋 Feed' : panel === 'query' ? '🔍 Query' : '📥 Ingest'}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+
+                {/* Main Content Area */}
+                <div className="flex-1 flex overflow-hidden">
+                    {/* Left Panel — Feed / Query / Ingest */}
+                    <div className="flex-1 flex flex-col overflow-hidden">
+                        {activePanel === 'feed' && (
+                            <FeedPanel
+                                memories={memories}
+                                searchQuery={memorySearchQuery}
+                                filterCategory={memoryFilterCategory}
+                                filterTier={memoryFilterTier}
+                                selectedMemoryId={selectedMemoryId}
+                                onSearchChange={setMemorySearchQuery}
+                                onFilterCategory={setMemoryFilterCategory}
+                                onFilterTier={setMemoryFilterTier}
+                                onSelect={setSelectedMemoryId}
+                                onDelete={handleDelete}
+                                onConsolidate={handleConsolidate}
+                                isConsolidating={isConsolidating}
+                                formatDate={formatDate}
+                            />
+                        )}
+                        {activePanel === 'query' && (
+                            <QueryPanel
+                                queryText={queryText}
+                                queryAnswer={queryAnswer}
+                                isQuerying={isQuerying}
+                                onQueryChange={setQueryText}
+                                onSubmit={handleQuery}
+                            />
+                        )}
+                        {activePanel === 'ingest' && (
+                            <IngestPanel
+                                ingestText={ingestText}
+                                isIngesting={isIngesting}
+                                onTextChange={setIngestText}
+                                onSubmit={handleIngest}
+                            />
+                        )}
+                    </div>
+
+                    {/* Right Panel — Memory Detail / Insights */}
+                    <div className="w-[380px] border-l border-white/5 overflow-y-auto custom-scrollbar flex-shrink-0 hidden lg:block">
+                        {selectedMemory ? (
+                            <MemoryDetail
+                                memory={selectedMemory}
+                                formatDate={formatDate}
+                                onClose={() => setSelectedMemoryId(null)}
+                            />
+                        ) : (
+                            <InsightsPanel insights={insights} formatDate={formatDate} />
+                        )}
                     </div>
                 </div>
             </div>
-
-            {/* Main Content Area */}
-            <div className="flex-1 flex overflow-hidden">
-                {/* Left Panel — Feed / Query / Ingest */}
-                <div className="flex-1 flex flex-col overflow-hidden">
-                    {activePanel === 'feed' && (
-                        <FeedPanel
-                            memories={memories}
-                            searchQuery={memorySearchQuery}
-                            filterCategory={memoryFilterCategory}
-                            filterTier={memoryFilterTier}
-                            selectedMemoryId={selectedMemoryId}
-                            onSearchChange={setMemorySearchQuery}
-                            onFilterCategory={setMemoryFilterCategory}
-                            onFilterTier={setMemoryFilterTier}
-                            onSelect={setSelectedMemoryId}
-                            onDelete={handleDelete}
-                            onConsolidate={handleConsolidate}
-                            isConsolidating={isConsolidating}
-                            formatDate={formatDate}
-                        />
-                    )}
-                    {activePanel === 'query' && (
-                        <QueryPanel
-                            queryText={queryText}
-                            queryAnswer={queryAnswer}
-                            isQuerying={isQuerying}
-                            onQueryChange={setQueryText}
-                            onSubmit={handleQuery}
-                        />
-                    )}
-                    {activePanel === 'ingest' && (
-                        <IngestPanel
-                            ingestText={ingestText}
-                            isIngesting={isIngesting}
-                            onTextChange={setIngestText}
-                            onSubmit={handleIngest}
-                        />
-                    )}
-                </div>
-
-                {/* Right Panel — Memory Detail / Insights */}
-                <div className="w-[380px] border-l border-white/5 overflow-y-auto custom-scrollbar flex-shrink-0 hidden lg:block">
-                    {selectedMemory ? (
-                        <MemoryDetail
-                            memory={selectedMemory}
-                            formatDate={formatDate}
-                            onClose={() => setSelectedMemoryId(null)}
-                        />
-                    ) : (
-                        <InsightsPanel insights={insights} formatDate={formatDate} />
-                    )}
-                </div>
-            </div>
-        </div>
         </ModuleErrorBoundary>
     );
 }

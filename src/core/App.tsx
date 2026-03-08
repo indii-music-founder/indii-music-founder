@@ -377,7 +377,7 @@ export default function App() {
 
                                     <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
                                         <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                                            <ErrorBoundary>
+                                            <ErrorBoundary key={currentModule}>
                                                 <Suspense fallback={<LoadingFallback />}>
                                                     <ModuleRenderer moduleId={currentModule as ModuleId} />
                                                 </Suspense>

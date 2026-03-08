@@ -129,7 +129,7 @@ Be specific and actionable. Focus on creative workflow, branding, distribution, 
                 } as any
             );
 
-            const parsed = safeParseJson(response, { insight: '', confidence: 0, connections: [] });
+            const parsed = safeParseJson(response, { insight: '', summary: '', confidence: 0, connections: [] });
 
             if (!parsed.insight || parsed.confidence < 0.3) {
                 return null;
@@ -289,7 +289,7 @@ Respond with ONLY a JSON object: {"importance": 0.X}`;
             );
 
             const parsed = safeParseJson(response, { importance: 0.5 });
-            const score = parseFloat(parsed.importance);
+            const score = parseFloat(String(parsed.importance));
             return isNaN(score) ? 0.5 : Math.max(0, Math.min(1, score));
         } catch (error) {
             logger.error('[MemorySummarizer] Importance scoring failed:', error);

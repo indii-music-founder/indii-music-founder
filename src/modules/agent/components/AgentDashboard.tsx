@@ -1,10 +1,8 @@
 import * as React from 'react';
-import { useState, useRef, useEffect } from 'react';
-import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw } from 'lucide-react';
+import { useState, useRef, useEffect, useCallback } from 'react';
+import { MapPin, Sparkles, Megaphone, Mail, ExternalLink, RefreshCw, Filter } from 'lucide-react';
 import { MarketingService } from '@/services/marketing/MarketingService';
 import { CampaignAsset } from '@/modules/marketing/types';
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { MapPin, Sparkles, Filter } from 'lucide-react';
 import { VenueScoutService, ScoutEvent } from '../services/VenueScoutService';
 import { useAgentStore } from '../store/AgentStore';
 import BrowserAgentTester from './BrowserAgentTester';
@@ -133,9 +131,8 @@ const InboxTab: React.FC = () => {
                 {MOCK_INBOX.map((msg) => (
                     <div
                         key={msg.id}
-                        className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-slate-700 ${
-                            msg.unread ? 'bg-slate-900 border-slate-800' : 'bg-slate-900/40 border-transparent'
-                        }`}
+                        className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-slate-700 ${msg.unread ? 'bg-slate-900 border-slate-800' : 'bg-slate-900/40 border-transparent'
+                            }`}
                     >
                         <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-400">
                             {msg.from[0]}

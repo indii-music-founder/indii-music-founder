@@ -160,17 +160,22 @@ export function PODIntegrationPanel() {
     // Load stored credentials on mount
     useEffect(() => {
         if (!userId) {
-            setLoading(false);
-            return;
+            // Defer state update to avoid synchronous setState in effect
+            const t = setTimeout(() => setLoading(false), 0);
+            return () => clearTimeout(t);
         }
-        PODCredentialService.loadAllCredentials(userId).then(creds => {
+        let cancelled = false;
+        (async () => {
+            const creds = await PODCredentialService.loadAllCredentials(userId);
+            if (cancelled) return;
             setPartners(prev => prev.map(p => ({
                 ...p,
                 status: creds[p.id] ? 'connected' : 'disconnected',
                 lastSync: creds[p.id] ? 'Never synced' : undefined,
             })));
             setLoading(false);
-        });
+        })();
+        return () => { cancelled = true; };
     }, [userId]);
 
     const handleConfirmConnect = async (provider: PODPartner, apiKey: string) => {
