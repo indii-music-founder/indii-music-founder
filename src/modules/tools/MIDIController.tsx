@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Music2, Zap, Activity, Wifi, WifiOff, Sliders } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -47,7 +47,7 @@ function parseMIDI(data: Uint8Array): Omit<MIDIEvent, 'timestamp'> {
 }
 
 export default function MIDIController() {
-    const [supported, setSupported] = useState<boolean | null>(null);
+    const [supported] = useState(() => 'requestMIDIAccess' in navigator);
     const [devices, setDevices] = useState<MIDIDevice[]>([]);
     const [events, setEvents] = useState<MIDIEvent[]>([]);
     const [connected, setConnected] = useState(false);
@@ -100,10 +100,6 @@ export default function MIDIController() {
         }
     }, [refreshDevices]);
 
-    useEffect(() => {
-        setSupported('requestMIDIAccess' in navigator);
-    }, []);
-
     const connectedInputs = devices.filter(d => d.type === 'input' && d.state === 'connected');
 
     return (
@@ -118,7 +114,7 @@ export default function MIDIController() {
                         WebMIDI API — connect physical gear to your workflows
                     </p>
                 </div>
-                {supported === false && (
+                {!supported && (
                     <span className="text-xs text-red-400 font-bold">WebMIDI not supported in this browser</span>
                 )}
             </div>
@@ -138,7 +134,7 @@ export default function MIDIController() {
                         {connected ? 'Listening for MIDI messages' : 'Click connect to request WebMIDI access'}
                     </p>
                 </div>
-                {!connected && supported !== false && (
+                {!connected && supported && (
                     <button
                         onClick={handleConnect}
                         className="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-colors"
@@ -225,7 +221,7 @@ export default function MIDIController() {
                 </div>
             </div>
 
-            {!supported && supported !== null && (
+            {!supported && (
                 <div className="rounded-xl bg-amber-500/5 border border-amber-500/20 p-4">
                     <p className="text-xs text-amber-400 font-bold">WebMIDI API Not Available</p>
                     <p className="text-[10px] text-amber-400/60 mt-1">
