@@ -82,8 +82,32 @@ export const CircuitBreakerPanel: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        checkBudget();
-    }, [checkBudget]);
+        let cancelled = false;
+        (async () => {
+            try {
+                const membershipService = new MembershipService();
+                const result = await membershipService.checkBudget(0);
+                if (cancelled) return;
+                setBudget(result);
+
+                if (!result.allowed) {
+                    setBreakerState('open');
+                } else if (result.requiresApproval) {
+                    setBreakerState('half-open');
+                } else {
+                    setBreakerState('closed');
+                }
+
+                setLastChecked(new Date());
+            } catch {
+                if (!cancelled) {
+                    setBreakerState('closed');
+                    setBudget(null);
+                }
+            }
+        })();
+        return () => { cancelled = true; };
+    }, []);
 
     const config = STATE_CONFIG[breakerState];
     const StateIcon = config.icon;

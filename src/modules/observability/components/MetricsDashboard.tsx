@@ -20,7 +20,7 @@ function StatCard({
 }: {
     label: string;
     value: string;
-    icon: React.FC<{ size?: number; className?: string }>;
+    icon: React.FC<{ size?: string | number; className?: string }>;
     color?: string;
     sub?: string;
 }) {
@@ -45,21 +45,28 @@ export const MetricsDashboard: React.FC = () => {
     const [timeRange, setTimeRange] = useState<TimeRange>(7);
 
     useEffect(() => {
-        setLoading(true);
-        setError(null);
-        MetricsService.getSystemMetrics(timeRange)
-            .then(setMetrics)
-            .catch(err => setError(err?.message ?? 'Failed to load metrics'))
-            .finally(() => setLoading(false));
+        let cancelled = false;
+        const fetchMetrics = async () => {
+            try {
+                const data = await MetricsService.getSystemMetrics(timeRange);
+                if (!cancelled) {
+                    setMetrics(data);
+                    setError(null);
+                }
+            } catch (err: unknown) {
+                if (!cancelled) {
+                    setError((err as Error)?.message ?? 'Failed to load metrics');
+                }
+            } finally {
+                if (!cancelled) setLoading(false);
+            }
+        };
+        fetchMetrics();
+        return () => { cancelled = true; };
     }, [timeRange]);
 
     const agentChartData = metrics
         ? Object.entries(metrics.agentBreakdown).map(([name, data]) => ({
-              name: name.replace('-agent', '').replace('_', ' '),
-              calls: data.count,
-              cost: Number(data.cost.toFixed(4)),
-              tokens: data.tokens,
-          }))
             name: name.replace('-agent', '').replace('_', ' '),
             calls: data.count,
             cost: Number(data.cost.toFixed(4)),
@@ -77,14 +84,9 @@ export const MetricsDashboard: React.FC = () => {
                         <button
                             key={range}
                             onClick={() => setTimeRange(range)}
-                            className={`px-3 py-1 rounded text-xs font-medium transition-colors ${
-                                timeRange === range
-                                    ? 'bg-slate-700 text-white'
-                                    : 'text-slate-500 hover:text-white'
-                            }`}
                             className={`px-3 py-1 rounded text-xs font-medium transition-colors ${timeRange === range
-                                    ? 'bg-slate-700 text-white'
-                                    : 'text-slate-500 hover:text-white'
+                                ? 'bg-slate-700 text-white'
+                                : 'text-slate-500 hover:text-white'
                                 }`}
                         >
                             {TIME_RANGE_LABELS[range]}
@@ -123,8 +125,6 @@ export const MetricsDashboard: React.FC = () => {
                                 metrics.totalTokens > 1_000_000
                                     ? `${(metrics.totalTokens / 1_000_000).toFixed(2)}M`
                                     : metrics.totalTokens > 1_000
-                                    ? `${(metrics.totalTokens / 1_000).toFixed(1)}K`
-                                    : metrics.totalTokens.toString()
                                         ? `${(metrics.totalTokens / 1_000).toFixed(1)}K`
                                         : metrics.totalTokens.toString()
                             }

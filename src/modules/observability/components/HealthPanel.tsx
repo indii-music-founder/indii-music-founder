@@ -13,7 +13,7 @@ interface ServiceHealth {
 }
 
 const STATUS_CONFIG: Record<HealthStatus, {
-    icon: React.FC<{ size?: number; className?: string }>;
+    icon: React.FC<{ size?: string | number; className?: string }>;
     color: string;
     label: string;
 }> = {
@@ -92,16 +92,28 @@ export const HealthPanel: React.FC = () => {
 
     // Initial check + auto-refresh every 30s
     useEffect(() => {
-        runChecks();
+        let cancelled = false;
+        (async () => {
+            const [firestore, agentZero, gemini] = await Promise.all([
+                checkFirestore(),
+                checkAgentZero(),
+                checkGeminiAPI(),
+            ]);
+            if (!cancelled) {
+                setServices([firestore, agentZero, gemini]);
+                setLastChecked(new Date());
+            }
+        })();
         const interval = setInterval(runChecks, 30_000);
-        return () => clearInterval(interval);
+        return () => {
+            cancelled = true;
+            clearInterval(interval);
+        };
     }, [runChecks]);
 
     const overallStatus: HealthStatus = services.some(s => s.status === 'down')
         ? 'down'
         : services.some(s => s.status === 'degraded' || s.status === 'checking')
-        ? 'degraded'
-        : 'healthy';
             ? 'degraded'
             : 'healthy';
 
@@ -113,18 +125,11 @@ export const HealthPanel: React.FC = () => {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     <h2 className="text-lg font-semibold text-white">System Health</h2>
-                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${
-                        overallStatus === 'healthy'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : overallStatus === 'degraded'
+                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${overallStatus === 'healthy'
+                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                        : overallStatus === 'degraded'
                             ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
                             : 'bg-red-500/10 text-red-400 border-red-500/20'
-                    }`}>
-                    <span className={`flex items-center gap-1.5 text-xs font-medium px-2 py-0.5 rounded-full border ${overallStatus === 'healthy'
-                            ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                            : overallStatus === 'degraded'
-                                ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
-                                : 'bg-red-500/10 text-red-400 border-red-500/20'
                         }`}>
                         <OverallIcon size={11} className={overallStatus === 'checking' ? 'animate-spin' : ''} />
                         {overallStatus === 'healthy' ? 'All Systems Operational' : overallStatus === 'degraded' ? 'Partial Degradation' : 'System Issue'}

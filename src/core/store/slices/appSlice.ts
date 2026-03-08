@@ -70,13 +70,21 @@ export const createAppSlice: StateCreator<AppSlice> = (set, get) => ({
             const currentModule = get().currentModule;
             // Only clear if actually switching modules
             if (currentModule !== module) {
-                if (currentModule === 'creative') {
-                    useStore.getState().clearSubscriptionsByPrefix('creative_');
-                } else if (currentModule === 'agent') {
-                    // Note: Agent runs globally via right panel sometimes, but if it's the main module:
-                    // useStore.getState().clearSubscriptionsByPrefix('agent_');
+                const store = useStore.getState();
+                // Clean up Firestore subscriptions for the module we're leaving
+                // to prevent INTERNAL ASSERTION FAILED errors during rapid navigation
+                const prefixes: Partial<Record<string, string>> = {
+                    creative: 'creative_',
+                    publishing: 'publishing_',
+                    finance: 'finance_',
+                    memory: 'memory_',
+                    publicist: 'publicist_',
+                    distribution: 'distribution_',
+                };
+                const prefix = prefixes[currentModule];
+                if (prefix) {
+                    store.clearSubscriptionsByPrefix(prefix);
                 }
-                // Add more module prefixes here as needed
             }
         }).catch(err => logger.error('[AppSlice] Failed to cleanup subscriptions:', err));
 
