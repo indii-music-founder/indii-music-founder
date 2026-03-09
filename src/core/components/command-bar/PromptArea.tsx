@@ -1,5 +1,5 @@
-import React, { useState, useRef, useMemo, useCallback, memo, useEffect } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, Lightbulb, Zap } from 'lucide-react';
+import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, AlignLeft, AlignCenter, AlignRight, Zap, Lightbulb } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -20,6 +20,7 @@ import {
 import { DelegateMenu } from './DelegateMenu';
 import { AttachmentList } from './AttachmentList';
 import { logger } from '@/utils/logger';
+import { useMediaQuery } from '@/hooks/useMediaQuery';
 
 interface PromptAreaProps {
     className?: string;
@@ -27,7 +28,7 @@ interface PromptAreaProps {
 }
 
 export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    const isMobile = useMediaQuery('(max-width: 767px)');
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [openDelegate, setOpenDelegate] = useState(false);
@@ -56,7 +57,9 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled,
         isCommandBarCollapsed,
-        setCommandBarCollapsed
+        setCommandBarCollapsed,
+        commandBarPosition,
+        setCommandBarPosition
     } = useStore(useShallow(state => ({
         // ⚡ Bolt Optimization: Use shallow selector to prevent re-renders on unrelated store updates
         currentModule: state.currentModule,
@@ -78,20 +81,28 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
         isKnowledgeBaseEnabled: state.isKnowledgeBaseEnabled,
         setKnowledgeBaseEnabled: state.setKnowledgeBaseEnabled,
         isCommandBarCollapsed: state.isCommandBarCollapsed,
-        setCommandBarCollapsed: state.setCommandBarCollapsed
+        setCommandBarCollapsed: state.setCommandBarCollapsed,
+        commandBarPosition: state.commandBarPosition,
+        setCommandBarPosition: state.setCommandBarPosition
     })));
 
     const isIndiiMode = chatChannel === 'indii';
     const colors = getColorForModule(currentModule);
     const toast = useToast();
 
+    // Set a sensible default channel when switching modules,
+    // but don't override manual Plan/Execute toggles.
+    const prevModuleRef: MutableRefObject<string> = useRef(currentModule);
     useEffect(() => {
-        if (currentModule === 'dashboard' || currentModule === 'select-org') {
-            if (chatChannel !== 'indii') setChatChannel('indii');
-        } else {
-            if (chatChannel !== 'agent') setChatChannel('agent');
+        if (prevModuleRef.current !== currentModule) {
+            prevModuleRef.current = currentModule;
+            if (currentModule === 'dashboard' || currentModule === 'select-org') {
+                setChatChannel('indii');
+            } else {
+                setChatChannel('agent');
+            }
         }
-    }, [currentModule, setChatChannel, chatChannel]);
+    }, [currentModule, setChatChannel]);
 
     const allAgents = useMemo(() => agentRegistry.getAll(), []);
     const managerAgents = useMemo(() => allAgents.filter(a => a.category === 'manager' || a.category === 'specialist'), [allAgents]);
@@ -220,7 +231,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             data-testid="command-bar-input-container"
             className={cn(
                 "glass transition-all relative focus-within:ring-2",
-                isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10" : "rounded-[1.5rem]",
+                isDocked ? "rounded-none border-x-0 border-b-0 border-t border-white/10 px-1" : "rounded-[1.5rem]",
                 isIndiiMode
                     ? "border-purple-500/50 ring-purple-500/20 shadow-[0_0_30px_rgba(168,85,247,0.15)] bg-purple-950/20"
                     : `${colors.border} ${colors.ring} bg-black/40 shadow-xl`,
@@ -260,18 +271,6 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     className="text-gray-200 placeholder-gray-600 text-base md:text-sm"
                 />
 
-                {isIndiiMode && (
-                    <div className="absolute top-2 right-4 flex items-center gap-2">
-                        <motion.div
-                            initial={{ opacity: 0, x: 10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            className="bg-purple-500/20 border border-purple-500/30 rounded-full px-2 py-0.5 flex items-center gap-1.5 shadow-[0_0_15px_rgba(168,85,247,0.2)]"
-                        >
-                            <Sparkles size={10} className="text-purple-400 animate-pulse" />
-                            <span className="text-[9px] font-bold text-purple-300 uppercase tracking-widest">Master Orchestrator</span>
-                        </motion.div>
-                    </div>
-                )}
 
                 <AttachmentList attachments={commandBarAttachments} onRemove={removeAttachment} />
 
@@ -371,37 +370,63 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Plan/Execute Toggle */}
+                        {/* Dock Position Toggle */}
                         <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
                             <button
-                                onClick={() => setChatChannel('indii')}
+                                onClick={() => setCommandBarPosition('left')}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
-                                    isIndiiMode
-                                        ? "bg-purple-600 text-white shadow-lg shadow-purple-500/20"
-                                        : "text-gray-400 hover:text-gray-200"
+                                    "p-1 rounded-md transition-all",
+                                    commandBarPosition === 'left'
+                                        ? "bg-white/15 text-white"
+                                        : "text-gray-500 hover:text-gray-300"
                                 )}
-                                aria-label="Plan mode"
-                                aria-pressed={isIndiiMode}
+                                aria-label="Dock left"
+                                title="Dock left"
                             >
-                                <Lightbulb size={12} />
-                                <span>Plan</span>
+                                <AlignLeft size={12} />
                             </button>
                             <button
-                                onClick={() => setChatChannel('agent')}
+                                onClick={() => setCommandBarPosition('center')}
                                 className={cn(
-                                    "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider transition-all",
-                                    !isIndiiMode
-                                        ? "bg-green-600 text-white shadow-lg shadow-green-500/20"
-                                        : "text-gray-400 hover:text-gray-200"
+                                    "p-1 rounded-md transition-all",
+                                    commandBarPosition === 'center'
+                                        ? "bg-white/15 text-white"
+                                        : "text-gray-500 hover:text-gray-300"
                                 )}
-                                aria-label="Execute mode"
-                                aria-pressed={!isIndiiMode}
+                                aria-label="Dock center"
+                                title="Dock center"
                             >
-                                <Zap size={12} />
-                                <span>Execute</span>
+                                <AlignCenter size={12} />
+                            </button>
+                            <button
+                                onClick={() => setCommandBarPosition('right')}
+                                className={cn(
+                                    "p-1 rounded-md transition-all",
+                                    commandBarPosition === 'right'
+                                        ? "bg-white/15 text-white"
+                                        : "text-gray-500 hover:text-gray-300"
+                                )}
+                                aria-label="Dock right"
+                                title="Dock right"
+                            >
+                                <AlignRight size={12} />
                             </button>
                         </div>
+
+                        {/* Agent / indii Mode Toggle */}
+                        <button
+                            onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
+                            className={cn(
+                                "p-1.5 rounded-lg transition-all border",
+                                isIndiiMode
+                                    ? "bg-purple-600/30 border-purple-500/40 text-purple-300 hover:bg-purple-600/50"
+                                    : "bg-green-600/30 border-green-500/40 text-green-300 hover:bg-green-600/50"
+                            )}
+                            aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
+                            title={isIndiiMode ? "indii mode — click for Agent" : "Agent mode — click for indii"}
+                        >
+                            {isIndiiMode ? <Zap size={12} /> : <Lightbulb size={12} />}
+                        </button>
 
                         {!isDocked && (
                             <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">

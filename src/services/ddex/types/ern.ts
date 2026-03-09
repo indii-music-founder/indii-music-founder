@@ -16,6 +16,7 @@ import type {
   TechnicalDetails,
   ParentalWarningType,
   AIGenerationInfo,
+  RightsController,
 } from './common';
 
 export type { Contributor };
@@ -51,6 +52,9 @@ export interface Release {
 
   // AI Generation (ERN 4.3)
   aiGenerationInfo?: AIGenerationInfo;
+
+  // Rights Controllers (Self-Publishing)
+  rightsControllers?: RightsController[];
 
   // Resources in this release
   releaseResourceReferenceList: string[];  // References to resources

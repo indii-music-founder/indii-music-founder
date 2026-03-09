@@ -23,32 +23,7 @@ interface GatedTrack {
     published: boolean;
 }
 
-const MOCK_TRACKS: GatedTrack[] = [
-    {
-        id: '1',
-        title: 'Unreleased — Midnight Circuit',
-        duration: '3:47',
-        bpm: 128,
-        key: 'Am',
-        contractAddress: '0x1a2b...9f3c',
-        tokenId: '001',
-        previewSlug: 'indii.vip/gate/midnight-circuit',
-        fanViews: 214,
-        published: true,
-    },
-    {
-        id: '2',
-        title: 'Draft — Solar Drift (Rough Mix)',
-        duration: '4:12',
-        bpm: 95,
-        key: 'Dm',
-        contractAddress: '0x1a2b...9f3c',
-        tokenId: '002',
-        previewSlug: 'indii.vip/gate/solar-drift',
-        fanViews: 87,
-        published: false,
-    },
-];
+// No hardcoded tracks — data populated via user interaction or Firestore.
 
 // Stable waveform heights — pre-computed once so render stays pure
 const WAVEFORM_HEIGHTS = Array.from({ length: 48 }, (_, i) =>
@@ -137,8 +112,8 @@ function FanPreviewMockup({ track, walletConnected }: { track: GatedTrack; walle
 }
 
 export function TokenGatedPreview() {
-    const [tracks, setTracks] = useState<GatedTrack[]>(MOCK_TRACKS);
-    const [selectedId, setSelectedId] = useState<string>(MOCK_TRACKS[0].id);
+    const [tracks, setTracks] = useState<GatedTrack[]>([]);
+    const [selectedId, setSelectedId] = useState<string>('');
     const [fanPreviewWallet, setFanPreviewWallet] = useState(false);
     const [copiedId, setCopiedId] = useState<string | null>(null);
 

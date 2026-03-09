@@ -87,15 +87,15 @@ This document contains **Part 5** of the master production readiness checklist (
 - [x] **247. Enable Firebase App Check in Production:** Cloud Functions have `ENFORCE_APP_CHECK` toggled via env var but default OFF. Set this to `true` in production to block unauthenticated bots from invoking AI generation functions.
 - [x] **248. Content Security Policy Headers:** Add strict CSP headers in `firebase.json` hosting config — currently missing. Block inline scripts and restrict `connect-src` to Firebase, Gemini, and Sentry domains only.
 - [x] **249. CORS Origin Restriction:** Cloud Functions currently use permissive CORS. Lock `Access-Control-Allow-Origin` to `https://app.indiios.com` and `https://localhost:4242` only.
-- [ ] **250. AI Prompt Injection Sanitization:** User-provided text passed to `GenAI.generateText()` is unsanitized. Add a prompt sanitizer that strips jailbreak patterns before sending to Gemini.
+- [x] **250. AI Prompt Injection Sanitization:** User-provided text passed to `GenAI.generateText()` is unsanitized. Add a prompt sanitizer that strips jailbreak patterns before sending to Gemini.
 - [x] **251. Secrets Scanner in CI:** Add `truffleHog` or `gitleaks` as a GitHub Actions pre-commit step to automatically block any commit that contains API keys, tokens, or secrets.
-- [ ] **252. Dependency Vulnerability Scanning:** Add `npm audit --audit-level=high` and Snyk GitHub Action to the CI pipeline to catch supply chain vulnerabilities in dependencies.
-- [ ] **253. Firestore Security Rules Unit Tests:** Add Firebase Emulator-based rules tests (`@firebase/rules-unit-testing`) to CI to prevent security regressions when rules change.
-- [ ] **254. Electron contextIsolation Audit:** Verify every `electron/preload.ts` exposure uses `contextBridge.exposeInMainWorld()` — confirm `nodeIntegration: false` and `contextIsolation: true` for all `BrowserWindow` instances.
+- [x] **252. Dependency Vulnerability Scanning:** Add `npm audit --audit-level=high` and Snyk GitHub Action to the CI pipeline to catch supply chain vulnerabilities in dependencies.
+- [x] **253. Firestore Security Rules Unit Tests:** Add Firebase Emulator-based rules tests (`@firebase/rules-unit-testing`) to CI to prevent security regressions when rules change.
+- [x] **254. Electron contextIsolation Audit:** Verify every `electron/preload.ts` exposure uses `contextBridge.exposeInMainWorld()` — confirm `nodeIntegration: false` and `contextIsolation: true` for all `BrowserWindow` instances.
 - [x] **255. HTTP Strict Transport Security:** Add `Strict-Transport-Security: max-age=31536000; includeSubDomains` to Firebase Hosting headers to prevent protocol downgrade attacks.
-- [ ] **256. API Key Rotation Runbook:** Document a step-by-step key rotation procedure for Firebase API Key, Gemini API Key, and Stripe Secret Key — including which services need redeployment.
+- [x] **256. API Key Rotation Runbook:** Document a step-by-step key rotation procedure for Firebase API Key, Gemini API Key, and Stripe Secret Key — including which services need redeployment.
 - [x] **257. God Mode Quota Bypass Removal:** `functions/src/index.ts:361–364` grants unlimited AI generation to a hardcoded email list. Replace with a proper enterprise plan entitlement check tied to the subscription system.
-- [ ] **258. Audit Log Hash Chain:** Each audit log entry in `users/{uid}/auditLogs` should include a `prevHash` field (SHA-256 of previous entry) to create a tamper-evident chain — without this, entries can be silently deleted.
+- [x] **258. Audit Log Hash Chain:** Each audit log entry in `users/{uid}/auditLogs` should include a `prevHash` field (SHA-256 of previous entry) to create a tamper-evident chain — without this, entries can be silently deleted.
 
 ---
 

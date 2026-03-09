@@ -18,6 +18,7 @@ import { fetchAndActivate, getValue } from 'firebase/remote-config';
 import { httpsCallable } from 'firebase/functions';
 import { AppErrorCode, AppException } from '@/shared/types/errors';
 import { safeJsonParse } from '@/services/utils/json';
+import { PromptSanitizer } from '@/services/security/PromptSanitizer';
 import { AI_MODELS, APPROVED_MODELS, getModelKey, AI_CONFIG } from '@/core/config/ai-models';
 import { RemoteAIConfigSchema, DEFAULT_REMOTE_CONFIG, RemoteAIConfig } from './config/RemoteAIConfig';
 import {
@@ -962,6 +963,11 @@ export class FirebaseAIService {
         let model: string | undefined;
         let config: Record<string, unknown> = {};
         let systemInstruction: string | undefined;
+
+        // Item 250: Sanitize user-provided string prompts before sending to Gemini
+        if (typeof prompt === 'string') {
+            prompt = PromptSanitizer.sanitizeOrThrow(prompt);
+        }
 
         if (typeof thinkingBudgetOrModel === 'string') {
             model = thinkingBudgetOrModel;

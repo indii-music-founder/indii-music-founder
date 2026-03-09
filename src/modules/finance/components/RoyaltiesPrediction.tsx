@@ -18,60 +18,22 @@ import { TrendingUp, RefreshCw, DollarSign, Music } from 'lucide-react';
 
 const PER_STREAM_RATE = 0.004; // Spotify per-stream rate
 
-function generateStreamData() {
-    const today = new Date(2026, 2, 7); // March 7, 2026
-    const data: Array<{
-        date: string;
-        label: string;
-        actual: number | null;
-        forecast: number | null;
-        upper: number | null;
-        lower: number | null;
-    }> = [];
-
-    // Last 30 days (actual)
-    for (let i = 29; i >= 0; i--) {
-        const d = new Date(today);
-        d.setDate(d.getDate() - i);
-        const base = 18000 + Math.sin(i * 0.4) * 4000;
-        const noise = (Math.floor(Math.abs(Math.sin(i * 17 + 3) * 10000)) % 6000) - 3000;
-        const streams = Math.max(8000, Math.round(base + noise));
-        data.push({
-            date: d.toISOString().slice(0, 10),
-            label: `${d.getMonth() + 1}/${d.getDate()}`,
-            actual: streams,
-            forecast: null,
-            upper: null,
-            lower: null,
-        });
-    }
-
-    // Next 30 days (forecast)
-    const lastActual = data[data.length - 1].actual ?? 18000;
-    for (let i = 1; i <= 30; i++) {
-        const d = new Date(today);
-        d.setDate(d.getDate() + i);
-        const trend = lastActual * (1 + i * 0.004);
-        const forecastVal = Math.round(trend);
-        data.push({
-            date: d.toISOString().slice(0, 10),
-            label: `${d.getMonth() + 1}/${d.getDate()}`,
-            actual: null,
-            forecast: forecastVal,
-            upper: Math.round(forecastVal * 1.15),
-            lower: Math.round(forecastVal * 0.85),
-        });
-    }
-
-    return data;
+interface StreamDataPoint {
+    label?: string;
+    forecast?: number | null;
+    upper?: number | null;
+    lower?: number | null;
+    actual?: number | null;
+    [key: string]: unknown;
 }
 
-const DSP_BREAKDOWN = [
-    { name: 'Spotify', pct: 52, color: '#1DB954' },
-    { name: 'Apple Music', pct: 28, color: '#FA2D55' },
-    { name: 'Amazon Music', pct: 12, color: '#00A8E1' },
-    { name: 'Tidal', pct: 8, color: '#2DC6D6' },
-];
+// Stream data and DSP breakdown should come from the distributor/streaming analytics API
+// Empty arrays shown until real analytics data is connected
+function generateStreamData(): StreamDataPoint[] {
+    return [];
+}
+
+const DSP_BREAKDOWN: Array<{ name: string; pct: number; color: string }> = [];
 
 interface TooltipPayload {
     color: string;

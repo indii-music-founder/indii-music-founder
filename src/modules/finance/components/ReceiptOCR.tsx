@@ -19,18 +19,8 @@ interface SavedReceipt extends ExtractedReceipt {
     addedAt: string;
 }
 
-const MOCK_EXTRACTIONS: ExtractedReceipt[] = [
-    { merchant: 'Guitar Center', amount: '$289.99', date: '2026-03-05', category: 'Equipment' },
-    { merchant: 'Adobe Creative Cloud', amount: '$54.99', date: '2026-03-04', category: 'Software' },
-    { merchant: 'Sweetwater', amount: '$149.00', date: '2026-03-02', category: 'Equipment' },
-    { merchant: 'Starbucks', amount: '$8.45', date: '2026-03-01', category: 'Meals' },
-];
-
-const RECENT_RECEIPTS: SavedReceipt[] = [
-    { id: 1, merchant: 'B&H Photo Video', amount: '$420.00', date: '2026-02-28', category: 'Equipment', filename: 'receipt_bh_0228.jpg', addedAt: '2026-02-28' },
-    { id: 2, merchant: 'Spotify for Artists', amount: '$9.99', date: '2026-02-20', category: 'Software', filename: 'spotify_invoice.pdf', addedAt: '2026-02-20' },
-    { id: 3, merchant: 'Rehearsal Space NYC', amount: '$200.00', date: '2026-02-15', category: 'Studio', filename: 'rehearsal_02_15.png', addedAt: '2026-02-15' },
-];
+// No hardcoded mock data — receipts are populated via OCR scan results
+// and persisted in component state until Firestore receipt collection is wired.
 
 const CATEGORY_COLORS: Record<string, string> = {
     Equipment: 'text-blue-400 bg-blue-500/10',
@@ -46,9 +36,8 @@ export function ReceiptOCR() {
     const [uploadedFile, setUploadedFile] = useState<File | null>(null);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [extracted, setExtracted] = useState<ExtractedReceipt | null>(null);
-    const [savedReceipts, setSavedReceipts] = useState<SavedReceipt[]>(RECENT_RECEIPTS);
+    const [savedReceipts, setSavedReceipts] = useState<SavedReceipt[]>([]);
     const [addedToExpenses, setAddedToExpenses] = useState(false);
-    const [extractionIndex, setExtractionIndex] = useState(0);
     const fileRef = useRef<HTMLInputElement>(null);
 
     function handleFile(file: File) {
@@ -78,18 +67,26 @@ export function ReceiptOCR() {
         if (file) handleFile(file);
     }
 
-    function handleAnalyze() {
+    async function handleAnalyze() {
         if (!uploadedFile) return;
         setIsAnalyzing(true);
         setExtracted(null);
 
-        // Simulate Gemini Vision API call
-        setTimeout(() => {
-            const mockResult = MOCK_EXTRACTIONS[extractionIndex % MOCK_EXTRACTIONS.length];
-            setExtractionIndex((i) => i + 1);
-            setExtracted(mockResult);
+        try {
+            // TODO: Wire to real Gemini Vision API via @google/genai
+            // For now, show a message that OCR requires the AI service connection
+            // The actual implementation will use:
+            //   const genai = new GoogleGenAI({ apiKey });
+            //   const result = await genai.models.generateContent({ model, contents: [fileData, prompt] });
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            setExtracted(null);
             setIsAnalyzing(false);
-        }, 2200);
+            // When no API key is configured, the UI will simply not extract and
+            // the user sees the "Analyze" button again. No fake data injected.
+        } catch (error) {
+            console.error('[ReceiptOCR] Analysis failed:', error);
+            setIsAnalyzing(false);
+        }
     }
 
     function handleAddToExpenses() {
@@ -126,13 +123,12 @@ export function ReceiptOCR() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileRef.current?.click()}
-                className={`relative rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all ${
-                    isDragOver
+                className={`relative rounded-xl border-2 border-dashed p-8 text-center cursor-pointer transition-all ${isDragOver
                         ? 'border-emerald-500/60 bg-emerald-500/5'
                         : uploadedFile
-                        ? 'border-emerald-500/30 bg-emerald-500/5'
-                        : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
-                }`}
+                            ? 'border-emerald-500/30 bg-emerald-500/5'
+                            : 'border-white/10 hover:border-white/20 hover:bg-white/[0.02]'
+                    }`}
             >
                 <input
                     ref={fileRef}

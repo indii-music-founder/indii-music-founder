@@ -65,30 +65,30 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
             <div className="md:col-span-8 grid grid-cols-2 gap-4 md:gap-8">
                 <StatCard
                     label="EST. VALUATION"
-                    value="$10,000,000"
-                    subvalue="+125% YTD"
+                    value="--"
+                    subvalue="Connect investor portal"
                     icon={DollarSign}
                     delay={0.1}
                 />
                 <StatCard
                     label="YOUR STAKE"
-                    value="1.25%"
-                    subvalue="~ $125,000"
+                    value="--"
+                    subvalue="Not configured"
                     icon={PieChart}
                     delay={0.2}
                     highlight
                 />
                 <StatCard
                     label="ACTIVE USERS"
-                    value="1,240"
-                    subvalue="Waitlist: 15,000"
+                    value="--"
+                    subvalue="Connect analytics"
                     icon={Users}
                     delay={0.3}
                 />
                 <StatCard
                     label="RUNWAY"
-                    value="18 MO"
-                    subvalue="Burn: $45k/mo"
+                    value="--"
+                    subvalue="Connect financials"
                     icon={Activity}
                     delay={0.4}
                 />
@@ -102,17 +102,17 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                     {/* Background Ring */}
                     <div className="absolute inset-0 border-4 border-[#1a1a1a] rounded-full" />
 
-                    {/* Active Ring (25%) */}
+                    {/* Active Ring (0% until configured) */}
                     <svg className="absolute inset-0 w-full h-full -rotate-90">
                         <circle cx="128" cy="128" r="124" stroke="currentColor" strokeWidth="8" fill="none"
-                            strokeDasharray="779" strokeDashoffset={779 - (779 * 0.25)}
+                            strokeDasharray="779" strokeDashoffset={779}
                             className="text-[#00ff66] drop-shadow-[0_0_10px_rgba(0,255,100,0.5)]"
                         />
                     </svg>
 
                     <div className="text-center z-10">
-                        <div className="text-6xl font-black text-white mix-blend-difference tracking-tighter">25%</div>
-                        <div className="text-xs font-bold uppercase tracking-widest mt-1 text-[#ff3366]">[ VESTED ]</div>
+                        <div className="text-6xl font-black text-white mix-blend-difference tracking-tighter">--</div>
+                        <div className="text-xs font-bold uppercase tracking-widest mt-1 text-[#ff3366]">[ NOT SET ]</div>
                     </div>
 
                     {/* Decorative Ticks (Crosshairs) */}
@@ -124,13 +124,13 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
 
                 <div className="w-full space-y-2 mt-auto relative z-10">
                     <div className="flex justify-between text-xs font-bold font-mono text-[#e0e0e0]">
-                        <span>START: DEC 2025</span>
-                        <span>CLIFF: DEC 2026</span>
+                        <span>START: --</span>
+                        <span>CLIFF: --</span>
                     </div>
                     <div className="w-full h-2 bg-[#1a1a1a] overflow-hidden">
                         <motion.div
                             initial={{ width: 0 }}
-                            animate={{ width: '25%' }}
+                            animate={{ width: '0%' }}
                             transition={{ duration: 1.5, ease: "easeOut" }}
                             className="h-full bg-[#ff3366]"
                         />
@@ -159,15 +159,11 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                         <div className="p-4 border border-[#00ff66]/30 bg-black/80 shadow-[inset_0_0_20px_rgba(0,255,102,0.05)]">
                             <div className="flex justify-between items-center mb-2">
                                 <span className="text-xs font-bold text-white">UPC:</span>
-                                <span className="text-xs font-mono text-[#00ff66] drop-shadow-[0_0_5px_rgba(0,255,102,0.8)]">
-                                    <DecodeText text="123456789012" delay={2000} />
-                                </span>
+                                <span className="text-xs font-mono text-[#00ff66]/50">Not assigned</span>
                             </div>
                             <div className="flex justify-between items-center mb-4">
                                 <span className="text-xs font-bold text-white">LATEST ISRC:</span>
-                                <span className="text-xs font-mono text-[#00ff66] drop-shadow-[0_0_5px_rgba(0,255,102,0.8)]">
-                                    <DecodeText text="QMZ422600001" delay={2500} />
-                                </span>
+                                <span className="text-xs font-mono text-[#00ff66]/50">Not assigned</span>
                             </div>
 
                             <motion.button
@@ -190,11 +186,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                         GHOST ADVISORY // STRATEGIC LINK
                     </h3>
                     <div className="flex-1 space-y-4 relative z-10 overflow-y-auto min-h-[150px] mb-4 pr-2 custom-scrollbar">
-                        <div className="text-xs text-[#e0e0e0] opacity-50 italic">Secure channel established. Connected to Agent: Index.</div>
-                        <div className="bg-[#1a1a1a] p-3 text-sm text-white font-mono border-l-2 border-[#ff3366]">
-                            <span className="text-[#ff3366] font-bold mr-2">INDEX:</span>
-                            Reviewing the Paxahau integration metrics. Are we clear to authorize the API bridge?
-                        </div>
+                        <div className="text-xs text-[#e0e0e0] opacity-50 italic">Secure channel established. Waiting for connection...</div>
                     </div>
                     <div className="relative z-10 mt-auto flex gap-2">
                         <input
@@ -220,10 +212,7 @@ export const EquityDashboard = ({ architect }: EquityDashboardProps) => {
                     SYSTEM LOGS // ACTIVITY
                 </h3>
                 <div className="space-y-3 font-mono text-sm max-h-48 overflow-y-auto pr-4 custom-scrollbar">
-                    <LogEntry time="10:42:15" msg="New Agency Partner onboarded: [REDACTED]" />
-                    <LogEntry time="09:15:00" msg="Revenue milestone achieved: $50k MRR" highlight />
-                    <LogEntry time="YESTERDAY" msg="System update v0.1.0-beta.2 deployed" />
-                    <LogEntry time="YESTERDAY" msg="Detroit 8 Protocol initiated" />
+                    <div className="py-8 text-center text-[#8b949e] text-xs">No activity recorded yet</div>
                 </div>
             </div>
         </motion.div>

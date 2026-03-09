@@ -90,16 +90,7 @@ export default function GhostCapture() {
                                 <span className="font-medium text-sm">Upload File</span>
                             </button>
 
-                            {/* DEBUG ONLY: Fast trigger for testing Blueprint Overlay without OS File Picker */}
-                            <button
-                                onClick={() => {
-                                    setImagePreview("https://placehold.co/400x600/1e293b/0ea5e9?text=MOCK+RECEIPT");
-                                    startMockIngest();
-                                }}
-                                className="col-span-2 mt-4 p-3 bg-gray-800 rounded-xl text-teal-500 text-xs font-mono uppercase tracking-widest border border-gray-700 hover:bg-gray-700 transition"
-                            >
-                                [Debug] Simulate OCR Ingest
-                            </button>
+
 
                             <input
                                 type="file"

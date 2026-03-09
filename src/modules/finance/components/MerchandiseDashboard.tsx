@@ -1,10 +1,30 @@
 import React from 'react';
 import { MerchandiseAnalytics } from './MerchandiseAnalytics';
 import { MerchTable } from './MerchTable';
+import { useFinance } from '../hooks/useFinance';
 import { motion } from 'motion/react';
 import { ShoppingBag, TrendingUp, Package, DollarSign } from 'lucide-react';
 
+function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 2,
+    }).format(amount);
+}
+
 export const MerchandiseDashboard: React.FC = () => {
+    const { earningsSummary, earningsLoading } = useFinance();
+
+    // Derive merch revenue from earnings data — sources include 'Merch' or similar
+    const merchRevenue = earningsSummary?.byPlatform
+        ?.filter(p => p.platformName.toLowerCase().includes('merch') || p.platformName.toLowerCase().includes('shopify'))
+        ?.reduce((sum, p) => sum + p.revenue, 0) ?? 0;
+
+    // Total revenue for percentage calculation
+    const totalRevenue = earningsSummary?.totalGrossRevenue ?? 0;
+    const merchPct = totalRevenue > 0 ? ((merchRevenue / totalRevenue) * 100).toFixed(1) : '--';
+
     return (
         <div className="flex flex-col space-y-8 pb-12" data-testid="merch-dashboard-content">
             {/* Header Stats Component - Upgraded to V2 */}
@@ -39,15 +59,17 @@ export const MerchandiseDashboard: React.FC = () => {
                     <div className="flex items-center gap-8 bg-white/5 border border-white/5 p-4 rounded-2xl backdrop-blur-md">
                         <div className="text-right">
                             <div className="text-xs text-gray-500 font-bold uppercase tracking-tighter mb-1">Total Net Revenue</div>
-                            <div className="text-4xl font-black text-white leading-none">$12,450.00</div>
+                            <div className="text-4xl font-black text-white leading-none">
+                                {earningsLoading ? '...' : merchRevenue > 0 ? formatCurrency(merchRevenue) : formatCurrency(0)}
+                            </div>
                         </div>
                         <div className="h-10 w-px bg-white/10" />
                         <div className="bg-emerald-500/10 px-3 py-2 rounded-xl border border-emerald-500/20">
                             <div className="text-emerald-400 font-bold text-sm flex items-center gap-1">
                                 <TrendingUp size={14} />
-                                <span>+15%</span>
+                                <span>{merchPct}%</span>
                             </div>
-                            <div className="text-[10px] text-emerald-500/60 font-bold uppercase mt-0.5">30D Growth</div>
+                            <div className="text-[10px] text-emerald-500/60 font-bold uppercase mt-0.5">of Total Revenue</div>
                         </div>
                     </div>
                 </div>
@@ -57,23 +79,27 @@ export const MerchandiseDashboard: React.FC = () => {
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Active Products</div>
                         <div className="text-xl font-bold text-white flex items-center gap-2">
                             <Package size={16} className="text-dept-licensing" />
-                            24 Items
+                            <span>{earningsLoading ? '...' : '--'}</span>
                         </div>
+                        <p className="text-[10px] text-gray-600 mt-1">Connect store to track</p>
                     </div>
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Stock Status</div>
-                        <div className="text-xl font-bold text-white flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
-                            Healthy
+                        <div className="text-xl font-bold text-gray-500 flex items-center gap-2">
+                            <div className="w-2 h-2 rounded-full bg-gray-500" />
+                            No data
                         </div>
+                        <p className="text-[10px] text-gray-600 mt-1">Connect POD provider</p>
                     </div>
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Pending Orders</div>
-                        <div className="text-xl font-bold text-white">128 Shipments</div>
+                        <div className="text-xl font-bold text-gray-500">--</div>
+                        <p className="text-[10px] text-gray-600 mt-1">No orders tracked</p>
                     </div>
                     <div className="bg-white/5 border border-white/5 p-4 rounded-xl">
                         <div className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-1">Average Margin</div>
-                        <div className="text-xl font-bold text-dept-licensing">62.5%</div>
+                        <div className="text-xl font-bold text-gray-500">--%</div>
+                        <p className="text-[10px] text-gray-600 mt-1">Requires cost data</p>
                     </div>
                 </div>
             </motion.div>

@@ -33,6 +33,18 @@ export { createStripeAccount, createTransfer } from './stripe/connect';
 // Distribution Functions (Item 218: Delivery Status Polling)
 export { pollDeliveryStatus } from './distribution/pollDeliveryStatus';
 
+// Legal Functions (Item 242: PandaDoc Proxy — API key secured server-side)
+export {
+    pandadocListTemplates,
+    pandadocCreateDocument,
+    pandadocSendDocument,
+    pandadocGetDocumentStatus,
+    pandadocGetSigningLink,
+} from './legal/pandadocProxy';
+
+// Legal Functions: PandaDoc Webhook (contract signed → career event)
+export { pandadocWebhook } from './legal/pandadocWebhook';
+
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
 

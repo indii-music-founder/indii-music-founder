@@ -108,51 +108,61 @@ const CampaignsTab: React.FC = () => {
     );
 };
 
-const MOCK_INBOX = [
-    { id: '1', from: 'Venue Contact', subject: 'Re: Booking inquiry – The Shelter', preview: "Hey, thanks for reaching out! We have a Friday slot open in April...", time: '2h ago', unread: true },
-    { id: '2', from: 'DistroKid', subject: 'Your release is live', preview: "Your track 'Midnight Drive' is now available on all platforms.", time: '1d ago', unread: false },
-    { id: '3', from: 'Sync Agent', subject: 'Licensing opportunity – Film project', preview: "A director is interested in licensing your catalog for...", time: '2d ago', unread: true },
-];
+// No hardcoded inbox data — messages come from connected email integrations.
 
 const InboxTab: React.FC = () => {
+    const [messages] = useState<Array<{ id: string; from: string; subject: string; preview: string; time: string; unread: boolean }>>([]);
+
+    const unreadCount = messages.filter(m => m.unread).length;
+
     return (
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
                     <Mail size={18} className="text-emerald-400" /> Inbox
-                    <span className="bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
-                        {MOCK_INBOX.filter(m => m.unread).length}
-                    </span>
+                    {unreadCount > 0 && (
+                        <span className="bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                            {unreadCount}
+                        </span>
+                    )}
                 </h2>
                 <p className="text-xs text-slate-600">Aggregated from connected integrations</p>
             </div>
 
-            <div className="space-y-1">
-                {MOCK_INBOX.map((msg) => (
-                    <div
-                        key={msg.id}
-                        className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-slate-700 ${msg.unread ? 'bg-slate-900 border-slate-800' : 'bg-slate-900/40 border-transparent'
-                            }`}
-                    >
-                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-400">
-                            {msg.from[0]}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                                <p className={`text-sm truncate ${msg.unread ? 'font-semibold text-white' : 'text-slate-300'}`}>
-                                    {msg.from}
-                                </p>
-                                <span className="text-xs text-slate-600 flex-shrink-0">{msg.time}</span>
+            {messages.length > 0 ? (
+                <div className="space-y-1">
+                    {messages.map((msg) => (
+                        <div
+                            key={msg.id}
+                            className={`flex items-start gap-3 p-4 rounded-xl border transition-colors cursor-pointer hover:border-slate-700 ${msg.unread ? 'bg-slate-900 border-slate-800' : 'bg-slate-900/40 border-transparent'
+                                }`}
+                        >
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center flex-shrink-0 text-xs font-bold text-slate-400">
+                                {msg.from[0]}
                             </div>
-                            <p className={`text-xs truncate mt-0.5 ${msg.unread ? 'text-slate-300' : 'text-slate-500'}`}>
-                                {msg.subject}
-                            </p>
-                            <p className="text-xs text-slate-600 truncate mt-0.5">{msg.preview}</p>
+                            <div className="flex-1 min-w-0">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className={`text-sm truncate ${msg.unread ? 'font-semibold text-white' : 'text-slate-300'}`}>
+                                        {msg.from}
+                                    </p>
+                                    <span className="text-xs text-slate-600 flex-shrink-0">{msg.time}</span>
+                                </div>
+                                <p className={`text-xs truncate mt-0.5 ${msg.unread ? 'text-slate-300' : 'text-slate-500'}`}>
+                                    {msg.subject}
+                                </p>
+                                <p className="text-xs text-slate-600 truncate mt-0.5">{msg.preview}</p>
+                            </div>
+                            {msg.unread && <div className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0 mt-1.5" />}
                         </div>
-                        {msg.unread && <div className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0 mt-1.5" />}
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="py-20 text-center">
+                    <Mail size={32} className="mx-auto text-slate-700 mb-3" />
+                    <p className="text-sm font-medium text-slate-400">No messages yet</p>
+                    <p className="text-xs text-slate-600 mt-1">Connect Gmail or Outlook in Settings to aggregate your inbox here.</p>
+                </div>
+            )}
 
             <p className="text-center text-xs text-slate-700 pt-2">
                 Full email integration coming soon. Connect Gmail / Outlook in Settings.

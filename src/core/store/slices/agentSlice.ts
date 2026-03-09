@@ -83,6 +83,7 @@ export interface AgentSlice {
     isAgentOpen: boolean;
     isCommandBarDetached: boolean;
     isCommandBarCollapsed: boolean;
+    commandBarPosition: 'left' | 'center' | 'right';
     commandBarInput: string;
     commandBarAttachments: File[];
     agentMode: AgentMode;
@@ -110,6 +111,7 @@ export interface AgentSlice {
     toggleAgentWindow: () => void;
     setCommandBarDetached: (detached: boolean) => void;
     setCommandBarCollapsed: (collapsed: boolean) => void;
+    setCommandBarPosition: (position: 'left' | 'center' | 'right') => void;
     setCommandBarInput: (input: string) => void;
     setCommandBarAttachments: (attachments: File[]) => void;
     setAgentMode: (mode: AgentMode) => void;
@@ -142,6 +144,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     isAgentOpen: false,
     isCommandBarDetached: false,
     isCommandBarCollapsed: false,
+    commandBarPosition: (typeof window !== 'undefined' && (['left', 'center', 'right'].includes(localStorage.getItem('indiiOS_commandBarPosition') || '') ? localStorage.getItem('indiiOS_commandBarPosition') as 'left' | 'center' | 'right' : 'center')) || 'center',
     commandBarInput: '',
     commandBarAttachments: [],
     agentMode: 'assistant',
@@ -335,7 +338,13 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     })),
     setCommandBarDetached: (detached) => set({ isCommandBarDetached: detached }),
     setCommandBarCollapsed: (collapsed) => set({ isCommandBarCollapsed: collapsed }),
-    resetCommandBar: () => set({ isCommandBarDetached: false, isCommandBarCollapsed: false }),
+    setCommandBarPosition: (position) => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('indiiOS_commandBarPosition', position);
+        }
+        set({ commandBarPosition: position });
+    },
+    resetCommandBar: () => set({ isCommandBarDetached: false, isCommandBarCollapsed: false, commandBarPosition: 'center' }),
     setCommandBarInput: (input) => set({ commandBarInput: input }),
     setCommandBarAttachments: (attachments) => set({ commandBarAttachments: attachments }),
     setAgentMode: (mode) => set({ agentMode: mode }),

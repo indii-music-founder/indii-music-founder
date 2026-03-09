@@ -14,22 +14,10 @@ interface ConversionCycle {
     revenue: number;
 }
 
-const revenueTrendData: RevenueTrend[] = [
-    { name: 'Week 1', sales: 1500, revenue: 1500 },
-    { name: 'Week 2', sales: 2300, revenue: 2000 },
-    { name: 'Week 3', sales: 3200, revenue: 3500 },
-    { name: 'Week 4', sales: 4500, revenue: 4500 },
-];
-
-const conversionCycleData: ConversionCycle[] = [
-    { day: 'Mon', revenue: 1200 },
-    { day: 'Tue', revenue: 2100 },
-    { day: 'Wed', revenue: 1800 },
-    { day: 'Thu', revenue: 2500 },
-    { day: 'Fri', revenue: 3200 }, // Peak
-    { day: 'Sat', revenue: 1800 },
-    { day: 'Sun', revenue: 1500 },
-];
+// Revenue trend and conversion data must come from the merch analytics API
+// Empty arrays are used until real store data is connected
+const revenueTrendData: RevenueTrend[] = [];
+const conversionCycleData: ConversionCycle[] = [];
 
 export const MerchandiseAnalytics: React.FC = () => {
     return (
@@ -53,53 +41,30 @@ export const MerchandiseAnalytics: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="h-[250px] w-full relative z-10">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={revenueTrendData}>
-                            <defs>
-                                <linearGradient id="merchRevenueGradient" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="var(--color-dept-royalties)" stopOpacity={0.3} />
-                                    <stop offset="95%" stopColor="var(--color-dept-royalties)" stopOpacity={0} />
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
-                            <XAxis
-                                dataKey="name"
-                                stroke="#555"
-                                tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <YAxis
-                                stroke="#555"
-                                tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }}
-                                axisLine={false}
-                                tickLine={false}
-                                tickFormatter={(value) => `$${value}`}
-                            />
-                            <Tooltip
-                                contentStyle={{
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    backdropFilter: 'blur(10px)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '16px',
-                                    padding: '12px'
-                                }}
-                                itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }}
-                                labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px' }}
-                            />
-                            <Area
-                                type="monotone"
-                                dataKey="revenue"
-                                stroke="var(--color-dept-royalties)"
-                                strokeWidth={4}
-                                fillOpacity={1}
-                                fill="url(#merchRevenueGradient)"
-                                animationDuration={2000}
-                                animationEasing="ease-in-out"
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
+                <div className="h-[250px] w-full relative z-10 flex items-center justify-center">
+                    {revenueTrendData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={revenueTrendData}>
+                                <defs>
+                                    <linearGradient id="merchRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="var(--color-dept-royalties)" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="var(--color-dept-royalties)" stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+                                <XAxis dataKey="name" stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                                <YAxis stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} tickFormatter={(value) => `$${value}`} />
+                                <Tooltip contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', padding: '12px' }} itemStyle={{ color: '#fff', fontSize: '12px', fontWeight: 'bold' }} labelStyle={{ color: '#888', marginBottom: '4px', fontSize: '10px' }} />
+                                <Area type="monotone" dataKey="revenue" stroke="var(--color-dept-royalties)" strokeWidth={4} fillOpacity={1} fill="url(#merchRevenueGradient)" animationDuration={2000} animationEasing="ease-in-out" />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="text-center">
+                            <TrendingUp size={24} className="text-neutral-700 mx-auto mb-2" />
+                            <p className="text-xs text-neutral-600">No sales data yet</p>
+                            <p className="text-[10px] text-neutral-700 mt-1">Connect your merch store to see revenue trends</p>
+                        </div>
+                    )}
                 </div>
             </motion.div>
 
@@ -126,44 +91,27 @@ export const MerchandiseAnalytics: React.FC = () => {
                     </div>
                 </div>
 
-                <div className="h-[250px] w-full relative z-10">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={conversionCycleData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
-                            <XAxis
-                                dataKey="day"
-                                stroke="#555"
-                                tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }}
-                                axisLine={false}
-                                tickLine={false}
-                            />
-                            <Tooltip
-                                cursor={{ fill: 'rgba(255,255,255,0.02)' }}
-                                contentStyle={{
-                                    backgroundColor: 'rgba(0,0,0,0.8)',
-                                    backdropFilter: 'blur(10px)',
-                                    border: '1px solid rgba(255,255,255,0.1)',
-                                    borderRadius: '16px'
-                                }}
-                                itemStyle={{ color: '#fff' }}
-                            />
-                            <Bar
-                                dataKey="revenue"
-                                radius={[8, 8, 0, 0]}
-                                animationDuration={1500}
-                                animationEasing="ease-out"
-                            >
-                                {conversionCycleData.map((entry: ConversionCycle, index: number) => (
-                                    <Cell
-                                        key={`cell-${index}`}
-                                        fill={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'}
-                                        stroke={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'}
-                                        strokeWidth={1}
-                                    />
-                                ))}
-                            </Bar>
-                        </BarChart>
-                    </ResponsiveContainer>
+                <div className="h-[250px] w-full relative z-10 flex items-center justify-center">
+                    {conversionCycleData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={conversionCycleData}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="#ffffff0a" vertical={false} />
+                                <XAxis dataKey="day" stroke="#555" tick={{ fill: '#666', fontSize: 10, fontWeight: 700 }} axisLine={false} tickLine={false} />
+                                <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
+                                <Bar dataKey="revenue" radius={[8, 8, 0, 0]} animationDuration={1500} animationEasing="ease-out">
+                                    {conversionCycleData.map((entry: ConversionCycle, index: number) => (
+                                        <Cell key={`cell-${index}`} fill={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'} stroke={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'} strokeWidth={1} />
+                                    ))}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div className="text-center">
+                            <BarChart3 size={24} className="text-neutral-700 mx-auto mb-2" />
+                            <p className="text-xs text-neutral-600">No conversion data</p>
+                            <p className="text-[10px] text-neutral-700 mt-1">Daily performance will appear once sales start</p>
+                        </div>
+                    )}
                 </div>
             </motion.div>
         </div>

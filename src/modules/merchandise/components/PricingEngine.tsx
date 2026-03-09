@@ -35,18 +35,13 @@ function enrichProduct(product: MerchProduct): PricedProduct {
     };
 }
 
-const MOCK_PRODUCTS: MerchProduct[] = [
-    { id: '1', userId: '', title: 'Classic Tee (Black)', image: '', price: '$22.00', category: 'standard' },
-    { id: '2', userId: '', title: 'Hoodie (Grey)', price: '$48.00', image: '', category: 'pro' },
-    { id: '3', userId: '', title: 'Vinyl Record', price: '$18.00', image: '', category: 'standard' },
-    { id: '4', userId: '', title: 'Poster', price: '$14.00', image: '', category: 'standard' },
-];
+// No hardcoded products — data comes from parent via props or Firestore.
 
 interface PricingEngineProps {
     products?: MerchProduct[];
 }
 
-export function PricingEngine({ products = MOCK_PRODUCTS }: PricingEngineProps) {
+export function PricingEngine({ products = [] }: PricingEngineProps) {
     const enriched = products.map(enrichProduct);
     const [applied, setApplied] = useState<Set<string>>(new Set());
 

@@ -16,14 +16,8 @@ interface InventoryItem {
     channel: 'Printful' | 'Printify' | 'Shopify' | 'Direct';
 }
 
-const MOCK_INVENTORY: InventoryItem[] = [
-    { id: '1', name: 'Classic Tee (Black)', physical: 142, virtual: 9999, reorderThreshold: 50, channel: 'Printful' },
-    { id: '2', name: 'Hoodie (Grey)', physical: 38, virtual: 9999, reorderThreshold: 50, channel: 'Printful' },
-    { id: '3', name: 'Vinyl Record', physical: 200, virtual: 0, reorderThreshold: 30, channel: 'Direct' },
-    { id: '4', name: 'Poster (18x24)', physical: 67, virtual: 9999, reorderThreshold: 20, channel: 'Printify' },
-    { id: '5', name: 'Sticker Sheet', physical: 15, virtual: 9999, reorderThreshold: 100, channel: 'Printful' },
-    { id: '6', name: 'Snapback Cap', physical: 89, virtual: 9999, reorderThreshold: 25, channel: 'Printify' },
-];
+// No hardcoded inventory — data comes from props or Firestore.
+// In production, wire to a merch provider API (Printful/Printify/Shopify).
 
 const CHANNEL_COLORS: Record<string, string> = {
     Printful: 'text-blue-400',
@@ -32,16 +26,11 @@ const CHANNEL_COLORS: Record<string, string> = {
     Direct: 'text-[#FFE135]',
 };
 
-const CHART_DATA = [
-    { name: 'Tee', physical: 142, virtual: 0 },
-    { name: 'Hoodie', physical: 38, virtual: 0 },
-    { name: 'Vinyl', physical: 200, virtual: 0 },
-    { name: 'Poster', physical: 67, virtual: 0 },
-    { name: 'Sticker', physical: 15, virtual: 0 },
-    { name: 'Cap', physical: 89, virtual: 0 },
-];
+interface InventoryTrackerProps {
+    inventory?: InventoryItem[];
+}
 
-export function InventoryTracker() {
+export function InventoryTracker({ inventory = [] }: InventoryTrackerProps) {
     const [syncing, setSyncing] = useState(false);
 
     const handleSync = async () => {
@@ -50,7 +39,14 @@ export function InventoryTracker() {
         setSyncing(false);
     };
 
-    const lowStock = MOCK_INVENTORY.filter(i => i.physical <= i.reorderThreshold);
+    const lowStock = inventory.filter(i => i.physical <= i.reorderThreshold);
+
+    // Derive chart data dynamically from inventory
+    const chartData = inventory.map(item => ({
+        name: item.name.split(' ')[0],
+        physical: item.physical,
+        virtual: item.virtual,
+    }));
 
     return (
         <div className="p-6 space-y-6">
@@ -58,7 +54,7 @@ export function InventoryTracker() {
             <div className="flex items-center justify-between">
                 <div>
                     <h3 className="text-lg font-bold text-white">Inventory Tracker</h3>
-                    <p className="text-xs text-neutral-500 mt-0.5">{MOCK_INVENTORY.length} SKUs across {Object.keys(CHANNEL_COLORS).length} channels</p>
+                    <p className="text-xs text-neutral-500 mt-0.5">{inventory.length} SKUs across {Object.keys(CHANNEL_COLORS).length} channels</p>
                 </div>
                 <button
                     onClick={handleSync}
@@ -84,26 +80,34 @@ export function InventoryTracker() {
             )}
 
             {/* Physical Inventory Chart */}
-            <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
-                <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-4">Physical Stock Levels</h4>
-                <ResponsiveContainer width="100%" height={160}>
-                    <BarChart data={CHART_DATA} barSize={24}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
-                        <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
-                        <Tooltip
-                            contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
-                            cursor={{ fill: 'rgba(255,255,255,0.03)' }}
-                        />
-                        <Bar dataKey="physical" fill="#FFE135" radius={[4, 4, 0, 0]} name="Physical Units" />
-                    </BarChart>
-                </ResponsiveContainer>
-            </div>
+            {inventory.length > 0 ? (
+                <div className="bg-white/[0.02] border border-white/5 rounded-xl p-4">
+                    <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-4">Physical Stock Levels</h4>
+                    <ResponsiveContainer width="100%" height={160}>
+                        <BarChart data={chartData} barSize={24}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" />
+                            <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
+                            <YAxis tick={{ fontSize: 10, fill: '#666' }} axisLine={false} tickLine={false} />
+                            <Tooltip
+                                contentStyle={{ background: '#111', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', fontSize: '11px' }}
+                                cursor={{ fill: 'rgba(255,255,255,0.03)' }}
+                            />
+                            <Bar dataKey="physical" fill="#FFE135" radius={[4, 4, 0, 0]} name="Physical Units" />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <div className="py-16 text-center bg-white/[0.02] border border-white/5 rounded-xl">
+                    <Package size={32} className="mx-auto text-neutral-700 mb-3" />
+                    <p className="text-sm font-bold text-neutral-500">No Inventory Data</p>
+                    <p className="text-[10px] text-neutral-600 mt-1">Connect a merch provider (Printful, Printify, Shopify) to start tracking stock.</p>
+                </div>
+            )}
 
             {/* Per-Product Table */}
             <div className="space-y-2">
                 <h4 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">SKU Detail</h4>
-                {MOCK_INVENTORY.map((item) => {
+                {inventory.map((item) => {
                     const pct = Math.min((item.physical / (item.reorderThreshold * 4)) * 100, 100);
                     const isLow = item.physical <= item.reorderThreshold;
                     return (

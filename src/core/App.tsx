@@ -4,6 +4,7 @@ import { useStore } from './store';
 import Sidebar from './components/Sidebar';
 import RightPanel from './components/RightPanel';
 import CommandBar from './components/CommandBar';
+import ChatOverlay from './components/ChatOverlay';
 import { ToastProvider } from './context/ToastContext';
 import { VoiceProvider } from './context/VoiceContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -309,11 +310,13 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
 
 export default function App() {
     // ⚡ Bolt Optimization: useShallow
-    const { currentModule, user, authLoading } = useStore(
+    const { currentModule, user, authLoading, isAgentOpen, toggleAgentWindow } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             user: state.user,
-            authLoading: state.authLoading
+            authLoading: state.authLoading,
+            isAgentOpen: state.isAgentOpen,
+            toggleAgentWindow: state.toggleAgentWindow,
         }))
     );
 
@@ -421,6 +424,13 @@ export default function App() {
                             {showChrome && (
                                 <ErrorBoundary>
                                     <CommandBar />
+                                </ErrorBoundary>
+                            )}
+
+                            {/* Floating Chat Overlay — draggable, resizable */}
+                            {isAgentOpen && (
+                                <ErrorBoundary>
+                                    <ChatOverlay onClose={toggleAgentWindow} />
                                 </ErrorBoundary>
                             )}
 

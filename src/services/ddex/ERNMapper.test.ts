@@ -210,12 +210,112 @@ describe('ERNMapper', () => {
         const resource = ern.resourceList[0];
 
         expect(resource.duration).toBe('PT3M4S');
-        
+
         const metadataLong: ExtendedGoldenMetadata = {
             ...MOCK_METADATA_BASE,
             durationFormatted: '1:05:30'
         };
         const ernLong = ERNMapper.mapMetadataToERN(metadataLong, defaultOptions);
         expect(ernLong.resourceList[0].duration).toBe('PT1H5M30S');
+    });
+
+    // 2026 Compliance Tests
+
+    it('should set AI disclosure type correctly for partially AI-assisted content', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: true,
+                aiToolsUsed: ['AI Mastering'],
+                humanContribution: 'All composition and performance by artist'
+            }
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+
+        expect(release.aiGenerationInfo).toBeDefined();
+        expect(release.aiGenerationInfo?.disclosureType).toBe('AI_Assisted');
+    });
+
+    it('should classify as Human_Composed_AI_Produced when human wrote the music', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: true,
+                aiToolsUsed: ['Suno'],
+                humanContribution: 'Artist composed and wrote all lyrics'
+            }
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+
+        expect(release.aiGenerationInfo?.disclosureType).toBe('Human_Composed_AI_Produced');
+    });
+
+    it('should classify as Human_Created when no AI involvement', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false
+            }
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+
+        expect(release.aiGenerationInfo?.disclosureType).toBe('Human_Created');
+    });
+
+    it('should add RightsController for self-publishing releases', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            publisher: 'Self',
+            labelName: 'Artist Records LLC'
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+
+        expect(release.rightsControllers).toBeDefined();
+        expect(release.rightsControllers).toHaveLength(1);
+        expect(release.rightsControllers![0].partyName).toBe('Artist Records LLC');
+        expect(release.rightsControllers![0].role).toBe('OriginalPublisher');
+        expect(release.rightsControllers![0].rightSharePercentage).toBe(100);
+    });
+
+    it('should NOT add RightsController when artist has an external publisher', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            publisher: 'Sony Music Publishing'
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const release = ern.releaseList[0];
+
+        expect(release.rightsControllers).toBeUndefined();
+    });
+
+    it('should flag Image resource as AI-generated when cover art is AI-made', () => {
+        const metadata: ExtendedGoldenMetadata = {
+            ...MOCK_METADATA_BASE,
+            coverArtAIGenerated: true,
+            aiGeneratedContent: {
+                isFullyAIGenerated: false,
+                isPartiallyAIGenerated: false
+            }
+        };
+
+        const ern = ERNMapper.mapMetadataToERN(metadata, defaultOptions);
+        const imageResource = ern.resourceList.find(r => r.resourceType === 'Image');
+
+        expect(imageResource).toBeDefined();
+        expect(imageResource?.aiGenerationInfo).toBeDefined();
+        expect(imageResource?.aiGenerationInfo?.isFullyAIGenerated).toBe(true);
+        expect(imageResource?.aiGenerationInfo?.disclosureType).toBe('AI_Generated');
     });
 });
