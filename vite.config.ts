@@ -173,7 +173,7 @@ export default defineConfig({
     },
     rollupOptions: {
       // Suppress warnings for Node.js builtins used in Electron-only code paths
-      external: ['child_process', 'fs', 'path', 'util', 'crypto'],
+      external: ['child_process', 'fs', 'path', 'util', 'crypto', '@remotion/cli', '@remotion/renderer'],
       onwarn(warning, warn) {
         // Suppress CIRCULAR_DEPENDENCY and MODULE_LEVEL_DIRECTIVE warnings from third-party libs
         if (warning.code === 'CIRCULAR_DEPENDENCY') return;
@@ -192,7 +192,7 @@ export default defineConfig({
           'vendor-fabric': ['fabric'],
           // Item 268: Heavy libs split into isolated chunks (loaded on-demand by lazy modules)
           'vendor-three': ['three', '@react-three/fiber', '@react-three/drei'],
-          'vendor-remotion': ['remotion', '@remotion/renderer', '@remotion/cli'],
+          'vendor-remotion': ['remotion'],
           'vendor-firebase': ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage', 'firebase/functions', 'firebase/analytics'],
         },
       },
