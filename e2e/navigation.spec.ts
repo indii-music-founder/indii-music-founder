@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Navigation E2E Tests
@@ -10,13 +10,13 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Sidebar Navigation', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('app shell renders with sidebar and main content area', async ({ page }) => {
+    test('app shell renders with sidebar and main content area', async ({ authedPage: page }) => {
         // App container is present
         const appContainer = page.locator('[data-testid="app-container"], #root');
         await expect(appContainer).toBeVisible();
@@ -26,7 +26,7 @@ test.describe('Sidebar Navigation', () => {
         await expect(nav.first()).toBeVisible();
     });
 
-    test('sidebar toggle collapses and expands the sidebar', async ({ page }) => {
+    test('sidebar toggle collapses and expands the sidebar', async ({ authedPage: page }) => {
         const toggle = page.locator('[data-testid="sidebar-toggle"]');
 
         // Skip if on mobile viewport (no sidebar toggle)
@@ -52,7 +52,7 @@ test.describe('Sidebar Navigation', () => {
         await expect(page.locator('[data-testid^="nav-item-"]').first()).toBeVisible();
     });
 
-    test('dashboard nav item is present and clickable', async ({ page }) => {
+    test('dashboard nav item is present and clickable', async ({ authedPage: page }) => {
         const dashboardLink = page.locator('[data-testid="nav-item-dashboard"]');
 
         // May not be present on mobile — skip gracefully
@@ -69,7 +69,7 @@ test.describe('Sidebar Navigation', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('navigating between modules does not cause white-screen', async ({ page }) => {
+    test('navigating between modules does not cause white-screen', async ({ authedPage: page }) => {
         const moduleIds = ['finance', 'distribution', 'creative', 'publishing'];
 
         for (const moduleId of moduleIds) {
@@ -86,7 +86,7 @@ test.describe('Sidebar Navigation', () => {
         }
     });
 
-    test('module lazy-loading shows loading state then content', async ({ page }) => {
+    test('module lazy-loading shows loading state then content', async ({ authedPage: page }) => {
         // Navigate via URL to trigger lazy load
         await page.goto('/#finance');
         await page.waitForTimeout(3_000);
@@ -95,7 +95,7 @@ test.describe('Sidebar Navigation', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('observability button is accessible in sidebar footer', async ({ page }) => {
+    test('observability button is accessible in sidebar footer', async ({ authedPage: page }) => {
         const obsBtn = page.locator('[data-testid="observability-footer-btn"]');
         const isVisible = await obsBtn.isVisible().catch(() => false);
 
@@ -108,13 +108,13 @@ test.describe('Sidebar Navigation', () => {
 });
 
 test.describe('CommandBar', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('prompt input is visible and accepts text', async ({ page }) => {
+    test('prompt input is visible and accepts text', async ({ authedPage: page }) => {
         const promptInput = page.locator('[data-testid="prompt-input"], textarea, [role="textbox"]');
         const found = await promptInput.first().isVisible().catch(() => false);
 

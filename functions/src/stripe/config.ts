@@ -13,6 +13,35 @@ const stripe = new Stripe(getStripeSecretKey(), {
   typescript: true
 });
 
+// Placeholder sentinel values used in development only
+const PLACEHOLDER_PRICE_IDS: Record<string, string> = {
+  STRIPE_PRICE_PRO_MONTHLY: 'price_pro_monthly_id',
+  STRIPE_PRICE_PRO_YEARLY: 'price_pro_yearly_id',
+  STRIPE_PRICE_STUDIO_MONTHLY: 'price_studio_monthly_id',
+  STRIPE_PRICE_STUDIO_YEARLY: 'price_studio_yearly_id',
+};
+
+/**
+ * Resolve a Stripe price env var. In production, throws if the variable is
+ * missing or still set to the development placeholder so checkout failures
+ * are surfaced at startup rather than at payment time.
+ */
+function resolvePriceId(envVar: string): string {
+  const value = process.env[envVar];
+  const placeholder = PLACEHOLDER_PRICE_IDS[envVar];
+
+  if (process.env.NODE_ENV === 'production') {
+    if (!value || value === placeholder) {
+      throw new Error(
+        `[Stripe] Missing or placeholder price ID for ${envVar}. ` +
+        `Set a real Stripe price ID in the Cloud Functions environment before deploying.`
+      );
+    }
+  }
+
+  return value || placeholder;
+}
+
 // Stripe price IDs for each tier and billing period
 export const STRIPE_PRICES: Record<SubscriptionTier, {
   monthly?: string;
@@ -20,16 +49,16 @@ export const STRIPE_PRICES: Record<SubscriptionTier, {
 }> = {
   [SubscriptionTier.FREE]: {},
   [SubscriptionTier.PRO_MONTHLY]: {
-    monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly_id',
-    yearly: process.env.STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly_id'
+    monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY')
   },
   [SubscriptionTier.STUDIO]: {
-    monthly: process.env.STRIPE_PRICE_STUDIO_MONTHLY || 'price_studio_monthly_id',
-    yearly: process.env.STRIPE_PRICE_STUDIO_YEARLY || 'price_studio_yearly_id'
+    monthly: resolvePriceId('STRIPE_PRICE_STUDIO_MONTHLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_STUDIO_YEARLY')
   },
   [SubscriptionTier.PRO_YEARLY]: {
-    monthly: process.env.STRIPE_PRICE_PRO_MONTHLY || 'price_pro_monthly_id',
-    yearly: process.env.STRIPE_PRICE_PRO_YEARLY || 'price_pro_yearly_id'
+    monthly: resolvePriceId('STRIPE_PRICE_PRO_MONTHLY'),
+    yearly: resolvePriceId('STRIPE_PRICE_PRO_YEARLY')
   }
 };
 

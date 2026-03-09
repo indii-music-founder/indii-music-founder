@@ -1,9 +1,31 @@
 import React, { useState } from 'react';
-import { Product } from '@/services/marketplace/types';
+import { Product, StemFile } from '@/services/marketplace/types';
 import { MarketplaceService } from '@/services/marketplace/MarketplaceService';
 import { useStore } from '@/core/store';
-import { ShoppingBag, Loader2, Check } from 'lucide-react';
+import { ShoppingBag, Loader2, Check, Music } from 'lucide-react';
 import { logger } from '@/utils/logger';
+
+const STEM_LABEL_DISPLAY: Record<string, string> = {
+    drums: 'Drums',
+    bass: 'Bass',
+    melody: 'Melody',
+    vocals: 'Vocals',
+};
+
+function StemPackBadge({ stems }: { stems: StemFile[] }) {
+    return (
+        <div className="flex flex-wrap gap-1 mt-2">
+            {stems.map(s => (
+                <span
+                    key={s.label}
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-purple-900/50 text-purple-300 border border-purple-700/40"
+                >
+                    {STEM_LABEL_DISPLAY[s.label] ?? s.label}
+                </span>
+            ))}
+        </div>
+    );
+}
 
 interface ProductCardProps {
     product: Product;
@@ -39,6 +61,10 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
     };
 
     const isEmbedded = variant === 'embedded';
+    const isStemPack = product.type === 'stem-pack';
+    const stemFiles = isStemPack
+        ? ((product.metadata?.stemFiles ?? []) as StemFile[])
+        : [];
 
     if (isEmbedded) {
         return (
@@ -63,7 +89,10 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                     <div className="flex justify-between items-start mb-1">
                         <div>
                             <h4 className="font-semibold text-white text-sm line-clamp-1">{product.title}</h4>
-                            <p className="text-xs text-gray-400 capitalize">{product.type} • {product.inventory} left</p>
+                            <p className="text-xs text-gray-400 capitalize flex items-center gap-1">
+                                {isStemPack && <Music size={10} className="text-purple-400" aria-hidden="true" />}
+                                {isStemPack ? 'Stem Pack' : product.type} • {product.inventory} left
+                            </p>
                         </div>
                         <span className="text-green-400 font-bold text-sm">
                             {product.currency} {product.price}
@@ -131,11 +160,20 @@ const ProductCard = React.memo(({ product, variant = 'default', source, sourceId
                         </span>
                     </div>
                     <p className="text-sm text-gray-400 line-clamp-2">{product.description}</p>
+                    {isStemPack && stemFiles.length > 0 && (
+                        <StemPackBadge stems={stemFiles} />
+                    )}
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-gray-800">
-                    <span className="text-xs font-medium px-2 py-1 rounded bg-gray-800 text-gray-300 capitalize">
-                        {product.type}
+                    <span className={`text-xs font-medium px-2 py-1 rounded capitalize flex items-center gap-1
+                        ${isStemPack
+                            ? 'bg-purple-900/40 text-purple-300 border border-purple-700/40'
+                            : 'bg-gray-800 text-gray-300'
+                        }`}
+                    >
+                        {isStemPack && <Music size={10} aria-hidden="true" />}
+                        {isStemPack ? 'Stem Pack' : product.type}
                     </span>
 
                     <button

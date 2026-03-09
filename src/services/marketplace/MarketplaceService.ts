@@ -1,4 +1,4 @@
-import { db } from '@/services/firebase';
+import { db, storage } from '@/services/firebase';
 import {
     collection,
     addDoc,
@@ -13,7 +13,8 @@ import {
     updateDoc,
     increment
 } from 'firebase/firestore';
-import { Product, Purchase } from './types';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { Product, Purchase, StemFile, StemLabel } from './types';
 import { createOneTimePayment } from '@/services/payment/PaymentService';
 import { revenueService } from '@/services/RevenueService';
 import { logger } from '@/utils/logger';
@@ -27,6 +28,39 @@ export class MarketplaceService {
     private static productCache = new Map<string, { product: Product | null, timestamp: number }>();
     private static CACHE_DURATION = 1000 * 60 * 5; // 5 minutes
     private static MAX_CACHE_SIZE = 100;
+
+    /**
+     * Uploads stem files to Firebase Storage and returns StemFile metadata.
+     * Call this before createProduct() when type === 'stem-pack'.
+     *
+     * @param sellerId  - The authenticated user's ID (used for storage path scoping)
+     * @param draftId   - A temporary ID generated before the product doc exists
+     * @param stems     - Array of { label, file } — one per stem track
+     */
+    static async uploadStemFiles(
+        sellerId: string,
+        draftId: string,
+        stems: { label: StemLabel; file: File }[]
+    ): Promise<StemFile[]> {
+        const results = await Promise.all(
+            stems.map(async ({ label, file }) => {
+                const ext = file.name.split('.').pop() ?? 'mp3';
+                const storagePath = `stems/${sellerId}/${draftId}/${label}.${ext}`;
+                const storageRef = ref(storage, storagePath);
+
+                await uploadBytes(storageRef, file, {
+                    contentType: file.type || 'audio/mpeg',
+                    customMetadata: { sellerId, draftId, label },
+                });
+
+                const url = await getDownloadURL(storageRef);
+                return { label, url, filename: file.name, storagePath } as StemFile;
+            })
+        );
+
+        logger.info(`[MarketplaceService] Uploaded ${results.length} stems for draft ${draftId}`);
+        return results;
+    }
 
     /**
      * Create a new product listing.

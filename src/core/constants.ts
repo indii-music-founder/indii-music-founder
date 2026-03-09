@@ -18,7 +18,6 @@ export const MODULE_IDS = [
     'publishing',
     'finance',
     'licensing',
-    'showroom',
     'onboarding',
     'select-org',
     'agent',

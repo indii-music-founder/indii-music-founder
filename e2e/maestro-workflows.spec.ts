@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Maestro Workflow E2E Tests
@@ -14,7 +14,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Maestro Batch Orchestration', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Mock all Gemini / AI API calls
         await page.route('**/generativelanguage.googleapis.com/**', async route => {
             await route.fulfill({
@@ -69,11 +69,11 @@ test.describe('Maestro Batch Orchestration', () => {
         await page.waitForTimeout(2_000);
     });
 
-    test('app loads and maestro task system is operational (no crash)', async ({ page }) => {
+    test('app loads and maestro task system is operational (no crash)', async ({ authedPage: page }) => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('submitting a campaign intent to the prompt does not crash the app', async ({ page }) => {
+    test('submitting a campaign intent to the prompt does not crash the app', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -94,7 +94,7 @@ test.describe('Maestro Batch Orchestration', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('task status indicators appear in right panel or chat', async ({ page }) => {
+    test('task status indicators appear in right panel or chat', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -120,7 +120,7 @@ test.describe('Maestro Batch Orchestration', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('markdown report renders in chat after orchestration', async ({ page }) => {
+    test('markdown report renders in chat after orchestration', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -146,7 +146,7 @@ test.describe('Maestro Batch Orchestration', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('failed workflow step shows error state without crashing UI', async ({ page }) => {
+    test('failed workflow step shows error state without crashing UI', async ({ authedPage: page }) => {
         // Override the mock to return an error
         await page.route('**/generativelanguage.googleapis.com/**', async route => {
             await route.fulfill({

@@ -106,6 +106,21 @@ service firebase.storage {
     }
 
     // ========================================
+    // STEM PACKS (verified artist uploads)
+    // ========================================
+
+    // Stem pack files uploaded by artists for marketplace
+    match /stems/{userId}/{allPaths=**} {
+      // The owner can read their own stems; buyers get access via signed URLs from Cloud Functions
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+      // Owner can upload: verified, size ≤ 250MB, audio files only
+      allow write: if isAuthenticated() &&
+                      request.auth.uid == userId &&
+                      isUnderSizeLimit(250) &&
+                      isAudioType();
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 

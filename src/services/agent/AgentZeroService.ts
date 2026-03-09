@@ -84,9 +84,7 @@ class AgentZeroService {
         // Defaults - in production, these should be loaded from secure storage or env
         // For the single-user desktop app, we use the values we found/know.
         this.config = {
-            baseUrl: 'http://127.0.0.1:50080',
-            // Defaulting to the value found in the docker container. 
-            // In a real app this should be configurable.
+            baseUrl: import.meta.env.VITE_A0_BASE_URL || 'http://127.0.0.1:50080',
             runtimeId: import.meta.env.VITE_A0_RUNTIME_ID || 'c13febd01bf518de389462d4d48b2285',
             authLogin: import.meta.env.VITE_A0_AUTH_LOGIN || '',
             authPassword: import.meta.env.VITE_A0_AUTH_PASSWORD || '',

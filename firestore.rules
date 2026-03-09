@@ -630,6 +630,38 @@ service cloud.firestore {
     }
 
     // ========================================
+    // MARKETPLACE: PRODUCTS (public discovery, owner writes)
+    // ========================================
+
+    match /products/{productId} {
+      // Any authenticated user can browse products (marketplace discovery)
+      allow read: if isAuthenticated();
+      // Only the verified owner can create/update/delete their listings
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    }
+
+    // ========================================
+    // MARKETPLACE: STEM PACKS (public discovery, owner writes)
+    // ========================================
+
+    match /stem_packs/{packId} {
+      // Any authenticated user can browse stem packs
+      allow read: if isAuthenticated();
+      // Only the verified owner can create/update/delete their packs
+      allow create: if isVerifiedUser() && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if isVerifiedUser() && resource.data.userId == request.auth.uid;
+    }
+
+    // Stem pack purchases — verified users only
+    match /stem_pack_purchases/{purchaseId} {
+      allow read: if isVerifiedUser() && resource.data.buyerId == request.auth.uid;
+      allow create: if isVerifiedUser() && request.resource.data.buyerId == request.auth.uid;
+      // Purchases are immutable once created
+      allow update, delete: if false;
+    }
+
+    // ========================================
     // DENY ALL OTHER ACCESS
     // ========================================
 
