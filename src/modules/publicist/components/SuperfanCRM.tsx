@@ -22,16 +22,8 @@ interface FanRecord {
     avatarInitial: string;
 }
 
-const MOCK_FANS: FanRecord[] = [
-    { id: '1', name: 'Aisha Thompson', email: 'aisha@mail.com', tier: 'Superfan', totalSpend: 847, streamsThisMonth: 2340, lastActive: '2 hours ago', avatarInitial: 'A' },
-    { id: '2', name: 'Marcus Webb', email: 'mwebb@mail.com', tier: 'Superfan', totalSpend: 612, streamsThisMonth: 1980, lastActive: '5 hours ago', avatarInitial: 'M' },
-    { id: '3', name: 'Priya Nair', email: 'priya@mail.com', tier: 'VIP', totalSpend: 289, streamsThisMonth: 890, lastActive: '1 day ago', avatarInitial: 'P' },
-    { id: '4', name: 'Jordan Lee', email: 'jlee@mail.com', tier: 'VIP', totalSpend: 214, streamsThisMonth: 740, lastActive: '2 days ago', avatarInitial: 'J' },
-    { id: '5', name: 'Elena Rossi', email: 'elenr@mail.com', tier: 'VIP', totalSpend: 178, streamsThisMonth: 560, lastActive: '3 days ago', avatarInitial: 'E' },
-    { id: '6', name: 'Devon Clark', email: 'dclark@mail.com', tier: 'Standard', totalSpend: 45, streamsThisMonth: 210, lastActive: '1 week ago', avatarInitial: 'D' },
-    { id: '7', name: 'Nadia Kim', email: 'nadk@mail.com', tier: 'Standard', totalSpend: 32, streamsThisMonth: 180, lastActive: '1 week ago', avatarInitial: 'N' },
-    { id: '8', name: 'Carlos Vega', email: 'cvega@mail.com', tier: 'Standard', totalSpend: 18, streamsThisMonth: 95, lastActive: '2 weeks ago', avatarInitial: 'C' },
-];
+// No hardcoded fan data — fans come from Firestore contacts collection.
+// In production, populate via a CRM integration or listener on the contacts collection.
 
 const TIER_CONFIG: Record<FanTier, { color: string; bg: string; border: string; icon: React.ReactNode; threshold: string }> = {
     Superfan: {
@@ -64,7 +56,7 @@ interface SuperfanCRMProps {
 export function SuperfanCRM({ contacts: _contacts }: SuperfanCRMProps) {
     const [activeTier, setActiveTier] = useState<FanTier | 'all'>('all');
     const [search, setSearch] = useState('');
-    const [fans] = useState<FanRecord[]>(MOCK_FANS);
+    const [fans] = useState<FanRecord[]>([]);
 
     const filtered = fans.filter(f => {
         const matchTier = activeTier === 'all' || f.tier === activeTier;

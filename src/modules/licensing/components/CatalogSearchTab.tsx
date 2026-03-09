@@ -13,18 +13,14 @@ interface CatalogTrack {
     isCleared: boolean;
 }
 
-const MOCK_CATALOG: CatalogTrack[] = [
-    { id: '1', title: 'Neon Horizon', artist: 'Synthwave Dreams', genre: 'Electronic', mood: 'Energetic', bpm: 120, duration: '3:45', isCleared: true },
-    { id: '2', title: 'Midnight Stroll', artist: 'Jazz Cats', genre: 'Jazz', mood: 'Chill', bpm: 85, duration: '4:12', isCleared: true },
-    { id: '3', title: 'Urban Pulse', artist: 'Beatsmith', genre: 'Hip Hop', mood: 'Intense', bpm: 95, duration: '2:58', isCleared: false },
-    { id: '4', title: 'Ethereal Voices', artist: 'Choir X', genre: 'Classical', mood: 'Uplifting', bpm: 75, duration: '5:01', isCleared: true },
-    { id: '5', title: 'Bass Drop', artist: 'DJ Wubs', genre: 'Dubstep', mood: 'Aggressive', bpm: 140, duration: '3:15', isCleared: false },
-    { id: '6', title: 'Sunny Drive', artist: 'Indie Vibes', genre: 'Acoustic', mood: 'Happy', bpm: 110, duration: '2:30', isCleared: true },
-    { id: '7', title: 'Dark Corridors', artist: 'Cinematix', genre: 'Cinematic', mood: 'Suspense', bpm: 60, duration: '4:45', isCleared: true },
-    { id: '8', title: 'Lo-Fi Chill', artist: 'Study Beats', genre: 'Lo-Fi', mood: 'Relaxed', bpm: 70, duration: '3:20', isCleared: true },
-];
+// No hardcoded catalog — tracks are fetched from Firestore licensing collection.
+// In production, populate via LicensingService.getCatalog().
 
-export function CatalogSearchTab() {
+interface CatalogSearchTabProps {
+    catalog?: CatalogTrack[];
+}
+
+export function CatalogSearchTab({ catalog = [] }: CatalogSearchTabProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [activeGenre, setActiveGenre] = useState<string>('All');
@@ -41,7 +37,7 @@ export function CatalogSearchTab() {
 
     // Derived filtered generic data
     const filteredTracks = React.useMemo(() => {
-        let results = MOCK_CATALOG;
+        let results = catalog;
         if (debouncedQuery) {
             const lowerQuery = debouncedQuery.toLowerCase();
             results = results.filter(
@@ -55,9 +51,9 @@ export function CatalogSearchTab() {
             results = results.filter((track) => track.genre === activeGenre);
         }
         return results;
-    }, [debouncedQuery, activeGenre]);
+    }, [debouncedQuery, activeGenre, catalog]);
 
-    const genres = ['All', ...Array.from(new Set(MOCK_CATALOG.map(t => t.genre)))];
+    const genres = ['All', ...Array.from(new Set(catalog.map(t => t.genre)))];
 
     return (
         <div className="flex flex-col h-full gap-6">

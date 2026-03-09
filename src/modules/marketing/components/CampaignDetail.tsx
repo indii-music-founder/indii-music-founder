@@ -107,8 +107,8 @@ const CampaignDetail: React.FC<CampaignDetailProps> = ({ campaign, onBack, onExe
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <StatCard label="Total Posts" value={campaign.posts?.length || 0} icon={<ImageIconComponent size={16} className="text-blue-400" />} />
                     <StatCard label="Duration" value={`${campaign.durationDays} Days`} icon={<ClockIcon size={16} className="text-purple-400" />} />
-                    <StatCard label="Platform Reach" value="24.5K" subtext="+12% vs avg" icon={<CalendarIcon size={16} className="text-pink-400" />} />
-                    <StatCard label="Engagement" value="4.2%" subtext="High Impact" icon={<CheckCircleIcon size={16} className="text-green-400" />} />
+                    <StatCard label="Platform Reach" value="--" subtext="Connect analytics" icon={<CalendarIcon size={16} className="text-pink-400" />} />
+                    <StatCard label="Engagement" value="--" subtext="Connect analytics" icon={<CheckCircleIcon size={16} className="text-green-400" />} />
                 </div>
             </div>
 

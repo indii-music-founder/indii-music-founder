@@ -215,8 +215,6 @@ function PerformanceSnapshotPanel({ campaigns }: { campaigns: CampaignAsset[] })
     const items = [
         { label: 'Active Campaigns', value: active.toString(), icon: Radio, color: 'text-green-400' },
         { label: 'Total Campaigns', value: total.toString(), icon: BarChart3, color: 'text-blue-400' },
-        { label: 'Avg. Engagement', value: '4.2%', icon: MousePointerClick, color: 'text-purple-400' },
-        { label: 'Growth', value: '+18%', icon: TrendingUp, color: 'text-emerald-400' },
     ];
 
     return (
@@ -240,49 +238,30 @@ function PerformanceSnapshotPanel({ campaigns }: { campaigns: CampaignAsset[] })
 }
 
 function AssetLibraryPanel() {
-    const assets = [
-        { name: 'Brand Logo Pack', type: 'Images', count: 12 },
-        { name: 'Press Kit Photos', type: 'Images', count: 8 },
-        { name: 'Social Templates', type: 'Templates', count: 5 },
-        { name: 'Copy Library', type: 'Text', count: 24 },
-    ];
-
+    // Brand assets should be loaded from the user's uploaded assets in Firebase Storage
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Asset Library</h3>
-            <div className="space-y-1">
-                {assets.map((a) => (
-                    <div key={a.name} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                        <Image size={12} className="text-gray-500 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-300 truncate">{a.name}</p>
-                            <p className="text-[10px] text-gray-600">{a.type} · {a.count} items</p>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+                <Image size={16} className="text-gray-600 mb-2" />
+                <p className="text-[11px] text-gray-600">No brand assets uploaded</p>
+                <p className="text-[10px] text-gray-700 mt-0.5">Upload logos, photos, and templates to build your library</p>
             </div>
         </div>
     );
 }
 
 function AISuggestionsPanel() {
-    const suggestions = [
-        'Post Reels on Fri 6PM for max engagement',
-        'Your audience prefers behind-the-scenes content',
-        'Try carousel posts — 2.3x higher save rate',
-    ];
-
+    // AI suggestions should be generated from actual campaign analytics data
     return (
         <div className="rounded-xl bg-dept-marketing/5 border border-dept-marketing/10 p-3">
             <h3 className="text-[10px] font-bold text-dept-marketing uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Sparkles size={10} /> AI Suggestions
             </h3>
-            <div className="space-y-2">
-                {suggestions.map((s, i) => (
-                    <div key={i} className="p-2.5 rounded-lg bg-white/[0.02] text-xs text-gray-300 leading-relaxed">
-                        {s}
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+                <Sparkles size={16} className="text-gray-600 mb-2" />
+                <p className="text-[11px] text-gray-600">No insights yet</p>
+                <p className="text-[10px] text-gray-700 mt-0.5">AI suggestions will appear once you have active campaign data</p>
             </div>
         </div>
     );

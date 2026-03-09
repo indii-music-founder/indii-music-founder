@@ -18,20 +18,9 @@ interface City {
     venues: number;
 }
 
-const CITY_POOL: City[] = [
-    { id: 'nyc', name: 'New York', state: 'NY', lat: 40.71, lng: -74.01, listeners: 1240000, avgTicketPrice: 45, venues: 82 },
-    { id: 'la', name: 'Los Angeles', state: 'CA', lat: 34.05, lng: -118.24, listeners: 980000, avgTicketPrice: 42, venues: 67 },
-    { id: 'chi', name: 'Chicago', state: 'IL', lat: 41.88, lng: -87.63, listeners: 620000, avgTicketPrice: 35, venues: 48 },
-    { id: 'hou', name: 'Houston', state: 'TX', lat: 29.76, lng: -95.37, listeners: 490000, avgTicketPrice: 30, venues: 41 },
-    { id: 'phi', name: 'Philadelphia', state: 'PA', lat: 39.95, lng: -75.17, listeners: 410000, avgTicketPrice: 33, venues: 35 },
-    { id: 'atl', name: 'Atlanta', state: 'GA', lat: 33.75, lng: -84.39, listeners: 560000, avgTicketPrice: 32, venues: 44 },
-    { id: 'mia', name: 'Miami', state: 'FL', lat: 25.77, lng: -80.19, listeners: 380000, avgTicketPrice: 38, venues: 29 },
-    { id: 'sea', name: 'Seattle', state: 'WA', lat: 47.61, lng: -122.33, listeners: 340000, avgTicketPrice: 36, venues: 31 },
-    { id: 'den', name: 'Denver', state: 'CO', lat: 39.74, lng: -104.98, listeners: 280000, avgTicketPrice: 31, venues: 26 },
-    { id: 'aus', name: 'Austin', state: 'TX', lat: 30.27, lng: -97.74, listeners: 310000, avgTicketPrice: 29, venues: 55 },
-    { id: 'nas', name: 'Nashville', state: 'TN', lat: 36.17, lng: -86.78, listeners: 260000, avgTicketPrice: 28, venues: 38 },
-    { id: 'det', name: 'Detroit', state: 'MI', lat: 42.33, lng: -83.05, listeners: 230000, avgTicketPrice: 27, venues: 22 },
-];
+// City data should be loaded from Spotify listener analytics API
+// The route optimizer algorithm will work once real city data is available
+const CITY_POOL: City[] = [];
 
 function haversine(a: City, b: City): number {
     const R = 3958.8; // miles
@@ -73,7 +62,7 @@ function formatListeners(n: number): string {
 }
 
 export function TourRouteOptimizer() {
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set(['nyc', 'chi', 'atl', 'aus']));
+    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
     const [optimized, setOptimized] = useState(false);
 
     const selected = CITY_POOL.filter(c => selectedIds.has(c.id));

@@ -2,6 +2,13 @@ import { db } from '@/services/firebase';
 import { collection, addDoc, serverTimestamp, Timestamp, query, orderBy, limit, getDocs } from 'firebase/firestore';
 import { logger } from '@/utils/logger';
 
+// Item 258: SHA-256 hash using Web Crypto API (Node 22 / browser compatible)
+async function sha256(data: string): Promise<string> {
+    const msgBuffer = new TextEncoder().encode(data);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+    return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 /**
  * Item 244: Immutable Legal Audit Trail
  *
@@ -33,6 +40,9 @@ export interface LegalAuditRecord {
     ipAddress?: string;     // Collected securely via Cloud Function in prod
     userAgent?: string;
     timestamp: Timestamp;
+    // Item 258: Tamper-evident hash chain
+    prevHash?: string;      // SHA-256 of previous entry (forms a linked chain)
+    entryHash?: string;     // SHA-256 of this entry's canonical fields
 }
 
 export class LegalAuditService {
@@ -49,9 +59,16 @@ export class LegalAuditService {
         try {
             const auditRef = collection(db, 'legal_audit_ledger');
 
-            // In a production environment, IP/UserAgent should be captured securely
-            // on the backend via a Callable Cloud Function to prevent spoofing.
-            // This client implementation acts as the interface.
+            // Item 258: Get the hash of the most recent entry to form the chain
+            const lastEntryQuery = query(auditRef, orderBy('timestamp', 'desc'), limit(1));
+            const lastSnapshot = await getDocs(lastEntryQuery);
+            const prevHash = lastSnapshot.empty
+                ? '0'.repeat(64)  // Genesis hash (no previous entry)
+                : (lastSnapshot.docs[0].data() as LegalAuditRecord).entryHash || '0'.repeat(64);
+
+            // Compute this entry's canonical hash (deterministic fields only — not timestamp)
+            const canonicalData = JSON.stringify({ actionType, actorUid, targetId, targetType, prevHash });
+            const entryHash = await sha256(canonicalData);
 
             const docRef = await addDoc(auditRef, {
                 actionType,
@@ -59,8 +76,10 @@ export class LegalAuditService {
                 targetId,
                 targetType,
                 metadata,
-                userAgent: navigator.userAgent,
+                userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'server',
                 timestamp: serverTimestamp(),
+                prevHash,
+                entryHash,
             });
 
             logger.info(`[LegalAudit] Recorded event: ${actionType} on ${targetType} ${targetId}`);

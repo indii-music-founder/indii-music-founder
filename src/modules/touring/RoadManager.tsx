@@ -396,48 +396,28 @@ function VehicleStatusPanel({ vehicleStats, fuelLogistics }: { vehicleStats: any
 }
 
 function RiderQuickPanel() {
-    const items = [
-        { label: 'Sound Check', done: true },
-        { label: 'Backline Confirmed', done: true },
-        { label: 'Catering Ordered', done: false },
-        { label: 'Hotel Booked', done: false },
-    ];
-
+    // Rider checklist items should come from the Rider Checklist module
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Rider Checklist</h3>
-            <div className="space-y-1.5">
-                {items.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 px-2 py-1.5">
-                        <CheckSquare size={12} className={item.done ? 'text-green-400' : 'text-gray-600'} />
-                        <span className={`text-xs ${item.done ? 'text-gray-300 line-through' : 'text-gray-400'}`}>{item.label}</span>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-3 text-center">
+                <CheckSquare size={14} className="text-gray-600 mb-1.5" />
+                <p className="text-[10px] text-gray-600">No active rider</p>
+                <p className="text-[10px] text-gray-700 mt-0.5">Create a rider in the Rider tab</p>
             </div>
         </div>
     );
 }
 
 function EmergencyContactsPanel() {
-    const contacts = [
-        { name: 'Tour Manager', phone: '(555) 123-4567' },
-        { name: 'Venue Contact', phone: '(555) 987-6543' },
-        { name: 'Roadside Assist', phone: '1-800-222-4357' },
-    ];
-
+    // Emergency contacts should be entered by the user for each tour
     return (
         <div className="rounded-xl bg-red-500/5 border border-red-500/10 p-3">
             <h3 className="text-[10px] font-bold text-red-400 uppercase tracking-widest mb-3 px-1">Emergency</h3>
-            <div className="space-y-2">
-                {contacts.map((c) => (
-                    <div key={c.name} className="flex items-center gap-2 px-2 py-1.5">
-                        <Phone size={10} className="text-red-400 flex-shrink-0" />
-                        <div>
-                            <p className="text-xs text-gray-300">{c.name}</p>
-                            <p className="text-[10px] text-gray-500">{c.phone}</p>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-3 text-center">
+                <Phone size={14} className="text-red-400/50 mb-1.5" />
+                <p className="text-[10px] text-gray-600">No contacts saved</p>
+                <p className="text-[10px] text-gray-700 mt-0.5">Add emergency numbers in tour settings</p>
             </div>
         </div>
     );

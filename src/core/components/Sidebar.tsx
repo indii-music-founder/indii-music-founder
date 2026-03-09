@@ -9,8 +9,6 @@ import { Scale, Music, Megaphone, Layout, Network, Film, Book, Briefcase, Users,
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ThemeToggle } from '@/core/components/ui/ThemeToggle';
 import { BiometricToggle } from '@/core/components/ui/BiometricToggle';
-import { SidecarStatus } from './SidecarStatus';
-import { SyncStatus } from './SyncStatus';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
@@ -217,8 +215,6 @@ export default function Sidebar() {
             <div className={`p-4 border-t border-white/5 mt-auto flex flex-col gap-2 ${!isSidebarOpen ? 'items-center' : ''}`}>
                 {!isSidebarOpen && (
                     <div className="mb-2 w-full flex flex-col gap-2">
-                        <SidecarStatus collapsed={true} />
-                        <SyncStatus collapsed={true} />
                     </div>
                 )}
                 <div className={`flex ${!isSidebarOpen ? 'flex-col justify-center' : 'items-center'} gap-3`}>
@@ -263,8 +259,6 @@ export default function Sidebar() {
                             <BiometricToggle />
                         </div>
                         <div className="px-1 pt-2 border-t border-white/5 flex flex-col gap-2">
-                            <SidecarStatus collapsed={!isSidebarOpen} />
-                            <SyncStatus />
                         </div>
 
 

@@ -4,15 +4,49 @@ import { useShallow } from 'zustand/react/shallow';
 import { motion, AnimatePresence } from 'motion/react';
 import { PromptArea } from './command-bar/PromptArea';
 import { cn } from '@/lib/utils';
+import { getDepartmentCssVar } from '@/core/theme/moduleColors';
+
+/**
+ * Compute Framer Motion position values for left/center/right docking.
+ * - 'left'   → 32px from the left edge
+ * - 'center' → centered via 50% + translateX(-50%)
+ * - 'right'  → 32px from the right edge (computed from viewport width)
+ */
+const getPositionStyle = (
+    position: 'left' | 'center' | 'right',
+    isCollapsed: boolean
+) => {
+    const barWidth = isCollapsed ? 48 : 672;
+
+    switch (position) {
+        case 'left':
+            return { left: 32, right: 'auto' as const, x: 0 };
+        case 'right':
+            // Position from the right — use CSS `right` via className, but for Framer 
+            // Motion animation we need `left` in pixels. We'll use a calc approach.
+            return { left: `calc(100vw - ${barWidth + 32}px)`, right: 'auto' as const, x: 0 };
+        case 'center':
+        default:
+            return { left: '50%', right: 'auto' as const, x: '-50%' };
+    }
+};
 
 function CommandBar() {
-    const { isCommandBarDetached, isCommandBarCollapsed, setCommandBarCollapsed, isAgentOpen, currentModule } = useStore(
+    const {
+        isCommandBarDetached,
+        isCommandBarCollapsed,
+        setCommandBarCollapsed,
+        isAgentOpen,
+        currentModule,
+        commandBarPosition
+    } = useStore(
         useShallow(state => ({
             isCommandBarDetached: state.isCommandBarDetached,
             isCommandBarCollapsed: state.isCommandBarCollapsed,
             setCommandBarCollapsed: state.setCommandBarCollapsed,
             isAgentOpen: state.isAgentOpen,
             currentModule: state.currentModule,
+            commandBarPosition: state.commandBarPosition,
         }))
     );
 
@@ -21,28 +55,27 @@ function CommandBar() {
     if (currentModule === 'agent' || isAgentOpen) return null;
 
     const shouldShow = true;
+    const posStyle = getPositionStyle(commandBarPosition, isCommandBarCollapsed);
+
+    // Module-aware orb color: use CSS variable from the department color system
+    const orbColor = getDepartmentCssVar(currentModule);
 
     // Transition variants for different states
     const variants = {
         docked: {
             opacity: 1,
             scale: 1,
-            left: '50%',
             bottom: '2rem',
             top: 'auto',
-            x: '-50%',
+            left: posStyle.left,
+            x: posStyle.x,
             y: 0,
-            width: isCommandBarCollapsed ? 64 : '100%',
-            maxWidth: isCommandBarCollapsed ? 48 : 672,
+            width: isCommandBarCollapsed ? 48 : 672,
         },
         detached: {
             opacity: 1,
             scale: 1,
-            // Only set position if we're not currently dragging or if it's the first time detaching
-            // But usually we just want it to stay where it is.
-            // Using a simple check to see if we should reset it
-            width: isCommandBarCollapsed ? 48 : '100%',
-            maxWidth: isCommandBarCollapsed ? 48 : 672,
+            width: isCommandBarCollapsed ? 48 : 672,
         }
     };
 
@@ -55,18 +88,27 @@ function CommandBar() {
                     variants={variants}
                     animate={isCommandBarDetached ? "detached" : "docked"}
                     exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    transition={{
+                        left: { type: 'spring', stiffness: 300, damping: 30 },
+                        x: { type: 'spring', stiffness: 300, damping: 30 },
+                        width: { type: 'spring', stiffness: 300, damping: 30 },
+                        maxWidth: { type: 'spring', stiffness: 300, damping: 30 },
+                        default: { duration: 0.2 }
+                    }}
                     drag={isCommandBarDetached}
                     dragMomentum={false}
                     dragElastic={0.1}
-                    dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }} // Relative to initial position
+                    dragConstraints={{ left: -500, right: 500, top: -500, bottom: 500 }}
                     className={cn(
                         "fixed z-[500] flex items-center justify-center",
-                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8 left-1/2"
+                        isCommandBarDetached ? "cursor-move top-[80%] left-1/2" : "bottom-8"
                     )}
                 >
                     <div className={cn(
                         "pointer-events-auto transition-all duration-300",
-                        isCommandBarCollapsed ? "w-16 h-16 flex items-center justify-center" : "w-full"
+                        isCommandBarCollapsed
+                            ? "w-12 h-12 flex items-center justify-center"
+                            : "w-full max-w-[calc(100vw-4rem)]"
                     )}>
                         {isCommandBarCollapsed ? (
                             <motion.button
@@ -76,10 +118,18 @@ function CommandBar() {
                                     e.stopPropagation();
                                     setCommandBarCollapsed(false);
                                 }}
-                                className="w-12 h-12 rounded-full bg-purple-600 shadow-[0_0_20px_rgba(168,85,247,0.5)] flex items-center justify-center border border-purple-400/50 cursor-pointer"
+                                className="w-12 h-12 rounded-full flex items-center justify-center border cursor-pointer"
+                                style={{
+                                    backgroundColor: `color-mix(in srgb, ${orbColor} 70%, black)`,
+                                    borderColor: `color-mix(in srgb, ${orbColor} 50%, transparent)`,
+                                    boxShadow: `0 0 20px color-mix(in srgb, ${orbColor} 50%, transparent)`,
+                                }}
                                 aria-label="Expand Chat"
                             >
-                                <div className="w-3 h-3 rounded-full bg-green-400 animate-pulse" />
+                                <div
+                                    className="w-3 h-3 rounded-full animate-pulse"
+                                    style={{ backgroundColor: `color-mix(in srgb, ${orbColor} 80%, white)` }}
+                                />
                             </motion.button>
                         ) : (
                             <PromptArea />

@@ -29,50 +29,8 @@ interface LeaderboardEntry {
     totalViews: string;
 }
 
-const MOCK_TRACKS = ['Midnight Frequencies', 'Static Love', 'Signal Loss', 'New Track'];
-
-const MOCK_BOUNTIES: Bounty[] = [
-    {
-        id: 'b001',
-        track: 'Midnight Frequencies',
-        reward: 50,
-        action: 'TikTok',
-        influencer: '@neonvibez',
-        link: 'https://tiktok.com/@neonvibez/video/123',
-        status: 'verified',
-        refCode: 'REF-NV92K',
-        views: 84200,
-    },
-    {
-        id: 'b002',
-        track: 'Static Love',
-        reward: 75,
-        action: 'IG Reel',
-        influencer: '@wavyworld',
-        link: '',
-        status: 'pending',
-        refCode: 'REF-WW14X',
-        views: 0,
-    },
-    {
-        id: 'b003',
-        track: 'Signal Loss',
-        reward: 100,
-        action: 'YouTube Short',
-        influencer: '@lofi.culture',
-        link: 'https://youtube.com/shorts/abc',
-        status: 'paid',
-        refCode: 'REF-LC77P',
-        views: 210500,
-    },
-];
-
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-    { name: '@neonvibez', bounties: 4, totalEarned: 230, totalViews: '342K' },
-    { name: '@lofi.culture', bounties: 3, totalEarned: 300, totalViews: '1.1M' },
-    { name: '@wavyworld', bounties: 2, totalEarned: 125, totalViews: '88K' },
-    { name: '@soulstatic', bounties: 1, totalEarned: 50, totalViews: '29K' },
-];
+// No hardcoded data — bounties come from InfluencerBountyService/Firestore.
+// Tracks and leaderboard are derived dynamically from bounty data.
 
 const STATUS_STYLES: Record<BountyStatus, string> = {
     pending: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
@@ -82,14 +40,39 @@ const STATUS_STYLES: Record<BountyStatus, string> = {
 
 
 export default function InfluencerBountyBoard() {
-    const [bounties, setBounties] = useState<Bounty[]>(MOCK_BOUNTIES);
-    const [selectedTrack, setSelectedTrack] = useState(MOCK_TRACKS[0]);
+    const [bounties, setBounties] = useState<Bounty[]>([]);
+    const [trackInput, setTrackInput] = useState('');
     const [reward, setReward] = useState(50);
     const [action, setAction] = useState<ActionType>('TikTok');
     const [influencerName, setInfluencerName] = useState('');
     const [copiedCode, setCopiedCode] = useState<string | null>(null);
     const [isCreating, setIsCreating] = useState(false);
     const toast = useToast();
+
+    // Derive unique tracks from existing bounties
+    const availableTracks = Array.from(new Set(bounties.map(b => b.track))).filter(Boolean);
+    const selectedTrack = trackInput || availableTracks[0] || '';
+
+    // Derive leaderboard dynamically from bounties
+    const leaderboard = React.useMemo(() => {
+        const byInfluencer = new Map<string, { bounties: number; totalEarned: number; totalViews: number }>();
+        bounties.forEach(b => {
+            const existing = byInfluencer.get(b.influencer) || { bounties: 0, totalEarned: 0, totalViews: 0 };
+            existing.bounties++;
+            if (b.status === 'paid') existing.totalEarned += b.reward;
+            existing.totalViews += b.views;
+            byInfluencer.set(b.influencer, existing);
+        });
+        return Array.from(byInfluencer.entries())
+            .map(([name, data]) => ({
+                name,
+                bounties: data.bounties,
+                totalEarned: data.totalEarned,
+                totalViews: data.totalViews >= 1000000 ? `${(data.totalViews / 1000000).toFixed(1)}M` : data.totalViews >= 1000 ? `${(data.totalViews / 1000).toFixed(0)}K` : String(data.totalViews),
+            }))
+            .sort((a, b) => b.totalEarned - a.totalEarned)
+            .slice(0, 10);
+    }, [bounties]);
 
     const handleCreateBounty = async () => {
         if (!influencerName) return;
@@ -155,11 +138,24 @@ export default function InfluencerBountyBoard() {
                         </label>
                         <select
                             value={selectedTrack}
-                            onChange={e => setSelectedTrack(e.target.value)}
+                            onChange={e => setTrackInput(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm text-white outline-none focus:border-dept-marketing/50 appearance-none cursor-pointer"
                         >
-                            {MOCK_TRACKS.map(t => <option key={t} value={t} className="bg-[#111]">{t}</option>)}
+                            {availableTracks.length > 0 ? (
+                                availableTracks.map(t => <option key={t} value={t} className="bg-[#111]">{t}</option>)
+                            ) : (
+                                <option value="" className="bg-[#111]">Enter track name below</option>
+                            )}
                         </select>
+                        {availableTracks.length === 0 && (
+                            <input
+                                type="text"
+                                value={trackInput}
+                                onChange={e => setTrackInput(e.target.value)}
+                                placeholder="Track name"
+                                className="w-full mt-1 px-3 py-2 bg-white/5 border border-white/10 rounded-lg text-sm text-white placeholder-gray-600 focus:border-dept-marketing/50 outline-none"
+                            />
+                        )}
                     </div>
 
                     {/* Reward */}
@@ -190,8 +186,8 @@ export default function InfluencerBountyBoard() {
                                     key={a}
                                     onClick={() => setAction(a)}
                                     className={`flex-1 py-1.5 rounded-lg text-xs font-medium transition-all ${action === a
-                                            ? 'bg-dept-marketing/20 border border-dept-marketing/40 text-dept-marketing'
-                                            : 'bg-white/5 border border-white/10 text-gray-500 hover:border-white/20'
+                                        ? 'bg-dept-marketing/20 border border-dept-marketing/40 text-dept-marketing'
+                                        : 'bg-white/5 border border-white/10 text-gray-500 hover:border-white/20'
                                         }`}
                                 >
                                     {a}
@@ -275,6 +271,14 @@ export default function InfluencerBountyBoard() {
                         </div>
                     ))}
                 </div>
+
+                {bounties.length === 0 && (
+                    <div className="py-12 text-center">
+                        <Trophy size={28} className="mx-auto text-gray-700 mb-3" />
+                        <p className="text-sm text-gray-500">No bounties created yet.</p>
+                        <p className="text-xs text-gray-600 mt-1">Use the form above to create your first influencer bounty.</p>
+                    </div>
+                )}
             </div>
 
             {/* Leaderboard */}
@@ -294,7 +298,7 @@ export default function InfluencerBountyBoard() {
                             </tr>
                         </thead>
                         <tbody>
-                            {MOCK_LEADERBOARD.map((e, i) => (
+                            {leaderboard.length > 0 ? leaderboard.map((e, i) => (
                                 <tr key={i} className="border-b border-white/5 last:border-0 hover:bg-white/[0.02] transition-colors">
                                     <td className="px-3 py-2.5 text-gray-600 font-bold">#{i + 1}</td>
                                     <td className="px-3 py-2.5 text-white font-medium">{e.name}</td>
@@ -304,7 +308,11 @@ export default function InfluencerBountyBoard() {
                                     </td>
                                     <td className="px-3 py-2.5 text-green-400 font-semibold">${e.totalEarned}</td>
                                 </tr>
-                            ))}
+                            )) : (
+                                <tr>
+                                    <td colSpan={5} className="px-3 py-6 text-center text-gray-600 text-xs">No influencer data yet. Create bounties to populate the leaderboard.</td>
+                                </tr>
+                            )}
                         </tbody>
                     </table>
                 </div>

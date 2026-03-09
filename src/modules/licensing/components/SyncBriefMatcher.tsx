@@ -32,43 +32,12 @@ interface CatalogTrack {
     isrc: string;
 }
 
-const BRIEFS: SyncBrief[] = [
-    {
-        id: 'b1', project: 'Untitled Netflix Drama — S2', type: 'TV', network: 'Netflix',
-        deadline: '2026-03-20', bpmMin: 60, bpmMax: 90, moods: ['Cinematic', 'Melancholic', 'Dark'],
-        budget: '$8,000–$15,000', description: 'Closing scene of final episode. Emotional and sparse. Instrumental preferred.',
-    },
-    {
-        id: 'b2', project: 'Nike Global Campaign — Spring 26', type: 'Ad', network: 'Nike',
-        deadline: '2026-04-01', bpmMin: 110, bpmMax: 140, moods: ['Upbeat', 'Energetic', 'Triumphant'],
-        budget: '$25,000–$50,000', description: 'Athlete montage. High energy, driving beat, inspirational feel.',
-    },
-    {
-        id: 'b3', project: 'Cyberpunk Indie Game — OST', type: 'Game', network: 'Devolver Digital',
-        deadline: '2026-05-15', bpmMin: 90, bpmMax: 130, moods: ['Dark', 'Energetic', 'Cinematic'],
-        budget: '$3,000–$8,000', description: 'Background ambiance for neon cityscape. Synth-heavy, atmospheric.',
-    },
-    {
-        id: 'b4', project: 'Apple — Valentine\'s Day Spot', type: 'Ad', network: 'Apple',
-        deadline: '2026-02-01', bpmMin: 70, bpmMax: 100, moods: ['Romantic', 'Chill', 'Cinematic'],
-        budget: '$40,000+', description: 'Soft, intimate, minimal production. Vocals welcome.',
-    },
-    {
-        id: 'b5', project: 'Summer Blockbuster Trailer', type: 'Trailer', network: 'WB Pictures',
-        deadline: '2026-03-30', bpmMin: 120, bpmMax: 160, moods: ['Triumphant', 'Energetic', 'Cinematic'],
-        budget: '$12,000–$20,000', description: 'Action-packed, orchestral build, massive drop.',
-    },
-];
+// Sync briefs should be loaded from the licensing API/inbox
+// The matching algorithm will work once real briefs and catalog tracks are available
+const BRIEFS: SyncBrief[] = [];
 
-const CATALOG: CatalogTrack[] = [
-    { id: 't1', title: 'Dusk Protocol', bpm: 78, moods: ['Cinematic', 'Melancholic', 'Dark'], duration: '3:42', isrc: 'USRC12345001' },
-    { id: 't2', title: 'Elevate', bpm: 124, moods: ['Upbeat', 'Energetic', 'Triumphant'], duration: '2:58', isrc: 'USRC12345002' },
-    { id: 't3', title: 'Neon Drift', bpm: 108, moods: ['Dark', 'Chill', 'Cinematic'], duration: '4:15', isrc: 'USRC12345003' },
-    { id: 't4', title: 'Tender Signal', bpm: 84, moods: ['Romantic', 'Chill', 'Melancholic'], duration: '3:27', isrc: 'USRC12345004' },
-    { id: 't5', title: 'Override', bpm: 142, moods: ['Energetic', 'Triumphant', 'Dark'], duration: '2:44', isrc: 'USRC12345005' },
-    { id: 't6', title: 'Still Water', bpm: 72, moods: ['Chill', 'Romantic', 'Cinematic'], duration: '5:01', isrc: 'USRC12345006' },
-    { id: 't7', title: 'Pulse City', bpm: 118, moods: ['Upbeat', 'Energetic', 'Cinematic'], duration: '3:10', isrc: 'USRC12345007' },
-];
+// Catalog tracks should be loaded from the user's catalog in Firestore
+const CATALOG: CatalogTrack[] = [];
 
 function matchScore(brief: SyncBrief, track: CatalogTrack): number {
     // BPM fit: 1.0 if in range, decays outside

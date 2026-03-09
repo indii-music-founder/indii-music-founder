@@ -19,30 +19,7 @@ interface Campaign {
 
 const BUDGET_PRESETS = [5, 10, 25, 50];
 
-const MOCK_CAMPAIGNS: Campaign[] = [
-    {
-        id: 'camp-001',
-        platform: 'Meta',
-        budget: 10,
-        genre: 'Hip-Hop',
-        ageRange: '18-24',
-        location: 'United States',
-        status: 'running',
-        reach: 12400,
-        spend: 47.20,
-    },
-    {
-        id: 'camp-002',
-        platform: 'TikTok Ads',
-        budget: 25,
-        genre: 'R&B',
-        ageRange: '18-34',
-        location: 'Global',
-        status: 'paused',
-        reach: 31800,
-        spend: 112.50,
-    },
-];
+// No hardcoded campaigns — data comes from user interaction or ad platform API.
 
 const GENRES = ['Hip-Hop', 'R&B', 'Pop', 'Electronic', 'Alternative', 'Afrobeats', 'Latin', 'Rock'];
 const AGE_RANGES = ['13-17', '18-24', '25-34', '35-44', '45-54', '55+'];
@@ -55,7 +32,7 @@ export default function AdBuyingPanel() {
     const [ageRange, setAgeRange] = useState('18-24');
     const [location, setLocation] = useState('United States');
     const [deploying, setDeploying] = useState(false);
-    const [campaigns, setCampaigns] = useState<Campaign[]>(MOCK_CAMPAIGNS);
+    const [campaigns, setCampaigns] = useState<Campaign[]>([]);
     const [deployResult, setDeployResult] = useState<{ id: string; reach: number } | null>(null);
 
     const handleDeploy = () => {
@@ -271,6 +248,13 @@ export default function AdBuyingPanel() {
                             </button>
                         </div>
                     ))}
+                    {campaigns.length === 0 && (
+                        <div className="py-12 text-center bg-white/[0.02] border border-white/5 rounded-xl">
+                            <Target size={28} className="mx-auto text-gray-700 mb-3" />
+                            <p className="text-sm text-gray-500">No campaigns running yet.</p>
+                            <p className="text-xs text-gray-600 mt-1">Configure your targeting above and deploy your first campaign.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
