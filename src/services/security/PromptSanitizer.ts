@@ -66,7 +66,7 @@ export class PromptSanitizer {
     static sanitize(prompt: string): SanitizeResult {
         const reasons: string[] = [];
         let sanitized = prompt;
-        let blocked = false;
+        const blocked = false;
 
         // 1. Check for hard-block patterns (return immediately, don't process further)
         for (const { pattern, label } of BLOCK_PATTERNS) {
@@ -82,6 +82,7 @@ export class PromptSanitizer {
 
         // 2. Normalize control characters (strip null bytes, DEL, non-printable)
         const originalLength = sanitized.length;
+        // eslint-disable-next-line no-control-regex
         sanitized = sanitized.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
         if (sanitized.length !== originalLength) {
             reasons.push('Stripped control characters');

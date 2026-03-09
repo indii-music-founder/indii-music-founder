@@ -42,8 +42,11 @@ export {
     pandadocGetSigningLink,
 } from './legal/pandadocProxy';
 
-// Legal Functions: PandaDoc Webhook (contract signed → career event)
+// Legal Functions: PandaDoc Webhook (contract signed → career event → auto-pipeline)
 export { pandadocWebhook } from './legal/pandadocWebhook';
+
+// Publishing Functions: ISWC Mapper (PandaDoc → composition registration)
+export { processISWCMapping } from './publishing/iswcMapper';
 
 // Social Functions (Item 226: Scheduled Post Background Delivery)
 export { deliverScheduledPosts } from './social/deliverScheduledPosts';
