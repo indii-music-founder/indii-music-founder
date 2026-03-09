@@ -1,7 +1,6 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Wrapper, Status } from "@googlemaps/react-wrapper";
-import { Loader2, MapPinOff } from 'lucide-react';
-import { useToast } from '@/core/context/ToastContext';
+import { Loader2, MapPinOff, Map as MapIcon } from 'lucide-react';
 
 import { MapMarker } from '../types';
 
@@ -11,108 +10,195 @@ interface TourMapProps {
     center?: { lat: number; lng: number };
     rangeRadiusMiles?: number;
 }
-// Internal Map Component that has access to the loaded Google Maps API
-const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], center, rangeRadiusMiles }) => {
+
+// ─── Graceful Map Unavailable Fallback ─────────────────────────────────────────
+const MapUnavailableFallback: React.FC<{ reason: 'missing_key' | 'auth_failure' | 'load_failure' }> = ({ reason }) => {
+    const messages: Record<string, { title: string; detail: string }> = {
+        missing_key: {
+            title: 'Map Visualization Disabled',
+            detail: 'Add VITE_GOOGLE_MAPS_API_KEY to your environment to enable real-time satellite routing.',
+        },
+        auth_failure: {
+            title: 'Map Temporarily Unavailable',
+            detail: 'The Google Maps API key needs to be configured. Tour planning features remain fully operational.',
+        },
+        load_failure: {
+            title: 'Map Could Not Load',
+            detail: 'Google Maps failed to initialize. Check your API key and ensure the Maps JavaScript API is enabled.',
+        },
+    };
+
+    const msg = messages[reason] || messages.auth_failure;
+
+    return (
+        <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-8 text-center relative overflow-hidden group">
+            {/* Abstract grid background for pro look */}
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]" />
+
+            {/* Decorative map silhouette */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none">
+                <MapIcon size={320} strokeWidth={0.5} />
+            </div>
+
+            <MapPinOff size={48} className="text-gray-700 relative z-10 group-hover:text-yellow-500/50 transition-colors duration-500" />
+            <div className="relative z-10">
+                <h3 className="text-lg font-bold text-gray-300">{msg.title}</h3>
+                <p className="text-xs font-mono mt-2 max-w-xs mx-auto text-gray-500">
+                    {msg.detail}
+                </p>
+            </div>
+
+            {/* Subtle animated pulse ring */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div className="w-24 h-24 rounded-full border border-gray-800 animate-ping opacity-10" />
+            </div>
+        </div>
+    );
+};
+
+// ─── Internal Map Component ────────────────────────────────────────────────────
+const MapComponent: React.FC<TourMapProps & { onAuthFailure: () => void }> = ({ locations = [], markers = [], center, rangeRadiusMiles, onAuthFailure }) => {
     const ref = useRef<HTMLDivElement>(null);
     const [map, setMap] = useState<google.maps.Map>();
     const markersRef = useRef<google.maps.Marker[]>([]);
 
+    // Detect Google Maps auth failure via global callback + MutationObserver
+    useEffect(() => {
+        // Google Maps fires this global function when API key auth fails
+        (window as any).gm_authFailure = () => {
+            console.warn('[TourMap] Google Maps authentication failure detected');
+            onAuthFailure();
+        };
+
+        // Also watch for Google's injected error overlay div
+        const observer = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                for (const node of Array.from(mutation.addedNodes)) {
+                    if (node instanceof HTMLElement) {
+                        // Google Maps injects a dismissible error div with specific styles
+                        const errorDiv = node.querySelector?.('.dismissButton') ||
+                            node.querySelector?.('[style*="background-color: white"]');
+                        if (errorDiv || node.textContent?.includes('This page didn\'t load Google Maps correctly')) {
+                            console.warn('[TourMap] Google Maps error overlay detected, hiding it');
+                            node.style.display = 'none';
+                            onAuthFailure();
+                            return;
+                        }
+                    }
+                }
+            }
+        });
+
+        observer.observe(document.body, { childList: true, subtree: true });
+
+        return () => {
+            delete (window as any).gm_authFailure;
+            observer.disconnect();
+        };
+    }, [onAuthFailure]);
+
     // Initialize Map
     useEffect(() => {
         if (ref.current && !map) {
-            const initialMap = new google.maps.Map(ref.current, {
-                center: center || { lat: 39.8283, lng: -98.5795 }, // Center of USA or provided center
-                zoom: 4,
-                styles: [ // Dark Mode Styles
-                    { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
-                    { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
-                    {
-                        featureType: "administrative.locality",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "poi",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "poi.park",
-                        elementType: "geometry",
-                        stylers: [{ color: "#263c3f" }],
-                    },
-                    {
-                        featureType: "poi.park",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#6b9a76" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry",
-                        stylers: [{ color: "#38414e" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#212a37" }],
-                    },
-                    {
-                        featureType: "road",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#9ca5b3" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry",
-                        stylers: [{ color: "#746855" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "geometry.stroke",
-                        stylers: [{ color: "#1f2835" }],
-                    },
-                    {
-                        featureType: "road.highway",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#f3d19c" }],
-                    },
-                    {
-                        featureType: "transit",
-                        elementType: "geometry",
-                        stylers: [{ color: "#2f3948" }],
-                    },
-                    {
-                        featureType: "transit.station",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#d59563" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "geometry",
-                        stylers: [{ color: "#17263c" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.fill",
-                        stylers: [{ color: "#515c6d" }],
-                    },
-                    {
-                        featureType: "water",
-                        elementType: "labels.text.stroke",
-                        stylers: [{ color: "#17263c" }],
-                    },
-                ],
-                disableDefaultUI: true, // Clean look
-                zoomControl: true, // Allow zoom
-                backgroundColor: '#0d1117'
-            });
-            setMap(initialMap);
+            try {
+                const initialMap = new google.maps.Map(ref.current, {
+                    center: center || { lat: 39.8283, lng: -98.5795 },
+                    zoom: 4,
+                    styles: [
+                        { elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+                        { elementType: "labels.text.stroke", stylers: [{ color: "#242f3e" }] },
+                        { elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+                        {
+                            featureType: "administrative.locality",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#d59563" }],
+                        },
+                        {
+                            featureType: "poi",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#d59563" }],
+                        },
+                        {
+                            featureType: "poi.park",
+                            elementType: "geometry",
+                            stylers: [{ color: "#263c3f" }],
+                        },
+                        {
+                            featureType: "poi.park",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#6b9a76" }],
+                        },
+                        {
+                            featureType: "road",
+                            elementType: "geometry",
+                            stylers: [{ color: "#38414e" }],
+                        },
+                        {
+                            featureType: "road",
+                            elementType: "geometry.stroke",
+                            stylers: [{ color: "#212a37" }],
+                        },
+                        {
+                            featureType: "road",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#9ca5b3" }],
+                        },
+                        {
+                            featureType: "road.highway",
+                            elementType: "geometry",
+                            stylers: [{ color: "#746855" }],
+                        },
+                        {
+                            featureType: "road.highway",
+                            elementType: "geometry.stroke",
+                            stylers: [{ color: "#1f2835" }],
+                        },
+                        {
+                            featureType: "road.highway",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#f3d19c" }],
+                        },
+                        {
+                            featureType: "transit",
+                            elementType: "geometry",
+                            stylers: [{ color: "#2f3948" }],
+                        },
+                        {
+                            featureType: "transit.station",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#d59563" }],
+                        },
+                        {
+                            featureType: "water",
+                            elementType: "geometry",
+                            stylers: [{ color: "#17263c" }],
+                        },
+                        {
+                            featureType: "water",
+                            elementType: "labels.text.fill",
+                            stylers: [{ color: "#515c6d" }],
+                        },
+                        {
+                            featureType: "water",
+                            elementType: "labels.text.stroke",
+                            stylers: [{ color: "#17263c" }],
+                        },
+                    ],
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    backgroundColor: '#0d1117'
+                });
+                setMap(initialMap);
+            } catch (err) {
+                console.error('[TourMap] Failed to initialize Google Maps:', err);
+                onAuthFailure();
+            }
         } else if (map && center) {
             map.panTo(center);
-            map.setZoom(14); // Closer zoom if focused
+            map.setZoom(14);
         }
-    }, [ref, map, center]);
+    }, [ref, map, center, onAuthFailure]);
 
     // Update Markers and Range Ring
     useEffect(() => {
@@ -122,25 +208,16 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
         markersRef.current.forEach(marker => marker.setMap(null));
         markersRef.current = [];
 
-        // Clear existing circles (if we were tracking them, but for now we'll just clear the specific one we add or re-render)
-        // Ideally we track circles in a ref too, improving this:
-        // const circlesRef = useRef<google.maps.Circle[]>([]);
-
         const bounds = new google.maps.LatLngBounds();
 
         // 1. Handle Pre-defined Markers (Performance Optimization)
         if (markers && markers.length > 0) {
             markers.forEach((m: MapMarker) => {
-                // Determine icon based on type
-                // Google Maps default markers are fine for now, but we'd ideally use SVGs
-                // We'll use color coding via standard charts API or built-in symbols
-
                 const marker = new google.maps.Marker({
                     position: m.position,
                     map,
                     title: m.title,
                     animation: google.maps.Animation.DROP,
-                    // Basic separation of types
                     icon: m.type === 'current' ? {
                         path: google.maps.SymbolPath.CIRCLE,
                         scale: 8,
@@ -149,32 +226,27 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
                         strokeColor: "white",
                         strokeWeight: 2,
                     } : m.type === 'gas' ? {
-                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z", // Simple pin path or use default
+                        path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z",
                         fillColor: "#22c55e",
                         fillOpacity: 1,
                         strokeWeight: 1,
                         strokeColor: "#ffffff",
                         scale: 1.5,
                         anchor: new google.maps.Point(12, 24),
-                        // Note: Path-based icons can be tricky without SVG path data.
-                        // Falling back to standard markers with distinct colors if path fails visually.
-                        // For reliability in this iteration:
                     } : undefined,
-                    // Use standard color markers if SVG path is complex
-                    // label: m.type === 'gas' ? { text: '⛽', color: 'white' } : undefined
                 });
 
                 // Range Ring Logic
                 if (m.type === 'current' && rangeRadiusMiles) {
                     new google.maps.Circle({
-                        strokeColor: "#F59E0B", // Amber for logistics
+                        strokeColor: "#F59E0B",
                         strokeOpacity: 0.8,
                         strokeWeight: 2,
                         fillColor: "#F59E0B",
                         fillOpacity: 0.15,
                         map,
                         center: m.position,
-                        radius: rangeRadiusMiles * 1609.34 // Convert miles to meters
+                        radius: rangeRadiusMiles * 1609.34
                     });
                 }
 
@@ -192,12 +264,9 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
         }
 
         // 2. Handle String Locations (Fallback / Touring Mode)
-        // Only run if we don't have rich markers OR if explicitly mixed (rare case)
-        // Prioritize markers for bounds if present.
         if (locations && locations.length > 0) {
             const geocoder = new google.maps.Geocoder();
 
-            // Promise.all to handle multiple async geocodes
             const geocodeProms = locations.map((location, index) => {
                 return new Promise<void>((resolve) => {
                     geocoder.geocode({ address: location }, (results, status) => {
@@ -221,11 +290,6 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
                 });
             });
 
-            // Wait for all, then fit bounds
-            // Note: This mixes async and sync bounds updates.
-            // If we have strict markers, we fit bounds immediately below.
-            // If we depend on geocoding, we might need to wait.
-            // For now, simple "if no markers, wait for location" approach.
             if (markers.length === 0) {
                 Promise.all(geocodeProms).then(() => {
                     if (!bounds.isEmpty()) {
@@ -239,7 +303,6 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
         // Immediate FitBounds for Markers
         if (markers.length > 0 && !bounds.isEmpty()) {
             map.fitBounds(bounds);
-            // Don't zoom in *too* close for a single point unless it's user location
             if (markers.length === 1 && markers[0].type === 'current') {
                 map.setZoom(15);
             } else if (markers.length === 1) {
@@ -252,53 +315,39 @@ const MapComponent: React.FC<TourMapProps> = ({ locations = [], markers = [], ce
     return <div ref={ref} className="w-full h-full rounded-xl overflow-hidden" />;
 };
 
-const renderMapStatus = (status: Status) => {
-    if (status === Status.FAILURE) {
-        return (
-            <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-8 text-center">
-                <MapPinOff size={48} className="text-gray-700" />
-                <div>
-                    <h3 className="text-lg font-bold text-gray-300">Map Unavailable</h3>
-                    <p className="text-xs font-mono mt-2 max-w-xs">
-                        Google Maps API Key is missing or invalid.
-                        Please check your environment configuration.
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    return (
-        <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
-            <Loader2 className="animate-spin text-blue-500" size={32} />
-        </div>
-    );
-};
-
+// ─── TourMap Wrapper ───────────────────────────────────────────────────────────
 export const TourMap: React.FC<TourMapProps> = (props) => {
     const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+    const [authFailed, setAuthFailed] = useState(false);
 
+    const handleAuthFailure = useCallback(() => {
+        setAuthFailed(true);
+    }, []);
+
+    // No API key at all — show clean fallback
     if (!apiKey) {
-        // Graceful fallback if no API key is present in env
-        return (
-            <div className="w-full h-full bg-[#161b22] flex flex-col items-center justify-center rounded-xl border border-gray-800 text-gray-500 gap-4 p-8 text-center relative overflow-hidden group">
-                {/* Abstract grid background to look "pro" even without map */}
-                <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent to-[#161b22]" />
+        return <MapUnavailableFallback reason="missing_key" />;
+    }
 
-                <MapPinOff size={48} className="text-gray-700 relative z-10 group-hover:text-blue-500/50 transition-colors" />
-                <div className="relative z-10">
-                    <h3 className="text-lg font-bold text-gray-300">Map Visualization Disabled</h3>
-                    <p className="text-xs font-mono mt-2 max-w-xs mx-auto">
-                        Add `VITE_GOOGLE_MAPS_API_KEY` to your environment to enable real-time satellite routing.
-                    </p>
-                </div>
+    // API key exists but auth failed post-load — show fallback
+    if (authFailed) {
+        return <MapUnavailableFallback reason="auth_failure" />;
+    }
+
+    const renderMapStatus = (status: Status) => {
+        if (status === Status.FAILURE) {
+            return <MapUnavailableFallback reason="load_failure" />;
+        }
+        return (
+            <div className="w-full h-full bg-[#161b22] flex items-center justify-center rounded-xl border border-gray-800">
+                <Loader2 className="animate-spin text-blue-500" size={32} />
             </div>
         );
-    }
+    };
 
     return (
         <Wrapper apiKey={apiKey} render={renderMapStatus}>
-            <MapComponent {...props} />
+            <MapComponent {...props} onAuthFailure={handleAuthFailure} />
         </Wrapper>
     );
 };

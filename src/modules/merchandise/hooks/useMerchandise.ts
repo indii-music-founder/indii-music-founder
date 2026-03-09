@@ -150,10 +150,10 @@ export const useMerchandise = () => {
                 if (revenueStats) {
                     setStats({
                         totalRevenue: revenueStats.sources.merch || 0,
-                        unitsSold: revenueStats.sourceCounts.merch || 0,
+                        unitsSold: revenueStats.unitsSold || 0,
                         conversionRate: null,
-                        revenueChange: revenueStats.revenueChange,
-                        unitsChange: 0,
+                        revenueChange: revenueStats.revenueChange || 0,
+                        unitsChange: revenueStats.unitsChange || 0,
                         trendScore: revenueStats.trendScore || 0,
                         productionVelocity: revenueStats.productionVelocity || 0,
                         funnelData: revenueStats.funnelData || {

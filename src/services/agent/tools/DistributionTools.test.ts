@@ -20,6 +20,7 @@ vi.mock('@/services/firebase', () => ({
 }));
 
 vi.mock('firebase/firestore', () => ({
+    getFirestore: vi.fn(() => ({})),
     doc: vi.fn(),
     setDoc: vi.fn(),
     getDoc: vi.fn(),

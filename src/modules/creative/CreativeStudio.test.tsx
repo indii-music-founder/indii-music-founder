@@ -72,7 +72,8 @@ describe('CreativeStudio', () => {
             removeWhiskItem: vi.fn(),
             toggleWhiskItem: vi.fn(),
             updateWhiskItem: vi.fn(),
-            setPreciseReference: vi.fn()
+            setPreciseReference: vi.fn(),
+            setHasUnsavedChanges: vi.fn()
         };
 
         (useStore as any).mockImplementation((selector: any) => {

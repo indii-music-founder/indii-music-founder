@@ -7,11 +7,16 @@ import { useToast } from '@/core/context/ToastContext';
 import { httpsCallable } from 'firebase/functions';
 
 // Mock dependencies
-vi.mock('../../store/videoEditorStore', () => ({
-    useVideoEditorStore: vi.fn(),
-    VideoProject: {},
-    VideoClip: {}
-}));
+vi.mock('../../store/videoEditorStore', () => {
+    const mockStore = vi.fn();
+    (mockStore as any).subscribe = vi.fn(() => () => { });
+    (mockStore as any).getState = vi.fn(() => ({ isPlaying: false, currentTime: 0 }));
+    return {
+        useVideoEditorStore: mockStore,
+        VideoProject: {},
+        VideoClip: {}
+    };
+});
 
 vi.mock('@/core/context/ToastContext', () => ({
     useToast: vi.fn(),

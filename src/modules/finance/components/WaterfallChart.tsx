@@ -27,8 +27,8 @@ export const WaterfallChart: React.FC<WaterfallChartProps> = ({ grossRevenue, ne
     // Generate waterfall data from the gross and net parameters
     const data = useMemo(() => {
         // Fallback amounts if data isn't provided realistically
-        const gross = grossRevenue || 12500;
-        const net = netRevenue || 8200;
+        const gross = grossRevenue || 0;
+        const net = netRevenue || 0;
 
         // Let's create sensible mock splits based on the difference
         const difference = gross - net;

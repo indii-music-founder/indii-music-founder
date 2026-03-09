@@ -17,12 +17,7 @@ interface Collaborator {
     accountId?: string;
 }
 
-const INITIAL_COLLABORATORS: Collaborator[] = [
-    { id: 1, name: 'Marcus Webb', email: 'marcus@beatstudio.io', splitPct: 40, status: 'active', accountId: 'acct_1Abc123' },
-    { id: 2, name: 'Layla Chen', email: 'layla.chen@soundlab.co', splitPct: 30, status: 'pending' },
-    { id: 3, name: 'Jordan Reeves', email: 'j.reeves@musiq.fm', splitPct: 20, status: 'not_started' },
-    { id: 4, name: 'Sofia Almeida', email: 'sofia@waveworks.pt', splitPct: 10, status: 'not_started' },
-];
+const INITIAL_COLLABORATORS: Collaborator[] = [];
 
 const STATUS_CONFIG: Record<ConnectStatus, { label: string; color: string; icon: React.ElementType }> = {
     active: { label: 'Active', color: 'text-green-400 bg-green-500/10 border-green-500/20', icon: CheckCircle },
@@ -56,7 +51,7 @@ export function StripeConnectOnboarding() {
     }
 
     function handleCopyLink(id: number, link: string) {
-        navigator.clipboard.writeText(link).catch(() => {});
+        navigator.clipboard.writeText(link).catch(() => { });
         setCopiedId(id);
         setTimeout(() => setCopiedId(null), 2000);
     }
@@ -104,87 +99,97 @@ export function StripeConnectOnboarding() {
 
             {/* Collaborator List */}
             <div className="space-y-2">
-                {collaborators.map((collab) => {
-                    const cfg = STATUS_CONFIG[collab.status];
-                    const StatusIcon = cfg.icon;
-                    const link = invitedLinks[collab.id];
+                {collaborators.length === 0 ? (
+                    <div className="p-8 rounded-xl bg-white/[0.02] border border-white/5 text-center flex flex-col items-center">
+                        <Users size={24} className="text-gray-600 mb-3" />
+                        <h3 className="text-sm font-bold text-white mb-1">No Collaborators Yet</h3>
+                        <p className="text-xs text-gray-500 mb-4 max-w-[250px]">
+                            Invite your bandmates, producers, or managers to set up their payout accounts.
+                        </p>
+                    </div>
+                ) : (
+                    collaborators.map((collab) => {
+                        const cfg = STATUS_CONFIG[collab.status];
+                        const StatusIcon = cfg.icon;
+                        const link = invitedLinks[collab.id];
 
-                    return (
-                        <motion.div
-                            key={collab.id}
-                            layout
-                            className="rounded-xl bg-white/[0.02] border border-white/5 p-3"
-                        >
-                            <div className="flex items-center gap-3">
-                                {/* Avatar */}
-                                <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center flex-shrink-0">
-                                    <span className="text-xs font-bold text-white">
-                                        {collab.name.split(' ').map((n) => n[0]).join('')}
+                        return (
+                            <motion.div
+                                key={collab.id}
+                                layout
+                                className="rounded-xl bg-white/[0.02] border border-white/5 p-3"
+                            >
+                                <div className="flex items-center gap-3">
+                                    {/* Avatar */}
+                                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500/30 to-purple-500/30 border border-white/10 flex items-center justify-center flex-shrink-0">
+                                        <span className="text-xs font-bold text-white">
+                                            {collab.name.split(' ').map((n) => n[0]).join('')}
+                                        </span>
+                                    </div>
+
+                                    {/* Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2">
+                                            <p className="text-xs font-bold text-white truncate">{collab.name}</p>
+                                            <span className="text-[10px] text-gray-500 flex-shrink-0">{collab.splitPct}% split</span>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 truncate">{collab.email}</p>
+                                    </div>
+
+                                    {/* Status Badge */}
+                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${cfg.color} flex-shrink-0`}>
+                                        <StatusIcon size={10} />
+                                        {cfg.label}
                                     </span>
                                 </div>
 
-                                {/* Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
-                                        <p className="text-xs font-bold text-white truncate">{collab.name}</p>
-                                        <span className="text-[10px] text-gray-500 flex-shrink-0">{collab.splitPct}% split</span>
-                                    </div>
-                                    <p className="text-[10px] text-gray-500 truncate">{collab.email}</p>
-                                </div>
-
-                                {/* Status Badge */}
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${cfg.color} flex-shrink-0`}>
-                                    <StatusIcon size={10} />
-                                    {cfg.label}
-                                </span>
-                            </div>
-
-                            {/* Actions */}
-                            <div className="mt-2.5 flex items-center gap-2">
-                                {collab.status === 'active' && collab.accountId && (
-                                    <a
-                                        href={`https://dashboard.stripe.com/${collab.accountId}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[10px] font-bold transition-colors"
-                                    >
-                                        <ExternalLink size={10} />
-                                        View Dashboard
-                                    </a>
-                                )}
-                                {collab.status !== 'active' && !link && (
-                                    <button
-                                        onClick={() => handleInvite(collab)}
-                                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-colors"
-                                    >
-                                        Invite to Connect
-                                    </button>
-                                )}
-                                <AnimatePresence>
-                                    {link && collab.status !== 'active' && (
-                                        <motion.div
-                                            initial={{ opacity: 0, y: -4 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0 }}
-                                            className="flex items-center gap-2 flex-1 min-w-0"
+                                {/* Actions */}
+                                <div className="mt-2.5 flex items-center gap-2">
+                                    {collab.status === 'active' && collab.accountId && (
+                                        <a
+                                            href={`https://dashboard.stripe.com/${collab.accountId}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-400 text-[10px] font-bold transition-colors"
                                         >
-                                            <div className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 rounded-lg px-2 py-1">
-                                                <p className="text-[10px] text-gray-400 truncate font-mono">{link}</p>
-                                            </div>
-                                            <button
-                                                onClick={() => handleCopyLink(collab.id, link)}
-                                                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] transition-colors flex-shrink-0"
-                                            >
-                                                <Copy size={10} />
-                                                {copiedId === collab.id ? 'Copied!' : 'Copy'}
-                                            </button>
-                                        </motion.div>
+                                            <ExternalLink size={10} />
+                                            View Dashboard
+                                        </a>
                                     )}
-                                </AnimatePresence>
-                            </div>
-                        </motion.div>
-                    );
-                })}
+                                    {collab.status !== 'active' && !link && (
+                                        <button
+                                            onClick={() => handleInvite(collab)}
+                                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-colors"
+                                        >
+                                            Invite to Connect
+                                        </button>
+                                    )}
+                                    <AnimatePresence>
+                                        {link && collab.status !== 'active' && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -4 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                className="flex items-center gap-2 flex-1 min-w-0"
+                                            >
+                                                <div className="flex-1 min-w-0 bg-white/[0.03] border border-white/10 rounded-lg px-2 py-1">
+                                                    <p className="text-[10px] text-gray-400 truncate font-mono">{link}</p>
+                                                </div>
+                                                <button
+                                                    onClick={() => handleCopyLink(collab.id, link)}
+                                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] transition-colors flex-shrink-0"
+                                                >
+                                                    <Copy size={10} />
+                                                    {copiedId === collab.id ? 'Copied!' : 'Copy'}
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </motion.div>
+                        );
+                    })
+                )}
             </div>
 
             {/* Summary */}

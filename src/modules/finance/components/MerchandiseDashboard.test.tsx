@@ -32,8 +32,9 @@ describe('MerchandiseDashboard', () => {
 
         expect(screen.getByText('Merchandise')).toBeInTheDocument();
         expect(screen.getByText('Sales')).toBeInTheDocument();
-        expect(screen.getByText('$12,450.00')).toBeInTheDocument();
-        expect(screen.getByText(/30D Growth/)).toBeInTheDocument();
+        // Revenue stats now show empty state (mock data purged)
+        expect(screen.getByText('Pending Orders')).toBeInTheDocument();
+        expect(screen.getByText('Average Margin')).toBeInTheDocument();
     });
 
     it('renders the Sales analytics components', () => {

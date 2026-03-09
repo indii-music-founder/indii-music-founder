@@ -20,23 +20,16 @@ export const EarningsDashboard: React.FC = () => {
     // Platform breakdown logic
     const platformBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
-        return [
-            { label: 'Spotify', revenue: earnings.totalNetRevenue * 0.42, percentage: 42, growth: 5.2 },
-            { label: 'Apple Music', revenue: earnings.totalNetRevenue * 0.33, percentage: 33, growth: 2.1 },
-            { label: 'YouTube', revenue: earnings.totalNetRevenue * 0.15, percentage: 15, growth: -1.4 },
-            { label: 'Amazon Music', revenue: earnings.totalNetRevenue * 0.10, percentage: 10, growth: 8.8 },
-        ];
+        // Platform breakdown would come from real DSP reporting data
+        // For now, show empty until real data is integrated
+        return [];
     }, [earnings]);
 
     const territoryBreakdown = useMemo(() => {
         if (!earnings?.totalNetRevenue) return [];
-        return [
-            { label: 'United States', revenue: earnings.totalNetRevenue * 0.65, percentage: 65 },
-            { label: 'United Kingdom', revenue: earnings.totalNetRevenue * 0.15, percentage: 15 },
-            { label: 'Germany', revenue: earnings.totalNetRevenue * 0.10, percentage: 10 },
-            { label: 'Japan', revenue: earnings.totalNetRevenue * 0.05, percentage: 5 },
-            { label: 'Brazil', revenue: earnings.totalNetRevenue * 0.05, percentage: 5 },
-        ];
+        // Territory breakdown would come from real distribution reporting data
+        // For now, show empty until real data is integrated
+        return [];
     }, [earnings]);
 
     return (
@@ -64,8 +57,8 @@ export const EarningsDashboard: React.FC = () => {
                             <span className="text-5xl font-black text-white tracking-tighter">
                                 {earnings.totalNetRevenue.toFixed(2)}
                             </span>
-                            <span className="ml-2 text-sm font-bold text-green-500 flex items-center gap-1 bg-green-500/10 px-2 py-0.5 rounded-full">
-                                <TrendingUp size={12} /> +12.5%
+                            <span className="ml-2 text-sm font-bold text-gray-500 flex items-center gap-1 bg-gray-500/10 px-2 py-0.5 rounded-full">
+                                <TrendingUp size={12} /> --
                             </span>
                         </div>
 

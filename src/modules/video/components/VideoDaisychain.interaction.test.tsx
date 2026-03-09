@@ -46,6 +46,7 @@ vi.mock('../store/videoEditorStore', () => {
     };
     const mockStore = vi.fn(() => mockData);
     (mockStore as any).getState = () => mockData;
+    (mockStore as any).subscribe = vi.fn(() => () => { });
     return { useVideoEditorStore: mockStore };
 });
 
@@ -62,6 +63,7 @@ vi.mock('@/core/store', () => {
         setSelectedItem: vi.fn(),
         addToHistory: vi.fn(),
         setIsGenerating: vi.fn(),
+        setHasUnsavedChanges: vi.fn(),
         generatedHistory: [],
         whiskState: {
             subjects: [],
@@ -223,6 +225,7 @@ describe('🖱️ Click: Video Production Daisychain', () => {
                 // Mock properties accessed via getState
                 videoInputs: state.videoInputs,
                 setIsGenerating: vi.fn(),
+                setHasUnsavedChanges: vi.fn(),
                 whiskState: state.whiskState
             }), [state, setVideoInput, setGenerationMode, setViewMode, setPrompt, addToHistory]);
 

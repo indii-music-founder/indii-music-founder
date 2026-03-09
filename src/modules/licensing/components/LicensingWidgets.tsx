@@ -32,7 +32,7 @@ export const MetricsGrid: React.FC<MetricsGridProps> = ({ activeLicensesCount, p
             <MetricCard
                 title="Projected Value"
                 value={`$${projectedValue.toLocaleString()}`}
-                trend="+8.5%"
+                trend="Est. Value"
                 icon={TrendingUp}
                 color="text-purple-400"
                 gradient="from-purple-500/10 to-transparent"
@@ -79,21 +79,11 @@ export const DealFlowChart = () => {
 
             <h3 className="relative z-10 text-lg font-bold text-white mb-6">Deal Velocity</h3>
 
-            {/* Artistic CSS Chart Representation */}
-            <div className="relative z-10 flex items-end justify-between h-40 gap-2 px-2">
-                {[40, 65, 45, 80, 55, 90, 70, 85, 60, 95, 75, 50].map((height, i) => (
-                    <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${height}%` }}
-                        transition={{ delay: i * 0.05, duration: 1, type: 'spring' }}
-                        className="w-full bg-gradient-to-t from-indigo-500/20 to-indigo-500 rounded-t-sm hover:from-indigo-400/30 hover:to-indigo-400 transition-colors cursor-pointer group"
-                    >
-                        <div className="opacity-0 group-hover:opacity-100 absolute -top-8 left-1/2 -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded pointer-events-none whitespace-nowrap">
-                            Vol: {height * 10}
-                        </div>
-                    </motion.div>
-                ))}
+            {/* Empty State */}
+            <div className="relative z-10 flex flex-col items-center justify-center h-40 gap-2">
+                <TrendingUp size={24} className="text-gray-500 mb-2 opacity-50" />
+                <p className="text-xs text-gray-500 font-medium">No deal velocity data</p>
+                <p className="text-[10px] text-gray-600">Connect CRM to visualize pipeline</p>
             </div>
         </div>
     );

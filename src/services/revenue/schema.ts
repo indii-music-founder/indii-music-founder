@@ -21,6 +21,8 @@ export type RevenueEntry = z.infer<typeof RevenueEntrySchema>;
 export const RevenueStatsSchema = z.object({
   totalRevenue: z.number(),
   revenueChange: z.number(),
+  unitsSold: z.number().default(0),
+  unitsChange: z.number().default(0),
   pendingPayouts: z.number(),
   lastPayoutAmount: z.number(),
   lastPayoutDate: z.date().optional(),

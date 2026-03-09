@@ -38,6 +38,7 @@ vi.mock('@/services/onboarding/onboardingService', () => ({
     runOnboardingConversation: vi.fn(),
     processFunctionCalls: vi.fn(() => ({ updatedProfile: {}, isFinished: false, updates: [] })),
     calculateProfileStatus: () => ({ coreProgress: 0, releaseProgress: 0, coreMissing: [], releaseMissing: [] }),
+    determinePhase: vi.fn(() => 'discovery'),
     generateNaturalFallback: vi.fn(() => 'Mock fallback response'),
     generateEmptyResponseFallback: vi.fn(() => 'Mock empty response'),
     generateSection: vi.fn(),

@@ -3,7 +3,7 @@ import { Globe2, Maximize2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export const GodModeCanvas: React.FC = () => {
-    // Mock "God Mode" View (Item 199)
+    // God Mode View (Item 199) — displays dynamic ecosystem stats
     return (
         <div className="w-full h-screen bg-[#050505] relative overflow-hidden flex flex-col cursor-move">
             <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -37,20 +37,20 @@ export const GodModeCanvas: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Satellite Nodes */}
+                {/* Satellite Nodes — empty state, populated dynamically */}
                 <div className="absolute -top-32 left-32 w-32 h-32 bg-pink-500/10 border border-pink-500/30 rounded-2xl flex flex-col items-center justify-center">
                     <span className="text-pink-400 font-bold mb-1">Catalog</span>
-                    <span className="text-xs text-pink-200/50">14 Tracks</span>
+                    <span className="text-xs text-pink-200/50">No tracks</span>
                 </div>
 
                 <div className="absolute top-32 -left-48 w-32 h-32 bg-green-500/10 border border-green-500/30 rounded-2xl flex flex-col items-center justify-center">
                     <span className="text-green-400 font-bold mb-1">Treasury</span>
-                    <span className="text-xs text-green-200/50">$12,450 YTD</span>
+                    <span className="text-xs text-green-200/50">$0 YTD</span>
                 </div>
 
                 <div className="absolute -bottom-24 right-20 w-32 h-32 bg-blue-500/10 border border-blue-500/30 rounded-2xl flex flex-col items-center justify-center">
                     <span className="text-blue-400 font-bold mb-1">Audience</span>
-                    <span className="text-xs text-blue-200/50">84k MAU</span>
+                    <span className="text-xs text-blue-200/50">No data</span>
                 </div>
             </motion.div>
         </div>

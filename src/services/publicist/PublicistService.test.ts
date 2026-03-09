@@ -11,7 +11,7 @@ import {
 
 // Mock Firebase
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     collection: vi.fn(),
     query: vi.fn(),
     where: vi.fn(),
@@ -25,8 +25,17 @@ vi.mock('firebase/firestore', () => ({
 
 // Mock db instance
 vi.mock('../firebase', () => ({
-  serverTimestamp: vi.fn(),
-    db: {}
+    serverTimestamp: vi.fn(),
+    db: {},
+    auth: { currentUser: { uid: 'test-user', getIdToken: vi.fn().mockResolvedValue('token') } },
+    functions: {},
+    functionsWest1: {},
+    remoteConfig: { defaultConfig: {} },
+    getFirebaseAI: vi.fn(() => null),
+    app: { options: {} },
+    appCheck: null,
+    messaging: null,
+    storage: {},
 }));
 
 describe('PublicistService', () => {

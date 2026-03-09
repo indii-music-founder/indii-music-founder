@@ -24,30 +24,10 @@ interface DailyStream {
     trackC: number;
 }
 
-const TRACK_NAMES: Record<string, string> = {
-    trackA: 'Midnight Circuit',
-    trackB: 'Glass Waves',
-    trackC: 'Neon Drift',
-};
+const TRACK_NAMES: Record<string, string> = {};
 
 // Static stream data (14 days)
-const STREAM_DATA: DailyStream[] = [
-    { date: '2026-02-22', label: 'Feb 22', trackA: 12400, trackB: 8200, trackC: 5600 },
-    { date: '2026-02-23', label: 'Feb 23', trackA: 13100, trackB: 7900, trackC: 5800 },
-    { date: '2026-02-24', label: 'Feb 24', trackA: 11800, trackB: 8500, trackC: 6100 },
-    { date: '2026-02-25', label: 'Feb 25', trackA: 12600, trackB: 8100, trackC: 5900 },
-    { date: '2026-02-26', label: 'Feb 26', trackA: 13200, trackB: 7800, trackC: 6300 },
-    { date: '2026-02-27', label: 'Feb 27', trackA: 12900, trackB: 8400, trackC: 5700 },
-    { date: '2026-02-28', label: 'Feb 28', trackA: 13500, trackB: 8200, trackC: 6000 },
-    { date: '2026-03-01', label: 'Mar 1', trackA: 14100, trackB: 8300, trackC: 5800 },
-    { date: '2026-03-02', label: 'Mar 2', trackA: 13800, trackB: 8100, trackC: 6200 },
-    { date: '2026-03-03', label: 'Mar 3', trackA: 14200, trackB: 8500, trackC: 5900 },
-    { date: '2026-03-04', label: 'Mar 4', trackA: 13600, trackB: 8200, trackC: 6100 },
-    // March 5: massive spike on trackA
-    { date: '2026-03-05', label: 'Mar 5', trackA: 131800, trackB: 8400, trackC: 6000 },
-    { date: '2026-03-06', label: 'Mar 6', trackA: 28400, trackB: 8100, trackC: 6400 },
-    { date: '2026-03-07', label: 'Mar 7', trackA: 19200, trackB: 8300, trackC: 5800 },
-];
+const STREAM_DATA: DailyStream[] = [];
 
 type Confidence = 'High' | 'Medium' | 'Low';
 
@@ -188,55 +168,64 @@ export function AnomalyDetector() {
 
             {/* Chart */}
             <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
-                <div className="flex items-center gap-4 mb-4 text-[10px]">
-                    {Object.entries(TRACK_NAMES).map(([key, name]) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                            <div className={`w-2 h-2 rounded-sm ${
-                                key === 'trackA' ? 'bg-purple-500' : key === 'trackB' ? 'bg-blue-500' : 'bg-emerald-500'
-                            }`} />
-                            <span className="text-gray-400">{name}</span>
-                        </div>
-                    ))}
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-2 h-2 rounded-sm bg-red-500" />
-                        <span className="text-gray-400">Spike</span>
+                {chartData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[200px] text-center">
+                        <TrendingUp size={24} className="text-gray-600 mb-2" />
+                        <p className="text-xs font-bold text-gray-400">No Streaming Data</p>
+                        <p className="text-[10px] text-gray-500 mt-1 max-w-[200px]">Connect your DSP accounts to monitor daily streams for anomalies.</p>
                     </div>
-                </div>
-                <ResponsiveContainer width="100%" height={200}>
-                    <BarChart data={chartData} barGap={2} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#6b7280' }} axisLine={false} tickLine={false} />
-                        <YAxis
-                            tick={{ fontSize: 9, fill: '#6b7280' }}
-                            axisLine={false}
-                            tickLine={false}
-                            tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
-                            width={35}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <Bar dataKey="trackA" name="trackA" radius={[2, 2, 0, 0]}>
-                            {chartData.map((entry, index) => {
-                                const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackA');
-                                return <Cell key={`trackA-${index}`} fill={isSpike ? '#ef4444' : '#8b5cf6'} />;
-                            })}
-                        </Bar>
-                        <Bar dataKey="trackB" name="trackB" radius={[2, 2, 0, 0]}>
-                            {chartData.map((entry, index) => {
-                                const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackB');
-                                return <Cell key={`trackB-${index}`} fill={isSpike ? '#ef4444' : '#3b82f6'} />;
-                            })}
-                        </Bar>
-                        <Bar dataKey="trackC" name="trackC" radius={[2, 2, 0, 0]}>
-                            {chartData.map((entry, index) => {
-                                const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
-                                const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackC');
-                                return <Cell key={`trackC-${index}`} fill={isSpike ? '#ef4444' : '#10b981'} />;
-                            })}
-                        </Bar>
-                    </BarChart>
-                </ResponsiveContainer>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-4 mb-4 text-[10px]">
+                            {Object.entries(TRACK_NAMES).map(([key, name]) => (
+                                <div key={key} className="flex items-center gap-1.5">
+                                    <div className={`w-2 h-2 rounded-sm ${key === 'trackA' ? 'bg-purple-500' : key === 'trackB' ? 'bg-blue-500' : 'bg-emerald-500'
+                                        }`} />
+                                    <span className="text-gray-400">{name}</span>
+                                </div>
+                            ))}
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-2 h-2 rounded-sm bg-red-500" />
+                                <span className="text-gray-400">Spike</span>
+                            </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={200}>
+                            <BarChart data={chartData} barGap={2} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#6b7280' }} axisLine={false} tickLine={false} />
+                                <YAxis
+                                    tick={{ fontSize: 9, fill: '#6b7280' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
+                                    width={35}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <Bar dataKey="trackA" name="trackA" radius={[2, 2, 0, 0]}>
+                                    {chartData.map((entry, index) => {
+                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
+                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackA');
+                                        return <Cell key={`trackA-${index}`} fill={isSpike ? '#ef4444' : '#8b5cf6'} />;
+                                    })}
+                                </Bar>
+                                <Bar dataKey="trackB" name="trackB" radius={[2, 2, 0, 0]}>
+                                    {chartData.map((entry, index) => {
+                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
+                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackB');
+                                        return <Cell key={`trackB-${index}`} fill={isSpike ? '#ef4444' : '#3b82f6'} />;
+                                    })}
+                                </Bar>
+                                <Bar dataKey="trackC" name="trackC" radius={[2, 2, 0, 0]}>
+                                    {chartData.map((entry, index) => {
+                                        const origIdx = STREAM_DATA.findIndex((d) => d.date === entry.date);
+                                        const isSpike = isAnomalousBar(STREAM_DATA, origIdx, 'trackC');
+                                        return <Cell key={`trackC-${index}`} fill={isSpike ? '#ef4444' : '#10b981'} />;
+                                    })}
+                                </Bar>
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </>
+                )}
             </div>
 
             {/* Alert List */}

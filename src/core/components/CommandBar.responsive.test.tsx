@@ -40,6 +40,7 @@ vi.mock('../theme/moduleColors', () => ({
         border: 'border-gray-700',
         ring: 'ring-gray-700',
     }),
+    getDepartmentCssVar: () => '--color-gray-700',
 }));
 
 vi.mock('motion/react', () => ({
@@ -93,9 +94,9 @@ describe('📱 Viewport: CommandBar Responsiveness', () => {
         expect(runButton).toBeVisible();
 
         // 3. Verify Desktop-only features are hidden via JS logic
-        // Agent selector button should be hidden on mobile
+        // Agent selector button is now always visible (even on mobile)
         const delegateButton = screen.queryByRole('button', { name: /select active agent/i });
-        expect(delegateButton).not.toBeInTheDocument();
+        expect(delegateButton).toBeInTheDocument();
 
         // "Attach" button should be hidden
         const attachButton = screen.queryByText('Attach');

@@ -30,7 +30,7 @@ const OverviewTab = ({ data }: { data: ValidatedEarningsSummary }) => (
                 <div className="text-3xl font-bold text-white mt-2">${data.totalNetRevenue.toFixed(2)}</div>
                 <p className="text-xs text-dept-royalties flex items-center gap-1 mt-1">
                     <TrendingUp size={12} />
-                    +20.1% from last month
+                    {data.totalNetRevenue > 0 ? 'Revenue from all sources' : 'No revenue data yet'}
                 </p>
             </div>
         </div>
@@ -232,8 +232,8 @@ export const EarningsDashboard: React.FC = () => {
                         className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-6 mt-6 overflow-hidden"
                     >
                         <WaterfallChart
-                            grossRevenue={earningsSummary.totalGrossRevenue || 12500}
-                            netRevenue={earningsSummary.totalNetRevenue || 8200}
+                            grossRevenue={earningsSummary.totalGrossRevenue || 0}
+                            netRevenue={earningsSummary.totalNetRevenue || 0}
                         />
                     </motion.div>
                 </TabsContent>

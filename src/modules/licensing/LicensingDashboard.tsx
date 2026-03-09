@@ -45,14 +45,14 @@ export default function LicensingDashboard() {
     if (isLoading) {
         return (
             <ModuleErrorBoundary moduleName="Licensing">
-            <div className="flex items-center justify-center min-h-[400px]">
-                <div className="relative" data-testid="loading-spinner">
-                    <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                        <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <div className="relative" data-testid="loading-spinner">
+                        <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                        </div>
                     </div>
                 </div>
-            </div>
             </ModuleErrorBoundary>
         );
     }
@@ -351,51 +351,28 @@ function DealFlowWidget() {
 }
 
 function LicensingTemplatesPanel() {
-    const templates = [
-        { label: 'Standard Sync License', icon: FileText, color: 'text-blue-400' },
-        { label: 'Master Use Agreement', icon: Briefcase, color: 'text-purple-400' },
-        { label: 'Mechanical License', icon: ShieldCheck, color: 'text-emerald-400' },
-    ];
-
+    // Templates should be loaded dynamically from the contract templates database
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Templates</h3>
-            <div className="space-y-1">
-                {templates.map((t) => (
-                    <button
-                        key={t.label}
-                        className="w-full flex items-center gap-2 py-2.5 px-2 rounded-lg hover:bg-white/[0.04] transition-colors text-left"
-                    >
-                        <t.icon size={14} className={t.color} />
-                        <span className="text-xs text-gray-300">{t.label}</span>
-                    </button>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+                <FileText size={16} className="text-gray-600 mb-2 opacity-50" />
+                <p className="text-[10px] text-gray-500">No custom templates</p>
+                <p className="text-[9px] text-gray-600 mt-1">Add legal agreement templates in settings</p>
             </div>
         </div>
     );
 }
 
 function ComplianceChecklistPanel({ licenses }: { licenses: any[] }) {
-    const items = [
-        { label: 'All licenses documented', done: licenses.length > 0 },
-        { label: 'Rights verified', done: licenses.some(l => l.licenseType) },
-        { label: 'Agreements signed', done: licenses.some(l => l.agreementUrl) },
-        { label: 'Royalty splits confirmed', done: false },
-    ];
-
+    // Compliance checklist should be generated dynamically based on deal status
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Compliance</h3>
-            <div className="space-y-2">
-                {items.map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 px-2 py-1.5">
-                        <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center flex-shrink-0 ${item.done ? 'bg-emerald-500/20 border-emerald-500/40' : 'border-white/10'
-                            }`}>
-                            {item.done && <CheckCircle2 size={8} className="text-emerald-400" />}
-                        </div>
-                        <span className={`text-xs ${item.done ? 'text-gray-300' : 'text-gray-600'}`}>{item.label}</span>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 px-2 text-center">
+                <CheckCircle2 size={16} className="text-gray-600 mb-2 opacity-50" />
+                <p className="text-[10px] text-gray-500">No active compliance tasks</p>
+                <p className="text-[9px] text-gray-600 mt-1">Initiate a deal to see checklist</p>
             </div>
         </div>
     );

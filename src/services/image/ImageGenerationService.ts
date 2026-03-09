@@ -202,7 +202,7 @@ export class ImageGenerationService {
                 if (res) results.push(res);
             });
 
-            if (results.length > 0 && window.electronAPI) {
+            if (results.length > 0 && typeof window !== 'undefined' && window.electronAPI) {
                 window.electronAPI.showNotification(
                     'Studio Generation Complete',
                     `Successfully generated ${results.length} image${results.length > 1 ? 's' : ''}.`
@@ -217,7 +217,7 @@ export class ImageGenerationService {
                 details: errObj.details,
             });
 
-            if (window.electronAPI) {
+            if (typeof window !== 'undefined' && window.electronAPI) {
                 window.electronAPI.showNotification(
                     'Generation Failed',
                     `Image generation error: ${errorMsg}`
@@ -294,7 +294,7 @@ export class ImageGenerationService {
     async remixImage(options: RemixOptions): Promise<{ url: string } | null> {
         return withServiceError('ImageGeneration', 'remixImage', async () => {
             // Call local Python API if in Electron
-            if (window.electronAPI) {
+            if (typeof window !== 'undefined' && window.electronAPI) {
                 try {
                     const localResult = await agentZeroService.callApi('/image_edit', {
                         prompt: options.prompt || 'Create a cinematic remix.',

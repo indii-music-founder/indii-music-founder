@@ -24,16 +24,7 @@ const EXCHANGE_RATES: Record<string, number> = {
     CAD: 0.737,
 };
 
-const LEDGER_DATA: LedgerRow[] = [
-    { id: 1, description: 'Spotify UK Royalty', amount: 842.50, currency: 'GBP', exchangeRate: 1.268, usdEquivalent: 1068.29, date: '2026-03-01' },
-    { id: 2, description: 'Apple Music EU Payout', amount: 1240.00, currency: 'EUR', exchangeRate: 1.084, usdEquivalent: 1344.16, date: '2026-02-28' },
-    { id: 3, description: 'TuneCore Japan', amount: 186500, currency: 'JPY', exchangeRate: 0.00671, usdEquivalent: 1251.42, date: '2026-02-27' },
-    { id: 4, description: 'Spotify US Direct', amount: 2340.00, currency: 'USD', exchangeRate: 1.0, usdEquivalent: 2340.00, date: '2026-02-25' },
-    { id: 5, description: 'Bandcamp Canada', amount: 615.00, currency: 'CAD', exchangeRate: 0.737, usdEquivalent: 453.26, date: '2026-02-22' },
-    { id: 6, description: 'Amazon Music EU', amount: 430.80, currency: 'EUR', exchangeRate: 1.084, usdEquivalent: 467.00, date: '2026-02-20' },
-    { id: 7, description: 'Apple Music UK', amount: 312.00, currency: 'GBP', exchangeRate: 1.268, usdEquivalent: 395.62, date: '2026-02-18' },
-    { id: 8, description: 'Tidal US Payout', amount: 890.00, currency: 'USD', exchangeRate: 1.0, usdEquivalent: 890.00, date: '2026-02-15' },
-];
+const LEDGER_DATA: LedgerRow[] = [];
 
 const CURRENCY_FLAGS: Record<string, string> = {
     USD: '🇺🇸',
@@ -145,32 +136,44 @@ export function MultiCurrencyLedger() {
                         </tr>
                     </thead>
                     <tbody>
-                        {filteredData.map((row, i) => (
-                            <motion.tr
-                                key={row.id}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: i * 0.04 }}
-                                className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
-                            >
-                                <td className="px-3 py-2.5 text-gray-300">{row.description}</td>
-                                <td className="px-3 py-2.5 text-right font-mono text-white">{formatAmount(row)}</td>
-                                <td className="px-3 py-2.5 text-center hidden sm:table-cell">
-                                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${CURRENCY_COLORS[row.currency]}`}>
-                                        {CURRENCY_FLAGS[row.currency]} {row.currency}
-                                    </span>
+                        {filteredData.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="px-3 py-8 text-center border-b border-white/[0.03]">
+                                    <div className="flex flex-col items-center justify-center">
+                                        <Globe size={18} className="text-gray-600 mb-2 opacity-50" />
+                                        <p className="text-xs text-gray-500 font-medium">No international transactions found</p>
+                                        <p className="text-[10px] text-gray-600 mt-0.5">Connect your distributor to import global royalty data</p>
+                                    </div>
                                 </td>
-                                <td className="px-3 py-2.5 text-right font-mono text-gray-500 hidden md:table-cell">
-                                    {row.currency === 'JPY'
-                                        ? row.exchangeRate.toFixed(5)
-                                        : row.exchangeRate.toFixed(3)}
-                                </td>
-                                <td className="px-3 py-2.5 text-right font-mono text-green-400 font-bold">
-                                    ${row.usdEquivalent.toFixed(2)}
-                                </td>
-                                <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">{row.date}</td>
-                            </motion.tr>
-                        ))}
+                            </tr>
+                        ) : (
+                            filteredData.map((row, i) => (
+                                <motion.tr
+                                    key={row.id}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: i * 0.04 }}
+                                    className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                                >
+                                    <td className="px-3 py-2.5 text-gray-300">{row.description}</td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-white">{formatAmount(row)}</td>
+                                    <td className="px-3 py-2.5 text-center hidden sm:table-cell">
+                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${CURRENCY_COLORS[row.currency]}`}>
+                                            {CURRENCY_FLAGS[row.currency]} {row.currency}
+                                        </span>
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-gray-500 hidden md:table-cell">
+                                        {row.currency === 'JPY'
+                                            ? row.exchangeRate.toFixed(5)
+                                            : row.exchangeRate.toFixed(3)}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right font-mono text-green-400 font-bold">
+                                        ${row.usdEquivalent.toFixed(2)}
+                                    </td>
+                                    <td className="px-3 py-2.5 text-right text-gray-500 hidden sm:table-cell">{row.date}</td>
+                                </motion.tr>
+                            ))
+                        )}
                     </tbody>
                     <tfoot>
                         <tr className="bg-white/[0.03] border-t border-white/10">

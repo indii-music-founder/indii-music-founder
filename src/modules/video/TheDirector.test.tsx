@@ -1,6 +1,8 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useVideoEditorStore } from './store/videoEditorStore';
 import { act } from '@testing-library/react';
+
+vi.unmock('./store/videoEditorStore');
 
 const INITIAL_STATE = useVideoEditorStore.getState();
 
