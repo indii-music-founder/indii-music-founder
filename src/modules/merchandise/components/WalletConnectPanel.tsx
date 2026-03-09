@@ -1,13 +1,15 @@
 /**
- * WalletConnectPanel — Item 126 (PRODUCTION_200)
- * Web3 wallet connection UI (mock-first, no ethers.js).
- * MetaMask + WalletConnect options, stores address in localStorage.
+ * WalletConnectPanel — Item 236
+ * Real wallet connection via window.ethereum (MetaMask EIP-1193)
+ * and WalletConnect v2 URI deep-link for mobile wallets.
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield } from 'lucide-react';
+import { Wallet, CheckCircle2, Copy, LogOut, Link2, Shield, AlertCircle } from 'lucide-react';
+import { walletConnectService } from '@/services/web3/WalletConnectService';
 
 const STORAGE_KEY = 'indii_wallet_address';
+const CHAIN_KEY = 'indii_wallet_chain';
 
 type WalletProvider = 'metamask' | 'walletconnect';
 
@@ -15,28 +17,108 @@ function truncateAddress(addr: string) {
     return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
 }
 
-function generateMockAddress(): string {
-    const hex = () => Math.floor(Math.random() * 0xFFFFFF).toString(16).padStart(6, '0');
-    return `0x${hex()}${hex()}${hex()}${hex()}${hex()}${hex()}`.slice(0, 42);
+function chainName(chainId: string): string {
+    const chains: Record<string, string> = {
+        '0x1': 'Ethereum', '0x89': 'Polygon', '0xa4b1': 'Arbitrum',
+        '0x38': 'BNB Chain', '0xa': 'Optimism',
+    };
+    return chains[chainId] || `Chain ${parseInt(chainId, 16)}`;
+}
+
+declare global {
+    interface Window {
+        ethereum?: {
+            request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
+            isMetaMask?: boolean;
+            on?: (event: string, handler: (...args: unknown[]) => void) => void;
+            removeListener?: (event: string, handler: (...args: unknown[]) => void) => void;
+        };
+    }
 }
 
 export function WalletConnectPanel() {
     const [address, setAddress] = useState<string | null>(() => localStorage.getItem(STORAGE_KEY));
+    const [chain, setChain] = useState<string>(() => localStorage.getItem(CHAIN_KEY) || '0x1');
     const [connecting, setConnecting] = useState<WalletProvider | null>(null);
     const [copied, setCopied] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+
+    // Listen for MetaMask account/chain changes
+    useEffect(() => {
+        if (typeof window === 'undefined' || !window.ethereum?.on) return;
+
+        const onAccountsChanged = (...args: unknown[]) => {
+            const accounts = args[0] as string[];
+            if (accounts.length === 0) {
+                handleDisconnect();
+            } else {
+                localStorage.setItem(STORAGE_KEY, accounts[0]);
+                setAddress(accounts[0]);
+            }
+        };
+        const onChainChanged = (...args: unknown[]) => {
+            const id = args[0] as string;
+            localStorage.setItem(CHAIN_KEY, id);
+            setChain(id);
+        };
+
+        window.ethereum.on('accountsChanged', onAccountsChanged);
+        window.ethereum.on('chainChanged', onChainChanged);
+
+        return () => {
+            window.ethereum?.removeListener?.('accountsChanged', onAccountsChanged);
+            window.ethereum?.removeListener?.('chainChanged', onChainChanged);
+        };
+    }, []);
 
     const handleConnect = async (provider: WalletProvider) => {
         setConnecting(provider);
-        await new Promise(r => setTimeout(r, 1800));
-        const mockAddr = generateMockAddress();
-        localStorage.setItem(STORAGE_KEY, mockAddr);
-        setAddress(mockAddr);
-        setConnecting(null);
+        setError(null);
+
+        try {
+            if (provider === 'metamask') {
+                if (typeof window === 'undefined' || !window.ethereum) {
+                    throw new Error('MetaMask not installed. Please install the MetaMask browser extension.');
+                }
+                // Request account access via EIP-1193
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' }) as string[];
+                const chainId = await window.ethereum.request({ method: 'eth_chainId' }) as string;
+
+                localStorage.setItem(STORAGE_KEY, accounts[0]);
+                localStorage.setItem(CHAIN_KEY, chainId);
+                setAddress(accounts[0]);
+                setChain(chainId);
+
+            } else {
+                // WalletConnect v2: uses WalletConnectService (backed by @reown/appkit when project ID is set)
+                if (!walletConnectService.isConfigured()) {
+                    throw new Error(
+                        'WalletConnect project ID not set. Add VITE_WALLETCONNECT_PROJECT_ID to .env ' +
+                        '(get a free key at cloud.reown.com)'
+                    );
+                }
+                const info = await walletConnectService.connect();
+                if (info.address) {
+                    localStorage.setItem(STORAGE_KEY, info.address);
+                    localStorage.setItem(CHAIN_KEY, `0x${info.chainId.toString(16)}`);
+                    setAddress(info.address);
+                    setChain(`0x${info.chainId.toString(16)}`);
+                }
+            }
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Connection failed';
+            setError(msg);
+        } finally {
+            setConnecting(null);
+        }
     };
 
     const handleDisconnect = () => {
         localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(CHAIN_KEY);
         setAddress(null);
+        setError(null);
+        walletConnectService.disconnect().catch(() => {});
     };
 
     const handleCopy = async () => {
@@ -56,6 +138,14 @@ export function WalletConnectPanel() {
                 </h3>
                 <p className="text-xs text-neutral-500 mt-0.5">Connect your wallet to enable smart contracts and NFT minting</p>
             </div>
+
+            {/* Error banner */}
+            {error && (
+                <div className="flex items-start gap-2 p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-xs text-red-400">
+                    <AlertCircle size={14} className="flex-shrink-0 mt-0.5" />
+                    <span>{error}</span>
+                </div>
+            )}
 
             <AnimatePresence mode="wait">
                 {address ? (
@@ -84,11 +174,11 @@ export function WalletConnectPanel() {
                         <div className="grid grid-cols-2 gap-3">
                             <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-center">
                                 <div className="text-xs font-bold text-white mb-0.5">Network</div>
-                                <div className="text-[11px] text-blue-400 font-mono">Polygon (MATIC)</div>
+                                <div className="text-[11px] text-blue-400 font-mono">{chainName(chain)}</div>
                             </div>
                             <div className="p-3 bg-white/[0.02] border border-white/5 rounded-xl text-center">
-                                <div className="text-xs font-bold text-white mb-0.5">Balance</div>
-                                <div className="text-[11px] text-[#FFE135] font-mono">0.00 USDC</div>
+                                <div className="text-xs font-bold text-white mb-0.5">Chain ID</div>
+                                <div className="text-[11px] text-[#FFE135] font-mono">{parseInt(chain, 16)}</div>
                             </div>
                         </div>
 
@@ -139,7 +229,11 @@ export function WalletConnectPanel() {
                             </div>
                             <div className="flex-1 text-left">
                                 <div className="text-sm font-bold text-white group-hover:text-orange-400 transition-colors">MetaMask</div>
-                                <div className="text-[11px] text-neutral-500">Browser extension wallet</div>
+                                <div className="text-[11px] text-neutral-500">
+                                    {typeof window !== 'undefined' && window.ethereum?.isMetaMask
+                                        ? 'Ready to connect'
+                                        : 'Browser extension wallet'}
+                                </div>
                             </div>
                             {connecting === 'metamask' ? (
                                 <div className="w-4 h-4 border-2 border-orange-400 border-t-transparent rounded-full animate-spin" />
@@ -159,7 +253,9 @@ export function WalletConnectPanel() {
                             </div>
                             <div className="flex-1 text-left">
                                 <div className="text-sm font-bold text-white group-hover:text-blue-400 transition-colors">WalletConnect</div>
-                                <div className="text-[11px] text-neutral-500">Scan QR with any mobile wallet</div>
+                                <div className="text-[11px] text-neutral-500">
+                                    {walletConnectService.isConfigured() ? 'Scan QR with any mobile wallet' : 'Requires VITE_WALLETCONNECT_PROJECT_ID'}
+                                </div>
                             </div>
                             {connecting === 'walletconnect' ? (
                                 <div className="w-4 h-4 border-2 border-blue-400 border-t-transparent rounded-full animate-spin" />
@@ -169,7 +265,7 @@ export function WalletConnectPanel() {
                         </button>
 
                         <p className="text-center text-[10px] text-neutral-700 pt-2">
-                            Mock-mode enabled · No real transactions
+                            Real wallet required · Transactions on connected chain
                         </p>
                     </motion.div>
                 )}
