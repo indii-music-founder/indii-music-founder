@@ -51,13 +51,13 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5D: PRO & Rights Management Real Integrations (229–235)
 
-- [ ] **229. ASCAP Work Registration API:** `PublishingService` acknowledges ASCAP but makes no API calls. Implement ASCAP Work Registration API to auto-register new compositions when a release is submitted.
-- [ ] **230. BMI Songwriting Registration:** Same gap — add BMI work registration API flow alongside ASCAP registration, triggered on release creation.
-- [ ] **231. SoundExchange Digital Performance Enrollment:** Add a one-time setup flow to enroll the artist's Sound Recordings with SoundExchange for digital performance royalties (satellite, internet radio).
-- [ ] **232. Harry Fox / Music Reports Cover Song Verification:** `MechanicalLicensingService` shows an acknowledgment checkbox but does not call the HFA API to verify license issuance before cover song delivery.
-- [ ] **233. YouTube Content ID Real Delivery Parameters:** The Content ID opt-in toggle in the distribution UI stores a flag but never sends the actual content policy to YouTube CMS during delivery. Wire this into the DDEX metadata blob.
-- [ ] **234. Loudness Compliance Validation (LUFS):** Add server-side LUFS measurement in the QC pipeline — Spotify requires -14 LUFS-I, Apple requires -16 LUFS-I. Block delivery if track fails loudness check.
-- [ ] **235. Apple Digital Masters Badge Qualification:** Add a QC gate that verifies the master is 24-bit/96kHz or higher before tagging the release as "Apple Digital Masters" eligible and delivering to Apple Music.
+- [x] **229. ASCAP Work Registration API:** `PublishingService` acknowledges ASCAP but makes no API calls. Implement ASCAP Work Registration API to auto-register new compositions when a release is submitted.
+- [x] **230. BMI Songwriting Registration:** Same gap — add BMI work registration API flow alongside ASCAP registration, triggered on release creation.
+- [x] **231. SoundExchange Digital Performance Enrollment:** Add a one-time setup flow to enroll the artist's Sound Recordings with SoundExchange for digital performance royalties (satellite, internet radio).
+- [x] **232. Harry Fox / Music Reports Cover Song Verification:** `MechanicalLicensingService` shows an acknowledgment checkbox but does not call the HFA API to verify license issuance before cover song delivery.
+- [x] **233. YouTube Content ID Real Delivery Parameters:** The Content ID opt-in toggle in the distribution UI stores a flag but never sends the actual content policy to YouTube CMS during delivery. Wire this into the DDEX metadata blob.
+- [x] **234. Loudness Compliance Validation (LUFS):** Add server-side LUFS measurement in the QC pipeline — Spotify requires -14 LUFS-I, Apple requires -16 LUFS-I. Block delivery if track fails loudness check.
+- [x] **235. Apple Digital Masters Badge Qualification:** Add a QC gate that verifies the master is 24-bit/96kHz or higher before tagging the release as "Apple Digital Masters" eligible and delivering to Apple Music.
 
 ---
 

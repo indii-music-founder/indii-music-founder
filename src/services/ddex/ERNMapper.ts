@@ -21,6 +21,7 @@ import {
     ContributorRole,
     CommercialModelType,
     UseType,
+    AIDisclosureType,
 } from './types/common';
 
 /**
@@ -125,12 +126,24 @@ export class ERNMapper {
         };
 
         if (metadata.aiGeneratedContent) {
+            const disclosureType = ERNMapper.classifyAIDisclosure(metadata.aiGeneratedContent);
             release.aiGenerationInfo = {
                 isFullyAIGenerated: metadata.aiGeneratedContent.isFullyAIGenerated,
                 isPartiallyAIGenerated: metadata.aiGeneratedContent.isPartiallyAIGenerated,
                 aiToolsUsed: metadata.aiGeneratedContent.aiToolsUsed,
-                humanContributionDescription: metadata.aiGeneratedContent.humanContribution
-            }
+                humanContributionDescription: metadata.aiGeneratedContent.humanContribution,
+                disclosureType,
+            };
+        }
+
+        // Self-Publishing Rights Controller
+        // When publisher is 'Self' or empty, the artist controls 100% of composition rights.
+        if (!metadata.publisher || metadata.publisher === 'Self' || metadata.publisher === 'self') {
+            release.rightsControllers = [{
+                partyName: metadata.labelName || metadata.artistName,
+                role: 'OriginalPublisher',
+                rightSharePercentage: 100,
+            }];
         }
 
         return release;
@@ -286,6 +299,17 @@ export class ERNMapper {
             };
         }
 
+        // Flag Image as AI-generated when cover art was created by AI
+        // This is critical for 2026 DSP compliance — indiiOS generates art via Nano Banana
+        if (metadata.aiGeneratedContent?.isFullyAIGenerated || metadata.coverArtAIGenerated) {
+            imageResource.aiGenerationInfo = {
+                isFullyAIGenerated: true,
+                isPartiallyAIGenerated: false,
+                aiToolsUsed: metadata.aiGeneratedContent?.aiToolsUsed || ['indiiOS Nano Banana'],
+                disclosureType: 'AI_Generated',
+            };
+        }
+
         resources.push(imageResource);
 
         return { resources, resourceReferences };
@@ -374,6 +398,33 @@ export class ERNMapper {
             addDeal('PayAsYouGoModel', 'PermanentDownload', 'Download');
         }
 
+        // 4. YouTube Content ID Deal (Item 233)
+        // When opted in, include a UGC monetization deal for YouTube CMS delivery.
+        // DDEX ERN 4.3: UserMakeAvailableLabelProvided + UserMadeContentDelivery use type
+        // signals the distributor to register the asset with YouTube Content ID.
+        if (metadata.youtubeContentIdOptIn === true) {
+            const contentIdPolicy = metadata.youtubeContentIdPolicy || 'monetize';
+            // block → prevent UGC; monetize/track → allow with revenue collection or tracking only
+            const useType: UseType = contentIdPolicy === 'block'
+                ? 'NonInteractiveStream'
+                : ('UserMadeContentDelivery' as UseType);
+
+            const contentIdDeal: Deal = {
+                dealReference: `D${dealCounter++}`,
+                dealTerms: {
+                    commercialModelType: ('UserMakeAvailableLabelProvided' as CommercialModelType),
+                    usage: [{ useType, distributionChannelType: 'Stream' }],
+                    territoryCode,
+                    validityPeriod,
+                    takeDown: false,
+                    releaseDisplayStartDate: metadata.releaseDate,
+                },
+            };
+            // Annotate the deal with the YouTube-specific policy in a proprietary extension field
+            (contentIdDeal as unknown as Record<string, unknown>)['youtubeContentIdPolicy'] = contentIdPolicy;
+            deals.push(contentIdDeal);
+        }
+
         return deals;
     }
 
@@ -414,5 +465,33 @@ export class ERNMapper {
         });
 
         return contributors;
+    }
+
+    /**
+     * Classify AI disclosure per 2026 DDEX / DSP requirements.
+     *
+     * Maps the internal metadata flags to the standardized disclosure types:
+     * - Fully AI → AI_Generated
+     * - Partially AI → AI_Assisted
+     * - Human-written but AI-produced → Human_Composed_AI_Produced
+     * - None → Human_Created
+     */
+    static classifyAIDisclosure(aiContent: {
+        isFullyAIGenerated: boolean;
+        isPartiallyAIGenerated: boolean;
+        humanContribution?: string;
+    }): AIDisclosureType {
+        if (aiContent.isFullyAIGenerated) {
+            return 'AI_Generated';
+        }
+        if (aiContent.isPartiallyAIGenerated) {
+            // If there's meaningful human composition, classify as composed-then-produced
+            const humanNote = (aiContent.humanContribution || '').toLowerCase();
+            if (humanNote.includes('composed') || humanNote.includes('wrote') || humanNote.includes('written')) {
+                return 'Human_Composed_AI_Produced';
+            }
+            return 'AI_Assisted';
+        }
+        return 'Human_Created';
     }
 }
