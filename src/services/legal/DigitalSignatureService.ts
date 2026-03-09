@@ -1,4 +1,5 @@
 import { logger } from '@/utils/logger';
+import { PandaDocService } from './PandaDocService';
 
 /**
  * Item 241: Digital Signature Service
@@ -24,7 +25,7 @@ export interface SignatureEnvelope {
     status: 'sent' | 'delivered' | 'signed' | 'declined' | 'pending_config';
     recipients: string[];
     sentAt: string;
-    provider: 'docusign' | 'mock';
+    provider: 'docusign' | 'pandadoc' | 'mock';
 }
 
 /**
@@ -89,11 +90,30 @@ export class DigitalSignatureService {
      * If DocuSign credentials are configured, sends a real envelope via the API.
      * Otherwise, returns a mock envelope with status 'pending_config' and logs a warning.
      */
+    /**
+     * Item 242: Route based on user preference (stored in localStorage).
+     * Default is 'docusign'. Set to 'pandadoc' in settings to route through PandaDoc.
+     */
+    static getPreferredProvider(): 'docusign' | 'pandadoc' {
+        const stored = localStorage.getItem('indii_signing_provider');
+        return stored === 'pandadoc' ? 'pandadoc' : 'docusign';
+    }
+
+    static setPreferredProvider(provider: 'docusign' | 'pandadoc'): void {
+        localStorage.setItem('indii_signing_provider', provider);
+    }
+
     async sendSplitSheetForSignature(trackName: string, collaborators: Collaborator[]): Promise<SignatureEnvelope> {
         // Validate math
         const totalSplit = collaborators.reduce((sum, c) => sum + c.splitPercentage, 0);
         if (Math.abs(totalSplit - 100) > 0.1) {
             throw new Error(`Splits must equal 100%. Current total: ${totalSplit}%`);
+        }
+
+        // Item 242: Route to preferred provider
+        const preferredProvider = DigitalSignatureService.getPreferredProvider();
+        if (preferredProvider === 'pandadoc') {
+            return this.sendViaPandaDoc(trackName, collaborators);
         }
 
         const config = getDocuSignConfig();
@@ -112,6 +132,42 @@ export class DigitalSignatureService {
         }
 
         return this.sendViaDocuSign(config, trackName, collaborators);
+    }
+
+    /**
+     * Item 242: Send via PandaDoc (fallback provider preferred by some music attorneys).
+     * Uses PandaDocService which proxies through a Cloud Function to keep the API key server-side.
+     */
+    private async sendViaPandaDoc(trackName: string, collaborators: Collaborator[]): Promise<SignatureEnvelope> {
+        logger.info(`[DigitalSignatureService] Routing to PandaDoc for "${trackName}"...`);
+
+        const pandaDoc = new PandaDocService();
+        const doc = await pandaDoc.createDocument({
+            name: `Split Sheet - ${trackName}`,
+            recipients: collaborators.map((c, i) => ({
+                email: c.email,
+                firstName: c.name.split(' ')[0] || c.name,
+                lastName: c.name.split(' ').slice(1).join(' ') || '',
+                role: 'signer',
+                signingOrder: i + 1,
+            })),
+            tokens: {
+                trackName,
+                totalSplits: String(collaborators.length),
+                collaboratorList: collaborators.map(c => `${c.name} (${c.role}): ${c.splitPercentage}%`).join('\n'),
+            },
+            metadata: { source: 'indiiOS', type: 'split_sheet' },
+        });
+
+        await pandaDoc.sendDocument(doc.id, `Please review and sign the split sheet for "${trackName}".`);
+
+        return {
+            envelopeId: doc.id,
+            status: 'sent',
+            recipients: collaborators.map(c => c.email),
+            sentAt: new Date().toISOString(),
+            provider: 'pandadoc',
+        };
     }
 
     /**
