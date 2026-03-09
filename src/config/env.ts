@@ -24,6 +24,12 @@ const FrontendEnvSchema = CommonEnvSchema.extend({
     VITE_FIREBASE_APP_CHECK_KEY: z.string().optional(),
     VITE_FIREBASE_APP_CHECK_DEBUG_TOKEN: z.string().optional(),
 
+    // Agent Zero sidecar
+    VITE_A0_BASE_URL: z.string().url().optional(),
+    VITE_A0_RUNTIME_ID: z.string().optional(),
+    VITE_A0_AUTH_LOGIN: z.string().optional(),
+    VITE_A0_AUTH_PASSWORD: z.string().optional(),
+
     skipOnboarding: z.boolean().default(false),
 });
 
@@ -73,6 +79,12 @@ const processEnv = {
 
     skipOnboarding: toBoolean(getSafeMetaEnv('VITE_SKIP_ONBOARDING') || process.env.VITE_SKIP_ONBOARDING),
     VITE_EXPOSE_INTERNALS: getEnv(getSafeMetaEnv('VITE_EXPOSE_INTERNALS'), process.env.VITE_EXPOSE_INTERNALS),
+
+    // Agent Zero sidecar
+    VITE_A0_BASE_URL: getEnv(getSafeMetaEnv('VITE_A0_BASE_URL'), process.env.VITE_A0_BASE_URL),
+    VITE_A0_RUNTIME_ID: getEnv(getSafeMetaEnv('VITE_A0_RUNTIME_ID'), process.env.VITE_A0_RUNTIME_ID),
+    VITE_A0_AUTH_LOGIN: getEnv(getSafeMetaEnv('VITE_A0_AUTH_LOGIN'), process.env.VITE_A0_AUTH_LOGIN),
+    VITE_A0_AUTH_PASSWORD: getEnv(getSafeMetaEnv('VITE_A0_AUTH_PASSWORD'), process.env.VITE_A0_AUTH_PASSWORD),
 };
 
 // isTest moved to top

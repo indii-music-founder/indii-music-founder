@@ -62,7 +62,6 @@ export const departmentCssVars = {
     audio: '--color-dept-distribution',             // Audio Distribution Hub shares Distribution
     onboarding: '--color-dept-creative',   // Onboarding shares Creative
     workflow: '--color-dept-social',       // Workflow shares Social
-    showroom: '--color-dept-brand',        // Showroom shares Brand
     merch: '--color-dept-brand',           // Merch shares Brand
     knowledge: '--color-dept-distribution', // Knowledge shares Distribution
     files: '--color-dept-default',
@@ -263,16 +262,6 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         hoverText: 'hover:text-dept-creative',
         hoverBg: 'hover:bg-dept-creative/5',
         cssVar: '--color-dept-creative',
-    },
-    showroom: {
-        // Showroom uses Brand's amber (product identity)
-        text: 'text-dept-brand',
-        bg: 'bg-dept-brand/10',
-        border: 'border-dept-brand',
-        ring: 'focus-within:ring-dept-brand/50',
-        hoverText: 'hover:text-dept-brand',
-        hoverBg: 'hover:bg-dept-brand/5',
-        cssVar: '--color-dept-brand',
     },
     agent: {
         // Agent uses Creative's purple (AI magic)

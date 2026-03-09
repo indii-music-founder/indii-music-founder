@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Chat Interaction E2E Tests
@@ -10,7 +10,7 @@ import { test, expect } from '@playwright/test';
  */
 
 test.describe('Chat / CommandBar Interaction', () => {
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         // Intercept AI API calls to prevent real token spend
         await page.route('**/generativelanguage.googleapis.com/**', async route => {
             await route.fulfill({
@@ -52,7 +52,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         await page.waitForTimeout(2_000);
     });
 
-    test('prompt input renders and accepts keyboard input', async ({ page }) => {
+    test('prompt input renders and accepts keyboard input', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea[placeholder], [role="textbox"]')
             .first();
@@ -85,7 +85,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         expect(value).toContain('hello');
     });
 
-    test('submitting empty prompt is rejected gracefully', async ({ page }) => {
+    test('submitting empty prompt is rejected gracefully', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -107,7 +107,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('DelegateMenu renders specialist agent list', async ({ page }) => {
+    test('DelegateMenu renders specialist agent list', async ({ authedPage: page }) => {
         // Look for delegate/specialist selector
         const delegateBtn = page
             .locator('[data-testid="delegate-menu"], [aria-label*="delegate"], [aria-label*="agent"]')
@@ -141,7 +141,7 @@ test.describe('Chat / CommandBar Interaction', () => {
         }
     });
 
-    test('app remains stable during rapid input changes', async ({ page }) => {
+    test('app remains stable during rapid input changes', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();

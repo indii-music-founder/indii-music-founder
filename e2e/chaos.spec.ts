@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures/auth';
 
 /**
  * Chaos E2E Tests — Resilience and Error Recovery
@@ -13,7 +13,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Chaos — Offline and Network Failures', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test('app renders when Firestore is blocked (offline mode)', async ({ page }) => {
+    test('app renders when Firestore is blocked (offline mode)', async ({ authedPage: page }) => {
         // Block all Firestore requests
         await page.route('**/firestore.googleapis.com/**', route => route.abort());
 
@@ -30,7 +30,7 @@ test.describe('Chaos — Offline and Network Failures', () => {
         expect(hasError).toBe(false);
     });
 
-    test('app renders when AI APIs are all blocked', async ({ page }) => {
+    test('app renders when AI APIs are all blocked', async ({ authedPage: page }) => {
         await page.route('**/generativelanguage.googleapis.com/**', route => route.abort());
         await page.route('**/aiplatform.googleapis.com/**', route => route.abort());
         await page.route('**/localhost:50080/**', route => route.abort());
@@ -42,7 +42,7 @@ test.describe('Chaos — Offline and Network Failures', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('app survives all external APIs being blocked simultaneously', async ({ page }) => {
+    test('app survives all external APIs being blocked simultaneously', async ({ authedPage: page }) => {
         // Block everything external
         await page.route('**/*.googleapis.com/**', route => route.abort());
         await page.route('**/stripe.com/**', route => route.abort());
@@ -59,13 +59,13 @@ test.describe('Chaos — Offline and Network Failures', () => {
 test.describe('Chaos — Rapid Navigation', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('navigating rapidly between 5 modules does not cause white-screen', async ({ page }) => {
+    test('navigating rapidly between 5 modules does not cause white-screen', async ({ authedPage: page }) => {
         const moduleIds = ['dashboard', 'finance', 'distribution', 'creative', 'publishing'];
 
         for (const moduleId of moduleIds) {
@@ -88,7 +88,7 @@ test.describe('Chaos — Rapid Navigation', () => {
         expect(hasError).toBe(false);
     });
 
-    test('opening and closing CommandBar 10 times does not crash', async ({ page }) => {
+    test('opening and closing CommandBar 10 times does not crash', async ({ authedPage: page }) => {
         // Try keyboard shortcut approach
         for (let i = 0; i < 10; i++) {
             await page.keyboard.press('Control+k');
@@ -104,13 +104,13 @@ test.describe('Chaos — Rapid Navigation', () => {
 test.describe('Chaos — Error Boundaries', () => {
     test.use({ viewport: { width: 1440, height: 900 } });
 
-    test.beforeEach(async ({ page }) => {
+    test.beforeEach(async ({ authedPage: page }) => {
         await page.goto('/');
         await page.waitForSelector('#root', { timeout: 15_000 });
         await page.waitForTimeout(2_000);
     });
 
-    test('submitting empty prompt is rejected without crash', async ({ page }) => {
+    test('submitting empty prompt is rejected without crash', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -129,7 +129,7 @@ test.describe('Chaos — Error Boundaries', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('injecting invalid characters into prompt does not crash', async ({ page }) => {
+    test('injecting invalid characters into prompt does not crash', async ({ authedPage: page }) => {
         const input = page
             .locator('[data-testid="prompt-input"], textarea, [role="textbox"]')
             .first();
@@ -157,7 +157,7 @@ test.describe('Chaos — Error Boundaries', () => {
         await expect(page.locator('#root')).toBeVisible();
     });
 
-    test('console errors do not spike above baseline during normal navigation', async ({ page }) => {
+    test('console errors do not spike above baseline during normal navigation', async ({ authedPage: page }) => {
         const errors: string[] = [];
 
         page.on('console', msg => {

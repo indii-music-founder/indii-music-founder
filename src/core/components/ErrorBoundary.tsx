@@ -135,3 +135,46 @@ export class ErrorBoundary extends Component<Props, State> {
         return this.props.children;
     }
 }
+
+/**
+ * ModuleErrorBoundary — inline, non-full-screen error state.
+ * Wraps individual panels/sections so one error doesn't crash the whole module.
+ */
+interface ModuleErrorBoundaryState {
+    hasError: boolean;
+    error: Error | null;
+}
+
+export class ModuleErrorBoundary extends Component<Props, ModuleErrorBoundaryState> {
+    public state: ModuleErrorBoundaryState = { hasError: false, error: null };
+
+    public static getDerivedStateFromError(error: Error): ModuleErrorBoundaryState {
+        return { hasError: true, error };
+    }
+
+    public componentDidCatch(error: Error, info: ErrorInfo) {
+        logger.error('[ModuleErrorBoundary]', error, info);
+    }
+
+    public render() {
+        if (!this.state.hasError) return this.props.children;
+
+        if (this.props.fallback) return this.props.fallback;
+
+        return (
+            <div className="flex flex-col items-center justify-center gap-3 p-8 rounded-xl border border-red-500/20 bg-red-950/10 text-center">
+                <RefreshCw className="w-6 h-6 text-red-400" />
+                <p className="text-sm font-medium text-gray-300">This section encountered an error.</p>
+                {import.meta.env.DEV && this.state.error && (
+                    <p className="font-mono text-xs text-red-300 max-w-xs truncate">{this.state.error.message}</p>
+                )}
+                <button
+                    onClick={() => this.setState({ hasError: false, error: null })}
+                    className="mt-1 px-4 py-1.5 text-xs bg-white/10 hover:bg-white/20 rounded-md text-white transition-colors"
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+}

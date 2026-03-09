@@ -74,7 +74,7 @@ const InvestorPortal = lazy(() => import('../modules/investor/InvestorPortal'));
 const GhostCapture = lazy(() => import('../modules/capture/GhostCapture'));
 const MemoryDashboard = lazy(() => import('../modules/memory/MemoryDashboard'));
 const MarketplaceModule = lazy(() => import('../modules/marketplace'));
-const MarketplaceStorefront = lazy(() => import('../modules/marketplace/components/MarketplaceStorefront'));
+const SelectOrg = lazy(() => import('../modules/select-org/SelectOrg'));
 
 // ============================================================================
 // Module Router - Maps module IDs to components
@@ -105,6 +105,8 @@ const MODULE_COMPONENTS: Partial<Record<ModuleId, React.LazyExoticComponent<Reac
     'merch': MerchStudio,
     'marketplace': MarketplaceModule,
     'audio-analyzer': AudioAnalyzer,
+    'observability': ObserverabilityDashboard,
+    'select-org': SelectOrg,
     'history': HistoryDashboard,
     'debug': MultimodalGauntlet,
     'investor': InvestorPortal,
@@ -234,17 +236,29 @@ function useAppInitialization() {
 }
 
 
+// Modules that require a verified (non-anonymous) account
+const COMMERCIAL_MODULES = new Set<ModuleId>([
+    'distribution', 'finance', 'licensing', 'merch', 'publishing',
+]);
+
 function useOnboardingRedirect() {
-    const { user, authLoading, currentModule } = useStore();
+    const { user, authLoading, currentModule, setModule } = useStore(
+        useShallow(s => ({
+            user: s.user,
+            authLoading: s.authLoading,
+            currentModule: s.currentModule,
+            setModule: s.setModule,
+        }))
+    );
 
     useEffect(() => {
-        if (authLoading) return;
+        if (authLoading || !user) return;
 
-        // If not authenticated, we might want to redirect to a login screen?
-        // But currently App.tsx doesn't have a specific login route visible in the code I saw.
-        // It renders modules. We probably need a Login Module or Overlay.
-
-    }, [user, authLoading, currentModule]);
+        // Redirect anonymous users away from commercial modules to onboarding
+        if (user.isAnonymous && COMMERCIAL_MODULES.has(currentModule as ModuleId)) {
+            setModule('onboarding');
+        }
+    }, [user, authLoading, currentModule, setModule]);
 }
 
 // Module Renderer and App Component follow
@@ -262,12 +276,34 @@ interface ModuleRendererProps {
  * Self-parses subPath from the URL to handle 404s for invalid deep links
  * (e.g. /agent/999 where 999 is not a real agent).
  */
+function GuestGate({ onUpgrade }: { onUpgrade: () => void }) {
+    return (
+        <div className="flex flex-col items-center justify-center h-full gap-6 text-gray-400 px-6 text-center">
+            <div className="text-5xl">🔒</div>
+            <div className="text-xl font-semibold text-gray-200">Account required</div>
+            <p className="text-sm text-gray-500 max-w-xs">
+                This feature requires a free account. Sign up in seconds to unlock distribution, finance, licensing, and more.
+            </p>
+            <button
+                onClick={onUpgrade}
+                className="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-semibold transition-colors"
+            >
+                Create Free Account
+            </button>
+        </div>
+    );
+}
+
 function ModuleRenderer({ moduleId }: ModuleRendererProps) {
     const location = useLocation();
     const subPath = useMemo(() => {
         const segments = location.pathname.split('/').filter(Boolean);
         return segments.length > 1 ? segments[1] : undefined;
     }, [location.pathname]);
+
+    const { user, setModule } = useStore(
+        useShallow(s => ({ user: s.user, setModule: s.setModule }))
+    );
 
     const ModuleComponent = MODULE_COMPONENTS[moduleId];
 
@@ -294,6 +330,11 @@ function ModuleRenderer({ moduleId }: ModuleRendererProps) {
                 </div>
             </div>
         );
+    }
+
+    // Gate commercial modules for anonymous/guest users
+    if (user?.isAnonymous && COMMERCIAL_MODULES.has(moduleId)) {
+        return <GuestGate onUpgrade={() => setModule('onboarding')} />;
     }
 
     // Special case for creative studio which needs initialMode prop

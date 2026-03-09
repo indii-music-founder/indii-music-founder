@@ -2,12 +2,41 @@ import React, { Suspense } from 'react';
 import { useStore } from '@/core/store';
 import { ShoppingCart, Store, X, Trash2 } from 'lucide-react';
 import MarketplaceStorefront from './components/MarketplaceStorefront';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 
 const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     const cart = useStore((s) => s.cart);
     const removeFromCart = useStore((s) => s.removeFromCart);
     const clearCart = useStore((s) => s.clearCart);
     const cartTotal = useStore((s) => s.cartTotal);
+
+    const [checkingOut, setCheckingOut] = React.useState(false);
+    const [checkoutError, setCheckoutError] = React.useState<string | null>(null);
+
+    const handleCheckout = async () => {
+        if (checkingOut || cart.length === 0) return;
+        setCheckingOut(true);
+        setCheckoutError(null);
+        try {
+            const functions = getFunctions();
+            const createCheckoutSession = httpsCallable<
+                { items: typeof cart; successUrl: string; cancelUrl: string },
+                { url: string }
+            >(functions, 'createCheckoutSession');
+            const result = await createCheckoutSession({
+                items: cart,
+                successUrl: window.location.href + '?checkout=success',
+                cancelUrl: window.location.href + '?checkout=cancel',
+            });
+            if (result.data?.url) {
+                window.location.href = result.data.url;
+            }
+        } catch (err: any) {
+            setCheckoutError(err.message || 'Checkout failed. Please try again.');
+        } finally {
+            setCheckingOut(false);
+        }
+    };
 
     return (
         <div className="w-80 h-full flex flex-col bg-[--card] border-l border-[--border]">
@@ -52,8 +81,15 @@ const CartSidebar: React.FC<{ onClose: () => void }> = ({ onClose }) => {
                         <span className="text-slate-400">Total</span>
                         <span className="text-white font-semibold">${cartTotal().toFixed(2)}</span>
                     </div>
-                    <button className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium rounded-lg transition-colors">
-                        Checkout
+                    {checkoutError && (
+                        <p className="text-xs text-red-400 text-center">{checkoutError}</p>
+                    )}
+                    <button
+                        onClick={handleCheckout}
+                        disabled={checkingOut}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white text-sm font-medium rounded-lg transition-colors"
+                    >
+                        {checkingOut ? 'Redirecting...' : 'Checkout'}
                     </button>
                     <button
                         onClick={clearCart}

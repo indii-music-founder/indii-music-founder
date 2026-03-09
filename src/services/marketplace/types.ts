@@ -1,4 +1,13 @@
-export type ProductType = 'song' | 'album' | 'merch' | 'ticket' | 'digital-asset' | 'service';
+export type ProductType = 'song' | 'album' | 'merch' | 'ticket' | 'digital-asset' | 'service' | 'stem-pack';
+
+export type StemLabel = 'drums' | 'bass' | 'melody' | 'vocals';
+
+export interface StemFile {
+    label: StemLabel;
+    url: string;      // Firebase Storage download URL
+    filename: string; // Original filename for display
+    storagePath: string; // Full path in Firebase Storage
+}
 
 export interface Product {
     id: string;
@@ -10,7 +19,7 @@ export interface Product {
     type: ProductType;
     images: string[];
     inventory?: number; // Unlimited if undefined
-    metadata?: Record<string, unknown>; // For things like ISRC, Ticket Date, etc.
+    metadata?: Record<string, unknown>; // For things like ISRC, Ticket Date, stemFiles[], etc.
     splits?: ProductSplit[]; // Revenue splits
     createdAt: string;
     isActive: boolean;
