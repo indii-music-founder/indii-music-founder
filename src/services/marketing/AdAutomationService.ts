@@ -70,13 +70,13 @@ export class AdAutomationService {
     async getAdInsights(adId: string) {
         logger.info(`[AdAutomation] Fetching insights for ad ${adId}.`);
 
-        // Mocked performance data
+        // TODO: Wire to Meta/TikTok Ads API for real insights
         return {
-            impressions: 4200,
-            clicks: 125,
-            spend: 18.42,
-            ctr: 0.029,
-            cpc: 0.147
+            impressions: 0,
+            clicks: 0,
+            spend: 0,
+            ctr: 0,
+            cpc: 0
         };
     }
 }

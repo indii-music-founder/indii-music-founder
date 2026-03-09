@@ -3,12 +3,9 @@ import type { AnyToolFunction } from '../types';
 
 export const LicensingTools: Record<string, AnyToolFunction> = {
     match_sync_licensing_brief: wrapTool('match_sync_licensing_brief', async (args: { briefDescription: string; mood: string; targetBpm: number }) => {
-        // Mock Sync Licensing Brief Matching (Item 133)
-        // In a real scenario, this would search the TrackLibraryService based on mood/BPM
-        const matchedTracks = [
-            { id: 't1', title: 'Neon Nights', confidence: 0.92, match_reason: `Mood '${args.mood}' aligns perfectly.` },
-            { id: 't2', title: 'Midnight Drive', confidence: 0.85, match_reason: `BPM ${args.targetBpm} is an exact match.` }
-        ];
+        // TODO: Wire to catalog matching service (Item 133)
+        // Search TrackLibraryService based on mood/BPM
+        const matchedTracks: Array<{ id: string; title: string; confidence: number; match_reason: string }> = [];
 
         return toolSuccess({
             briefDescription: args.briefDescription,
@@ -18,17 +15,17 @@ export const LicensingTools: Record<string, AnyToolFunction> = {
     }),
 
     generate_beat_lease_contract: wrapTool('generate_beat_lease_contract', async (args: { beatTitle: string; producerName: string; buyerName: string; leaseType: 'Exclusive' | 'Non-Exclusive'; price: number }) => {
-        // Mock Micro-Licensing Portal contract generator (Item 134)
-        const mockContractUrl = `https://docs.indii.os/licensing/${args.beatTitle.replace(/\s+/g, '_')}_${args.leaseType.toLowerCase()}_lease.pdf`;
+        // TODO: Wire to contract generation service (Item 134)
+        const contractId = `lease_${Date.now()}`;
 
         return toolSuccess({
             beatTitle: args.beatTitle,
             leaseType: args.leaseType,
             buyer: args.buyerName,
             producer: args.producerName,
-            contractUrl: mockContractUrl,
-            status: 'Draft Created'
-        }, `${args.leaseType} beat-leasing contract generated for "${args.beatTitle}" priced at $${args.price}. Document available: ${mockContractUrl}`);
+            contractId,
+            status: 'Draft Pending'
+        }, `${args.leaseType} beat-leasing contract queued for "${args.beatTitle}" priced at $${args.price}. Contract ID: ${contractId}`);
     })
 };
 

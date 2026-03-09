@@ -11,13 +11,9 @@ interface Track {
     streams: string;
 }
 
-const DEFAULT_BIO = `An independent artist blending soul, electronic, and hip-hop into a sound entirely their own. With a catalog spanning three EPs and dozens of live performances, they've carved a dedicated audience on the strength of raw emotion and genre-defying production.`;
+const DEFAULT_BIO = '';
 
-const DEFAULT_TRACKS: Track[] = [
-    { title: 'Midnight Frequencies', year: '2025', streams: '1.2M' },
-    { title: 'Static Love', year: '2025', streams: '847K' },
-    { title: 'Signal Loss', year: '2024', streams: '2.1M' },
-];
+const DEFAULT_TRACKS: Track[] = [];
 
 const GENRE_OPTIONS = ['Hip-Hop', 'R&B', 'Electronic', 'Soul', 'Afrobeats', 'Pop', 'Alternative', 'Jazz'];
 
@@ -162,11 +158,10 @@ export default function EPKGenerator() {
                         <button
                             key={g}
                             onClick={() => toggleGenre(g)}
-                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${
-                                genreTags.includes(g)
+                            className={`px-3 py-1 rounded-full text-xs font-medium transition-all ${genreTags.includes(g)
                                     ? 'bg-dept-marketing/20 border border-dept-marketing/40 text-dept-marketing'
                                     : 'bg-white/5 border border-white/10 text-gray-500 hover:border-white/20'
-                            }`}
+                                }`}
                         >
                             {g}
                         </button>

@@ -31,32 +31,7 @@ const PLATFORMS: Platform[] = [
     { id: 'ig-reels', name: 'IG Reels', color: 'bg-purple-500', maxDuration: 90, ratio: '9:16' },
 ];
 
-const INITIAL_POSTS: ScheduledPost[] = [
-    {
-        id: '1',
-        title: 'Midnight Frequency - Teaser Clip',
-        platforms: ['tiktok', 'ig-reels'],
-        scheduledAt: new Date(Date.now() + 3600000),
-        status: 'queued',
-        caption: '🎵 New single dropping Friday — drop a 🔥 if you\'re ready #indii #newmusic',
-    },
-    {
-        id: '2',
-        title: 'Studio Session BTS',
-        platforms: ['tiktok', 'yt-shorts', 'ig-reels'],
-        scheduledAt: new Date(Date.now() + 86400000),
-        status: 'queued',
-        caption: 'Behind the scenes of the recording process 🎚️ #studiobts #producer',
-    },
-    {
-        id: '3',
-        title: 'Release Day Announcement',
-        platforms: ['ig-reels'],
-        scheduledAt: new Date(Date.now() - 3600000),
-        status: 'posted',
-        caption: 'IT\'S OUT NOW 🚀 Link in bio. Stream "Midnight Frequency" everywhere.',
-    },
-];
+const INITIAL_POSTS: ScheduledPost[] = [];
 
 const STATUS_ICONS = {
     queued: <Clock size={14} className="text-yellow-400" />,
@@ -225,8 +200,8 @@ export default function MultiPlatformPoster() {
                                         key={p.id}
                                         onClick={() => togglePlatform(p.id)}
                                         className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold border transition-all ${newPlatforms.includes(p.id)
-                                                ? 'bg-dept-marketing/20 border-dept-marketing text-dept-marketing'
-                                                : 'border-white/10 text-gray-500 hover:border-white/20'
+                                            ? 'bg-dept-marketing/20 border-dept-marketing text-dept-marketing'
+                                            : 'border-white/10 text-gray-500 hover:border-white/20'
                                             }`}
                                     >
                                         <div className={`w-2 h-2 rounded-full ${p.color}`} />

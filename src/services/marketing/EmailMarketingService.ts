@@ -37,11 +37,11 @@ export class EmailMarketingService {
 
         members.forEach(m => logger.debug(`[EmailMarketing] Prepped: ${m.email}`));
 
-        await this.syncMock(provider, listId, members.length);
+        await this.syncToProvider(provider, listId, members.length);
     }
 
-    private async syncMock(provider: string, listId: string, count: number) {
-        // Mock successful sync
+    private async syncToProvider(provider: string, listId: string, count: number) {
+        // TODO: Wire to Mailchimp/Klaviyo API
         return new Promise((resolve) => {
             setTimeout(() => {
                 logger.info(`[EmailMarketing] ${provider} sync successful for list ${listId} (${count} members).`);
@@ -72,12 +72,12 @@ export class EmailMarketingService {
     async getCampaignStats(campaignId: string, provider: EmailProvider) {
         logger.info(`[EmailMarketing] Fetching stats for campaign ${campaignId} on ${provider}.`);
 
-        // Mocked stats
+        // TODO: Wire to Mailchimp/Klaviyo reporting API
         return {
-            openRate: 0.245,
-            clickRate: 0.032,
-            unsubscribes: 2,
-            delivered: 1200
+            openRate: 0,
+            clickRate: 0,
+            unsubscribes: 0,
+            delivered: 0
         };
     }
 }

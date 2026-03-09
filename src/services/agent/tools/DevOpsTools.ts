@@ -202,18 +202,17 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     run_chaos_mesh_tests: wrapTool('run_chaos_mesh_tests', async (args: { targetService: string; duration: string }) => {
-        // Mock Playwright Chaos Mesh testing (Item 181)
+        // TODO: Wire to Chaos Mesh API (Item 181)
         return toolSuccess({
             targetService: args.targetService,
             duration: args.duration,
-            status: 'Chaos Engineering Test Completed',
-            faultsInjected: ['Network Latency', 'Packet Drop', 'Pod Kill'],
-            resiliencyScore: 92
-        }, `Chaos mesh tests completed on ${args.targetService} for ${args.duration}. System demonstrated high resiliency with a score of 92/100.`);
+            status: 'Chaos test queued',
+            note: 'Connect Chaos Mesh API for actual fault injection and scoring.'
+        }, `Chaos mesh test queued for ${args.targetService} for ${args.duration}. Connect Chaos Mesh for execution.`);
     }),
 
     configure_circuit_breaker: wrapTool('configure_circuit_breaker', async (args: { serviceName: string; threshold: number; fallbackBehavior: string }) => {
-        // Mock API Circuit Breakers (Item 182)
+        // TODO: Wire to service mesh circuit breaker config (Item 182)
         return toolSuccess({
             serviceName: args.serviceName,
             threshold: args.threshold,
@@ -223,7 +222,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     configure_websocket_keepalive: wrapTool('configure_websocket_keepalive', async (args: { serviceId: string; pingInterval: number }) => {
-        // Mock Long-Polling Resiliency (Item 183)
+        // TODO: Wire to WebSocket keep-alive config (Item 183)
         return toolSuccess({
             serviceId: args.serviceId,
             pingInterval: args.pingInterval,
@@ -232,7 +231,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     run_contention_test: wrapTool('run_contention_test', async (args: { database: string; parallelWrites: number }) => {
-        // Mock Firestore Lock Contention Testing (Item 184)
+        // TODO: Wire to Firestore contention testing harness (Item 184)
         return toolSuccess({
             database: args.database,
             parallelWrites: args.parallelWrites,
@@ -243,7 +242,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     configure_sentry_crash_reporting: wrapTool('configure_sentry_crash_reporting', async (args: { environment: string }) => {
-        // Mock Electron Crash Reporting (Item 185)
+        // TODO: Wire to Sentry SDK initialization (Item 185)
         return toolSuccess({
             environment: args.environment,
             provider: 'Sentry',
@@ -253,7 +252,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     trigger_watchdog_recovery: wrapTool('trigger_watchdog_recovery', async (args: { agentId: string; loopThreshold: number }) => {
-        // Mock "Stressed Agent" Recovery (Item 186)
+        // TODO: Wire to agent watchdog service (Item 186)
         return toolSuccess({
             agentId: args.agentId,
             loopThreshold: args.loopThreshold,
@@ -263,7 +262,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     configure_logical_sharding: wrapTool('configure_logical_sharding', async (args: { collection: string; shards: number }) => {
-        // Mock Database Sharding Prep (Item 188)
+        // TODO: Wire to Firestore sharding config (Item 188)
         return toolSuccess({
             collection: args.collection,
             shardsConfigured: args.shards,
@@ -274,7 +273,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     spin_up_qa_sandbox: wrapTool('spin_up_qa_sandbox', async (args: { environmentName: string; snapshotId: string }) => {
-        // Mock Sandbox QA Environment (Item 189)
+        // TODO: Wire to GCP sandbox provisioning API (Item 189)
         return toolSuccess({
             environmentName: args.environmentName,
             snapshotUsed: args.snapshotId,

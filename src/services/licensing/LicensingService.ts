@@ -1,4 +1,4 @@
-import { Timestamp, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { logger } from '@/utils/logger';
 
@@ -145,50 +145,8 @@ export class LicensingService {
      * Seed initial data for a new user/org
      */
     private async seedDatabase(userId: string) {
-        logger.info(`[LicensingService] Seeding database for ${userId}...`);
-
-        const initialLicenses = [
-            {
-                title: 'Neon Nights (Beat)',
-                artist: 'CyberSonic',
-                licenseType: 'Exclusive',
-                status: 'active',
-                usage: 'Commercial Release / Streaming',
-                notes: 'Master and Publishing rights fully cleared.',
-                updatedAt: serverTimestamp(),
-                createdAt: serverTimestamp()
-            },
-            {
-                title: 'Coffee & Code (Vocal Sample)',
-                artist: 'LofiLink',
-                licenseType: 'Royalty-Free',
-                status: 'active',
-                usage: 'Social Media / Background Music',
-                notes: 'Attribution required.',
-                updatedAt: serverTimestamp(),
-                createdAt: serverTimestamp()
-            }
-        ];
-
-        const initialRequests = [
-            {
-                title: 'Midnight Drive (Remix)',
-                artist: 'SynthWave-X',
-                usage: 'Major Label Compilation',
-                status: 'checking',
-                notes: 'Pending AI clearance check on master samples.',
-                updatedAt: serverTimestamp(),
-                requestedAt: serverTimestamp()
-            }
-        ];
-
-        for (const l of initialLicenses) {
-            await addDoc(collection(db, 'licenses'), { ...l, userId });
-        }
-
-        for (const r of initialRequests) {
-            await addDoc(collection(db, 'license_requests'), { ...r, userId });
-        }
+        // No-op: Licensing data is created by user actions, not auto-seeded
+        logger.info(`[LicensingService] Database ready for ${userId}.`);
     }
 }
 

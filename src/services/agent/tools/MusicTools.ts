@@ -7,7 +7,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
      * Highly advanced tool that analyzes audio and creates industry-standard "Golden Metadata".
      * This metadata is DDEX-ready and includes AI-detected genre, mood, and identifiers.
      */
-    create_music_metadata: wrapTool('create_music_metadata', async (args: { 
+    create_music_metadata: wrapTool('create_music_metadata', async (args: {
         uploadedAudioIndex: number,
         artistName?: string,
         trackTitle?: string,
@@ -49,9 +49,9 @@ export const MusicTools: Record<string, AnyToolFunction> = {
      */
     verify_metadata_golden: wrapTool('verify_metadata_golden', async (args: { metadata: any }) => {
         const { ExtendedGoldenMetadataSchema } = await import('@/services/ddex/validation');
-        
+
         const result = ExtendedGoldenMetadataSchema.safeParse(args.metadata);
-        
+
         if (!result.success) {
             return {
                 isGolden: false,
@@ -63,7 +63,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
         // Additional business logic: splits must sum to 100%
         const splits = args.metadata.splits || [];
         const totalPercentage = splits.reduce((sum: number, s: any) => sum + (s.percentage || 0), 0);
-        
+
         if (Math.abs(totalPercentage - 100) > 0.01) {
             return {
                 isGolden: false,
@@ -78,12 +78,12 @@ export const MusicTools: Record<string, AnyToolFunction> = {
     /**
      * Updates specific fields in a track's metadata.
      */
-    update_track_metadata: wrapTool('update_track_metadata', async (args: { 
-        fingerprint: string, 
-        updates: Partial<any> 
+    update_track_metadata: wrapTool('update_track_metadata', async (args: {
+        fingerprint: string,
+        updates: Partial<any>
     }) => {
         const { trackLibrary } = await import('@/services/metadata/TrackLibraryService');
-        
+
         const existing = await trackLibrary.getByFingerprint(args.fingerprint);
         if (!existing) return toolError("Track not found in library.", "NOT_FOUND");
 
@@ -94,7 +94,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
     }),
 
     scrub_id3_tags: wrapTool('scrub_id3_tags', async (args: { fileUrl: string; metadata: any }) => {
-        // Mock Sync Metadata Scrubber (Item 176)
+        // TODO: Wire to ID3 tag writer library (Item 176)
         return toolSuccess({
             fileUrl: args.fileUrl,
             status: 'ID3 Tags Auto-Populated',
@@ -103,7 +103,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
     }),
 
     inject_splits_to_metadata: wrapTool('inject_splits_to_metadata', async (args: { trackId: string; splits: Array<{ writer: string; percentage: number; ipi: string }> }) => {
-        // Mock Split Sheet Metadata Injection (Item 178)
+        // TODO: Wire to metadata embedding service (Item 178)
         return toolSuccess({
             trackId: args.trackId,
             injectedSplits: args.splits.length,
@@ -112,7 +112,7 @@ export const MusicTools: Record<string, AnyToolFunction> = {
     }),
 
     export_dolby_atmos_stems: wrapTool('export_dolby_atmos_stems', async (args: { trackId: string; stemCount: number }) => {
-        // Mock Spatial/Dolby Atmos Preparation (Item 192)
+        // TODO: Wire to Dolby Atmos stem export service (Item 192)
         return toolSuccess({
             trackId: args.trackId,
             stemCount: args.stemCount,
