@@ -67,11 +67,11 @@ export class RINService {
                 },
                 title: track.trackTitle,
                 contributors: contributors,
-                // Mock session for demonstration
+                // TODO: Source session data from track metadata
                 studioSessions: [{
                     sessionDate: metadata.releaseDate, // Fallback to release date
                     studioLocation: {
-                        studioName: 'Home Studio', // Placeholder
+                        studioName: '', // Populated from track session metadata when available
                         countryCode: 'US'
                     },
                     participants: contributors.map(c => ({

@@ -101,12 +101,8 @@ export class InfluencerBountyService {
     async getTopInfluencers(orgId: string) {
         logger.info(`[BountyService] Fetching leaderboard for org ${orgId}`);
 
-        // Mocked leaderboard
-        return [
-            { name: 'Alex_Vlogs', conversions: 420, earned: 1250.00 },
-            { name: 'IndiiFanatic', conversions: 215, earned: 645.50 },
-            { name: 'MusicReviewerX', conversions: 180, earned: 540.00 }
-        ];
+        // TODO: Query Firestore bountyLinks collection, aggregate by influencerId
+        return [];
     }
 }
 

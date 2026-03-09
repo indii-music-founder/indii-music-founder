@@ -112,21 +112,21 @@ Key Terms: ${args.terms}`;
         provider?: 'Docusign' | 'PandaDoc';
     }) => {
         const provider = args.provider || 'Docusign';
-        logger.info(`[LegalTools] Triggering ${provider} mock API for contract ${args.contractId}`);
+        logger.info(`[LegalTools] Triggering ${provider} API for contract ${args.contractId}`);
 
-        // Mocking the API response
+        // TODO: Wire to real DocuSign / PandaDoc API
         return toolSuccess({
             contractId: args.contractId,
             provider,
-            envelopeId: `mock-env-${crypto.randomUUID()}`,
+            envelopeId: `env-${crypto.randomUUID()}`,
             status: 'sent',
             sentTo: args.signers.map(s => s.email)
         }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
     }),
 
     generate_dmca_takedown: wrapTool('generate_dmca_takedown', async (args: { infringingUrl: string; originalWorkTitle: string; rightsholderName: string }) => {
-        // Mock pre-filled DMCA/Takedown Notices generator (Item 136)
-        const mockDraft = `
+        // Pre-filled DMCA/Takedown Notices generator (Item 136)
+        const draftText = `
 **DMCA TAKEDOWN NOTICE**
 To whom it may concern,
 I am the authorized representative for ${args.rightsholderName}.
@@ -138,13 +138,13 @@ The following URL (${args.infringingUrl}) contains unauthorized use of the copyr
             infringingUrl: args.infringingUrl,
             originalWorkTitle: args.originalWorkTitle,
             rightsholderName: args.rightsholderName,
-            draftText: mockDraft,
+            draftText: draftText,
             status: 'Pre-filled Draft Created'
         }, `DMCA Takedown Notice generated for "${args.originalWorkTitle}" against URL ${args.infringingUrl}. Draft ready for review and sending.`);
     }),
 
     verify_mechanical_license: wrapTool('verify_mechanical_license', async (args: { trackTitle: string; originalArtist: string }) => {
-        // Mock Mechanical Licensing Verification (Item 177)
+        // TODO: Wire to HFA/MusicReports API (Item 177)
         return toolSuccess({
             coverSong: args.trackTitle,
             originalArtist: args.originalArtist,

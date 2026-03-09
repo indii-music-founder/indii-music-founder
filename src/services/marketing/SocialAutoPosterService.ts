@@ -102,20 +102,7 @@ export class SocialAutoPosterService {
         }, 300);
     }
 
-    private handlePublishingMock(jobId: string, platform: SocialPlatform) {
-        let progress = 0;
-        const interval = setInterval(() => {
-            progress += 25;
-            const store = useStore.getState();
-            store.updateJobProgress(jobId, progress);
 
-            if (progress >= 100) {
-                clearInterval(interval);
-                store.updateJobStatus(jobId, 'success');
-                logger.info(`[SocialPost] Successfully published to ${platform}.`);
-            }
-        }, 1000); // 4-second mock publishing window
-    }
 
     /**
      * Revokes or deletes a scheduled post if it hasn't been published yet.
@@ -132,13 +119,13 @@ export class SocialAutoPosterService {
     async getPostInsights(externalId: string, platform: SocialPlatform) {
         logger.info(`[SocialPost] Fetching ${platform} insights for ${externalId}.`);
 
-        // Mocked insights
+        // TODO: Wire to platform analytics APIs (TikTok/YouTube/Meta)
         return {
-            views: 12050,
-            likes: 842,
-            shares: 115,
-            comments: 34,
-            avgWatchTime: platform === 'tiktok' ? 12.4 : 9.8
+            views: 0,
+            likes: 0,
+            shares: 0,
+            comments: 0,
+            avgWatchTime: 0
         };
     }
 }

@@ -38,17 +38,14 @@ export const StorageTools: Record<string, AnyToolFunction> = {
     }),
 
     scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {
-        // Mock Storage Bucket Scrubbing (Item 187)
-        const mockDeletedCount = Math.floor(Math.random() * 500) + 50;
-        const mockSavedBytes = Math.floor(Math.random() * 5000000) + 1000000;
-
+        // TODO: Wire to Cloud Storage lifecycle management API (Item 187)
         return toolSuccess({
             bucketId: args.bucketId,
             olderThanDays: args.olderThanDays,
-            deletedFiles: mockDeletedCount,
-            savedBytes: mockSavedBytes,
-            status: 'Cron Scrubbing Complete'
-        }, `Storage cron job scrubbed ${mockDeletedCount} orphaned temp media files from bucket ${args.bucketId} older than ${args.olderThanDays} days. Saved ${(mockSavedBytes / 1024 / 1024).toFixed(2)} MB of space.`);
+            deletedFiles: 0,
+            savedBytes: 0,
+            status: 'Scan queued — connect Storage admin SDK for actual results.'
+        }, `Storage scrub queued for bucket ${args.bucketId} targeting files older than ${args.olderThanDays} days. Connect admin SDK for execution.`);
     })
 };
 

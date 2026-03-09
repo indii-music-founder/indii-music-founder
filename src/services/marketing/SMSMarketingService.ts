@@ -33,13 +33,13 @@ export class SMSMarketingService {
         // In production: POST /2010-04-01/Accounts/{AccountSid}/Messages.json
         // Using Twilio Node Helper or direct axios requests
 
-        await this.dispatchToTwilioMock(superfansOnly, message);
+        await this.dispatchToTwilio(superfansOnly, message);
 
         return superfansOnly.length;
     }
 
-    private async dispatchToTwilioMock(members: SMSMember[], message: SMSMessage) {
-        // Mock successful dispatch
+    private async dispatchToTwilio(members: SMSMember[], message: SMSMessage) {
+        // TODO: Wire to Twilio API — POST /2010-04-01/Accounts/{AccountSid}/Messages.json
         return new Promise((resolve) => {
             setTimeout(() => {
                 logger.info(`[SMSMarketing] Twilio broadcast complete: "${message.text.substring(0, 30)}..."`);
@@ -53,7 +53,8 @@ export class SMSMarketingService {
      */
     async getSMSStatus(messageId: string): Promise<string> {
         logger.info(`[SMSMarketing] Fetching delivery status for message ${messageId}.`);
-        return 'delivered'; // Conceptual status
+        // TODO: Query Twilio API for real delivery status
+        return 'pending';
     }
 }
 

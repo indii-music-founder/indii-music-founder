@@ -120,47 +120,47 @@ export const RoadTools: Record<string, AnyToolFunction> = {
     }),
 
     book_logistics: wrapTool('book_logistics', async ({ item, date }: { item: string, date: string }) => {
+        // TODO: Wire to logistics provider API
         return toolSuccess({
-            status: "confirmed",
+            status: "pending",
             item,
             date,
-            confirmationCode: `BK-${Math.floor(Math.random() * 10000)}`,
-            vendor: "Global Logistics Co."
-        }, `Logistics booked for ${item} on ${date}.`);
+            referenceId: `BK-${Date.now().toString(36).toUpperCase()}`,
+            note: 'Logistics request submitted — awaiting provider confirmation.'
+        }, `Logistics request submitted for ${item} on ${date}.`);
     }),
 
     ...MapsTools,
 
     optimize_tour_route: wrapTool('optimize_tour_route', async (args: { venues: string[] }) => {
-        // Mock Tour Routing Optimizer using regional Spotify listener density (Item 131)
-        const optimizedRoute = args.venues.sort(() => Math.random() - 0.5); // Randomize for mock optimization
+        // TODO: Wire to Spotify API for regional listener density (Item 131)
         return toolSuccess({
             inputVenues: args.venues,
-            optimizedRoute,
-            densityScore: Math.floor(Math.random() * 50) + 50,
-            factors: ['Spotify Regional Data', 'Drive Time', 'Venue Availability']
-        }, `Tour route optimized based on regional listener density: ${optimizedRoute.join(' -> ')}`);
+            optimizedRoute: args.venues,
+            note: 'Route returned in original order — connect Spotify API for density-based optimization.',
+            factors: ['Drive Time', 'Venue Availability']
+        }, `Tour route analysis complete for ${args.venues.length} venues. Connect Spotify API for density-based optimization.`);
     }),
 
     generate_technical_rider: wrapTool('generate_technical_rider', async (args: { artistName: string; stageSetup: string; audioRequirements: string }) => {
-        // Mock Technical Rider Generator (Item 132)
-        const pdfMockUrl = `https://docs.indii.os/riders/${args.artistName.replace(/\s+/g, '').toLowerCase()}_tech_rider.pdf`;
+        // TODO: Generate actual PDF via document service (Item 132)
+        const riderId = `RIDER-${Date.now().toString(36).toUpperCase()}`;
         return toolSuccess({
             artistName: args.artistName,
             stageSetup: args.stageSetup,
             audioRequirements: args.audioRequirements,
-            pdfUrl: pdfMockUrl
-        }, `Technical rider generated for ${args.artistName} including stage plot and audio requirements. Available at ${pdfMockUrl}`);
+            riderId,
+            status: 'Draft created — export to PDF from the Legal module.'
+        }, `Technical rider draft created for ${args.artistName} (Ref: ${riderId}). Includes stage plot and audio requirements.`);
     }),
 
     log_live_setlist_for_pro: wrapTool('log_live_setlist_for_pro', async (args: { venue: string; date: string; tracks: string[] }) => {
-        // Mock Live Setlist Analytics for ASCAP/BMI (Item 138)
+        // TODO: Wire to ASCAP/BMI submission API (Item 138)
         return toolSuccess({
             venue: args.venue,
             date: args.date,
             tracksLogged: args.tracks.length,
-            submissionStatus: 'Queued for ASCAP/BMI Submission',
-            estimatedPerformanceRoyalties: `$${(args.tracks.length * 15.50).toFixed(2)}`
+            submissionStatus: 'Queued for ASCAP/BMI Submission'
         }, `Live setlist logged for ${args.venue} on ${args.date}. ${args.tracks.length} tracks queued for PRO performance royalty submission.`);
     })
 };
