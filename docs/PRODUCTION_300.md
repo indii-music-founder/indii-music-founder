@@ -74,10 +74,10 @@ This document contains **Part 5** of the master production readiness checklist (
 ## Part 5F: Legal Document Real Integrations (241–245)
 
 - [x] **241. DocuSign API Real Envelope Sending:** `DigitalSignatureService.ts:37` uses `setTimeout(..., 1500)` as a mock. Replace with real DocuSign `envelopes.create()` API calls with actual split sheet PDFs attached.
-- [ ] **242. PandaDoc Alternative Provider:** Implement `PandaDocAdapter.ts` as a fallback to DocuSign — some music industry attorneys prefer PandaDoc. Route based on user preference in settings.
-- [ ] **243. Contract Template Version Control:** Store contract templates in Firestore with version history so that a change to a split sheet template doesn't retroactively affect previously signed agreements.
-- [ ] **244. Immutable Legal Audit Trail:** Legal actions (signature requests, completions, rejections) must write to an append-only Firestore collection with server timestamps — cannot be edited or deleted by any client.
-- [ ] **245. Notarization Integration (Notarize.com):** Add an optional notarization step via the Notarize.com API for high-value agreements (publishing deals, sync licensing contracts > $10k).
+- [x] **242. PandaDoc Alternative Provider:** Implement `PandaDocAdapter.ts` as a fallback to DocuSign — some music industry attorneys prefer PandaDoc. Route based on user preference in settings.
+- [x] **243. Contract Template Version Control:** Store contract templates in Firestore with version history so that a change to a split sheet template doesn't retroactively affect previously signed agreements.
+- [x] **244. Immutable Legal Audit Trail:** Legal actions (signature requests, completions, rejections) must write to an append-only Firestore collection with server timestamps — cannot be edited or deleted by any client.
+- [x] **245. Notarization Integration (Notarize.com):** Add an optional notarization step via the Notarize.com API for high-value agreements (publishing deals, sync licensing contracts > $10k).
 
 ---
 

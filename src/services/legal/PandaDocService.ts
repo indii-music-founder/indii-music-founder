@@ -5,10 +5,12 @@
  * management for music industry agreements (label deals,
  * sync licenses, publishing splits, etc.).
  *
- * Setup: Get a free sandbox API key from https://developers.pandadoc.com
- * Env: VITE_PANDADOC_API_KEY
- * Free tier: Unlimited sandbox API calls
+ * SECURITY: All API calls are proxied through Cloud Functions.
+ * The PandaDoc API key never touches the client bundle.
  */
+
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '@/services/firebase';
 
 export interface DocumentTemplate {
     id: string;
@@ -50,55 +52,31 @@ export interface DocumentLink {
     expiresAt: string;
 }
 
-const PANDADOC_API = 'https://api.pandadoc.com/public/v1';
+const FUNCTIONS_REGION = 'us-west1';
 
 export class PandaDocService {
-    private apiKey: string;
-
-    constructor() {
-        this.apiKey = import.meta.env.VITE_PANDADOC_API_KEY || '';
-    }
+    private functions = getFunctions(app, FUNCTIONS_REGION);
 
     /**
      * Check if PandaDoc is configured.
+     * With the Cloud Function proxy, this always returns true —
+     * the key is managed server-side. If the key is missing,
+     * the Cloud Function will throw at call time.
      */
     isConfigured(): boolean {
-        return this.apiKey.length > 0 && this.apiKey !== 'MOCK_KEY_DO_NOT_USE';
-    }
-
-    /**
-     * Get authorization headers.
-     */
-    private getHeaders(): Record<string, string> {
-        return {
-            'Authorization': `API-Key ${this.apiKey}`,
-            'Content-Type': 'application/json',
-        };
+        return true;
     }
 
     /**
      * List available document templates.
      */
     async listTemplates(): Promise<DocumentTemplate[]> {
-        if (!this.isConfigured()) {
-            throw new Error('PandaDoc not configured. Set VITE_PANDADOC_API_KEY in .env');
-        }
-
-        const response = await fetch(`${PANDADOC_API}/templates`, {
-            headers: this.getHeaders(),
-        });
-
-        if (!response.ok) {
-            throw new Error(`PandaDoc templates error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return (data.results || []).map((t: Record<string, unknown>) => ({
-            id: t.id as string,
-            name: t.name as string,
-            dateCreated: t.date_created as string,
-            version: t.version as string || '1',
-        }));
+        const callable = httpsCallable<void, DocumentTemplate[]>(
+            this.functions,
+            'pandadocListTemplates'
+        );
+        const result = await callable();
+        return result.data;
     }
 
     /**
@@ -106,133 +84,47 @@ export class PandaDocService {
      * Used for generating label deals, sync licenses, etc.
      */
     async createDocument(params: CreateDocumentParams): Promise<Document> {
-        if (!this.isConfigured()) {
-            throw new Error('PandaDoc not configured');
-        }
-
-        const body = {
-            name: params.name,
-            template_uuid: params.templateId,
-            recipients: params.recipients.map(r => ({
-                email: r.email,
-                first_name: r.firstName,
-                last_name: r.lastName,
-                role: r.role,
-                signing_order: r.signingOrder,
-            })),
-            tokens: params.tokens ? Object.entries(params.tokens).map(([k, v]) => ({
-                name: k,
-                value: v,
-            })) : [],
-            metadata: params.metadata,
-            tags: params.tags,
-        };
-
-        const response = await fetch(`${PANDADOC_API}/documents`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-            const error = await response.text();
-            throw new Error(`PandaDoc create error: ${response.status} — ${error}`);
-        }
-
-        const doc = await response.json();
-        return {
-            id: doc.id,
-            name: doc.name,
-            status: doc.status,
-            dateCreated: doc.date_created,
-            dateModified: doc.date_modified,
-            recipients: params.recipients,
-        };
+        const callable = httpsCallable<CreateDocumentParams, Document>(
+            this.functions,
+            'pandadocCreateDocument'
+        );
+        const result = await callable(params);
+        return result.data;
     }
 
     /**
      * Send a document for e-signature.
      */
     async sendDocument(documentId: string, message?: string, subject?: string): Promise<void> {
-        if (!this.isConfigured()) {
-            throw new Error('PandaDoc not configured');
-        }
-
-        const response = await fetch(`${PANDADOC_API}/documents/${documentId}/send`, {
-            method: 'POST',
-            headers: this.getHeaders(),
-            body: JSON.stringify({
-                message: message || 'Please review and sign',
-                subject: subject || 'Document ready for signature',
-                silent: false,
-            }),
-        });
-
-        if (!response.ok) {
-            throw new Error(`PandaDoc send error: ${response.status}`);
-        }
+        const callable = httpsCallable<{ documentId: string; message?: string; subject?: string }, { success: boolean }>(
+            this.functions,
+            'pandadocSendDocument'
+        );
+        await callable({ documentId, message, subject });
     }
 
     /**
      * Get the current status of a document.
      */
     async getDocumentStatus(documentId: string): Promise<Document> {
-        if (!this.isConfigured()) {
-            throw new Error('PandaDoc not configured');
-        }
-
-        const response = await fetch(`${PANDADOC_API}/documents/${documentId}`, {
-            headers: this.getHeaders(),
-        });
-
-        if (!response.ok) {
-            throw new Error(`PandaDoc status error: ${response.status}`);
-        }
-
-        const doc = await response.json();
-        return {
-            id: doc.id,
-            name: doc.name,
-            status: doc.status,
-            dateCreated: doc.date_created,
-            dateModified: doc.date_modified,
-            expirationDate: doc.expiration_date,
-            recipients: (doc.recipients || []).map((r: Record<string, unknown>) => ({
-                email: r.email as string,
-                firstName: r.first_name as string,
-                lastName: r.last_name as string,
-                role: r.role as string,
-            })),
-        };
+        const callable = httpsCallable<{ documentId: string }, Document>(
+            this.functions,
+            'pandadocGetDocumentStatus'
+        );
+        const result = await callable({ documentId });
+        return result.data;
     }
 
     /**
      * Generate a shareable signing link for a recipient.
      */
     async getSigningLink(documentId: string, recipientId: string): Promise<DocumentLink> {
-        if (!this.isConfigured()) {
-            throw new Error('PandaDoc not configured');
-        }
-
-        const response = await fetch(
-            `${PANDADOC_API}/documents/${documentId}/session`,
-            {
-                method: 'POST',
-                headers: this.getHeaders(),
-                body: JSON.stringify({ recipient: recipientId }),
-            }
+        const callable = httpsCallable<{ documentId: string; recipientId: string }, DocumentLink>(
+            this.functions,
+            'pandadocGetSigningLink'
         );
-
-        if (!response.ok) {
-            throw new Error(`PandaDoc session error: ${response.status}`);
-        }
-
-        const data = await response.json();
-        return {
-            id: data.id,
-            url: data.url || `https://app.pandadoc.com/s/${data.id}`,
-            expiresAt: data.expires_at,
-        };
+        const result = await callable({ documentId, recipientId });
+        return result.data;
     }
 }
 

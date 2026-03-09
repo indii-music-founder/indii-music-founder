@@ -204,7 +204,7 @@ export default function MerchDashboard() {
                                 <StatsCard
                                     title="Conversion Rate"
                                     value={`${stats.conversionRate ?? 0}%`}
-                                    change="+1.1%"
+                                    change={stats.conversionRate != null ? `${(stats.conversionRate as number) >= 0 ? '+' : ''}${stats.conversionRate}%` : '--'}
                                     icon={<TrendingUp className="text-[#FFE135]" />}
                                 />
                             </div>
@@ -430,55 +430,32 @@ function NewDesignsWidget({ products, onDesignClick }: { products: Array<{ id: s
 /* ================================================================== */
 
 function DesignTemplatesPanel() {
-    const templates = [
-        { name: 'Album Art Tee', category: 'Apparel', icon: Palette },
-        { name: 'Vinyl Mockup', category: 'Music', icon: Star },
-        { name: 'Festival Poster', category: 'Print', icon: BarChart3 },
-        { name: 'Sticker Pack', category: 'Accessories', icon: Sparkles },
-    ];
-
+    // Templates should be loaded from user's saved design templates in Firestore
+    // Empty state shown until connected
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1">Design Templates</h3>
-            <div className="space-y-1">
-                {templates.map((t) => (
-                    <div key={t.name} className="flex items-center gap-2 py-2 px-2 rounded-lg hover:bg-white/[0.04] transition-colors cursor-pointer">
-                        <div className="w-7 h-7 rounded-lg bg-[#FFE135]/10 flex items-center justify-center flex-shrink-0">
-                            <t.icon size={12} className="text-[#FFE135]" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <p className="text-xs text-neutral-300 truncate">{t.name}</p>
-                            <p className="text-[10px] text-neutral-600">{t.category}</p>
-                        </div>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+                <Palette size={16} className="text-neutral-600 mb-2" />
+                <p className="text-[11px] text-neutral-600">No templates yet</p>
+                <p className="text-[10px] text-neutral-700 mt-0.5">Create a design to save as a template</p>
             </div>
         </div>
     );
 }
 
 function PODPartnerStatusPanel() {
-    const partners = [
-        { name: 'Printful', status: 'connected', latency: '1.2s' },
-        { name: 'Printify', status: 'connected', latency: '0.8s' },
-        { name: 'Gooten', status: 'pending', latency: '—' },
-    ];
-
+    // POD partner status should be fetched from the POD integration service
+    // Empty state shown until API keys are configured
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest mb-3 px-1 flex items-center gap-1.5">
                 <Truck size={10} /> POD Partners
             </h3>
-            <div className="space-y-2">
-                {partners.map((p) => (
-                    <div key={p.name} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02]">
-                        <div className="flex items-center gap-2">
-                            <div className={`w-2 h-2 rounded-full ${p.status === 'connected' ? 'bg-green-400' : 'bg-yellow-400'}`} />
-                            <span className="text-xs text-neutral-300">{p.name}</span>
-                        </div>
-                        <span className="text-[10px] text-neutral-600">{p.latency}</span>
-                    </div>
-                ))}
+            <div className="flex flex-col items-center justify-center py-4 text-center">
+                <Truck size={16} className="text-neutral-600 mb-2" />
+                <p className="text-[11px] text-neutral-600">No partners connected</p>
+                <p className="text-[10px] text-neutral-700 mt-0.5">Connect Printful, Printify, or Gooten in POD Partners tab</p>
             </div>
         </div>
     );
