@@ -585,13 +585,40 @@ export const DistributionTools: Record<string, AnyToolFunction> = {
         }, `Direct SFTP pipeline successfully dropped structured folder "${args.releaseFolder}" to direct DSP (${args.targetDSP}).`);
     }),
 
-    toggle_content_id: wrapTool('toggle_content_id', async (args: { trackId: string; optIn: boolean; boundaries?: string[] }) => {
-        // Mock Content ID Opt-out/In Toggle (Item 175)
+    toggle_content_id: wrapTool('toggle_content_id', async (args: {
+        trackId: string;
+        optIn: boolean;
+        policy?: 'monetize' | 'track' | 'block';
+        boundaries?: string[];
+    }) => {
+        // Item 233: Wire YouTube Content ID opt-in flag into release metadata / DDEX blob
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        const policy = args.policy || 'monetize';
+        const releaseRef = doc(db, 'releases', args.trackId);
+        const snap = await getDoc(releaseRef);
+
+        if (!snap.exists()) {
+            return toolError(`Release ${args.trackId} not found`);
+        }
+
+        // Persist flag to Firestore release record — ERNMapper reads this on next delivery
+        await setDoc(releaseRef, {
+            'metadata.youtubeContentIdOptIn': args.optIn,
+            'metadata.youtubeContentIdPolicy': args.optIn ? policy : null,
+            updatedAt: serverTimestamp(),
+        }, { merge: true });
+
         return toolSuccess({
             trackId: args.trackId,
             contentIdStatus: args.optIn ? 'OPTED_IN' : 'OPTED_OUT',
-            boundaries: args.boundaries || ['Global']
-        }, `Content ID delivery parameters updated for track ${args.trackId}. Status: ${args.optIn ? 'Opted In' : 'Opted Out'}.`);
+            policy: args.optIn ? policy : null,
+            boundaries: args.boundaries || ['Worldwide'],
+            ddexDealIncluded: args.optIn,
+        }, `Content ID delivery parameters saved for release ${args.trackId}. ` +
+           `Status: ${args.optIn ? `Opted In (${policy})` : 'Opted Out'}. ` +
+           `DDEX ERN will include UserMakeAvailableLabelProvided deal on next delivery.`);
     }),
 
     issue_automated_takedown: wrapTool('issue_automated_takedown', async (args: { releaseId: string; reason: string }) => {

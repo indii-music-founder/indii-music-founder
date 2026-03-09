@@ -113,6 +113,13 @@ export interface ExtendedGoldenMetadata extends GoldenMetadata {
     publisherShare?: number; // Publisher ownership percentage (0-100)
     isCoverSong?: boolean; // Requires mechanical license if true
     originalSongTitle?: string; // Title of the original work (for cover songs)
+
+    // YouTube Content ID (Item 233)
+    youtubeContentIdOptIn?: boolean; // When true, content policy deal is included in DDEX ERN delivery
+    youtubeContentIdPolicy?: 'monetize' | 'track' | 'block'; // Default: 'monetize'
+
+    // Cover Art AI Disclosure (2026 DSP Compliance)
+    coverArtAIGenerated?: boolean; // true when cover art was created by AI (e.g., Nano Banana)
 }
 
 // Type for release status in distribution
