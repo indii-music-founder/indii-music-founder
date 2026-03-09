@@ -63,11 +63,11 @@ This document contains **Part 5** of the master production readiness checklist (
 
 ## Part 5E: Blockchain / Web3 Real Implementation (236–240)
 
-- [ ] **236. WalletConnect v2 Real Integration:** `WalletConnectPanel.tsx` renders a mock QR code. Replace with `@walletconnect/web3modal` or `wagmi` to enable real wallet connections.
-- [ ] **237. Ethers.js Smart Contract Deployment:** `SmartContractService.ts` generates random fake addresses (`0x${Math.random().toString(16)...}`). Integrate `ethers.js` + Alchemy/Infura to deploy real ERC-1155 contracts on a testnet first, then mainnet.
-- [ ] **238. IPFS Real Pinning via Pinata:** `BlockchainLedger.tsx` shows a "Sync to IPFS" button that sets a pending state forever. Implement `@pinata/sdk` calls to pin release metadata CIDs to IPFS.
-- [ ] **239. OpenSea API Integration:** After NFT minting, submit the token to OpenSea's API to create a marketplace listing — currently there is no post-mint delivery step.
-- [ ] **240. ENS / Unstoppable Domains Artist Identity:** Allow artists to claim a `.eth` or `.nft` domain as their verified on-chain identity, displayed in their profile and EPK.
+- [x] **236. WalletConnect v2 Real Integration:** `WalletConnectPanel.tsx` renders a mock QR code. Replace with `@walletconnect/web3modal` or `wagmi` to enable real wallet connections.
+- [x] **237. Ethers.js Smart Contract Deployment:** `SmartContractService.ts` generates random fake addresses (`0x${Math.random().toString(16)...}`). Integrate `ethers.js` + Alchemy/Infura to deploy real ERC-1155 contracts on a testnet first, then mainnet.
+- [x] **238. IPFS Real Pinning via Pinata:** `BlockchainLedger.tsx` shows a "Sync to IPFS" button that sets a pending state forever. Implement `@pinata/sdk` calls to pin release metadata CIDs to IPFS.
+- [x] **239. OpenSea API Integration:** After NFT minting, submit the token to OpenSea's API to create a marketplace listing — currently there is no post-mint delivery step.
+- [x] **240. ENS / Unstoppable Domains Artist Identity:** Allow artists to claim a `.eth` or `.nft` domain as their verified on-chain identity, displayed in their profile and EPK.
 
 ---
 
