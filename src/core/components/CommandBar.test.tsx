@@ -10,15 +10,17 @@ import { create } from 'zustand';
 // vi.mock('@/core/store'); // We will use a custom implementation for the store
 vi.mock('@/core/context/ToastContext');
 vi.mock('firebase/firestore', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     Timestamp: {
         now: () => ({
-  serverTimestamp: vi.fn(), toMillis: () => Date.now() }),
+            serverTimestamp: vi.fn(), toMillis: () => Date.now()
+        }),
         fromDate: (date: Date) => ({ toMillis: () => date.getTime() }),
     },
     getFirestore: vi.fn(),
     initializeFirestore: vi.fn(() => ({
-  serverTimestamp: vi.fn(),})),
+        serverTimestamp: vi.fn(),
+    })),
     persistentLocalCache: vi.fn(),
     persistentMultipleTabManager: vi.fn(),
     collection: vi.fn(),
@@ -27,13 +29,13 @@ vi.mock('firebase/firestore', () => ({
     setDoc: vi.fn(),
 }));
 vi.mock('@/services/agent/AgentService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     agentService: {
         sendMessage: vi.fn(),
     },
 }));
 vi.mock('@/services/ai/VoiceService', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     voiceService: {
         isSupported: vi.fn(() => false),
         startListening: vi.fn(),
@@ -42,7 +44,7 @@ vi.mock('@/services/ai/VoiceService', () => ({
 }));
 
 vi.mock('@/services/agent/registry', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     agentRegistry: {
         getAll: () => [
             { id: 'creative', name: 'Creative Director', category: 'manager', color: 'bg-pink-500' },
@@ -59,16 +61,17 @@ vi.mock('@/services/agent/registry', () => ({
 }));
 
 vi.mock('../theme/moduleColors', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     getColorForModule: () => ({
-  serverTimestamp: vi.fn(),
+        serverTimestamp: vi.fn(),
         border: 'border-gray-700',
         ring: 'ring-gray-700',
     }),
+    getDepartmentCssVar: () => '--color-gray-700',
 }));
 
 vi.mock('motion/react', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     motion: {
         div: ({ children, className, ...props }: React.HTMLAttributes<HTMLDivElement>) => <div className={className} {...props}>{children}</div>
     },
@@ -111,7 +114,7 @@ const useTestStore = create<TestStoreState>((set) => ({
 
 // Mock the useStore hook to use our real test store
 vi.mock('@/core/store', () => ({
-  serverTimestamp: vi.fn(),
+    serverTimestamp: vi.fn(),
     useStore: (selector?: (state: TestStoreState) => any) => {
         const state = useTestStore();
         return selector ? selector(state) : state;

@@ -157,6 +157,7 @@ export class RevenueService {
 
       // Calculate Previous Revenue for Change %
       let previousRevenue = 0;
+      let previousUnits = 0;
       snapshotPrevious.docs.forEach(doc => {
         // ⚡ OPTIMIZATION: Direct property access
         const data = doc.data();
@@ -172,11 +173,17 @@ export class RevenueService {
 
         const amount = (typeof data.amount === 'number') ? data.amount : 0;
         previousRevenue += amount;
+        previousUnits += 1;
       });
 
       const revenueChange = previousRevenue === 0
         ? (totalRevenue > 0 ? 100 : 0)
         : ((totalRevenue - previousRevenue) / previousRevenue) * 100;
+
+      const unitsSold = snapshotCurrent.docs.length;
+      const unitsChange = previousUnits === 0
+        ? (unitsSold > 0 ? 100 : 0)
+        : ((unitsSold - previousUnits) / previousUnits) * 100;
 
       // Convert history map to array and sort
       // ⚡ OPTIMIZATION: String comparison of YYYY-MM-DD avoids expensive Date parsing in sort loop
@@ -188,6 +195,8 @@ export class RevenueService {
       const result: RevenueStats = {
         totalRevenue,
         revenueChange,
+        unitsSold,
+        unitsChange,
         pendingPayouts: 0, // Heuristic removed for production safety
         lastPayoutAmount: 0, // No hardcoded placeholder
         lastPayoutDate: undefined,

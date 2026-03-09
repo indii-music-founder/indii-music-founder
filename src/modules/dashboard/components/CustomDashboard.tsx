@@ -11,7 +11,11 @@ import {
     TrendingUp,
     Bot,
     Edit3,
+    BarChart3,
 } from 'lucide-react';
+import { useStore } from '@/core/store';
+import { revenueService } from '@/services/RevenueService';
+import type { RevenueStats } from '@/services/revenue/schema';
 
 /* ================================================================== */
 /*  Item 159 — Customizable Dashboard                                  */
@@ -52,6 +56,10 @@ function loadWidgets(): Widget[] {
     return DEFAULT_WIDGETS;
 }
 
+function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(amount);
+}
+
 /* ── Individual Widget Content ─────────────────────────────────────── */
 
 function StreamsTodayWidget() {
@@ -64,12 +72,12 @@ function StreamsTodayWidget() {
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Streams Today</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">84.2K</p>
-                <p className="text-[10px] text-green-400 font-bold mt-1">+12% vs yesterday</p>
+                <p className="text-3xl font-black text-white">--</p>
+                <p className="text-[10px] text-gray-500 font-bold mt-1">Connect a DSP to see streams</p>
             </div>
             <div className="mt-3 flex items-end gap-1 h-8">
-                {[40, 55, 45, 70, 60, 80, 84].map((v, i) => (
-                    <div key={i} className="flex-1 rounded-sm bg-purple-500/20 hover:bg-purple-500/40 transition-colors" style={{ height: `${(v / 84) * 100}%` }} />
+                {[0, 0, 0, 0, 0, 0, 0].map((_, i) => (
+                    <div key={i} className="flex-1 rounded-sm bg-purple-500/10" style={{ height: '20%' }} />
                 ))}
             </div>
         </div>
@@ -77,6 +85,20 @@ function StreamsTodayWidget() {
 }
 
 function RevenueMTDWidget() {
+    const userProfile = useStore((s) => s.userProfile);
+    const [revenue, setRevenue] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!userProfile?.id) return;
+        revenueService.getUserRevenueStats(userProfile.id, '30d')
+            .then((stats: RevenueStats) => setRevenue(stats.totalRevenue))
+            .catch(() => setRevenue(0));
+    }, [userProfile?.id]);
+
+    const now = new Date();
+    const dayOfMonth = now.getDate();
+    const monthName = now.toLocaleString('default', { month: 'long', year: 'numeric' });
+
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -86,29 +108,17 @@ function RevenueMTDWidget() {
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Revenue MTD</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">$4,218</p>
-                <p className="text-[10px] text-gray-500 mt-1">7 days into March 2026</p>
+                <p className="text-3xl font-black text-white">{revenue !== null ? formatCurrency(revenue) : '--'}</p>
+                <p className="text-[10px] text-gray-500 mt-1">{dayOfMonth} days into {monthName}</p>
             </div>
             <div className="mt-3">
-                <div className="flex items-center justify-between text-[10px] mb-1">
-                    <span className="text-gray-500">Goal: $18,000</span>
-                    <span className="text-green-400 font-bold">23%</span>
-                </div>
-                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                    <motion.div
-                        className="h-full bg-gradient-to-r from-green-500 to-emerald-400 rounded-full"
-                        initial={{ width: 0 }}
-                        animate={{ width: '23%' }}
-                        transition={{ duration: 0.8 }}
-                    />
-                </div>
+                <p className="text-[10px] text-gray-600">Revenue goal not set</p>
             </div>
         </div>
     );
 }
 
 function NextReleaseWidget() {
-    const daysUntil = 14;
     return (
         <div className="flex flex-col h-full justify-between">
             <div className="flex items-center gap-2 mb-3">
@@ -118,12 +128,12 @@ function NextReleaseWidget() {
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Next Release</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">{daysUntil}d</p>
-                <p className="text-xs font-bold text-white mt-1">Glass Waves EP</p>
-                <p className="text-[10px] text-gray-500">March 21, 2026</p>
+                <p className="text-3xl font-black text-white">--</p>
+                <p className="text-xs font-bold text-gray-500 mt-1">No upcoming releases</p>
+                <p className="text-[10px] text-gray-600">Schedule a release to see countdown</p>
             </div>
             <div className="mt-3 p-2 rounded-lg bg-blue-500/5 border border-blue-500/10">
-                <p className="text-[10px] text-blue-400">Distribution submitted · Awaiting DSP approval</p>
+                <p className="text-[10px] text-blue-400/60">No distribution submissions pending</p>
             </div>
         </div>
     );
@@ -139,20 +149,20 @@ function TopTrackWidget() {
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Top Track</span>
             </div>
             <div>
-                <p className="text-sm font-black text-white">Midnight Circuit</p>
-                <p className="text-[10px] text-gray-500 mb-2">Released Feb 1, 2026</p>
+                <p className="text-sm font-black text-gray-500">No tracks yet</p>
+                <p className="text-[10px] text-gray-600 mb-2">Upload your first release</p>
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] text-gray-500">Streams</span>
-                        <span className="text-[10px] font-bold text-white">2.4M</span>
+                        <span className="text-[10px] font-bold text-gray-600">--</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] text-gray-500">Revenue</span>
-                        <span className="text-[10px] font-bold text-green-400">$9,600</span>
+                        <span className="text-[10px] font-bold text-gray-600">--</span>
                     </div>
                     <div className="flex items-center justify-between">
                         <span className="text-[10px] text-gray-500">Save Rate</span>
-                        <span className="text-[10px] font-bold text-amber-400">34%</span>
+                        <span className="text-[10px] font-bold text-gray-600">--</span>
                     </div>
                 </div>
             </div>
@@ -161,13 +171,6 @@ function TopTrackWidget() {
 }
 
 function AgentActivityWidget() {
-    const activities = [
-        { agent: 'DistributionAgent', action: 'DDEX uploaded to TuneCore', time: '2m ago', status: 'success' },
-        { agent: 'FinanceAgent', action: 'Royalties calculated', time: '8m ago', status: 'success' },
-        { agent: 'PublicistAgent', action: 'Press release sent', time: '15m ago', status: 'success' },
-        { agent: 'MarketingAgent', action: 'Campaign scheduled', time: '1h ago', status: 'pending' },
-    ];
-
     return (
         <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 mb-3">
@@ -176,17 +179,11 @@ function AgentActivityWidget() {
                 </div>
                 <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Agent Activity</span>
             </div>
-            <div className="space-y-1.5 flex-1 overflow-y-auto">
-                {activities.map((a, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                        <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${a.status === 'success' ? 'bg-green-500' : 'bg-yellow-500'}`} />
-                        <div className="flex-1 min-w-0">
-                            <p className="text-[10px] text-gray-300 truncate">{a.action}</p>
-                            <p className="text-[9px] text-gray-600">{a.agent}</p>
-                        </div>
-                        <span className="text-[9px] text-gray-600 flex-shrink-0">{a.time}</span>
-                    </div>
-                ))}
+            <div className="flex-1 flex items-center justify-center">
+                <div className="text-center">
+                    <Bot size={24} className="text-gray-700 mx-auto mb-2" />
+                    <p className="text-[10px] text-gray-600">No recent agent activity</p>
+                </div>
             </div>
         </div>
     );
@@ -292,11 +289,10 @@ export function CustomDashboard() {
                 <div className="flex items-center gap-2">
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${
-                            isEditMode
-                                ? 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
-                                : 'bg-white/5 text-gray-400 hover:bg-white/10'
-                        }`}
+                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${isEditMode
+                            ? 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
+                            : 'bg-white/5 text-gray-400 hover:bg-white/10'
+                            }`}
                     >
                         <Edit3 size={10} />
                         {isEditMode ? 'Done' : 'Edit Layout'}
@@ -330,11 +326,10 @@ export function CustomDashboard() {
                                         key={type}
                                         onClick={() => addWidget(type)}
                                         disabled={alreadyAdded}
-                                        className={`flex items-start gap-2 p-3 rounded-lg text-left transition-colors ${
-                                            alreadyAdded
-                                                ? 'bg-white/[0.02] opacity-40 cursor-not-allowed'
-                                                : 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 cursor-pointer'
-                                        }`}
+                                        className={`flex items-start gap-2 p-3 rounded-lg text-left transition-colors ${alreadyAdded
+                                            ? 'bg-white/[0.02] opacity-40 cursor-not-allowed'
+                                            : 'bg-white/[0.03] hover:bg-white/[0.06] border border-white/5 cursor-pointer'
+                                            }`}
                                     >
                                         <Icon size={14} className="text-gray-400 flex-shrink-0 mt-0.5" />
                                         <div className="min-w-0">
@@ -369,11 +364,10 @@ export function CustomDashboard() {
                                 onDragOver={(e) => handleDragOver(e, widget.id)}
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                                className={`relative rounded-xl p-4 border transition-all min-h-[180px] ${
-                                    isOver
-                                        ? 'border-dept-marketing/40 bg-dept-marketing/5'
-                                        : 'border-white/5 bg-white/[0.02]'
-                                } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                                className={`relative rounded-xl p-4 border transition-all min-h-[180px] ${isOver
+                                    ? 'border-dept-marketing/40 bg-dept-marketing/5'
+                                    : 'border-white/5 bg-white/[0.02]'
+                                    } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             >
                                 {/* Edit mode controls */}
                                 {isEditMode && (

@@ -100,7 +100,7 @@ export const MerchandiseAnalytics: React.FC = () => {
                                 <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(10px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px' }} itemStyle={{ color: '#fff' }} />
                                 <Bar dataKey="revenue" radius={[8, 8, 0, 0]} animationDuration={1500} animationEasing="ease-out">
                                     {conversionCycleData.map((entry: ConversionCycle, index: number) => (
-                                        <Cell key={`cell-${index}`} fill={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'} stroke={entry.revenue > 3000 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'} strokeWidth={1} />
+                                        <Cell key={`cell-${index}`} fill={entry.revenue > 0 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.05)'} stroke={entry.revenue > 0 ? 'var(--color-dept-creative)' : 'rgba(255,255,255,0.1)'} strokeWidth={1} />
                                     ))}
                                 </Bar>
                             </BarChart>

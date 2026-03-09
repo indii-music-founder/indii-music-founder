@@ -281,8 +281,8 @@ describe('MerchDashboard — full render', () => {
   it('renders the design templates section', () => {
     renderDashboard();
     expect(
-      screen.getByText(/templates?|quick start/i),
-    ).toBeInTheDocument();
+      screen.getAllByText(/templates?|quick start/i).length,
+    ).toBeGreaterThan(0);
   });
 
   it('renders the POD partner status section', () => {

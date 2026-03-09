@@ -35,7 +35,7 @@ describe('CreativeGallery', () => {
     };
 
     beforeEach(() => {
-        (useStore as any).mockReturnValue(mockStore);
+        (useStore as any).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
     });
 
     vi.mock('@/components/kokonutui/file-upload', () => ({
@@ -46,8 +46,8 @@ describe('CreativeGallery', () => {
         render(<CreativeGallery />);
 
         // Check for empty state text
-        expect(screen.getByText('No assets yet')).toBeInTheDocument();
-        expect(screen.getByText('Upload or generate to see them here')).toBeInTheDocument();
+        expect(screen.getByText('GALLERY IS EMPTY')).toBeInTheDocument();
+        expect(screen.getByText('Upload media or generate new AI assets to see them appear in your gallery.')).toBeInTheDocument();
     });
 
     it('renders generated history items correctly', () => {

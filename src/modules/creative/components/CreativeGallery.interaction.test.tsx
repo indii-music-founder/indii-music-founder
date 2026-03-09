@@ -51,7 +51,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
-        (useStore as any).mockReturnValue(mockStore);
+        (useStore as any).mockImplementation((selector: any) => selector ? selector(mockStore) : mockStore);
         (useToast as any).mockReturnValue({
             success: mockToastSuccess,
             error: vi.fn()
@@ -82,7 +82,7 @@ describe('🖱️ Click: CreativeGallery Interaction', () => {
         fireEvent.click(deleteBtn);
 
         // ✅ Assert Action: Verify removeFromHistory was called
-        expect(mockRemoveFromHistory).toHaveBeenCalledWith('test-123');
+        expect(mockRemoveFromHistory).toHaveBeenCalledWith('test-123', 'image', 'generated');
     });
 
     it('verifies the Video Set Frame lifecycle in Video Mode (Click → Action → Feedback)', async () => {

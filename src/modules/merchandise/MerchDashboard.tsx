@@ -192,19 +192,19 @@ export default function MerchDashboard() {
                                 <StatsCard
                                     title="Total Revenue"
                                     value={formatCurrency(stats.totalRevenue)}
-                                    change={`+${stats.revenueChange}%`}
+                                    change={`${stats.revenueChange > 0 ? '+' : ''}${stats.revenueChange.toFixed(1)}%`}
                                     icon={<DollarSign className="text-[#FFE135]" />}
                                 />
                                 <StatsCard
                                     title="Units Sold"
                                     value={stats.unitsSold.toString()}
-                                    change={`+${stats.unitsChange}%`}
+                                    change={`${stats.unitsChange > 0 ? '+' : ''}${stats.unitsChange.toFixed(1)}%`}
                                     icon={<ShoppingBag className="text-[#FFE135]" />}
                                 />
                                 <StatsCard
                                     title="Conversion Rate"
                                     value={`${stats.conversionRate ?? 0}%`}
-                                    change={stats.conversionRate != null ? `${(stats.conversionRate as number) >= 0 ? '+' : ''}${stats.conversionRate}%` : '--'}
+                                    change={stats.conversionRate != null ? `${(stats.conversionRate as number) > 0 ? '+' : ''}${stats.conversionRate}%` : '--'}
                                     icon={<TrendingUp className="text-[#FFE135]" />}
                                 />
                             </div>

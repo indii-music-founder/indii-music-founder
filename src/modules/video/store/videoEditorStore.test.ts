@@ -2,6 +2,8 @@ import { renderHook, act } from '@testing-library/react';
 import { useVideoEditorStore } from './videoEditorStore';
 import { vi } from 'vitest';
 
+vi.unmock('@/modules/video/store/videoEditorStore');
+
 describe('useVideoEditorStore', () => {
     beforeEach(() => {
         const store = useVideoEditorStore.getState();

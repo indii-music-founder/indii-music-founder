@@ -18,14 +18,7 @@ interface TaxCollaborator {
     email: string;
 }
 
-const INITIAL_COLLABORATORS: TaxCollaborator[] = [
-    { id: 1, name: 'Marcus Webb', country: 'United States', formType: 'W-9', status: 'verified', email: 'marcus@beatstudio.io' },
-    { id: 2, name: 'Layla Chen', country: 'Canada', formType: 'W-8BEN', status: 'submitted', email: 'layla.chen@soundlab.co' },
-    { id: 3, name: 'Jordan Reeves', country: 'United States', formType: 'W-9', status: 'needed', email: 'j.reeves@musiq.fm' },
-    { id: 4, name: 'Sofia Almeida', country: 'Portugal', formType: 'W-8BEN', status: 'needed', email: 'sofia@waveworks.pt' },
-    { id: 5, name: 'Devon Park', country: 'United States', formType: 'W-9', status: 'submitted', email: 'devon@parkstudios.com' },
-    { id: 6, name: 'Aiko Tanaka', country: 'Japan', formType: 'W-8BEN', status: 'needed', email: 'aiko@tokyosound.jp' },
-];
+const INITIAL_COLLABORATORS: TaxCollaborator[] = [];
 
 const STATUS_CONFIG: Record<FormStatus, { label: string; color: string; bg: string; icon: React.ElementType }> = {
     verified: { label: 'Verified', color: 'text-green-400', bg: 'bg-green-500/10 border-green-500/20', icon: CheckCircle },
@@ -99,112 +92,121 @@ export function TaxFormCollection() {
 
             {/* Table */}
             <div className="rounded-xl border border-white/5 overflow-hidden">
-                <table className="w-full text-xs">
-                    <thead>
-                        <tr className="border-b border-white/5 bg-white/[0.02]">
-                            <th className="text-left px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Collaborator</th>
-                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Country</th>
-                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Form</th>
-                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Status</th>
-                            <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {collaborators.map((collab, i) => {
-                            const cfg = STATUS_CONFIG[collab.status];
-                            const StatusIcon = cfg.icon;
-                            const notifSent = sentNotifs.has(collab.id);
-                            const uploadedFile = uploadedFiles[collab.id];
+                {collaborators.length === 0 ? (
+                    <div className="p-8 text-center flex flex-col items-center">
+                        <FileText size={24} className="text-gray-600 mb-3" />
+                        <h3 className="text-sm font-bold text-white mb-1">No Tax Forms Needed Yet</h3>
+                        <p className="text-xs text-gray-500 max-w-[250px]">
+                            Add collaborators to collect W-9 or W-8BEN forms automatically.
+                        </p>
+                    </div>
+                ) : (
+                    <table className="w-full text-xs">
+                        <thead>
+                            <tr className="border-b border-white/5 bg-white/[0.02]">
+                                <th className="text-left px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Collaborator</th>
+                                <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide hidden sm:table-cell">Country</th>
+                                <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Form</th>
+                                <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Status</th>
+                                <th className="text-center px-3 py-2.5 text-[10px] font-bold text-gray-500 uppercase tracking-wide">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {collaborators.map((collab, i) => {
+                                const cfg = STATUS_CONFIG[collab.status];
+                                const StatusIcon = cfg.icon;
+                                const notifSent = sentNotifs.has(collab.id);
+                                const uploadedFile = uploadedFiles[collab.id];
 
-                            return (
-                                <motion.tr
-                                    key={collab.id}
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: i * 0.04 }}
-                                    className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
-                                >
-                                    <td className="px-3 py-2.5">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
-                                                <span className="text-[9px] font-bold text-amber-400">
-                                                    {collab.name.split(' ').map((n) => n[0]).join('')}
-                                                </span>
+                                return (
+                                    <motion.tr
+                                        key={collab.id}
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        transition={{ delay: i * 0.04 }}
+                                        className="border-b border-white/[0.03] hover:bg-white/[0.02] transition-colors"
+                                    >
+                                        <td className="px-3 py-2.5">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-amber-500/20 to-orange-500/20 flex items-center justify-center flex-shrink-0">
+                                                    <span className="text-[9px] font-bold text-amber-400">
+                                                        {collab.name.split(' ').map((n) => n[0]).join('')}
+                                                    </span>
+                                                </div>
+                                                <div className="min-w-0">
+                                                    <p className="font-bold text-white truncate">{collab.name}</p>
+                                                    {collab.status === 'needed' && (
+                                                        <div className="flex items-center gap-1 mt-0.5">
+                                                            <Lock size={9} className="text-red-400" />
+                                                            <span className="text-[9px] text-red-400">Payout locked</span>
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
-                                            <div className="min-w-0">
-                                                <p className="font-bold text-white truncate">{collab.name}</p>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center text-gray-400 hidden sm:table-cell">
+                                            {collab.country}
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${collab.formType === 'W-9'
+                                                    ? 'text-blue-400 bg-blue-500/10'
+                                                    : 'text-purple-400 bg-purple-500/10'
+                                                }`}>
+                                                {collab.formType}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2.5 text-center">
+                                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${cfg.bg} ${cfg.color}`}>
+                                                <StatusIcon size={9} />
+                                                {cfg.label}
+                                            </span>
+                                        </td>
+                                        <td className="px-3 py-2.5">
+                                            <div className="flex items-center justify-center gap-1.5">
+                                                {/* Request Form button */}
                                                 {collab.status === 'needed' && (
-                                                    <div className="flex items-center gap-1 mt-0.5">
-                                                        <Lock size={9} className="text-red-400" />
-                                                        <span className="text-[9px] text-red-400">Payout locked</span>
-                                                    </div>
+                                                    <button
+                                                        onClick={() => handleRequestForm(collab.id)}
+                                                        className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[10px] font-bold transition-colors"
+                                                    >
+                                                        <Mail size={9} />
+                                                        <AnimatePresence mode="wait">
+                                                            <motion.span
+                                                                key={notifSent ? 'sent' : 'request'}
+                                                                initial={{ opacity: 0 }}
+                                                                animate={{ opacity: 1 }}
+                                                                exit={{ opacity: 0 }}
+                                                            >
+                                                                {notifSent ? 'Sent!' : 'Request'}
+                                                            </motion.span>
+                                                        </AnimatePresence>
+                                                    </button>
                                                 )}
-                                            </div>
-                                        </div>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center text-gray-400 hidden sm:table-cell">
-                                        {collab.country}
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
-                                            collab.formType === 'W-9'
-                                                ? 'text-blue-400 bg-blue-500/10'
-                                                : 'text-purple-400 bg-purple-500/10'
-                                        }`}>
-                                            {collab.formType}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-2.5 text-center">
-                                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold border ${cfg.bg} ${cfg.color}`}>
-                                            <StatusIcon size={9} />
-                                            {cfg.label}
-                                        </span>
-                                    </td>
-                                    <td className="px-3 py-2.5">
-                                        <div className="flex items-center justify-center gap-1.5">
-                                            {/* Request Form button */}
-                                            {collab.status === 'needed' && (
-                                                <button
-                                                    onClick={() => handleRequestForm(collab.id)}
-                                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 text-[10px] font-bold transition-colors"
-                                                >
-                                                    <Mail size={9} />
-                                                    <AnimatePresence mode="wait">
-                                                        <motion.span
-                                                            key={notifSent ? 'sent' : 'request'}
-                                                            initial={{ opacity: 0 }}
-                                                            animate={{ opacity: 1 }}
-                                                            exit={{ opacity: 0 }}
-                                                        >
-                                                            {notifSent ? 'Sent!' : 'Request'}
-                                                        </motion.span>
-                                                    </AnimatePresence>
-                                                </button>
-                                            )}
 
-                                            {/* Upload Form */}
-                                            <button
-                                                onClick={() => fileRefs.current[collab.id]?.click()}
-                                                className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] transition-colors"
-                                                title={uploadedFile ?? 'Upload form'}
-                                            >
-                                                <Upload size={9} />
-                                                {uploadedFile ? 'Uploaded' : 'Upload'}
-                                            </button>
-                                            <input
-                                                ref={(el) => { fileRefs.current[collab.id] = el; }}
-                                                type="file"
-                                                accept=".pdf,.jpg,.jpeg,.png"
-                                                className="hidden"
-                                                onChange={(e) => handleFileChange(collab.id, e)}
-                                            />
-                                        </div>
-                                    </td>
-                                </motion.tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                                {/* Upload Form */}
+                                                <button
+                                                    onClick={() => fileRefs.current[collab.id]?.click()}
+                                                    className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 text-[10px] transition-colors"
+                                                    title={uploadedFile ?? 'Upload form'}
+                                                >
+                                                    <Upload size={9} />
+                                                    {uploadedFile ? 'Uploaded' : 'Upload'}
+                                                </button>
+                                                <input
+                                                    ref={(el) => { fileRefs.current[collab.id] = el; }}
+                                                    type="file"
+                                                    accept=".pdf,.jpg,.jpeg,.png"
+                                                    className="hidden"
+                                                    onChange={(e) => handleFileChange(collab.id, e)}
+                                                />
+                                            </div>
+                                        </td>
+                                    </motion.tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                )}
             </div>
 
             {/* Legend */}

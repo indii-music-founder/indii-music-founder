@@ -31,25 +31,12 @@ const MILESTONE_EVENTS: MilestoneEvent[] = [
 ];
 
 function generateData(days: number): DataPoint[] {
-    const baseCurve = [
-        8200, 14500, 11200, 9800, 10100, 11400, 18700,
-        16200, 13400, 12100, 11800, 14200, 15600, 22400,
-        20100, 18800, 16400, 19200, 31400, 58200, 72100,
-        65400, 48200, 41800, 38200, 35600, 32100, 29800, 27400, 25100,
-    ];
-
-    const adCurve = [
-        50, 50, 50, 50, 50, 50, 50,
-        100, 100, 100, 100, 100, 100, 100,
-        150, 150, 150, 150, 250, 400, 400,
-        300, 250, 200, 200, 150, 150, 100, 100, 100,
-    ];
-
+    // Returns empty data — real data would come from analytics API
     return Array.from({ length: days }, (_, i) => ({
         day: i + 1,
         label: `Day ${i + 1}`,
-        streams: baseCurve[i % baseCurve.length] ?? 25000,
-        adSpend: adCurve[i % adCurve.length] ?? 100,
+        streams: 0,
+        adSpend: 0,
     }));
 }
 
@@ -57,12 +44,8 @@ const ALL_DATA = generateData(90);
 
 const RANGE_DAYS: Record<DateRange, number> = { '7d': 7, '30d': 30, '90d': 90 };
 
-const KEY_MOMENTS = [
-    { day: 1, icon: Flame, text: 'Release Day — 8.2K streams in first 24 hours', color: 'text-purple-400' },
-    { day: 7, icon: TrendingUp, text: 'Week 1 total: 85K streams. Editorial playlist add confirmed', color: 'text-blue-400' },
-    { day: 14, icon: Zap, text: 'Pitchfork feature drove 3x spike — 22K streams in a day', color: 'text-yellow-400' },
-    { day: 21, icon: Flame, text: 'TikTok sound went viral — 72K streams peak day', color: 'text-red-400' },
-];
+// Key moments would be populated from release analytics — empty until a release is tracked
+const KEY_MOMENTS: { day: number; icon: React.ElementType; text: string; color: string }[] = [];
 
 interface CustomTooltipProps {
     active?: boolean;
@@ -126,11 +109,10 @@ export default function MomentumTracker() {
                         <button
                             key={r}
                             onClick={() => setDateRange(r)}
-                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-                                dateRange === r
+                            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${dateRange === r
                                     ? 'bg-dept-marketing text-white shadow'
                                     : 'text-gray-500 hover:text-gray-300'
-                            }`}
+                                }`}
                         >
                             {r}
                         </button>

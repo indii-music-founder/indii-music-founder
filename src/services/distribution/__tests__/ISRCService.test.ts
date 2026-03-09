@@ -1,19 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { isrcService } from '../ISRCService';
-import { FirestoreService } from '@/services/FirestoreService';
-import { Timestamp } from 'firebase/firestore';
-
-// Mock FirestoreService
-vi.mock('@/services/FirestoreService', () => {
-    return {
-        FirestoreService: class {
-            constructor(collectionName: string) { }
-            list = vi.fn();
-            add = vi.fn();
-            where = vi.fn().mockImplementation((field, op, val) => ({ field, op, val }));
-        }
-    };
-});
+import { getDocs, addDoc, Timestamp } from 'firebase/firestore';
 
 describe('ISRCService', () => {
     beforeEach(() => {
@@ -22,21 +9,24 @@ describe('ISRCService', () => {
 
     it('should get ISRC record by ISRC string', async () => {
         const mockISRC = 'US-XXX-24-00001';
-        const mockRecord = { id: '1', isrc: mockISRC, releaseId: 'rel-1' };
+        const mockRecord = { isrc: mockISRC, releaseId: 'rel-1' };
 
-        // Mock the list method to return our record
-        (isrcService as any).list.mockResolvedValue([mockRecord]);
+        (getDocs as any).mockResolvedValueOnce({
+            empty: false,
+            docs: [{ id: '1', data: () => mockRecord }]
+        });
 
         const result = await isrcService.getByIsrc(mockISRC);
 
-        expect(result).toEqual(mockRecord);
-        expect((isrcService as any).list).toHaveBeenCalledWith([
-            expect.objectContaining({ field: 'isrc', val: mockISRC })
-        ]);
+        expect(result).toEqual({ id: '1', ...mockRecord });
+        expect(getDocs).toHaveBeenCalled();
     });
 
     it('should return null if ISRC record not found', async () => {
-        (isrcService as any).list.mockResolvedValue([]);
+        (getDocs as any).mockResolvedValueOnce({
+            empty: true,
+            docs: []
+        });
 
         const result = await isrcService.getByIsrc('NON-EXISTENT');
 
@@ -46,18 +36,22 @@ describe('ISRCService', () => {
     it('should get ISRC records by release ID', async () => {
         const mockReleaseId = 'rel-1';
         const mockRecords = [
-            { id: '1', isrc: 'US-XXX-24-00001', releaseId: mockReleaseId },
-            { id: '2', isrc: 'US-XXX-24-00002', releaseId: mockReleaseId }
+            { isrc: 'US-XXX-24-00001', releaseId: mockReleaseId },
+            { isrc: 'US-XXX-24-00002', releaseId: mockReleaseId }
         ];
 
-        (isrcService as any).list.mockResolvedValue(mockRecords);
+        (getDocs as any).mockResolvedValueOnce({
+            empty: false,
+            docs: mockRecords.map((data, i) => ({ id: String(i + 1), data: () => data }))
+        });
 
         const result = await isrcService.getByRelease(mockReleaseId);
 
-        expect(result).toEqual(mockRecords);
-        expect((isrcService as any).list).toHaveBeenCalledWith([
-            expect.objectContaining({ field: 'releaseId', val: mockReleaseId })
+        expect(result).toEqual([
+            { id: '1', ...mockRecords[0] },
+            { id: '2', ...mockRecords[1] }
         ]);
+        expect(getDocs).toHaveBeenCalled();
     });
 
     it('should record a new ISRC assignment', async () => {
@@ -67,16 +61,17 @@ describe('ISRCService', () => {
             userId: 'user-1',
             trackTitle: 'Test Track',
             artistName: 'Test Artist',
+            status: 'assigned' as const,
             assignedAt: Timestamp.now(),
             metadataSnapshot: {}
         };
         const mockId = 'new-record-id';
 
-        (isrcService as any).add.mockResolvedValue(mockId);
+        (addDoc as any).mockResolvedValueOnce({ id: mockId });
 
         const result = await isrcService.recordAssignment(mockData);
 
         expect(result).toBe(mockId);
-        expect((isrcService as any).add).toHaveBeenCalledWith(mockData);
+        expect(addDoc).toHaveBeenCalledWith(expect.anything(), mockData);
     });
 });

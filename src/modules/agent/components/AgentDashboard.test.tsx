@@ -95,6 +95,7 @@ describe('AgentDashboard', () => {
         const campaignsButton = screen.getByTitle('Campaigns');
         fireEvent.click(campaignsButton);
 
-        expect(screen.getByText('Module under construction')).toBeDefined();
+        // 'Campaigns' text appears in sidebar tab AND the campaign panel content
+        expect(screen.getAllByText(/Campaigns/).length).toBeGreaterThan(1);
     });
 });

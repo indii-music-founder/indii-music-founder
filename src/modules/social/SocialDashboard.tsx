@@ -103,105 +103,105 @@ export default function SocialDashboard() {
 
     return (
         <ModuleErrorBoundary moduleName="Social">
-        <div className="absolute inset-0 flex">
-            {/* ── LEFT PANEL — Accounts & Filters ────────────────── */}
-            <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <AccountStatsPanel stats={stats} />
-                <PlatformFiltersPanel />
-                <BestTimesPanel />
-            </aside>
+            <div className="absolute inset-0 flex">
+                {/* ── LEFT PANEL — Accounts & Filters ────────────────── */}
+                <aside className="hidden lg:flex w-64 xl:w-72 2xl:w-80 flex-col border-r border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <AccountStatsPanel stats={stats} />
+                    <PlatformFiltersPanel />
+                    <BestTimesPanel />
+                </aside>
 
-            {/* ── CENTER — Calendar & Feed ────────────────────────── */}
-            <div className="flex-1 flex flex-col min-w-0">
-                {/* Header */}
-                <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
-                    <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
-                    <div className="relative z-10 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                                <Megaphone size={18} className="text-white" />
+                {/* ── CENTER — Calendar & Feed ────────────────────────── */}
+                <div className="flex-1 flex flex-col min-w-0">
+                    {/* Header */}
+                    <div className="px-4 md:px-6 py-4 border-b border-white/5 flex-shrink-0 relative overflow-hidden">
+                        <div className="absolute top-[-80px] left-[-80px] w-[300px] h-[300px] bg-blue-500/8 blur-[100px] pointer-events-none rounded-full" />
+                        <div className="relative z-10 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                                    <Megaphone size={18} className="text-white" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Social</h1>
+                                    <p className="text-muted-foreground font-medium tracking-wide text-[10px]">CONTENT CALENDAR & SCHEDULING</p>
+                                </div>
                             </div>
-                            <div>
-                                <h1 className="text-2xl font-black text-white tracking-tighter uppercase">Social</h1>
-                                <p className="text-muted-foreground font-medium tracking-wide text-[10px]">CONTENT CALENDAR & SCHEDULING</p>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => setIsAccountWizardOpen(true)}
+                                    className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-xs font-bold border border-white/5"
+                                >
+                                    <UserPlus size={14} /> Add Account
+                                </button>
+                                <button
+                                    onClick={() => setIsCreateModalOpen(true)}
+                                    className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors text-xs"
+                                >
+                                    <Plus size={14} /> Create Post
+                                </button>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={() => setIsAccountWizardOpen(true)}
-                                className="flex items-center gap-1.5 px-3 py-2 bg-white/5 hover:bg-white/10 text-white rounded-lg transition-colors text-xs font-bold border border-white/5"
-                            >
-                                <UserPlus size={14} /> Add Account
-                            </button>
-                            <button
-                                onClick={() => setIsCreateModalOpen(true)}
-                                className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors text-xs"
-                            >
-                                <Plus size={14} /> Create Post
-                            </button>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <div className="p-4 md:p-6 space-y-6">
+                            {/* Calendar */}
+                            <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
+                                <div className="p-4 border-b border-white/5 flex items-center justify-between">
+                                    <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                        <Calendar size={14} className="text-gray-400" />
+                                        Content Calendar
+                                    </h3>
+                                    <div className="flex items-center gap-3 text-[10px] text-gray-500">
+                                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Social</span>
+                                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Email</span>
+                                        <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Content</span>
+                                    </div>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <div className="min-w-[700px]">
+                                        <div className="grid grid-cols-7 border-b border-white/5">
+                                            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                                                <div key={day} className="py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">
+                                                    {day}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="grid grid-cols-7">
+                                            {renderCalendarGrid()}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Social Feed */}
+                            <SocialFeed />
                         </div>
                     </div>
                 </div>
 
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto custom-scrollbar">
-                    <div className="p-4 md:p-6 space-y-6">
-                        {/* Calendar */}
-                        <div className="rounded-xl bg-white/[0.02] border border-white/5 overflow-hidden">
-                            <div className="p-4 border-b border-white/5 flex items-center justify-between">
-                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <Calendar size={14} className="text-gray-400" />
-                                    Content Calendar
-                                </h3>
-                                <div className="flex items-center gap-3 text-[10px] text-gray-500">
-                                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Social</span>
-                                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500"></span> Email</span>
-                                    <span className="flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Content</span>
-                                </div>
-                            </div>
-                            <div className="overflow-x-auto">
-                                <div className="min-w-[700px]">
-                                    <div className="grid grid-cols-7 border-b border-white/5">
-                                        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-                                            <div key={day} className="py-2 text-center text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                                                {day}
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <div className="grid grid-cols-7">
-                                        {renderCalendarGrid()}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                {/* ── RIGHT PANEL — Queue & Trends ───────────────────── */}
+                <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
+                    <DraftsQueuePanel scheduledPosts={scheduledPosts} />
+                    <PlatformStatusPanel />
+                    <TrendingTopicsPanel />
+                </aside>
 
-                        {/* Social Feed */}
-                        <SocialFeed />
-                    </div>
-                </div>
+                {/* Modals */}
+                {isCreateModalOpen && (
+                    <CreatePostModal
+                        onClose={() => setIsCreateModalOpen(false)}
+                        onSave={handleCreatePost}
+                    />
+                )}
+
+                {isAccountWizardOpen && (
+                    <AccountCreationWizard
+                        onClose={() => setIsAccountWizardOpen(false)}
+                    />
+                )}
             </div>
-
-            {/* ── RIGHT PANEL — Queue & Trends ───────────────────── */}
-            <aside className="hidden lg:flex w-72 2xl:w-80 flex-col border-l border-white/5 overflow-y-auto p-3 gap-3 flex-shrink-0">
-                <DraftsQueuePanel scheduledPosts={scheduledPosts} />
-                <PlatformStatusPanel />
-                <TrendingTopicsPanel />
-            </aside>
-
-            {/* Modals */}
-            {isCreateModalOpen && (
-                <CreatePostModal
-                    onClose={() => setIsCreateModalOpen(false)}
-                    onSave={handleCreatePost}
-                />
-            )}
-
-            {isAccountWizardOpen && (
-                <AccountCreationWizard
-                    onClose={() => setIsAccountWizardOpen(false)}
-                />
-            )}
-        </div>
         </ModuleErrorBoundary>
     );
 }
@@ -212,8 +212,8 @@ export default function SocialDashboard() {
 
 function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
     const items = [
-        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString(), icon: Users, color: 'text-blue-400', change: '+12%' },
-        { label: 'Following', value: (stats?.following || 0).toLocaleString(), icon: TrendingUp, color: 'text-purple-400', change: '+0.5%' },
+        { label: 'Total Reach', value: (stats?.followers || 0).toLocaleString(), icon: Users, color: 'text-blue-400' },
+        { label: 'Following', value: (stats?.following || 0).toLocaleString(), icon: TrendingUp, color: 'text-purple-400' },
         { label: 'Posts', value: (stats?.posts || 0).toLocaleString(), icon: Megaphone, color: 'text-pink-400' },
     ];
 
@@ -230,9 +230,6 @@ function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
                             <p className="text-xs font-bold text-white truncate">{s.value}</p>
                             <p className="text-[10px] text-gray-500">{s.label}</p>
                         </div>
-                        {s.change && (
-                            <span className="text-[10px] font-bold text-green-400">{s.change}</span>
-                        )}
                     </div>
                 ))}
             </div>
@@ -242,8 +239,8 @@ function AccountStatsPanel({ stats }: { stats: SocialStats | null }) {
 
 function PlatformFiltersPanel() {
     const platforms = [
-        { name: 'Instagram', color: 'bg-pink-500', active: true },
-        { name: 'TikTok', color: 'bg-white', active: true },
+        { name: 'Instagram', color: 'bg-pink-500', active: false },
+        { name: 'TikTok', color: 'bg-white', active: false },
         { name: 'Twitter / X', color: 'bg-blue-400', active: false },
         { name: 'YouTube', color: 'bg-red-500', active: false },
     ];
@@ -267,30 +264,30 @@ function PlatformFiltersPanel() {
 }
 
 function BestTimesPanel() {
-    const times = [
-        { day: 'Mon', time: '6:00 PM', engagement: 'High' },
-        { day: 'Wed', time: '12:00 PM', engagement: 'Medium' },
-        { day: 'Fri', time: '9:00 AM', engagement: 'High' },
-        { day: 'Sat', time: '3:00 PM', engagement: 'Peak' },
-    ];
+    // Best times would be fetched from analytics — empty until connected
+    const times: { day: string; time: string; engagement: string }[] = [];
 
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Best Posting Times</h3>
-            <div className="space-y-1">
-                {times.map((t) => (
-                    <div key={t.day} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.02] transition-colors">
-                        <div className="flex items-center gap-2">
-                            <Clock size={10} className="text-gray-500" />
-                            <span className="text-xs text-gray-300">{t.day}</span>
+            {times.length === 0 ? (
+                <p className="text-xs text-gray-600 px-1">Connect accounts to analyze optimal posting times.</p>
+            ) : (
+                <div className="space-y-1">
+                    {times.map((t) => (
+                        <div key={t.day} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.02] transition-colors">
+                            <div className="flex items-center gap-2">
+                                <Clock size={10} className="text-gray-500" />
+                                <span className="text-xs text-gray-300">{t.day}</span>
+                            </div>
+                            <span className="text-[10px] text-gray-400">{t.time}</span>
+                            <span className={`text-[10px] font-bold ${t.engagement === 'Peak' ? 'text-green-400' : t.engagement === 'High' ? 'text-blue-400' : 'text-gray-500'}`}>
+                                {t.engagement}
+                            </span>
                         </div>
-                        <span className="text-[10px] text-gray-400">{t.time}</span>
-                        <span className={`text-[10px] font-bold ${t.engagement === 'Peak' ? 'text-green-400' : t.engagement === 'High' ? 'text-blue-400' : 'text-gray-500'}`}>
-                            {t.engagement}
-                        </span>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
@@ -330,8 +327,8 @@ function DraftsQueuePanel({ scheduledPosts }: { scheduledPosts: ScheduledPost[] 
 
 function PlatformStatusPanel() {
     const platforms = [
-        { name: 'Instagram', status: 'Connected', ok: true },
-        { name: 'TikTok', status: 'Connected', ok: true },
+        { name: 'Instagram', status: 'Not Connected', ok: false },
+        { name: 'TikTok', status: 'Not Connected', ok: false },
         { name: 'Twitter / X', status: 'Not Connected', ok: false },
         { name: 'YouTube', status: 'Not Connected', ok: false },
     ];
@@ -357,27 +354,27 @@ function PlatformStatusPanel() {
 }
 
 function TrendingTopicsPanel() {
-    const topics = [
-        { tag: '#NewMusic', posts: '12.3K' },
-        { tag: '#IndieArtist', posts: '8.1K' },
-        { tag: '#StudioLife', posts: '5.7K' },
-        { tag: '#MusicProducer', posts: '4.2K' },
-    ];
+    // Trending topics would be fetched from social APIs — empty until connected
+    const topics: { tag: string; posts: string }[] = [];
 
     return (
         <div className="rounded-xl bg-white/[0.02] border border-white/5 p-3">
             <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3 px-1">Trending Topics</h3>
-            <div className="space-y-1">
-                {topics.map((t) => (
-                    <div key={t.tag} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.02] transition-colors cursor-pointer">
-                        <div className="flex items-center gap-2">
-                            <Hash size={10} className="text-blue-400" />
-                            <span className="text-xs text-blue-300 font-bold">{t.tag}</span>
+            {topics.length === 0 ? (
+                <p className="text-xs text-gray-600 px-1">No trending data available yet.</p>
+            ) : (
+                <div className="space-y-1">
+                    {topics.map((t) => (
+                        <div key={t.tag} className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.02] transition-colors cursor-pointer">
+                            <div className="flex items-center gap-2">
+                                <Hash size={10} className="text-blue-400" />
+                                <span className="text-xs text-blue-300 font-bold">{t.tag}</span>
+                            </div>
+                            <span className="text-[10px] text-gray-500">{t.posts}</span>
                         </div>
-                        <span className="text-[10px] text-gray-500">{t.posts}</span>
-                    </div>
-                ))}
-            </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }

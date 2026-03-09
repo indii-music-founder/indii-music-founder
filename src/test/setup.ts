@@ -135,13 +135,13 @@ vi.mock('firebase/app', () => ({
 // Mock Firebase Auth
 vi.mock('firebase/auth', () => ({
     getAuth: vi.fn(() => ({
-        currentUser: { uid: 'test-uid', email: 'test@test.com' },
+        currentUser: { uid: 'test-uid', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('test-token') },
         signInWithEmailAndPassword: vi.fn(),
         signOut: vi.fn(),
         onAuthStateChanged: vi.fn(() => () => { })
     })),
     initializeAuth: vi.fn(() => ({
-        currentUser: { uid: 'test-uid', email: 'test@test.com' },
+        currentUser: { uid: 'test-uid', email: 'test@test.com', getIdToken: vi.fn().mockResolvedValue('test-token') },
         signInWithEmailAndPassword: vi.fn(),
         signOut: vi.fn(),
         onAuthStateChanged: vi.fn(() => () => { })
@@ -192,7 +192,8 @@ vi.mock('@/core/store', () => {
         startSession: vi.fn(),
         endSession: vi.fn(),
         setActiveSessionId: vi.fn(),
-        registerSubscription: vi.fn(() => () => { })
+        registerSubscription: vi.fn(() => () => { }),
+        setHasUnsavedChanges: vi.fn()
     };
 
     const useStoreMock = Object.assign(
@@ -257,6 +258,7 @@ vi.mock('firebase/firestore', () => {
         arrayUnion: vi.fn((...args) => args),
         arrayRemove: vi.fn((...args) => args),
         increment: vi.fn((n) => n),
+        deleteField: vi.fn(() => ({ __deleteField: true })),
         serverTimestamp: vi.fn(() => new Date()),
         getDocsViaCache: vi.fn(() => Promise.resolve({ docs: [], empty: true, size: 0, forEach: vi.fn() })),
         getDocViaCache: vi.fn(() => Promise.resolve({ exists: () => true, data: () => ({}), id: 'mock-doc-id' })),
@@ -420,3 +422,63 @@ vi.mock('@/services/CloudStorageService', () => ({
     },
 }));
 
+// Mock ToastContext globally
+vi.mock('@/core/context/ToastContext', () => ({
+    useToast: vi.fn(() => ({
+        addToast: vi.fn(),
+        removeToast: vi.fn()
+    })),
+    ToastProvider: ({ children }: { children: React.ReactNode }) => children
+}));
+
+// Mock video editor store globally
+vi.mock('@/modules/video/store/videoEditorStore', () => {
+    const mockState = {
+        project: { id: 'test-project', clips: [], tracks: [], duration: 0 },
+        currentTime: 0,
+        isPlaying: false,
+        selectedClipId: null,
+        selectedTrackId: null,
+        viewMode: 'timeline' as const,
+        addClip: vi.fn(),
+        updateClip: vi.fn(),
+        removeClip: vi.fn(),
+        addTrack: vi.fn(),
+        updateTrack: vi.fn(),
+        removeTrack: vi.fn(),
+        setCurrentTime: vi.fn(),
+        setIsPlaying: vi.fn(),
+        setSelectedClipId: vi.fn(),
+        setSelectedTrackId: vi.fn(),
+        setViewMode: vi.fn(),
+        exportProject: vi.fn()
+    };
+    const useVideoEditorStoreMock = Object.assign(
+        vi.fn((selector) => selector ? selector(mockState) : mockState),
+        {
+            getState: vi.fn(() => mockState),
+            setState: vi.fn((patch: any) => Object.assign(mockState, typeof patch === 'function' ? patch(mockState) : patch)),
+            subscribe: vi.fn(() => () => { })
+        }
+    );
+    return {
+        useVideoEditorStore: useVideoEditorStoreMock
+    };
+});
+
+// Mock @tanstack/react-virtual — useVirtualizer doesn't render items in JSDOM
+// because ResizeObserver never fires. This mock makes it render all items directly.
+vi.mock('@tanstack/react-virtual', () => ({
+    useVirtualizer: (opts: { count: number; estimateSize: () => number }) => ({
+        getVirtualItems: () =>
+            Array.from({ length: opts.count }, (_, i) => ({
+                index: i,
+                start: i * (opts.estimateSize?.() || 200),
+                size: opts.estimateSize?.() || 200,
+                end: (i + 1) * (opts.estimateSize?.() || 200),
+                key: i,
+            })),
+        getTotalSize: () => opts.count * (opts.estimateSize?.() || 200),
+        measureElement: vi.fn(),
+    }),
+}));

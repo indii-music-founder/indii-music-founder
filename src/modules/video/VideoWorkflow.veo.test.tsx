@@ -7,9 +7,20 @@ import { ToastProvider } from '@/core/context/ToastContext';
 import { processJobUpdate } from './VideoWorkflow';
 
 // Mock Store
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn(),
-}));
+vi.mock('@/core/store', () => {
+    const mockState: Record<string, any> = {
+        updateJobProgress: vi.fn(),
+        updateJobStatus: vi.fn(),
+        addJob: vi.fn(),
+        setHasUnsavedChanges: vi.fn(),
+    };
+    const useStoreMock: any = vi.fn((selector?: any) => selector ? selector(mockState) : mockState);
+    useStoreMock.getState = vi.fn(() => mockState);
+    useStoreMock.setState = vi.fn((patch: any) => Object.assign(mockState, typeof patch === 'function' ? patch(mockState) : patch));
+    useStoreMock.subscribe = vi.fn(() => () => { });
+    useStoreMock._mockState = mockState; // Expose for test setup
+    return { useStore: useStoreMock };
+});
 
 // Mock Editor Store
 vi.mock('./store/videoEditorStore', () => {
@@ -138,7 +149,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
 
         // Setup subscription mock with fast real-time delays
         mockSubscribeToJob.mockImplementation((id, callback) => {
-            if (id !== jobId) return () => {};
+            if (id !== jobId) return () => { };
 
             // Processing after 50ms
             setTimeout(() => {
@@ -158,7 +169,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
                 });
             }, 100);
 
-            return () => {};
+            return () => { };
         });
 
         render(
@@ -214,7 +225,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
         (useVideoEditorStore as any).getState.mockReturnValue({ status: 'processing', setProgress: mockSetProgress });
 
         mockSubscribeToJob.mockImplementation((id, callback) => {
-            if (id !== flashJobId) return () => {};
+            if (id !== flashJobId) return () => { };
             // Flash: Immediate return (< 50ms)
             setTimeout(() => {
                 callback({
@@ -225,7 +236,7 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
                     metadata: flashMetadata
                 });
             }, 20);
-            return () => {};
+            return () => { };
         });
 
         const { unmount } = render(
@@ -258,16 +269,16 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
         });
 
         mockSubscribeToJob.mockImplementation((id, callback) => {
-             if (id !== safetyJobId) return () => {};
-             setTimeout(() => {
-                 callback({
-                     status: 'failed',
-                     id: safetyJobId,
-                     stitchError: 'SAFETY_VIOLATION: Harmful content detected',
-                     metadata: { safety_ratings: ['BLOCK_MEDIUM_AND_ABOVE'] }
-                 });
-             }, 50);
-             return () => {};
+            if (id !== safetyJobId) return () => { };
+            setTimeout(() => {
+                callback({
+                    status: 'failed',
+                    id: safetyJobId,
+                    stitchError: 'SAFETY_VIOLATION: Harmful content detected',
+                    metadata: { safety_ratings: ['BLOCK_MEDIUM_AND_ABOVE'] }
+                });
+            }, 50);
+            return () => { };
         });
 
         render(
@@ -278,8 +289,8 @@ describe('Lens: Veo 3.1 Generation Pipeline', () => {
 
         // Verify Safety Error Handling
         await waitFor(() => {
-             expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('SAFETY_VIOLATION'));
-             expect(mockSetJobStatus).toHaveBeenCalledWith('failed');
+            expect(mockToastError).toHaveBeenCalledWith(expect.stringContaining('SAFETY_VIOLATION'));
+            expect(mockSetJobStatus).toHaveBeenCalledWith('failed');
         });
     });
 });

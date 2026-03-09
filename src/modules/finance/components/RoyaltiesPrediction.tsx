@@ -131,126 +131,145 @@ export function RoyaltiesPrediction() {
                         <Music size={12} className="text-purple-400" />
                         <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Forecast Streams</span>
                     </div>
-                    <p className="text-2xl font-black text-white">{(totalForecastStreams / 1000).toFixed(0)}K</p>
+                    <p className="text-2xl font-black text-white">
+                        {totalForecastStreams > 0 ? (totalForecastStreams / 1000).toFixed(0) + 'K' : '0'}
+                    </p>
                     <p className="text-[10px] text-gray-500">projected next 30 days</p>
                 </div>
             </div>
 
             {/* Chart */}
             <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
-                <div className="flex items-center gap-4 mb-4 text-[10px]">
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-0.5 bg-dept-royalties rounded" />
-                        <span className="text-gray-400">Actual</span>
+                {chartData.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center h-[220px] text-center">
+                        <TrendingUp size={24} className="text-gray-600 mb-2" />
+                        <p className="text-xs font-bold text-gray-400">No Forecast Data Here</p>
+                        <p className="text-[10px] text-gray-500 mt-1 max-w-[200px]">Connect your stores to start seeing royalty predictions</p>
                     </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-0.5 bg-purple-400 rounded border-dashed" style={{ borderTop: '2px dashed #a78bfa' }} />
-                        <span className="text-gray-400">Forecast</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-2 bg-purple-500/20 rounded" />
-                        <span className="text-gray-400">Confidence ±15%</span>
-                    </div>
-                </div>
-                <ResponsiveContainer width="100%" height={220}>
-                    <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
-                        <defs>
-                            <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
-                                <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="gradForecast" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.2} />
-                                <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
-                            </linearGradient>
-                            <linearGradient id="gradCI" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.1} />
-                                <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.05} />
-                            </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                        <XAxis
-                            dataKey="label"
-                            tick={{ fontSize: 9, fill: '#6b7280' }}
-                            interval={9}
-                            axisLine={false}
-                            tickLine={false}
-                        />
-                        <YAxis
-                            tick={{ fontSize: 9, fill: '#6b7280' }}
-                            axisLine={false}
-                            tickLine={false}
-                            tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
-                            width={35}
-                        />
-                        <Tooltip content={<CustomTooltip />} />
-                        <ReferenceLine x={chartData[29]?.label} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
-                        {/* Confidence interval */}
-                        <Area
-                            type="monotone"
-                            dataKey="upper"
-                            stroke="none"
-                            fill="url(#gradCI)"
-                            connectNulls={false}
-                            isAnimationActive={false}
-                        />
-                        <Area
-                            type="monotone"
-                            dataKey="lower"
-                            stroke="none"
-                            fill="url(#gradCI)"
-                            connectNulls={false}
-                            isAnimationActive={false}
-                        />
-                        {/* Actual */}
-                        <Area
-                            type="monotone"
-                            dataKey="actual"
-                            stroke="#8b5cf6"
-                            strokeWidth={2}
-                            fill="url(#gradActual)"
-                            connectNulls={false}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#8b5cf6' }}
-                        />
-                        {/* Forecast (dashed) */}
-                        <Area
-                            type="monotone"
-                            dataKey="forecast"
-                            stroke="#a78bfa"
-                            strokeWidth={2}
-                            strokeDasharray="5 4"
-                            fill="url(#gradForecast)"
-                            connectNulls={false}
-                            dot={false}
-                            activeDot={{ r: 4, fill: '#a78bfa' }}
-                        />
-                    </AreaChart>
-                </ResponsiveContainer>
+                ) : (
+                    <>
+                        <div className="flex items-center gap-4 mb-4 text-[10px]">
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-0.5 bg-dept-royalties rounded" />
+                                <span className="text-gray-400">Actual</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-0.5 bg-purple-400 rounded border-dashed" style={{ borderTop: '2px dashed #a78bfa' }} />
+                                <span className="text-gray-400">Forecast</span>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                                <div className="w-3 h-2 bg-purple-500/20 rounded" />
+                                <span className="text-gray-400">Confidence ±15%</span>
+                            </div>
+                        </div>
+                        <ResponsiveContainer width="100%" height={220}>
+                            <AreaChart data={chartData} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
+                                <defs>
+                                    <linearGradient id="gradActual" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="gradForecast" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.2} />
+                                        <stop offset="95%" stopColor="#a78bfa" stopOpacity={0} />
+                                    </linearGradient>
+                                    <linearGradient id="gradCI" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor="#a78bfa" stopOpacity={0.1} />
+                                        <stop offset="95%" stopColor="#a78bfa" stopOpacity={0.05} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis
+                                    dataKey="label"
+                                    tick={{ fontSize: 9, fill: '#6b7280' }}
+                                    interval={9}
+                                    axisLine={false}
+                                    tickLine={false}
+                                />
+                                <YAxis
+                                    tick={{ fontSize: 9, fill: '#6b7280' }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}K`}
+                                    width={35}
+                                />
+                                <Tooltip content={<CustomTooltip />} />
+                                <ReferenceLine x={chartData[29]?.label} stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
+                                {/* Confidence interval */}
+                                <Area
+                                    type="monotone"
+                                    dataKey="upper"
+                                    stroke="none"
+                                    fill="url(#gradCI)"
+                                    connectNulls={false}
+                                    isAnimationActive={false}
+                                />
+                                <Area
+                                    type="monotone"
+                                    dataKey="lower"
+                                    stroke="none"
+                                    fill="url(#gradCI)"
+                                    connectNulls={false}
+                                    isAnimationActive={false}
+                                />
+                                {/* Actual */}
+                                <Area
+                                    type="monotone"
+                                    dataKey="actual"
+                                    stroke="#8b5cf6"
+                                    strokeWidth={2}
+                                    fill="url(#gradActual)"
+                                    connectNulls={false}
+                                    dot={false}
+                                    activeDot={{ r: 4, fill: '#8b5cf6' }}
+                                />
+                                {/* Forecast (dashed) */}
+                                <Area
+                                    type="monotone"
+                                    dataKey="forecast"
+                                    stroke="#a78bfa"
+                                    strokeWidth={2}
+                                    strokeDasharray="5 4"
+                                    fill="url(#gradForecast)"
+                                    connectNulls={false}
+                                    dot={false}
+                                    activeDot={{ r: 4, fill: '#a78bfa' }}
+                                />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </>
+                )}
             </div>
 
             {/* DSP Breakdown */}
             <div className="rounded-xl bg-white/[0.02] border border-white/5 p-4">
                 <h3 className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mb-3">DSP Breakdown</h3>
-                <div className="space-y-2.5">
-                    {DSP_BREAKDOWN.map((dsp) => (
-                        <div key={dsp.name}>
-                            <div className="flex items-center justify-between mb-1">
-                                <span className="text-xs text-gray-300">{dsp.name}</span>
-                                <span className="text-xs font-bold text-white">{dsp.pct}%</span>
+
+                {DSP_BREAKDOWN.length === 0 ? (
+                    <div className="text-center py-4">
+                        <p className="text-xs text-gray-500">Awaiting stream data</p>
+                    </div>
+                ) : (
+                    <div className="space-y-2.5">
+                        {DSP_BREAKDOWN.map((dsp) => (
+                            <div key={dsp.name}>
+                                <div className="flex items-center justify-between mb-1">
+                                    <span className="text-xs text-gray-300">{dsp.name}</span>
+                                    <span className="text-xs font-bold text-white">{dsp.pct}%</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                    <motion.div
+                                        className="h-full rounded-full"
+                                        style={{ backgroundColor: dsp.color }}
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${dsp.pct}%` }}
+                                        transition={{ duration: 0.8, delay: 0.1 }}
+                                    />
+                                </div>
                             </div>
-                            <div className="w-full h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <motion.div
-                                    className="h-full rounded-full"
-                                    style={{ backgroundColor: dsp.color }}
-                                    initial={{ width: 0 }}
-                                    animate={{ width: `${dsp.pct}%` }}
-                                    transition={{ duration: 0.8, delay: 0.1 }}
-                                />
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                        ))}
+                    </div>
+                )}
             </div>
         </div>
     );
