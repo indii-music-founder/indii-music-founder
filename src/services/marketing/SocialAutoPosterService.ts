@@ -119,14 +119,28 @@ export class SocialAutoPosterService {
     async getPostInsights(externalId: string, platform: SocialPlatform) {
         logger.info(`[SocialPost] Fetching ${platform} insights for ${externalId}.`);
 
-        // TODO: Wire to platform analytics APIs (TikTok/YouTube/Meta)
-        return {
-            views: 0,
-            likes: 0,
-            shares: 0,
-            comments: 0,
-            avgWatchTime: 0
-        };
+        // Item 141: Fetch real platform analytics via Cloud Function
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const getInsightsFn = httpsCallable<
+                { externalId: string; platform: string },
+                { views: number; likes: number; shares: number; comments: number; avgWatchTime: number }
+            >(functionsWest1, 'getSocialPostInsights');
+
+            const result = await getInsightsFn({ externalId, platform });
+            return result.data;
+        } catch (_error) {
+            logger.warn(`[SocialPost] Insights Cloud Function unavailable for ${platform}:${externalId}. Deploy Cloud Function 'getSocialPostInsights'.`);
+            return {
+                views: 0,
+                likes: 0,
+                shares: 0,
+                comments: 0,
+                avgWatchTime: 0
+            };
+        }
     }
 }
 

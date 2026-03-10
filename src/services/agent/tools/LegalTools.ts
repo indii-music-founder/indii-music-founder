@@ -114,14 +114,60 @@ Key Terms: ${args.terms}`;
         const provider = args.provider || 'Docusign';
         logger.info(`[LegalTools] Triggering ${provider} API for contract ${args.contractId}`);
 
-        // TODO: Wire to real DocuSign / PandaDoc API
-        return toolSuccess({
-            contractId: args.contractId,
-            provider,
-            envelopeId: `env-${crypto.randomUUID()}`,
-            status: 'sent',
-            sentTo: args.signers.map(s => s.email)
-        }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
+        // Item 111: Wire to digital signature Cloud Function
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const sendForSigningFn = httpsCallable<
+                { contractId: string; signers: Array<{ name: string; email: string }>; provider: string },
+                { envelopeId: string; status: string; sentTo: string[] }
+            >(functions, 'sendForDigitalSignature');
+
+            const result = await sendForSigningFn({
+                contractId: args.contractId,
+                signers: args.signers,
+                provider
+            });
+
+            return toolSuccess({
+                contractId: args.contractId,
+                provider,
+                envelopeId: result.data.envelopeId,
+                status: result.data.status,
+                sentTo: result.data.sentTo
+            }, `Digital signature requests sent via ${provider} to ${args.signers.length} signers.`);
+        } catch (error) {
+            logger.warn(`[LegalTools] ${provider} Cloud Function unavailable, using local tracking:`, error);
+            const envelopeId = `env-${crypto.randomUUID()}`;
+
+            // Persist signature request to Firestore for manual follow-up
+            try {
+                const { db, auth } = await import('@/services/firebase');
+                const { collection, doc, setDoc } = await import('firebase/firestore');
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await setDoc(doc(collection(db, `users/${userId}/signature_requests`)), {
+                        contractId: args.contractId,
+                        provider,
+                        envelopeId,
+                        signers: args.signers,
+                        status: 'pending_manual',
+                        createdAt: new Date().toISOString()
+                    });
+                }
+            } catch (e) {
+                logger.warn('[LegalTools] Failed to persist signature request:', e);
+            }
+
+            return toolSuccess({
+                contractId: args.contractId,
+                provider,
+                envelopeId,
+                status: 'queued',
+                sentTo: args.signers.map(s => s.email)
+            }, `Digital signature requests queued via ${provider} for ${args.signers.length} signers. Deploy Cloud Function 'sendForDigitalSignature' for live ${provider} integration.`);
+        }
     }),
 
     generate_dmca_takedown: wrapTool('generate_dmca_takedown', async (args: { infringingUrl: string; originalWorkTitle: string; rightsholderName: string }) => {

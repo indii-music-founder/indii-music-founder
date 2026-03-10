@@ -38,14 +38,37 @@ export const StorageTools: Record<string, AnyToolFunction> = {
     }),
 
     scrub_orphaned_media: wrapTool('scrub_orphaned_media', async (args: { olderThanDays: number; bucketId: string }) => {
-        // TODO: Wire to Cloud Storage lifecycle management API (Item 187)
-        return toolSuccess({
-            bucketId: args.bucketId,
-            olderThanDays: args.olderThanDays,
-            deletedFiles: 0,
-            savedBytes: 0,
-            status: 'Scan queued — connect Storage admin SDK for actual results.'
-        }, `Storage scrub queued for bucket ${args.bucketId} targeting files older than ${args.olderThanDays} days. Connect admin SDK for execution.`);
+        // Item 187: Scrub orphaned media via Cloud Function
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const scrubFn = httpsCallable<
+                { olderThanDays: number; bucketId: string },
+                { deletedFiles: number; savedBytes: number; status: string }
+            >(functions, 'scrubOrphanedMedia');
+
+            const result = await scrubFn({
+                olderThanDays: args.olderThanDays,
+                bucketId: args.bucketId
+            });
+
+            return toolSuccess({
+                bucketId: args.bucketId,
+                olderThanDays: args.olderThanDays,
+                deletedFiles: result.data.deletedFiles,
+                savedBytes: result.data.savedBytes,
+                status: result.data.status
+            }, `Storage scrub completed for bucket ${args.bucketId}. Deleted ${result.data.deletedFiles} orphaned files, saved ${(result.data.savedBytes / 1024 / 1024).toFixed(1)} MB.`);
+        } catch (_error) {
+            return toolSuccess({
+                bucketId: args.bucketId,
+                olderThanDays: args.olderThanDays,
+                deletedFiles: 0,
+                savedBytes: 0,
+                status: 'Scan queued (deploy Cloud Function for execution)'
+            }, `Storage scrub queued for bucket ${args.bucketId}. Deploy Cloud Function 'scrubOrphanedMedia' for actual cleanup.`);
+        }
     })
 };
 

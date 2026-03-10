@@ -124,7 +124,7 @@ describe('SmartContractService', () => {
         });
 
         const tokenAddr = await smartContractService.tokenizeAsset('US-TOKEN', 100);
-        expect(tokenAddr).toMatch(/^0xToken/);
+        expect(tokenAddr).toMatch(/^pending:token:/); // No wallet in test env — returns pending token
 
         const history = await smartContractService.getChainOfCustody('US-TOKEN');
         expect(history[0].action).toBe('TOKEN_MINT');

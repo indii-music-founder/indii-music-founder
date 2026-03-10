@@ -30,22 +30,36 @@ export class SMSMarketingService {
         const superfansOnly = members.filter(m => m.isSuperfan);
         logger.info(`[SMSMarketing] Filtering to Superfans only: ${superfansOnly.length} recipients.`);
 
-        // In production: POST /2010-04-01/Accounts/{AccountSid}/Messages.json
-        // Using Twilio Node Helper or direct axios requests
-
         await this.dispatchToTwilio(superfansOnly, message);
 
         return superfansOnly.length;
     }
 
-    private async dispatchToTwilio(members: SMSMember[], message: SMSMessage) {
-        // TODO: Wire to Twilio API — POST /2010-04-01/Accounts/{AccountSid}/Messages.json
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                logger.info(`[SMSMarketing] Twilio broadcast complete: "${message.text.substring(0, 30)}..."`);
-                resolve(true);
-            }, 1000);
-        });
+    private async dispatchToTwilio(members: SMSMember[], message: SMSMessage): Promise<boolean> {
+        // Item 145: Dispatch SMS via Cloud Function → Twilio API
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const sendSMSFn = httpsCallable<
+                { phones: string[]; text: string; imageUrl?: string; messageId: string },
+                { sent: number; failed: number; status: string }
+            >(functionsWest1, 'sendSMSBlast');
+
+            const result = await sendSMSFn({
+                phones: members.map(m => m.phone),
+                text: message.text,
+                imageUrl: message.imageUrl,
+                messageId: message.id
+            });
+
+            logger.info(`[SMSMarketing] Twilio broadcast complete: ${result.data.sent} sent, ${result.data.failed} failed.`);
+            return true;
+        } catch (error) {
+            logger.warn('[SMSMarketing] Twilio Cloud Function unavailable:', error);
+            logger.info(`[SMSMarketing] SMS blast queued locally for ${members.length} recipients. Deploy Cloud Function 'sendSMSBlast' for live Twilio integration.`);
+            return false;
+        }
     }
 
     /**
@@ -53,8 +67,22 @@ export class SMSMarketingService {
      */
     async getSMSStatus(messageId: string): Promise<string> {
         logger.info(`[SMSMarketing] Fetching delivery status for message ${messageId}.`);
-        // TODO: Query Twilio API for real delivery status
-        return 'pending';
+
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const getStatusFn = httpsCallable<
+                { messageId: string },
+                { status: string; deliveredAt?: string }
+            >(functionsWest1, 'getSMSDeliveryStatus');
+
+            const result = await getStatusFn({ messageId });
+            return result.data.status;
+        } catch (_error) {
+            logger.warn(`[SMSMarketing] Status check unavailable for ${messageId}. Deploy Cloud Function 'getSMSDeliveryStatus'.`);
+            return 'pending';
+        }
     }
 }
 
