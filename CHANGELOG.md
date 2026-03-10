@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.12.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.1...v1.12.0) (2026-03-10)
+
+
+### Features
+
+* wire 30+ agent tools to backend services ([0ea3533](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0ea3533d08e050a0dafe01d86f1b3fd6a9d61e8f))
+
 ## [1.11.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.0...v1.11.1) (2026-03-10)
 
 
