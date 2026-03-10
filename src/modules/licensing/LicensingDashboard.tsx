@@ -9,6 +9,7 @@ import { useToast } from '@/core/context/ToastContext';
 import { useLicensing } from './hooks/useLicensing';
 import { MetricsGrid, DealFlowChart } from './components/LicensingWidgets';
 import { EmptyActionState } from './components/EmptyActionState';
+import { SkeletonStat, SkeletonList } from '@/components/shared/SkeletonLoader';
 import { CatalogSearchTab } from './components/CatalogSearchTab';
 import { SyncBriefMatcher } from './components/SyncBriefMatcher';
 import { MicroLicensingPortal } from './components/MicroLicensingPortal';
@@ -45,12 +46,17 @@ export default function LicensingDashboard() {
     if (isLoading) {
         return (
             <ModuleErrorBoundary moduleName="Licensing">
-                <div className="flex items-center justify-center min-h-[400px]">
-                    <div className="relative" data-testid="loading-spinner">
-                        <div className="h-16 w-16 rounded-full border-4 border-indigo-500/20 border-t-indigo-500 animate-spin"></div>
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                <div className="absolute inset-0 flex p-4 gap-4" data-testid="loading-spinner" aria-busy="true" aria-label="Loading licensing data">
+                    <div className="w-64 xl:w-72 space-y-3">
+                        <SkeletonStat />
+                        <SkeletonStat />
+                        <SkeletonStat />
+                    </div>
+                    <div className="flex-1 space-y-3">
+                        <div className="grid grid-cols-3 gap-3">
+                            <SkeletonStat /><SkeletonStat /><SkeletonStat />
                         </div>
+                        <SkeletonList rows={6} />
                     </div>
                 </div>
             </ModuleErrorBoundary>

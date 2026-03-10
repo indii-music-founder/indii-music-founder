@@ -18,9 +18,10 @@ import MultiPlatformPoster from './MultiPlatformPoster';
 import { useMarketing } from '@/modules/marketing/hooks/useMarketing';
 import { CampaignAsset } from '../types';
 import { MarketingService } from '@/services/marketing/MarketingService';
-import { Loader2, BarChart3, TrendingUp, MousePointerClick, Image, Sparkles, Radio } from 'lucide-react';
+import { BarChart3, TrendingUp, MousePointerClick, Image, Sparkles, Radio } from 'lucide-react';
 import { motion } from 'motion/react';
 import { logger } from '@/utils/logger';
+import { SkeletonList, SkeletonStat } from '@/components/shared/SkeletonLoader';
 
 /* ================================================================== */
 /*  Campaign Dashboard — Three-Panel Layout                             */
@@ -136,9 +137,11 @@ const CampaignDashboard: React.FC = () => {
 
                     {activeTab === 'campaigns' || activeTab === 'overview' ? (
                         isLoading ? (
-                            <div className="h-full flex flex-col items-center justify-center text-gray-500" data-testid="marketing-dashboard-loader">
-                                <Loader2 className="animate-spin mb-4" size={48} />
-                                <p className="text-lg animate-pulse">Loading campaigns...</p>
+                            <div className="p-4 space-y-4" data-testid="marketing-dashboard-loader" aria-busy="true" aria-label="Loading campaigns">
+                                <div className="grid grid-cols-3 gap-3">
+                                    <SkeletonStat /><SkeletonStat /><SkeletonStat />
+                                </div>
+                                <SkeletonList rows={5} />
                             </div>
                         ) : (
                             <CampaignManager

@@ -207,7 +207,7 @@ export default function DirectGenerationTab() {
                                     <p className="text-white text-xs line-clamp-2 mb-2">{item.prompt}</p>
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] uppercase font-bold text-gray-400">{item.type}</span>
-                                        <button className="text-gray-400 hover:text-white transition-colors">
+                                        <button aria-label="Download image" className="text-gray-400 hover:text-white transition-colors">
                                             <Download size={14} />
                                         </button>
                                     </div>

@@ -3,6 +3,7 @@ import { CampaignAsset } from '../types';
 import CampaignCard from './CampaignCard';
 import { Plus, Sparkles } from 'lucide-react';
 import { motion } from 'motion/react';
+import { EmptyState } from '@/components/shared/EmptyState';
 
 // Fix for React 19 type mismatch - using components directly
 // const PlusIcon = Plus as any;
@@ -95,7 +96,16 @@ const CampaignList: React.FC<CampaignListProps> = ({ campaigns, onSelectCampaign
                 </motion.div>
 
                 {/* Campaign Cards */}
-                {campaigns.map(campaign => (
+                {campaigns.length === 0 ? (
+                    <EmptyState
+                        icon="megaphone"
+                        title="No active campaigns"
+                        description="Create your first campaign to start reaching fans and tracking performance."
+                        action={{ label: 'Create Campaign', onClick: onCreateNew }}
+                        secondaryAction={onAIGenerate ? { label: 'Generate with AI', onClick: onAIGenerate, variant: 'secondary' } : undefined}
+                        compact
+                    />
+                ) : campaigns.map(campaign => (
                     <motion.div key={campaign.id} variants={itemVars}>
                         <CampaignCard
                             campaign={campaign}

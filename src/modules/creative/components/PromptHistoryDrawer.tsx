@@ -41,7 +41,7 @@ export default function PromptHistoryDrawer({ onClose }: { onClose: () => void }
                     <Clock size={16} className="text-purple-400" />
                     Prompt History
                 </h3>
-                <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
+                <button onClick={onClose} aria-label="Close prompt history" className="p-1 hover:bg-white/10 rounded-full text-gray-500 hover:text-white transition-colors">
                     <X size={18} />
                 </button>
             </div>

@@ -129,7 +129,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                             <div className="flex items-center gap-2 bg-gray-800 px-2 py-1 rounded-lg">
                                 <img src={endFrameItem.url} alt="End Frame" className="w-6 h-6 rounded object-cover" />
                                 <span className="text-xs text-gray-300">End Frame</span>
-                                <button onClick={() => setEndFrameItem(null)} className="text-gray-400 hover:text-white">
+                                <button onClick={() => setEndFrameItem(null)} aria-label="Remove end frame" className="text-gray-400 hover:text-white">
                                     <X size={12} />
                                 </button>
                             </div>
@@ -193,6 +193,7 @@ export const CanvasHeader: React.FC<CanvasHeaderProps> = ({
                 <button
                     onClick={onClose}
                     data-testid="canvas-close-btn"
+                    aria-label="Close canvas"
                     className="p-2 hover:bg-red-900/50 rounded-lg text-gray-400 hover:text-red-400 transition-colors"
                 >
                     <X size={18} />

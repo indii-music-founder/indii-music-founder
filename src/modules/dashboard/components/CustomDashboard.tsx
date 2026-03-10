@@ -12,6 +12,7 @@ import {
     Bot,
     Edit3,
     BarChart3,
+    Undo2,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { revenueService } from '@/services/RevenueService';
@@ -206,6 +207,22 @@ export function CustomDashboard() {
     const [dragId, setDragId] = useState<string | null>(null);
     const [dragOverId, setDragOverId] = useState<string | null>(null);
     const widgetCounter = useRef(0);
+    // Item 292: single-level undo for accidental drag-drops or removals
+    const previousWidgets = useRef<Widget[] | null>(null);
+    const [canUndo, setCanUndo] = useState(false);
+
+    const saveSnapshot = useCallback(() => {
+        previousWidgets.current = widgets;
+        setCanUndo(true);
+    }, [widgets]);
+
+    const handleUndo = useCallback(() => {
+        if (previousWidgets.current) {
+            setWidgets(previousWidgets.current);
+            previousWidgets.current = null;
+            setCanUndo(false);
+        }
+    }, []);
 
     // Persist to localStorage whenever widgets change
     useEffect(() => {
@@ -219,6 +236,7 @@ export function CustomDashboard() {
     const sortedWidgets = [...widgets].sort((a, b) => a.order - b.order);
 
     function removeWidget(id: string) {
+        saveSnapshot();
         setWidgets((prev) => prev.filter((w) => w.id !== id));
     }
 
@@ -252,6 +270,7 @@ export function CustomDashboard() {
             return;
         }
 
+        saveSnapshot();
         setWidgets((prev) => {
             const dragWidget = prev.find((w) => w.id === dragId);
             const targetWidget = prev.find((w) => w.id === targetId);
@@ -269,7 +288,7 @@ export function CustomDashboard() {
 
         setDragId(null);
         setDragOverId(null);
-    }, [dragId]);
+    }, [dragId, saveSnapshot]);
 
     const addedTypes = new Set(widgets.map((w) => w.type));
 
@@ -287,6 +306,17 @@ export function CustomDashboard() {
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
+                    {canUndo && (
+                        <button
+                            onClick={handleUndo}
+                            aria-label="Undo last layout change"
+                            title="Undo"
+                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 text-gray-400 hover:bg-white/10 text-[10px] font-bold transition-colors"
+                        >
+                            <Undo2 size={10} />
+                            Undo
+                        </button>
+                    )}
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${isEditMode

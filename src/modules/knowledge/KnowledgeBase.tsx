@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Upload, Search, Filter, Loader2, Book, Sparkles } from 'lucide-react';
+import { EmptyState } from '@/components/shared/EmptyState';
 import { useToast } from '@/core/context/ToastContext';
 import { knowledgeBaseService, KnowledgeDoc } from './services/KnowledgeBaseService';
 import { DocumentCard } from './components/DocumentCard';
@@ -175,11 +176,12 @@ export default function KnowledgeBase() {
                         <p className="animate-pulse">Accessing Neural Archives...</p>
                     </div>
                 ) : filteredDocs.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-64 text-gray-600 border-2 border-dashed border-gray-800 rounded-3xl">
-                        <Upload size={48} className="mb-4 opacity-50" />
-                        <p className="text-xl font-medium">No documents found</p>
-                        <p className="text-sm mt-2">Upload files or drag & drop to populate the Knowledge Base</p>
-                    </div>
+                    <EmptyState
+                        icon="document"
+                        title="No documents found"
+                        description="Upload files or drag & drop to populate the Knowledge Base."
+                        className="h-64"
+                    />
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-20">
                         {filteredDocs.map(doc => (

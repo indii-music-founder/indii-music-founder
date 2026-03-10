@@ -4,8 +4,8 @@
  * Generates a mock shareable slug and shows a product grid preview.
  */
 import React, { useState } from 'react';
-import { AnimatePresence, motion } from 'motion/react';
 import { X, ExternalLink, Copy, CheckCircle2, ShoppingBag, Globe, Zap, Store } from 'lucide-react';
+import { Modal } from '@/components/ui/Modal';
 import { MerchProduct } from '../types';
 
 interface StorefrontPreviewModalProps {
@@ -42,22 +42,7 @@ export function StorefrontPreviewModal({ isOpen, onClose, products, artistName =
     const placeholders = Math.max(0, 3 - previewProducts.length);
 
     return (
-        <AnimatePresence>
-            {isOpen && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-                    onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-                >
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-                        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                        className="w-full max-w-3xl bg-[#0a0a0a] border border-white/10 rounded-2xl shadow-2xl overflow-hidden"
-                    >
+        <Modal isOpen={isOpen} onClose={onClose} titleId="storefront-modal-title" maxWidth="max-w-3xl" className="bg-[#0a0a0a]">
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
                             <div className="flex items-center gap-3">
@@ -65,11 +50,11 @@ export function StorefrontPreviewModal({ isOpen, onClose, products, artistName =
                                     <Store size={14} className="text-[#FFE135]" />
                                 </div>
                                 <div>
-                                    <h3 className="text-sm font-bold text-white">Storefront Preview</h3>
+                                    <h3 id="storefront-modal-title" className="text-sm font-bold text-white">Storefront Preview</h3>
                                     <p className="text-[10px] text-neutral-500">Your public-facing shop</p>
                                 </div>
                             </div>
-                            <button onClick={onClose} className="text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
+                            <button onClick={onClose} aria-label="Close storefront preview" className="text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/5">
                                 <X size={16} />
                             </button>
                         </div>
@@ -152,9 +137,6 @@ export function StorefrontPreviewModal({ isOpen, onClose, products, artistName =
                                 {deploying ? 'Deploying...' : deployed ? 'Live via Stripe!' : 'Deploy via Stripe'}
                             </button>
                         </div>
-                    </motion.div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        </Modal>
     );
 }
