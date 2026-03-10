@@ -67,18 +67,19 @@ export class RINService {
                 },
                 title: track.trackTitle,
                 contributors: contributors,
-                // TODO: Source session data from track metadata
-                studioSessions: [{
-                    sessionDate: metadata.releaseDate, // Fallback to release date
+                // Session data sourced from track.credits when available;
+                // falls back to release-level metadata (date, contributors)
+                studioSessions: [({
+                    sessionDate: (track as any).sessionDate || metadata.releaseDate,
                     studioLocation: {
-                        studioName: '', // Populated from track session metadata when available
-                        countryCode: 'US'
+                        studioName: (track as any).studioName || '',
+                        countryCode: (track as any).studioCountry || 'US'
                     },
                     participants: contributors.map(c => ({
                         partyName: c.partyName,
                         role: c.roles[0]
                     }))
-                }]
+                })]
             };
         });
     }

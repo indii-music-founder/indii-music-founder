@@ -6,7 +6,7 @@
  */
 
 import { IdentifierService } from '@/services/identity/IdentifierService';
-import { ernService } from '@/services/ddex/ERNService';
+import { ernService, ERNService } from '@/services/ddex/ERNService';
 import { RoyaltyService, RevenueReportItem } from '@/services/finance/RoyaltyService';
 import { db, auth } from '@/services/firebase';
 import { doc, setDoc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore';
@@ -535,54 +535,222 @@ export const DistributionTools: Record<string, AnyToolFunction> = {
     create_music_metadata: MusicTools.create_music_metadata,
 
     distribute_premium_video: wrapTool('distribute_premium_video', async (args: { videoTitle: string; artistName: string; videoUrl: string; targetDSP: 'VEVO' | 'Apple Music Video' }) => {
-        // TODO: Wire to VEVO / Apple Music Video ingestion API (Item 137)
         const dsp = args.targetDSP || 'VEVO';
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
 
-        // Generate delivery XML schema from input args
-        const deliveryXml = `<VideoRelease><Title>${args.videoTitle}</Title><Artist>${args.artistName}</Artist><AssetUrl>${args.videoUrl}</AssetUrl></VideoRelease>`;
-
-        return toolSuccess({
+        // 1. Persist video release record to Firestore
+        const videoReleaseRef = await addDoc(collection(db, 'video_releases'), {
+            userId: uid,
             videoTitle: args.videoTitle,
             artistName: args.artistName,
+            videoUrl: args.videoUrl,
             targetDSP: dsp,
-            schemaValid: true,
-            deliveryStatus: `Queued for ${dsp} Ingestion`,
-            generatedXml: deliveryXml
-        }, `Premium music video "${args.videoTitle}" prepared for ${dsp} distribution. Pipeline rules and XML schema validated successfully.`);
+            status: 'QUEUED',
+            createdAt: serverTimestamp(),
+        });
+
+        // 2. Call Cloud Function for DSP-specific ingestion pipeline
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const functions = getFunctions();
+            const distributeVideo = httpsCallable(functions, 'distributeVideoToDSP');
+            const result = await distributeVideo({
+                releaseDocId: videoReleaseRef.id,
+                videoTitle: args.videoTitle,
+                artistName: args.artistName,
+                videoUrl: args.videoUrl,
+                targetDSP: dsp,
+            });
+            const data = result.data as Record<string, unknown>;
+            return toolSuccess({
+                videoTitle: args.videoTitle,
+                artistName: args.artistName,
+                targetDSP: dsp,
+                releaseId: videoReleaseRef.id,
+                deliveryStatus: data.status || 'QUEUED',
+                pipelineId: data.pipelineId || null,
+            }, `Premium music video "${args.videoTitle}" submitted to ${dsp} ingestion pipeline via Cloud Function.`);
+        } catch (cfError) {
+            logger.warn(`[DistributionTools] ${dsp} Cloud Function unavailable, falling back to local record:`, cfError);
+            // Fallback: video is persisted in Firestore for manual pipeline pickup
+            return toolSuccess({
+                videoTitle: args.videoTitle,
+                artistName: args.artistName,
+                targetDSP: dsp,
+                releaseId: videoReleaseRef.id,
+                deliveryStatus: 'QUEUED_FOR_MANUAL_REVIEW',
+                note: `${dsp} ingestion API not yet configured. Video release saved — will be processed when partner API credentials are added.`,
+            }, `Premium music video "${args.videoTitle}" saved for ${dsp} distribution. Awaiting partner API configuration.`);
+        }
     }),
 
     export_ddex_ern42: wrapTool('export_ddex_ern42', async (args: { releaseId: string; metadata: any }) => {
-        // TODO: Wire to ERNService for ERN 4.2 export (Item 171)
-        const ernXml = `<?xml version="1.0" encoding="utf-8"?>\n<ern:NewReleaseMessage xmlns:ern="http://ddex.net/xml/ern/42">\n  <ReleaseId>${args.releaseId}</ReleaseId>\n</ern:NewReleaseMessage>`;
+        // Wire to ERNService for ERN export (Item 171)
+        // Build ExtendedGoldenMetadata from the provided metadata
+        const meta: ExtendedGoldenMetadata = {
+            id: args.releaseId,
+            trackTitle: args.metadata?.title || args.metadata?.trackTitle || 'Untitled',
+            artistName: args.metadata?.artist || args.metadata?.artistName || 'Unknown Artist',
+            isrc: args.metadata?.isrc || '',
+            upc: args.metadata?.upc || '',
+            labelName: args.metadata?.label || args.metadata?.labelName || 'indii Records',
+            releaseType: args.metadata?.releaseType || 'Single',
+            genre: args.metadata?.genre || 'Pop',
+            subGenre: args.metadata?.subGenre || '',
+            language: args.metadata?.language || 'eng',
+            releaseDate: args.metadata?.releaseDate || new Date().toISOString().split('T')[0],
+            explicit: args.metadata?.explicit ?? false,
+            tracks: args.metadata?.tracks || [],
+            splits: args.metadata?.splits || [{ legalName: args.metadata?.artistName || 'Artist', role: 'performer', percentage: 100, email: '' }],
+            pro: args.metadata?.pro || 'None',
+            publisher: args.metadata?.publisher || 'Self-Published',
+            containsSamples: args.metadata?.containsSamples ?? false,
+            samples: args.metadata?.samples || [],
+            isGolden: true,
+            territories: args.metadata?.territories || ['Worldwide'],
+            distributionChannels: args.metadata?.distributionChannels || ['streaming', 'download'],
+            aiGeneratedContent: args.metadata?.aiGeneratedContent || { isFullyAIGenerated: false, isPartiallyAIGenerated: false },
+        };
 
-        return toolSuccess({
-            releaseId: args.releaseId,
-            format: 'DDEX ERN 4.2',
-            isValid: true,
-            xmlSnippet: ernXml
-        }, `Exported metadata for Release ${args.releaseId} to fully compliant DDEX ERN 4.2 format.`);
+        try {
+            const result = await ernService.generateERN(meta, undefined, 'generic', undefined, { isTestMode: false });
+            if (!result.success) {
+                return toolError(result.error || 'ERN generation failed', 'ERN_ERROR');
+            }
+
+            // Validate the generated XML
+            const validationErrors = ERNService.validateERNXML(result.xml || '');
+
+            return toolSuccess({
+                releaseId: args.releaseId,
+                format: 'DDEX ERN 4.3',
+                isValid: validationErrors.length === 0,
+                validationErrors: validationErrors.length > 0 ? validationErrors : undefined,
+                xmlLength: result.xml?.length || 0,
+            }, `Exported metadata for Release ${args.releaseId} to DDEX ERN 4.3 format via ERNService. ${validationErrors.length === 0 ? 'Structural validation passed.' : `${validationErrors.length} validation issue(s) detected.`}`);
+        } catch (error) {
+            return toolError(error instanceof Error ? error.message : 'ERN export failed', 'ERN_EXPORT_ERROR');
+        }
     }),
 
     generate_upc: wrapTool('generate_upc', async (args: { releaseTitle: string; recordLabel: string }) => {
-        // TODO: Wire to IdentifierService / GS1 registry (Item 172)
-        const generatedUpc = `00${Date.now().toString().slice(-10)}`;
+        // Wire to IdentifierService (Item 172)
+        try {
+            const upc = await IdentifierService.nextUPC();
+            const isValid = IdentifierService.validateUPC(upc);
 
-        return toolSuccess({
-            releaseTitle: args.releaseTitle,
-            recordLabel: args.recordLabel,
-            upc: generatedUpc,
-            status: 'Generated — connect GS1 registry for official validation'
-        }, `UPC generated (${generatedUpc}) for release "${args.releaseTitle}". Connect GS1 for official validation.`);
+            // Persist to Firestore registry
+            const uid = auth.currentUser?.uid;
+            if (uid) {
+                await addDoc(collection(db, 'upc_registry'), {
+                    upc,
+                    releaseTitle: args.releaseTitle,
+                    recordLabel: args.recordLabel,
+                    userId: uid,
+                    status: 'REGISTERED',
+                    createdAt: serverTimestamp(),
+                });
+            }
+
+            return toolSuccess({
+                releaseTitle: args.releaseTitle,
+                recordLabel: args.recordLabel,
+                upc,
+                checksumValid: isValid,
+                status: 'REGISTERED',
+            }, `UPC generated (${upc}) via IdentifierService for release "${args.releaseTitle}". GTIN-12 checksum: ${isValid ? 'VALID' : 'INVALID'}.`);
+        } catch (error) {
+            return toolError(error instanceof Error ? error.message : 'UPC generation failed', 'UPC_ERROR');
+        }
     }),
 
     sftp_direct_ingestion: wrapTool('sftp_direct_ingestion', async (args: { targetDSP: string; releaseFolder: string }) => {
-        // TODO: Wire to SFTP engine via Electron IPC (Item 173)
-        return toolSuccess({
-            dsp: args.targetDSP,
-            folderPath: args.releaseFolder,
-            sftpStatus: 'Transferred Successfully',
-            timestamp: new Date().toISOString()
-        }, `Direct SFTP pipeline successfully dropped structured folder "${args.releaseFolder}" to direct DSP (${args.targetDSP}).`);
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        // 1. Log the ingestion attempt to Firestore
+        const ingestionRef = await addDoc(collection(db, 'sftp_ingestions'), {
+            userId: uid,
+            targetDSP: args.targetDSP,
+            releaseFolder: args.releaseFolder,
+            status: 'INITIATED',
+            createdAt: serverTimestamp(),
+        });
+
+        // 2. Try Electron IPC for actual SFTP transfer
+        if (typeof window !== 'undefined' && window.electronAPI) {
+            try {
+                // Use the sftp.uploadDirectory IPC channel for actual SFTP delivery
+                const result = await window.electronAPI.sftp.uploadDirectory(
+                    args.releaseFolder,
+                    `/${args.targetDSP.toLowerCase().replace(/\s+/g, '_')}/releases/`,
+                );
+
+                if (!result.success) {
+                    throw new Error(result.error || 'SFTP upload failed');
+                }
+
+                // Update status on success
+                await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+                    status: 'TRANSFERRED',
+                    filesTransferred: result.files?.length || 0,
+                    completedAt: serverTimestamp(),
+                }, { merge: true });
+
+                return toolSuccess({
+                    dsp: args.targetDSP,
+                    folderPath: args.releaseFolder,
+                    sftpStatus: 'Transferred Successfully',
+                    ingestionId: ingestionRef.id,
+                    timestamp: new Date().toISOString(),
+                    engine: 'Electron SFTP',
+                }, `Direct SFTP pipeline successfully delivered "${args.releaseFolder}" to ${args.targetDSP} via Electron IPC.`);
+            } catch (e) {
+                logger.warn('[DistributionTools] Electron SFTP failed, trying Cloud Function:', e);
+            }
+        }
+
+        // 3. Fallback: Cloud Function for server-side SFTP
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const functions = getFunctions();
+            const sftpDeliver = httpsCallable(functions, 'sftpDeliverRelease');
+            const result = await sftpDeliver({
+                ingestionId: ingestionRef.id,
+                targetDSP: args.targetDSP,
+                releaseFolder: args.releaseFolder,
+            });
+            const data = result.data as Record<string, unknown>;
+
+            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+                status: data.status || 'TRANSFERRED',
+                completedAt: serverTimestamp(),
+            }, { merge: true });
+
+            return toolSuccess({
+                dsp: args.targetDSP,
+                folderPath: args.releaseFolder,
+                sftpStatus: data.status || 'Transferred',
+                ingestionId: ingestionRef.id,
+                timestamp: new Date().toISOString(),
+                engine: 'Cloud Function',
+            }, `SFTP delivery for "${args.releaseFolder}" to ${args.targetDSP} completed via Cloud Function.`);
+        } catch (cfError) {
+            logger.warn('[DistributionTools] SFTP Cloud Function unavailable:', cfError);
+            // Mark as pending for manual processing
+            await setDoc(doc(db, 'sftp_ingestions', ingestionRef.id), {
+                status: 'PENDING_MANUAL',
+            }, { merge: true });
+
+            return toolSuccess({
+                dsp: args.targetDSP,
+                folderPath: args.releaseFolder,
+                sftpStatus: 'PENDING_MANUAL',
+                ingestionId: ingestionRef.id,
+                note: 'SFTP engine unavailable. Ingestion saved — will be processed when SFTP credentials are configured.',
+            }, `SFTP delivery saved for manual processing. Configure ${args.targetDSP} SFTP credentials to enable automated delivery.`);
+        }
     }),
 
     toggle_content_id: wrapTool('toggle_content_id', async (args: {
@@ -622,12 +790,65 @@ export const DistributionTools: Record<string, AnyToolFunction> = {
     }),
 
     issue_automated_takedown: wrapTool('issue_automated_takedown', async (args: { releaseId: string; reason: string }) => {
-        // TODO: Wire to takedown workflow API (Item 180)
-        return toolSuccess({
+        const uid = auth.currentUser?.uid;
+        if (!uid) return toolError('User not authenticated');
+
+        // 1. Update release status in Firestore
+        const releaseRef = doc(db, 'releases', args.releaseId);
+        const releaseSnap = await getDoc(releaseRef);
+
+        if (!releaseSnap.exists()) {
+            return toolError(`Release ${args.releaseId} not found`, 'RELEASE_NOT_FOUND');
+        }
+
+        // Mark release as takedown-in-progress
+        await setDoc(releaseRef, {
+            status: 'TAKEDOWN_REQUESTED',
+            takedownReason: args.reason,
+            takedownRequestedAt: serverTimestamp(),
+            takedownRequestedBy: uid,
+        }, { merge: true });
+
+        // 2. Create takedown audit record
+        const takedownRef = await addDoc(collection(db, 'takedown_requests'), {
             releaseId: args.releaseId,
             reason: args.reason,
-            status: 'Takedown Issued',
-            estimatedRemovalTime: '24-48 hours'
-        }, `Automated takedown issued for release ${args.releaseId} due to: ${args.reason}. Streamlined process bypassed email support.`);
+            requestedBy: uid,
+            status: 'INITIATED',
+            createdAt: serverTimestamp(),
+        });
+
+        // 3. Notify distributors via Cloud Function
+        try {
+            const { getFunctions, httpsCallable } = await import('firebase/functions');
+            const functions = getFunctions();
+            const processTakedown = httpsCallable(functions, 'processReleaseTakedown');
+            const result = await processTakedown({
+                takedownId: takedownRef.id,
+                releaseId: args.releaseId,
+                reason: args.reason,
+            });
+            const data = result.data as Record<string, unknown>;
+
+            return toolSuccess({
+                releaseId: args.releaseId,
+                reason: args.reason,
+                takedownId: takedownRef.id,
+                status: data.status || 'PROCESSING',
+                distributorsNotified: data.distributorsNotified || 0,
+                estimatedRemovalTime: '24-48 hours',
+            }, `Automated takedown issued for release ${args.releaseId}. ${data.distributorsNotified || 'All'} distributor(s) notified. Estimated removal: 24-48 hours.`);
+        } catch (cfError) {
+            logger.warn('[DistributionTools] Takedown Cloud Function unavailable:', cfError);
+            // Takedown is already recorded in Firestore — manual follow-up possible
+            return toolSuccess({
+                releaseId: args.releaseId,
+                reason: args.reason,
+                takedownId: takedownRef.id,
+                status: 'RECORDED_PENDING_NOTIFICATION',
+                note: 'Takedown recorded in system. Distributor notifications will be sent when Cloud Function is deployed.',
+                estimatedRemovalTime: '24-48 hours after notification',
+            }, `Takedown for release ${args.releaseId} recorded. Distributor notification pending Cloud Function deployment.`);
+        }
     })
 };
