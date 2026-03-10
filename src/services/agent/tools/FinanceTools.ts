@@ -221,25 +221,70 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
 
     convert_multi_currency: wrapTool('convert_multi_currency', async (args: { amount: number; sourceCurrency: string; targetCurrency: string }) => {
         // Multi-Currency Ledger (Item 153)
-        // TODO: Replace with live exchange rate API (e.g., Open Exchange Rates, ECB)
+        // Fetches live exchange rates from the European Central Bank (free, no key required).
+        // ECB publishes daily EUR-based rates; we compute cross-rates for any pair.
         const fallbackExchangeRates: Record<string, number> = {
             'USD_EUR': 0.92,
             'EUR_USD': 1.09,
             'USD_GBP': 0.79,
-            'GBP_USD': 1.27
+            'GBP_USD': 1.27,
+            'USD_JPY': 149.50,
+            'JPY_USD': 0.0067,
+            'USD_CAD': 1.36,
+            'CAD_USD': 0.74,
+            'USD_AUD': 1.53,
+            'AUD_USD': 0.65,
         };
-        const pair = `${args.sourceCurrency}_${args.targetCurrency}`;
-        const rate = fallbackExchangeRates[pair] || 1.0;
+
+        let rate: number;
+        let source = 'fallback';
+
+        try {
+            // ECB daily reference rates (XML)
+            const ecbUrl = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
+            const response = await fetch(ecbUrl, { signal: AbortSignal.timeout(5000) });
+            if (!response.ok) throw new Error(`ECB API returned ${response.status}`);
+            const xml = await response.text();
+
+            // Parse EUR-based rates from XML using regex (lightweight, no XML parser needed)
+            const rateMap: Record<string, number> = { EUR: 1.0 };
+            const regex = /currency='([A-Z]+)'\s+rate='([\d.]+)'/g;
+            let match: RegExpExecArray | null;
+            while ((match = regex.exec(xml)) !== null) {
+                rateMap[match[1]] = parseFloat(match[2]);
+            }
+
+            const src = args.sourceCurrency.toUpperCase();
+            const tgt = args.targetCurrency.toUpperCase();
+
+            if (src === tgt) {
+                rate = 1.0;
+            } else if (rateMap[src] && rateMap[tgt]) {
+                // Cross-rate: convert source→EUR→target
+                rate = rateMap[tgt] / rateMap[src];
+            } else {
+                throw new Error(`Currency not found in ECB data: ${!rateMap[src] ? src : tgt}`);
+            }
+
+            source = 'ECB';
+            logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
+        } catch (error) {
+            logger.warn('[FinanceTools] ECB API unavailable, using fallback rates:', error);
+            const pair = `${args.sourceCurrency.toUpperCase()}_${args.targetCurrency.toUpperCase()}`;
+            rate = fallbackExchangeRates[pair] || 1.0;
+        }
+
         const converted = args.amount * rate;
 
         return toolSuccess({
             sourceAmount: args.amount,
             sourceCurrency: args.sourceCurrency,
             targetCurrency: args.targetCurrency,
-            exchangeRate: rate,
+            exchangeRate: Number(rate.toFixed(6)),
             convertedAmount: Number(converted.toFixed(2)),
+            rateSource: source,
             timestamp: new Date().toISOString()
-        }, `Converted ${args.amount} ${args.sourceCurrency} to ${converted.toFixed(2)} ${args.targetCurrency} (Rate: ${rate}).`);
+        }, `Converted ${args.amount} ${args.sourceCurrency} to ${converted.toFixed(2)} ${args.targetCurrency} (Rate: ${rate.toFixed(6)}, Source: ${source}).`);
     }),
 
     onboard_stripe_connect: wrapTool('onboard_stripe_connect', async (args: { email: string; role: string; splitPercentage: number }) => {

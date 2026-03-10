@@ -190,13 +190,84 @@ The following URL (${args.infringingUrl}) contains unauthorized use of the copyr
     }),
 
     verify_mechanical_license: wrapTool('verify_mechanical_license', async (args: { trackTitle: string; originalArtist: string }) => {
-        // TODO: Wire to HFA/MusicReports API (Item 177)
-        return toolSuccess({
-            coverSong: args.trackTitle,
-            originalArtist: args.originalArtist,
-            hfaStatus: 'Clearance Required',
-            userAcknowledged: false,
-            link: `https://www.songfile.com/`
-        }, `Mechanical licensing verification required for cover song "${args.trackTitle}". User must acknowledge HFA/Music Reports compliance before delivery.`);
+        // Item 177: Mechanical License Verification via HFA/MusicReports
+        // Calls Cloud Function that interfaces with HFA/MusicReports API,
+        // persists check results to Firestore for audit trail.
+
+        try {
+            const { functions } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const verifyFn = httpsCallable<
+                { trackTitle: string; originalArtist: string },
+                { status: string; songCode: string; publisher: string; rate: number; requiresClearance: boolean }
+            >(functions, 'verifyMechanicalLicense');
+
+            const result = await verifyFn({
+                trackTitle: args.trackTitle,
+                originalArtist: args.originalArtist,
+            });
+
+            // Persist the license check to Firestore
+            try {
+                const { db, auth } = await import('@/services/firebase');
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {
+                        trackTitle: args.trackTitle,
+                        originalArtist: args.originalArtist,
+                        hfaStatus: result.data.status,
+                        songCode: result.data.songCode,
+                        publisher: result.data.publisher,
+                        statutoryRate: result.data.rate,
+                        requiresClearance: result.data.requiresClearance,
+                        checkedAt: serverTimestamp(),
+                    });
+                }
+            } catch (persistError) {
+                logger.warn('[LegalTools] Failed to persist license check:', persistError);
+            }
+
+            return toolSuccess({
+                coverSong: args.trackTitle,
+                originalArtist: args.originalArtist,
+                hfaStatus: result.data.status,
+                songCode: result.data.songCode,
+                publisher: result.data.publisher,
+                statutoryRate: result.data.rate,
+                requiresClearance: result.data.requiresClearance,
+                link: 'https://www.songfile.com/',
+            }, `Mechanical license verification for "${args.trackTitle}": Status=${result.data.status}, Publisher=${result.data.publisher}. ${result.data.requiresClearance ? 'Clearance required before delivery.' : 'License verified — cleared for delivery.'}`);
+        } catch (error) {
+            logger.warn('[LegalTools] verifyMechanicalLicense Cloud Function unavailable:', error);
+
+            // Fallback: Persist the check request for manual processing
+            try {
+                const { db, auth } = await import('@/services/firebase');
+                const { collection, addDoc, serverTimestamp } = await import('firebase/firestore');
+                const userId = auth.currentUser?.uid;
+                if (userId) {
+                    await addDoc(collection(db, `users/${userId}/mechanical_license_checks`), {
+                        trackTitle: args.trackTitle,
+                        originalArtist: args.originalArtist,
+                        hfaStatus: 'pending_manual_verification',
+                        requiresClearance: true,
+                        checkedAt: serverTimestamp(),
+                    });
+                }
+            } catch (persistError) {
+                logger.warn('[LegalTools] Failed to persist fallback license check:', persistError);
+            }
+
+            return toolSuccess({
+                coverSong: args.trackTitle,
+                originalArtist: args.originalArtist,
+                hfaStatus: 'Clearance Required',
+                requiresClearance: true,
+                userAcknowledged: false,
+                link: 'https://www.songfile.com/',
+            }, `Mechanical licensing verification required for cover song "${args.trackTitle}". Deploy Cloud Function 'verifyMechanicalLicense' for automated HFA/MusicReports checking. Manual clearance via SongFile is required before delivery.`);
+        }
     })
 };
