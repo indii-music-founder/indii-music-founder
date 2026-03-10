@@ -45,7 +45,7 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({ collapsed }) => {
 
     if (pendingCount === 0 && !isSyncing && !lastSyncError) {
         return (
-            <div className={cn(
+            <div role="status" aria-live="polite" aria-label="Sync status: all changes saved" className={cn(
                 "flex items-center gap-2 rounded-lg bg-card/50 border border-border/50 text-zinc-500 transition-all duration-300",
                 collapsed ? "p-1 justify-center" : "px-3 py-2"
             )}>
@@ -68,6 +68,9 @@ export const SyncStatus: React.FC<SyncStatusProps> = ({ collapsed }) => {
 
     return (
         <motion.div
+            role="status"
+            aria-live="polite"
+            aria-label={isSyncing ? 'Syncing changes' : lastSyncError ? 'Sync error' : `${pendingCount} changes pending sync`}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
             className={cn(

@@ -29,7 +29,15 @@ export class AgentOrchestrator {
             return 'generalist';
         }
 
-        // 2. Sanitize Input
+        // 2. Security check — block injection attempts before any AI processing
+        const security = InputSanitizer.securityCheck(userQuery);
+        if (security.shouldBlock) {
+            logger.warn('[indii:Orchestrator] Input blocked:', security.analysis.detectedPatterns);
+            await TraceService.failTrace(traceId, 'Blocked: injection pattern detected');
+            throw new Error('Request blocked by security filter.');
+        }
+
+        // 3. Sanitize Input
         const sanitizedQuery = InputSanitizer.sanitize(userQuery);
 
         const specializedAgents = agentRegistry.getAll().map(a => ({

@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { useShallow } from 'zustand/react/shallow';
 import { useStore } from './store';
 import Sidebar from './components/Sidebar';
@@ -390,6 +391,9 @@ export default function App() {
     }
 
     return (
+        // Item 276: MotionConfig reducedMotion="user" causes all Framer Motion
+        // animations to respect the OS prefers-reduced-motion setting globally.
+        <MotionConfig reducedMotion="user">
         <VoiceProvider>
             <ThemeProvider>
                 <ToastProvider>
@@ -492,6 +496,7 @@ export default function App() {
                     </div>
                 </ToastProvider>
             </ThemeProvider>
-        </VoiceProvider >
+        </VoiceProvider>
+        </MotionConfig>
     );
 }

@@ -14,6 +14,14 @@ export interface AudioAnalysisResult {
         format: string;
         bitrate: number;
     };
+    streams?: Array<{
+        codec_type?: string;
+        codec_name?: string;
+        sample_rate?: string;
+        bits_per_raw_sample?: string;
+        bits_per_sample?: string;
+        channels?: number;
+    }>;
 }
 
 export interface ElectronAPI {

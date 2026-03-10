@@ -52,7 +52,15 @@ export class HybridOrchestrator {
             return `${truncated}\n\n[... Result truncated by Orchestrator for context window efficiency. Total length: ${text.length} characters ...]`;
         };
 
-        // 1. Sanitize
+        // 1. Security check — block injection attempts before entering the reasoning loop
+        const security = InputSanitizer.securityCheck(userQuery);
+        if (security.shouldBlock) {
+            logger.warn('[indii:Hybrid] Input blocked:', security.analysis.detectedPatterns);
+            await TraceService.failTrace(traceId, 'Blocked: injection pattern detected');
+            return "I can't process that request. Please rephrase and try again.";
+        }
+
+        // 2. Sanitize
         const sanitizedQuery = InputSanitizer.sanitize(userQuery);
 
         while (currentTurn < this.MAX_TURNS && !isTaskComplete) {

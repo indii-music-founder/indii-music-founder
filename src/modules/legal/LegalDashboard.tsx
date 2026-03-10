@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio } from 'lucide-react';
+import { Shield, Upload, FileText, CheckCircle, AlertTriangle, Loader2, Camera, Scale, Clock, Briefcase, BookOpen, Radio, Star, ExternalLink, ChevronRight, Search, MapPin, Award } from 'lucide-react';
 import { DMCANoticeGenerator } from './components/DMCANoticeGenerator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/core/context/ToastContext';
@@ -31,6 +31,7 @@ export default function LegalDashboard() {
     }>(null);
     const [isGenerating, setIsGenerating] = useState<string | null>(null);
     const [analysisHistory, setAnalysisHistory] = useState<Array<{ name: string; score: number; date: string }>>([]);
+    const [activeTab, setActiveTab] = useState('analyzer');
     const toast = useToast();
 
     const handleDragOver = (e: React.DragEvent) => {
@@ -145,8 +146,7 @@ Only return valid JSON.
     };
 
     const handleFindCounsel = () => {
-        window.open('https://www.entertainmentlawyer.ca/directory', '_blank', 'noopener,noreferrer');
-        toast.info("Opening entertainment lawyer directory...");
+        setActiveTab('counsel');
     };
 
     return (
@@ -179,7 +179,7 @@ Only return valid JSON.
                     </div>
                 </div>
 
-                <Tabs defaultValue="analyzer" className="flex-1 flex flex-col overflow-hidden">
+                <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
                     <div className="px-4 md:px-6 border-b border-white/5 flex-shrink-0">
                         <TabsList className="bg-transparent gap-6 p-0 h-12">
                             <TabsTrigger value="analyzer" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
@@ -187,6 +187,9 @@ Only return valid JSON.
                             </TabsTrigger>
                             <TabsTrigger value="dmca" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
                                 <Shield size={14} /> DMCA Notices
+                            </TabsTrigger>
+                            <TabsTrigger value="counsel" className="text-muted-foreground data-[state=active]:text-blue-400 data-[state=active]:bg-transparent border-b-2 border-transparent data-[state=active]:border-blue-400 rounded-none px-0 h-full font-bold transition-all flex items-center gap-2 text-xs">
+                                <Scale size={14} /> Find Counsel
                             </TabsTrigger>
                         </TabsList>
                     </div>
@@ -290,6 +293,10 @@ Only return valid JSON.
 
                     <TabsContent value="dmca" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
                         <DMCANoticeGenerator />
+                    </TabsContent>
+
+                    <TabsContent value="counsel" className="flex-1 overflow-y-auto m-0 p-4 md:p-6">
+                        <FindCounselPanel />
                     </TabsContent>
                 </Tabs>
             </div>
@@ -453,15 +460,175 @@ function RiskScoresPanel({ result }: { result: { score: number; risks: string[] 
 
 function CounselPanel({ onFindCounsel }: { onFindCounsel: () => void }) {
     return (
-        <div className="rounded-xl bg-blue-500/5 border border-blue-500/10 p-3">
-            <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest mb-2 px-1">Need a Lawyer?</h3>
-            <p className="text-[10px] text-gray-500 px-1 mb-3">Connect with a verified entertainment lawyer for binding advice.</p>
+        <div className="rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/5 border border-blue-500/20 p-3 space-y-3">
+            {/* Partner badge */}
+            <div className="flex items-center justify-between">
+                <h3 className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">Platform Legal Partner</h3>
+                <span className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={8} className="fill-yellow-400 text-yellow-400" />
+                    ))}
+                </span>
+            </div>
+
+            {/* Avatar + name */}
+            <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/30">
+                    <Scale size={16} className="text-white" />
+                </div>
+                <div className="min-w-0">
+                    <p className="text-xs font-bold text-white truncate">Music Business Attorney</p>
+                    <p className="text-[10px] text-gray-400 truncate">Entertainment Law · IP · Contracts</p>
+                </div>
+            </div>
+
             <button
                 onClick={onFindCounsel}
-                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors"
+                className="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5"
             >
-                Find Counsel
+                <Scale size={11} /> Book Consultation
             </button>
+            <button
+                onClick={onFindCounsel}
+                className="w-full py-1.5 text-[10px] text-gray-400 hover:text-white transition-colors flex items-center justify-center gap-1"
+            >
+                Browse all attorneys <ChevronRight size={10} />
+            </button>
+        </div>
+    );
+}
+
+/* ================================================================== */
+/*  Find Counsel — Full Panel (counsel tab)                             */
+/* ================================================================== */
+
+// Placeholder booking URL — replaced when partnership is signed
+const FEATURED_ATTORNEY_BOOKING_URL = '#attorney-booking-placeholder';
+const FEATURED_ATTORNEY_UTM = `${FEATURED_ATTORNEY_BOOKING_URL}?utm_source=indiios&utm_medium=platform&utm_campaign=legal_partner`;
+
+function FindCounselPanel() {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    return (
+        <div className="space-y-6 max-w-2xl mx-auto">
+
+            {/* ── Featured Attorney Card ─────────────────────────── */}
+            <div className="relative rounded-2xl overflow-hidden border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-purple-500/5 to-transparent">
+                {/* Glow */}
+                <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 blur-[60px] pointer-events-none rounded-full" />
+
+                <div className="relative p-5 space-y-4">
+                    {/* Header row */}
+                    <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-3">
+                            {/* Avatar */}
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-400 to-purple-600 flex items-center justify-center flex-shrink-0 ring-2 ring-blue-500/40 shadow-lg shadow-blue-500/20">
+                                <Scale size={24} className="text-white" />
+                            </div>
+                            <div>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                    <p className="text-base font-black text-white">Music Business Attorney</p>
+                                    <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/30 text-[9px] font-bold text-blue-300 uppercase tracking-wider flex items-center gap-1">
+                                        <Award size={8} /> Platform Partner
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-400">Entertainment Law · Music IP · Contracts · Distribution</p>
+                                <div className="flex items-center gap-1 mt-1">
+                                    {[...Array(5)].map((_, i) => (
+                                        <Star key={i} size={10} className="fill-yellow-400 text-yellow-400" />
+                                    ))}
+                                    <span className="text-[10px] text-gray-500 ml-1">indiiOS Verified Partner</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Bio */}
+                    <p className="text-xs text-gray-300 leading-relaxed">
+                        Specializes in music business law for independent artists and labels — contract review,
+                        IP protection, distribution agreements, copyright registration, and label deal negotiation.
+                        Featured music law educator and YouTube content creator.
+                    </p>
+
+                    {/* Specialty tags */}
+                    <div className="flex flex-wrap gap-1.5">
+                        {['Music Contracts', 'Copyright', 'Distribution Deals', 'Label Agreements', 'IP Protection', 'Royalties'].map(tag => (
+                            <span key={tag} className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[10px] text-gray-300">
+                                {tag}
+                            </span>
+                        ))}
+                    </div>
+
+                    {/* CTA row */}
+                    <div className="flex gap-3 pt-1">
+                        <a
+                            href={FEATURED_ATTORNEY_UTM}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                        >
+                            <Scale size={13} /> Book a Consultation
+                        </a>
+                        <a
+                            href={FEATURED_ATTORNEY_UTM}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2.5 bg-white/5 hover:bg-white/10 text-white rounded-xl text-xs font-medium transition-colors flex items-center gap-2 border border-white/10"
+                        >
+                            <ExternalLink size={12} /> View Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            {/* ── Browse More Attorneys ──────────────────────────── */}
+            <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                    <div className="flex-1 h-px bg-white/5" />
+                    <span className="text-[10px] text-gray-600 font-bold uppercase tracking-widest">Or browse more attorneys</span>
+                    <div className="flex-1 h-px bg-white/5" />
+                </div>
+
+                {/* Search bar */}
+                <div className="relative">
+                    <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none" />
+                    <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by specialty, state, or name..."
+                        className="w-full pl-9 pr-4 py-2.5 bg-white/[0.03] border border-white/10 rounded-xl text-xs text-white placeholder-gray-600 focus:outline-none focus:border-blue-500/50 focus:bg-white/[0.05] transition-colors"
+                    />
+                </div>
+
+                {/* Placeholder directory entries */}
+                <div className="space-y-2">
+                    {[
+                        { specialty: 'Music IP & Licensing', location: 'New York, NY', note: 'Verified listing coming soon' },
+                        { specialty: 'Entertainment Contracts', location: 'Los Angeles, CA', note: 'Verified listing coming soon' },
+                        { specialty: 'Independent Artist Law', location: 'Nashville, TN', note: 'Verified listing coming soon' },
+                    ].map((entry, i) => (
+                        <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5 opacity-50">
+                            <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center flex-shrink-0">
+                                <Scale size={14} className="text-gray-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-xs text-gray-400 font-medium">{entry.specialty}</p>
+                                <div className="flex items-center gap-1 text-[10px] text-gray-600 mt-0.5">
+                                    <MapPin size={9} /> {entry.location}
+                                    <span className="mx-1">·</span>
+                                    <span className="italic">{entry.note}</span>
+                                </div>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+
+                <p className="text-center text-[10px] text-gray-600 pt-2">
+                    Attorney directory expanding at launch. <br />
+                    Interested in a listing? Contact <a href="mailto:legal@indiios.com" className="text-blue-400 hover:underline">legal@indiios.com</a>
+                </p>
+            </div>
         </div>
     );
 }

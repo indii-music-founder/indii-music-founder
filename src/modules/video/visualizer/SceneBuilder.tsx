@@ -1,4 +1,4 @@
-import React, { useState, useRef, Suspense, Component, ErrorInfo } from 'react';
+import React, { useState, useRef, useMemo, useEffect, Suspense, Component, ErrorInfo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Environment, ContactShadows, useGLTF } from '@react-three/drei';
 import * as THREE from 'three';
@@ -35,7 +35,26 @@ class ModelErrorBoundary extends Component<{ children: React.ReactNode }, { hasE
 // useGLTF must be called unconditionally (rules-of-hooks). Suspense + ModelErrorBoundary handle failures.
 const Model = ({ url, position, scale }: { url: string; position: [number, number, number]; scale: number }) => {
     const { scene } = useGLTF(url);
-    const clonedScene = scene.clone();
+
+    // Clone once per scene reference — not on every render
+    const clonedScene = useMemo(() => scene.clone(), [scene]);
+
+    // Dispose all GPU resources when this model unmounts
+    useEffect(() => {
+        return () => {
+            clonedScene.traverse((obj) => {
+                if (obj instanceof THREE.Mesh) {
+                    obj.geometry?.dispose();
+                    if (Array.isArray(obj.material)) {
+                        obj.material.forEach(m => m.dispose());
+                    } else {
+                        obj.material?.dispose();
+                    }
+                }
+            });
+        };
+    }, [clonedScene]);
+
     return <primitive object={clonedScene} position={position} scale={scale} />;
 };
 
@@ -84,6 +103,12 @@ export const SceneBuilder = () => {
     };
 
     const handleClear = () => {
+        // Revoke blob URLs created by URL.createObjectURL to free browser memory
+        assets.forEach(asset => {
+            if (asset.url.startsWith('blob:')) {
+                URL.revokeObjectURL(asset.url);
+            }
+        });
         setAssets([]);
     };
 
