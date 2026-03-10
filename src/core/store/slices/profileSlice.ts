@@ -25,22 +25,22 @@ export interface ProfileSlice {
     updatePreferences: (updates: Partial<UserPreferences>) => void;
 }
 
-// Default Guest Profile
+// Default Brand Kit — Intentionally empty so new users trigger onboarding
 const DEFAULT_BRAND_KIT: BrandKit = {
-    colors: ['#000000', '#ffffff'],
-    fonts: 'Inter',
-    brandDescription: 'My Studio Brand',
+    colors: [],
+    fonts: '',
+    brandDescription: '',
     negativePrompt: '',
     socials: {},
     brandAssets: [],
     referenceImages: [],
     releaseDetails: {
-        title: 'Untitled Project',
-        type: 'Single',
-        artists: 'Me',
-        genre: 'Pop',
-        mood: 'Energetic',
-        themes: 'Life',
+        title: '',
+        type: '',
+        artists: '',
+        genre: '',
+        mood: '',
+        themes: '',
         lyrics: ''
     }
 };
@@ -58,7 +58,7 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     membership: { tier: 'free', expiresAt: null },
     accountType: 'artist',
 
-    bio: 'Creative Director',
+    bio: '',
     preferences: {
         theme: 'system',
         notifications: true,
@@ -68,8 +68,8 @@ const DEFAULT_USER_PROFILE: UserProfile = {
     analyzedTrackIds: [],
     knowledgeBase: [],
     savedWorkflows: [],
-    careerStage: 'Established',
-    goals: ['Global Domination']
+    careerStage: '',
+    goals: []
 };
 
 export const createProfileSlice: StateCreator<ProfileSlice> = (set, get) => ({

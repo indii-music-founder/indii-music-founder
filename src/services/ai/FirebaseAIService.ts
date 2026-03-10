@@ -371,6 +371,21 @@ export class FirebaseAIService {
         const modelName = this.getModelName(modelOverride);
         const mergedConfig = { ...this.defaultConfig, ...config };
 
+        // SAFETY: Extract non-generation fields that callers may have mixed into config.
+        // e.g. onboardingService passes { systemInstruction, tools, ...thinkingConfig } as config.
+        // These must NOT end up in generationConfig or the API will reject with 400.
+        const configRecord = mergedConfig as Record<string, unknown>;
+        if (!systemInstruction && typeof configRecord.systemInstruction === 'string') {
+            systemInstruction = configRecord.systemInstruction as string;
+        }
+        if (!tools && Array.isArray(configRecord.tools)) {
+            tools = configRecord.tools as Tool[];
+        }
+        delete configRecord.systemInstruction;
+        delete configRecord.tools;
+        delete configRecord.toolConfig;
+        delete configRecord.safetySettings;
+
         // 1. Request Coalescing & Cache Key
         // Create a lean key that avoids stringifying large binary data
         const leanPrompt = Array.isArray(prompt)
@@ -575,15 +590,24 @@ export class FirebaseAIService {
                 ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
                 : prompt;
 
+            // Clean config: strip non-generation fields that callers may have mixed in
+            const cleanConfig = { ...config };
+            delete (cleanConfig as Record<string, unknown>).systemInstruction;
+            delete (cleanConfig as Record<string, unknown>).tools;
+            delete (cleanConfig as Record<string, unknown>).toolConfig;
+            delete (cleanConfig as Record<string, unknown>).safetySettings;
+
+            // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
+            // NOT nested inside config (which maps to generation_config in the API payload).
             const result = await this.fallbackClient.models.generateContent({
                 model: modelName,
                 contents: contents as unknown as Record<string, unknown>[],
                 config: {
-                    ...config,
-                    systemInstruction,
+                    ...cleanConfig,
+                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
                     tools: tools as unknown as Record<string, unknown>[],
                     toolConfig,
-                    safetySettings: (safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
+                    systemInstruction,
                     abortSignal: options?.signal
                 } as Record<string, unknown>,
             });
@@ -819,15 +843,24 @@ export class FirebaseAIService {
             ? [{ role: 'user' as const, parts: [{ text: prompt }] }]
             : prompt;
 
+        // Clean config: strip non-generation fields that callers may have mixed in
+        const cleanConfig = { ...config };
+        delete (cleanConfig as Record<string, unknown>).systemInstruction;
+        delete (cleanConfig as Record<string, unknown>).tools;
+        delete (cleanConfig as Record<string, unknown>).toolConfig;
+        delete (cleanConfig as Record<string, unknown>).safetySettings;
+
+        // @google/genai SDK: systemInstruction, tools, safetySettings are TOP-LEVEL fields,
+        // NOT nested inside config (which maps to generation_config in the API payload).
         const result = await this.fallbackClient.models.generateContentStream({
             model: modelName,
             contents: contents as unknown as Record<string, unknown>[],
             config: {
-                ...config,
-                systemInstruction,
+                ...cleanConfig,
+                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
                 tools: tools as unknown as Record<string, unknown>[],
                 toolConfig: options?.toolConfig,
-                safetySettings: (options?.safetySettings || STANDARD_SAFETY_SETTINGS) as unknown as Record<string, unknown>[],
+                systemInstruction,
             } as Record<string, unknown>,
         });
 

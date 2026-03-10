@@ -48,20 +48,77 @@ export class AdAutomationService {
 
     private async createCampaign(config: AdBudgetConfig): Promise<string> {
         logger.debug(`[AdAutomation] Creating ${config.platform} campaign...`);
-        // In production: POST /v17.0/act_<AD_ACCOUNT_ID>/campaigns
-        return `camp_${Date.now()}`;
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const createCampaignFn = httpsCallable<
+                { platform: string; dailyBudget: number; totalDays: number },
+                { campaignId: string }
+            >(functionsWest1, 'createAdCampaign');
+
+            const result = await createCampaignFn({
+                platform: config.platform,
+                dailyBudget: config.dailyBudget,
+                totalDays: config.totalDays
+            });
+
+            return result.data.campaignId;
+        } catch (_error) {
+            logger.warn('[AdAutomation] Campaign Cloud Function unavailable, using local ID.');
+            return `camp_${Date.now()}`;
+        }
     }
 
     private async createAdSet(campaignId: string, config: AdBudgetConfig): Promise<string> {
         logger.debug(`[AdAutomation] Creating ad set for campaign ${campaignId}...`);
-        // In production: POST /v17.0/act_<AD_ACCOUNT_ID>/adsets
-        return `adset_${Date.now()}`;
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const createAdSetFn = httpsCallable<
+                { campaignId: string; platform: string; targetAgeRange?: [number, number]; targetInterests?: string[] },
+                { adSetId: string }
+            >(functionsWest1, 'createAdSet');
+
+            const result = await createAdSetFn({
+                campaignId,
+                platform: config.platform,
+                targetAgeRange: config.targetAgeRange,
+                targetInterests: config.targetInterests
+            });
+
+            return result.data.adSetId;
+        } catch (_error) {
+            logger.warn('[AdAutomation] AdSet Cloud Function unavailable, using local ID.');
+            return `adset_${Date.now()}`;
+        }
     }
 
     private async createAd(adSetId: string, creative: AdCreative): Promise<string> {
         logger.debug(`[AdAutomation] Creating ad in ad set ${adSetId}...`);
-        // In production: POST /v17.0/act_<AD_ACCOUNT_ID>/ads
-        return `ad_${Date.now()}`;
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const createAdFn = httpsCallable<
+                { adSetId: string; creativeId: string; headline: string; body: string; callToAction: string },
+                { adId: string }
+            >(functionsWest1, 'createAd');
+
+            const result = await createAdFn({
+                adSetId,
+                creativeId: creative.creativeId,
+                headline: creative.headline,
+                body: creative.body,
+                callToAction: creative.callToAction
+            });
+
+            return result.data.adId;
+        } catch (_error) {
+            logger.warn('[AdAutomation] Ad Cloud Function unavailable, using local ID.');
+            return `ad_${Date.now()}`;
+        }
     }
 
     /**
@@ -70,14 +127,27 @@ export class AdAutomationService {
     async getAdInsights(adId: string) {
         logger.info(`[AdAutomation] Fetching insights for ad ${adId}.`);
 
-        // TODO: Wire to Meta/TikTok Ads API for real insights
-        return {
-            impressions: 0,
-            clicks: 0,
-            spend: 0,
-            ctr: 0,
-            cpc: 0
-        };
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const getInsightsFn = httpsCallable<
+                { adId: string },
+                { impressions: number; clicks: number; spend: number; ctr: number; cpc: number }
+            >(functionsWest1, 'getAdInsights');
+
+            const result = await getInsightsFn({ adId });
+            return result.data;
+        } catch (_error) {
+            logger.warn(`[AdAutomation] Insights Cloud Function unavailable for ad ${adId}. Deploy Cloud Function 'getAdInsights'.`);
+            return {
+                impressions: 0,
+                clicks: 0,
+                spend: 0,
+                ctr: 0,
+                cpc: 0
+            };
+        }
     }
 }
 

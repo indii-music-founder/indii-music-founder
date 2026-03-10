@@ -243,23 +243,43 @@ const COMMERCIAL_MODULES = new Set<ModuleId>([
 ]);
 
 function useOnboardingRedirect() {
-    const { user, authLoading, currentModule, setModule } = useStore(
+    const { user, authLoading, currentModule, setModule, userProfile } = useStore(
         useShallow(s => ({
             user: s.user,
             authLoading: s.authLoading,
             currentModule: s.currentModule,
             setModule: s.setModule,
+            userProfile: s.userProfile,
         }))
     );
 
     useEffect(() => {
         if (authLoading || !user) return;
 
+        // Already on onboarding — no redirect needed
+        if (currentModule === 'onboarding') return;
+
         // Redirect anonymous users away from commercial modules to onboarding
         if (user.isAnonymous && COMMERCIAL_MODULES.has(currentModule as ModuleId)) {
             setModule('onboarding');
+            return;
         }
-    }, [user, authLoading, currentModule, setModule]);
+
+        // Detect genuinely new users who need onboarding:
+        // - Profile id is still 'pending' (default, not loaded from Firestore yet)
+        // - OR profile has no meaningful bio (less than 10 chars, excluding defaults)
+        // - AND user just signed up (no displayName set via landing page, or profile is bare)
+        const isNewProfile = userProfile.id === 'pending' ||
+            (!userProfile.bio || userProfile.bio.length < 10 || userProfile.bio === 'Creative Director');
+
+        const hasMinimalBrandKit = !userProfile.brandKit?.brandDescription ||
+            userProfile.brandKit.brandDescription === 'My Studio Brand';
+
+        if (isNewProfile && hasMinimalBrandKit) {
+            // New user detected — send to onboarding
+            setModule('onboarding');
+        }
+    }, [user, authLoading, currentModule, setModule, userProfile]);
 }
 
 // Module Renderer and App Component follow
@@ -394,109 +414,109 @@ export default function App() {
         // Item 276: MotionConfig reducedMotion="user" causes all Framer Motion
         // animations to respect the OS prefers-reduced-motion setting globally.
         <MotionConfig reducedMotion="user">
-        <VoiceProvider>
-            <ThemeProvider>
-                <ToastProvider>
-                    <OfflineBanner />
-                    <SessionTimeoutOverlay />
-                    {/* Skip to content link for keyboard accessibility */}
-                    <a
-                        href="#main-content"
-                        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
-                    >
-                        Skip to content
-                    </a>
+            <VoiceProvider>
+                <ThemeProvider>
+                    <ToastProvider>
+                        <OfflineBanner />
+                        <SessionTimeoutOverlay />
+                        {/* Skip to content link for keyboard accessibility */}
+                        <a
+                            href="#main-content"
+                            className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:px-4 focus:py-2 focus:bg-purple-600 focus:text-white focus:rounded-lg focus:shadow-lg"
+                        >
+                            Skip to content
+                        </a>
 
-                    {/* AuthWrapper handles session persistence */}
-                    <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
-                        <GlobalDropZone>
-                            <ShareTargetHandler />
-                            <BiometricGate>
-                                <div className="flex w-full h-full">
-                                    {/* Left Sidebar - Hidden for standalone modules */}
-                                    {showChrome && (
-                                        <div className="hidden md:block h-full">
+                        {/* AuthWrapper handles session persistence */}
+                        <div className="flex h-screen w-screen bg-background text-foreground overflow-hidden" data-testid="app-container">
+                            <GlobalDropZone>
+                                <ShareTargetHandler />
+                                <BiometricGate>
+                                    <div className="flex w-full h-full">
+                                        {/* Left Sidebar - Hidden for standalone modules */}
+                                        {showChrome && (
+                                            <div className="hidden md:block h-full">
+                                                <ErrorBoundary>
+                                                    <Sidebar />
+                                                </ErrorBoundary>
+                                            </div>
+                                        )}
+
+                                        <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
+                                            <div className="flex-1 overflow-y-auto relative custom-scrollbar">
+                                                <ErrorBoundary key={currentModule}>
+                                                    <Suspense fallback={<LoadingFallback />}>
+                                                        <ModuleRenderer moduleId={currentModule as ModuleId} />
+                                                    </Suspense>
+                                                </ErrorBoundary>
+                                            </div>
+
+
+                                        </main>
+
+                                        {/* Right Panel - Hidden for standalone modules and mobile */}
+                                        {showChrome && isDesktop && (
                                             <ErrorBoundary>
-                                                <Sidebar />
+                                                <RightPanel />
                                             </ErrorBoundary>
-                                        </div>
-                                    )}
+                                        )}
+                                    </div>
+                                </BiometricGate>
 
-                                    <main id="main-content" className="flex-1 flex flex-col min-w-0 bg-background relative">
-                                        <div className="flex-1 overflow-y-auto relative custom-scrollbar">
-                                            <ErrorBoundary key={currentModule}>
-                                                <Suspense fallback={<LoadingFallback />}>
-                                                    <ModuleRenderer moduleId={currentModule as ModuleId} />
-                                                </Suspense>
-                                            </ErrorBoundary>
-                                        </div>
+                                {/* Mobile Navigation - Hidden for standalone modules */}
+                                {showChrome && (
+                                    <ErrorBoundary>
+                                        <MobileNav />
+                                    </ErrorBoundary>
+                                )}
 
+                                {/* DevTools HUD - Only in Development */}
+                                {import.meta.env.DEV && (
+                                    <Suspense fallback={null}>
+                                        <DevPortWarning />
+                                        <ErrorButton />
+                                    </Suspense>
+                                )}
 
-                                    </main>
+                                {/* Global Modals */}
+                                <ApprovalModal />
+                                <ApprovalManager />
+                                <PWAInstallPrompt />
+                                <TransmissionMonitor />
+                                <UpdaterMonitor />
 
-                                    {/* Right Panel - Hidden for standalone modules and mobile */}
-                                    {showChrome && isDesktop && (
-                                        <ErrorBoundary>
-                                            <RightPanel />
-                                        </ErrorBoundary>
-                                    )}
-                                </div>
-                            </BiometricGate>
+                                {/* Global Command Bar */}
+                                {showChrome && (
+                                    <ErrorBoundary>
+                                        <CommandBar />
+                                    </ErrorBoundary>
+                                )}
 
-                            {/* Mobile Navigation - Hidden for standalone modules */}
-                            {showChrome && (
-                                <ErrorBoundary>
-                                    <MobileNav />
-                                </ErrorBoundary>
-                            )}
+                                {/* Floating Chat Overlay — draggable, resizable */}
+                                {isAgentOpen && (
+                                    <ErrorBoundary>
+                                        <ChatOverlay onClose={toggleAgentWindow} />
+                                    </ErrorBoundary>
+                                )}
 
-                            {/* DevTools HUD - Only in Development */}
-                            {import.meta.env.DEV && (
-                                <Suspense fallback={null}>
-                                    <DevPortWarning />
-                                    <ErrorButton />
-                                </Suspense>
-                            )}
+                                {/* Global Command Menu (CMD+K) */}
+                                <UnifiedCommandMenu />
 
-                            {/* Global Modals */}
-                            <ApprovalModal />
-                            <ApprovalManager />
-                            <PWAInstallPrompt />
-                            <TransmissionMonitor />
-                            <UpdaterMonitor />
+                                {/* Global Upload Manager Queue */}
+                                <UploadQueueMonitor />
+                                <BackgroundJobMonitor />
+                                <AudioPIPPlayer />
 
-                            {/* Global Command Bar */}
-                            {showChrome && (
-                                <ErrorBoundary>
-                                    <CommandBar />
-                                </ErrorBoundary>
-                            )}
+                                {/* Global Keyboard Shortcuts Help (press ?) */}
+                                <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
 
-                            {/* Floating Chat Overlay — draggable, resizable */}
-                            {isAgentOpen && (
-                                <ErrorBoundary>
-                                    <ChatOverlay onClose={toggleAgentWindow} />
-                                </ErrorBoundary>
-                            )}
-
-                            {/* Global Command Menu (CMD+K) */}
-                            <UnifiedCommandMenu />
-
-                            {/* Global Upload Manager Queue */}
-                            <UploadQueueMonitor />
-                            <BackgroundJobMonitor />
-                            <AudioPIPPlayer />
-
-                            {/* Global Keyboard Shortcuts Help (press ?) */}
-                            <GlobalKeyboardShortcuts isOpen={shortcutsModal.isOpen} onClose={shortcutsModal.close} />
-
-                            {/* GDPR Cookie Consent Banner (Item 303) */}
-                            <CookieConsentBanner />
-                        </GlobalDropZone>
-                    </div>
-                </ToastProvider>
-            </ThemeProvider>
-        </VoiceProvider>
+                                {/* GDPR Cookie Consent Banner (Item 303) */}
+                                <CookieConsentBanner />
+                            </GlobalDropZone>
+                        </div>
+                    </ToastProvider>
+                </ThemeProvider>
+            </VoiceProvider>
         </MotionConfig>
     );
 }

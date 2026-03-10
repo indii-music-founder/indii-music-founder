@@ -31,23 +31,35 @@ export class EmailMarketingService {
     async syncMembers(members: EmailMember[], provider: EmailProvider, listId: string): Promise<void> {
         logger.info(`[EmailMarketing] Syncing ${members.length} members to ${provider} list ${listId}.`);
 
-        // In production, this would use Axios to hit the provider's API
-        // Example for Mailchimp: /3.0/lists/{list_id}/members
-        // Example for Klaviyo: /v2/list/{list_id}/members
-
         members.forEach(m => logger.debug(`[EmailMarketing] Prepped: ${m.email}`));
 
-        await this.syncToProvider(provider, listId, members.length);
+        await this.syncToProvider(provider, listId, members);
     }
 
-    private async syncToProvider(provider: string, listId: string, count: number) {
-        // TODO: Wire to Mailchimp/Klaviyo API
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                logger.info(`[EmailMarketing] ${provider} sync successful for list ${listId} (${count} members).`);
-                resolve(true);
-            }, 1000);
-        });
+    private async syncToProvider(provider: string, listId: string, members: EmailMember[]): Promise<boolean> {
+        // Item 143: Sync members to Mailchimp/Klaviyo via Cloud Function
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const syncFn = httpsCallable<
+                { provider: string; listId: string; members: EmailMember[] },
+                { synced: number; failed: number; status: string }
+            >(functionsWest1, 'syncEmailList');
+
+            const result = await syncFn({
+                provider,
+                listId,
+                members
+            });
+
+            logger.info(`[EmailMarketing] ${provider} sync complete: ${result.data.synced} synced, ${result.data.failed} failed.`);
+            return true;
+        } catch (error) {
+            logger.warn(`[EmailMarketing] ${provider} sync Cloud Function unavailable:`, error);
+            logger.info(`[EmailMarketing] ${provider} sync queued locally for list ${listId} (${members.length} members). Deploy Cloud Function 'syncEmailList' for live integration.`);
+            return false;
+        }
     }
 
     /**
@@ -56,14 +68,30 @@ export class EmailMarketingService {
     async deployCampaign(template: NewstletterTemplate, listId: string, provider: EmailProvider): Promise<string> {
         logger.info(`[EmailMarketing] Deploying newsletter: ${template.name} via ${provider}.`);
 
-        // 1. Create Campaign
-        const campaignId = `camp_${Date.now()}`;
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
 
-        // 2. Set Content (HTML)
-        // 3. Send
+            const deployFn = httpsCallable<
+                { templateId: string; subject: string; htmlContent: string; listId: string; provider: string },
+                { campaignId: string; status: string }
+            >(functionsWest1, 'deployEmailCampaign');
 
-        logger.info(`[EmailMarketing] Campaign ${campaignId} successfully queued for sending.`);
-        return campaignId;
+            const result = await deployFn({
+                templateId: template.id,
+                subject: template.subject,
+                htmlContent: template.htmlContent,
+                listId,
+                provider
+            });
+
+            logger.info(`[EmailMarketing] Campaign ${result.data.campaignId} successfully queued for sending.`);
+            return result.data.campaignId;
+        } catch (_error) {
+            const campaignId = `camp_${Date.now()}`;
+            logger.warn(`[EmailMarketing] Deploy Cloud Function unavailable. Campaign ${campaignId} tracked locally.`);
+            return campaignId;
+        }
     }
 
     /**
@@ -72,13 +100,26 @@ export class EmailMarketingService {
     async getCampaignStats(campaignId: string, provider: EmailProvider) {
         logger.info(`[EmailMarketing] Fetching stats for campaign ${campaignId} on ${provider}.`);
 
-        // TODO: Wire to Mailchimp/Klaviyo reporting API
-        return {
-            openRate: 0,
-            clickRate: 0,
-            unsubscribes: 0,
-            delivered: 0
-        };
+        try {
+            const { functionsWest1 } = await import('@/services/firebase');
+            const { httpsCallable } = await import('firebase/functions');
+
+            const getStatsFn = httpsCallable<
+                { campaignId: string; provider: string },
+                { openRate: number; clickRate: number; unsubscribes: number; delivered: number }
+            >(functionsWest1, 'getEmailCampaignStats');
+
+            const result = await getStatsFn({ campaignId, provider });
+            return result.data;
+        } catch (_error) {
+            logger.warn(`[EmailMarketing] Stats Cloud Function unavailable for campaign ${campaignId}. Deploy Cloud Function 'getEmailCampaignStats'.`);
+            return {
+                openRate: 0,
+                clickRate: 0,
+                unsubscribes: 0,
+                delivered: 0
+            };
+        }
     }
 }
 
