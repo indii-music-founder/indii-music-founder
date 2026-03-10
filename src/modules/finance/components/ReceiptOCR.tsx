@@ -73,18 +73,71 @@ export function ReceiptOCR() {
         setExtracted(null);
 
         try {
-            // TODO: Wire to real Gemini Vision API via @google/genai
-            // For now, show a message that OCR requires the AI service connection
-            // The actual implementation will use:
-            //   const genai = new GoogleGenAI({ apiKey });
-            //   const result = await genai.models.generateContent({ model, contents: [fileData, prompt] });
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            setExtracted(null);
-            setIsAnalyzing(false);
-            // When no API key is configured, the UI will simply not extract and
-            // the user sees the "Analyze" button again. No fake data injected.
+            // Read the file as base64 for Gemini Vision
+            const base64 = await new Promise<string>((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const result = reader.result as string;
+                    // Strip the data URL prefix to get raw base64
+                    resolve(result.split(',')[1] || result);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(uploadedFile);
+            });
+
+            const mimeType = uploadedFile.type || 'image/jpeg';
+
+            // Call Gemini Vision via @google/genai
+            const { GoogleGenAI } = await import('@google/genai');
+            const apiKey = import.meta.env.VITE_API_KEY;
+            if (!apiKey) {
+                console.warn('[ReceiptOCR] No API key configured — cannot analyze receipt');
+                setIsAnalyzing(false);
+                return;
+            }
+
+            const ai = new GoogleGenAI({ apiKey });
+            const result = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-preview-05-20',
+                contents: [
+                    {
+                        role: 'user',
+                        parts: [
+                            {
+                                inlineData: {
+                                    mimeType,
+                                    data: base64,
+                                },
+                            },
+                            {
+                                text: `Analyze this receipt image and extract the following fields as JSON:
+{
+  "merchant": "Store/business name",
+  "amount": "$XX.XX format",
+  "date": "YYYY-MM-DD format",
+  "category": "One of: Equipment, Software, Studio, Meals, Travel, Other"
+}
+Return ONLY valid JSON, no markdown fences or extra text.`,
+                            },
+                        ],
+                    },
+                ],
+            });
+
+            const responseText = result.text?.trim() || '';
+            // Strip potential markdown code fences
+            const cleanJson = responseText.replace(/^```json?\n?/i, '').replace(/\n?```$/i, '').trim();
+            const parsed = JSON.parse(cleanJson) as ExtractedReceipt;
+
+            setExtracted({
+                merchant: parsed.merchant || 'Unknown',
+                amount: parsed.amount || '$0.00',
+                date: parsed.date || new Date().toISOString().slice(0, 10),
+                category: parsed.category || 'Other',
+            });
         } catch (error) {
             console.error('[ReceiptOCR] Analysis failed:', error);
+        } finally {
             setIsAnalyzing(false);
         }
     }

@@ -645,6 +645,19 @@ export class FirebaseAIService {
         const modelName = this.getModelName(modelOverride);
         const mergedConfig = { ...this.defaultConfig, ...config };
 
+        // SAFETY: Extract non-generation fields that callers may have mixed into config.
+        const streamConfigRecord = mergedConfig as Record<string, unknown>;
+        if (!systemInstruction && typeof streamConfigRecord.systemInstruction === 'string') {
+            systemInstruction = streamConfigRecord.systemInstruction as string;
+        }
+        if (!tools && Array.isArray(streamConfigRecord.tools)) {
+            tools = streamConfigRecord.tools as Tool[];
+        }
+        delete streamConfigRecord.systemInstruction;
+        delete streamConfigRecord.tools;
+        delete streamConfigRecord.toolConfig;
+        delete streamConfigRecord.safetySettings;
+
         // Create an internal AbortController for timeout if specified
         const timeoutController = new AbortController();
         let timeoutId: NodeJS.Timeout | number | undefined;

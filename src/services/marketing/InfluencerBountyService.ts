@@ -101,8 +101,48 @@ export class InfluencerBountyService {
     async getTopInfluencers(orgId: string) {
         logger.info(`[BountyService] Fetching leaderboard for org ${orgId}`);
 
-        // TODO: Query Firestore bountyLinks collection, aggregate by influencerId
-        return [];
+        try {
+            const { db } = await import('@/services/firebase');
+            const { collection, query, where, getDocs, orderBy, limit } = await import('firebase/firestore');
+
+            const q = query(
+                collection(db, 'bountyLinks'),
+                where('orgId', '==', orgId),
+                where('status', '==', 'active'),
+                orderBy('earnedCommission', 'desc'),
+                limit(20),
+            );
+
+            const snapshot = await getDocs(q);
+            const links = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            })) as BountyLink[];
+
+            // Aggregate by influencerId
+            const leaderboard = new Map<string, { influencerId: string; totalClicks: number; totalConversions: number; totalCommission: number }>();
+            for (const link of links) {
+                const existing = leaderboard.get(link.influencerId);
+                if (existing) {
+                    existing.totalClicks += link.totalClicks;
+                    existing.totalConversions += link.totalConversions;
+                    existing.totalCommission += link.earnedCommission;
+                } else {
+                    leaderboard.set(link.influencerId, {
+                        influencerId: link.influencerId,
+                        totalClicks: link.totalClicks,
+                        totalConversions: link.totalConversions,
+                        totalCommission: link.earnedCommission,
+                    });
+                }
+            }
+
+            return Array.from(leaderboard.values())
+                .sort((a, b) => b.totalCommission - a.totalCommission);
+        } catch (error) {
+            logger.error('[BountyService] Failed to fetch leaderboard:', error);
+            return [];
+        }
     }
 }
 
