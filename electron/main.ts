@@ -60,7 +60,7 @@ const createWindow = () => {
             sandbox: true,
             safeDialogs: true,
             safeDialogsMessage: 'Stop seeing alerts from this page',
-            webSecurity: !isDev,
+            webSecurity: !isDev, // Intentionally disabled in dev only — needed for Vite CORS. Always true in production builds.
             webviewTag: false,
         },
         autoHideMenuBar: true,

@@ -10,6 +10,12 @@ interface ProRegistrationSectionProps {
     onSelectPro?: (pro: 'BMI' | 'ASCAP' | 'SESAC') => void;
 }
 
+const PRO_URLS: Record<'BMI' | 'ASCAP' | 'SESAC', { hub: string; login: string }> = {
+    BMI:   { hub: 'https://www.bmi.com/creator',    login: 'https://www.bmi.com/login' },
+    ASCAP: { hub: 'https://www.ascap.com/members',  login: 'https://www.ascap.com/members' },
+    SESAC: { hub: 'https://www.sesac.com/licensing', login: 'https://www.sesac.com/licensing' },
+};
+
 export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
     profile,
     isExpanded,
@@ -17,6 +23,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
     onSelectPro
 }) => {
     const { status, selectedPro, ipiNumber, applicationDate } = profile.proRegistration;
+    const proUrls = selectedPro ? PRO_URLS[selectedPro] : PRO_URLS.BMI;
 
     return (
         <RegistrationSection
@@ -73,14 +80,24 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                         </table>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={() => onSelectPro && onSelectPro('BMI')}
-                        className="w-full md:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
-                    >
-                        <span>Choose a PRO & Register</span>
-                        <ArrowRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex flex-wrap gap-3">
+                        <button
+                            type="button"
+                            onClick={() => { onSelectPro && onSelectPro('BMI'); window.open('https://www.bmi.com/creator', '_blank', 'noopener,noreferrer'); }}
+                            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm"
+                        >
+                            <span>Register with BMI</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => { onSelectPro && onSelectPro('ASCAP'); window.open('https://www.ascap.com/help/new-to-ascap/ascap-member-registration', '_blank', 'noopener,noreferrer'); }}
+                            className="inline-flex items-center justify-center gap-2 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors shadow-sm"
+                        >
+                            <span>Register with ASCAP</span>
+                            <ArrowRight className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 
@@ -116,7 +133,7 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
 
                     <div className="flex justify-end pt-2">
                         <a
-                            href="https://www.bmi.com/creator"
+                            href={proUrls.hub}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors shadow-sm"
@@ -157,12 +174,12 @@ export const ProRegistrationSection: React.FC<ProRegistrationSectionProps> = ({
                     </div>
                     <div className="w-full md:w-auto mt-4 md:mt-0 pt-2 border-t border-green-100 md:border-0">
                         <a
-                            href="https://www.bmi.com/login"
+                            href={proUrls.login}
                             target="_blank"
                             rel="noreferrer"
                             className="w-full flex items-center justify-center gap-2 px-5 py-2 bg-white border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm font-medium rounded-lg transition-colors shadow-sm"
                         >
-                            <span>Manage BMI</span>
+                            <span>Manage {selectedPro}</span>
                             <ExternalLink className="w-4 h-4 text-gray-400" />
                         </a>
                     </div>

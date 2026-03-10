@@ -40,6 +40,7 @@
     "changelog": "bash scripts/generate-changelog.sh",
     "changelog:update": "bash scripts/generate-changelog.sh --prepend",
     "test": "vitest",
+    "test:rules": "FIRESTORE_EMULATOR_HOST=localhost:8080 vitest run --config vitest.rules.config.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

@@ -156,6 +156,149 @@ When that grep returns nothing, the legal P0 is cleared.
 
 ---
 
+## Attorney Partnership Strategy — Featured Attorney + Marketplace Model
+
+> **TL;DR:** Approach the music business YouTuber attorney about a
+> partnership deal where she is the *featured/default attorney* on the
+> platform. She gets a prominent, paying slot with inbound client leads.
+> Users who want someone different can search a broader directory. Her
+> audience becomes a marketing channel; the platform becomes a client
+> source for her firm. Everyone wins.
+>
+> **Do not search for her name online — you have the contact. Reach out
+> directly. No need to document her identity here until a deal is signed.**
+
+---
+
+### The Business Model
+
+**Three layers in the attorney directory:**
+
+```
+┌─────────────────────────────────────────────────────┐
+│  Layer 1 — FEATURED ATTORNEY  (the partner slot)    │
+│  • Pinned to top of every attorney search result    │
+│  • Shown by default when user clicks "Find Attorney"│
+│  • Her firm's brand, bio, and booking link          │
+│  • Paid placement (monthly retainer or rev-share)   │
+└─────────────────────────────────────────────────────┘
+         ↓  "Want to browse more options?"
+┌─────────────────────────────────────────────────────┐
+│  Layer 2 — CURATED DIRECTORY  (future paid slots)   │
+│  • Other vetted music/entertainment attorneys       │
+│  • Can pay for boosted placement                    │
+│  • indiiOS vets and approves each listing           │
+└─────────────────────────────────────────────────────┘
+         ↓  "Search the full directory"
+┌─────────────────────────────────────────────────────┐
+│  Layer 3 — OPEN SEARCH  (organic, no rev-share)     │
+│  • General attorney search (state bar lookup, etc.) │
+│  • No indiiOS endorsement, user finds their own     │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### The Deal Structure to Propose
+
+**Option A — Revenue Share (preferred for the pitch)**
+- indiiOS gets X% of any client fees generated through the platform referral
+- She gets prominent placement at zero upfront cost
+- Both parties win as the user base grows
+- Track referrals via a UTM-tagged booking link or a dedicated booking flow
+  inside the app
+
+**Option B — Flat Monthly Retainer**
+- She pays a fixed monthly fee for the featured slot
+- indiiOS revenue is predictable
+- Better for her if client volume is high (she keeps 100% of fees)
+- Risk: if the platform is early-stage, harder to justify the fee
+
+**Option C — Hybrid (most likely to close)**
+- Low/zero monthly fee at launch (reduces her risk while platform is early)
+- Revenue share kicks in after a threshold (e.g., after she earns $X from
+  referrals, indiiOS takes Y%)
+- She gets "Founding Partner Attorney" title / co-marketing language
+- Both sides have skin in the game
+
+**The pitch hook:** Her YouTube audience is people who can't afford her
+firm yet. indiiOS is the platform where those same people become paying
+clients once they release their first record. She's already warming up
+the exact user base indiiOS is targeting.
+
+---
+
+### What She Gets (the value prop for her)
+
+1. **Inbound leads at scale** — every indiiOS user who clicks "Find an
+   Attorney" sees her first, every time
+2. **Credibility on the platform** — "Platform Legal Partner" badge,
+   visible on legal pages, in the AI agent's responses, in onboarding
+3. **Content angle** — she can use indiiOS in her YouTube videos as a
+   real tool she endorses (not paid promo — actual partnership)
+4. **Zero cold outreach** — she doesn't market to get these leads; they
+   come from users mid-workflow (e.g., just after they generate a contract
+   or hit the copyright registration step)
+5. **First mover** — she'd be the named attorney partner while indiiOS is
+   in beta, locking in the relationship before competitors notice
+
+---
+
+### What indiiOS Gets
+
+1. **Legal credibility** — a recognizable music law brand attached to the
+   platform; reduces user anxiety about "is this legit?"
+2. **Marketing channel** — she demos the platform to her audience in
+   exchange for the leads the platform sends her
+3. **Revenue stream** — attorney directory becomes a monetizable layer
+   (other attorneys can pay for placement in Layer 2)
+4. **Retained users** — when a user finds their attorney inside the app,
+   they don't leave the platform to handle their legal needs
+
+---
+
+### Engineering Spec — What Needs to Be Built
+
+> File locations when implemented: `src/modules/legal/` for the UI,
+> `src/services/legal/` for the directory logic, `python/tools/` for
+> any attorney search agent tools.
+
+**MVP (for the pitch — show her this exists):**
+- [ ] Featured attorney card in `LegalPages.tsx` — name, firm, bio,
+      photo, "Book a Consultation" button (deep links to her booking page)
+- [ ] Pinned to top of any attorney search result in the Legal module
+- [ ] Simple UTM-tagged link so referrals are trackable from day one
+
+**Phase 2 (after deal is signed):**
+- [ ] Booking flow inside the app (user picks time slot, fills intake form,
+      submits without leaving indiiOS)
+- [ ] Referral tracking dashboard (attorney-facing: how many leads came
+      from indiiOS, conversion rate, client status)
+- [ ] "Platform Legal Partner" badge + featured placement in AI agent
+      responses when user asks "how do I find an attorney?"
+
+**Phase 3 (attorney marketplace):**
+- [ ] Layer 2 directory with paid attorney listings
+- [ ] Attorney profile pages (specialty, state bar license, bio, reviews)
+- [ ] Attorney search filtered by specialty (music IP, contract review,
+      distribution, touring, etc.) and state
+
+---
+
+### Outreach Checklist
+
+| # | Step | Status |
+|---|------|--------|
+| O1 | Build the MVP featured attorney card (even placeholder) so you can show a real demo during the pitch | ✅ Done — `src/modules/legal/LegalDashboard.tsx` |
+| O2 | Draft a one-page partnership deck (the value prop above, condensed) | ✅ Done — `docs/legal/ATTORNEY_PARTNERSHIP_DECK.md` |
+| O3 | Reach out via DM or email with the pitch — lead with the marketing angle (her YouTube audience → indiiOS users → her clients) | ✅ Done — `docs/legal/ATTORNEY_OUTREACH_O3.md` (3 message versions + sending checklist) |
+| O4 | Agree on deal structure (Option A/B/C above) | [ ] |
+| O5 | Have an attorney (ironically) review the partnership agreement before signing | [ ] |
+| O6 | Integrate her real booking link + bio into the platform | [ ] |
+| O7 | Co-announce the partnership — her channel + indiiOS launch | [ ] |
+
+---
+
 ## Detroit / Local Entrepreneur Resources
 
 > **Note to founder:** Look into these before paying full market rate for

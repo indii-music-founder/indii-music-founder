@@ -1,9 +1,22 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, Circle, AlertCircle, FileAudio, Image as ImageIcon, AlignLeft, Hash, Users, Receipt, ChevronDown, ChevronUp, Radio } from 'lucide-react';
+import { CheckCircle2, Circle, AlertCircle, FileAudio, Image as ImageIcon, AlignLeft, Hash, Users, Receipt, ChevronDown, ChevronUp, Radio, Loader2 } from 'lucide-react';
+import { distributionService } from '@/services/distribution/DistributionService';
+import { useToast } from '@/core/context/ToastContext';
 
-const CHECKLIST_ITEMS = [
-    { id: 'audio', label: 'Audio Master (16-bit/44.1kHz+)', icon: FileAudio, status: 'complete', required: true },
+type ItemStatus = 'complete' | 'missing' | 'warning' | 'checking';
+
+interface ChecklistItem {
+    id: string;
+    label: string;
+    icon: React.ElementType;
+    status: ItemStatus;
+    required: boolean;
+    actionText?: string;
+}
+
+const INITIAL_ITEMS: ChecklistItem[] = [
+    { id: 'audio', label: 'Audio Master (16-bit/44.1kHz+)', icon: FileAudio, status: 'missing', required: true, actionText: 'Verify Audio' },
     { id: 'art', label: 'Cover Art (3000x3000px)', icon: ImageIcon, status: 'complete', required: true },
     { id: 'metadata', label: 'Title & Release Metadata', icon: AlignLeft, status: 'complete', required: true },
     { id: 'isrc', label: 'ISRC Assignment', icon: Hash, status: 'missing', required: true, actionText: 'Generate ISRC' },
@@ -13,10 +26,108 @@ const CHECKLIST_ITEMS = [
 
 export function RegistrationChecklistPanel() {
     const [expanded, setExpanded] = useState(true);
+    const [items, setItems] = useState<ChecklistItem[]>(INITIAL_ITEMS);
+    const { success, error: toastError } = useToast();
 
-    const completeCount = CHECKLIST_ITEMS.filter(item => item.status === 'complete').length;
-    const totalRequired = CHECKLIST_ITEMS.filter(item => item.required).length;
-    const requiredComplete = CHECKLIST_ITEMS.filter(item => item.status === 'complete' && item.required).length;
+    const setItemStatus = (id: string, status: ItemStatus) => {
+        setItems(prev => prev.map(item => item.id === id ? { ...item, status } : item));
+    };
+
+    const handleAudioVerify = async () => {
+        if (!window.electronAPI) {
+            toastError('Audio verification requires the desktop app.');
+            return;
+        }
+        // Prompt the user to select an audio file via native dialog
+        const filePath = await window.electronAPI.selectFile({
+            title: 'Select Audio Master',
+            filters: [{ name: 'Audio', extensions: ['wav', 'aiff', 'flac', 'mp3', 'aac', 'm4a'] }]
+        }).catch(() => null);
+
+        if (!filePath) return;
+
+        setItemStatus('audio', 'checking');
+        try {
+            const result = await window.electronAPI.audio.analyze(filePath);
+            if (result.status !== 'success') {
+                toastError('Audio analysis failed — check file format.');
+                setItemStatus('audio', 'missing');
+                return;
+            }
+
+            // Check for stream data (sample_rate, bit_depth)
+            const stream = result.streams?.[0];
+            const sampleRate = parseInt(stream?.sample_rate ?? '0', 10);
+            const bitDepth = parseInt(stream?.bits_per_raw_sample ?? stream?.bits_per_sample ?? '0', 10);
+
+            // CD Quality: 44100+ Hz, 16+ bit
+            const cdCompliant = sampleRate >= 44100 && bitDepth >= 16;
+
+            if (cdCompliant) {
+                success(`Audio verified: ${sampleRate / 1000}kHz / ${bitDepth}-bit`);
+                setItemStatus('audio', 'complete');
+            } else {
+                const msg = `Audio does not meet CD quality: ${sampleRate}Hz / ${bitDepth}-bit. DSPs require 44100Hz / 16-bit minimum.`;
+                toastError(msg);
+                setItemStatus('audio', 'warning');
+                setItems(prev => prev.map(item =>
+                    item.id === 'audio'
+                        ? { ...item, label: `Audio Master — ${sampleRate / 1000}kHz/${bitDepth}-bit (below spec)`, status: 'warning' }
+                        : item
+                ));
+            }
+        } catch {
+            toastError('Audio analysis failed — file may be unreadable.');
+            setItemStatus('audio', 'missing');
+        }
+    };
+
+    const handleGenerateISRC = async () => {
+        setItemStatus('isrc', 'checking');
+        try {
+            const isrc = await distributionService.assignISRCs();
+            success(`ISRC assigned: ${isrc}`);
+            setItems(prev => prev.map(item =>
+                item.id === 'isrc'
+                    ? { ...item, label: `ISRC: ${isrc}`, status: 'complete' }
+                    : item
+            ));
+        } catch {
+            toastError('ISRC generation failed. Try again.');
+            setItemStatus('isrc', 'missing');
+        }
+    };
+
+    const handleAssignUPC = async () => {
+        if (!window.electronAPI) {
+            toastError('UPC assignment requires the desktop app.');
+            return;
+        }
+        setItemStatus('upc', 'checking');
+        try {
+            const result = await window.electronAPI.distribution.generateUPC();
+            if (!result.success || !result.upc) throw new Error(result.error || 'No UPC returned');
+            success(`UPC assigned: ${result.upc}`);
+            setItems(prev => prev.map(item =>
+                item.id === 'upc'
+                    ? { ...item, label: `UPC: ${result.upc}`, status: 'complete' }
+                    : item
+            ));
+        } catch {
+            toastError('UPC assignment failed. Try again.');
+            setItemStatus('upc', 'missing');
+        }
+    };
+
+    const handleAction = (id: string) => {
+        if (id === 'audio') handleAudioVerify();
+        else if (id === 'isrc') handleGenerateISRC();
+        else if (id === 'upc') handleAssignUPC();
+    };
+
+    const completeCount = items.filter(item => item.status === 'complete').length;
+    const totalRequired = items.filter(item => item.required).length;
+    const requiredComplete = items.filter(item => item.status === 'complete' && item.required).length;
 
     const progress = Math.round((requiredComplete / totalRequired) * 100);
     const isReadyForDistribution = progress === 100;
@@ -45,7 +156,7 @@ export function RegistrationChecklistPanel() {
                 </div>
             </div>
 
-            {/* Progress Bar (Visible even when collapsed) */}
+            {/* Progress Bar */}
             <div className="h-0.5 w-full bg-white/5 relative">
                 <motion.div
                     className={`absolute inset-y-0 left-0 ${isReadyForDistribution ? 'bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]' : 'bg-dept-publishing'}`}
@@ -55,7 +166,7 @@ export function RegistrationChecklistPanel() {
                 />
             </div>
 
-            {/* Expandable Checklist Content */}
+            {/* Checklist Content */}
             <AnimatePresence>
                 {expanded && (
                     <motion.div
@@ -65,21 +176,26 @@ export function RegistrationChecklistPanel() {
                         className="overflow-hidden"
                     >
                         <div className="p-3 space-y-1.5">
-                            {CHECKLIST_ITEMS.map((item) => (
+                            {items.map((item) => (
                                 <div
                                     key={item.id}
-                                    className={`flex items-start gap-3 p-2 rounded-lg transition-colors ${item.status === 'complete'
+                                    className={`flex items-start gap-3 p-2 rounded-lg transition-colors ${
+                                        item.status === 'complete'
                                             ? 'bg-white/[0.02]'
                                             : item.status === 'warning'
                                                 ? 'bg-yellow-500/5 hover:bg-yellow-500/10'
-                                                : 'bg-dept-publishing/5 hover:bg-dept-publishing/10 cursor-pointer'
-                                        }`}
+                                                : item.status === 'checking'
+                                                    ? 'bg-white/[0.02] opacity-70'
+                                                    : 'bg-dept-publishing/5 hover:bg-dept-publishing/10'
+                                    }`}
                                 >
                                     <div className="mt-0.5 flex-shrink-0">
                                         {item.status === 'complete' ? (
                                             <CheckCircle2 size={16} className="text-green-500" />
                                         ) : item.status === 'warning' ? (
                                             <AlertCircle size={16} className="text-yellow-500" />
+                                        ) : item.status === 'checking' ? (
+                                            <Loader2 size={16} className="text-gray-400 animate-spin" />
                                         ) : (
                                             <Circle size={16} className="text-dept-publishing" />
                                         )}
@@ -91,11 +207,15 @@ export function RegistrationChecklistPanel() {
                                                 {item.label}
                                             </p>
                                         </div>
-                                        {item.actionText && item.status !== 'complete' && (
-                                            <button className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${item.status === 'warning'
-                                                    ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
-                                                    : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
-                                                }`}>
+                                        {item.actionText && item.status !== 'complete' && item.status !== 'checking' && (
+                                            <button
+                                                onClick={() => handleAction(item.id)}
+                                                className={`mt-1.5 text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded transition-colors ${
+                                                    item.status === 'warning'
+                                                        ? 'bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 shadow-[0_0_10px_rgba(234,179,8,0.2)]'
+                                                        : 'bg-dept-publishing/20 text-dept-publishing hover:bg-dept-publishing/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
+                                                }`}
+                                            >
                                                 {item.actionText}
                                             </button>
                                         )}

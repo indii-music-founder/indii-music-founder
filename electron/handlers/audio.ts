@@ -65,12 +65,12 @@ export function registerAudioHandlers() {
             const validatedPath = validateSafeAudioPath(rawPath);
 
             // Parallel execution: Hash + Metadata
-            const [hash, metadata] = await Promise.all([
+            const [hash, probeData] = await Promise.all([
                 calculateFileHash(validatedPath),
                 new Promise<any>((resolve, reject) => {
                     ffmpeg.ffprobe(validatedPath, (err, metadata) => {
                         if (err) reject(err);
-                        else resolve(metadata.format);
+                        else resolve(metadata); // full object: { format, streams }
                     });
                 })
             ]);
@@ -81,11 +81,11 @@ export function registerAudioHandlers() {
                 status: 'success',
                 hash,
                 metadata: {
-                    ...metadata,
-                    duration: metadata.duration,
-                    format: metadata.format_name,
-                    bitrate: metadata.bit_rate
-                }
+                    duration: probeData.format.duration,
+                    format: probeData.format.format_name,
+                    bitrate: probeData.format.bit_rate
+                },
+                streams: probeData.streams ?? []
             };
         } catch (error) {
             console.error("Audio analysis failed:", error);
