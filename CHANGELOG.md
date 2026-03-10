@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.11.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.10.0...v1.11.0) (2026-03-10)
+
+
+### Features
+
+* security hardening, legal Find Counsel tab, Firestore rules tests, Three.js memory fixes ([b20aad5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b20aad51e11790552256a08dbaa46d9a0a08880a))
+
 ## [1.10.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.9.0...v1.10.0) (2026-03-09)
 
 
