@@ -91,10 +91,6 @@ const anonCtx = () => testEnv.authenticatedContext(ANON_UID, { token: ANON_TOKEN
 /** Create an unauthenticated context */
 const unauthCtx = () => testEnv.unauthenticatedContext();
 
-/** Seed data via admin context (bypasses rules) */
-const seed = (fn: (ctx: ReturnType<RulesTestEnvironment['withSecurityRulesDisabled']> extends Promise<infer T> ? T : never) => Promise<void>) =>
-    testEnv.withSecurityRulesDisabled(fn);
-
 /** Build a valid organization doc with given member UIDs */
 const orgDoc = (...members: string[]) => ({
     name: 'Test Org',
