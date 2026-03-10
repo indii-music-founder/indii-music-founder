@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.11.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.11.0...v1.11.1) (2026-03-10)
+
+
+### Bug Fixes
+
+* **lint:** replace short-circuit expressions with if-statements in ProRegistrationSection ([bec8720](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/bec872095fbf7586e2e6921835f1414246aabc80))
+* **types:** remove unused seed() helper with broken generic in firestore rules test ([847e342](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/847e342ab3b31fa9c1e72a518b227c03247e0d2a))
+
 ## [1.11.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.10.0...v1.11.0) (2026-03-10)
 
 
