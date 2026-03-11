@@ -354,10 +354,20 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
-                                    setKnowledgeBaseEnabled(!isKnowledgeBaseEnabled);
+                                    const next = !isKnowledgeBaseEnabled;
+                                    setKnowledgeBaseEnabled(next);
+                                    if (isMobile) {
+                                        toast.success(next
+                                            ? "Knowledge Base connected — AI will reference your docs"
+                                            : "Knowledge Base disconnected"
+                                        );
+                                    }
                                 }}
                                 className={cn(
-                                    "flex items-center justify-center w-8 h-8 rounded-full transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    "flex items-center justify-center gap-1 transition-all border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
+                                    isMobile
+                                        ? "px-2.5 py-1.5 rounded-lg text-[10px] font-semibold uppercase tracking-wide"
+                                        : "w-8 h-8 rounded-full",
                                     isKnowledgeBaseEnabled
                                         ? "bg-teal-600/20 border-teal-500/50 text-teal-300"
                                         : "bg-black/40 border-white/5 text-gray-500 hover:text-gray-300"
@@ -366,6 +376,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                 aria-pressed={isKnowledgeBaseEnabled}
                             >
                                 <Database size={12} />
+                                {isMobile && <span>KB</span>}
                             </button>
                         </PromptInputAction>
                     </div>
