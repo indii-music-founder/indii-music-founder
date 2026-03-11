@@ -195,15 +195,15 @@ const AgentDashboard: React.FC = () => {
     // Reactive mobile detection via centralized hook
     const { isAnyPhone } = useMobile();
 
-    if (isAnyPhone) {
-        return (
-            <MobileOnlyWarning
-                featureName="Agent Dashboard"
-                reason="The venue scout and map visualization features require a larger screen for optimal map interaction and venue analysis."
-                suggestedModule="touring"
-            />
-        );
-    }
+    // On mobile, default to 'chat' tab and hide desktop-only features
+    const defaultTab = isAnyPhone ? 'chat' : 'scout';
+    // Set initial tab to appropriate default based on device
+    useEffect(() => {
+        if (isAnyPhone && (activeTab === 'scout' || activeTab === 'browser')) {
+            setActiveTab('chat');
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAnyPhone]);
 
     const handleAddToRoster = async (venue: Venue) => {
         try {
@@ -257,12 +257,31 @@ const AgentDashboard: React.FC = () => {
     return (
         <ModuleErrorBoundary moduleName="Agent">
             <div className="flex h-full w-full bg-slate-950 text-white font-sans overflow-hidden">
-                {/* Standardized Agent Sidebar */}
-                <AgentSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+                {/* Standardized Agent Sidebar — hidden on mobile */}
+                {!isAnyPhone && <AgentSidebar activeTab={activeTab} setActiveTab={setActiveTab} />}
 
                 {/* Main Content Area */}
                 <div className="flex-1 flex flex-col min-w-0 bg-[--background]">
-                    {/* Top Toolbar */}
+                    {/* Mobile Tab Strip — visible only on phones */}
+                    {isAnyPhone && (
+                        <div className="flex items-center gap-1 px-3 py-2 border-b border-slate-800 overflow-x-auto shrink-0">
+                            {(['chat', 'tasks', 'campaigns', 'inbox'] as const).map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setActiveTab(tab)}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                                        activeTab === tab
+                                            ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
+                                            : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                                    }`}
+                                >
+                                    {tab.charAt(0).toUpperCase() + tab.slice(1)}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                    {/* Top Toolbar — hide on mobile (tab strip replaces it) */}
+                    {!isAnyPhone && (
                     <AgentToolbar
                         left={
                             <div className="flex items-center gap-3">
@@ -280,6 +299,7 @@ const AgentDashboard: React.FC = () => {
                             </div>
                         }
                     />
+                    )}
 
                     {/* Workspace Content */}
                     <div className="flex-1 flex flex-col overflow-hidden relative">
