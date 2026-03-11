@@ -1,5 +1,5 @@
 <div align="center">
-  <img width="1280" height="640" alt="indiiOS Banner" src="docs/assets/indiios-banner.png" />
+  <img width="1280" height="560" alt="indiiOS Banner" src="docs/assets/indiios-banner.png" />
 </div>
 
 # indiiOS: The Sovereign Creative Engine

@@ -1,7 +1,11 @@
 <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect width="512" height="512" rx="128" fill="#0f0f0f"/>
-  <path d="M192 352V224" stroke="white" stroke-width="48" stroke-linecap="round"/>
-  <path d="M320 352V224" stroke="white" stroke-width="48" stroke-linecap="round"/>
-  <circle cx="192" cy="160" r="24" fill="#FACC15"/>
-  <circle cx="320" cy="160" r="24" fill="#FACC15"/>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E5CC"/>
+      <stop offset="100%" stop-color="#00B8D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+  <rect x="161" y="136" width="60" height="240" rx="30" fill="white"/>
+  <rect x="291" y="136" width="60" height="240" rx="30" fill="white"/>
 </svg>
