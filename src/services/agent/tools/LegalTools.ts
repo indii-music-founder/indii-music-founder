@@ -101,9 +101,9 @@ Key Terms: ${args.terms}`;
         });
 
         return toolSuccess({
-            ...result,
-            message: `Split sheet generated for "${args.trackTitle}"`
-        }, result.message);
+            ...result.data,
+            splitSheetMessage: `Split sheet generated for "${args.trackTitle}"`
+        }, result.message || `Split sheet generated for "${args.trackTitle}"`);
     }),
 
     trigger_digital_signature: wrapTool('trigger_digital_signature', async (args: {
@@ -174,10 +174,31 @@ Key Terms: ${args.terms}`;
         // Pre-filled DMCA/Takedown Notices generator (Item 136)
         const draftText = `
 **DMCA TAKEDOWN NOTICE**
-To whom it may concern,
-I am the authorized representative for ${args.rightsholderName}.
-The following URL (${args.infringingUrl}) contains unauthorized use of the copyrighted work "${args.originalWorkTitle}".
-...
+
+To: Designated DMCA Agent
+
+Dear Sir/Madam,
+
+I am writing on behalf of ${args.rightsholderName} ("Rights Holder") to notify you of an infringement of copyright.
+
+**Copyrighted Work:** "${args.originalWorkTitle}"
+**Infringing Material URL:** ${args.infringingUrl}
+
+The above-identified material is not authorized by the copyright owner, its agent, or the law and must be removed or access to it disabled.
+
+**Statements Under Penalty of Perjury:**
+
+1. I have a good faith belief that the use of the copyrighted material described above is not authorized by the copyright owner, its agent, or the law.
+2. The information in this notice is accurate, and under penalty of perjury, I am authorized to act on behalf of the owner of the exclusive right that is allegedly infringed.
+3. I acknowledge that under Section 512(f) of the DMCA, any person who knowingly materially misrepresents that material is infringing may be subject to liability.
+
+**Contact Information:**
+Name: ${args.rightsholderName}
+Title: Authorized Representative
+Date: ${new Date().toISOString().slice(0, 10)}
+
+Signature: ____________________________
+(Electronic signature accepted)
         `.trim();
 
         return toolSuccess({
@@ -185,8 +206,8 @@ The following URL (${args.infringingUrl}) contains unauthorized use of the copyr
             originalWorkTitle: args.originalWorkTitle,
             rightsholderName: args.rightsholderName,
             draftText: draftText,
-            status: 'Pre-filled Draft Created'
-        }, `DMCA Takedown Notice generated for "${args.originalWorkTitle}" against URL ${args.infringingUrl}. Draft ready for review and sending.`);
+            status: 'Complete Draft Created'
+        }, `DMCA Takedown Notice generated for "${args.originalWorkTitle}" against URL ${args.infringingUrl}. Full statutory language included. Draft ready for review and sending.`);
     }),
 
     verify_mechanical_license: wrapTool('verify_mechanical_license', async (args: { trackTitle: string; originalArtist: string }) => {

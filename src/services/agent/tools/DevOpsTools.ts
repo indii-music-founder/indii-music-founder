@@ -2,7 +2,7 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
-// useStore removed
+import { logger } from '@/utils/logger';
 
 // Tool: DevOps Infrastructure (Real GKE/GCE via Cloud Functions)
 // This tool interacts with Google Cloud Platform services through Firebase Cloud Functions.
@@ -66,7 +66,7 @@ async function requireApproval(action: string, details: string): Promise<boolean
 
 export const DevOpsTools: Record<string, AnyToolFunction> = {
     list_clusters: wrapTool('list_clusters', async (args?: { projectId?: string; location?: string }) => {
-        console.info(`[DevOps] Listing GKE clusters`);
+        logger.info('[DevOps] Listing GKE clusters');
 
         const listGKEClustersFn = httpsCallable<
             { projectId?: string; location?: string },
@@ -84,7 +84,7 @@ export const DevOpsTools: Record<string, AnyToolFunction> = {
     }),
 
     get_cluster_status: wrapTool('get_cluster_status', async (args: { cluster_id: string; projectId?: string; location?: string }) => {
-        console.info(`[DevOps] Getting status for cluster: ${args.cluster_id}`);
+        logger.info(`[DevOps] Getting status for cluster: ${args.cluster_id}`);
 
         const getGKEClusterStatusFn = httpsCallable<
             { clusterName: string; projectId?: string; location?: string },

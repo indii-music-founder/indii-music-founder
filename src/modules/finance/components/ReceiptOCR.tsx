@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, Store } from 'lucide-react';
+import { Scan, Upload, FileImage, Plus, CheckCircle, Tag, Calendar, DollarSign, Store, AlertTriangle } from 'lucide-react';
+import { AI_MODELS } from '@/core/config/ai-models';
 
 /* ================================================================== */
 /*  Item 160 — Expense Receipt OCR                                     */
@@ -38,12 +39,20 @@ export function ReceiptOCR() {
     const [extracted, setExtracted] = useState<ExtractedReceipt | null>(null);
     const [savedReceipts, setSavedReceipts] = useState<SavedReceipt[]>([]);
     const [addedToExpenses, setAddedToExpenses] = useState(false);
+    const [error, setError] = useState<string | null>(null);
     const fileRef = useRef<HTMLInputElement>(null);
 
+    const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
+
     function handleFile(file: File) {
+        if (file.size > MAX_FILE_SIZE) {
+            setError(`File too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Maximum is 10MB.`);
+            return;
+        }
         setUploadedFile(file);
         setExtracted(null);
         setAddedToExpenses(false);
+        setError(null);
     }
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -98,7 +107,7 @@ export function ReceiptOCR() {
 
             const ai = new GoogleGenAI({ apiKey });
             const result = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-preview-05-20',
+                model: AI_MODELS.TEXT.FAST,
                 contents: [
                     {
                         role: 'user',
@@ -137,6 +146,7 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
             });
         } catch (error) {
             console.error('[ReceiptOCR] Analysis failed:', error);
+            setError(error instanceof Error ? error.message : 'Analysis failed. Please try again.');
         } finally {
             setIsAnalyzing(false);
         }
@@ -205,6 +215,23 @@ Return ONLY valid JSON, no markdown fences or extra text.`,
                     </div>
                 )}
             </div>
+
+            {/* Error State */}
+            <AnimatePresence>
+                {error && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -4 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 cursor-pointer"
+                        onClick={() => setError(null)}
+                    >
+                        <AlertTriangle size={14} className="flex-shrink-0" />
+                        <span className="text-xs font-bold">{error}</span>
+                        <span className="text-[10px] text-red-500/60 ml-auto">Click to dismiss</span>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Analyze Button */}
             {uploadedFile && !extracted && (
