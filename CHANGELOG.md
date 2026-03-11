@@ -2,6 +2,22 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.16.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.15.0...v1.16.0) (2026-03-11)
+
+
+### Features
+
+* **hunter:** add Loading State Traps scan (1.3) to workflow & SKILL ([f58b061](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f58b0617df442fefd69d172a1df66f3d34104b53))
+
+
+### Bug Fixes
+
+* **auth:** add 10s timeout failsafe to prevent infinite loading spinner ([c2ddba6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c2ddba670cee02ec82256271006a40c426230630))
+* **critical:** prevent App Check crash from killing React mount ([9ce2ccf](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/9ce2ccf8d5e6606fe98cb6fe0421085d0fd1154b))
+* **hunter:** XSS, subscription leak, stale flag, process.env, console.logs, race conditions ([6d14438](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/6d144389bd76eb58144cefebc19650a635f69c1e))
+* Logo mark uses proper lowercase 'i' with dots ([cd8924d](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/cd8924d7db9420d3baa2e0641f2ebd6db2f48a46))
+* Match logo to banner — teal outer → dark inset → teal ii ([f662ead](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f662ead6cc80d2915599deec42b91b7997be7994))
+
 ## [1.15.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.1...v1.15.0) (2026-03-11)
 
 
