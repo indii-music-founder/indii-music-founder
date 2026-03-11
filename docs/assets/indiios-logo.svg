@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <defs>
+    <linearGradient id="bg-gradient" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E5CC"/>
+      <stop offset="100%" stop-color="#00B8D4"/>
+    </linearGradient>
+    <linearGradient id="bar-gradient" x1="0" y1="30" x2="0" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#E0F7FA"/>
+    </linearGradient>
+  </defs>
+  <!-- Rounded square background -->
+  <rect x="4" y="4" width="112" height="112" rx="28" ry="28" fill="url(#bg-gradient)"/>
+  <!-- Left vertical bar "i" -->
+  <rect x="38" y="32" width="14" height="56" rx="7" ry="7" fill="url(#bar-gradient)"/>
+  <!-- Right vertical bar "i" -->
+  <rect x="68" y="32" width="14" height="56" rx="7" ry="7" fill="url(#bar-gradient)"/>
+  <!-- Left dot -->
+  <circle cx="45" cy="24" r="5" fill="url(#bar-gradient)" opacity="0"/>
+  <!-- Right dot -->
+  <circle cx="75" cy="24" r="5" fill="url(#bar-gradient)" opacity="0"/>
+</svg>
