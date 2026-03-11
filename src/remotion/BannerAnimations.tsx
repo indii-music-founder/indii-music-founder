@@ -576,7 +576,7 @@ export const BannerGlitch: React.FC = () => {
       {glitchActive && (
         <div style={{
           position: 'absolute', inset: 0,
-          background: `linear-gradient(${Math.random() * 360}deg, ${TEAL}11, transparent)`,
+          background: `linear-gradient(${(frame * 137.508) % 360}deg, ${TEAL}11, transparent)`,
           zIndex: 15,
         }} />
       )}
