@@ -1,14 +1,15 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 import { getColorForModule } from '@/core/theme/moduleColors';
 import {
-    LayoutDashboard, Palette, MessageCircle, DollarSign, Menu, X
+    LayoutDashboard, Palette, MessageCircle, DollarSign, Menu, X, Plus
 } from 'lucide-react';
 import { haptic } from '@/lib/mobile';
 import { type ModuleId } from '@/core/constants';
 import { motion, AnimatePresence, PanInfo } from 'motion/react';
 import { useMobile } from '@/hooks/useMobile';
+import { QuickCapture } from '@/modules/capture/QuickCapture';
 
 /**
  * MobileTabBar — Persistent iOS-style bottom tab bar for phone-class viewports.
@@ -86,7 +87,8 @@ export const MobileTabBar: React.FC = () => {
             setModule: state.setModule,
         }))
     );
-    const [isMoreOpen, setIsMoreOpen] = React.useState(false);
+    const [isMoreOpen, setIsMoreOpen] = useState(false);
+    const [isQuickCaptureOpen, setIsQuickCaptureOpen] = useState(false);
 
     // Only render on phone-class viewports
     if (!isAnyPhone) return null;
@@ -115,6 +117,30 @@ export const MobileTabBar: React.FC = () => {
 
     return (
         <>
+            {/* QuickCapture FAB — floating above tab bar center */}
+            <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={() => {
+                    haptic('medium');
+                    setIsQuickCaptureOpen(true);
+                }}
+                className="fixed z-[102] w-12 h-12 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 shadow-lg shadow-indigo-500/30 flex items-center justify-center active:shadow-indigo-500/50 transition-shadow"
+                style={{
+                    bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 8px)`,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                }}
+                aria-label="Quick capture new contact"
+            >
+                <Plus size={22} className="text-white" strokeWidth={2.5} />
+            </motion.button>
+
+            {/* QuickCapture Bottom Sheet */}
+            <QuickCapture
+                isOpen={isQuickCaptureOpen}
+                onClose={() => setIsQuickCaptureOpen(false)}
+            />
+
             {/* Persistent Bottom Tab Bar */}
             <nav
                 className="fixed bottom-0 left-0 right-0 z-[101] bg-[#0d0d0d]/95 backdrop-blur-xl border-t border-white/[0.06]"

@@ -7,7 +7,7 @@ import { PlanningTab } from './components/PlanningTab';
 import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
 import { Itinerary } from './types';
-import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { RoadMode } from './components/RoadMode';
 import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
@@ -83,11 +83,9 @@ const RoadManager: React.FC = () => {
 
     if (isMobile) {
         return (
-            <MobileOnlyWarning
-                featureName="Road Manager"
-                reason="The calendar view and itinerary planning features require a larger screen for optimal tour scheduling and logistics management."
-                suggestedModule="marketing"
-            />
+            <ModuleErrorBoundary moduleName="Road Manager">
+                <RoadMode />
+            </ModuleErrorBoundary>
         );
     }
 

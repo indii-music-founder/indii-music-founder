@@ -40,6 +40,7 @@ import { LoadingFallback } from '@/core/components/LoadingFallbacks';
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
+import { logger } from '@/utils/logger';
 
 cleanupLocalStorage();
 
@@ -174,7 +175,8 @@ function useAppInitialization() {
     // 3. Load Application Data (Projects, History) when Profile is ready
     useEffect(() => {
         if (user) {
-            // Log removed (Platinum Polish)
+            let isMounted = true;
+
             initializeHistory();
             loadProjects();
 
@@ -183,26 +185,27 @@ function useAppInitialization() {
 
             // Initialize Proactive Service (Start Polling) — requires auth
             import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
-                proactiveService.start();
-            });
+                if (isMounted) proactiveService.start();
+            }).catch(err => logger.error('Failed to load ProactiveService', err));
 
             // Initialize Asset Observer — requires auth for Firestore subscriptions
             import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
-                assetObserver.initialize();
-            });
+                if (isMounted) assetObserver.initialize();
+            }).catch(err => logger.error('Failed to load AssetObserver', err));
 
             // Initialize Always-On Memory Engine — starts background consolidation
             import('@/services/agent/AlwaysOnMemoryEngine').then(({ alwaysOnMemoryEngine }) => {
-                alwaysOnMemoryEngine.start(user.uid);
-            });
+                if (isMounted) alwaysOnMemoryEngine.start(user.uid);
+            }).catch(err => logger.error('Failed to load AlwaysOnMemoryEngine', err));
 
             return () => {
+                isMounted = false;
                 import('@/services/agent/ProactiveService').then(({ proactiveService }) => {
                     proactiveService.dispose();
-                });
+                }).catch(() => { /* module already unloaded */ });
                 import('@/services/agent/AssetObserver').then(({ assetObserver }) => {
                     assetObserver.stop();
-                });
+                }).catch(() => { /* module already unloaded */ });
             };
         }
     }, [user, initializeHistory, loadProjects]);
@@ -267,18 +270,13 @@ function useOnboardingRedirect() {
             return;
         }
 
-        // Detect genuinely new users who need onboarding:
-        // - Profile id is still 'pending' (default, not loaded from Firestore yet)
-        // - OR profile has no meaningful bio (less than 10 chars, excluding defaults)
-        // - AND user just signed up (no displayName set via landing page, or profile is bare)
-        const isNewProfile = userProfile.id === 'pending' ||
-            (!userProfile.bio || userProfile.bio.length < 10 || userProfile.bio === 'Creative Director');
+        // Only redirect genuinely new users whose profile hasn't loaded from Firestore yet.
+        // Once the profile resolves (id !== 'pending'), the user is a returning user — never trap them.
+        // The localStorage escape hatch prevents loops for users who intentionally skip onboarding.
+        const profileStillPending = userProfile?.id === 'pending';
+        const hasExplicitlySkipped = typeof window !== 'undefined' && localStorage.getItem('onboarding_dismissed') === 'true';
 
-        const hasMinimalBrandKit = !userProfile.brandKit?.brandDescription ||
-            userProfile.brandKit.brandDescription === 'My Studio Brand';
-
-        if (isNewProfile && hasMinimalBrandKit) {
-            // New user detected — send to onboarding
+        if (profileStillPending && !hasExplicitlySkipped) {
             setModule('onboarding');
         }
     }, [user, authLoading, currentModule, setModule, userProfile]);
