@@ -81,10 +81,11 @@ const MORE_SECTIONS: { title: string; items: NavItem[] }[] = [
 
 export const MobileTabBar: React.FC = () => {
     const { isAnyPhone } = useMobile();
-    const { currentModule, setModule } = useStore(
+    const { currentModule, setModule, isAgentOpen } = useStore(
         useShallow(state => ({
             currentModule: state.currentModule,
             setModule: state.setModule,
+            isAgentOpen: state.isAgentOpen,
         }))
     );
     const [isMoreOpen, setIsMoreOpen] = useState(false);
@@ -98,12 +99,22 @@ export const MobileTabBar: React.FC = () => {
         if (tab.id === 'more') {
             setIsMoreOpen(true);
         } else {
+            // Auto-close the ChatOverlay when switching to a non-agent module on mobile.
+            // This prevents the Orchestrator overlay from blocking the destination module
+            // after a quick action (e.g. "Analyze Brand") opens it from the Dashboard.
+            if (isAgentOpen && tab.id !== 'agent') {
+                useStore.setState({ isAgentOpen: false });
+            }
             setModule(tab.id as ModuleId);
         }
     };
 
     const handleMoreItemPress = (id: ModuleId) => {
         haptic('light');
+        // Also close the ChatOverlay when navigating via the "More" menu
+        if (isAgentOpen && id !== 'agent') {
+            useStore.setState({ isAgentOpen: false });
+        }
         setModule(id);
         setIsMoreOpen(false);
     };
