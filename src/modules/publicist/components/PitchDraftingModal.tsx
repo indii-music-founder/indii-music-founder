@@ -24,6 +24,12 @@ export function PitchDraftingModal({ isOpen, onClose, contact, campaign }: Pitch
     const [isGenerating, setIsGenerating] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // Early return if no contact — Modal guard below also checks this,
+    // but this satisfies TypeScript's null narrowing for the rest of the component.
+    if (!contact) {
+        return null;
+    }
+
     const buildPrompt = () => {
         if (!contact) return '';
         const campaignContext = campaign
@@ -71,7 +77,7 @@ Do not include a subject line — just the email body.
     };
 
     return (
-        <Modal isOpen={isOpen && !!contact} onClose={onClose} titleId="pitch-modal-title">
+        <Modal isOpen={isOpen} onClose={onClose} titleId="pitch-modal-title">
                     <div>
                         {/* Header */}
                         <div className="flex items-center justify-between px-6 py-4 border-b border-white/5">
@@ -82,7 +88,7 @@ Do not include a subject line — just the email body.
                                 <div>
                                     <h3 id="pitch-modal-title" className="text-sm font-bold text-white">AI Pitch Drafter</h3>
                                     <p className="text-[10px] text-slate-500">
-                                        Pitching <span className="text-slate-300">{contact.name}</span> @ {contact.outlet}
+                                        Pitching <span className="text-slate-300">{contact?.name}</span> @ {contact?.outlet}
                                     </p>
                                 </div>
                             </div>
@@ -118,7 +124,7 @@ Do not include a subject line — just the email body.
                                     <div className="flex flex-col items-center justify-center h-full py-12 text-center">
                                         <Sparkles size={24} className="text-slate-700 mb-3" />
                                         <p className="text-sm text-slate-500 mb-1">Click "Generate Pitch" to draft a personalized email.</p>
-                                        <p className="text-xs text-slate-600">Tailored to {contact.name}'s outlet and relationship strength.</p>
+                                        <p className="text-xs text-slate-600">Tailored to {contact?.name}'s outlet and relationship strength.</p>
                                     </div>
                                 )}
                                 {draft && !isGenerating && (
@@ -157,7 +163,7 @@ Do not include a subject line — just the email body.
                                             {copied ? 'Copied!' : 'Copy'}
                                         </button>
                                         <a
-                                            href={`mailto:${contact.name.toLowerCase().replace(' ', '.')}@${contact.outlet.toLowerCase().replace(' ', '')}.com?body=${encodeURIComponent(draft)}`}
+                                            href={`mailto:${contact?.name?.toLowerCase().replace(' ', '.')}@${contact?.outlet?.toLowerCase().replace(' ', '')}.com?body=${encodeURIComponent(draft)}`}
                                             className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all ml-auto"
                                         >
                                             <Send size={13} />

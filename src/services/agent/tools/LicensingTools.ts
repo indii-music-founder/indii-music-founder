@@ -93,7 +93,7 @@ export const LicensingTools: Record<string, AnyToolFunction> = {
             terms
         });
 
-        const contractId = (result as any)?.contractId || `lease_${Date.now()}`;
+        const contractId = result?.data?.contractId || `lease_${Date.now()}`;
 
         return toolSuccess({
             beatTitle: args.beatTitle,
@@ -103,7 +103,7 @@ export const LicensingTools: Record<string, AnyToolFunction> = {
             price: args.price,
             contractId,
             status: 'Draft Generated',
-            content: (result as any)?.content
+            content: result?.data?.content
         }, `${args.leaseType} beat-leasing contract generated for "${args.beatTitle}" priced at $${args.price}. Contract ID: ${contractId}`);
     })
 };
