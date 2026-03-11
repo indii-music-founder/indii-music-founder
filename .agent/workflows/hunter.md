@@ -80,13 +80,40 @@ grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_m
 # Unhandled response codes
 grep -rn '!response.ok' src/services/ --include='*.ts' | grep -v 'status\|429\|502\|503' | grep -v test
 
-# Fetch without timeout
-grep -n 'await fetch(' src/services/ --include='*.ts' -r | grep -v 'signal\|timeout\|abort' | grep -v '.test.'
+# Missing retry logic for 429 rate limits
+grep -rn 'fetch(' src/services/ --include='*.ts' | grep -v 'retry\|backoff\|429' | grep -v test | grep -v '.d.ts'
 ```
 
 **AUTO-FIX:** For each finding:
-- Missing status handling → Add status-specific error messages per the retry pattern in SKILL.md
-- Missing timeout → Add `signal: AbortSignal.timeout(10000)` to fetch options
+- Missing status check → Add `if (!response.ok)` with appropriate error handling
+- Missing retry → Wrap in retry logic for 429/5xx codes
+
+### 1.6 Vendor Chunk Conflicts
+```bash
+# Check vite.config.ts manualChunks for React-dependent libs split from vendor-react
+# Any lib that imports react-reconciler, scheduler, or react-dom MUST be in vendor-react
+grep -A 30 'manualChunks' vite.config.ts
+
+# Check for scheduler duplication in production build
+npm run build:studio 2>&1 | grep -i 'scheduler\|reconciler' || echo 'No scheduler warnings'
+```
+
+**AUTO-FIX:** For each finding:
+- React-dependent lib in separate chunk (e.g. @react-three/fiber, @remotion/*) → Move to vendor-react or remove from manualChunks
+- Scheduler duplication warning → Consolidate into single React vendor chunk
+
+### 1.7 Impure Render Functions
+```bash
+# Math.random() in render — violates react-hooks/purity, causes lint failure
+grep -rn 'Math\.random()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v 'useMemo\|useCallback\|useRef'
+
+# Date.now() in render (non-deterministic)
+grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'useMemo\|useCallback\|useRef\|useEffect'
+```
+
+**AUTO-FIX:** For each finding:
+- Math.random() in render → Replace with deterministic seeded RNG or frame-based calculation
+- Date.now() in render → Move to useEffect or useMemo
 
 ---
 
