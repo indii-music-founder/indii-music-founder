@@ -5,7 +5,14 @@
       <stop offset="100%" stop-color="#00B8D4"/>
     </linearGradient>
   </defs>
+  <!-- Rounded square background -->
   <rect width="512" height="512" rx="128" fill="url(#bg)"/>
-  <rect x="161" y="136" width="60" height="240" rx="30" fill="white"/>
-  <rect x="291" y="136" width="60" height="240" rx="30" fill="white"/>
+  <!-- Left "i" bar -->
+  <rect x="161" y="200" width="60" height="176" rx="30" fill="white"/>
+  <!-- Right "i" bar -->
+  <rect x="291" y="200" width="60" height="176" rx="30" fill="white"/>
+  <!-- Left "i" dot -->
+  <circle cx="191" cy="148" r="30" fill="white"/>
+  <!-- Right "i" dot -->
+  <circle cx="321" cy="148" r="30" fill="white"/>
 </svg>

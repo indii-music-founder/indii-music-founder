@@ -7,7 +7,7 @@ interface IndiiFaviconProps {
 
 /**
  * Inline SVG of the indiiOS favicon — the stylized "ii" mark.
- * Cyan/teal gradient rounded square with two solid white rounded-rect bars.
+ * Cyan/teal gradient rounded square with two lowercase "i" characters (bars + dots).
  * Mirrors the design from `/public/favicon.svg` and `docs/assets/indiios-logo.svg`.
  */
 export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
@@ -31,8 +31,14 @@ export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
                 </linearGradient>
             </defs>
             <rect width="512" height="512" rx="128" fill={`url(#${gradientId})`} />
-            <rect x="161" y="136" width="60" height="240" rx="30" fill="white" />
-            <rect x="291" y="136" width="60" height="240" rx="30" fill="white" />
+            {/* Left "i" bar */}
+            <rect x="161" y="200" width="60" height="176" rx="30" fill="white" />
+            {/* Right "i" bar */}
+            <rect x="291" y="200" width="60" height="176" rx="30" fill="white" />
+            {/* Left "i" dot */}
+            <circle cx="191" cy="148" r="30" fill="white" />
+            {/* Right "i" dot */}
+            <circle cx="321" cy="148" r="30" fill="white" />
         </svg>
     );
 }
