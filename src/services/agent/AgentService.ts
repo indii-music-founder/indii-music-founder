@@ -524,10 +524,28 @@ export class AgentService {
         if (brandDesc) personaContext += `\nBrand: ${brandDesc}`;
         if (genre) personaContext += `\nGenre: ${genre}`;
 
-        const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}
+        // Retrieve Knowledge Base context if enabled — even in direct chat mode,
+        // the user's uploaded documents and memories should be available.
+        let knowledgeContext = '';
+        const state = useStore.getState();
+        if (state.isKnowledgeBaseEnabled) {
+            try {
+                const { ContextPipeline } = await import('./components/ContextPipeline');
+                const pipeline = new ContextPipeline();
+                const pipelineContext = await pipeline.buildContext();
+                if (pipelineContext.memoryContext && pipelineContext.memoryContext.trim()) {
+                    knowledgeContext = `\n\nKNOWLEDGE BASE CONTEXT (from the artist's uploaded files and project data):\n${pipelineContext.memoryContext}`;
+                }
+            } catch (kbErr) {
+                logger.warn('[AgentService] Knowledge Base retrieval failed in direct chat, continuing without:', kbErr);
+            }
+        }
+
+        const systemPrompt = `You are indii, a creative assistant for independent music artists and creators.${personaContext}${knowledgeContext}
 
 Be direct, creative, and helpful. You are in direct chat mode — respond conversationally without using any tools or complex orchestration.
-If the user asks you to do something that requires tools (like generating images, searching files, or managing projects), suggest they switch to Agent mode for that task.`;
+When answering questions, use the Knowledge Base context (if available) to provide personalized, grounded responses about the artist's projects, files, and data.
+If the user asks you to do something that requires active tools (like generating images, running automations, or managing live projects), suggest they switch to Agent mode for that task.`;
 
         // Build chat history for multi-turn context (last 20 messages)
         // Note: Filter out the current message which should be the last entry
