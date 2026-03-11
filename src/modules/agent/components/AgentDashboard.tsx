@@ -264,12 +264,12 @@ const AgentDashboard: React.FC = () => {
                 <div className="flex-1 flex flex-col min-w-0 bg-[--background]">
                     {/* Mobile Tab Strip — visible only on phones */}
                     {isAnyPhone && (
-                        <div className="flex items-center gap-1 px-4 py-2.5 border-b border-slate-800 overflow-x-auto shrink-0">
+                        <div className="flex items-center gap-2 px-4 py-3 border-b border-slate-800 overflow-x-auto shrink-0 no-scrollbar">
                             {(['chat', 'tasks', 'campaigns', 'inbox'] as const).map((tab) => (
                                 <button
                                     key={tab}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
+                                    className={`px-4 py-2.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                                         activeTab === tab
                                             ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30'
                                             : 'text-slate-400 hover:text-white hover:bg-slate-800'

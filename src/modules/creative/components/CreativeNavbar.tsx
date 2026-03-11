@@ -24,18 +24,18 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
     return (
         <div {...props} className={`flex flex-col z-20 relative bg-[#0a0a0a] border-b border-white/5 select-none ${props.className || ''}`}>
             {/* Single Compact Header Row */}
-            <div className="flex items-center justify-between px-4 py-2 h-14">
+            <div className="flex items-center justify-between px-3 md:px-4 py-2 h-14 gap-2">
                 {/* Left: Branding & Title */}
-                <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2 text-gray-400">
+                <div className="flex items-center gap-2 md:gap-3 min-w-0">
+                    <div className="flex items-center gap-2 text-gray-400 flex-shrink-0">
                         <Palette size={16} className="text-purple-400" />
-                        <h1 className="text-sm font-bold text-gray-200 tracking-tight">Creative Director</h1>
+                        <h1 className="text-sm font-bold text-gray-200 tracking-tight hidden sm:block">Creative Director</h1>
                     </div>
                     {/* Divider */}
                     <div className="h-4 w-px bg-white/10 mx-1"></div>
 
                     {/* View Mode Switcher (Compact Segmented Control) */}
-                    <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5">
+                    <div className="flex bg-white/5 p-0.5 rounded-lg border border-white/5 overflow-x-auto no-scrollbar">
                         <button
                             onClick={() => setViewMode('gallery')}
                             data-testid="gallery-view-btn"
@@ -87,8 +87,8 @@ export default function CreativeNavbar(props: CreativeNavbarProps) {
                     </div>
                 </div>
 
-                {/* Right: Context Controls & Utilities */}
-                <div className="flex items-center gap-3">
+                {/* Right: Context Controls & Utilities — hidden on mobile (desktop power-user features) */}
+                <div className="hidden md:flex items-center gap-3">
                     {generationMode === 'image' ? (
                         <div className="flex items-center gap-2">
                             <button

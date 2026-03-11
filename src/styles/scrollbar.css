@@ -17,4 +17,13 @@
   .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: var(--color-dept-default);
   }
+
+  /* Hide scrollbar while keeping content scrollable */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }
