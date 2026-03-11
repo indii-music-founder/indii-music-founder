@@ -7,12 +7,12 @@ interface IndiiFaviconProps {
 
 /**
  * Inline SVG of the indiiOS favicon — the stylized "ii" mark.
- * Cyan/teal gradient rounded square with two lowercase "i" characters (bars + dots).
- * Mirrors the design from `/public/favicon.svg` and `docs/assets/indiios-logo.svg`.
+ * Cyan/teal gradient outer rounded square with a dark inset inner panel
+ * and teal-colored lowercase "i" characters (bars + dots).
+ * Matches the brand mark from the README banner and `/public/favicon.svg`.
  */
 export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
-    // Unique gradient ID to avoid collisions when multiple instances render
-    const gradientId = `indii-bg-${size}`;
+    const id = `indii-${size}`;
 
     return (
         <svg
@@ -25,20 +25,27 @@ export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
             aria-label="indiiOS logo"
         >
             <defs>
-                <linearGradient id={gradientId} x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+                <linearGradient id={`${id}-outer`} x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#00E5CC" />
+                    <stop offset="100%" stopColor="#00B8D4" />
+                </linearGradient>
+                <linearGradient id={`${id}-ii`} x1="180" y1="120" x2="340" y2="400" gradientUnits="userSpaceOnUse">
                     <stop offset="0%" stopColor="#00E5CC" />
                     <stop offset="100%" stopColor="#00B8D4" />
                 </linearGradient>
             </defs>
-            <rect width="512" height="512" rx="128" fill={`url(#${gradientId})`} />
-            {/* Left "i" bar */}
-            <rect x="161" y="200" width="60" height="176" rx="30" fill="white" />
-            {/* Right "i" bar */}
-            <rect x="291" y="200" width="60" height="176" rx="30" fill="white" />
+            {/* Outer rounded square: cyan/teal gradient */}
+            <rect width="512" height="512" rx="128" fill={`url(#${id}-outer)`} />
+            {/* Inner dark inset panel */}
+            <rect x="48" y="48" width="416" height="416" rx="96" fill="#0C0C1A" />
             {/* Left "i" dot */}
-            <circle cx="191" cy="148" r="30" fill="white" />
+            <circle cx="200" cy="155" r="28" fill={`url(#${id}-ii)`} />
             {/* Right "i" dot */}
-            <circle cx="321" cy="148" r="30" fill="white" />
+            <circle cx="312" cy="155" r="28" fill={`url(#${id}-ii)`} />
+            {/* Left "i" bar */}
+            <rect x="174" y="210" width="52" height="160" rx="26" fill={`url(#${id}-ii)`} />
+            {/* Right "i" bar */}
+            <rect x="286" y="210" width="52" height="160" rx="26" fill={`url(#${id}-ii)`} />
         </svg>
     );
 }
