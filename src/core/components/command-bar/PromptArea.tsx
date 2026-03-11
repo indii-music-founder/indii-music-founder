@@ -371,48 +371,50 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                        {/* Dock Position Toggle */}
-                        <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
-                            <button
-                                onClick={() => setCommandBarPosition('left')}
-                                className={cn(
-                                    "p-1 rounded-md transition-all",
-                                    commandBarPosition === 'left'
-                                        ? "bg-white/15 text-white"
-                                        : "text-gray-500 hover:text-gray-300"
-                                )}
-                                aria-label="Dock left"
-                                title="Dock left"
-                            >
-                                <AlignLeft size={12} />
-                            </button>
-                            <button
-                                onClick={() => setCommandBarPosition('center')}
-                                className={cn(
-                                    "p-1 rounded-md transition-all",
-                                    commandBarPosition === 'center'
-                                        ? "bg-white/15 text-white"
-                                        : "text-gray-500 hover:text-gray-300"
-                                )}
-                                aria-label="Dock center"
-                                title="Dock center"
-                            >
-                                <AlignCenter size={12} />
-                            </button>
-                            <button
-                                onClick={() => setCommandBarPosition('right')}
-                                className={cn(
-                                    "p-1 rounded-md transition-all",
-                                    commandBarPosition === 'right'
-                                        ? "bg-white/15 text-white"
-                                        : "text-gray-500 hover:text-gray-300"
-                                )}
-                                aria-label="Dock right"
-                                title="Dock right"
-                            >
-                                <AlignRight size={12} />
-                            </button>
-                        </div>
+                        {/* Dock Position Toggle — desktop only, irrelevant on phone */}
+                        {!isMobile && (
+                            <div className="flex items-center bg-black/40 rounded-lg p-0.5 border border-white/10">
+                                <button
+                                    onClick={() => setCommandBarPosition('left')}
+                                    className={cn(
+                                        "p-1 rounded-md transition-all",
+                                        commandBarPosition === 'left'
+                                            ? "bg-white/15 text-white"
+                                            : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    aria-label="Dock left"
+                                    title="Dock left"
+                                >
+                                    <AlignLeft size={12} />
+                                </button>
+                                <button
+                                    onClick={() => setCommandBarPosition('center')}
+                                    className={cn(
+                                        "p-1 rounded-md transition-all",
+                                        commandBarPosition === 'center'
+                                            ? "bg-white/15 text-white"
+                                            : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    aria-label="Dock center"
+                                    title="Dock center"
+                                >
+                                    <AlignCenter size={12} />
+                                </button>
+                                <button
+                                    onClick={() => setCommandBarPosition('right')}
+                                    className={cn(
+                                        "p-1 rounded-md transition-all",
+                                        commandBarPosition === 'right'
+                                            ? "bg-white/15 text-white"
+                                            : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                    aria-label="Dock right"
+                                    title="Dock right"
+                                >
+                                    <AlignRight size={12} />
+                                </button>
+                            </div>
+                        )}
 
                         {/* Agent / indii Mode Toggle */}
                         <button

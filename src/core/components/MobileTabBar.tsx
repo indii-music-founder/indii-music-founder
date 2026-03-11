@@ -128,7 +128,7 @@ export const MobileTabBar: React.FC = () => {
                     }}
                     className="fixed z-[102] w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 to-cyan-500 shadow-lg shadow-teal-500/30 flex items-center justify-center active:shadow-teal-500/50 transition-shadow"
                     style={{
-                        bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 8px)`,
+                        bottom: `calc(56px + env(safe-area-inset-bottom, 0px) + 16px)`,
                         left: '50%',
                         transform: 'translateX(-50%)',
                     }}
@@ -147,7 +147,7 @@ export const MobileTabBar: React.FC = () => {
             {/* Persistent Bottom Tab Bar */}
             <nav
                 className="fixed bottom-0 left-0 right-0 z-[101] bg-[#0d0d0d]/95 backdrop-blur-xl border-t border-white/[0.06]"
-                style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+                style={{ paddingBottom: 'calc(env(safe-area-inset-bottom, 0px) + 8px)' }}
                 role="tablist"
                 aria-label="Main navigation"
             >

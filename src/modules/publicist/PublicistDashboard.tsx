@@ -75,8 +75,8 @@ export default function PublicistDashboard() {
                     <div className="absolute top-[40%] left-[40%] w-[40%] h-[40%] bg-dept-marketing-muted/5 blur-[120px] animate-pulse-slow" />
                 </div>
 
-                {/* Sidebar Navigation */}
-                <aside className="w-64 lg:w-72 h-full z-20 flex flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl relative">
+                {/* Sidebar Navigation — hidden on mobile, tab bar handles navigation */}
+                <aside className="hidden md:flex w-64 lg:w-72 h-full z-20 flex-col border-r border-white/5 bg-black/40 backdrop-blur-xl relative">
                     {/* Brand */}
                     <div className="p-6 pb-2">
                         <div className="flex items-center gap-3 mb-6">
@@ -166,15 +166,15 @@ export default function PublicistDashboard() {
                 {/* Main Content Area */}
                 <main className="flex-1 relative flex flex-col min-w-0 z-10 h-full">
                     {/* Top HUD Bar */}
-                    <header className="h-20 shrink-0 px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
-                        <div className="flex items-center gap-4">
-                            <h2 className="text-2xl font-bold text-white tracking-tight">
+                    <header className="h-14 md:h-20 shrink-0 px-4 md:px-8 flex items-center justify-between border-b border-white/5 bg-black/20 backdrop-blur-sm z-20">
+                        <div className="flex items-center gap-2 md:gap-4 min-w-0">
+                            <h2 className="text-base md:text-2xl font-bold text-white tracking-tight truncate">
                                 {activeTab === 'campaigns' ? 'Campaigns' : (activeTab as string) === 'superfans' ? 'Superfan CRM' : 'Media Network'}
                             </h2>
-                            <div className="h-6 w-px bg-white/10 mx-2" />
+                            <div className="hidden md:block h-6 w-px bg-white/10 mx-2" />
 
-                            {/* Search Bar */}
-                            <div className="relative group">
+                            {/* Search Bar — hidden on mobile, too wide */}
+                            <div className="relative group hidden md:block">
                                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-dept-marketing transition-colors" size={14} />
                                 <input
                                     type="text"
@@ -186,7 +186,7 @@ export default function PublicistDashboard() {
                             </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2 md:gap-3 shrink-0">
                             {/* Filter Controls (Visible on Campaign Tab) */}
                             {activeTab === 'campaigns' && (
                                 <>
@@ -220,25 +220,25 @@ export default function PublicistDashboard() {
                             {activeTab === 'campaigns' ? (
                                 <button
                                     onClick={() => setIsCreateCampaignModalOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
+                                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-1 md:ml-2"
                                 >
                                     <Plus size={14} />
-                                    <span>New Campaign</span>
+                                    <span className="hidden md:inline">New Campaign</span>
                                 </button>
                             ) : (
                                 <button
                                     onClick={() => setIsCreateContactModalOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-2"
+                                    className="flex items-center gap-2 px-3 md:px-4 py-2 bg-white text-black rounded-lg text-xs font-bold hover:bg-slate-200 transition-all active:scale-95 shadow-[0_0_15px_rgba(255,255,255,0.1)] ml-1 md:ml-2"
                                 >
                                     <Plus size={14} />
-                                    <span>New Contact</span>
+                                    <span className="hidden md:inline">New Contact</span>
                                 </button>
                             )}
                         </div>
                     </header>
 
                     {/* Scrollable Content Stage */}
-                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-8 scroll-smooth no-scrollbar">
+                    <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 scroll-smooth no-scrollbar">
                         <AnimatePresence mode="wait">
                             {activeTab === 'campaigns' ? (
                                 <motion.div
