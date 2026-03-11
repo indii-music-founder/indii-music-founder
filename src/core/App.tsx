@@ -498,7 +498,8 @@ export default function App() {
                                 )}
 
                                 {/* Floating Chat Overlay — draggable, resizable */}
-                                {isAgentOpen && (
+                                {/* On mobile agent module, chat is inline in AgentDashboard — skip overlay */}
+                                {isAgentOpen && !(isAnyPhone && currentModule === 'agent') && (
                                     <ErrorBoundary>
                                         <ChatOverlay onClose={toggleAgentWindow} />
                                     </ErrorBoundary>

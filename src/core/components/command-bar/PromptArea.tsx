@@ -203,10 +203,14 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
             setCommandBarInput('');
             setCommandBarAttachments([]);
 
-            if (!isAgentOpen) {
-                toggleAgentWindow();
-            } else if (!isRightPanelOpen) {
-                toggleRightPanel();
+            // On mobile Agent Dashboard, chat is displayed inline — don't open a ChatOverlay on top
+            const isOnAgentModule = currentModule === 'agent';
+            if (!isOnAgentModule) {
+                if (!isAgentOpen) {
+                    toggleAgentWindow();
+                } else if (!isRightPanelOpen) {
+                    toggleRightPanel();
+                }
             }
 
             try {
@@ -442,7 +446,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                             <IndiiFavicon size={18} />
                         </button>
 
-                        {!isDocked && (
+                        {!isDocked && !isMobile && (
                             <div className="flex items-center gap-1 border-l border-white/10 px-2 mr-1">
                                 <PromptInputAction tooltip="Collapse Chat">
                                     <button

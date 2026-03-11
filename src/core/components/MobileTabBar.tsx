@@ -118,8 +118,8 @@ export const MobileTabBar: React.FC = () => {
     return (
         <>
             {/* QuickCapture FAB — floating above tab bar center */}
-            {/* Hidden on modules with their own bottom action bar (Road Mode has voice bar) */}
-            {currentModule !== 'road' && (
+            {/* Hidden on modules with their own bottom action bar (Road has voice bar, Agent has chat input) */}
+            {currentModule !== 'road' && currentModule !== 'agent' && (
                 <motion.button
                     whileTap={{ scale: 0.85 }}
                     onClick={() => {
