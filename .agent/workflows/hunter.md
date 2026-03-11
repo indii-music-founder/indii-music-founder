@@ -43,7 +43,26 @@ grep -rn 'onSnapshot' src/ --include='*.ts' --include='*.tsx' | grep -v node_mod
 - Missing `removeEventListener` → Add cleanup in `useEffect` return or component unmount
 - Leaked `onSnapshot` → Store unsubscribe via `registerSubscription()` or return it from `useEffect`
 
-### 1.3 Swallowed Errors
+### 1.3 Loading State Traps
+```bash
+# Loading gates that block ALL rendering with no timeout/fallback
+# These cause infinite spinners when the underlying service fails silently
+grep -rn 'if.*Loading.*return' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+
+# Init functions that set loading=true but have no timeout
+grep -rn 'authLoading\|isLoading.*true\|loading: true' src/core/store/slices/ --include='*.ts' | grep -v '.test.'
+
+# CI/CD env var mismatch: check deployed key matches local key
+grep 'VITE_FIREBASE_API_KEY' .env
+# Compare with: GitHub Settings → Secrets → VITE_FIREBASE_API_KEY
+```
+
+**AUTO-FIX:** For each finding:
+- Loading gate with no timeout → Add a `setTimeout` failsafe (10s) that forces `loading=false` with an error message
+- Init function with no error path → Add `try/catch` that sets `loading: false` + descriptive `error`
+- CI/CD key mismatch → Flag to user with exact key values for comparison
+
+### 1.4 Swallowed Errors
 ```bash
 # Empty catch blocks (silent failure)
 grep -rn 'catch.*{}' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
@@ -56,7 +75,7 @@ grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_m
 - Empty catch → Add `logger.error()` and `Sentry.captureException()` 
 - Raw `console.log` → Replace with `logger.debug()` or `logger.info()`
 
-### 1.4 HTTP Error Codes
+### 1.5 HTTP Error Codes
 ```bash
 # Unhandled response codes
 grep -rn '!response.ok' src/services/ --include='*.ts' | grep -v 'status\|429\|502\|503' | grep -v test
@@ -196,3 +215,4 @@ mcp_mem0_add-memory(
 3. **Every finding gets a fix.** If a fix is non-trivial (> 50 lines), apply the simplest safe fix and add a `// TODO(hunter): deeper refactor needed` comment.
 4. **Verify after fixing.** Never commit code that doesn't pass typecheck and tests.
 5. **Log everything.** Every fix goes to Error Ledger AND mem0 for institutional memory.
+6. **Check deployed state.** If a bug involves configuration (API keys, env vars), verify the production deployment matches local config.

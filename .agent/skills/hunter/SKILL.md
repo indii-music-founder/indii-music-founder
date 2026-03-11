@@ -61,7 +61,31 @@ grep -rn 'setInterval\|setTimeout' src/ --include='*.ts' --include='*.tsx' | gre
 grep -rn 'onSnapshot' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
 ```
 
-### 1.3 Swallowed Errors & Code Hygiene
+### 1.3 Loading State Traps
+
+Bugs where a loading gate (`if (loading) return <Spinner>`) has no timeout or error fallback,
+causing the app to hang forever when the underlying service fails silently (blocked API key,
+network down, SDK crash, CI/CD env var mismatch).
+
+```bash
+# Loading gates that block ALL rendering with no timeout/fallback
+grep -rn 'if.*Loading.*return' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive'
+
+# Init functions that set loading=true — check each has a timeout or error path
+grep -rn 'authLoading\|isLoading.*true\|loading: true' src/core/store/slices/ --include='*.ts' | grep -v '.test.'
+
+# CI/CD env var mismatch: deployed key must match local .env
+grep 'VITE_FIREBASE_API_KEY' .env
+# Cross-reference with: GitHub Settings → Secrets → VITE_FIREBASE_API_KEY
+```
+
+**Deep Read Checklist:**
+- [ ] Every loading gate must have a timeout failsafe (max 10-15s)
+- [ ] Every `onAuthStateChanged` / service init must set `loading: false` in ALL paths (success, error, AND timeout)
+- [ ] CI/CD secrets must match local `.env` values for critical config (API keys, project IDs)
+- [ ] External service initialization must have `try/catch` around it
+
+### 1.4 Swallowed Errors & Code Hygiene
 
 ```bash
 # Empty catch blocks (silent failure)
@@ -77,7 +101,7 @@ grep -rn 'console\.log' src/ --include='*.ts' --include='*.tsx' | grep -v node_m
 grep -rn 'as any' src/ --include='*.ts' --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | wc -l
 ```
 
-### 1.4 HTTP Error Code Sweep
+### 1.5 HTTP Error Code Sweep
 
 Target codes: **401, 403, 404, 410, 413, 422, 429, 500, 502, 503, 504**
 
@@ -358,3 +382,39 @@ private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T
 | 2026-03-11 | Photo capture silently discards data | `QuickCapture.tsx` | Data Loss |
 | 2026-03-11 | AI calls missing maxOutputTokens | Multiple agent services | Token Exhaustion |
 | 2026-03-11 | Locale-dependent formatting (15+ uses) | Multiple modules | i18n |
+| 2026-03-11 | Auth init hangs forever (no timeout failsafe) | `authSlice.ts` | Loading Trap |
+| 2026-03-11 | CI/CD deploys with wrong API key (Maps-only) | GitHub Actions secret | Config Mismatch |
+
+---
+
+## Reference: Loading State Trap Fix
+
+```typescript
+// BAD: loading gate with no timeout — hangs forever if service fails silently
+initializeAuthListener: () => {
+    return onAuthStateChanged(auth, (user) => {
+        set({ user, authLoading: false });
+    });
+    // If onAuthStateChanged never fires (blocked API key, network down),
+    // authLoading stays true → app stuck on <LoadingFallback /> forever
+}
+
+// GOOD: timeout failsafe forces fallthrough after 10s
+initializeAuthListener: () => {
+    let hasResolved = false;
+    const timeoutId = setTimeout(() => {
+        if (!hasResolved) {
+            logger.error('[Auth] Timed out after 10s');
+            set({ authLoading: false, authError: 'Service unavailable. Try again.' });
+        }
+    }, 10_000);
+
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        hasResolved = true;
+        clearTimeout(timeoutId);
+        set({ user, authLoading: false });
+    });
+
+    return () => { clearTimeout(timeoutId); unsubscribe(); };
+}
+```
