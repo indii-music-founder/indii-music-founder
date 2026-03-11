@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.18.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.17.0...v1.18.0) (2026-03-11)
+
+
+### Features
+
+* GIF versions of all 5 banner animations ([5e0af75](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/5e0af7551357be79439fdfaf7fd5d25a161cc239))
+
 ## [1.17.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.16.0...v1.17.0) (2026-03-11)
 
 
