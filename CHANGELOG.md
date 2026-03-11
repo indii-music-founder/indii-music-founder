@@ -2,6 +2,13 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.15.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.1...v1.15.0) (2026-03-11)
+
+
+### Features
+
+* Timeline Orchestrator + Inngest autonomous milestone execution ([b724d86](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b724d86eeb56fd290a1ebdb795f0f24ae1f908ec))
+
 ## [1.14.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.0...v1.14.1) (2026-03-11)
 
 
