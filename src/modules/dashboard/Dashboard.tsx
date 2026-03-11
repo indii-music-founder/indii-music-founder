@@ -15,14 +15,14 @@ export default function Dashboard() {
             {/* Tab Bar */}
             <div className="flex-shrink-0 border-b border-white/5 px-6 flex gap-6">
                 {([
-                    { id: 'agent', label: 'Agent Workspace', icon: Bot },
-                    { id: 'custom', label: 'My Dashboard', icon: LayoutDashboard },
-                ] as { id: DashboardTab; label: string; icon: React.ElementType }[]).map(({ id, label, icon: Icon }) => (
+                    { id: 'agent', label: 'Agent Workspace', icon: Bot, activeClass: 'border-indigo-500 text-indigo-400' },
+                    { id: 'custom', label: 'My Dashboard', icon: LayoutDashboard, activeClass: 'border-white text-white' },
+                ] as const).map(({ id, label, icon: Icon, activeClass }) => (
                     <button
                         key={id}
-                        onClick={() => setActiveTab(id)}
+                        onClick={() => setActiveTab(id as DashboardTab)}
                         className={`flex items-center gap-2 h-12 text-xs font-bold border-b-2 transition-all ${activeTab === id
-                            ? 'border-dept-marketing text-dept-marketing'
+                            ? activeClass
                             : 'border-transparent text-muted-foreground hover:text-white'
                             }`}
                     >

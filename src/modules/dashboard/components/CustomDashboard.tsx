@@ -13,6 +13,13 @@ import {
     Edit3,
     BarChart3,
     Undo2,
+    Users,
+    Activity,
+    CheckSquare,
+    ThumbsUp,
+    Palette,
+    ShoppingBag,
+    MapPin,
 } from 'lucide-react';
 import { useStore } from '@/core/store';
 import { revenueService } from '@/services/RevenueService';
@@ -22,7 +29,7 @@ import type { RevenueStats } from '@/services/revenue/schema';
 /*  Item 159 — Customizable Dashboard                                  */
 /* ================================================================== */
 
-type WidgetType = 'streams_today' | 'revenue_mtd' | 'next_release' | 'top_track' | 'agent_activity';
+type WidgetType = 'streams_today' | 'revenue_mtd' | 'next_release' | 'top_track' | 'agent_activity' | 'audience_growth' | 'active_campaigns' | 'pending_tasks' | 'social_engagement' | 'brand_identity' | 'merch_sales' | 'tour_status';
 
 interface Widget {
     id: string;
@@ -36,6 +43,13 @@ const WIDGET_DEFINITIONS: Record<WidgetType, { label: string; icon: React.Elemen
     next_release: { label: 'Next Release', icon: Calendar, description: 'Countdown to your next scheduled release' },
     top_track: { label: 'Top Track', icon: TrendingUp, description: 'Your best performing track right now' },
     agent_activity: { label: 'Agent Activity', icon: Bot, description: 'Recent AI agent tasks and completions' },
+    audience_growth: { label: 'Audience Growth', icon: Users, description: 'New listeners and followers across platforms' },
+    active_campaigns: { label: 'Active Campaigns', icon: Activity, description: 'Currently running marketing campaigns' },
+    pending_tasks: { label: 'Pending Tasks', icon: CheckSquare, description: 'Tasks requiring your attention' },
+    social_engagement: { label: 'Social Engagement', icon: ThumbsUp, description: 'Likes, comments, and shares on recent posts' },
+    brand_identity: { label: 'Brand Integrity', icon: Palette, description: 'Visual identity and brand compliance scores' },
+    merch_sales: { label: 'Merchandise', icon: ShoppingBag, description: 'Recent sales and inventory alerts' },
+    tour_status: { label: 'Tour & Shows', icon: MapPin, description: 'Ticket sales and upcoming tour dates' },
 };
 
 const DEFAULT_WIDGETS: Widget[] = [
@@ -43,6 +57,8 @@ const DEFAULT_WIDGETS: Widget[] = [
     { id: 'w2', type: 'revenue_mtd', order: 1 },
     { id: 'w3', type: 'next_release', order: 2 },
     { id: 'w4', type: 'top_track', order: 3 },
+    { id: 'w5', type: 'audience_growth', order: 4 },
+    { id: 'w6', type: 'active_campaigns', order: 5 },
 ];
 
 const STORAGE_KEY = 'indiiOS_custom_dashboard_widgets';
@@ -70,11 +86,11 @@ function StreamsTodayWidget() {
                 <div className="w-6 h-6 rounded-lg bg-purple-500/10 flex items-center justify-center">
                     <Music size={12} className="text-purple-400" />
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Streams Today</span>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Streams Today</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">--</p>
-                <p className="text-[10px] text-gray-500 font-bold mt-1">Connect a DSP to see streams</p>
+                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Connect a DSP to see streams</p>
             </div>
             <div className="mt-3 flex items-end gap-1 h-8">
                 {[0, 0, 0, 0, 0, 0, 0].map((_, i) => (
@@ -106,14 +122,14 @@ function RevenueMTDWidget() {
                 <div className="w-6 h-6 rounded-lg bg-green-500/10 flex items-center justify-center">
                     <DollarSign size={12} className="text-green-400" />
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Revenue MTD</span>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Revenue MTD</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">{revenue !== null ? formatCurrency(revenue) : '--'}</p>
-                <p className="text-[10px] text-gray-500 mt-1">{dayOfMonth} days into {monthName}</p>
+                <p className="text-4xl font-semibold text-white tracking-tight">{revenue !== null ? formatCurrency(revenue) : '--'}</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">{dayOfMonth} days into {monthName}</p>
             </div>
             <div className="mt-3">
-                <p className="text-[10px] text-gray-600">Revenue goal not set</p>
+                <p className="text-[10px] text-white/30">Revenue goal not set</p>
             </div>
         </div>
     );
@@ -126,12 +142,12 @@ function NextReleaseWidget() {
                 <div className="w-6 h-6 rounded-lg bg-blue-500/10 flex items-center justify-center">
                     <Calendar size={12} className="text-blue-400" />
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Next Release</span>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Next Release</span>
             </div>
             <div>
-                <p className="text-3xl font-black text-white">--</p>
+                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
                 <p className="text-xs font-bold text-gray-500 mt-1">No upcoming releases</p>
-                <p className="text-[10px] text-gray-600">Schedule a release to see countdown</p>
+                <p className="text-[10px] text-white/30">Schedule a release to see countdown</p>
             </div>
             <div className="mt-3 p-2 rounded-lg bg-blue-500/5 border border-blue-500/10">
                 <p className="text-[10px] text-blue-400/60">No distribution submissions pending</p>
@@ -147,23 +163,23 @@ function TopTrackWidget() {
                 <div className="w-6 h-6 rounded-lg bg-amber-500/10 flex items-center justify-center">
                     <TrendingUp size={12} className="text-amber-400" />
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Top Track</span>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Top Track</span>
             </div>
             <div>
-                <p className="text-sm font-black text-gray-500">No tracks yet</p>
+                <p className="text-sm font-semibold text-white/50 tracking-wide">No tracks yet</p>
                 <p className="text-[10px] text-gray-600 mb-2">Upload your first release</p>
                 <div className="space-y-1">
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-500">Streams</span>
-                        <span className="text-[10px] font-bold text-gray-600">--</span>
+                        <span className="text-[10px] text-white/40">Streams</span>
+                        <span className="text-[10px] font-semibold text-white/70">--</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-500">Revenue</span>
-                        <span className="text-[10px] font-bold text-gray-600">--</span>
+                        <span className="text-[10px] text-white/40">Revenue</span>
+                        <span className="text-[10px] font-semibold text-white/70">--</span>
                     </div>
                     <div className="flex items-center justify-between">
-                        <span className="text-[10px] text-gray-500">Save Rate</span>
-                        <span className="text-[10px] font-bold text-gray-600">--</span>
+                        <span className="text-[10px] text-white/40">Save Rate</span>
+                        <span className="text-[10px] font-semibold text-white/70">--</span>
                     </div>
                 </div>
             </div>
@@ -178,13 +194,155 @@ function AgentActivityWidget() {
                 <div className="w-6 h-6 rounded-lg bg-indigo-500/10 flex items-center justify-center">
                     <Bot size={12} className="text-indigo-400" />
                 </div>
-                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Agent Activity</span>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Agent Activity</span>
             </div>
             <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
                     <Bot size={24} className="text-gray-700 mx-auto mb-2" />
-                    <p className="text-[10px] text-gray-600">No recent agent activity</p>
+                    <p className="text-[10px] text-white/30">No recent agent activity</p>
                 </div>
+            </div>
+        </div>
+    );
+}
+
+function AudienceGrowthWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-pink-500/10 flex items-center justify-center">
+                    <Users size={12} className="text-pink-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Audience Growth</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">+0</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">New listeners this week</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">Connect social accounts to see data</p>
+            </div>
+        </div>
+    );
+}
+
+function ActiveCampaignsWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-teal-500/10 flex items-center justify-center">
+                    <Activity size={12} className="text-teal-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Active Campaigns</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Campaigns running now</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">Launch a campaign to track performance</p>
+            </div>
+        </div>
+    );
+}
+
+function PendingTasksWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-orange-500/10 flex items-center justify-center">
+                    <CheckSquare size={12} className="text-orange-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Pending Tasks</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Tasks require your attention</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">All caught up!</p>
+            </div>
+        </div>
+    );
+}
+
+function SocialEngagementWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <ThumbsUp size={12} className="text-cyan-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Social Engagement</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">--</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Avg. engagement rate</p>
+            </div>
+            <div className="mt-3 flex items-end gap-1 h-8">
+                {[0, 0, 0, 0, 0, 0, 0].map((_, i) => (
+                    <div key={i} className="flex-1 rounded-sm bg-cyan-500/10" style={{ height: '20%' }} />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function BrandIdentityWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-fuchsia-500/10 flex items-center justify-center">
+                    <Palette size={12} className="text-fuchsia-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Brand Integrity</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">98%</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Brand assets are fully synced</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">Ready for automated marketing</p>
+            </div>
+        </div>
+    );
+}
+
+function MerchSalesWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <ShoppingBag size={12} className="text-emerald-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Merchandise</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">$0</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Sales this week</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">Connect Shopify or set up print-on-demand</p>
+            </div>
+        </div>
+    );
+}
+
+function TourStatusWidget() {
+    return (
+        <div className="flex flex-col h-full justify-between">
+            <div className="flex items-center gap-2 mb-3">
+                <div className="w-6 h-6 rounded-lg bg-rose-500/10 flex items-center justify-center">
+                    <MapPin size={12} className="text-rose-400" />
+                </div>
+                <span className="text-[10px] font-semibold text-white/50 uppercase tracking-[0.15em]">Tour & Shows</span>
+            </div>
+            <div>
+                <p className="text-4xl font-semibold text-white tracking-tight">0</p>
+                <p className="text-[10px] text-indigo-200/50 mt-1 font-medium">Upcoming shows</p>
+            </div>
+            <div className="mt-3">
+                <p className="text-[10px] text-white/30">Route a new tour to start tracking</p>
             </div>
         </div>
     );
@@ -196,6 +354,13 @@ const WIDGET_RENDERERS: Record<WidgetType, () => React.ReactElement> = {
     next_release: () => <NextReleaseWidget />,
     top_track: () => <TopTrackWidget />,
     agent_activity: () => <AgentActivityWidget />,
+    audience_growth: () => <AudienceGrowthWidget />,
+    active_campaigns: () => <ActiveCampaignsWidget />,
+    pending_tasks: () => <PendingTasksWidget />,
+    social_engagement: () => <SocialEngagementWidget />,
+    brand_identity: () => <BrandIdentityWidget />,
+    merch_sales: () => <MerchSalesWidget />,
+    tour_status: () => <TourStatusWidget />,
 };
 
 /* ── Custom Dashboard ──────────────────────────────────────────────── */
@@ -297,12 +462,12 @@ export function CustomDashboard() {
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <div className="w-7 h-7 rounded-lg bg-dept-marketing/10 flex items-center justify-center">
-                        <LayoutDashboard size={14} className="text-dept-marketing" />
+                    <div className="w-8 h-8 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-inner shadow-indigo-500/10">
+                        <LayoutDashboard size={16} className="text-indigo-400" />
                     </div>
                     <div>
-                        <h2 className="text-sm font-bold text-white">Custom Dashboard</h2>
-                        <p className="text-[10px] text-gray-500">{widgets.length} widget{widgets.length !== 1 ? 's' : ''} · drag to reorder</p>
+                        <h2 className="text-xl font-semibold text-white tracking-wide">My Dashboard</h2>
+                        <p className="text-[10px] text-indigo-200/60 font-medium uppercase tracking-[0.1em] mt-0.5">{widgets.length} widget{widgets.length !== 1 ? 's' : ''} · drag to reorder</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -320,7 +485,7 @@ export function CustomDashboard() {
                     <button
                         onClick={() => setIsEditMode((v) => !v)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-bold transition-colors ${isEditMode
-                            ? 'bg-dept-marketing/10 text-dept-marketing border border-dept-marketing/20'
+                            ? 'bg-indigo-500/15 text-indigo-400 border border-indigo-500/20'
                             : 'bg-white/5 text-gray-400 hover:bg-white/10'
                             }`}
                     >
@@ -329,7 +494,7 @@ export function CustomDashboard() {
                     </button>
                     <button
                         onClick={() => setShowPicker((v) => !v)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-dept-marketing/10 hover:bg-dept-marketing/20 text-dept-marketing text-[10px] font-bold transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/20 text-indigo-400 text-[10px] font-bold transition-colors"
                     >
                         <Plus size={10} />
                         Add Widget
@@ -394,9 +559,9 @@ export function CustomDashboard() {
                                 onDragOver={(e) => handleDragOver(e, widget.id)}
                                 onDrop={(e) => handleDrop(e, widget.id)}
                                 onDragEnd={() => { setDragId(null); setDragOverId(null); }}
-                                className={`relative rounded-xl p-4 border transition-all min-h-[180px] ${isOver
-                                    ? 'border-dept-marketing/40 bg-dept-marketing/5'
-                                    : 'border-white/5 bg-white/[0.02]'
+                                className={`relative rounded-2xl p-4 border transition-all min-h-[180px] shadow-lg ${isOver
+                                    ? 'border-indigo-500/40 bg-indigo-500/5 shadow-indigo-500/10'
+                                    : 'border-white/5 bg-white/[0.02] hover:bg-white/[0.04] hover:border-white/10 shadow-black/20'
                                     } ${isEditMode ? 'cursor-grab active:cursor-grabbing' : ''}`}
                             >
                                 {/* Edit mode controls */}
@@ -408,7 +573,7 @@ export function CustomDashboard() {
                                         </div>
                                         <button
                                             onClick={() => removeWidget(widget.id)}
-                                            className="w-5 h-5 rounded-full bg-red-500/10 hover:bg-red-500/30 text-red-400 flex items-center justify-center transition-colors"
+                                            className="w-5 h-5 rounded-full bg-slate-500/10 hover:bg-slate-500/30 border border-slate-500/20 text-slate-400 flex items-center justify-center transition-colors shadow-sm"
                                         >
                                             <X size={10} />
                                         </button>
