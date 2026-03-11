@@ -288,13 +288,31 @@
     touch-action: manipulation;
   }
 
-  /* Ensure adequate touch targets */
-  button,
-  a,
+  /* Ensure adequate touch targets (only for standalone interactive elements) */
+  button:not(.inline-btn),
+  a:not(.inline-link),
   [role="button"] {
     min-height: 44px;
     min-width: 44px;
     touch-action: manipulation;
+  }
+}
+
+/* Phone-specific optimizations (≤ 430px — iPhone Pro Max class) */
+@media (max-width: 430px) {
+  /* Reduce generous paddings on phone */
+  .responsive-padding {
+    padding: 0.75rem !important;
+  }
+
+  /* Force single-column on phone for grids that don't have explicit mobile breakpoints */
+  .mobile-single-col {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure tab bar safe area bottom padding */
+  .mobile-safe-bottom {
+    padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px));
   }
 }
 

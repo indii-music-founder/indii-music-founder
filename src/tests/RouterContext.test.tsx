@@ -25,19 +25,36 @@ vi.mock('../core/store', () => {
         user: { uid: 'test-uid' },
         authLoading: false,
         currentModule: 'dashboard',
+        setModule: vi.fn(),
         userProfile: {},
+        isSidebarOpen: true,
+        toggleSidebar: vi.fn(),
+        isAgentOpen: false,
+        toggleAgentWindow: vi.fn(),
         initializeAuthListener: vi.fn(() => () => { }),
         loadUserProfile: vi.fn(),
         initializeHistory: vi.fn(),
         loadProjects: vi.fn(),
+        loadSessions: vi.fn(),
         loginWithGoogle: vi.fn(),
+        pendingCount: 0,
+        isSyncing: false,
+        lastSyncError: null,
+        setPendingCount: vi.fn(),
+        setIsSyncing: vi.fn(),
+        setLastSyncError: vi.fn(),
+        setSidecarStatus: vi.fn(),
+        setIsOffline: vi.fn(),
     };
 
-    const useStoreMock = vi.fn(() => mockState);
-
+    const useStoreMock = vi.fn((selector?: any) => {
+        if (selector && typeof selector === 'function') {
+            return selector(mockState);
+        }
+        return mockState;
+    });
 
     (useStoreMock as any).setState = vi.fn();
-
     (useStoreMock as any).getState = vi.fn(() => mockState);
 
     return {

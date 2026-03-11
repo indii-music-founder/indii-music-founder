@@ -9,6 +9,7 @@ import BrowserAgentTester from './BrowserAgentTester';
 import { VenueCard } from './VenueCard';
 import { ScoutMapVisualization } from './ScoutMapVisualization';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { useMobile } from '@/hooks/useMobile';
 import { AgentSidebar } from './AgentSidebar';
 import { AgentToolbar } from './AgentToolbar';
 import { ScoutControls } from './ScoutControls';
@@ -191,10 +192,10 @@ const AgentDashboard: React.FC = () => {
     const [isAutonomous, setIsAutonomous] = useState(false);
     const [scanStatus, setScanStatus] = useState<string>('Ready to deploy');
 
-    // Check if device is mobile AFTER hooks are called
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // Reactive mobile detection via centralized hook
+    const { isAnyPhone } = useMobile();
 
-    if (isMobile) {
+    if (isAnyPhone) {
         return (
             <MobileOnlyWarning
                 featureName="Agent Dashboard"

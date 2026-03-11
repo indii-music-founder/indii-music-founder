@@ -8,6 +8,7 @@ import { OnTheRoadTab } from './components/OnTheRoadTab';
 import { useTouring } from './hooks/useTouring';
 import { Itinerary } from './types';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { useMobile } from '@/hooks/useMobile';
 import { RoadManagerSidebar, TouringTab } from './components/RoadManagerSidebar';
 import { RiderChecklist } from './components/RiderChecklist';
 import { MapPin, CloudSun, Phone, Fuel, Calendar, CheckSquare, AlertTriangle, Navigation } from 'lucide-react';
@@ -77,8 +78,8 @@ const RoadManager: React.FC = () => {
     const [fuelLogistics, setFuelLogistics] = useState<FuelLogistics | null>(null);
     const [isCalculatingFuel, setIsCalculatingFuel] = useState(false);
 
-    // Check if device is mobile AFTER hooks are called
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // Reactive mobile detection via centralized hook
+    const { isAnyPhone: isMobile } = useMobile();
 
     if (isMobile) {
         return (

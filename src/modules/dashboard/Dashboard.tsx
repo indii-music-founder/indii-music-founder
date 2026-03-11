@@ -4,16 +4,18 @@ import AgentWorkspace from './components/AgentWorkspace';
 import { CustomDashboard } from './components/CustomDashboard';
 import { LayoutDashboard, Bot } from 'lucide-react';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
+import { useMobile } from '@/hooks/useMobile';
 
 type DashboardTab = 'agent' | 'custom';
 
 export default function Dashboard() {
     const [activeTab, setActiveTab] = useState<DashboardTab>('agent');
+    const { isAnyPhone } = useMobile();
 
     return (
         <ModuleErrorBoundary moduleName="Dashboard">
             {/* Tab Bar */}
-            <div className="flex-shrink-0 border-b border-white/5 px-6 flex gap-6">
+            <div className={`flex-shrink-0 border-b border-white/5 flex gap-6 ${isAnyPhone ? 'px-3 gap-3' : 'px-6'}`}>
                 {([
                     { id: 'agent', label: 'Agent Workspace', icon: Bot, activeClass: 'border-indigo-500 text-indigo-400' },
                     { id: 'custom', label: 'My Dashboard', icon: LayoutDashboard, activeClass: 'border-white text-white' },
@@ -35,7 +37,7 @@ export default function Dashboard() {
             {/* Content */}
             <div className="flex-1 overflow-hidden relative">
                 {activeTab === 'agent' ? (
-                    <div className="min-h-full bg-bg-dark p-8 overflow-y-auto w-full">
+                    <div className={`min-h-full bg-bg-dark overflow-y-auto w-full ${isAnyPhone ? 'p-3' : 'p-8'}`}>
                         <div className="max-w-7xl mx-auto">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}

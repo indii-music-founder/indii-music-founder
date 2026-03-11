@@ -48,7 +48,7 @@ export function EmptyState({ onCommandSubmit }: EmptyStateProps) {
     ];
 
     return (
-        <div className="flex-1 flex flex-col items-center justify-center p-8 max-w-6xl mx-auto w-full">
+        <div className="flex-1 flex flex-col items-center justify-center p-3 sm:p-8 max-w-6xl mx-auto w-full">
             <motion.div
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}

@@ -17,6 +17,7 @@ import { Status, SavedWorkflow } from './types';
 import { getUserWorkflows } from './services/workflowPersistence';
 import { ModuleErrorBoundary } from '@/core/components/ModuleErrorBoundary';
 import { MobileOnlyWarning } from '@/core/components/MobileOnlyWarning';
+import { useMobile } from '@/hooks/useMobile';
 import { logger } from '@/utils/logger';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
@@ -75,8 +76,8 @@ export default function WorkflowLab() {
         return () => clearTimeout(saveTimer);
     }, [nodes, edges, workflowName, currentWorkflowId, currentUser, setNodes]);
 
-    // Check if device is mobile AFTER hooks are called
-    const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
+    // Reactive mobile detection via centralized hook
+    const { isAnyPhone: isMobile } = useMobile();
 
     // Local Draft Auto-Save
     useEffect(() => {

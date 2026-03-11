@@ -47,9 +47,8 @@ describe('CampaignDashboard Pulse (Loading States)', () => {
         // Assert: We expect a loader
         expect(screen.getByTestId('marketing-dashboard-loader')).toBeInTheDocument();
 
-        // Note: "Active Campaigns" appears in the Performance sidebar which is always visible.
-        // We just ensure the main loader is taking priority.
-        expect(screen.getByText('Loading campaigns...')).toBeInTheDocument();
+        // The loader uses aria-label instead of visible text
+        expect(screen.getByLabelText('Loading campaigns')).toBeInTheDocument();
     });
 
     it('shows the campaign list when loading completes', () => {
