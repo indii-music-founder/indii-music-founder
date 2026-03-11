@@ -470,7 +470,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                     "flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-white text-xs font-bold transition-all shadow-lg focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none",
                                     isIndiiMode
                                         ? "bg-purple-600 hover:bg-purple-500 shadow-purple-500/20"
-                                        : `${colors.bg} hover:brightness-110`
+                                        : "bg-white/20 hover:bg-white/30 border border-white/10"
                                 )}
                                 data-testid="command-bar-run-btn"
                             >

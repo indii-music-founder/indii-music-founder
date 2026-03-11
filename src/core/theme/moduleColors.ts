@@ -264,14 +264,14 @@ export const moduleColors: Record<ModuleId, ModuleColor> = {
         cssVar: '--color-dept-creative',
     },
     agent: {
-        // Agent uses Creative's purple (AI magic)
-        text: 'text-dept-creative',
-        bg: 'bg-dept-creative/10',
-        border: 'border-dept-creative',
-        ring: 'focus-within:ring-dept-creative/50',
-        hoverText: 'hover:text-dept-creative',
-        hoverBg: 'hover:bg-dept-creative/5',
-        cssVar: '--color-dept-creative',
+        // Agent — Cyan for AI intelligence, distinct from creative purple
+        text: 'text-cyan-400',
+        bg: 'bg-cyan-500/10',
+        border: 'border-cyan-500',
+        ring: 'focus-within:ring-cyan-500/50',
+        hoverText: 'hover:text-cyan-300',
+        hoverBg: 'hover:bg-cyan-500/5',
+        cssVar: '--color-dept-social',
     },
     distribution: {
         // Distribution - Electric Blue #2196F3: Data flow, logistics, global reach
