@@ -21,7 +21,7 @@ const STATUS_CONFIG: Record<BatchedTask['status'], {
     },
     completed: {
         icon: CheckCircle2,
-        color: 'text-emerald-400',
+        color: 'text-cyan-400',
         label: 'Done',
     },
     error: {

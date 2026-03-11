@@ -1,5 +1,5 @@
 import React, { useState, useRef, useMemo, useCallback, memo, useEffect, type MutableRefObject } from 'react';
-import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, AlignLeft, AlignCenter, AlignRight, Zap, Lightbulb } from 'lucide-react';
+import { ArrowRight, Loader2, Paperclip, Camera, Mic, ChevronUp, PanelTopClose, PanelTopOpen, Database, Sparkles, AlignLeft, AlignCenter, AlignRight } from 'lucide-react';
 import { useToast } from '@/core/context/ToastContext';
 import { agentService } from '@/services/agent/AgentService';
 import { agentRegistry } from '@/services/agent/registry';
@@ -21,6 +21,7 @@ import { DelegateMenu } from './DelegateMenu';
 import { AttachmentList } from './AttachmentList';
 import { logger } from '@/utils/logger';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { IndiiFavicon } from '@/components/shared/IndiiFavicon';
 
 interface PromptAreaProps {
     className?: string;
@@ -328,7 +329,7 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                                         !isIndiiMode ? `${colors.bg} ${colors.border} ${colors.text}` : "bg-white/5 border-white/10 text-gray-400 hover:text-white"
                                     )}
                                 >
-                                    <div className={cn("w-1.5 h-1.5 rounded-full", !isIndiiMode ? "bg-green-400 animate-pulse" : "bg-gray-600")} />
+                                    <div className={cn("w-1.5 h-1.5 rounded-full", !isIndiiMode ? "bg-cyan-400 animate-pulse" : "bg-gray-600")} />
                                 </button>
                                 <DelegateMenu
                                     isOpen={openDelegate}
@@ -417,15 +418,15 @@ export const PromptArea = memo(({ className, isDocked }: PromptAreaProps) => {
                         <button
                             onClick={() => setChatChannel(isIndiiMode ? 'agent' : 'indii')}
                             className={cn(
-                                "p-1.5 rounded-lg transition-all border",
+                                "w-8 h-8 rounded-lg transition-all border flex items-center justify-center overflow-hidden",
                                 isIndiiMode
-                                    ? "bg-purple-600/30 border-purple-500/40 text-purple-300 hover:bg-purple-600/50"
-                                    : "bg-green-600/30 border-green-500/40 text-green-300 hover:bg-green-600/50"
+                                    ? "bg-purple-600/30 border-purple-500/40 hover:bg-purple-600/50"
+                                    : "bg-cyan-600/30 border-cyan-500/40 hover:bg-cyan-600/50"
                             )}
                             aria-label={isIndiiMode ? "Switch to Agent mode" : "Switch to indii mode"}
                             title={isIndiiMode ? "indii mode — click for Agent" : "Agent mode — click for indii"}
                         >
-                            {isIndiiMode ? <Zap size={12} /> : <Lightbulb size={12} />}
+                            <IndiiFavicon size={18} />
                         </button>
 
                         {!isDocked && (

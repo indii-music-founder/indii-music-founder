@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SpecializedAgent } from '@/services/agent/types';
 import { BatchedTask } from '@/services/agent/MaestroBatchingService';
 import { logger } from '@/utils/logger';
+import type { CanvasItem } from '@/modules/dashboard/components/WorkspaceCanvas';
 // import { agentRegistry } from '@/services/agent/registry'; // Removed to break circular dependency
 
 const AgentSchema = z.object({
@@ -127,6 +128,12 @@ export interface AgentSlice {
     setAgentWindowSize: (size: { width: number; height: number }) => void;
     loadSessions: () => Promise<void>;
     loadAgents: () => Promise<void>;
+
+    // Canvas Items — rich media output from agent tasks
+    canvasItems: CanvasItem[];
+    addCanvasItem: (item: CanvasItem) => void;
+    removeCanvasItem: (id: string) => void;
+    clearCanvasItems: () => void;
 }
 
 export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
@@ -140,6 +147,8 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     chatChannel: 'indii', // Default to indii (main orchestrator)
     activeAgentProvider: 'direct',
     isKnowledgeBaseEnabled: false,
+
+    canvasItems: [],
 
     isAgentOpen: false,
     isCommandBarDetached: false,
@@ -397,6 +406,10 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
 
     setAgentProcessing: (isProcessing) => set({ isAgentProcessing: isProcessing }),
     setAgentWindowSize: (size) => set({ agentWindowSize: size }),
+
+    addCanvasItem: (item) => set((state) => ({ canvasItems: [...state.canvasItems, item] })),
+    removeCanvasItem: (id) => set((state) => ({ canvasItems: state.canvasItems.filter((c) => c.id !== id) })),
+    clearCanvasItems: () => set({ canvasItems: [] }),
 
     loadSessions: async () => {
         const { sessionService } = await import('@/services/agent/SessionService');

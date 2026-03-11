@@ -60,7 +60,7 @@ const BrowserAgentTester: React.FC = () => {
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <div className="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                    <Terminal className="text-emerald-400" size={20} /> Autonomous Agent Lab
+                    <Terminal className="text-cyan-400" size={20} /> Autonomous Agent Lab
                 </h2>
 
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -73,7 +73,7 @@ const BrowserAgentTester: React.FC = () => {
                                     id="agent-url"
                                     value={url}
                                     onChange={(e) => setUrl(e.target.value)}
-                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                    className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-10 pr-4 py-2 text-white focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
                                     placeholder="https://..."
                                 />
                             </div>
@@ -85,7 +85,7 @@ const BrowserAgentTester: React.FC = () => {
                                 id="agent-goal"
                                 value={goal}
                                 onChange={(e) => setGoal(e.target.value)}
-                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white h-32 resize-none focus:ring-2 focus:ring-emerald-500 outline-none transition-all"
+                                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2 text-white h-32 resize-none focus:ring-2 focus:ring-cyan-500 outline-none transition-all"
                                 placeholder="What should the agent do?"
                             />
                         </div>
@@ -93,7 +93,7 @@ const BrowserAgentTester: React.FC = () => {
                         <button
                             onClick={runAgent}
                             disabled={isRunning}
-                            className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]"
+                            className="w-full bg-cyan-600 hover:bg-cyan-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 rounded-lg flex items-center justify-center gap-2 transition-all transform active:scale-[0.98]"
                         >
                             {isRunning ? (
                                 <>
@@ -128,15 +128,15 @@ const BrowserAgentTester: React.FC = () => {
                                 <div key={i} className={
                                     log.includes('[ERROR]') ? 'text-red-400' :
                                         log.includes('[Driver] AI Thought') ? 'text-blue-400' :
-                                            log.includes('[Driver] AI Action') ? 'text-emerald-400 font-bold' :
+                                            log.includes('[Driver] AI Action') ? 'text-cyan-400 font-bold' :
                                                 'text-slate-300'
                                 }>
                                     {log}
                                 </div>
                             ))}
                             {isRunning && (
-                                <div className="text-emerald-400 animate-pulse flex items-center gap-2">
-                                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></span>
+                                <div className="text-cyan-400 animate-pulse flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-cyan-400 rounded-full"></span>
                                     Wait for AI reasoning...
                                 </div>
                             )}
@@ -149,7 +149,7 @@ const BrowserAgentTester: React.FC = () => {
             {/* Quick Tips */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="bg-slate-900/50 border border-slate-800/50 p-4 rounded-xl flex items-start gap-3">
-                    <div className="bg-emerald-500/10 p-2 rounded-lg text-emerald-400">
+                    <div className="bg-cyan-500/10 p-2 rounded-lg text-cyan-400">
                         <ImageIcon size={18} />
                     </div>
                     <div>

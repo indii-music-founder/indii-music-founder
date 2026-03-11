@@ -26,7 +26,7 @@ import { useStore } from '@/core/store';
 import { useShallow } from 'zustand/react/shallow';
 
 const STATUS_COLORS: Record<string, string> = {
-    active: 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30',
+    active: 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30',
     scheduled: 'bg-blue-500/20 text-blue-400 border-blue-500/30',
     expired: 'bg-slate-700/50 text-slate-500 border-slate-700',
 };
@@ -51,7 +51,7 @@ const CampaignsTab: React.FC = () => {
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Megaphone size={18} className="text-emerald-400" /> Campaigns
+                    <Megaphone size={18} className="text-cyan-400" /> Campaigns
                 </h2>
                 <button
                     onClick={fetchCampaigns}
@@ -74,7 +74,7 @@ const CampaignsTab: React.FC = () => {
                     <p className="text-sm">No campaigns yet. Create one in the Marketing module.</p>
                     <a
                         href="?module=marketing"
-                        className="text-xs text-emerald-400 hover:text-emerald-300 flex items-center gap-1 transition-colors"
+                        className="text-xs text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition-colors"
                     >
                         Go to Marketing <ExternalLink size={10} />
                     </a>
@@ -119,9 +119,9 @@ const InboxTab: React.FC = () => {
         <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-6 space-y-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-white flex items-center gap-2">
-                    <Mail size={18} className="text-emerald-400" /> Inbox
+                    <Mail size={18} className="text-cyan-400" /> Inbox
                     {unreadCount > 0 && (
-                        <span className="bg-emerald-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
+                        <span className="bg-cyan-500 text-white text-xs px-1.5 py-0.5 rounded-full font-bold">
                             {unreadCount}
                         </span>
                     )}
@@ -152,7 +152,7 @@ const InboxTab: React.FC = () => {
                                 </p>
                                 <p className="text-xs text-slate-600 truncate mt-0.5">{msg.preview}</p>
                             </div>
-                            {msg.unread && <div className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0 mt-1.5" />}
+                            {msg.unread && <div className="w-2 h-2 bg-cyan-400 rounded-full flex-shrink-0 mt-1.5" />}
                         </div>
                     ))}
                 </div>
@@ -265,9 +265,9 @@ const AgentDashboard: React.FC = () => {
                     <AgentToolbar
                         left={
                             <div className="flex items-center gap-3">
-                                <h2 className="font-bold text-lg text-white tracking-tight">Agent Tools</h2>
+                                <h2 className="font-bold text-lg text-white tracking-tight">Booking Agent</h2>
                                 <span className="text-slate-600">/</span>
-                                <span className="flex items-center gap-2 text-emerald-400 text-sm font-medium bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                                <span className="flex items-center gap-2 text-cyan-400 text-sm font-medium bg-cyan-500/10 px-2 py-0.5 rounded-full border border-cyan-500/20">
                                     <Sparkles size={12} />
                                     {activeTab === 'scout' ? 'The Scout' : activeTab === 'browser' ? 'Browser Agent' : activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
                                 </span>

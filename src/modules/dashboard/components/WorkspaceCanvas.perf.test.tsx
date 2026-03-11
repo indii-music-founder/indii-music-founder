@@ -2,57 +2,64 @@ import { render } from '@testing-library/react';
 import { WorkspaceCanvas } from './WorkspaceCanvas';
 import { vi } from 'vitest';
 
-// Mock dependencies
-vi.mock('@/core/store', () => ({
-    useStore: vi.fn(() => ({ isAgentOpen: false }))
+// Mock motion/react for tests
+vi.mock('motion/react', () => ({
+    motion: {
+        div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    },
+    AnimatePresence: ({ children }: any) => <>{children}</>,
 }));
 
-describe('WorkspaceCanvas Performance', () => {
-    let contextMock: any;
-
-    beforeEach(() => {
-        // Setup Canvas Mock
-        contextMock = {
-            fillStyle: '',
-            strokeStyle: '',
-            lineWidth: 1,
-            fillRect: vi.fn(),
-            beginPath: vi.fn(),
-            moveTo: vi.fn(),
-            lineTo: vi.fn(),
-            stroke: vi.fn(),
-            clearRect: vi.fn(),
-        };
-
-        vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(contextMock as any);
-
-        // Mock dimensions
-        Object.defineProperty(HTMLElement.prototype, 'clientWidth', { configurable: true, value: 800 });
-        Object.defineProperty(HTMLElement.prototype, 'clientHeight', { configurable: true, value: 600 });
-        Object.defineProperty(window, 'innerWidth', { configurable: true, value: 800 });
-        Object.defineProperty(window, 'innerHeight', { configurable: true, value: 600 });
+describe('WorkspaceCanvas', () => {
+    it('renders empty state when no items provided', () => {
+        const { getByText } = render(<WorkspaceCanvas items={[]} />);
+        expect(getByText('Canvas ready')).toBeTruthy();
     });
 
-    afterEach(() => {
-        vi.restoreAllMocks();
+    it('renders an image card when an image item is provided', () => {
+        const items = [
+            {
+                id: 'test-1',
+                type: 'image' as const,
+                title: 'Test Image',
+                createdAt: Date.now(),
+                imageUrl: 'https://example.com/image.png',
+                imagePrompt: 'A beautiful landscape',
+            },
+        ];
+        const { getByText } = render(<WorkspaceCanvas items={items} />);
+        expect(getByText('Test Image')).toBeTruthy();
     });
 
-    it('batches stroke calls to reduce rendering overhead', () => {
-        // Mock requestAnimationFrame to run only once immediately
-        vi.spyOn(window, 'requestAnimationFrame').mockImplementation((cb) => {
-           // Do not loop
-           return 0;
-        });
+    it('renders a loading card with custom label', () => {
+        const items = [
+            {
+                id: 'loading-1',
+                type: 'loading' as const,
+                title: 'Generating artwork',
+                createdAt: Date.now(),
+                loadingLabel: 'Creating your image…',
+            },
+        ];
+        const { getByText } = render(<WorkspaceCanvas items={items} />);
+        expect(getByText('Creating your image…')).toBeTruthy();
+    });
 
-        render(<WorkspaceCanvas />);
-
-        // Expected grid size is 40
-        // 800 / 40 = 20 cols
-        // 600 / 40 = 15 rows
-        // Total cells = 300
-
-        // In unoptimized code, stroke is called for each cell -> ~300 times
-        // We assert it is called exactly once (batched)
-        expect(contextMock.stroke).toHaveBeenCalledTimes(1);
+    it('calls onDismiss when remove button is clicked', async () => {
+        const onDismiss = vi.fn();
+        const items = [
+            {
+                id: 'doc-1',
+                type: 'document' as const,
+                title: 'Brand Report',
+                createdAt: Date.now(),
+                content: 'This is brand report content.',
+            },
+        ];
+        const { getByTitle } = render(<WorkspaceCanvas items={items} onDismiss={onDismiss} />);
+        // Remove button should exist (visible on hover — rendered in DOM regardless)
+        const removeBtn = getByTitle('Remove');
+        removeBtn.click();
+        expect(onDismiss).toHaveBeenCalledWith('doc-1');
     });
 });
