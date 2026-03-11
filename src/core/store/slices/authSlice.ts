@@ -157,9 +157,25 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
             return () => { };
         }
 
+        // TIMEOUT FAILSAFE: If onAuthStateChanged never fires (API key blocked,
+        // network down, SDK error), fall through to login after 10s instead of
+        // spinning forever. See: API_KEY_SERVICE_BLOCKED incident 2026-03-11.
+        let hasResolved = false;
+        const timeoutId = setTimeout(() => {
+            if (!hasResolved) {
+                logger.error('[Auth] Auth listener timed out after 10s — falling through to login.');
+                set({
+                    authLoading: false,
+                    authError: 'Authentication timed out. The service may be temporarily unavailable. Please try again.',
+                });
+            }
+        }, 10_000);
+
         // Return unsubscribe function
-        return onAuthStateChanged(auth, async (user) => {
-            // Log removed (Platinum Polish)
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            hasResolved = true;
+            clearTimeout(timeoutId);
+
             set({ user, authLoading: false });
 
             if (user) {
@@ -171,7 +187,6 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                     const userSnap = await getDoc(userRef);
 
                     if (!userSnap.exists()) {
-                        // console.info("[Auth] Creating new user profile for", user.uid);
                         await setDoc(userRef, {
                             email: user.email,
                             displayName: user.displayName,
@@ -190,5 +205,10 @@ export const createAuthSlice: StateCreator<AuthSlice> = (set, get) => ({
                 }
             }
         });
+
+        return () => {
+            clearTimeout(timeoutId);
+            unsubscribe();
+        };
     }
 });
