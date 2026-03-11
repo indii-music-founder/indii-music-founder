@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <!-- Monochrome white logo for dark backgrounds -->
+  <rect x="4" y="4" width="112" height="112" rx="28" ry="28" fill="none" stroke="#FFFFFF" stroke-width="3"/>
+  <rect x="38" y="32" width="14" height="56" rx="7" ry="7" fill="#FFFFFF"/>
+  <rect x="68" y="32" width="14" height="56" rx="7" ry="7" fill="#FFFFFF"/>
+</svg>
