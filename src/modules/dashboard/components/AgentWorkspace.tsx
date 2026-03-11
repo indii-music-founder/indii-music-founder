@@ -25,8 +25,8 @@ export default function AgentWorkspace() {
     return (
         <div className="flex-1 flex flex-col h-full bg-grid-white/[0.02] relative overflow-hidden">
             {/* Background Glows */}
-            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-dept-marketing/5 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/2 -z-10" />
-            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/5 blur-[120px] rounded-full translate-y-1/2 -translate-x-1/2 -z-10" />
+            <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full -translate-y-1/2 translate-x-1/3 -z-10" />
+            <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 blur-[120px] rounded-full translate-y-1/3 -translate-x-1/3 -z-10" />
 
             {/* Header */}
             <AgentHeader uptime={uptime} isProcessing={isAgentProcessing} />

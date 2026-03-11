@@ -34,7 +34,7 @@ import { UploadQueueMonitor } from '@/components/shared/UploadQueueMonitor';
 import { BackgroundJobMonitor } from '@/components/shared/BackgroundJobMonitor';
 import AudioPIPPlayer from '@/components/shared/AudioPIPPlayer';
 import { LoadingFallback } from '@/core/components/LoadingFallbacks';
-import { ErrorButton } from './components/debug/ErrorButton';
+
 import { cleanupLocalStorage } from '@/lib/storageHealth';
 import { UpdaterMonitor } from './components/UpdaterMonitor';
 import { CookieConsentBanner } from '@/components/shared/CookieConsentBanner';
@@ -474,7 +474,6 @@ export default function App() {
                                 {import.meta.env.DEV && (
                                     <Suspense fallback={null}>
                                         <DevPortWarning />
-                                        <ErrorButton />
                                     </Suspense>
                                 )}
 
