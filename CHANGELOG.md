@@ -2,6 +2,14 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.14.1](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.14.0...v1.14.1) (2026-03-11)
+
+
+### Bug Fixes
+
+* patch 5 launch-day risks in App.tsx ([644f6ae](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/644f6aee36272ea13e7a937fd3af1945b230a2e3))
+* resolve all 5 failing test files for green CI ([b5b5fbe](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/b5b5fbebb4e0fedf62cf91e327d21ddedd10214a))
+
 ## [1.14.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.13.0...v1.14.0) (2026-03-11)
 
 
