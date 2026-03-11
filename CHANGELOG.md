@@ -2,6 +2,29 @@
 
 All notable changes to indiiOS are documented in this file.
 
+## [1.17.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.16.0...v1.17.0) (2026-03-11)
+
+
+### Features
+
+* 5 animated banner variants from v3 teal square ([13afb4c](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/13afb4cb9df56ade1624f82628af8ab9070d3e7a))
+* BannerOrbit v2 — bigger screenshots, 3D depth, glow trails ([f2c8b2b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/f2c8b2b06a40545fb5fa7de343be0ccb5758090b))
+* **hunter:** add vendor chunk conflicts and impure render scans ([25c5324](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/25c5324da1b1037457008e33fe557fe3b86e79a6))
+* Remotion animated logo reveal — 3 format variants ([152bcdc](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/152bcdc869cb065f406c4be39c117afc12494685))
+
+
+### Bug Fixes
+
+* 2x larger screenshot cards in all banner animations ([622ebaa](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/622ebaa38595f0b7fe93c2842b2f15c8c082fa27))
+* **ci:** add .env and Firebase API keys to gitleaks allowlist ([589ee07](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/589ee07168b8ee2c87515b4dfd5d5d40dbbb34ca))
+* **critical:** remove @react-three/* from vendor-three chunk ([a525734](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/a525734de32a140c867bceb749929ad06e0daf86))
+* Halve BannerOrbit speed (360° → 180° per cycle) ([0e9bcd6](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/0e9bcd6e7d3445810020287b9a97b871beab789c))
+* **lint:** replace Math.random() in render with deterministic frame-based angle ([02b74d5](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/02b74d59edafa6891805c48363cb322b4555addc))
+* **mobile:** ChatOverlay uses 100dvh minus tab bar height on iOS ([d5f578b](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/d5f578bf226f934e0161dee64e94816a53cf9833))
+* **mobile:** hide desktop-only UI on phone, fix tab bar and layout issues ([c3fb115](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/c3fb1150dfc0c60d76cd9e6d62b8bf974df1b177))
+* **mobile:** reduce font sizes and fix bottom tab bar overlap ([7a40994](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/7a40994899bc1e3b1a417cf80ebb94cd36891195))
+* Replace placeholder cards with real screenshots + seamless loops ([96e4962](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/commit/96e496230405b8c0c0dec35a75562bc3f0b402a9))
+
 ## [1.16.0](https://github.com/the-walking-agency-det/indiiOS-Alpha-Electron/compare/v1.15.0...v1.16.0) (2026-03-11)
 
 
