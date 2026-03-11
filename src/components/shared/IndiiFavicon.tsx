@@ -6,10 +6,14 @@ interface IndiiFaviconProps {
 }
 
 /**
- * Inline SVG of the indiiOS favicon — the stylized "ii" with yellow dots.
- * Mirrors the design from `/public/favicon.svg` for use as a React component.
+ * Inline SVG of the indiiOS favicon — the stylized "ii" mark.
+ * Cyan/teal gradient rounded square with two solid white rounded-rect bars.
+ * Mirrors the design from `/public/favicon.svg` and `docs/assets/indiios-logo.svg`.
  */
 export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
+    // Unique gradient ID to avoid collisions when multiple instances render
+    const gradientId = `indii-bg-${size}`;
+
     return (
         <svg
             width={size}
@@ -20,11 +24,15 @@ export function IndiiFavicon({ size = 40, className = '' }: IndiiFaviconProps) {
             className={className}
             aria-label="indiiOS logo"
         >
-            <rect width="512" height="512" rx="128" fill="#0f0f0f" />
-            <path d="M192 352V224" stroke="white" strokeWidth="48" strokeLinecap="round" />
-            <path d="M320 352V224" stroke="white" strokeWidth="48" strokeLinecap="round" />
-            <circle cx="192" cy="160" r="24" fill="#FACC15" />
-            <circle cx="320" cy="160" r="24" fill="#FACC15" />
+            <defs>
+                <linearGradient id={gradientId} x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+                    <stop offset="0%" stopColor="#00E5CC" />
+                    <stop offset="100%" stopColor="#00B8D4" />
+                </linearGradient>
+            </defs>
+            <rect width="512" height="512" rx="128" fill={`url(#${gradientId})`} />
+            <rect x="161" y="136" width="60" height="240" rx="30" fill="white" />
+            <rect x="291" y="136" width="60" height="240" rx="30" fill="white" />
         </svg>
     );
 }
