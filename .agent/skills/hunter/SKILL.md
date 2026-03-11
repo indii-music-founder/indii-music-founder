@@ -119,6 +119,55 @@ grep -rn 'await fetch(' src/services/ --include='*.ts' -r | grep -v 'signal\|tim
 grep -rn 'v1beta\|v1alpha\|deprecated\|legacy' src/services/ --include='*.ts' | grep -v 'test\|//\|mock' | head -30
 ```
 
+### 1.6 Vendor Chunk Conflicts (Vite/Webpack)
+
+React-dependent libraries MUST share the same React instance. Splitting them into
+separate vendor chunks causes `unstable_now`, `__SECRET_INTERNALS`, or reconciler
+crashes that kill the entire bundle at import time — before any error boundary fires.
+
+```bash
+# Check manualChunks for React-dependent libs isolated from vendor-react
+grep -A 30 'manualChunks' vite.config.ts
+
+# Cross-reference: which packages depend on react-reconciler or scheduler?
+# Any of these MUST be in vendor-react or left out of manualChunks entirely:
+# @react-three/fiber, @react-three/drei, @remotion/*, react-spring, @dnd-kit/*
+grep -rn 'react-reconciler\|scheduler' node_modules/@react-three/fiber/package.json node_modules/remotion/package.json 2>/dev/null
+```
+
+**Deep Read Checklist:**
+- [ ] Every entry in `manualChunks` must NOT contain packages that import `react-reconciler`, `scheduler`, or `react-dom/client`
+- [ ] If `@react-three/fiber`, `@remotion/*`, or `react-spring` appear in a separate chunk, they MUST move to `vendor-react`
+- [ ] After any manualChunks change, run `npm run build:studio` and test the production bundle loads
+
+**Reference Incident:** 2026-03-11 — `@react-three/fiber` in `vendor-three` chunk caused
+`TypeError: Cannot set properties of undefined (setting 'unstable_now')`, killing the
+entire production app before React mounted.
+
+### 1.7 Impure Render Functions
+
+`Math.random()`, `Date.now()`, `crypto.getRandomValues()` in JSX render bodies violate
+React's purity rules. ESLint `react-hooks/purity` catches these as *errors* that block CI/CD.
+
+```bash
+# Math.random() in render (blocks lint, non-deterministic)
+grep -rn 'Math\.random()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v '_archive' | grep -v 'useMemo\|useCallback\|useRef'
+
+# Date.now() in render
+grep -rn 'Date\.now()' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'useMemo\|useCallback\|useRef\|useEffect'
+
+# crypto in render
+grep -rn 'crypto\.\(getRandomValues\|randomUUID\)' src/ --include='*.tsx' | grep -v node_modules | grep -v '.test.' | grep -v 'useMemo\|useCallback\|useRef'
+```
+
+**AUTO-FIX:**
+- `Math.random()` in render → Replace with deterministic seeded PRNG (see `Particles` component in `BannerAnimations.tsx`) or frame-based `(frame * 137.508) % 360`
+- `Date.now()` in render → Move to `useEffect` or `useMemo`
+- `crypto.*` in render → Move to `useMemo` with stable deps
+
+**Reference Incident:** 2026-03-11 — `Math.random()` in `BannerGlitch` render caused
+`react-hooks/purity` lint error, blocking CI/CD deploy of critical production fix.
+
 ---
 
 ## Phase 2: Small Game (Deep Logic Read)
