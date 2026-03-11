@@ -5,6 +5,10 @@ import { functions } from '@/services/firebase';
 import { httpsCallable } from 'firebase/functions';
 import { logger } from '@/utils/logger';
 
+// Module-level cache for ECB exchange rates (updates once daily, cache for 1 hour)
+let _ecbCache: { rates: Record<string, number>; fetchedAt: number } | null = null;
+const ECB_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
 export const FinanceTools: Record<string, AnyToolFunction> = {
     analyze_receipt: wrapTool('analyze_receipt', async (args: { image_data: string, mime_type: string }) => {
         const { firebaseAI } = await import('@/services/ai/FirebaseAIService');
@@ -239,39 +243,68 @@ export const FinanceTools: Record<string, AnyToolFunction> = {
         let rate: number;
         let source = 'fallback';
 
+        // Validate ISO 4217 currency codes
+        const src = args.sourceCurrency.toUpperCase();
+        const tgt = args.targetCurrency.toUpperCase();
+        if (!/^[A-Z]{3}$/.test(src)) {
+            return toolError(`Invalid source currency code: '${args.sourceCurrency}'. Must be 3-letter ISO 4217 (e.g., USD, EUR, GBP).`, 'INVALID_CURRENCY');
+        }
+        if (!/^[A-Z]{3}$/.test(tgt)) {
+            return toolError(`Invalid target currency code: '${args.targetCurrency}'. Must be 3-letter ISO 4217 (e.g., USD, EUR, GBP).`, 'INVALID_CURRENCY');
+        }
+        if (args.amount <= 0) {
+            return toolError(`Amount must be positive. Received: ${args.amount}`, 'INVALID_AMOUNT');
+        }
+
         try {
-            // ECB daily reference rates (XML)
-            const ecbUrl = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
-            const response = await fetch(ecbUrl, { signal: AbortSignal.timeout(5000) });
-            if (!response.ok) throw new Error(`ECB API returned ${response.status}`);
-            const xml = await response.text();
-
-            // Parse EUR-based rates from XML using regex (lightweight, no XML parser needed)
-            const rateMap: Record<string, number> = { EUR: 1.0 };
-            const regex = /currency='([A-Z]+)'\s+rate='([\d.]+)'/g;
-            let match: RegExpExecArray | null;
-            while ((match = regex.exec(xml)) !== null) {
-                rateMap[match[1]] = parseFloat(match[2]);
-            }
-
-            const src = args.sourceCurrency.toUpperCase();
-            const tgt = args.targetCurrency.toUpperCase();
-
-            if (src === tgt) {
-                rate = 1.0;
-            } else if (rateMap[src] && rateMap[tgt]) {
-                // Cross-rate: convert source→EUR→target
-                rate = rateMap[tgt] / rateMap[src];
+            // Check cache first
+            if (_ecbCache && Date.now() - _ecbCache.fetchedAt < ECB_CACHE_TTL_MS) {
+                const rateMap = _ecbCache.rates;
+                if (src === tgt) {
+                    rate = 1.0;
+                } else if (rateMap[src] && rateMap[tgt]) {
+                    rate = rateMap[tgt] / rateMap[src];
+                } else {
+                    throw new Error(`Currency not found in cached ECB data: ${!rateMap[src] ? src : tgt}`);
+                }
+                source = 'ECB (cached)';
+                logger.info(`[FinanceTools] ECB cached rate ${src}→${tgt}: ${rate.toFixed(6)}`);
             } else {
-                throw new Error(`Currency not found in ECB data: ${!rateMap[src] ? src : tgt}`);
-            }
+                // Fetch fresh from ECB
+                const ecbUrl = 'https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml';
+                const response = await fetch(ecbUrl, { signal: AbortSignal.timeout(5000) });
+                if (!response.ok) throw new Error(`ECB API returned ${response.status}`);
+                const xml = await response.text();
 
-            source = 'ECB';
-            logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
+                // Parse EUR-based rates from XML using regex (lightweight, no XML parser needed)
+                const rateMap: Record<string, number> = { EUR: 1.0 };
+                const regex = /currency=['"]([A-Z]+)['"]\s+rate=['"]([\d.]+)['"]/g;
+                let match: RegExpExecArray | null;
+                while ((match = regex.exec(xml)) !== null) {
+                    rateMap[match[1]] = parseFloat(match[2]);
+                }
+
+                // Update cache
+                _ecbCache = { rates: rateMap, fetchedAt: Date.now() };
+
+                if (src === tgt) {
+                    rate = 1.0;
+                } else if (rateMap[src] && rateMap[tgt]) {
+                    rate = rateMap[tgt] / rateMap[src];
+                } else {
+                    throw new Error(`Currency not found in ECB data: ${!rateMap[src] ? src : tgt}`);
+                }
+
+                source = 'ECB';
+                logger.info(`[FinanceTools] ECB live rate ${src}→${tgt}: ${rate.toFixed(6)}`);
+            }
         } catch (error) {
             logger.warn('[FinanceTools] ECB API unavailable, using fallback rates:', error);
-            const pair = `${args.sourceCurrency.toUpperCase()}_${args.targetCurrency.toUpperCase()}`;
+            const pair = `${src}_${tgt}`;
             rate = fallbackExchangeRates[pair] || 1.0;
+            if (rate === 1.0 && src !== tgt) {
+                source = 'fallback (unknown pair)';
+            }
         }
 
         const converted = args.amount * rate;

@@ -14,13 +14,9 @@ import type { ExtendedGoldenMetadata } from '@/services/metadata/types';
 import { distributionService } from '@/services/distribution/DistributionService';
 import { wrapTool, toolSuccess, toolError } from '../utils/ToolUtils';
 import type { AnyToolFunction } from '../types';
+import { MusicTools } from './MusicTools';
+import { logger } from '@/utils/logger';
 
-
-/**
- * Prepare a release for distribution by generating DDEX ERN 4.3 XML.
- * Uses the actual ERNService.
- */
-// ... (imports remain the same)
 
 /**
  * Prepare a release for distribution using the Industrial Engine (Python/DDEX).
@@ -55,11 +51,10 @@ const prepare_release = wrapTool('prepare_release', async (args: {
                 genre: 'Pop'
             });
 
-            return {
+            return toolSuccess({
                 engine: 'Industrial (Python)',
                 ddex: rawDdex,
-                message: `Industrial DDEX ERN 4.3 generated via Python Engine.`
-            };
+            }, 'Industrial DDEX ERN 4.3 generated via Python Engine.');
         } catch (e) {
             logger.warn('[DistributionTools] Industrial DDEX generation failed, falling back to JS Service:', e);
         }
@@ -216,13 +211,13 @@ const issue_isrc = wrapTool('issue_isrc', async (args: {
             });
         }
 
-        return {
+        return toolSuccess({
             isrc,
             source: 'JS Service',
             valid: true,
             track_title: trackTitle,
             registry_status: 'REGISTERED'
-        };
+        }, `ISRC ${isrc} generated and registered for "${trackTitle}".`);
     } catch (error) {
         return toolError(error instanceof Error ? error.message : 'ISRC failed', 'ISRC_ERROR');
     }
@@ -316,14 +311,14 @@ const certify_tax_profile = wrapTool('certify_tax_profile', async (args: {
         };
     }
 
-    return {
+    return toolSuccess({
         form_type: formType,
         tin_valid: tinValid,
         payout_status: payoutStatus,
         tin_message: tinMessage,
         certified: certified,
-        withholding_rate: isUsPerson ? 0 : 30 // Simplified mock
-    };
+        withholding_rate: isUsPerson ? 0 : 30
+    }, `Tax profile certified. Form: ${formType}, Status: ${payoutStatus}.`);
 });
 
 /**
@@ -366,14 +361,14 @@ const calculate_payout = wrapTool('calculate_payout', async (args: {
     const net = grossRevenue - indiiFee - recoupableExpenses;
     const totalPaid = net > 0 ? net : 0;
 
-    return {
+    return toolSuccess({
         gross_revenue: grossRevenue,
         indii_fee: indiiFee,
         recouped_expenses: recoupableExpenses,
         net_distributable: totalPaid,
         paid: totalPaid,
         engine: 'JS Service'
-    };
+    }, `Payout calculated. Net distributable: $${totalPaid.toFixed(2)}.`);
 });
 
 /**
@@ -519,9 +514,6 @@ const check_merlin_status = wrapTool('check_merlin_status', async (args: {
 
     return toolError('Merlin check requires Electron environment (Keys Layer).', 'ELECTRON_REQUIRED');
 });
-
-import { MusicTools } from './MusicTools';
-import { logger } from '@/utils/logger';
 
 export const DistributionTools: Record<string, AnyToolFunction> = {
     prepare_release,
