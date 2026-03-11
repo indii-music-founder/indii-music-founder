@@ -1,18 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" fill="none">
   <defs>
-    <linearGradient id="bg-gradient" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+    <linearGradient id="outer-bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#00E5CC"/>
+      <stop offset="100%" stop-color="#00B8D4"/>
+    </linearGradient>
+    <linearGradient id="ii-fill" x1="180" y1="120" x2="340" y2="400" gradientUnits="userSpaceOnUse">
       <stop offset="0%" stop-color="#00E5CC"/>
       <stop offset="100%" stop-color="#00B8D4"/>
     </linearGradient>
   </defs>
-  <!-- Rounded square background -->
-  <rect x="4" y="4" width="112" height="112" rx="28" ry="28" fill="url(#bg-gradient)"/>
-  <!-- Left "i" bar -->
-  <rect x="37" y="47" width="14" height="41" rx="7" ry="7" fill="white"/>
-  <!-- Right "i" bar -->
-  <rect x="69" y="47" width="14" height="41" rx="7" ry="7" fill="white"/>
+  <!-- Outer rounded square: cyan/teal gradient -->
+  <rect width="512" height="512" rx="128" fill="url(#outer-bg)"/>
+  <!-- Inner dark inset panel -->
+  <rect x="48" y="48" width="416" height="416" rx="96" fill="#0C0C1A"/>
   <!-- Left "i" dot -->
-  <circle cx="44" cy="34" r="7" fill="white"/>
+  <circle cx="200" cy="155" r="28" fill="url(#ii-fill)"/>
   <!-- Right "i" dot -->
-  <circle cx="76" cy="34" r="7" fill="white"/>
+  <circle cx="312" cy="155" r="28" fill="url(#ii-fill)"/>
+  <!-- Left "i" bar -->
+  <rect x="174" y="210" width="52" height="160" rx="26" fill="url(#ii-fill)"/>
+  <!-- Right "i" bar -->
+  <rect x="286" y="210" width="52" height="160" rx="26" fill="url(#ii-fill)"/>
 </svg>
