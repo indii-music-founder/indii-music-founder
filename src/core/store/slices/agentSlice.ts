@@ -146,7 +146,7 @@ export const createAgentSlice: StateCreator<AgentSlice> = (set, get) => ({
     agentsError: null,
     chatChannel: 'indii', // Default to indii (main orchestrator)
     activeAgentProvider: 'direct',
-    isKnowledgeBaseEnabled: false,
+    isKnowledgeBaseEnabled: true,
 
     canvasItems: [],
 
