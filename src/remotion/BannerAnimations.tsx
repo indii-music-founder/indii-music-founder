@@ -447,90 +447,149 @@ export const BannerZoomThrough: React.FC = () => {
 
 // ═════════════════════════════════════════════════════════════
 // VARIANT 3: "Orbit"
-// Screenshots orbit around the central logo — continuous spin
+// Screenshots orbit around the central logo with 3D depth,
+// teal glow trails, counter-rotating rings, and dynamic wobble
 // ═════════════════════════════════════════════════════════════
 export const BannerOrbit: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const T = TOTAL_FRAMES;
+  const freq = (2 * Math.PI) / T;
 
   const logoVis = loopValue(frame, T, 0.03, 0.2);
   const logoScale = spring({ frame: frame - T * 0.05, fps, config: { damping: 10, stiffness: 70 } });
+  // Logo pulse — gentle breathing glow
+  const logoPulse = 1 + Math.sin(frame * freq * 2) * 0.06;
   const textVis = loopValue(frame, T, 0.35, 0.5);
   const textY = interpolate(textVis, [0, 1], [20, 0]);
 
   // Orbit angle: exactly one full revolution in T frames for seamless loop
   const orbitAngle = (frame / T) * 360;
-  const orbitRadius = 340;
+  const orbitRadius = 420;
 
-  // 4 orbiting screenshot positions
+  // 4 orbiting screenshot positions — BIG cards with aggressive depth
+  const cardW = 560;
+  const cardH = 350;
   const orbitItems = [0, 90, 180, 270].map((offset, i) => {
     const angle = ((orbitAngle + offset) * Math.PI) / 180;
     const ox = Math.cos(angle) * orbitRadius;
-    const oy = Math.sin(angle) * orbitRadius * 0.35;
-    const zIndex = Math.sin(angle) > 0 ? 5 : 15;
-    const itemOpacity = loopValue(frame, T, 0.05 + i * 0.04, 0.2 + i * 0.04);
-    const itemScale = 0.7 + Math.sin(angle) * 0.15;
+    const oy = Math.sin(angle) * orbitRadius * 0.4; // slightly taller ellipse
+    // depth: sin(angle) ranges -1 to 1; "front" (sin > 0) = larger, "back" = smaller
+    const depth = Math.sin(angle); // -1 (back) to +1 (front)
+    const zIndex = depth > 0 ? 5 + Math.round(depth * 10) : 2;
+    const itemOpacity = loopValue(frame, T, 0.05 + i * 0.03, 0.18 + i * 0.03);
+    // Scale range: 0.55 at the back → 1.15 at the front
+    const itemScale = 0.85 + depth * 0.3;
+    // Dynamic tilt: cards tilt as they orbit, more dramatic at the sides
+    const tiltX = Math.cos(angle) * 12;  // perspective tilt left-right
+    const tiltY = depth * -6;            // slight pitch forward/back
+    // Blur when far back for depth-of-field effect
+    const blurAmount = depth < -0.3 ? (Math.abs(depth) - 0.3) * 3 : 0;
 
-    return { ox, oy, zIndex, itemOpacity, itemScale, angle };
+    return { ox, oy, zIndex, itemOpacity, itemScale, angle, tiltX, tiltY, blurAmount, depth };
   });
+
+  // Counter-rotate angle for second ring
+  const counterAngle = orbitAngle * -0.6;
 
   return (
     <AbsoluteFill style={{ backgroundColor: DARK, justifyContent: 'center', alignItems: 'center' }}>
-      <Particles frame={frame} total={T} count={25} opacity={0.3} />
+      <Particles frame={frame} total={T} count={35} opacity={0.35} />
 
-      {/* Center glow */}
+      {/* Center glow — larger, pulses */}
       <div style={{
-        position: 'absolute', width: 500, height: 500, borderRadius: '50%',
-        background: `radial-gradient(circle, ${TEAL}22 0%, transparent 60%)`,
-        opacity: 0.6,
+        position: 'absolute', width: 700, height: 700, borderRadius: '50%',
+        background: `radial-gradient(circle, ${TEAL}28 0%, ${TEAL}08 40%, transparent 65%)`,
+        opacity: 0.5 + Math.sin(frame * freq) * 0.15,
+        transform: `scale(${logoPulse})`,
       }} />
 
-      {/* Orbit ring */}
+      {/* Primary orbit ring */}
       <div style={{
-        position: 'absolute', width: orbitRadius * 2, height: orbitRadius * 0.7,
-        borderRadius: '50%', border: `1px solid ${TEAL}15`,
-        opacity: 0.3,
+        position: 'absolute', width: orbitRadius * 2, height: orbitRadius * 0.8,
+        borderRadius: '50%', border: `1px solid ${TEAL}22`,
+        opacity: 0.35,
+        transform: `rotate(${orbitAngle * 0.02}deg)`,
       }} />
 
-      {/* Orbiting screenshots */}
-      {orbitItems.map((item, i) => (
-        <div
-          key={i}
-          style={{
-            position: 'absolute',
-            left: `calc(50% + ${item.ox}px - 200px)`,
-            top: `calc(50% + ${item.oy}px - 130px)`,
-            zIndex: item.zIndex,
-          }}
-        >
-          <div
-            style={{
-              width: 400,
-              height: 260,
-              borderRadius: 10,
-              overflow: 'hidden',
-              opacity: item.itemOpacity * 0.8,
-              transform: `scale(${item.itemScale})`,
-              border: `1px solid ${TEAL}33`,
-              boxShadow: `0 8px 30px rgba(0,0,0,0.5)`,
-            }}
-          >
-            <Img
-              src={SCREENSHOTS[i]}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            />
-          </div>
-        </div>
-      ))}
+      {/* Counter-rotating orbit ring — slightly smaller, dashed feel */}
+      <div style={{
+        position: 'absolute', width: orbitRadius * 1.6, height: orbitRadius * 0.55,
+        borderRadius: '50%', border: `1px dashed ${TEAL_END}18`,
+        opacity: 0.25,
+        transform: `rotate(${counterAngle * 0.05}deg)`,
+      }} />
 
-      {/* Center logo */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 25, zIndex: 10 }}>
-        <IILogo size={180} opacity={logoVis} scale={Math.min(logoScale, 1)} glowSize={20} />
+      {/* Third decorative ring — very subtle */}
+      <div style={{
+        position: 'absolute', width: orbitRadius * 2.4, height: orbitRadius * 1.0,
+        borderRadius: '50%', border: `1px solid ${TEAL}0A`,
+        opacity: 0.15,
+      }} />
+
+      {/* Orbiting screenshots — sorted by depth so back renders first */}
+      {[...orbitItems]
+        .sort((a, b) => a.depth - b.depth) // back-to-front
+        .map((item) => {
+          const i = orbitItems.indexOf(item);
+          return (
+            <div
+              key={i}
+              style={{
+                position: 'absolute',
+                left: `calc(50% + ${item.ox}px - ${cardW / 2}px)`,
+                top: `calc(50% + ${item.oy}px - ${cardH / 2}px)`,
+                zIndex: item.zIndex,
+              }}
+            >
+              {/* Teal glow trail behind the card */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: cardW * 0.1,
+                  top: cardH * 0.15,
+                  width: cardW * 0.8,
+                  height: cardH * 0.7,
+                  borderRadius: 20,
+                  background: `radial-gradient(ellipse, ${TEAL}22 0%, transparent 70%)`,
+                  opacity: item.itemOpacity * (item.depth > 0 ? 0.6 : 0.2),
+                  filter: 'blur(20px)',
+                }}
+              />
+              <div
+                style={{
+                  width: cardW,
+                  height: cardH,
+                  borderRadius: 14,
+                  overflow: 'hidden',
+                  opacity: item.itemOpacity * (0.6 + item.depth * 0.25),
+                  transform: `scale(${item.itemScale}) perspective(800px) rotateY(${item.tiltX}deg) rotateX(${item.tiltY}deg)`,
+                  border: `1.5px solid ${TEAL}${item.depth > 0 ? '55' : '22'}`,
+                  boxShadow: item.depth > 0
+                    ? `0 12px 50px rgba(0,0,0,0.6), 0 0 25px ${TEAL}22`
+                    : `0 4px 20px rgba(0,0,0,0.4)`,
+                  filter: item.blurAmount > 0 ? `blur(${item.blurAmount}px)` : undefined,
+                  transition: 'filter 0.1s',
+                }}
+              >
+                <Img
+                  src={SCREENSHOTS[i]}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              </div>
+            </div>
+          );
+        })}
+
+      {/* Equalizer bars — dual, flanking the logo */}
+      <EqualizerBars x={320} y={70} frame={frame} total={T} enterFraction={0.2} opacity={0.5} barCount={8} />
+      <EqualizerBars x={660} y={70} frame={frame} total={T} enterFraction={0.22} opacity={0.45} barCount={8} />
+
+      {/* Center logo — on top of everything */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 25, zIndex: 20 }}>
+        <IILogo size={160} opacity={logoVis} scale={Math.min(logoScale, 1) * logoPulse} glowSize={logoVis * 30} />
         <BrandText opacity={textVis} y={textY} />
       </div>
-
-      <EqualizerBars x={420} y={80} frame={frame} total={T} enterFraction={0.2} opacity={0.4} barCount={10} />
     </AbsoluteFill>
   );
 };
